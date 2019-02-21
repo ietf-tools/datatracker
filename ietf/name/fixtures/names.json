@@ -2347,6 +2347,36 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
+      "acts_like_wg": false,
+      "admin_roles": "\"[\\\"chair\\\"]\"",
+      "agenda_type": "ietf",
+      "create_wiki": true,
+      "custom_group_roles": false,
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.group_about",
+      "docman_roles": "\"[\\\"chair\\\"]\"",
+      "groupman_roles": "\"[\\\"chair\\\",\\\"delegate\\\"]\"",
+      "has_chartering_process": false,
+      "has_default_jabber": true,
+      "has_documents": false,
+      "has_meetings": true,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "has_session_materials": true,
+      "is_schedulable": true,
+      "material_types": "\"[\\\"slides\\\"]\"",
+      "matman_roles": "\"[\\\"chair\\\",\\\"delegate\\\"]\"",
+      "req_subm_approval": true,
+      "role_order": "\"[\\\"chair\\\",\\\"delegate\\\"]\"",
+      "show_on_agenda": true
+    },
+    "model": "group.groupfeatures",
+    "pk": "adhoc"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
       "acts_like_wg": true,
       "admin_roles": "[\"chair\"]",
       "agenda_type": "ietf",
@@ -2468,6 +2498,36 @@
     "fields": {
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
+      "admin_roles": "\"[\\\"chair\\\"]\"",
+      "agenda_type": null,
+      "create_wiki": false,
+      "custom_group_roles": true,
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.group_about",
+      "docman_roles": "\"[\\\"chair\\\"]\"",
+      "groupman_roles": "\"[\\\"chair\\\",\\\"delegate\\\"]\"",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_documents": false,
+      "has_meetings": false,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "has_session_materials": false,
+      "is_schedulable": false,
+      "material_types": "\"[]\"",
+      "matman_roles": "\"[\\\"chair\\\",\\\"delegate\\\"]\"",
+      "req_subm_approval": true,
+      "role_order": "\"[\\\"chair\\\",\\\"secr\\\"]\"",
+      "show_on_agenda": false
+    },
+    "model": "group.groupfeatures",
+    "pk": "iesg"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "acts_like_wg": false,
       "admin_roles": "[\"chair\",\"lead\"]",
       "agenda_type": "ietf",
       "create_wiki": false,
@@ -2553,6 +2613,36 @@
     },
     "model": "group.groupfeatures",
     "pk": "irtf"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "acts_like_wg": false,
+      "admin_roles": "\"[\\\"chair\\\",\\\"lead\\\"]\"",
+      "agenda_type": null,
+      "create_wiki": false,
+      "custom_group_roles": true,
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.group_about",
+      "docman_roles": "\"[\\\"chair\\\"]\"",
+      "groupman_roles": "\"[\\\"chair\\\",\\\"delegate\\\"]\"",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_documents": false,
+      "has_meetings": false,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "has_session_materials": false,
+      "is_schedulable": false,
+      "material_types": "\"[]\"",
+      "matman_roles": "\"[\\\"chair\\\",\\\"delegate\\\"]\"",
+      "req_subm_approval": true,
+      "role_order": "\"[\\\"chair\\\"]\"",
+      "show_on_agenda": false
+    },
+    "model": "group.groupfeatures",
+    "pk": "ise"
   },
   {
     "fields": {
@@ -8845,6 +8935,17 @@
   },
   {
     "fields": {
+      "desc": "Ad Hoc schedulable Group Type, for instance HotRfc",
+      "name": "Ad Hoc",
+      "order": 0,
+      "used": true,
+      "verbose_name": "Ad Hoc Group Type"
+    },
+    "model": "name.grouptypename",
+    "pk": "adhoc"
+  },
+  {
+    "fields": {
       "desc": "Area group",
       "name": "AG",
       "order": 0,
@@ -8890,6 +8991,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "IESG",
+      "order": 0,
+      "used": true,
+      "verbose_name": "Internet Engineering Steering Group"
+    },
+    "model": "name.grouptypename",
+    "pk": "iesg"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "IETF",
       "order": 0,
       "used": true,
@@ -8919,6 +9031,17 @@
     },
     "model": "name.grouptypename",
     "pk": "irtf"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "ISE",
+      "order": 0,
+      "used": true,
+      "verbose_name": "Independent Stream Editor"
+    },
+    "model": "name.grouptypename",
+    "pk": "ise"
   },
   {
     "fields": {
@@ -10702,7 +10825,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2019-02-06T00:08:09.183",
+      "time": "2019-02-18T00:07:55.553",
       "used": true,
       "version": "xym 0.4"
     },
@@ -10713,7 +10836,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2019-02-06T00:08:10.172",
+      "time": "2019-02-18T00:07:56.776",
       "used": true,
       "version": "pyang 1.7.8"
     },
@@ -10724,7 +10847,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2019-02-06T00:08:10.404",
+      "time": "2019-02-18T00:07:57.000",
       "used": true,
       "version": "yanglint 0.14.80"
     },
@@ -10735,7 +10858,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2019-02-06T00:08:11.933",
+      "time": "2019-02-18T00:07:58.212",
       "used": true,
       "version": "xml2rfc 2.17.2"
     },

@@ -22,7 +22,7 @@ from ietf.doc.fields import SearchableDocAliasesField
 from ietf.ipr.mail import utc_from_string
 from ietf.meeting.models import Meeting
 from ietf.message.models import Message
-from ietf.name.models import FormalLanguageName
+from ietf.name.models import FormalLanguageName, GroupTypeName
 from ietf.submit.models import Submission, Preapproval
 from ietf.submit.utils import validate_submission_rev, validate_submission_document_date
 from ietf.submit.parsers.pdf_parser import PDFParser
@@ -293,43 +293,42 @@ class SubmissionBaseUploadForm(forms.Form):
             else:
                 return None
         else:
-            if name.startswith('draft-ietf-') or name.startswith("draft-irtf-"):
-                components = name.split("-")
-                if len(components) < 3:
-                    raise forms.ValidationError(u"The draft name \"%s\" is missing a third part, please rename it" % name)
+            name_parts = name.split("-")
+            if len(name_parts) < 3:
+                raise forms.ValidationError(u"The draft name \"%s\" is missing a third part, please rename it" % name)
 
-                if components[1] == "ietf":
+            if name.startswith('draft-ietf-') or name.startswith("draft-irtf-"):
+
+                if name_parts[1] == "ietf":
                     group_type = "wg"
-                elif components[1] == "irtf":
+                elif name_parts[1] == "irtf":
                     group_type = "rg"
 
                 # first check groups with dashes
                 for g in Group.objects.filter(acronym__contains="-", type=group_type):
-                    if name.startswith('draft-%s-%s-' % (components[1], g.acronym)):
+                    if name.startswith('draft-%s-%s-' % (name_parts[1], g.acronym)):
                         return g
 
                 try:
-                    return Group.objects.get(acronym=components[2], type=group_type)
+                    return Group.objects.get(acronym=name_parts[2], type=group_type)
                 except Group.DoesNotExist:
-                    raise forms.ValidationError('There is no active group with acronym \'%s\', please rename your draft' % components[2])
+                    raise forms.ValidationError('There is no active group with acronym \'%s\', please rename your draft' % name_parts[2])
 
             elif name.startswith("draft-rfc-"):
                 return Group.objects.get(acronym="iesg")
-
-            elif name.startswith("draft-irtf-"):
-                return Group.objects.get(acronym="irtf")
-
-            elif name.startswith("draft-iab-"):
-                return Group.objects.get(acronym="iab")
-
-            elif name.startswith("draft-iana-"):
-                return Group.objects.get(acronym="iana")
-
             elif name.startswith("draft-rfc-editor-") or name.startswith("draft-rfced-") or name.startswith("draft-rfceditor-"):
                 return Group.objects.get(acronym="rfceditor")
-
             else:
-                return None
+                ntype = name_parts[1].lower()
+                debug.show('ntype')
+                # This covers group types iesg, iana, iab, ise, and others:
+                if GroupTypeName.objects.filter(slug=ntype).exists():
+                    group = Group.objects.filter(acronym=ntype).first()
+                    if group:
+                        return group
+                    else:
+                        raise forms.ValidationError('Draft names starting with draft-%s- are restricted, please pick a differen name' % ntype)
+            return None
 
 class SubmissionManualUploadForm(SubmissionBaseUploadForm):
     xml = forms.FileField(label=u'.xml format', required=False) # xml field with required=False instead of True
