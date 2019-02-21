@@ -431,7 +431,7 @@ def concluded_groups(request):
                   dict(sections=sections))
 
 def prepare_group_documents(request, group, clist):
-    found_docs, meta = prepare_document_table(request, docs_tracked_by_community_list(clist), request.GET)
+    found_docs, meta = prepare_document_table(request, docs_tracked_by_community_list(clist), request.GET, max_results=500)
 
     docs = []
     docs_related = []
