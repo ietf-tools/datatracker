@@ -8,9 +8,6 @@ from django.db import migrations
 
 import debug                            # pyflakes:ignore
 
-# 
-
-
 group_type_features = {
     'adhoc': {
         'grouptypename': {
@@ -22,30 +19,31 @@ group_type_features = {
             "verbose_name": "Ad Hoc Group Type",
         },
         'groupfeatures': {
-          'about_page': 'ietf.group.views.group_about',
-          'acts_like_wg': False,
-          'admin_roles': '["chair"]',
-          'agenda_type_id': 'ietf',
-          'create_wiki': True,
-          'custom_group_roles': False,
-          'customize_workflow': False,
-          'default_tab': 'ietf.group.views.group_about',
-          'docman_roles': '["chair"]',
-          'groupman_roles': '["chair","delegate"]',
-          'has_chartering_process': False,
-          'has_default_jabber': True,
-          'has_documents': False,
-          'has_meetings': True,
-          'has_milestones': False,
-          'has_nonsession_materials': False,
-          'has_reviews': False,
-          'has_session_materials': True,
-          'is_schedulable': True,
-          'material_types': '["slides"]',
-          'matman_roles': '["chair","delegate"]',
-          'req_subm_approval': True,
-          'role_order': '["chair","delegate"]',
-          'show_on_agenda': True,
+            'about_page': 'ietf.group.views.group_about',
+            'acts_like_wg': False,
+            'admin_roles': '["chair"]',
+            'agenda_type_id': 'ietf',
+            'create_wiki': True,
+            'custom_group_roles': False,
+            'customize_workflow': False,
+            'default_tab': 'ietf.group.views.group_about',
+            'docman_roles': '["chair"]',
+            'groupman_roles': '["chair","delegate"]',
+            'has_chartering_process': False,
+            'has_default_jabber': True,
+            'has_documents': False,
+            'has_dependencies': False,
+            'has_meetings': True,
+            'has_milestones': False,
+            'has_nonsession_materials': False,
+            'has_reviews': False,
+            'has_session_materials': True,
+            'is_schedulable': True,
+            'material_types': '["slides"]',
+            'matman_roles': '["chair","delegate"]',
+            'req_subm_approval': True,
+            'role_order': '["chair","delegate"]',
+            'show_on_agenda': True,
         },
     },
     'iesg': {
@@ -71,6 +69,7 @@ group_type_features = {
             'has_chartering_process': False,
             'has_default_jabber': False,
             'has_documents': False,
+            'has_dependencies': False,
             'has_meetings': False,
             'has_milestones': False,
             'has_nonsession_materials': False,
@@ -94,30 +93,31 @@ group_type_features = {
             "verbose_name": "Independent Stream Editor",
         },
         'groupfeatures': {
-          'about_page': 'ietf.group.views.group_about',
-          'acts_like_wg': False,
-          'admin_roles': '["chair","lead"]',
-          'agenda_type_id': None,
-          'create_wiki': False,
-          'custom_group_roles': True,
-          'customize_workflow': False,
-          'default_tab': 'ietf.group.views.group_about',
-          'docman_roles': '["chair"]',
-          'groupman_roles': '["chair","delegate"]',
-          'has_chartering_process': False,
-          'has_default_jabber': False,
-          'has_documents': False,
-          'has_meetings': False,
-          'has_milestones': False,
-          'has_nonsession_materials': False,
-          'has_reviews': False,
-          'has_session_materials': False,
-          'is_schedulable': False,
-          'material_types': '[]',
-          'matman_roles': '["chair","delegate"]',
-          'req_subm_approval': True,
-          'role_order': '["chair"]',
-          'show_on_agenda': False
+            'about_page': 'ietf.group.views.group_about',
+            'acts_like_wg': False,
+            'admin_roles': '["chair","lead"]',
+            'agenda_type_id': None,
+            'create_wiki': False,
+            'custom_group_roles': True,
+            'customize_workflow': False,
+            'default_tab': 'ietf.group.views.group_about',
+            'docman_roles': '["chair"]',
+            'groupman_roles': '["chair","delegate"]',
+            'has_chartering_process': False,
+            'has_default_jabber': False,
+            'has_documents': False,
+            'has_dependencies': False,
+            'has_meetings': False,
+            'has_milestones': False,
+            'has_nonsession_materials': False,
+            'has_reviews': False,
+            'has_session_materials': False,
+            'is_schedulable': False,
+            'material_types': '[]',
+            'matman_roles': '["chair","delegate"]',
+            'req_subm_approval': True,
+            'role_order': '["chair"]',
+            'show_on_agenda': False
         },
     },
 }
@@ -149,7 +149,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('group', '0010_remove_groupfeatures_has_dependencies')
+        ('group', '0009_auto_20190122_1012'),
     ]
 
     operations = [
