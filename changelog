@@ -1,3 +1,42 @@
+ietfdb (6.92.0) ietf; urgency=low
+
+  **Generalized the submission approval protection for special groups**
+
+  Before this rewrite, code explicitly looked for draft names like
+  draf-iab-, draft-iana=, etc., but did not derive the list of draft name
+  prefixes needing approval from the group types in the database.  The new
+  code extends this protection to any new group types in the database (and a
+  number of old ones that were not protected before such as draft-iesg- ).
+
+  There are also some bugfixes.  From the commit log:
+
+  * Increased the document count for group document lists from the 
+    default(200) to 500, as MPLS now exceeds 200.
+
+  * Rewrote the submission deduce_group() to consider all groups with 
+    acronyms that are also GroupTypeNames. Added GroupTypeName for 
+    iesg,ise,adhoc groups, and appropriate GroupFeatures for each.
+
+
+  * Fixed a problem with the secretariat IESG agenda handling, where removal
+    of a document from the telechat agenda could lead to a server 500 in
+    a different view.  Insetead, redirect to the removed document (which
+    will show as not on the agenda any more).
+
+  * Tweaked mkdevbranch to take an optional extra message paragraph.
+
+  * Modified a view function to fill in missing default CommunityLists for 
+    groups with features.has_documents == True, to avoid a possible server
+    error.
+
+  * Removed the has_dependencies GroupFeature, and used has_documents 
+    instead in the one place it was used.
+
+  * Fixed a submission failure for xml files missing abstract sections.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Feb 2019 13:08:34 +0000
+
+
 ietfdb (6.91.0) ietf; urgency=low
 
   **Expanded group property table entries**
