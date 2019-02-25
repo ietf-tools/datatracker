@@ -836,7 +836,7 @@ class DocumentURL(models.Model):
     doc  = ForeignKey(Document)
     tag  = ForeignKey(DocUrlTagName)
     desc = models.CharField(max_length=255, default='', blank=True)
-    url  = models.URLField(max_length=512)
+    url  = models.URLField(max_length=2083) # 2083 is the legal max for URLs
 
 class RelatedDocHistory(models.Model):
     source = ForeignKey('DocHistory')
