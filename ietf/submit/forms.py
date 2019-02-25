@@ -320,7 +320,6 @@ class SubmissionBaseUploadForm(forms.Form):
                 return Group.objects.get(acronym="rfceditor")
             else:
                 ntype = name_parts[1].lower()
-                debug.show('ntype')
                 # This covers group types iesg, iana, iab, ise, and others:
                 if GroupTypeName.objects.filter(slug=ntype).exists():
                     group = Group.objects.filter(acronym=ntype).first()
