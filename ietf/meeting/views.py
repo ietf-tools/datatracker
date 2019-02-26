@@ -946,6 +946,8 @@ def json_agenda(request, num=None ):
             sessdict['name'] = asgn.session.short
         else:
             sessdict['name'] = asgn.session.historic_group.name
+        if asgn.session.short:
+            sessdict['short'] = asgn.session.short
         sessdict['start'] = asgn.timeslot.utc_start_time().strftime("%Y-%m-%dT%H:%M:%SZ")
         sessdict['duration'] = str(asgn.timeslot.duration)
         sessdict['location'] = asgn.room_name
