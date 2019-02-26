@@ -1,4 +1,21 @@
-ietfdb (6.92.0) ietf; urgency=low
+ietfdb (6.92.1) ietf; urgency=medium
+
+  This release contains one database schema migration delayed from the
+  previous release in order to deploy new code before a fields used by old
+  code was removed, and one migration to extend the width of a field used to
+  hold URLs.  From the commit log:
+
+  * Increased the DocumentURL.url field length to the legal URL maximum of 
+    2083.
+
+  * Removed the GroupFeatures.has_dependencies field.
+
+  * Added a note to the draft/RFC stats pages about missing data.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Feb 2019 12:27:22 +0000
+
+
+ietfdb (6.92.0) ietf; urgency=medium
 
   **Generalized the submission approval protection for special groups**
 
