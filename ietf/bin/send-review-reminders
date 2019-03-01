@@ -27,7 +27,8 @@ today = datetime.date.today()
 
 for review_req in review_requests_needing_reviewer_reminder(today):
     email_reviewer_reminder(review_req)
-    print("Emailed reminder to {} for review of {} in {} (req. id {})".format(review_req.reviewer.address, review_req.doc_id, review_req.team.acronym, review_req.pk))
+    for review_assignment in review_req.reviewassignment_set.all():
+        print("Emailed reminder to {} for review of {} in {} (req. id {})".format(review_assignment.reviewer.address, review_req.doc_id, review_req.team.acronym, review_req.pk))
 
 for review_req, secretary_role in review_requests_needing_secretary_reminder(today):
     email_secretary_reminder(review_req, secretary_role)

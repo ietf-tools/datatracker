@@ -85,7 +85,7 @@ from ietf.meeting.helpers import get_meeting
 from ietf.meeting.utils import group_sessions
 from ietf.name.models import GroupTypeName, StreamName
 from ietf.person.models import Email
-from ietf.review.models import ReviewRequest, ReviewerSettings, ReviewSecretarySettings
+from ietf.review.models import ReviewRequest, ReviewAssignment, ReviewerSettings, ReviewSecretarySettings
 from ietf.review.utils import (can_manage_review_requests_for_team,
                                can_access_review_stats_for_team,
 
@@ -1262,27 +1262,26 @@ def group_menu_data(request):
 # --- Review views -----------------------------------------------------
 
 def get_open_review_requests_for_team(team, assignment_status=None):
-    open_review_requests = ReviewRequest.objects.filter(
-        team=team,
-        state__in=("requested", "accepted")
+    open_review_requests = ReviewRequest.objects.filter(team=team).filter(
+        Q(state_id='requested') | Q(state_id='assigned',reviewassignment__state__in=('assigned','accepted'))
     ).prefetch_related(
-        "reviewer__person", "type", "state", "doc", "doc__states",
+        "type", "state", "doc", "doc__states",
     ).order_by("-time", "-id")
 
     if assignment_status == "unassigned":
-        open_review_requests = suggested_review_requests_for_team(team) + list(open_review_requests.filter(reviewer=None))
+        open_review_requests = suggested_review_requests_for_team(team) + list(open_review_requests.filter(state_id='requested'))
     elif assignment_status == "assigned":
-        open_review_requests = list(open_review_requests.exclude(reviewer=None))
+        open_review_requests = list(open_review_requests.filter(state_id='assigned'))
     else:
         open_review_requests = suggested_review_requests_for_team(team) + list(open_review_requests)
 
-    today = datetime.date.today()
-    unavailable_periods = current_unavailable_periods_for_reviewers(team)
-    for r in open_review_requests:
-        if r.reviewer:
-            r.reviewer_unavailable = any(p.availability == "unavailable"
-                                         for p in unavailable_periods.get(r.reviewer.person_id, []))
-        r.due = max(0, (today - r.deadline).days)
+    #today = datetime.date.today()
+    #unavailable_periods = current_unavailable_periods_for_reviewers(team)
+    #for r in open_review_requests:
+        #if r.reviewer:
+        #    r.reviewer_unavailable = any(p.availability == "unavailable"
+        #                                 for p in unavailable_periods.get(r.reviewer.person_id, []))
+        #r.due = max(0, (today - r.deadline).days)
 
     return open_review_requests
 
@@ -1291,25 +1290,19 @@ def review_requests(request, acronym, group_type=None):
     if not group.features.has_reviews:
         raise Http404
 
-    assigned_review_requests = []
-    unassigned_review_requests = []
+    unassigned_review_requests = [r for r in get_open_review_requests_for_team(group) if not r.state_id=='assigned']
 
-    for r in get_open_review_requests_for_team(group):
-        if r.reviewer:
-            assigned_review_requests.append(r)
-        else:
-            unassigned_review_requests.append(r)
+    open_review_assignments = list(ReviewAssignment.objects.filter(review_request__team=group, state_id__in=('assigned','accepted')).order_by('-assigned_on'))
+    today = datetime.date.today()
+    unavailable_periods = current_unavailable_periods_for_reviewers(group)
+    for a in open_review_assignments:
+        a.reviewer_unavailable = any(p.availability == "unavailable"
+                                     for p in unavailable_periods.get(a.reviewer.person_id, []))
+        a.due = max(0, (today - a.review_request.deadline).days)
 
-    open_review_requests = [
-        ("Unassigned", unassigned_review_requests),
-        ("Assigned", assigned_review_requests),
-    ]
+    closed_review_assignments = ReviewAssignment.objects.filter(review_request__team=group).exclude(state_id__in=('assigned','accepted')).prefetch_related("state","result").order_by('-assigned_on')
 
-    closed_review_requests = ReviewRequest.objects.filter(
-        team=group,
-    ).exclude(
-        state__in=("requested", "accepted")
-    ).prefetch_related("reviewer__person", "type", "state", "doc", "result").order_by("-time", "-id")
+    closed_review_requests = ReviewRequest.objects.filter(team=group).exclude(state__in=("requested", "assigned")).prefetch_related("type", "state", "doc").order_by("-time", "-id")
 
     since_choices = [
         (None, "1 month"),
@@ -1337,10 +1330,14 @@ def review_requests(request, acronym, group_type=None):
             | Q(reviewrequestdocevent__isnull=True, time__gte=datetime.date.today() - date_limit)
         ).distinct()
 
+        closed_review_assignments = closed_review_assignments.filter(completed_on__gte = datetime.date.today() - date_limit)
+
     return render(request, 'group/review_requests.html',
                   construct_group_menu_context(request, group, "review requests", group_type, {
-                      "open_review_requests": open_review_requests,
+                      "unassigned_review_requests": unassigned_review_requests,
+                      "open_review_assignments": open_review_assignments,
                       "closed_review_requests": closed_review_requests,
+                      "closed_review_assignments": closed_review_assignments,
                       "since_choices": since_choices,
                       "since": since,
                       "can_manage_review_requests": can_manage_review_requests_for_team(request.user, group),

@@ -14,7 +14,7 @@ from ietf.doc.models import (Document, ReviewRequestDocEvent, State,
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
-from ietf.review.models import (ReviewRequest, ReviewRequestStateName, ReviewTypeName, 
+from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewRequestStateName, ReviewTypeName, 
                                 ReviewerSettings, UnavailablePeriod, ReviewWish, NextReviewerInTeam,
                                 ReviewTeamSettings, ReviewSecretarySettings)
 from ietf.utils.mail import send_mail, get_email_addresses_from_text
@@ -333,6 +333,46 @@ def make_new_review_request_from_existing(review_req):
     obj.state = ReviewRequestStateName.objects.get(slug="requested")
     return obj
 
+def email_review_assignment_change(request, review_assignment, subject, msg, by, notify_secretary, notify_reviewer, notify_requested_by):
+
+    system_email = Person.objects.get(name="(System)").formatted_email()
+
+    to = set() 
+
+    def extract_email_addresses(objs):
+        for o in objs:
+            if o and o.person!=by:
+                e = o.formatted_email()
+                if e != system_email:
+                    to.add(e)
+
+    if notify_secretary:
+        rts = ReviewTeamSettings.objects.filter(group=review_assignment.review_request.team).first()
+        if rts and rts.secr_mail_alias and rts.secr_mail_alias.strip() != '':
+            for addr in get_email_addresses_from_text(rts.secr_mail_alias):
+                to.add(addr)
+        else:
+            extract_email_addresses(Role.objects.filter(name="secr", group=review_assignment.review_request.team).distinct())
+    if notify_reviewer:
+        extract_email_addresses([review_assignment.reviewer])
+    if notify_requested_by:
+        extract_email_addresses([review_assignment.review_request.requested_by.email()])
+        
+    if not to:
+        return
+
+    to = list(to)
+
+    url = urlreverse("ietf.doc.views_review.review_request_forced_login", kwargs={ "name": review_assignment.review_request.doc.name, "request_id": review_assignment.review_request.pk })
+    url = request.build_absolute_uri(url)
+    # TODO : Why is this a bare send_mail?
+    send_mail(request, to, request.user.person.formatted_email(), subject, "review/review_request_changed.txt", {
+        "review_req_url": url,
+        "review_req": review_assignment.review_request,
+        "msg": msg,
+    })
+ 
+
 def email_review_request_change(request, review_req, subject, msg, by, notify_secretary, notify_reviewer, notify_requested_by):
 
     """Notify stakeholders about change, skipping a party if the change
@@ -417,24 +457,23 @@ def email_reviewer_availability_change(request, team, reviewer_role, msg, by):
     })
 
 def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=False):
-    assert review_req.state_id in ("requested", "accepted")
+    assert review_req.state_id in ("requested", "assigned")
 
-    if reviewer == review_req.reviewer:
+    if review_req.reviewassignment_set.filter(reviewer=reviewer).exists():
         return
 
-    if review_req.reviewer:
-        email_review_request_change(
-            request, review_req,
-            "Unassigned from review of %s" % review_req.doc.name,
-            "%s has cancelled your assignment to the review." % request.user.person,
-            by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=False)
+    # Unassignment now has to be explicit
+    #if review_req.reviewer:
+    #    email_review_request_change(
+    #        request, review_req,
+    #        "Unassigned from review of %s" % review_req.doc.name,
+    #        "%s has cancelled your assignment to the review." % request.user.person,
+    #        by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=False)
 
-    review_req.state = ReviewRequestStateName.objects.get(slug="requested")
-    review_req.reviewer = reviewer
-    review_req.save()
+    review_req.reviewassignment_set.create(state_id='requested', reviewer = reviewer, assigned_on = datetime.datetime.now())
 
-    if review_req.reviewer:
-        possibly_advance_next_reviewer_for_team(review_req.team, review_req.reviewer.person_id, add_skip)
+    if reviewer:
+        possibly_advance_next_reviewer_for_team(review_req.team, reviewer.person_id, add_skip)
 
     ReviewRequestDocEvent.objects.create(
         type="assigned_review_request",
@@ -451,19 +490,19 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
     )
 
     msg = "%s has assigned you as a reviewer for this document." % request.user.person.ascii
-    prev_team_reviews = ReviewRequest.objects.filter(
+    prev_team_reviews = ReviewAssignment.objects.filter(
         doc=review_req.doc,
         state="completed",
         team=review_req.team,
     )
     if prev_team_reviews.exists():
         msg = msg + '\n\nThis team has completed other reviews of this document:\n'
-        for req in prev_team_reviews:
+        for assignment in prev_team_reviews:
             msg += u'%s %s -%s %s\n'% (
-                     req.review_done_time().strftime('%d %b %Y'), 
-                     req.reviewer.person.ascii,
-                     req.reviewed_rev or req.requested_rev,
-                     req.result.name,
+                     assignment.completed_on.strftime('%d %b %Y'), 
+                     assignment.reviewer.person.ascii,
+                     assignment.reviewed_rev or assignment.review_request.requested_rev,
+                     assignment.result.name,
                    )
 
     email_review_request_change(
@@ -630,7 +669,7 @@ def suggested_review_requests_for_team(team):
 
             seen_deadlines[doc_pk] = deadline
 
-    # filter those with existing requests
+    # filter those with existing explicit requests 
     existing_requests = defaultdict(list)
     for r in ReviewRequest.objects.filter(doc__in=requests.iterkeys(), team=team):
         existing_requests[r.doc_id].append(r)
@@ -640,12 +679,14 @@ def suggested_review_requests_for_team(team):
             return False
 
         no_review_document = existing.state_id == "no-review-document"
-        pending = (existing.state_id in ("requested", "accepted")
+        no_review_rev = ( existing.state_id == "no-review-version") and (not existing.requested_rev or existing.requested_rev == request.doc.rev)
+        pending = (existing.state_id == "assigned" 
+                   and existing.reviewassignment_set.filter(state_id__in=("assigned", "accepted")).exists()
                    and (not existing.requested_rev or existing.requested_rev == request.doc.rev))
-        completed_or_closed = (existing.state_id not in ("part-completed", "rejected", "overtaken", "no-response")
-                               and existing.reviewed_rev == request.doc.rev)
+        request_closed = existing.state_id not in ('requested','assigned')
+        all_assignments_completed = not existing.reviewassignment_set.filter(state_id__in=('assigned','accepted')).exists()
 
-        return no_review_document or pending or completed_or_closed
+        return any([no_review_document, no_review_rev, pending, request_closed, all_assignments_completed])
 
     res = [r for r in requests.itervalues()
            if not any(blocks(e, r) for e in existing_requests[r.doc_id])]

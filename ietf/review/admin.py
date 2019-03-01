@@ -53,11 +53,11 @@ admin.site.register(NextReviewerInTeam, NextReviewerInTeamAdmin)
 class ReviewRequestAdmin(admin.ModelAdmin):
     list_display = ["doc", "time", "type", "team", "deadline"]
     list_display_links = ["doc"]
-    list_filter = ["team", "type", "state", "result"]
+    list_filter = ["team", "type", "state"]
     ordering = ["-id"]
-    raw_id_fields = ["doc", "team", "requested_by", "reviewer", "review"]
+    raw_id_fields = ["doc", "team", "requested_by"]
     date_hierarchy = "time"
-    search_fields = ["doc__name", "reviewer__person__name"]
+    search_fields = ["doc__name"]
 
 admin.site.register(ReviewRequest, ReviewRequestAdmin)
 
