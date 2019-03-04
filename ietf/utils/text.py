@@ -124,7 +124,7 @@ def isascii(text):
     try:
         text.encode('ascii')
         return True
-    except UnicodeEncodeError:
+    except (UnicodeEncodeError, UnicodeDecodeError):
         return False
 
 def maybe_split(text, split=True, pos=5000):
