@@ -77,6 +77,8 @@ TOOLS_ID_HTML_URL = TOOLS_SERVER_URL + '/html/'
 SERVER_EMAIL = 'Django Server <django-project@' + TOOLS_SERVER + '>'
 
 DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@' + IETF_DOMAIN + '>'
+UTILS_ON_BEHALF_EMAIL = 'ietf-secretariat-reply@' + IETF_DOMAIN
+UTILS_FROM_EMAIL_DOMAINS = [ 'ietf.org', 'iab.org', 'tools.ietf.org', ]
 
 MANAGERS = ADMINS
 

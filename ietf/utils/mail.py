@@ -8,11 +8,11 @@ import textwrap
 import time
 import traceback
 
-from email.utils import make_msgid, formatdate, formataddr as simple_formataddr, parseaddr, getaddresses
+from email.utils import make_msgid, formatdate, formataddr as simple_formataddr, parseaddr as simple_parseaddr, getaddresses
 from email.mime.text import MIMEText
 from email.mime.message import MIMEMessage
 from email.mime.multipart import MIMEMultipart
-from email.header import Header
+from email.header import Header, decode_header
 from email import message_from_string
 from email import charset as Charset
 
@@ -26,7 +26,7 @@ from django.template import Context,RequestContext
 import debug                            # pyflakes:ignore
 
 import ietf
-from ietf.utils.log import log
+from ietf.utils.log import log, unreachable
 from ietf.utils.text import isascii
 
 # Testing mode:
@@ -184,6 +184,30 @@ def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=F
     msg = encode_message(txt)
     return send_mail_mime(request, to, frm, subject, msg, cc, extra, toUser, bcc, copy=copy)
         
+def on_behalf_of(frm):
+    if isinstance(frm, tuple):
+        name, addr = frm
+    else:
+        name, addr = parseaddr(frm)
+    domain = addr.rsplit('@', 1)[-1]
+    if domain in settings.UTILS_FROM_EMAIL_DOMAINS:
+        raise ValueError("Using send_mail_on_behalf_of() with an address (%s) in %s is misleading.  Please use send_mail()" % (addr, settings.UTILS_FROM_EMAIL_DOMAINS))
+    if not name:
+        name = addr
+    name = "Datatracker on behalf of %s" % name
+    addr = settings.UTILS_ON_BEHALF_EMAIL
+    return formataddr((name, addr))
+
+def maybe_on_behalf_of(frm):
+    if isinstance(frm, tuple):
+        name, addr = frm
+    else:
+        name, addr = parseaddr(frm)
+    domain = addr.rsplit('@', 1)[-1]
+    if not domain in settings.UTILS_FROM_EMAIL_DOMAINS:
+        frm = on_behalf_of(frm)
+    return frm
+
 def formataddr(addrtuple):
     """
     Takes a name and email address, and inspects the name to see if it needs
@@ -196,6 +220,18 @@ def formataddr(addrtuple):
         name = str(Header(name, 'utf-8'))
     return simple_formataddr((name, addr))
 
+def parseaddr(addr):
+    """
+    Takes an address (which should be the value of some address-containing
+    field such as To or Cc) into its constituent realname and email address
+    parts. Returns a tuple of that information, unless the parse fails, in
+    which case a 2-tuple of ('', '') is returned.
+
+    """
+    addr = u''.join( [ s.decode(m) if m else unicode(s) for (s,m) in decode_header(addr) ] )
+    name, addr = simple_parseaddr(addr)
+    return name, addr
+
 def condition_message(to, frm, subject, msg, cc, extra):
 
     if isinstance(frm, tuple):
@@ -205,6 +241,11 @@ def condition_message(to, frm, subject, msg, cc, extra):
     if isinstance(cc, list) or isinstance(cc, tuple):
         cc = ", ".join([isinstance(addr, tuple) and formataddr(addr) or addr for addr in cc if addr])
     if frm:
+        n, a = parseaddr(frm)
+        domain = a.rsplit('@', 1)[-1]
+        if not domain in settings.UTILS_FROM_EMAIL_DOMAINS:
+            unreachable('2019-03-04')
+            frm = on_behalf_of(frm)
 	msg['From'] = frm
     if extra and 'Reply-To' in extra:
         reply_to = extra['Reply-To']
