@@ -30,7 +30,7 @@ def create_person(group, role_name, name=None, username=None, email_address=None
     if not username:
         username = group.acronym + "-" + role_name
     if not email_address:
-        email_address = username + "@ietf.org"
+        email_address = username + "@example.org"
     if not password:
         password = username + "+password"
 
@@ -98,7 +98,7 @@ def make_immutable_base_data():
 
     # one area
     area = create_group(name="Far Future", acronym="farfut", type_id="area", parent=ietf)
-    create_person(area, "ad", name=u"Areað Irector", username="ad", email_address="aread@ietf.org")
+    create_person(area, "ad", name=u"Areað Irector", username="ad", email_address="aread@example.org")
 
     # second area
     opsarea = create_group(name="Operations", acronym="ops", type_id="area", parent=ietf)
@@ -112,7 +112,7 @@ def make_immutable_base_data():
     for i in range(1, 10):
         u = User.objects.create(username="ad%s" % i)
         p = Person.objects.create(name="Ad No%s" % i, ascii="Ad No%s" % i, user=u)
-        email = Email.objects.create(address="ad%s@ietf.org" % i, person=p, origin=u.username)
+        email = Email.objects.create(address="ad%s@example.org" % i, person=p, origin=u.username)
         if i < 6:
             # active
             Role.objects.create(name_id="ad", group=area, person=p, email=email)
@@ -301,8 +301,8 @@ def make_test_data():
 
     DocumentAuthor.objects.create(
         document=draft,
-        person=Person.objects.get(email__address="aread@ietf.org"),
-        email=Email.objects.get(address="aread@ietf.org"),
+        person=Person.objects.get(email__address="aread@example.org"),
+        email=Email.objects.get(address="aread@example.org"),
         country="Germany",
         affiliation="IETF",
         order=1
