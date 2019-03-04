@@ -68,7 +68,7 @@ class EditCharterTests(TestCase):
         area = GroupFactory(type_id='area')
         RoleFactory(name_id='ad',group=area,person=Person.objects.get(user__username='ad'))
 
-        ames = GroupFactory(acronym='ames',state_id='proposed',list_email='ames-wg@example.org',parent=area)
+        ames = GroupFactory(acronym='ames',state_id='proposed',list_email='ames-wg@ietf.org',parent=area)
         RoleFactory(name_id='ad',group=ames,person=Person.objects.get(user__username='ad'))
         RoleFactory(name_id='chair',group=ames,person__name=u'Ames Man',person__user__email='ameschairman@example.org')
         RoleFactory(name_id='secr',group=ames,person__name=u'Secretary',person__user__email='amessecretary@example.org')
@@ -133,7 +133,7 @@ class EditCharterTests(TestCase):
                 for word in ["Chairs", "Ames Man <ameschairman@example.org>",
                     "Secretaries", "Secretary <amessecretary@example.org>",
                     "Assigned Area Director", "Areað Irector <aread@example.org>",
-                    "Mailing list", "ames-wg@example.org",
+                    "Mailing list", "ames-wg@ietf.org",
                     "Charter", "Milestones"]:
                     self.assertIn(word, body)
 
@@ -196,7 +196,7 @@ class EditCharterTests(TestCase):
         # does the unusual state sequence of: intrev --> extrev --> intrev
         area = GroupFactory(type_id='area')
         RoleFactory(name_id='ad',group=area,person=Person.objects.get(user__username='ad'))
-        group = GroupFactory(acronym='ames',state_id='proposed',list_email='ames-wg@example.org',parent=area)
+        group = GroupFactory(acronym='ames',state_id='proposed',list_email='ames-wg@ietf.org',parent=area)
         CharterFactory(group=group)
 
         charter = group.charter
@@ -416,7 +416,7 @@ class EditCharterTests(TestCase):
                               "Windows line\nMac line\nUnix line\n" + utf_8_snippet)
 
     def test_submit_initial_charter(self):
-        group = GroupFactory(type_id='wg',acronym='mars',list_email='mars-wg@example.org')
+        group = GroupFactory(type_id='wg',acronym='mars',list_email='mars-wg@ietf.org')
 
         url = urlreverse('ietf.doc.views_charter.submit', kwargs=dict(name=charter_name_for_group(group)))
         login_testing_unauthorized(self, "secretary", url)
@@ -444,7 +444,7 @@ class EditCharterTests(TestCase):
     def test_edit_review_announcement_text(self):
         area = GroupFactory(type_id='area')
         RoleFactory(name_id='ad',group=area,person=Person.objects.get(user__username='ad'))
-        charter = CharterFactory(group__parent=area,group__list_email='mars-wg@example.org')
+        charter = CharterFactory(group__parent=area,group__list_email='mars-wg@ietf.org')
         group = charter.group
 
         url = urlreverse('ietf.doc.views_charter.review_announcement_text', kwargs=dict(name=charter.name))
@@ -589,7 +589,7 @@ class EditCharterTests(TestCase):
     def test_approve(self):
         area = GroupFactory(type_id='area')
         RoleFactory(name_id='ad',group=area,person=Person.objects.get(user__username='ad'))
-        charter = CharterFactory(group__acronym='ames',group__list_email='ames-wg@example.org',group__parent=area,group__state_id='bof')
+        charter = CharterFactory(group__acronym='ames',group__list_email='ames-wg@ietf.org',group__parent=area,group__state_id='bof')
         group = charter.group
         RoleFactory(name_id='chair',group=group,person__name=u'Ames Man',person__user__email='ameschairman@example.org')
         RoleFactory(name_id='secr',group=group,person__name=u'Secretary',person__user__email='amessecretary@example.org')
@@ -665,12 +665,12 @@ class EditCharterTests(TestCase):
         #
         self.assertTrue("WG Action" in outbox[1]['Subject'])
         self.assertTrue("ietf-announce" in outbox[1]['To'])
-        self.assertTrue("ames-wg@example.org" in outbox[1]['Cc'])
+        self.assertTrue("ames-wg@ietf.org" in outbox[1]['Cc'])
         body = outbox[1].get_payload()
         for word in ["Chairs", "Ames Man <ameschairman@example.org>",
             "Secretaries", "Secretary <amessecretary@example.org>",
             "Assigned Area Director", "Areað Irector <aread@example.org>",
-            "Area Directors", "Mailing list", "ames-wg@example.org",
+            "Area Directors", "Mailing list", "ames-wg@ietf.org",
             "Charter", "/doc/charter-ietf-ames/", "Milestones"]:
             self.assertIn(word, body)
 

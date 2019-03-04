@@ -1352,7 +1352,7 @@ class AdoptDraftTests(TestCase):
 class ChangeStreamStateTests(TestCase):
     def test_set_tags(self):
         role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name=u'WG Cháir Man')
-        RoleFactory(name_id='delegate',group=role.group,person__user__email='marsdelegate@ietf.org')
+        RoleFactory(name_id='delegate',group=role.group,person__user__email='marsdelegate@example.org')
         draft = WgDraftFactory(group=role.group,shepherd=PersonFactory(user__username='plain',user__email='plain@example.com').email_set.first())
         draft.tags.set(DocTagName.objects.filter(slug="w-expert"))
         draft.group.unused_tags.add("w-refdoc")

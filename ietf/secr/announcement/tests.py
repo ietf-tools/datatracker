@@ -24,7 +24,7 @@ class SecrAnnouncementTestCase(TestCase):
         secretariat = Group.objects.get(acronym='secretariat')
         AnnouncementFrom.objects.create(name=secr,group=secretariat,address='IETF Secretariat <ietf-secretariat@ietf.org>')
         AnnouncementFrom.objects.create(name=chair,group=ietf,address='IETF Chair <chair@ietf.org>')
-        AnnouncementFrom.objects.create(name=chair,group=iab,address='IAB Chair <iab-chair@ietf.org>')
+        AnnouncementFrom.objects.create(name=chair,group=iab,address='IAB Chair <iab-chair@iab.org>')
 
     def test_main(self):
         "Main Test"
@@ -49,7 +49,7 @@ class SecrAnnouncementTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('#id_frm option')),1)
-        self.assertTrue('<iab-chair@ietf.org>' in q('#id_frm option').val())
+        self.assertTrue('<iab-chair@iab.org>' in q('#id_frm option').val())
 
         # IETF Chair
         self.client.login(username="ietf-chair", password="ietf-chair+password")
