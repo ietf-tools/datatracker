@@ -32,7 +32,7 @@ from ietf.review.utils import reviewer_rotation_list, possibly_advance_next_revi
 from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import create_person
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import outbox, empty_outbox, parseaddr
 from ietf.person.factories import PersonFactory
 
 class ReviewTests(TestCase):
@@ -632,9 +632,9 @@ class ReviewTests(TestCase):
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 1)
-        self.assertTrue(review_req.team.list_email in outbox[0]["To"])
-        self.assertTrue(review_req.reviewer.role_set.filter(group=review_req.team,name='reviewer').first().email.address in outbox[0]["From"])
-        self.assertTrue("This is a review" in outbox[0].get_payload(decode=True).decode("utf-8"))
+        self.assertIn(review_req.team.list_email, outbox[0]["To"])
+        self.assertIn(review_req.reviewer.person.plain_name(), parseaddr(outbox[0]["From"])[0])
+        self.assertIn("This is a review", outbox[0].get_payload(decode=True).decode("utf-8"))
 
         self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in review_req.review.external_url)
 
@@ -644,8 +644,8 @@ class ReviewTests(TestCase):
         # Check that we have a copy of the outgoing message
         msgid = outbox[0]["Message-ID"]
         message = Message.objects.get(msgid=msgid)
-        self.assertEqual(email.utils.parseaddr(outbox[0]["To"]), email.utils.parseaddr(message.to))
-        self.assertEqual(email.utils.parseaddr(outbox[0]["From"]), email.utils.parseaddr(message.frm))
+        self.assertEqual(parseaddr(outbox[0]["To"]), parseaddr(message.to))
+        self.assertEqual(parseaddr(outbox[0]["From"]), parseaddr(message.frm))
         self.assertEqual(outbox[0].get_payload(decode=True).decode(str(outbox[0].get_charset())), message.body)
 
         # check the review document page

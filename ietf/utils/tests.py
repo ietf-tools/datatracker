@@ -64,7 +64,7 @@ class SendingMail(TestCase):
 
     def test_send_mail_preformatted(self):
         msg = """To: to1@example.com, to2@example.com
-From: from1@example.com, from2@example.com
+From: from1@ietf.org, from2@ietf.org
 Cc: cc1@example.com, cc2@example.com
 Bcc: bcc1@example.com, bcc2@example.com
 Subject: subject
@@ -74,7 +74,7 @@ body
         send_mail_preformatted(None, msg, {}, {})
         recv = outbox[-1]
         self.assertEqual(recv['To'], '<to1@example.com>, <to2@example.com>')
-        self.assertEqual(recv['From'], 'from1@example.com, from2@example.com')
+        self.assertEqual(recv['From'], 'from1@ietf.org, from2@ietf.org')
         self.assertEqual(recv['Cc'], 'cc1@example.com, cc2@example.com')
         self.assertEqual(recv['Bcc'], None)
         self.assertEqual(recv['Subject'], 'subject')
@@ -82,14 +82,14 @@ body
 
         override = {
             'To': 'oto1@example.net, oto2@example.net',
-            'From': 'ofrom1@example.net, ofrom2@example.net',
+            'From': 'ofrom1@ietf.org, ofrom2@ietf.org',
             'Cc': 'occ1@example.net, occ2@example.net',
             'Subject': 'osubject',
         }
         send_mail_preformatted(request=None, preformatted=msg, extra={}, override=override)
         recv = outbox[-1]
         self.assertEqual(recv['To'], '<oto1@example.net>, <oto2@example.net>')
-        self.assertEqual(recv['From'], 'ofrom1@example.net, ofrom2@example.net')
+        self.assertEqual(recv['From'], 'ofrom1@ietf.org, ofrom2@ietf.org')
         self.assertEqual(recv['Cc'], 'occ1@example.net, occ2@example.net')
         self.assertEqual(recv['Bcc'], None)
         self.assertEqual(recv['Subject'], 'osubject')
@@ -97,14 +97,14 @@ body
 
         override = {
             'To': ['<oto1@example.net>', 'oto2@example.net'],
-            'From': ['<ofrom1@example.net>', 'ofrom2@example.net'],
+            'From': ['<ofrom1@ietf.org>', 'ofrom2@ietf.org'],
             'Cc': ['<occ1@example.net>', 'occ2@example.net'],
             'Subject': 'osubject',
         }
         send_mail_preformatted(request=None, preformatted=msg, extra={}, override=override)
         recv = outbox[-1]
         self.assertEqual(recv['To'], '<oto1@example.net>, <oto2@example.net>')
-        self.assertEqual(recv['From'], '<ofrom1@example.net>, ofrom2@example.net')
+        self.assertEqual(recv['From'], '<ofrom1@ietf.org>, ofrom2@ietf.org')
         self.assertEqual(recv['Cc'], '<occ1@example.net>, occ2@example.net')
         self.assertEqual(recv['Bcc'], None)
         self.assertEqual(recv['Subject'], 'osubject')

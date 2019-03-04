@@ -34,8 +34,8 @@ class StatisticsTests(TestCase):
         draft = WgDraftFactory()
         DocumentAuthor.objects.create(
             document=draft,
-            person=Person.objects.get(email__address="aread@ietf.org"),
-            email=Email.objects.get(address="aread@ietf.org"),
+            person=Person.objects.get(email__address="aread@example.org"),
+            email=Email.objects.get(address="aread@example.org"),
             country="Germany",
             affiliation="IETF",
             order=1
