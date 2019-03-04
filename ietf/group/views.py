@@ -108,7 +108,7 @@ from ietf.doc.models import LastCallDocEvent
 
 
 from ietf.name.models import ReviewRequestStateName
-from ietf.utils.mail import send_mail_text, parse_preformatted
+from ietf.utils.mail import send_mail_text, parse_preformatted, on_behalf_of
 
 from ietf.ietfauth.utils import user_is_person
 from ietf.dbtemplate.models import DBTemplate
@@ -1599,7 +1599,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
     if request.method == "POST" and request.POST.get("action") == "email":
         form = EmailOpenAssignmentsForm(request.POST)
         if form.is_valid():
-            send_mail_text(request, form.cleaned_data["to"], form.cleaned_data["frm"], form.cleaned_data["subject"], form.cleaned_data["body"],cc=form.cleaned_data["cc"],extra={"Reply-To":", ".join(form.cleaned_data["reply_to"])})
+            send_mail_text(request, form.cleaned_data["to"], on_behalf_of(form.cleaned_data["frm"]), form.cleaned_data["subject"], form.cleaned_data["body"],cc=form.cleaned_data["cc"],extra={"Reply-To":", ".join(form.cleaned_data["reply_to"])})
             return HttpResponseRedirect(back_url)
     else:
         (to,cc) = gather_address_lists('review_assignments_summarized',group=group)

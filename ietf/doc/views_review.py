@@ -37,7 +37,7 @@ from ietf.review import mailarch
 from ietf.utils.fields import DatepickerDateField
 from ietf.utils.text import strip_prefix, xslugify
 from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.utils.mail import send_mail_message
+from ietf.utils.mail import send_mail_message, on_behalf_of
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.fields import MultiEmailField
 
@@ -628,7 +628,7 @@ def complete_review(request, name, request_id):
                 msg = Message.objects.create(
                         by=request.user.person,
                         subject=subject,
-                        frm=frm,
+                        frm=on_behalf_of(frm),
                         to=", ".join(to),
                         cc=form.cleaned_data["cc"],
                         body = render_to_string("review/completed_review.txt", {

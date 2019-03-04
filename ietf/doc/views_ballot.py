@@ -32,7 +32,7 @@ from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.utils import log
-from ietf.utils.mail import send_mail_text, send_mail_preformatted
+from ietf.utils.mail import send_mail_text, send_mail_preformatted, on_behalf_of
 from ietf.utils.decorators import require_api_key
 
 BALLOT_CHOICES = (("yes", "Yes"),
@@ -285,6 +285,7 @@ def api_set_position(request):
 
     # send position email
     addrs, frm, subject, body = build_position_email(ad, doc, pos)
+    frm = on_behalf_of(frm)
     send_mail_text(request, addrs.to, frm, subject, body, cc=addrs.cc)
 
     return HttpResponse("Done", status=200, content_type='text/plain')
@@ -362,7 +363,7 @@ def send_ballot_comment(request, name, ballot_id):
         if extra_cc:
             cc.extend(extra_cc)
 
-        send_mail_text(request, addrs.to, frm, subject, body, cc=u", ".join(cc))
+        send_mail_text(request, addrs.to, on_behalf_of(frm), subject, body, cc=u", ".join(cc))
             
         return HttpResponseRedirect(return_to_url)
 

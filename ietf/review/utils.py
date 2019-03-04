@@ -17,7 +17,7 @@ from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
 from ietf.review.models import (ReviewRequest, ReviewRequestStateName, ReviewTypeName, 
                                 ReviewerSettings, UnavailablePeriod, ReviewWish, NextReviewerInTeam,
                                 ReviewTeamSettings, ReviewSecretarySettings)
-from ietf.utils.mail import send_mail, get_email_addresses_from_text
+from ietf.utils.mail import send_mail, on_behalf_of, get_email_addresses_from_text
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 
 def active_review_teams():
@@ -368,7 +368,7 @@ def email_review_request_change(request, review_req, subject, msg, by, notify_se
 
     url = urlreverse("ietf.doc.views_review.review_request_forced_login", kwargs={ "name": review_req.doc.name, "request_id": review_req.pk })
     url = request.build_absolute_uri(url)
-    send_mail(request, to, request.user.person.formatted_email(), subject, "review/review_request_changed.txt", {
+    send_mail(request, to, on_behalf_of(request.user.person.formatted_email()), subject, "review/review_request_changed.txt", {
         "review_req_url": url,
         "review_req": review_req,
         "msg": msg,

@@ -9,7 +9,7 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.mail import send_mail, send_mail_text
+from ietf.utils.mail import send_mail, send_mail_text, on_behalf_of
 from ietf.ipr.utils import iprs_from_docs, related_docs
 from ietf.doc.models import WriteupDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
 from ietf.doc.utils import needed_ballot_positions
@@ -35,7 +35,7 @@ def email_ad_approved_doc(request, doc, text):
 	to = "iesg@iesg.org"
 	bcc = "iesg-secretary@ietf.org"
 	frm = request.user.person.formatted_email()
-	send_mail(request, to, frm,
+	send_mail(request, to, on_behalf_of(frm),
 			  "Approved: %s" % doc.filename_with_rev(),
 			  "doc/mail/ad_approval_email.txt",
 			  dict(text=text,
@@ -318,7 +318,7 @@ def email_resurrect_requested(request, doc, by):
         e = by.role_email("ad")
     frm = e.address
 
-    send_mail(request, to, e.formatted_email(),
+    send_mail(request, to, on_behalf_of(e.formatted_email()),
               "I-D Resurrection Request",
               "doc/mail/resurrect_request_email.txt",
               dict(doc=doc,
