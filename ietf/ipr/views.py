@@ -12,6 +12,7 @@ from django.forms.formsets import formset_factory
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
+from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 
@@ -591,9 +592,9 @@ def notify(request, id, type):
             
     else:
         if type == 'update':
-            initial = [ {'type':'update_notify','text':m} for m in get_update_submitter_emails(ipr) ]
+            initial = [ {'type':'update_notify','text':escape(m)} for m in get_update_submitter_emails(ipr) ]
         else:
-            initial = [ {'type':'msgout','text':m} for m in get_posted_emails(ipr) ]
+            initial = [ {'type':'msgout','text':escape(m)} for m in get_posted_emails(ipr) ]
         formset = NotifyFormset(initial=initial)
         
     return render(request, "ipr/notify.html", {
