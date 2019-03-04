@@ -7,9 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Change email sender -- move from AD and reviewer email addresses to a
-  datatracker address 'on behalf of'.
-
 * Fix the rfc sync script to update BCP changes (a BCP points to new RFC numbers)
 
 * Polish the htmlization pages, making the style identical with tools.ietf.org.
