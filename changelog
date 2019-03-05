@@ -31,7 +31,7 @@ ietfdb (6.93.0) ietf; urgency=medium
     Add session.short to the output from meeting/agenda.json when it is 
     available.  
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  05 Mar 2019 16:44:51 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Mar 2019 17:52:55 +0000
 
 
 ietfdb (6.92.1) ietf; urgency=medium
