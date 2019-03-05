@@ -89,7 +89,7 @@ def send_smtp(msg, bcc=None):
         addrlist += [bcc]
     to = [addr for name, addr in getaddresses(addrlist) if ( addr != '' and not addr.startswith('unknown-email-') )]
     if not to:
-        log("No addressees for email from '%s', subject '%s'.  Nothing sent." % (frm, msg.get('Subject', '[no subject]')))
+        log(u"No addressees for email from '%s', subject '%s'.  Nothing sent." % (frm, msg.get('Subject', '[no subject]')))
     else:
         if test_mode:
             outbox.append(msg)
