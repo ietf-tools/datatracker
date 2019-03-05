@@ -1389,7 +1389,7 @@ class ChangeStreamStateTests(TestCase):
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("tags changed" in outbox[-1]["Subject"].lower())
         self.assertTrue("mars-chairs@ietf.org" in unicode(outbox[-1]))
-        self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("marsdelegate@example.org" in unicode(outbox[-1]))
         self.assertTrue("plain@example.com" in unicode(outbox[-1]))
 
     def test_set_initial_state(self):
