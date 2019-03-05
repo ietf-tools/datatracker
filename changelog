@@ -1,3 +1,39 @@
+ietfdb (6.93.0) ietf; urgency=medium
+
+  **Changed review and AD emails to use 'On behalf of ...' **
+
+  This release changes the email sender for emails sent through the
+  datatracker by ADs and reviewers to say "On behalf of" and the username,
+  with a datatracker email address, instead of using the user's from
+  address, since that has increasingly (and rightly) been running into
+  problems with SPF and DMARC processing.  The release also provides session
+  short names in the meeting/agenda.json file, for use by Meetecho scripts.
+
+  From the commit log:
+
+  * Added on_behalf_of() calls for from addresses needing it throughout the 
+    code.
+
+  * Added html escaping of initial text-area content in a view function to
+    avoid mangling.
+
+  * Updated the tests to always use @ietf.org addresses where appropriate,
+    and not do so when not appropriate.  All test user login addresses have
+    been changed away from @ietf.org.
+
+  * Added two new functions to replace email From: of users with
+    On-behalf-of addresses, with associated values in settings.  Added a
+    catchall stanza in the mail sending pipeline to catch anything not
+    already changed to On-behalf-of addresses, which should have been
+    changed.
+
+  * Merged in [15982] from rjsparks@nostrum.com:
+    Add session.short to the output from meeting/agenda.json when it is 
+    available.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Mar 2019 16:44:51 +0000
+
+
 ietfdb (6.92.1) ietf; urgency=medium
 
   This release contains one database schema migration delayed from the
