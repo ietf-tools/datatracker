@@ -8,7 +8,7 @@ from ietf.message.models import AnnouncementFrom
 from ietf.ietfauth.utils import has_role
 from ietf.secr.announcement.forms import AnnounceForm
 from ietf.secr.utils.decorators import check_for_cancel
-from ietf.utils.mail import send_mail_text, on_behalf_of
+from ietf.utils.mail import send_mail_text, maybe_on_behalf_of
 
 # -------------------------------------------------
 # Helper Functions
@@ -83,7 +83,7 @@ def confirm(request):
             extra = {'Reply-To':message.reply_to}
             send_mail_text(None,
                            message.to,
-                           on_behalf_of(message.frm),
+                           maybe_on_behalf_of(message.frm),
                            message.subject,
                            message.body,
                            cc=message.cc,

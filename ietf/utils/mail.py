@@ -191,7 +191,8 @@ def on_behalf_of(frm):
         name, addr = parseaddr(frm)
     domain = addr.rsplit('@', 1)[-1]
     if domain in settings.UTILS_FROM_EMAIL_DOMAINS:
-        raise ValueError("Using send_mail_on_behalf_of() with an address (%s) in %s is misleading.  Please use send_mail()" % (addr, settings.UTILS_FROM_EMAIL_DOMAINS))
+        unreachable('2019-03-06')
+        return frm
     if not name:
         name = addr
     name = "Datatracker on behalf of %s" % name
