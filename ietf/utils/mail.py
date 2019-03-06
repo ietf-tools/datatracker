@@ -117,7 +117,7 @@ def send_smtp(msg, bcc=None):
                 raise SMTPSomeRefusedRecipients(message="%d addresses were refused"%len(unhandled),original_msg=msg,refusals=unhandled)
         except Exception as e:
             # need to improve log message
-            log("Exception while trying to send email from '%s' to %s subject '%s'" % (frm, to, msg.get('Subject', '[no subject]')))
+            log(u"Exception while trying to send email from '%s' to %s subject '%s'" % (frm, to, msg.get('Subject', '[no subject]')))
             if isinstance(e, smtplib.SMTPException):
                 e.original_msg=msg
                 raise 
@@ -128,7 +128,7 @@ def send_smtp(msg, bcc=None):
                 server.quit()
             except smtplib.SMTPServerDisconnected:
                 pass
-        log("sent email from '%s' to %s id %s subject '%s'" % (frm, to, msg.get('Message-ID', ''), msg.get('Subject', '[no subject]')))
+        log(u"sent email from '%s' to %s id %s subject '%s'" % (frm, to, msg.get('Message-ID', ''), msg.get('Subject', '[no subject]')))
     
 def copy_email(msg, to, toUser=False, originalBcc=None):
     '''

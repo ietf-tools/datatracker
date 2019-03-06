@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+from __future__ import unicode_literals, print_function
+
+
 import datetime, re, itertools
 from collections import defaultdict, namedtuple
 
