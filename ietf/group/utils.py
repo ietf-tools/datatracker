@@ -254,14 +254,14 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
 
 def group_features_group_filter(groups, person, feature):
-    """This returns a queryset of groups filtered such that the given person has
+    """This returns a list of groups filtered such that the given person has
     a role listed in the given feature for each group."""
-    type_slugs = set(groups.values_list('type__slug', flat=True))
-    group_types = GroupTypeName.objects.filter(slug__in=type_slugs)
-    if not group_types.exists():
-        return groups.none()
-    q = reduce(lambda a,b:a|b, [ Q(role__person=person, role__name__slug__in=getattr(t.features, feature)) for t in group_types ])
-    return groups.filter(q)
+    feature_groups = []
+    for g in groups:
+        for r in person.role_set.filter(group=g):
+            if r.name.slug in getattr(r.group.type.features, feature):
+                feature_groups.append(g)
+    return feature_groups
 
 def group_features_role_filter(roles, person, feature):
     type_slugs = set(roles.values_list('group__type__slug', flat=True))
