@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
-
+from __future__ import unicode_literals, print_function
 
 # Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
