@@ -256,12 +256,12 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 def group_features_group_filter(groups, person, feature):
     """This returns a list of groups filtered such that the given person has
     a role listed in the given feature for each group."""
-    feature_groups = []
+    feature_groups = set([])
     for g in groups:
         for r in person.role_set.filter(group=g):
             if r.name.slug in getattr(r.group.type.features, feature):
-                feature_groups.append(g)
-    return feature_groups
+                feature_groups.add(g)
+    return list(feature_groups)
 
 def group_features_role_filter(roles, person, feature):
     type_slugs = set(roles.values_list('group__type__slug', flat=True))
