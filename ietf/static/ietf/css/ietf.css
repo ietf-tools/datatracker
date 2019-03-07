@@ -392,6 +392,10 @@ table.materials .snippable {
   padding: 0.2em 0.5em;
 }
 
+.pad {
+  padding: 0.5em 0.5em;
+  line-height: 1.2;
+}
 .padded {
   padding: 1em 1em;
   line-height: 1.4142;
