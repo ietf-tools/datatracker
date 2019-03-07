@@ -85,6 +85,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('name', '0005_reviewassignmentstatename'),
+        ('doc','0011_reviewassignmentdocevent'),
     ]
 
     operations = [

@@ -701,7 +701,8 @@ def extract_revision_ordered_review_requests_for_documents_and_replaced(review_r
     replaces = extract_complete_replaces_ancestor_mapping_for_docs(names)
 
     requests_for_each_doc = defaultdict(list)
-    for r in review_request_queryset.filter(doc__in=set(e for l in replaces.itervalues() for e in l) | names).order_by("-reviewed_rev", "-time", "-id").iterator():
+    # TODO : See if this function is still meeting the need. I removed "-reviewed_rev" from the order_by below. The whole thing may need to be operating on ReviewAssignments?
+    for r in review_request_queryset.filter(doc__in=set(e for l in replaces.itervalues() for e in l) | names).order_by("-time", "-id").iterator():
         requests_for_each_doc[r.doc_id].append(r)
 
     # now collect in breadth-first order to keep the revision order intact

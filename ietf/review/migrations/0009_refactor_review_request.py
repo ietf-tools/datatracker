@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('doc', '0009_move_non_url_externalurls_to_uploaded_filename'),
-        ('name', '0006_adjust_statenames'),
+        ('name', '0005_reviewassignmentstatename'),
         ('person', '0008_auto_20181014_1448'),
         ('review', '0008_remove_reviewrequest_old_id'),
     ]

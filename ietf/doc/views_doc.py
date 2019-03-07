@@ -598,7 +598,8 @@ def document_main(request, name, rev=None):
         # If we want to go back to using markup_txt.markup_unicode, call it explicitly here like this:
         # content = markup_txt.markup_unicode(content, split=False, width=80)
        
-        review_req = ReviewRequest.objects.filter(review=doc.name).first()
+        # TODO - verify if this shows other reviews from the same team - I bet it doesn't
+        review_req = ReviewRequest.objects.filter(reviewassignment__review=doc.name).first()
 
         other_reviews = []
         if review_req:
