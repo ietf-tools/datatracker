@@ -195,7 +195,7 @@ def on_behalf_of(frm):
         return frm
     if not name:
         name = addr
-    name = "Datatracker on behalf of %s" % name
+    name = "%s via Datatracker" % name
     addr = settings.UTILS_ON_BEHALF_EMAIL
     return formataddr((name, addr))
 
