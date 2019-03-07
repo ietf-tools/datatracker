@@ -19,7 +19,7 @@
   </td>
 
   {% if session.status_id == 'canceled' %}
-    {% if user|has_role:"Secretariat" or user|matman_groups %}
+    {% if user|has_role:"Secretariat" or user_groups %}
       <td colspan="6"><span class="label label-danger">Session cancelled</span></td>
     {% else %}
       <td colspan="5"><span class="label label-danger">Session cancelled</span></td>
@@ -88,11 +88,11 @@
               {{ session.last_update|utc|date:"Y-m-d" }}<br><small>{{ session.last_update|utc|date:"H:i:s" }}&nbsp;UTC</small>
           {% endif %}
       </td>
-    {% if user|has_role:"Secretariat" or user|matman_groups %}
       <td> 
-        <div>{% include "meeting/edit_materials_button.html" %}</div>
+	{% if user|has_role:"Secretariat" or session.group in user_groups %}
+	  <div>{% include "meeting/edit_materials_button.html" %}</div>
+	{% endif %}
       </td>
-    {% endif %}
   {% endif %}
 </tr>
 
