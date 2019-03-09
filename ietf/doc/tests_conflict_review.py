@@ -278,9 +278,9 @@ class ConflictReviewTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('[type=submit]:contains("Send announcement")')), 1)
         if approve_type == 'appr-noprob':
-            self.assertTrue( 'IESG has no problem' in ''.join(wrap(r.content,2**16)))
+            self.assertIn( 'IESG has no problem', ''.join(wrap(r.content,2**16)))
         else:
-            self.assertTrue( 'NOT be published' in ''.join(wrap(r.content,2**16)))
+            self.assertIn( 'NOT be published', ''.join(wrap(r.content,2**16)))
         
         # submit
         empty_outbox()
@@ -292,14 +292,14 @@ class ConflictReviewTests(TestCase):
         self.assertFalse(doc.ballot_open("conflrev"))
         
         self.assertEqual(len(outbox), 1)
-        self.assertTrue('Results of IETF-conflict review' in outbox[0]['Subject'])
-        self.assertTrue('irtf-chair' in outbox[0]['To'])
-        self.assertTrue('ietf-announce@' in outbox[0]['Cc'])
-        self.assertTrue('iana@' in outbox[0]['Cc'])
+        self.assertIn('Results of IETF-conflict review', outbox[0]['Subject'])
+        self.assertIn('irtf-chair', outbox[0]['To'])
+        self.assertIn('ietf-announce@', outbox[0]['Cc'])
+        self.assertIn('iana@', outbox[0]['Cc'])
         if approve_type == 'appr-noprob':
-            self.assertTrue( 'IESG has no problem' in ''.join(wrap(unicode(outbox[0]),2**16)))
+            self.assertIn( 'IESG has no problem', ''.join(wrap(unicode(outbox[0]),2**16)))
         else:
-            self.assertTrue( 'NOT be published' in ''.join(wrap(unicode(outbox[0]),2**16)))
+            self.assertIn( 'NOT be published', ''.join(wrap(unicode(outbox[0]),2**16)))
         
        
     def test_approve_reqnopub(self):
