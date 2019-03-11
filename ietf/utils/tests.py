@@ -110,7 +110,7 @@ body
         self.assertEqual(recv['Subject'], 'osubject')
         self.assertEqual(recv.get_payload(), 'body\n')
 
-        extra = {'Fuzz': 'bucket'}
+        extra = {'Fuzz': [ 'bucket' ]}
         send_mail_preformatted(request=None, preformatted=msg, extra=extra, override={})
         recv = outbox[-1]
         self.assertEqual(recv['Fuzz'], 'bucket')

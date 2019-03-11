@@ -367,12 +367,12 @@ class ReviewTests(TestCase):
         })
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), 1)
-        self.assertTrue('toaddr' in outbox[0]["To"])
-        self.assertTrue('ccaddr' in outbox[0]["Cc"])
-        self.assertTrue('replytoaddr' in outbox[0]["Reply-To"])
-        self.assertTrue('fromaddr' in outbox[0]["From"])
+        self.assertIn('toaddr', outbox[0]["To"])
+        self.assertIn('ccaddr', outbox[0]["Cc"])
+        self.assertIn('replytoaddr', outbox[0]["Reply-To"])
+        self.assertIn('fromaddr', outbox[0]["From"])
         self.assertEqual(outbox[0]["subject"], "Test subject")
-        self.assertTrue("Test body" in outbox[0].get_payload(decode=True).decode("utf-8"))
+        self.assertIn("Test body", outbox[0].get_payload(decode=True).decode("utf-8"))
 
     def test_change_reviewer_settings(self):
         reviewer = ReviewerSettingsFactory(person__user__username='reviewer',expertise='Some expertise').person

@@ -1,6 +1,6 @@
 import re, datetime, email
 
-from ietf.utils.mail import send_mail_text, send_mail_mime, maybe_on_behalf_of
+from ietf.utils.mail import send_mail_text, send_mail_mime
 from ietf.message.models import Message
 
 first_dot_on_line_re = re.compile(r'^\.', re.MULTILINE)
@@ -21,15 +21,13 @@ def infer_message(s):
 
 def send_scheduled_message_from_send_queue(send_queue):
     message = send_queue.message
-    message.frm = maybe_on_behalf_of(message.frm)
-    message.save()
-    
+
     # for some reason, the old Perl code base substituted away . on line starts
     body = first_dot_on_line_re.sub("", message.body)
     
     extra = {}
     if message.reply_to:
-        extra['Reply-To'] = message.reply_to
+        extra['Reply-To'] = message.get('reply_to')
 
     # announcement.content_type can contain a case-sensitive parts separator,
     # so we need to keep it as is, not lowercased, but we want a lowercased

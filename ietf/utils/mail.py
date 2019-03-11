@@ -9,6 +9,7 @@ import time
 import traceback
 
 from email.utils import make_msgid, formatdate, formataddr as simple_formataddr, parseaddr as simple_parseaddr, getaddresses
+from email.message import Message       # pyflakes:ignore
 from email.mime.text import MIMEText
 from email.mime.message import MIMEMessage
 from email.mime.multipart import MIMEMultipart
@@ -26,7 +27,7 @@ from django.template import Context,RequestContext
 import debug                            # pyflakes:ignore
 
 import ietf
-from ietf.utils.log import log, unreachable
+from ietf.utils.log import log, assertion
 from ietf.utils.text import isascii
 
 # Testing mode:
@@ -191,7 +192,6 @@ def on_behalf_of(frm):
         name, addr = parseaddr(frm)
     domain = addr.rsplit('@', 1)[-1]
     if domain in settings.UTILS_FROM_EMAIL_DOMAINS:
-        unreachable('2019-03-06')
         return frm
     if not name:
         name = addr
@@ -234,6 +234,10 @@ def parseaddr(addr):
     return name, addr
 
 def condition_message(to, frm, subject, msg, cc, extra):
+    if extra:
+        assertion("isinstance(extra, (dict, Message))")
+        if 'Reply-To' in extra:
+            assertion("isinstance(extra['Reply-To'], list)")
 
     if isinstance(frm, tuple):
         frm = formataddr(frm)
@@ -245,14 +249,13 @@ def condition_message(to, frm, subject, msg, cc, extra):
         n, a = parseaddr(frm)
         domain = a.rsplit('@', 1)[-1]
         if not domain in settings.UTILS_FROM_EMAIL_DOMAINS:
-            unreachable('2019-03-04')
+            extra = extra or {}
+            if 'Reply-To' in extra:
+                extra['Reply-To'].append(frm)
+            else:
+                extra['Reply-To'] = [frm, ]
             frm = on_behalf_of(frm)
 	msg['From'] = frm
-    if extra and 'Reply-To' in extra:
-        reply_to = extra['Reply-To']
-        if isinstance(reply_to, list) or isinstance(reply_to, tuple):
-            reply_to = ", ".join([isinstance(addr, tuple) and formataddr(addr) or addr for addr in reply_to if addr])
-        extra['Reply-To'] = reply_to
 
     # The following is a hack to avoid an issue with how the email module (as of version 4.0.3)
     # breaks lines when encoding header fields with anything other than the us-ascii codec.
@@ -282,7 +285,11 @@ def condition_message(to, frm, subject, msg, cc, extra):
     if extra:
 	for k, v in extra.items():
             if v:
-                msg[k] = v
+                assertion('len(list(set(v))) == len(v)')
+                try:
+                    msg[k] = ", ".join(v)
+                except Exception:
+                    raise
 
 def show_that_mail_was_sent(request,leadline,msg,bcc):
         if request and request.user:
@@ -348,37 +355,43 @@ def parse_preformatted(preformatted, extra={}, override={}):
     msg.set_charset('UTF-8')
 
     for k, v in override.iteritems():
-         if k in msg:
-              del msg[k]
-         if isinstance(v, list):
-              msg[k] = ', '.join(v)
-         else:
-              msg[k] = v 
+        if k in msg:
+            del msg[k]
+        if v:
+            if isinstance(v, list):
+                msg[k] = ', '.join(v)
+            else:
+                msg[k] = v 
 
-    headers = copy.copy(msg)
+    extra = copy.deepcopy(extra)        # don't modify the caller's extra obj
+    headers = copy.copy(msg)            # don't modify the message
     for key in ['To', 'From', 'Subject', 'Bcc']:
         del headers[key]
-    for k, v in extra.iteritems():
-         if k in headers:
-              del headers[k]
-         if isinstance(v, list):
-              headers[k] = ', '.join(v)
-         else:
-             headers[k] = v 
+    for k in headers.keys():
+        v = headers.get_all(k, [])
+        if k in extra:
+            ev = extra[k]
+            if not isinstance(ev, list):
+                ev = [ ev, ]
+            extra[k] = list(set(v + ev))
+        else:
+            extra[k] = v
 
     bcc = msg['Bcc']
     del msg['Bcc']
 
-    return (msg, headers, bcc)
+    for v in extra.values():
+        assertion('len(list(set(v))) == len(v)')
+    return (msg, extra, bcc)
 
 def send_mail_preformatted(request, preformatted, extra={}, override={}):
     """Parse preformatted string containing mail with From:, To:, ...,
     and send it through the standard IETF mail interface (inserting
     extra headers as needed)."""
 
-    (msg,headers,bcc) = parse_preformatted(preformatted, extra, override)
+    (msg, extra, bcc) = parse_preformatted(preformatted, extra, override)
     txt = msg.get_payload().decode(str(msg.get_charset()))
-    send_mail_text(request, msg['To'], msg["From"], msg["Subject"], txt, extra=headers, bcc=bcc)
+    send_mail_text(request, msg['To'], msg["From"], msg["Subject"], txt, extra=extra, bcc=bcc)
     return msg
 
 def send_mail_message(request, message, extra={}):
@@ -387,9 +400,9 @@ def send_mail_message(request, message, extra={}):
 
     e = extra.copy()
     if message.reply_to:
-        e['Reply-To'] = message.reply_to
+        e['Reply-To'] = message.get('reply_to')
     if message.msgid:
-        e['Message-ID'] = message.msgid
+        e['Message-ID'] = [ message.msgid, ]
 
     return send_mail_text(request, message.to, message.frm, message.subject,
                           message.body, cc=message.cc, bcc=message.bcc, extra=e)

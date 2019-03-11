@@ -64,7 +64,7 @@ from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, 
     create_recording)
 from ietf.utils.decorators import require_api_key
 from ietf.utils.log import assertion
-from ietf.utils.mail import send_mail_message, send_mail_text, on_behalf_of
+from ietf.utils.mail import send_mail_message, send_mail_text
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 from ietf.utils.text import xslugify
@@ -2307,7 +2307,7 @@ def request_minutes(request, num=None):
         if form.is_valid():
             send_mail_text(request,
                            to=form.cleaned_data.get('to'),
-                           frm=on_behalf_of(request.user.person.email_address()),
+                           frm=request.user.person.email_address(),
                            subject=form.cleaned_data.get('subject'),
                            txt=form.cleaned_data.get('body'),
                            cc=form.cleaned_data.get('cc'),

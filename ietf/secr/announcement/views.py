@@ -8,7 +8,7 @@ from ietf.message.models import AnnouncementFrom
 from ietf.ietfauth.utils import has_role
 from ietf.secr.announcement.forms import AnnounceForm
 from ietf.secr.utils.decorators import check_for_cancel
-from ietf.utils.mail import send_mail_text, maybe_on_behalf_of
+from ietf.utils.mail import send_mail_text
 
 # -------------------------------------------------
 # Helper Functions
@@ -80,15 +80,16 @@ def confirm(request):
         form = AnnounceForm(request.POST, user=request.user)
         if request.method == 'POST':
             message = form.save(user=request.user,commit=True)
-            extra = {'Reply-To':message.reply_to}
+            extra = {'Reply-To': message.get('reply_to') }
             send_mail_text(None,
                            message.to,
-                           maybe_on_behalf_of(message.frm),
+                           message.frm,
                            message.subject,
                            message.body,
                            cc=message.cc,
                            bcc=message.bcc,
-                           extra=extra)
+                           extra=extra,
+                       )
 
             messages.success(request, 'The announcement was sent.')
             return redirect('ietf.secr.announcement.views.main')

@@ -9,7 +9,7 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.mail import send_mail, send_mail_text, on_behalf_of
+from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ipr.utils import iprs_from_docs, related_docs
 from ietf.doc.models import WriteupDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
 from ietf.doc.utils import needed_ballot_positions
@@ -35,7 +35,7 @@ def email_ad_approved_doc(request, doc, text):
 	to = "iesg@iesg.org"
 	bcc = "iesg-secretary@ietf.org"
 	frm = request.user.person.formatted_email()
-	send_mail(request, to, on_behalf_of(frm),
+	send_mail(request, to, frm,
 			  "Approved: %s" % doc.filename_with_rev(),
 			  "doc/mail/ad_approval_email.txt",
 			  dict(text=text,
@@ -68,7 +68,7 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
 def email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state):
     extra=extra_automation_headers(doc)
     addrs = gather_address_lists('doc_pulled_from_rfc_queue',doc=doc)
-    extra['Cc'] = addrs.as_strings().cc
+    extra['Cc'] = addrs.cc
     send_mail(request, addrs.to , None,
               "%s changed state from %s to %s" % (doc.name, prev_state.name, next_state.name),
               "doc/mail/pulled_from_rfc_queue_email.txt",
@@ -318,7 +318,7 @@ def email_resurrect_requested(request, doc, by):
         e = by.role_email("ad")
     frm = e.address
 
-    send_mail(request, to, on_behalf_of(e.formatted_email()),
+    send_mail(request, to, e.formatted_email(),
               "I-D Resurrection Request",
               "doc/mail/resurrect_request_email.txt",
               dict(doc=doc,
@@ -385,10 +385,8 @@ def email_iana(request, doc, to, msg, cc=None):
     parsed_msg = email.message_from_string(msg.encode("utf-8"))
     parsed_msg.set_charset('UTF-8')
 
-    extra = {}
-    extra["Reply-To"] = "noreply@ietf.org"
-    extra["X-IETF-Draft-string"] = doc.name
-    extra["X-IETF-Draft-revision"] = doc.rev
+    extra = extra_automation_headers(doc)
+    extra["Reply-To"] = ["noreply@ietf.org", ]
     
     send_mail_text(request, to,
                    parsed_msg["From"], parsed_msg["Subject"],
@@ -398,8 +396,8 @@ def email_iana(request, doc, to, msg, cc=None):
 
 def extra_automation_headers(doc):
     extra = {}
-    extra["X-IETF-Draft-string"] = doc.name
-    extra["X-IETF-Draft-revision"] = doc.rev
+    extra["X-IETF-Draft-string"] = [ doc.name, ]
+    extra["X-IETF-Draft-revision"] = [ doc.rev, ]
 
     return extra
 
@@ -536,5 +534,5 @@ def email_charter_internal_review(request, charter):
                    milestones=charter.group.groupmilestone_set.filter(state="charter"),
               ),
               cc=addrs.cc,
-              extra={'Reply-To':"iesg@ietf.org"},
+              extra={'Reply-To': ["iesg@ietf.org", ]},
              )

@@ -1,4 +1,7 @@
 from collections import namedtuple
+
+import debug                            # pyflakes:ignore
+
 from ietf.mailtrigger.models import MailTrigger, Recipient
 from ietf.submit.models import Submission
 

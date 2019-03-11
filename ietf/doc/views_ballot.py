@@ -32,7 +32,7 @@ from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.utils import log
-from ietf.utils.mail import send_mail_text, send_mail_preformatted, on_behalf_of
+from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.utils.decorators import require_api_key
 
 BALLOT_CHOICES = (("yes", "Yes"),
@@ -285,7 +285,6 @@ def api_set_position(request):
 
     # send position email
     addrs, frm, subject, body = build_position_email(ad, doc, pos)
-    frm = on_behalf_of(frm)
     send_mail_text(request, addrs.to, frm, subject, body, cc=addrs.cc)
 
     return HttpResponse("Done", status=200, content_type='text/plain')
@@ -363,7 +362,7 @@ def send_ballot_comment(request, name, ballot_id):
         if extra_cc:
             cc.extend(extra_cc)
 
-        send_mail_text(request, addrs.to, on_behalf_of(frm), subject, body, cc=u", ".join(cc))
+        send_mail_text(request, addrs.to, frm, subject, body, cc=u", ".join(cc))
             
         return HttpResponseRedirect(return_to_url)
 
@@ -621,11 +620,10 @@ def ballot_writeupnotes(request, name):
                 send_mail_preformatted(request, msg, override=override)
 
                 addrs = gather_address_lists('ballot_issued_iana',doc=doc).as_strings()
-                override={ "To": "IANA <%s>"%settings.IANA_EVAL_EMAIL, "Bcc": None , "Reply-To": None}
+                override={ "To": "IANA <%s>"%settings.IANA_EVAL_EMAIL, "Bcc": None , "Reply-To": []}
                 if addrs.cc:
                     override['CC'] = addrs.cc
-                send_mail_preformatted(request, msg, extra=extra_automation_headers(doc),
-                                       override={ "To": "IANA <%s>"%settings.IANA_EVAL_EMAIL, "CC": None, "Bcc": None , "Reply-To": None})
+                send_mail_preformatted(request, msg, extra=extra_automation_headers(doc), override=override)
 
                 e = DocEvent(doc=doc, rev=doc.rev, by=login)
                 e.by = login
@@ -866,7 +864,7 @@ def approve_ballot(request, name):
         if action == "to_announcement_list":
             addrs = gather_address_lists('ballot_approved_ietf_stream_iana').as_strings(compact=False)
             send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
-                                   override={ "To": addrs.to, "CC": addrs.cc, "Bcc": None, "Reply-To": None})
+                                   override={ "To": addrs.to, "CC": addrs.cc, "Bcc": None, "Reply-To": []})
 
         msg = infer_message(announcement)
         msg.by = login
@@ -911,7 +909,7 @@ def make_last_call(request, name):
             if doc.type.slug == 'draft':
                 addrs = gather_address_lists('last_call_issued_iana',doc=doc).as_strings(compact=False)
                 send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
-                                       override={ "To": addrs.to, "CC": addrs.cc, "Bcc": None, "Reply-To": None})
+                                       override={ "To": addrs.to, "CC": addrs.cc, "Bcc": None, "Reply-To": []})
 
             msg = infer_message(announcement)
             msg.by = login

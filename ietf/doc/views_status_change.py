@@ -352,7 +352,7 @@ def approve(request, name):
 
             for form in formset.forms:
 
-                send_mail_preformatted(request,form.cleaned_data['announcement_text'])
+                send_mail_preformatted(request, form.cleaned_data['announcement_text'], extra={})
 
                 c = DocEvent(type="added_comment", doc=status_change, rev=status_change.rev, by=login)
                 c.desc = "The following approval message was sent\n"+form.cleaned_data['announcement_text']

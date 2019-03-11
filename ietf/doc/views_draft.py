@@ -42,7 +42,7 @@ from ietf.message.models import Message
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName, DocUrlTagName
 from ietf.person.fields import SearchableEmailField
 from ietf.person.models import Person, Email
-from ietf.utils.mail import send_mail, send_mail_message, on_behalf_of
+from ietf.utils.mail import send_mail, send_mail_message
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.mailtrigger.utils import gather_address_lists
 
@@ -594,10 +594,10 @@ def to_iesg(request,name):
 
             addrs= gather_address_lists('pubreq_iesg',doc=doc)
             extra = {}
-            extra['Cc'] = addrs.as_strings().cc
+            extra['Cc'] = addrs.cc
             send_mail(request=request,
                       to = addrs.to,
-                      frm = on_behalf_of(by.formatted_email()),
+                      frm = by.formatted_email(),
                       subject = "Publication has been requested for %s-%s" % (doc.name,doc.rev),
                       template = "doc/submit_to_iesg_email.txt",
                       context = dict(doc=doc,by=by,url="%s%s"%(settings.IDTRACKER_BASE_URL,doc.get_absolute_url()),),
@@ -1219,7 +1219,7 @@ def request_publication(request, name):
     consensus_event = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
 
     m = Message()
-    m.frm = on_behalf_of(request.user.person.formatted_email())
+    m.frm = request.user.person.formatted_email()
     (m.to, m.cc) = gather_address_lists('pubreq_rfced',doc=doc)
     m.by = request.user.person
 

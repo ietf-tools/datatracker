@@ -32,7 +32,7 @@ from ietf.review.utils import reviewer_rotation_list, possibly_advance_next_revi
 from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import create_person
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
-from ietf.utils.mail import outbox, empty_outbox, parseaddr
+from ietf.utils.mail import outbox, empty_outbox, parseaddr, on_behalf_of
 from ietf.person.factories import PersonFactory
 
 class ReviewTests(TestCase):
@@ -645,7 +645,8 @@ class ReviewTests(TestCase):
         msgid = outbox[0]["Message-ID"]
         message = Message.objects.get(msgid=msgid)
         self.assertEqual(parseaddr(outbox[0]["To"]), parseaddr(message.to))
-        self.assertEqual(parseaddr(outbox[0]["From"]), parseaddr(message.frm))
+        self.assertEqual(parseaddr(outbox[0]["From"]), parseaddr(on_behalf_of(message.frm)))
+        self.assertEqual(parseaddr(outbox[0]["Reply-To"]), parseaddr(message.frm))
         self.assertEqual(outbox[0].get_payload(decode=True).decode(str(outbox[0].get_charset())), message.body)
 
         # check the review document page

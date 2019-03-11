@@ -10,6 +10,7 @@ from ietf.group.models import Group
 from ietf.doc.models import Document
 from ietf.name.models import RoleName
 from ietf.utils.models import ForeignKey
+from ietf.utils.mail import get_email_addresses_from_text
 
 class Message(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
@@ -34,6 +35,10 @@ class Message(models.Model):
     def __unicode__(self):
         return "'%s' %s -> %s" % (self.subject, self.frm, self.to)
 
+    def get(self, field):
+        r = getattr(self, field)
+        return r if isinstance(r, list) else get_email_addresses_from_text(r)
+            
 
 class MessageAttachment(models.Model):
     message = ForeignKey(Message)
