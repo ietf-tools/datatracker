@@ -46,6 +46,7 @@ class ReviewAssignmentFactory(factory.DjangoModelFactory):
     review_request = factory.SubFactory('ietf.review.factories.ReviewRequestFactory')
     state_id = 'requested'
     reviewer = factory.SubFactory('ietf.person.factories.EmailFactory')
+    assigned_on = datetime.datetime.now()
 
 class ReviewerSettingsFactory(factory.DjangoModelFactory):
     class Meta:

@@ -186,11 +186,11 @@ def review_request(request, name, request_id):
 
     can_manage_request = can_manage_review_requests_for_team(request.user, review_req.team)
 
-    can_close_request = (review_req.state_id in ["requested", "accepted"]
+    can_close_request = (review_req.state_id in ["requested", "assigned"]
                          and (is_authorized_in_doc_stream(request.user, doc)
                               or can_manage_request))
 
-    can_assign_reviewer = (review_req.state_id in ["requested", "accepted"]
+    can_assign_reviewer = (review_req.state_id in ["requested", "assigned"]
                            and can_manage_request)
 
     can_edit_comment = can_request_review_of_doc(request.user, doc)
@@ -210,6 +210,9 @@ def review_request(request, name, request_id):
         assignment.can_complete_review = (assignment.state_id in ["requested", "accepted", "overtaken", "no-response", "part-completed", "completed"]
                                           and (assignment.is_reviewer or can_manage_request))
 
+    # This implementation means if a reviewer accepts one assignment for a review_request, he accepts all assigned to him (for that request)
+    # This problematic - it's a bug (probably) for the same person to have more than one assignment for the same request.
+    # It is, however unintuitive, and acceptance should be refactored to be something that works on assignments, not requests
     if request.method == "POST" and request.POST.get("action") == "accept":
         for assignment in assignments:
             if assignment.can_accept_reviewer_assignment:
@@ -245,7 +248,7 @@ class CloseReviewRequestForm(forms.Form):
 @login_required
 def close_request(request, name, request_id):
     doc = get_object_or_404(Document, name=name)
-    review_req = get_object_or_404(ReviewRequest, pk=request_id, state__in=["requested", "accepted"])
+    review_req = get_object_or_404(ReviewRequest, pk=request_id, state__in=["requested", "assigned"])
 
     can_request = is_authorized_in_doc_stream(request.user, doc)
     can_manage_request = can_manage_review_requests_for_team(request.user, review_req.team)
@@ -265,6 +268,7 @@ def close_request(request, name, request_id):
     return render(request, 'doc/review/close_request.html', {
         'doc': doc,
         'review_req': review_req,
+        'assignments': review_req.reviewassignment_set.all(),
         'form': form,
     })
 
@@ -745,7 +749,7 @@ def edit_deadline(request, name, request_id):
         if form.is_valid():
             if form.cleaned_data['deadline'] != old_deadline:
                 form.save()
-                subject = "Deadline changed: {} {} review of {}-{}".format(review_req.team.acronym.capitalize(),review_req.type.name.lower(), review_req.doc.name, review_req.reviewed_rev)
+                subject = "Deadline changed: {} {} review of {}-{}".format(review_req.team.acronym.capitalize(),review_req.type.name.lower(), review_req.doc.name, review_req.requested_rev)
                 msg = render_to_string("review/deadline_changed.txt", {
                     "review_req": review_req,
                     "old_deadline": old_deadline,
