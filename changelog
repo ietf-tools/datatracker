@@ -1,6 +1,54 @@
+ietfdb (6.94.0) ietf; urgency=medium
+
+  **Added review and AD emails 'Reply-To:' fields**
+
+  This release contains another change to email sending, adding a Reply-To
+  header field for mail sent on behalf of a user, and also contains a number
+  of other changes and fixes, as follows:
+
+  * Merged in [16022] from rcross@amsl.com: Modified IPR Patent number regex
+    to allow a new Italian patent number format, IT[15 digits]. Fixes #2694.  
+
+  * Reverted earlier application of on_behalf_of() at mail sending call
+    points, and instead did all on_behalf_of processing in
+    condition_message().  Added insertion of Reply-To header fields in this
+    case.  Changed all use of the mail-sending 'extra' parameters to use
+    value lists.  Updated a bunch of tests accordingly.
+
+  * Removed a statement about IETF being an activity of the Internet Society
+    from a template file, and tweaked the remaining text.
+
+  * Converted a test to use .assertIn() instead of .assertTrue(... in ...)
+    for better failure reports.
+
+  * Tweaked the group_features_group_filter() function.
+
+  * Refactored some templates to reduce materials page permission lookups
+    from ~2*#sessions to just a few.
+
+  * Rewrote a function to be more readable and actually do the right thing.
+    This moved some filtering from database into code, but it seems
+    acceptable here.
+
+  * Transitioned group/views.py to unicode strings
+
+  * Improved a somewhat misleading UI for adding account email addresses.
+    Fixes issue #2692.
+
+  * Changed the on-behalf-of name template from 'On behalf of ...' to '...
+    via Datatracker' to make the originator's name come first.
+
+  * Changed ietf/utils/mail.py to use unicode strings, and changed a call in
+    ietf/review/utils.py to use unicode for mail Subject, to fix a server 500
+    issue.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Mar 2019 15:09:42 +0000
+
+
+
 ietfdb (6.93.0) ietf; urgency=medium
 
-  **Changed review and AD emails to use 'On behalf of ...' **
+  **Changed review and AD emails to use 'On behalf of ...' sender**
 
   This release changes the email sender for emails sent through the
   datatracker by ADs and reviewers to say "On behalf of" and the username,
