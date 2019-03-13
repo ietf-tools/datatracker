@@ -414,7 +414,7 @@ class ReviewTests(TestCase):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
-        assignment = ReviewAssignmentFactory(review_request=review_req, state_id='requested', reviewer=rev_role.person.email_set.first())
+        assignment = ReviewAssignmentFactory(review_request=review_req, state_id='assigned', reviewer=rev_role.person.email_set.first())
 
         url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
         username = assignment.reviewer.person.user.username

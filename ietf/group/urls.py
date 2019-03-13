@@ -41,7 +41,7 @@ info_detail_urls = [
     url(r'^archives/$', views.derived_archives),
     url(r'^photos/$', views.group_photos),
     url(r'^reviews/$', views.review_requests),
-    url(r'^reviews/manage/(?P<assignment_status>assigned|unassigned)/$', views.manage_review_requests),
+    url(r'^reviews/manage/(?P<assignment_status>unassigned)/$', views.manage_review_requests),
     url(r'^reviews/email-assignments/$', views.email_open_review_assignments),
     url(r'^reviewers/$', views.reviewer_overview),
     url(r'^reviewers/(?P<reviewer_email>[\w%+-.@]+)/settings/$', views.change_reviewer_settings),

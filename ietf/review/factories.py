@@ -44,7 +44,7 @@ class ReviewAssignmentFactory(factory.DjangoModelFactory):
         model = ReviewAssignment
 
     review_request = factory.SubFactory('ietf.review.factories.ReviewRequestFactory')
-    state_id = 'requested'
+    state_id = 'assigned'
     reviewer = factory.SubFactory('ietf.person.factories.EmailFactory')
     assigned_on = datetime.datetime.now()
 

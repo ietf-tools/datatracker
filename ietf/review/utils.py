@@ -559,7 +559,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
 
     # Note that assigning a review no longer unassigns other reviews
 
-    review_req.reviewassignment_set.create(state_id='requested', reviewer = reviewer, assigned_on = datetime.datetime.now())
+    review_req.reviewassignment_set.create(state_id='assigned', reviewer = reviewer, assigned_on = datetime.datetime.now())
     if review_req.state_id != 'assigned':
         review_req.state_id = 'assigned'
         review_req.save()
@@ -668,7 +668,7 @@ def close_review_request(request, review_req, close_state):
             state=review_req.state,
         )
 
-        for assignment in review_req.reviewassignment_set.filter(state_id__in=['requested','accepted']):
+        for assignment in review_req.reviewassignment_set.filter(state_id__in=['assigned','accepted']):
             assignment.state_id = 'withdrawn'
             assignment.save()
             ReviewAssignmentDocEvent.objects.create(
@@ -790,9 +790,10 @@ def suggested_review_requests_for_team(team):
                    and existing.reviewassignment_set.filter(state_id__in=("assigned", "accepted")).exists()
                    and (not existing.requested_rev or existing.requested_rev == request.doc.rev))
         request_closed = existing.state_id not in ('requested','assigned')
-        all_assignments_completed = not existing.reviewassignment_set.filter(state_id__in=('assigned','accepted')).exists()
+        # at least one assignment was completed for the requested version:
+        some_assignment_completed = existing.reviewassignment_set.filter(reviewed_rev=existing.requested_rev,state_id='completed').exists()
 
-        return any([no_review_document, no_review_rev, pending, request_closed, all_assignments_completed])
+        return any([no_review_document, no_review_rev, pending, request_closed, some_assignment_completed])
 
     res = [r for r in requests.itervalues()
            if not any(blocks(e, r) for e in existing_requests[r.doc_id])]
@@ -1061,21 +1062,19 @@ def make_assignment_choices(email_queryset, review_req):
 
     return [(r["email"].pk, r["label"]) for r in ranking]
 
-def review_requests_needing_reviewer_reminder(remind_date):
-    reqs_qs = ReviewRequest.objects.filter(
-        state__in=("requested", "accepted"),
+def review_assignments_needing_reviewer_reminder(remind_date):
+    assignment_qs = ReviewAssignment.objects.filter(
+        state__in=("assigned", "accepted"),
         reviewer__person__reviewersettings__remind_days_before_deadline__isnull=False,
-        reviewer__person__reviewersettings__team=F("team"),
-    ).exclude(
-        reviewer=None
-    ).values_list("pk", "deadline", "reviewer__person__reviewersettings__remind_days_before_deadline").distinct()
+        reviewer__person__reviewersettings__team=F("review_request__team"),
+    ).values_list("pk", "review_request__deadline", "reviewer__person__reviewersettings__remind_days_before_deadline").distinct()
 
-    req_pks = []
-    for r_pk, deadline, remind_days in reqs_qs:
+    assignment_pks = []
+    for a_pk, deadline, remind_days in assignment_qs:
         if (deadline - remind_date).days == remind_days:
-            req_pks.append(r_pk)
+            assignment_pks.append(a_pk)
 
-    return ReviewRequest.objects.filter(pk__in=req_pks).select_related("reviewer", "reviewer__person", "state", "team")
+    return ReviewAssignment.objects.filter(pk__in=assignment_pks).select_related("reviewer", "reviewer__person", "state", "review_request__team")
 
 def email_reviewer_reminder(review_request):
     team = review_request.team
@@ -1102,24 +1101,24 @@ def email_reviewer_reminder(review_request):
         "remind_days": remind_days,
     })
 
-def review_requests_needing_secretary_reminder(remind_date):
-    reqs_qs = ReviewRequest.objects.filter(
-        state__in=("requested", "accepted"),
-        team__role__person__reviewsecretarysettings__remind_days_before_deadline__isnull=False,
-        team__role__person__reviewsecretarysettings__team=F("team"),
+def review_assignments_needing_secretary_reminder(remind_date):
+    assignment_qs = ReviewAssignment.objects.filter(
+        state__in=("assigned", "accepted"),
+        review_request__team__role__person__reviewsecretarysettings__remind_days_before_deadline__isnull=False,
+        review_request__team__role__person__reviewsecretarysettings__team=F("review_request__team"),
     ).exclude(
         reviewer=None
-    ).values_list("pk", "deadline", "team__role", "team__role__person__reviewsecretarysettings__remind_days_before_deadline").distinct()
+    ).values_list("pk", "review_request__deadline", "review_request__team__role", "review_request__team__role__person__reviewsecretarysettings__remind_days_before_deadline").distinct()
 
-    req_pks = {}
-    for r_pk, deadline, secretary_role_pk, remind_days in reqs_qs:
+    assignment_pks = {}
+    for a_pk, deadline, secretary_role_pk, remind_days in assignment_qs:
         if (deadline - remind_date).days == remind_days:
-            req_pks[r_pk] = secretary_role_pk
+            assignment_pks[a_pk] = secretary_role_pk
 
-    review_reqs = { r.pk: r for r in ReviewRequest.objects.filter(pk__in=req_pks.keys()).select_related("reviewer", "reviewer__person", "state", "team") }
-    secretary_roles = { r.pk: r for r in Role.objects.filter(pk__in=req_pks.values()).select_related("email", "person") }
+    review_assignments = { a.pk: a for a in ReviewAssignment.objects.filter(pk__in=assignment_pks.keys()).select_related("reviewer", "reviewer__person", "state", "review_request__team") }
+    secretary_roles = { r.pk: r for r in Role.objects.filter(pk__in=assignment_pks.values()).select_related("email", "person") }
 
-    return [ (review_reqs[req_pk], secretary_roles[secretary_role_pk]) for req_pk, secretary_role_pk in req_pks.iteritems() ]
+    return [ (review_assignments[a_pk], secretary_roles[secretary_role_pk]) for a_pk, secretary_role_pk in assignment_pks.iteritems() ]
 
 def email_secretary_reminder(review_request, secretary_role):
     team = review_request.team
