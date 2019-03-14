@@ -18,7 +18,7 @@ from ietf.meeting.factories import MeetingFactory
 from ietf.person.factories import PersonFactory
 from ietf.person.models import Person, Email
 from ietf.name.models import FormalLanguageName, DocRelationshipName, CountryName
-from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory
+from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
 from ietf.stats.models import MeetingRegistration, CountryAlias
 from ietf.stats.utils import get_meeting_registration_data
 
@@ -157,7 +157,8 @@ class StatisticsTests(TestCase):
 
     def test_review_stats(self):
         reviewer = PersonFactory()
-        review_req = ReviewRequestFactory(reviewer=reviewer.email_set.first())
+        review_req = ReviewRequestFactory()
+        ReviewAssignmentFactory(review_request=review_req, reviewer=reviewer.email_set.first())
         RoleFactory(group=review_req.team,name_id='reviewer',person=reviewer)
         ReviewerSettingsFactory(team=review_req.team, person=reviewer)
         PersonFactory(user__username='plain')

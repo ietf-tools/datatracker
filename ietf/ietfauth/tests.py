@@ -22,7 +22,7 @@ from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.mailinglists.models import Subscribed
 from ietf.person.models import Person, Email, PersonalApiKey, PERSON_API_KEY_ENDPOINTS
 from ietf.person.factories import PersonFactory, EmailFactory
-from ietf.review.factories import ReviewRequestFactory
+from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
 from ietf.utils.decorators import skip_coverage
 
@@ -358,11 +358,12 @@ class IetfAuthTests(TestCase):
         self.assertTrue(self.username_in_htpasswd_file(user.username))
 
     def test_review_overview(self):
-        review_req = ReviewRequestFactory(reviewer=EmailFactory(person__user__username='reviewer'))
-        RoleFactory(name_id='reviewer',group=review_req.team,person=review_req.reviewer.person)
+        review_req = ReviewRequestFactory()
+        assignment = ReviewAssignmentFactory(review_request=review_req,reviewer=EmailFactory(person__user__username='reviewer'))
+        RoleFactory(name_id='reviewer',group=review_req.team,person=assignment.reviewer.person)
         doc = review_req.doc
 
-        reviewer = review_req.reviewer.person
+        reviewer = assignment.reviewer.person
 
         UnavailablePeriod.objects.create(
             team=review_req.team,

@@ -64,8 +64,8 @@ from ietf.doc.mails import email_comment
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions
-from ietf.review.models import ReviewRequest, ReviewAssignment
-from ietf.review.utils import can_request_review_of_doc, review_requests_to_list_for_docs, review_assignments_to_list_for_docs
+from ietf.review.models import ReviewAssignment
+from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
 from ietf.utils import markup_txt, log
 from ietf.utils.text import maybe_split

@@ -429,6 +429,20 @@ class ReviewRequestStateNameResource(ModelResource):
         }
 api.name.register(ReviewRequestStateNameResource())
 
+class ReviewAssignmentStateNameResource(ModelResource):
+    class Meta:
+        cache = SimpleCache()
+        queryset = ReviewAssignmentStateName.objects.all()
+        #resource_name = 'reviewassignmentstatename'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(ReviewAssignmentStateNameResource())
+
 class ReviewTypeNameResource(ModelResource):
     class Meta:
         cache = SimpleCache()
@@ -570,17 +584,3 @@ class AgendaTypeNameResource(ModelResource):
 api.name.register(AgendaTypeNameResource())
 
 
-class ReviewAssignmentStateNameResource(ModelResource):
-    class Meta:
-        queryset = ReviewAssignmentStateName.objects.all()
-        serializer = api.Serializer()
-        cache = SimpleCache()
-        #resource_name = 'reviewassignmentstatename'
-        filtering = { 
-            "slug": ALL,
-            "name": ALL,
-            "desc": ALL,
-            "used": ALL,
-            "order": ALL,
-        }
-api.name.register(ReviewAssignmentStateNameResource())

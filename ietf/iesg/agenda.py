@@ -12,7 +12,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import Document, LastCallDocEvent, ConsensusDocEvent
 from ietf.doc.utils_search import fill_in_telechat_date
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem
-from ietf.review.utils import review_requests_to_list_for_docs
+from ietf.review.utils import review_assignments_to_list_for_docs
 
 def get_agenda_date(date=None):
     if not date:

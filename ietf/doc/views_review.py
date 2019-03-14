@@ -31,7 +31,7 @@ from ietf.person.fields import PersonEmailChoiceField, SearchablePersonField
 from ietf.review.utils import (active_review_teams, assign_review_request_to_reviewer,
                                can_request_review_of_doc, can_manage_review_requests_for_team,
                                email_review_assignment_change, email_review_request_change,
-                               make_new_review_request_from_existing, close_review_request_states,
+                               close_review_request_states,
                                close_review_request, setup_reviewer_field)
 from ietf.review import mailarch
 from ietf.utils.fields import DatepickerDateField
@@ -201,13 +201,13 @@ def review_request(request, name, request_id):
     for assignment in assignments:
         assignment.is_reviewer = user_is_person(request.user, assignment.reviewer.person)
 
-        assignment.can_accept_reviewer_assignment = (assignment.state_id == "requested"
+        assignment.can_accept_reviewer_assignment = (assignment.state_id == "assigned"
                                                      and (assignment.is_reviewer or can_manage_request))
 
-        assignment.can_reject_reviewer_assignment = (assignment.state_id in ["requested", "accepted"]
+        assignment.can_reject_reviewer_assignment = (assignment.state_id in ["assigned", "accepted"]
                                                      and (assignment.is_reviewer or can_manage_request))
 
-        assignment.can_complete_review = (assignment.state_id in ["requested", "accepted", "overtaken", "no-response", "part-completed", "completed"]
+        assignment.can_complete_review = (assignment.state_id in ["assigned", "accepted", "overtaken", "no-response", "part-completed", "completed"]
                                           and (assignment.is_reviewer or can_manage_request))
 
     # This implementation means if a reviewer accepts one assignment for a review_request, he accepts all assigned to him (for that request)

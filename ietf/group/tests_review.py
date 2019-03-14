@@ -9,15 +9,15 @@ from ietf.utils.test_utils import login_testing_unauthorized, TestCase, uniconte
 from ietf.doc.models import TelechatDocEvent
 from ietf.group.models import Role
 from ietf.iesg.models import TelechatDate
-from ietf.person.models import Email, Person
-from ietf.review.models import ReviewRequest, ReviewerSettings, UnavailablePeriod, ReviewSecretarySettings
+from ietf.person.models import Person
+from ietf.review.models import ReviewerSettings, UnavailablePeriod, ReviewSecretarySettings
 from ietf.review.utils import (
     suggested_review_requests_for_team,
     review_assignments_needing_reviewer_reminder, email_reviewer_reminder,
     review_assignments_needing_secretary_reminder, email_secretary_reminder,
     reviewer_rotation_list,
 )
-from ietf.name.models import ReviewTypeName, ReviewResultName, ReviewRequestStateName, ReviewAssignmentStateName
+from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAssignmentStateName
 import ietf.group.views
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.dbtemplate.factories import DBTemplateFactory
@@ -173,13 +173,12 @@ class ReviewTests(TestCase):
 
     def test_manage_review_requests(self):
         group = ReviewTeamFactory()
-        reviewer = RoleFactory(name_id='reviewer',group=group,person__user__username='reviewer').person
+        RoleFactory(name_id='reviewer',group=group,person__user__username='reviewer').person
         marsperson = RoleFactory(name_id='reviewer',group=group,person=PersonFactory(name=u"Mars Anders Chairman",user__username='marschairman')).person
         review_req1 = ReviewRequestFactory(doc__pages=2,doc__shepherd=marsperson.email(),team=group)
         review_req2 = ReviewRequestFactory(team=group)
         review_req3 = ReviewRequestFactory(team=group)
         RoleFactory(name_id='chair',group=review_req1.doc.group,person=marsperson)
-        doc = review_req1.doc
 
         unassigned_url = urlreverse(ietf.group.views.manage_review_requests, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id, "assignment_status": "unassigned" })
         login_testing_unauthorized(self, "secretary", unassigned_url)
