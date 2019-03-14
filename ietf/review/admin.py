@@ -3,7 +3,7 @@ import simple_history
 from django.contrib import admin
 
 from ietf.review.models import (ReviewerSettings, ReviewSecretarySettings, UnavailablePeriod,
-    ReviewWish, NextReviewerInTeam, ReviewRequest, ReviewTeamSettings )
+    ReviewWish, NextReviewerInTeam, ReviewRequest, ReviewAssignment, ReviewTeamSettings )
 
 class ReviewerSettingsAdmin(simple_history.admin.SimpleHistoryAdmin):
     def acronym(self, obj):
@@ -60,6 +60,15 @@ class ReviewRequestAdmin(admin.ModelAdmin):
     search_fields = ["doc__name"]
 
 admin.site.register(ReviewRequest, ReviewRequestAdmin)
+
+class ReviewAssignmentAdmin(admin.ModelAdmin):
+    list_display = ["review_request", "reviewer", "assigned_on", "result"]
+    list_filter = ["result", "state"]
+    ordering = ["-id"]
+    raw_id_fields = ["reviewer", "result"]
+    search_fields = ["review_request__doc__name"]
+
+admin.site.register(ReviewAssignment, ReviewAssignmentAdmin)
 
 class ReviewTeamSettingsAdmin(admin.ModelAdmin):
     list_display = ["group", ] 
