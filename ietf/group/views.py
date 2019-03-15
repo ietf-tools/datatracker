@@ -98,7 +98,7 @@ from ietf.review.utils import (can_manage_review_requests_for_team,
                                current_unavailable_periods_for_reviewers,
                                email_reviewer_availability_change,
                                reviewer_rotation_list,
-                               latest_review_requests_for_reviewers,
+                               latest_review_assignments_for_reviewers,
                                augment_review_requests_with_events,
                                get_default_filter_re,
                                days_needed_to_fulfill_min_interval_for_reviewers,
@@ -107,7 +107,7 @@ from ietf.doc.models import LastCallDocEvent
 
 
 
-from ietf.name.models import ReviewRequestStateName
+from ietf.name.models import ReviewAssignmentStateName
 from ietf.utils.mail import send_mail_text, parse_preformatted
 
 from ietf.ietfauth.utils import user_is_person
@@ -1361,8 +1361,8 @@ def reviewer_overview(request, acronym, group_type=None):
 
     today = datetime.date.today()
 
-    req_data_for_reviewers = latest_review_requests_for_reviewers(group)
-    review_state_by_slug = { n.slug: n for n in ReviewRequestStateName.objects.all() }
+    req_data_for_reviewers = latest_review_assignments_for_reviewers(group)
+    assignment_state_by_slug = { n.slug: n for n in ReviewAssignmentStateName.objects.all() }
 
     days_needed = days_needed_to_fulfill_min_interval_for_reviewers(group)
 
@@ -1383,14 +1383,15 @@ def reviewer_overview(request, acronym, group_type=None):
             person.busy = person.id in days_needed 
         
 
+        # TODO - What is this MAX_CLOSED_REQS trying to accomplish?
         MAX_CLOSED_REQS = 10
         req_data = req_data_for_reviewers.get(person.pk, [])
-        open_reqs = sum(1 for d in req_data if d.state in ["requested", "accepted"])
+        open_reqs = sum(1 for d in req_data if d.state in ["assigned", "accepted"])
         latest_reqs = []
         for d in req_data:
-            if d.state in ["requested", "accepted"] or len(latest_reqs) < MAX_CLOSED_REQS + open_reqs:
-                latest_reqs.append((d.req_pk, d.doc, d.reviewed_rev, d.assigned_time, d.deadline,
-                                    review_state_by_slug.get(d.state),
+            if d.state in ["assigned", "accepted"] or len(latest_reqs) < MAX_CLOSED_REQS + open_reqs:
+                latest_reqs.append((d.assignment_pk, d.doc, d.reviewed_rev, d.assigned_time, d.deadline,
+                                    assignment_state_by_slug.get(d.state),
                                     int(math.ceil(d.assignment_to_closure_days)) if d.assignment_to_closure_days is not None else None))
         person.latest_reqs = latest_reqs
 

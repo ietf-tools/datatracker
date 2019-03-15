@@ -4,6 +4,8 @@ from mock import patch
 from pyquery import PyQuery
 from requests import Response
 
+import debug    # pyflakes:ignore
+
 from django.urls import reverse as urlreverse
 from django.contrib.auth.models import User
 
@@ -157,8 +159,8 @@ class StatisticsTests(TestCase):
 
     def test_review_stats(self):
         reviewer = PersonFactory()
-        review_req = ReviewRequestFactory()
-        ReviewAssignmentFactory(review_request=review_req, reviewer=reviewer.email_set.first())
+        review_req = ReviewRequestFactory(state_id='assigned')
+        ReviewAssignmentFactory(review_request=review_req, state_id='assigned', reviewer=reviewer.email_set.first())
         RoleFactory(group=review_req.team,name_id='reviewer',person=reviewer)
         ReviewerSettingsFactory(team=review_req.team, person=reviewer)
         PersonFactory(user__username='plain')

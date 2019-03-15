@@ -176,11 +176,6 @@ ReviewAssignmentData = namedtuple("ReviewAssignmentData", [
     "late_days",
     "request_to_assignment_days", "assignment_to_closure_days", "request_to_closure_days"])
 
-# TODO - see if this becomes dead
-ReviewRequestData = namedtuple("ReviewRequestData", [
-    "req_pk", "doc", "doc_pages", "req_time", "state", "assigned_time", "deadline", "reviewed_rev", "result", "team", "reviewer",
-    "late_days",
-    "request_to_assignment_days", "assignment_to_closure_days", "request_to_closure_days"])
 
 def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, time_to=None, ordering=[]):
     """Yield data on each review assignment, sorted by (*ordering, assigned_on)
@@ -208,7 +203,7 @@ def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, t
         "reviewer__person", "assigned_on", "completed_on"
     )
 
-    event_qs = event_qs.order_by(*[o.replace("reviewer", "reviewer__person") for o in ordering] + ["assigned_on", "pk", "completed_on"])
+    event_qs = event_qs.order_by(*[o.replace("reviewer", "reviewer__person").replace("team","review_request__team") for o in ordering] + ["assigned_on", "pk", "completed_on"])
 
     def positive_days(time_from, time_to):
         if time_from is None or time_to is None:
@@ -242,74 +237,10 @@ def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, t
 
         yield d
 
-# TODO - see if this is dead code
-def extract_review_request_data(teams=None, reviewers=None, time_from=None, time_to=None, ordering=[]):
-    """Yield data on each review request, sorted by (*ordering, time)
-    for easy use with itertools.groupby. Valid entries in *ordering are "team" and "reviewer"."""
 
-    filters = Q()
-
-    if teams:
-        filters &= Q(team__in=teams)
-
-    if reviewers:
-        filters &= Q(reviewer__person__in=reviewers)
-
-    if time_from:
-        filters &= Q(time__gte=time_from)
-
-    if time_to:
-        filters &= Q(time__lte=time_to)
-
-    # we may be dealing with a big bunch of data, so treat it carefully
-    event_qs = ReviewRequest.objects.filter(filters)
-
-    # left outer join with RequestRequestDocEvent for request/assign/close time
-    event_qs = event_qs.values_list(
-        "pk", "doc", "doc__pages", "time", "state", "deadline", "reviewassignment__reviewed_rev", "reviewassignment__result", "team",
-        "reviewassignment__reviewer__person", "reviewrequestdocevent__time", "reviewrequestdocevent__type"
-    )
-
-    event_qs = event_qs.order_by(*[o.replace("reviewer", "reviewassignment__reviewer__person") for o in ordering] + ["time", "pk", "-reviewrequestdocevent__time"])
-
-    def positive_days(time_from, time_to):
-        if time_from is None or time_to is None:
-            return None
-
-        delta = time_to - time_from
-        seconds = delta.total_seconds()
-        if seconds > 0:
-            return seconds / float(24 * 60 * 60)
-        else:
-            return 0.0
-
-    for _, events in itertools.groupby(event_qs.iterator(), lambda t: t[0]):
-        requested_time = assigned_time = closed_time = None
-
-        for e in events:
-            req_pk, doc, doc_pages, req_time, state, deadline, reviewed_rev, result, team, reviewer, event_time, event_type = e
-
-            if event_type == "requested_review" and requested_time is None:
-                requested_time = event_time
-            elif event_type == "assigned_review_request" and assigned_time is None:
-                assigned_time = event_time
-            elif event_type == "closed_review_request" and closed_time is None:
-                closed_time = event_time
-
-        late_days = positive_days(datetime.datetime.combine(deadline, datetime.time.max), closed_time)
-        request_to_assignment_days = positive_days(requested_time, assigned_time)
-        assignment_to_closure_days = positive_days(assigned_time, closed_time)
-        request_to_closure_days = positive_days(requested_time, closed_time)
-
-        d = ReviewRequestData(req_pk, doc, doc_pages, req_time, state, assigned_time, deadline, reviewed_rev, result, team, reviewer,
-                              late_days, request_to_assignment_days, assignment_to_closure_days,
-                              request_to_closure_days)
-
-        yield d
-
-def aggregate_raw_period_review_request_stats(review_request_data, count=None):
+def aggregate_raw_period_review_assignment_stats(review_assignment_data, count=None):
     """Take a sequence of review request data from
-    extract_review_request_data and aggregate them."""
+    extract_review_assignment_data and aggregate them."""
 
     state_dict = defaultdict(int)
     late_state_dict = defaultdict(int)
@@ -317,8 +248,8 @@ def aggregate_raw_period_review_request_stats(review_request_data, count=None):
     assignment_to_closure_days_list = []
     assignment_to_closure_days_count = 0
 
-    for (req_pk, doc, doc_pages, req_time, state, assigned_time, deadline, reviewed_rev, result, team, reviewer,
-         late_days, request_to_assignment_days, assignment_to_closure_days, request_to_closure_days) in review_request_data:
+    for (assignment_pk, doc, doc_pages, req_time, state, assigned_time, deadline, reviewed_rev, result, team, reviewer,
+         late_days, request_to_assignment_days, assignment_to_closure_days, request_to_closure_days) in review_assignment_data:
         if count == "pages":
             c = doc_pages
         else:
@@ -337,7 +268,7 @@ def aggregate_raw_period_review_request_stats(review_request_data, count=None):
 
     return state_dict, late_state_dict, result_dict, assignment_to_closure_days_list, assignment_to_closure_days_count
 
-def sum_period_review_request_stats(raw_aggregation):
+def sum_period_review_assignment_stats(raw_aggregation):
     """Compute statistics from aggregated review request data for one aggregation point."""
     state_dict, late_state_dict, result_dict, assignment_to_closure_days_list, assignment_to_closure_days_count = raw_aggregation
 
@@ -345,11 +276,11 @@ def sum_period_review_request_stats(raw_aggregation):
     res["state"] = state_dict
     res["result"] = result_dict
 
-    res["open"] = sum(state_dict.get(s, 0) for s in ("requested", "accepted"))
+    res["open"] = sum(state_dict.get(s, 0) for s in ("assigned", "accepted"))
     res["completed"] = sum(state_dict.get(s, 0) for s in ("completed", "part-completed"))
     res["not_completed"] = sum(state_dict.get(s, 0) for s in state_dict if s in ("rejected", "withdrawn", "overtaken", "no-response"))
 
-    res["open_late"] = sum(late_state_dict.get(s, 0) for s in ("requested", "accepted"))
+    res["open_late"] = sum(late_state_dict.get(s, 0) for s in ("assigned", "accepted"))
     res["open_in_time"] = res["open"] - res["open_late"]
     res["completed_late"] = sum(late_state_dict.get(s, 0) for s in ("completed", "part-completed"))
     res["completed_in_time"] = res["completed"] - res["completed_late"]
@@ -358,7 +289,7 @@ def sum_period_review_request_stats(raw_aggregation):
 
     return res
 
-def sum_raw_review_request_aggregations(raw_aggregations):
+def sum_raw_review_assignment_aggregations(raw_aggregations):
     """Collapse a sequence of aggregations into one aggregation."""
     state_dict = defaultdict(int)
     late_state_dict = defaultdict(int)
@@ -396,36 +327,6 @@ def latest_review_assignments_for_reviewers(team, days_back=365):
     }
 
     return assignment_data_for_reviewers
-
-# TODO - see if this is dead code
-def latest_review_requests_for_reviewers(team, days_back=365):
-    """Collect and return stats for reviewers on latest requests, in
-    extract_review_request_data format."""
-
-    extracted_data = extract_review_request_data(
-        teams=[team],
-        time_from=datetime.date.today() - datetime.timedelta(days=days_back),
-        ordering=["reviewer"],
-    )
-
-    req_data_for_reviewers = {
-        reviewer: list(reversed(list(req_data_items)))
-        for reviewer, req_data_items in itertools.groupby(extracted_data, key=lambda data: data.reviewer)
-    }
-
-    return req_data_for_reviewers
-
-def make_new_review_request_from_existing(review_req):
-    obj = ReviewRequest()
-    obj.time = review_req.time
-    obj.type = review_req.type
-    obj.doc = review_req.doc
-    obj.team = review_req.team
-    obj.deadline = review_req.deadline
-    obj.requested_rev = review_req.requested_rev
-    obj.requested_by = review_req.requested_by
-    obj.state = ReviewRequestStateName.objects.get(slug="requested")
-    return obj
 
 def email_review_assignment_change(request, review_assignment, subject, msg, by, notify_secretary, notify_reviewer, notify_requested_by):
 

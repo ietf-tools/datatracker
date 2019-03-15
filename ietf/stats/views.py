@@ -18,15 +18,15 @@ from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
-from ietf.review.utils import (extract_review_request_data,
-                               aggregate_raw_period_review_request_stats,
-                               ReviewRequestData,
-                               sum_period_review_request_stats,
-                               sum_raw_review_request_aggregations)
+from ietf.review.utils import (extract_review_assignment_data,
+                               aggregate_raw_period_review_assignment_stats,
+                               ReviewAssignmentData,
+                               sum_period_review_assignment_stats,
+                               sum_raw_review_assignment_aggregations)
 from ietf.submit.models import Submission
 from ietf.group.models import Role, Group
 from ietf.person.models import Person
-from ietf.name.models import ReviewRequestStateName, ReviewResultName, CountryName, DocRelationshipName
+from ietf.name.models import ReviewResultName, CountryName, DocRelationshipName, ReviewAssignmentStateName
 from ietf.person.name import plain_name
 from ietf.doc.models import DocAlias, Document, State, DocEvent
 from ietf.meeting.models import Meeting
@@ -1091,7 +1091,7 @@ def review_stats(request, stats_type=None, acronym=None):
         query_reviewers = None
 
         group_by_objs = { t.pk: t for t in query_teams }
-        group_by_index = ReviewRequestData._fields.index("team")
+        group_by_index = ReviewAssignmentData._fields.index("team")
 
     elif level == "reviewer":
         for t in teams:
@@ -1102,9 +1102,9 @@ def review_stats(request, stats_type=None, acronym=None):
             return HttpResponseRedirect(urlreverse(review_stats))
 
         query_reviewers = list(Person.objects.filter(
-            email__reviewrequest__time__gte=from_time,
-            email__reviewrequest__time__lte=to_time,
-            email__reviewrequest__team=reviewers_for_team,
+            email__reviewassignment__review_request__time__gte=from_time,
+            email__reviewassignment__review_request__time__lte=to_time,
+            email__reviewassignment__review_request__team=reviewers_for_team,
             **reviewer_filter_args.get(t.pk, {})
         ).distinct())
         query_reviewers.sort(key=lambda p: p.last_name())
@@ -1112,7 +1112,7 @@ def review_stats(request, stats_type=None, acronym=None):
         query_teams = [t]
 
         group_by_objs = { r.pk: r for r in query_reviewers }
-        group_by_index = ReviewRequestData._fields.index("reviewer")
+        group_by_index = ReviewAssignmentData._fields.index("reviewer")
 
     # now filter and aggregate the data
     possible_teams = possible_completion_types = possible_results = possible_states = None
@@ -1136,9 +1136,9 @@ def review_stats(request, stats_type=None, acronym=None):
         )
         query_teams = [t for t in query_teams if t.acronym in selected_teams]
 
-        extracted_data = extract_review_request_data(query_teams, query_reviewers, from_time, to_time)
+        extracted_data = extract_review_assignment_data(query_teams, query_reviewers, from_time, to_time)
 
-        req_time_index = ReviewRequestData._fields.index("req_time")
+        req_time_index = ReviewAssignmentData._fields.index("req_time")
 
         def time_key_fn(t):
             d = t[req_time_index].date()
@@ -1150,8 +1150,8 @@ def review_stats(request, stats_type=None, acronym=None):
         found_states = set()
         aggrs = []
         for d, request_data_items in itertools.groupby(extracted_data, key=time_key_fn):
-            raw_aggr = aggregate_raw_period_review_request_stats(request_data_items, count=count)
-            aggr = sum_period_review_request_stats(raw_aggr)
+            raw_aggr = aggregate_raw_period_review_assignment_stats(request_data_items, count=count)
+            aggr = sum_period_review_assignment_stats(raw_aggr)
 
             aggrs.append((d, aggr))
 
@@ -1161,7 +1161,7 @@ def review_stats(request, stats_type=None, acronym=None):
                 found_states.add(slug)
 
         results = ReviewResultName.objects.filter(slug__in=found_results)
-        states = ReviewRequestStateName.objects.filter(slug__in=found_states)
+        states = ReviewAssignmentStateName.objects.filter(slug__in=found_states)
 
         # choice
 
@@ -1210,7 +1210,7 @@ def review_stats(request, stats_type=None, acronym=None):
             }])
 
     else: # tabular data
-        extracted_data = extract_review_request_data(query_teams, query_reviewers, from_time, to_time, ordering=[level])
+        extracted_data = extract_review_assignment_data(query_teams, query_reviewers, from_time, to_time, ordering=[level])
 
         data = []
 
@@ -1218,10 +1218,10 @@ def review_stats(request, stats_type=None, acronym=None):
         found_states = set()
         raw_aggrs = []
         for group_pk, request_data_items in itertools.groupby(extracted_data, key=lambda t: t[group_by_index]):
-            raw_aggr = aggregate_raw_period_review_request_stats(request_data_items, count=count)
+            raw_aggr = aggregate_raw_period_review_assignment_stats(request_data_items, count=count)
             raw_aggrs.append(raw_aggr)
 
-            aggr = sum_period_review_request_stats(raw_aggr)
+            aggr = sum_period_review_assignment_stats(raw_aggr)
 
             # skip zero-valued rows
             if aggr["open"] == 0 and aggr["completed"] == 0 and aggr["not_completed"] == 0:
@@ -1238,12 +1238,12 @@ def review_stats(request, stats_type=None, acronym=None):
 
         # add totals row
         if len(raw_aggrs) > 1:
-            totals = sum_period_review_request_stats(sum_raw_review_request_aggregations(raw_aggrs))
+            totals = sum_period_review_assignment_stats(sum_raw_review_assignment_aggregations(raw_aggrs))
             totals["obj"] = "Totals"
             data.append(totals)
 
         results = ReviewResultName.objects.filter(slug__in=found_results)
-        states = ReviewRequestStateName.objects.filter(slug__in=found_states)
+        states = ReviewAssignmentStateName.objects.filter(slug__in=found_states)
 
         # massage states/results breakdowns for template rendering
         for aggr in data:
