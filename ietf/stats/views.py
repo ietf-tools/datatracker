@@ -1017,7 +1017,7 @@ def review_stats(request, stats_type=None, acronym=None):
     possible_stats_types = [
         ("completion", "Completion status"),
         ("results", "Review results"),
-        ("states", "Request states"),
+        ("states", "Assignment states"),
     ]
 
     if level == "team":

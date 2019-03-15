@@ -115,7 +115,7 @@
         {{ assignment.reviewer.person }}
         {% if assignment.can_reject_reviewer_assignment or assignment.can_accept_reviewer_assignment %}
           <div class="reviewer-assignment-not-accepted">
-            {% if assignment.state_id == "requested"%}
+            {% if assignment.state_id == "assigned"%}
               <em>Assignment not accepted yet:</em>
             {% else %}
               <em>Assignment accepted:</em>
@@ -146,7 +146,7 @@
               <td>
                 {% if assignment.review %}
                   <a href="{{ assignment.review.get_absolute_url }}">{{ assignment.review.name }}</a>
-                {% elif assignment.state_id == "requested" or assignment.state_id == "accepted" %}
+                {% elif assignment.state_id == "assigned" or assignment.state_id == "accepted" %}
                   Not completed yet
                 {% else %}
                   Not available
@@ -154,7 +154,7 @@
 
                 {% if assignment.can_complete_review %}
                   {# TODO: The url below needs to be to a new complete_assignment passed the assignment.pk #}
-                  <a class="btn btn-primary btn-xs" href="{% url "ietf.doc.views_review.complete_review" name=doc.name assignment_id=assignment.pk %}"><span class="fa fa-pencil-square-o"></span> {% if assignment.state_id == "requested" or assignment.state_id == "accepted" %}Complete review{% else %}Correct review{% endif %}</a>
+                  <a class="btn btn-primary btn-xs" href="{% url "ietf.doc.views_review.complete_review" name=doc.name assignment_id=assignment.pk %}"><span class="fa fa-pencil-square-o"></span> {% if assignment.state_id == "assigned" or assignment.state_id == "accepted" %}Complete review{% else %}Correct review{% endif %}</a>
                 {% endif %}
               </td>
             </tr>

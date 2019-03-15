@@ -814,7 +814,7 @@ class ReviewTests(TestCase):
         first_review = assignment.review
 
         # complete
-        assignment = assignment.review_request.reviewassignment_set.create(state_id="requested", reviewer=assignment.reviewer)
+        assignment = assignment.review_request.reviewassignment_set.create(state_id="assigned", reviewer=assignment.reviewer)
 
         url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": assignment.review_request.doc.name, "assignment_id": assignment.pk })
 

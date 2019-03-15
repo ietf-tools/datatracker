@@ -52,22 +52,12 @@ def can_access_review_stats_for_team(user, team):
 
 def review_assignments_to_list_for_docs(docs):
     assignment_qs = ReviewAssignment.objects.filter(
-        state__in=["requested", "accepted", "part-completed", "completed"],
+        state__in=["assigned", "accepted", "part-completed", "completed"],
     ).prefetch_related("result")
 
     doc_names = [d.name for d in docs]
 
     return extract_revision_ordered_review_assignments_for_documents_and_replaced(assignment_qs, doc_names)
-
-# TODO : remove this when there are no callers
-def review_requests_to_list_for_docs(docs):
-    request_qs = ReviewRequest.objects.filter(
-        state__in=["requested", "accepted", "part-completed", "completed"],
-    ).prefetch_related("result")
-
-    doc_names = [d.name for d in docs]
-
-    return extract_revision_ordered_review_requests_for_documents_and_replaced(request_qs, doc_names)
 
 def augment_review_requests_with_events(review_reqs):
     req_dict = { r.pk: r for r in review_reqs }
@@ -930,8 +920,8 @@ def make_assignment_choices(email_queryset, review_req):
         stats = []
         assignment_data = assignment_data_for_reviewers.get(e.person_id, [])
 
-        currently_open = sum(1 for d in assignment_data if d.state in ["requested", "accepted"])
-        pages = sum(rd.doc_pages for rd in assignment_data if rd.state in ["requested", "accepted"])
+        currently_open = sum(1 for d in assignment_data if d.state in ["assigned", "accepted"])
+        pages = sum(rd.doc_pages for rd in assignment_data if rd.state in ["assigned", "accepted"])
         if currently_open > 0:
             stats.append("currently {count} open, {pages} pages".format(count=currently_open, pages=pages))
         could_have_completed = [d for d in assignment_data if d.state in ["part-completed", "completed", "no-response"]]

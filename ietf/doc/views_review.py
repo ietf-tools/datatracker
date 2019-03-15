@@ -274,7 +274,7 @@ def close_request(request, name, request_id):
 
 
 class AssignReviewerForm(forms.Form):
-    reviewer = PersonEmailChoiceField(empty_label="(None)", required=False)
+    reviewer = PersonEmailChoiceField(label="Assign Additional Reviewer", empty_label="(None)", required=False)
     add_skip = forms.BooleanField(label='Skip next time', required=False)
 
     def __init__(self, review_req, *args, **kwargs):
@@ -304,6 +304,7 @@ def assign_reviewer(request, name, request_id):
     return render(request, 'doc/review/assign_reviewer.html', {
         'doc': doc,
         'review_req': review_req,
+        'assignments': review_req.reviewassignment_set.all(),
         'form': form,
     })
 
@@ -390,7 +391,7 @@ class CompleteReviewForm(forms.Form):
 
         known_revisions = NewRevisionDocEvent.objects.filter(doc=doc).order_by("time", "id").values_list("rev", "time", flat=False)
 
-        revising_review = assignment.state_id not in ["requested", "accepted"]
+        revising_review = assignment.state_id not in ["assigned", "accepted"]
 
         if not revising_review:
             self.fields["state"].choices = [
@@ -481,7 +482,7 @@ def complete_review(request, name, assignment_id):
     doc = get_object_or_404(Document, name=name)
     assignment = get_object_or_404(ReviewAssignment, pk=assignment_id)
 
-    revising_review = assignment.state_id not in ["requested", "accepted"]
+    revising_review = assignment.state_id not in ["assigned", "accepted"]
 
     is_reviewer = user_is_person(request.user, assignment.reviewer.person)
     can_manage_request = can_manage_review_requests_for_team(request.user, assignment.review_request.team)
@@ -588,7 +589,7 @@ def complete_review(request, name, assignment_id):
             close_event.save()
 
             if assignment.state_id == "part-completed" and not revising_review: 
-                existing_assignments = ReviewAssignment.objects.filter(review_request__doc=assignment.review_request.doc, review_request__team=assignment.review_request.team, state__in=("requested", "accepted", "completed"))
+                existing_assignments = ReviewAssignment.objects.filter(review_request__doc=assignment.review_request.doc, review_request__team=assignment.review_request.team, state__in=("assigned", "accepted", "completed"))
 
                 subject = "Review of {}-{} completed partially".format(assignment.review_request.doc.name, assignment.reviewed_rev)
 
