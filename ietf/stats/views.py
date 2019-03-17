@@ -15,6 +15,7 @@ from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse as urlreverse
 from django.utils.safestring import mark_safe
+from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
 
@@ -134,7 +135,9 @@ def document_stats(request, stats_type=None):
 
         return urlreverse(document_stats, kwargs={ k: v for k, v in kwargs.iteritems() if v is not None }) + generate_query_string(request.GET, get_overrides)
 
-    cache_key = ("stats:document_stats:%s:%s" % (stats_type, request.META.get('QUERY_STRING','')))
+    # the length limitation is to keep the key shorter than memcached's limit
+    # of 250 after django has added the key_prefix and key_version parameters
+    cache_key = ("stats:document_stats:%s:%s" % (stats_type, slugify(request.META.get('QUERY_STRING',''))))[:228]
     data = cache.get(cache_key)
     if not data:
         names_limit = settings.STATS_NAMES_LIMIT
@@ -766,7 +769,7 @@ def meeting_stats(request, num=None, stats_type=None):
 
         return urlreverse(meeting_stats, kwargs={ k: v for k, v in kwargs.iteritems() if v is not None }) + generate_query_string(request.GET, get_overrides)
 
-    cache_key = "stats:meeting_stats:%s:%s:%s" % (num, stats_type, request.META.get('QUERY_STRING',''))
+    cache_key = ("stats:meeting_stats:%s:%s:%s" % (num, stats_type, slugify(request.META.get('QUERY_STRING',''))))[:228]
     data = cache.get(cache_key)
     if not data:
         names_limit = settings.STATS_NAMES_LIMIT
