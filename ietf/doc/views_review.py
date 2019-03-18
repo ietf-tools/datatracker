@@ -364,6 +364,81 @@ def reject_reviewer_assignment(request, name, assignment_id):
         'form': form,
     })
 
+@login_required
+def withdraw_reviewer_assignment(request, name, assignment_id):
+    get_object_or_404(Document, name=name)
+    review_assignment = get_object_or_404(ReviewAssignment, pk=assignment_id, state__in=["assigned", "accepted"])
+
+    can_manage_request = can_manage_review_requests_for_team(request.user, review_assignment.review_request.team)
+    if not can_manage_request:
+        return HttpResponseForbidden("You do not have permission to perform this action")
+
+    if request.method == "POST" and request.POST.get("action") == "withdraw":
+        review_assignment.state_id = 'withdrawn'
+        review_assignment.save()
+
+        ReviewAssignmentDocEvent.objects.create(
+            type="closed_review_request",
+            doc=review_assignment.review_request.doc,
+            rev=review_assignment.review_request.doc.rev,
+            by=request.user.person,
+            desc="Assignment of request for {} review by {} to {} was withdrawn".format(
+                review_assignment.review_request.type.name,
+                review_assignment.review_request.team.acronym.upper(),
+                review_assignment.reviewer.person,
+            ),
+            review_assignment=review_assignment,
+            state=review_assignment.state,
+        )            
+
+        msg = "Review assignment withdrawn by %s"%request.user.person
+
+        email_review_assignment_change(request, review_assignment, "Reviewer assignment withdrawn", msg, by=request.user.person, notify_secretary=True, notify_reviewer=True, notify_requested_by=False)
+
+        return redirect(review_request, name=review_assignment.review_request.doc.name, request_id=review_assignment.review_request.pk)
+
+    return render(request, 'doc/review/withdraw_reviewer_assignment.html', {
+        'assignment': review_assignment,
+    })    
+
+@login_required
+def mark_reviewer_assignment_no_response(request, name, assignment_id):
+    get_object_or_404(Document, name=name)
+    review_assignment = get_object_or_404(ReviewAssignment, pk=assignment_id, state__in=["assigned", "accepted"])
+
+    can_manage_request = can_manage_review_requests_for_team(request.user, review_assignment.review_request.team)
+    if not can_manage_request:
+        return HttpResponseForbidden("You do not have permission to perform this action")
+
+    if request.method == "POST" and request.POST.get("action") == "noresponse":
+        review_assignment.state_id = 'no-response'
+        review_assignment.save()
+
+        ReviewAssignmentDocEvent.objects.create(
+            type="closed_review_request",
+            doc=review_assignment.review_request.doc,
+            rev=review_assignment.review_request.doc.rev,
+            by=request.user.person,
+            desc="Assignment of request for {} review by {} to {} was marked no-response".format(
+                review_assignment.review_request.type.name,
+                review_assignment.review_request.team.acronym.upper(),
+                review_assignment.reviewer.person,
+            ),
+            review_assignment=review_assignment,
+            state=review_assignment.state,
+        )            
+
+        msg = "Review assignment marked 'No Response' by %s"%request.user.person
+
+        email_review_assignment_change(request, review_assignment, "Reviewer assignment marked no-response", msg, by=request.user.person, notify_secretary=True, notify_reviewer=True, notify_requested_by=False)
+
+        return redirect(review_request, name=review_assignment.review_request.doc.name, request_id=review_assignment.review_request.pk)
+
+    return render(request, 'doc/review/mark_reviewer_assignment_no_response.html', {
+        'assignment': review_assignment,
+    })    
+
+
 class CompleteReviewForm(forms.Form):
     state = forms.ModelChoiceField(queryset=ReviewAssignmentStateName.objects.filter(slug__in=("completed", "part-completed")).order_by("-order"), widget=forms.RadioSelect, initial="completed")
     reviewed_rev = forms.CharField(label="Reviewed revision", max_length=4)

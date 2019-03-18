@@ -942,3 +942,34 @@ class ReviewTests(TestCase):
         review_req = reload_db_objects(review_req)
         self.assertEqual(review_req.deadline,new_deadline)
         self.assertTrue('Deadline changed' in outbox[-1]['Subject'])
+
+    def test_mark_no_response(self):
+        assignment = ReviewAssignmentFactory()
+        secr = RoleFactory(group=assignment.review_request.team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr').person
+        url = urlreverse('ietf.doc.views_review.mark_reviewer_assignment_no_response', kwargs={"name": assignment.review_request.doc.name, "assignment_id": assignment.pk})
+
+        login_testing_unauthorized(self, secr.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        r=self.client.post(url, data={"action":"noresponse"})
+        self.assertEqual(r.status_code, 302)
+
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, 'no-response')
+
+    def test_withdraw_assignment(self):
+        assignment = ReviewAssignmentFactory()
+        secr = RoleFactory(group=assignment.review_request.team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr').person
+        url = urlreverse('ietf.doc.views_review.withdraw_reviewer_assignment', kwargs={"name": assignment.review_request.doc.name, "assignment_id": assignment.pk})
+
+        login_testing_unauthorized(self, secr.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        r=self.client.post(url, data={"action":"withdraw"})
+        self.assertEqual(r.status_code, 302)
+
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, 'withdrawn')
+
