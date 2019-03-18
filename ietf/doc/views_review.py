@@ -360,6 +360,7 @@ def reject_reviewer_assignment(request, name, assignment_id):
     return render(request, 'doc/review/reject_reviewer_assignment.html', {
         'doc': doc,
         'review_req': review_assignment.review_request,
+        'assignments': review_assignment.review_request.reviewassignment_set.all(),
         'form': form,
     })
 

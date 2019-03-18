@@ -450,10 +450,11 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
 
     # Note that assigning a review no longer unassigns other reviews
 
-    review_req.reviewassignment_set.create(state_id='assigned', reviewer = reviewer, assigned_on = datetime.datetime.now())
     if review_req.state_id != 'assigned':
         review_req.state_id = 'assigned'
         review_req.save()
+        
+    review_req.reviewassignment_set.create(state_id='assigned', reviewer = reviewer, assigned_on = datetime.datetime.now())
 
     if reviewer:
         possibly_advance_next_reviewer_for_team(review_req.team, reviewer.person_id, add_skip)
@@ -543,8 +544,9 @@ def close_review_request(request, review_req, close_state):
     suggested_req = review_req.pk is None
 
     review_req.state = close_state
-    if close_state.slug == "no-review-version":
-        review_req.reviewed_rev = review_req.requested_rev or review_req.doc.rev # save rev for later reference
+# This field no longer exists, and it's not clear what the later reference was...
+#    if close_state.slug == "no-review-version":
+#        review_req.reviewed_rev = review_req.requested_rev or review_req.doc.rev # save rev for later reference
     review_req.save()
 
     if not suggested_req:
@@ -681,8 +683,8 @@ def suggested_review_requests_for_team(team):
                    and existing.reviewassignment_set.filter(state_id__in=("assigned", "accepted")).exists()
                    and (not existing.requested_rev or existing.requested_rev == request.doc.rev))
         request_closed = existing.state_id not in ('requested','assigned')
-        # at least one assignment was completed for the requested version:
-        some_assignment_completed = existing.reviewassignment_set.filter(reviewed_rev=existing.requested_rev,state_id='completed').exists()
+        # at least one assignment was completed for the requested version or the current doc version if no specific version was requested:
+        some_assignment_completed = existing.reviewassignment_set.filter(reviewed_rev=existing.requested_rev or existing.doc.rev, state_id='completed').exists()
 
         return any([no_review_document, no_review_rev, pending, request_closed, some_assignment_completed])
 

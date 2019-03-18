@@ -78,12 +78,10 @@
 
       <tr>
         <th></th>
-        <th>Reviews from other teams</th>
+        <th>Completed reviews</th>
         <td>
-          {% for req in review_req.other_completed_requests %} {# TODO: align this with new models #}
-            {% if req.reviewer == review_req.reviewer %}<strong>{% endif %}
-            <a href="{% url "ietf.doc.views_review.review_request" name=req.doc request_id=req.id %}">{{req.team.acronym|capfirst}} {{req.type.name}} review of -{{req.reviewed_rev}} by {{req.reviewer.person.plain_name}}</a> {% if req.reviewed_rev != req.doc.rev %} (<a href="{{ rfcdiff_base_url }}?url1={{ req.doc.name }}-{{ req.reviewed_rev }}&amp;url2={{ req.doc.name }}-{{ req.doc.rev }}">diff</a>){% endif %}<br>
-            {% if req.reviewer == review_req.reviewer %}</strong>{% endif %}
+          {% for a in review_req.all_completed_assignments_for_doc %}
+            <a href="{% url "ietf.doc.views_doc.document_main" name=a.review.name %}">{{a.review_request.team.acronym|capfirst}} {{a.review_request.type.name}} review of -{{a.reviewed_rev}} by {{a.reviewer.person.plain_name}}</a> {% if a.reviewed_rev != a.review_request.doc.rev %} (<a href="{{ rfcdiff_base_url }}?url1={{ a.review_request.doc.name }}-{{ a.reviewed_rev }}&amp;url2={{ a.review_request.doc.name }}-{{ a.review_request.doc.rev }}">diff</a>){% endif %}<br>
           {% endfor %}
         </td>
       </tr>
@@ -134,7 +132,7 @@
           <tbody class="panel-meta">
             <tr>
               <th>State</th>
-              <td>{{ review_req.state.name }}
+              <td>{{ assignment.state.name }}
                 {% if snapshot %}
                    <span class="label label-warning">Snapshot</span>
                 {% endif %}

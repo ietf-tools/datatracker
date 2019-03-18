@@ -10,7 +10,7 @@
 
   {% include "doc/review/request_info.html" %}
 
-  <p>{{ review_req.reviewer.person }} is currently assigned to do the review. Do you want to reject this assignment?</p>
+  <p>Do you want to reject this assignment?</p>
 
   <form method="post">
     {% csrf_token %}

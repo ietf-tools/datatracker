@@ -100,6 +100,7 @@ class ReviewTests(TestCase):
         review_req.state = ReviewRequestStateName.objects.get(slug="assigned")
         review_req.save()
         assignment.state = ReviewAssignmentStateName.objects.get(slug="completed")
+        assignment.reviewed_rev = review_req.doc.rev
         assignment.save()
 
         self.assertEqual(list(suggested_review_requests_for_team(team)), [])

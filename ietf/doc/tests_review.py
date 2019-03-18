@@ -17,7 +17,7 @@ from pyquery import PyQuery
 import debug                            # pyflakes:ignore
 
 import ietf.review.mailarch
-from ietf.doc.factories import NewRevisionDocEventFactory, WgDraftFactory, WgRfcFactory
+from ietf.doc.factories import NewRevisionDocEventFactory, WgDraftFactory, WgRfcFactory, ReviewFactory
 from ietf.doc.models import DocumentAuthor, RelatedDocument, DocEvent, ReviewAssignmentDocEvent
 from ietf.group.factories import RoleFactory, ReviewTeamFactory
 from ietf.group.models import Group
@@ -335,6 +335,7 @@ class ReviewTests(TestCase):
             result_id='serious-issues',
             reviewer=reviewer_email,
             reviewed_rev="01",
+            review = ReviewFactory(),
             assigned_on=req.time,
             completed_on=req.time + datetime.timedelta(days=10),
         )
