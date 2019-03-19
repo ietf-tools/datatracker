@@ -674,8 +674,7 @@ def complete_review(request, name, assignment_id):
                     "by": request.user.person,
                 })
 
-                # TODO: replumb this function to work with assignments
-                email_review_request_change(request, assignment.review_request, subject, msg, request.user.person, notify_secretary=True, notify_reviewer=False, notify_requested_by=False)
+                email_review_assignment_change(request, assignment, subject, msg, request.user.person, notify_secretary=True, notify_reviewer=False, notify_requested_by=False)
 
             role = request.user.person.role_set.filter(group=assignment.review_request.team,name='reviewer').first()
             if role and role.email.active:

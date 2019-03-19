@@ -350,7 +350,6 @@ def email_review_assignment_change(request, review_assignment, subject, msg, by,
 
     url = urlreverse("ietf.doc.views_review.review_request_forced_login", kwargs={ "name": review_assignment.review_request.doc.name, "request_id": review_assignment.review_request.pk })
     url = request.build_absolute_uri(url)
-    # TODO : Why is this a bare send_mail?
     send_mail(request, to, request.user.person.formatted_email(), subject, "review/review_request_changed.txt", {
         "review_req_url": url,
         "review_req": review_assignment.review_request,
@@ -454,12 +453,11 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
         review_req.state_id = 'assigned'
         review_req.save()
         
-    review_req.reviewassignment_set.create(state_id='assigned', reviewer = reviewer, assigned_on = datetime.datetime.now())
+    assignment = review_req.reviewassignment_set.create(state_id='assigned', reviewer = reviewer, assigned_on = datetime.datetime.now())
 
     if reviewer:
         possibly_advance_next_reviewer_for_team(review_req.team, reviewer.person_id, add_skip)
 
-    # TODO - should these be ReviewAssignmentDocEvents?
     ReviewRequestDocEvent.objects.create(
         type="assigned_review_request",
         doc=review_req.doc,
@@ -471,7 +469,21 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
             reviewer.person if reviewer else "(None)",
         ),
         review_request=review_req,
-        state=None,
+        state_id='assigned',
+    )
+
+    ReviewAssignmentDocEvent.objects.create(
+        type="assigned_review_request",
+        doc=review_req.doc,
+        rev=review_req.doc.rev,
+        by=request.user.person,
+        desc="Request for {} review by {} is assigned to {}".format(
+            review_req.type.name,
+            review_req.team.acronym.upper(),
+            reviewer.person if reviewer else "(None)",
+        ),
+        review_assignment=assignment,
+        state_id='assigned',
     )
 
     msg = "%s has assigned you as a reviewer for this document." % request.user.person.ascii
@@ -739,7 +751,6 @@ def extract_revision_ordered_review_assignments_for_documents_and_replaced(revie
 
     return res
 
-# TODO - remove when there are no remaining callers
 def extract_revision_ordered_review_requests_for_documents_and_replaced(review_request_queryset, names):
     """Extracts all review requests for document names (including replaced ancestors), return them neatly sorted."""
 
@@ -748,7 +759,6 @@ def extract_revision_ordered_review_requests_for_documents_and_replaced(review_r
     replaces = extract_complete_replaces_ancestor_mapping_for_docs(names)
 
     requests_for_each_doc = defaultdict(list)
-    # TODO : See if this function is still meeting the need. I removed "-reviewed_rev" from the order_by below. The whole thing may need to be operating on ReviewAssignments?
     for r in review_request_queryset.filter(doc__in=set(e for l in replaces.itervalues() for e in l) | names).order_by("-time", "-id").iterator():
         requests_for_each_doc[r.doc_id].append(r)
 

@@ -209,7 +209,7 @@ class ConflictReviewFactory(BaseDocumentFactory):
         else:
             obj.set_state(State.objects.get(type_id='conflrev',slug='iesgeval'))
 
-# TODO: This is too skeletal - improve it with, at least, a group generator that backs the object with a review team.
+# This is very skeletal. It is enough for the tests that use it now, but when it's needed, it will need to be improved with, at least, a group generator that backs the object with a review team.
 class ReviewFactory(BaseDocumentFactory):
     type_id = 'review'
     name = factory.LazyAttribute(lambda o: 'review-doesnotexist-00-%s-%s'%(o.group.acronym,datetime.date.today().isoformat()))

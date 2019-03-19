@@ -119,13 +119,7 @@ class ReviewRequest(models.Model):
     requested_rev = models.CharField(verbose_name="requested revision", max_length=16, blank=True, help_text="Fill in if a specific revision is to be reviewed, e.g. 02")
     comment       = models.TextField(verbose_name="Requester's comments and instructions", max_length=2048, blank=True, help_text="Provide any additional information to show to the review team secretary and reviewer", default='')
 
-    # Moved to class Review:
-    # Fields filled in as reviewer is assigned and as the review is
-    # uploaded. Once these are filled in and we progress beyond being
-    # requested/assigned, any changes to the assignment happens by
-    # closing down the current request and making a new one, copying
-    # the request-part fields above.
-    # TODO: Change that - changing an assingment should only be creating a new Assignment and marking the old one as withdrawn
+    # Moved to class ReviewAssignment:
     # These exist only to facilitate data migrations. They will be removed in the next release.
     unused_reviewer      = ForeignKey(Email, blank=True, null=True)
 
