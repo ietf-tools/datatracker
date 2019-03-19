@@ -1,3 +1,20 @@
+ietfdb (6.94.1) ietf; urgency=medium
+
+  This is a minor bugfix release, to clear the slate for the IETF 104 sprint.
+
+  * Put a length limit to generated cache keys in stats/views.py, to avoid 
+    tickling memcached's limit of 250.
+
+  * Changed sending of PubReq messages to explicitly use on-behalf-of, 
+    without Reply-To.  Reply-To is picked up as requestor by RT.  Fixes issue 
+    #2691 anew.
+
+  * Changed etherpad server address from etherpad.tools.ietf.org to 
+    etherpad.ietf.org.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 Mar 2019 18:01:07 +0000
+
+
 ietfdb (6.94.0) ietf; urgency=medium
 
   **Added review and AD emails 'Reply-To:' fields**
