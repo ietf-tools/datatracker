@@ -1143,7 +1143,8 @@ def review_stats(request, stats_type=None, acronym=None):
         def time_key_fn(t):
             d = t[req_time_index].date()
             #d -= datetime.timedelta(days=d.weekday()) # weekly
-            d -= datetime.timedelta(days=d.day) # monthly
+            # NOTE: Earlier releases had an off-by-one error here - some stat counts may move a month.
+            d -= datetime.timedelta(days=d.day-1) # monthly 
             return d
 
         found_results = set()

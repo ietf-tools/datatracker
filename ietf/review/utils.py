@@ -180,10 +180,10 @@ def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, t
         filters &= Q(reviewer__person__in=reviewers)
 
     if time_from:
-        filters &= Q(assigned_on__gte=time_from)
+        filters &= Q(review_request__time__gte=time_from)
 
     if time_to:
-        filters &= Q(assigned_on__lte=time_to)
+        filters &= Q(review_request__time__lte=time_to)
 
     # This doesn't do the left-outer join on docevent that the previous code did. These variables could be renamed
     event_qs = ReviewAssignment.objects.filter(filters)
@@ -193,7 +193,7 @@ def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, t
         "reviewer__person", "assigned_on", "completed_on"
     )
 
-    event_qs = event_qs.order_by(*[o.replace("reviewer", "reviewer__person").replace("team","review_request__team") for o in ordering] + ["assigned_on", "pk", "completed_on"])
+    event_qs = event_qs.order_by(*[o.replace("reviewer", "reviewer__person").replace("team","review_request__team") for o in ordering] + ["review_request__time", "assigned_on", "pk", "completed_on"])
 
     def positive_days(time_from, time_to):
         if time_from is None or time_to is None:
