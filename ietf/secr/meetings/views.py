@@ -534,7 +534,7 @@ def non_session_edit(request, meeting_id, schedule_name, slot_id):
 
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
+        if button_text == 'Back':
             return redirect('ietf.secr.meetings.views.non_session', meeting_id=meeting_id, schedule_name=schedule_name)
 
         form = NonSessionForm(request.POST,meeting=meeting,session=session)

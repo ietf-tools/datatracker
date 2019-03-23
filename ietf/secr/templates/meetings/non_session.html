@@ -34,7 +34,11 @@
             <td>{{ assignment.timeslot.show_location }}</td>
             <td>{{ assignment.timeslot.type }}</td>
             <td><a href="{% url "ietf.secr.meetings.views.non_session_edit" meeting_id=meeting.number schedule_name=schedule.name slot_id=assignment.timeslot.id %}">Edit</a></td>
-            <td><a href="{% url "ietf.secr.meetings.views.non_session_cancel" meeting_id=meeting.number schedule_name=schedule.name slot_id=assignment.timeslot.id %}">Cancel</a></td>
+            <td>
+              {% if not assignment.session.type.slug == "break" %}
+                <a href="{% url "ietf.secr.meetings.views.non_session_cancel" meeting_id=meeting.number schedule_name=schedule.name slot_id=assignment.timeslot.id %}">Cancel</a>
+              {% endif %}
+            </td>
             <td><a href="{% url "ietf.secr.meetings.views.non_session_delete" meeting_id=meeting.number schedule_name=schedule.name slot_id=assignment.timeslot.id %}">Delete</a></td>
           </tr>
         {% endfor %}

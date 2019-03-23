@@ -10,7 +10,12 @@
              {{ form.as_table }}
            </table>
 
-             {% include "includes/buttons_save_cancel.html" %}
+            <div class="button-group">
+              <ul>
+                <li><button type="submit" name="submit" value="Save">Save</button></li>
+                <li><button type="submit" name="submit" value="Back">Back</button></li>
+              </ul>
+            </div> <!-- button-group -->
 
          </form>
 </div> <!-- module -->
