@@ -21,7 +21,10 @@
     {% if conflictdoc %}References: <a href="{{ conflictdoc.get_absolute_url }}">{{ conflictdoc }}</a><br />{% endif %}
     <a href="#writeup">Ballot Writeup</a><br />
     Token: {{ document.ad.name }}<br />
-    {% if document.type_id == "draft" %}Consensus: {{ document|consensus }}<br />{% endif %}
+    {% if document.type_id == "draft" %}
+      Consensus: {{ document|consensus }}<br />
+      Has downref: {% if downrefs %}Yes{% else %}No{% endif %}<br />
+    {% endif %}
     Number of Open Positions: {{ open_positions }}<br />
     <br />
     <div>
@@ -73,7 +76,21 @@
     <pre>
 {{ writeup }}
     </pre>
-    
+
+    {% if downrefs %}
+    <a name="downrefs"><h2>Downward References</h2></a>
+    {% for ref in downrefs %}
+      <p>Add {{ref.target.document.canonical_name}}
+        ({{ref.target.document.std_level}} - {{ref.target.document.stream.desc}})
+        to downref registry.<br />
+       {% if not ref.target.document.std_level %}
+        +++ Warning: The standards level has not been set yet!!!<br />
+       {% endif %}
+       {% if not ref.target.document.stream %}
+        +++ Warning: document stream has not been set yet!!!<br />
+       {% endif %}
+    {% endfor %}</p>
+    {% endif %}
 
 {% else %}
     <h3>No Documents on the Agenda</h3>

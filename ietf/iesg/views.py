@@ -257,9 +257,11 @@ def agenda_moderator_package(request, date=None):
     for num, s in sections:
         if "2" <= num < "5" and "docs" in s and s["docs"]:
             for i, d in enumerate(s["docs"], start=1):
+                downrefs = [rel for rel in d.relateddocument_set.all() if rel.is_downref() and not rel.is_approved_downref()]
                 flattened_sections.append((num, {
                             "title": s["title"] + " (%s of %s)" % (i, len(s["docs"])),
                             "doc": d,
+                            "downrefs": downrefs,
                             "parents": s["parents"],
                             }))
         else:

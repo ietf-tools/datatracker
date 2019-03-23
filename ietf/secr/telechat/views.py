@@ -202,6 +202,8 @@ def doc_detail(request, date, name):
     tags = doc.tags.filter(slug__in=TELECHAT_TAGS)
     tag = tags[0].pk if tags else None
 
+    downrefs = [rel for rel in doc.relateddocument_set.all() if rel.is_downref() and not rel.is_approved_downref()]
+
     writeup = get_doc_writeup(doc)
 
     initial_state = {'state':doc.get_state(state_type).pk,
@@ -304,6 +306,7 @@ def doc_detail(request, date, name):
         'ballot_type': ballot_type,
         'date': date,
         'document': doc,
+        'downrefs': downrefs,
         'conflictdoc': conflictdoc,
         'agenda': agenda,
         'formset': formset,
