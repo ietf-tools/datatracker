@@ -97,39 +97,24 @@ def build_nonsession(meeting,schedule):
     
     delta = meeting.date - last_meeting.date
     system = Person.objects.get(name='(System)')
-    secretariat = Group.objects.get(acronym='secretariat')
     
     for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg','other','plenary','lead')):
         new_time = slot.time + delta
-        session = None
-        # create Session object for Tutorials to hold materials
-        if slot.type.slug in ('other','plenary'):
-            session = Session(meeting=meeting,
-                              name=slot.name,
-                              short=get_session(slot).short,
-                              group=get_session(slot).group,
-                              requested_by=system,
-                              status_id='sched',
-                              type=slot.type,
-                             )
-        else:
-            session, __ = Session.objects.get_or_create(meeting=meeting,
-                              name=slot.name,
-                              group=secretariat,
-                              requested_by=system,
-                              status_id='sched',
-                              type=slot.type,
-                             )
-        session.save()
+        session = Session.objects.create(meeting=meeting,
+                                         name=slot.name,
+                                         short=get_session(slot).short,
+                                         group=get_session(slot).group,
+                                         requested_by=system,
+                                         status_id='sched',
+                                         type=slot.type)
 
         ts = TimeSlot.objects.create(type=slot.type,
-                                meeting=meeting,
-                                name=slot.name,
-                                time=new_time,
-                                duration=slot.duration,
-                                show_location=slot.show_location)
-        if session:
-            SchedTimeSessAssignment.objects.create(schedule=schedule,session=session,timeslot=ts)
+                                     meeting=meeting,
+                                     name=slot.name,
+                                     time=new_time,
+                                     duration=slot.duration,
+                                     show_location=slot.show_location)
+        SchedTimeSessAssignment.objects.create(schedule=schedule,session=session,timeslot=ts)
 
 def check_nonsession(meeting,schedule):
     '''
