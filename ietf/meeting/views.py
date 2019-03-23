@@ -723,7 +723,8 @@ def session_draft_pdf(request, num, acronym):
     pdfmarks.close()
     pdfh, pdfn = mkstemp()
     os.close(pdfh)
-    code, out, err = pipe("gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=" + pdfn + " " + pdf_list + " " + pmn)
+    gs = settings.GHOSTSCRIPT_COMMAND
+    code, out, err = pipe(gs + " -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=" + pdfn + " " + pdf_list + " " + pmn)
     assertion('code == 0')
 
     pdf = open(pdfn,"r")

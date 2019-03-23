@@ -805,6 +805,9 @@ DAYS_TO_EXPIRE_REGISTRATION_LINK = 3
 HTPASSWD_COMMAND = "/usr/bin/htpasswd"
 HTPASSWD_FILE = "/www/htpasswd"
 
+# Generation of pdf files
+GHOSTSCRIPT_COMMAND = "/usr/bin/gs"
+
 # Generation of bibxml files for xml2rfc
 BIBXML_BASE_PATH = '/a/www/ietf-ftp/xml2rfc'
 

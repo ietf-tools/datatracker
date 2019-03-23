@@ -7,6 +7,7 @@ import shutil
 import datetime
 import urlparse
 import random
+from unittest import skipIf
 
 import debug           # pyflakes:ignore
 
@@ -40,6 +41,16 @@ from ietf.meeting.factories import ( SessionFactory, SessionPresentationFactory,
 from ietf.doc.factories import DocumentFactory
 from ietf.submit.tests import submission_file
 
+
+if os.path.exists(settings.GHOSTSCRIPT_COMMAND):
+    skip_pdf_tests = False
+    skip_message = ""
+else:
+    import sys
+    skip_pdf_tests = True
+    skip_message = ("Skipping pdf test: The binary for ghostscript wasn't found in the\n       "
+                    "location indicated in settings.py.")
+    sys.stderr.write("     "+skip_message+'\n')
 
 class MeetingTests(TestCase):
     def setUp(self):
@@ -501,6 +512,7 @@ class MeetingTests(TestCase):
         self.assertEqual(response.get('Content-Type'), 'application/octet-stream')
         os.unlink(filename)
 
+    @skipIf(skip_pdf_tests, skip_message)
     def test_session_draft_pdf(self):
         session = SessionFactory(group__type_id='wg',meeting__type_id='ietf')
         doc = DocumentFactory(type_id='draft')
