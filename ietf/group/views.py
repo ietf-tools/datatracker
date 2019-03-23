@@ -4,24 +4,24 @@ from __future__ import unicode_literals, print_function
 
 # Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
-# 
+#
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-# 
+#
 #  * Redistributions in binary form must reproduce the above
 #    copyright notice, this list of conditions and the following
 #    disclaimer in the documentation and/or other materials provided
 #    with the distribution.
-# 
+#
 #  * Neither the name of the Nokia Corporation and/or its
 #    subsidiary(-ies) nor the names of its contributors may be used
 #    to endorse or promote products derived from this software
 #    without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -73,12 +73,12 @@ from ietf.group.forms import (GroupForm, StatusUpdateForm, ConcludeGroupForm, St
 from ietf.group.mails import email_admin_re_charter, email_personnel_change, email_comment
 from ietf.group.models import ( Group, Role, GroupEvent, GroupStateTransitions, GroupURL,
                               ChangeStateGroupEvent, GroupFeatures )
-from ietf.group.utils import (get_charter_text, can_manage_group_type, 
+from ietf.group.utils import (get_charter_text, can_manage_group_type,
                               milestone_reviewer_for_group_type, can_provide_status_update,
-                              can_manage_materials, 
+                              can_manage_materials,
                               construct_group_menu_context, get_group_materials,
-                              save_group_in_history, can_manage_group, 
-                              get_group_or_404, setup_default_community_list_for_group, )                              
+                              save_group_in_history, can_manage_group,
+                              get_group_or_404, setup_default_community_list_for_group, )
 #
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
@@ -337,7 +337,7 @@ def active_programs(request):
     return render(request, 'group/active_programs.html', {'programs' : programs })
 
 def active_areas(request):
-	areas = Group.objects.filter(type="area", state="active").order_by("name")  
+	areas = Group.objects.filter(type="area", state="active").order_by("name")
 	return render(request, 'group/active_areas.html', {'areas': areas })
 
 def active_wgs(request):
@@ -371,7 +371,7 @@ def active_rgs(request):
         group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
 
     return render(request, 'group/active_rgs.html', { 'irtf': irtf, 'groups': groups })
-    
+
 def active_ags(request):
 
     groups = Group.objects.filter(type="ag", state="active").order_by("acronym")
@@ -380,7 +380,7 @@ def active_ags(request):
         group.ads = sorted(roles(group, "ad"), key=extract_last_name)
 
     return render(request, 'group/active_ags.html', { 'groups': groups })
-    
+
 def bofs(request, group_type):
     groups = Group.objects.filter(type=group_type, state="bof")
     return render(request, 'group/bofs.html',dict(groups=groups))
@@ -415,7 +415,7 @@ def concluded_groups(request):
     sections['Teams'] = Group.objects.filter(type='team', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
 
     for name, groups in sections.items():
-        
+
         # add start/conclusion date
         d = dict((g.pk, g) for g in groups)
 
@@ -519,9 +519,9 @@ def group_about(request, acronym, group_type=None):
     requested_close = group.state_id != "conclude" and e and e.type == "requested_close"
 
     can_manage = can_manage_group_type(request.user, group)
-    charter_submit_url = "" 
-    if group.features.has_chartering_process: 
-        charter_submit_url = urlreverse('ietf.doc.views_charter.submit', kwargs={ "name": charter_name_for_group(group) }) 
+    charter_submit_url = ""
+    if group.features.has_chartering_process:
+        charter_submit_url = urlreverse('ietf.doc.views_charter.submit', kwargs={ "name": charter_name_for_group(group) })
 
     can_provide_update = can_provide_status_update(request.user, group)
     status_update = group.latest_event(type="status_update")
@@ -606,7 +606,7 @@ def group_about_status_edit(request, acronym, group_type=None):
                     by=login,
                     type='status_update',
                     desc=update_text,
-                ) 
+                )
                 return redirect('ietf.group.views.group_about',acronym=group.acronym)
         else:
             form = None
@@ -617,7 +617,7 @@ def group_about_status_edit(request, acronym, group_type=None):
         form = StatusUpdateForm(initial={"content": old_update.desc if old_update else ""})
 
     return render(request, 'group/group_about_status_edit.html',
-                  { 
+                  {
                     'form': form,
                     'group':group,
                   }
@@ -650,7 +650,7 @@ def email(request, acronym, group_type=None):
                        'aliases':aliases,
                        'group':group,
                        'ietf_domain':settings.IETF_DOMAIN,
-                  })) 
+                  }))
 
 def history(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
@@ -727,7 +727,7 @@ def email_aliases(request, acronym=None, group_type=None):
 
     if not acronym:
         # require login for the overview page, but not for the group-specific
-        # pages 
+        # pages
         if not request.user.is_authenticated:
                 return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -789,7 +789,7 @@ def reorder_roles(roles, role_names):
         list += [ r for r in roles if r.name_id == name ]
     list += [ r for r in roles if not r in list ]
     return list
-    
+
 def group_photos(request, group_type=None, acronym=None):
     group = get_object_or_404(Group, acronym=acronym)
     roles = sorted(Role.objects.filter(group__acronym=acronym),key=lambda x: x.name.name+x.person.last_name())
@@ -808,7 +808,7 @@ def group_photos(request, group_type=None, acronym=None):
 ## XXX Remove after testing
 # def get_or_create_initial_charter(group, group_type):
 #     charter_name = charter_name_for_group(group)
-# 
+#
 #     try:
 #         charter = Document.objects.get(docalias__name=charter_name)
 #     except Document.DoesNotExist:
@@ -822,40 +822,40 @@ def group_photos(request, group_type=None, acronym=None):
 #         )
 #         charter.save()
 #         charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
-# 
+#
 #         # Create an alias as well
 #         DocAlias.objects.create(name=charter.name, document=charter)
-# 
+#
 #     return charter
-# 
+#
 # @login_required
 # def submit_initial_charter(request, group_type=None, acronym=None):
-# 
+#
 #     # This needs refactoring.
 #     # The signature assumed you could have groups with the same name, but with different types, which we do not allow.
-#     # Consequently, this can be called with an existing group acronym and a type 
+#     # Consequently, this can be called with an existing group acronym and a type
 #     # that doesn't match the existing group type. The code below essentially ignores the group_type argument.
 #     #
 #     # If possible, the use of get_or_create_initial_charter should be moved
 #     # directly into charter_submit, and this function should go away.
-# 
+#
 #     if acronym==None:
 #         raise Http404
-# 
+#
 #     group = get_object_or_404(Group, acronym=acronym)
 #     if not group.features.has_chartering_process:
 #         raise Http404
-# 
+#
 #     # This is where we start ignoring the passed in group_type
 #     group_type = group.type_id
-# 
+#
 #     if not can_manage_group(request.user, group):
 #         return HttpResponseForbidden("You don't have permission to access this view")
-# 
+#
 #     if not group.charter:
 #         group.charter = get_or_create_initial_charter(group, group_type)
 #         group.save()
-# 
+#
 #     return redirect('ietf.doc.views_charter.submit', name=group.charter.name, option="initcharter")
 
 @login_required
@@ -1068,7 +1068,7 @@ def conclude(request, acronym, group_type=None):
             kwargs = {'acronym':group.acronym}
             if group_type:
                 kwargs['group_type'] = group_type
-   
+
             return redirect(group.features.about_page, **kwargs)
     else:
         form = ConcludeGroupForm()
@@ -1384,10 +1384,11 @@ def reviewer_overview(request, acronym, group_type=None):
             person.completely_unavailable = any(p.availability == "unavailable"
                                            and (p.start_date is None or p.start_date <= today) and (p.end_date is None or today <= p.end_date)
                                            for p in person.unavailable_periods)
-            person.busy = person.id in days_needed 
-        
+            person.busy = person.id in days_needed
+
 
         MAX_CLOSED_REQS = 10
+        days_since = 9999
         req_data = req_data_for_reviewers.get(person.pk, [])
         open_reqs = sum(1 for d in req_data if d.state in ["requested", "accepted"])
         latest_reqs = []
@@ -1396,7 +1397,15 @@ def reviewer_overview(request, acronym, group_type=None):
                 latest_reqs.append((d.req_pk, d.doc, d.reviewed_rev, d.assigned_time, d.deadline,
                                     review_state_by_slug.get(d.state),
                                     int(math.ceil(d.assignment_to_closure_days)) if d.assignment_to_closure_days is not None else None))
+            if d.state in ["completed", "completed_in_time", "completed_late"]:
+                if d.assigned_time is not None:
+                    delta = datetime.datetime.now() - d.assigned_time
+                    if d.assignment_to_closure_days is not None:
+                        days = int(delta.days - d.assignment_to_closure_days)
+                        if days_since > days: days_since = days
+
         person.latest_reqs = latest_reqs
+        person.days_since_completed_review = days_since
 
     return render(request, 'group/reviewer_overview.html',
                   construct_group_menu_context(request, group, "reviewers", group_type, {
@@ -1503,7 +1512,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
                     if not person in assignments_by_person:
                         assignments_by_person[person] = []
                     assignments_by_person[person].append(r)
-            
+
             # Make sure the any assignments to the person at the head
             # of the rotation queue are processed first so that the queue
             # rotates before any more assignments are processed
@@ -1517,7 +1526,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
 
             for review_req in reqs_to_assign:
                 assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"],review_req.form.cleaned_data["add_skip"])
-            
+
             kwargs = { "acronym": group.acronym }
             if group_type:
                 kwargs["group_type"] = group_type
@@ -1525,7 +1534,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
             if form_action == "save-continue":
                 if assignment_status:
                     kwargs["assignment_status"] = assignment_status
-                
+
                 return redirect(manage_review_requests, **kwargs)
             else:
                 import ietf.group.views
@@ -1625,7 +1634,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
             "rotation_list": reviewer_rotation_list(group)[:10],
             "group" : group,
         })
-        
+
         (msg,_,_) = parse_preformatted(partial_msg)
 
         body = msg.get_payload()
@@ -1840,7 +1849,7 @@ def add_comment(request, acronym, group_type=None):
 
     if not is_authorized_in_group(request.user,group):
         return HttpResponseForbidden("You need to a chair, secretary, or delegate of this group to add a comment.")
-    
+
     if request.method == 'POST':
         form = AddCommentForm(request.POST)
         if form.is_valid():
