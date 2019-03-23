@@ -7,6 +7,7 @@ from ietf.meeting.models import (Meeting, Room, Session, TimeSlot, Constraint, S
 
 class UrlResourceAdmin(admin.ModelAdmin):
     list_display = ['name', 'room', 'url', ]
+    list_filter = ['room__meeting', ]
     raw_id_fields = ['room', ]
 admin.site.register(UrlResource, UrlResourceAdmin)
 
