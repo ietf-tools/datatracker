@@ -124,7 +124,8 @@ DATADIR=$parent/data
 
 if [ "$DOWNLOAD" ]; then
     echo "Fetching database dump ..."
-    wget -N -P $DATADIR http://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz || die "No new data, quitting."
+#    wget -N -P $DATADIR http://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz || die "No new data, quitting."
+    wget -N -P $DATADIR http://zinfandel.tools.ietf.org/tools/ietf_utf8.sql.gz || die "No new data, quitting."
 fi
 
 echo "Loading database ..."
