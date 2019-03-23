@@ -43,6 +43,7 @@ Parts Copyright (c) 2009 The IETF Trust, all rights reserved.
   <b>
     Intended status: {{ doc.intended_std_level }}<br>
     Consensus: <a href="{% url 'ietf.doc.views_draft.edit_consensus' name=doc.name %}">{{ doc|consensus }}</a><br>
+    Has downref: {% if downrefs %}Yes{% else %}No{% endif %}<br>
     Token: {{ doc.ad.plain_name }}<br>
     {% if doc.type_id == "draft" %}
       Last call ends: {{ doc.most_recent_ietflc.expires.date|default:"(none)" }}
@@ -159,3 +160,21 @@ Parts Copyright (c) 2009 The IETF Trust, all rights reserved.
     the Do Not Publish message to the RFC Editor that includes the note
     drafted by[Name the AD].</p>
 {% endif %}
+
+{% if num|startswith:"2.1" or num|startswith:"2.2" %}
+  {% if downrefs %}
+    <p>If APPROVED - The Secretariat will add to the downref registry:<br>
+    {% for ref in downrefs %}
+      + Add {{ref.target.document.canonical_name}}
+        ({{ref.target.document.std_level}} - {{ref.target.document.stream.desc}})
+        to downref registry.<br>
+       {% if not ref.target.document.std_level %}
+         +++ Warning: The standards level has not been set yet!!!<br>
+       {% endif %}
+       {% if not ref.target.document.stream %}
+         +++ Warning: document stream has not been set yet!!!<br>
+       {% endif %}
+    {% endfor %}</p>
+  {% endif %}
+{% endif %}
+

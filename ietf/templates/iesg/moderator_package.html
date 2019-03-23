@@ -97,11 +97,11 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 
       {% if num >= "2" and num < "5" %}
 	{% if "doc" in section %}
-	  {% with section.doc as doc %}
+	  {% with section.doc as doc %}{% with section.downrefs as downrefs %}
 	    {% if doc.type_id == "draft" or doc.type_id == "statchg" %}{% include "iesg/moderator_doc.html" %}{% endif %}
 	    {% if doc.type_id == "conflrev" %}{% include "iesg/moderator_conflict_doc.html" %}{% endif %}
 	    {% if doc.type_id == "charter" %}{% include "iesg/moderator_charter.html" %}{% endif %}
-	  {% endwith %}
+	  {% endwith %}{% endwith %}
 	{% else %}
 	  <p>NONE</p>
 	{% endif %}
