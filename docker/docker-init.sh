@@ -76,6 +76,10 @@ if ! id -u "$USER" &> /dev/null; then
     useradd -s /bin/bash --groups staff,sudo --uid $UID --gid $GID $USER
     echo "$USER:$USER" | chpasswd
 fi
+if ! grep -q ":$GID:$" /etc/group ; then
+    echo "Creating group entry for GID '$GID' ..."
+    groupadd -g $GID users
+fi
 
 VIRTDIR="/opt/home/$USER/$TAG"
 echo "Checking that there's a virtual environment for $TAG ..."
