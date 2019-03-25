@@ -146,7 +146,14 @@ class SubmissionBaseUploadForm(forms.Form):
                 try:
                     parser = xml2rfc.XmlRfcParser(str(tfn), quiet=True)
                     self.xmltree = parser.parse(normalize=True)
-                    ok, errors = self.xmltree.validate()
+                    root = self.xmltree.getroot()
+                    ver = root.get('version', '2')
+                    debug.show('ver')
+                    if ver == '2':
+                        ok, errors = self.xmltree.validate()
+                    else:
+                        # XXX TODO: Add v3 validation
+                        ok, errors = True, ''
                 except Exception as exc:
                     raise forms.ValidationError("An exception occurred when trying to process the XML file: %s" % exc)
                 if not ok:
