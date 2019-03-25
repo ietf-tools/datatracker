@@ -4,7 +4,7 @@ import datetime
 
 from django.core.files.base import ContentFile
 
-from ietf.meeting.models import Meeting, Session, Schedule, TimeSlot, SessionPresentation, FloorPlan, Room
+from ietf.meeting.models import Meeting, Session, Schedule, TimeSlot, SessionPresentation, FloorPlan, Room, SlideSubmission
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
 
@@ -157,3 +157,16 @@ class FloorPlanFactory(factory.DjangoModelFactory):
                 ), 'floorplan.jpg'
             )
         )
+
+class SlideSubmissionFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = SlideSubmission
+
+    session = factory.SubFactory(SessionFactory)
+    title = factory.Faker('sentence')
+    filename = factory.Sequence(lambda n: 'test_slide_%d'%n)
+    submitter = factory.SubFactory(PersonFactory)
+
+    make_file = factory.PostGeneration(
+                    lambda obj, create, extracted, **kwargs: open(obj.staged_filepath(),'a').close()
+                )

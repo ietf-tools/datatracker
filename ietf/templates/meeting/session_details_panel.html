@@ -93,7 +93,9 @@
          </tbody>
         </table>
         {% if can_manage_materials %}
-          <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number %}">Upload New Slides</a>
+          <a id="uploadslides" class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number %}">Upload New Slides</a>
+        {% elif request.user.is_authenticated %}
+          <a id="proposeslides" class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.propose_session_slides' session_id=session.pk num=session.meeting.number %}">Propose Slides</a>
         {% endif %}
       </div>
       {% if can_manage_materials %}

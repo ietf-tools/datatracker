@@ -25,7 +25,7 @@ from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_r
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates, update_important_dates
-from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation
+from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.utils import finalize
 from ietf.name.models import SessionStatusName, ImportantDateName
@@ -34,9 +34,9 @@ from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.text import xslugify
 
 from ietf.person.factories import PersonFactory
-from ietf.group.factories import GroupFactory, GroupEventFactory
+from ietf.group.factories import GroupFactory, GroupEventFactory, RoleFactory
 from ietf.meeting.factories import ( SessionFactory, SessionPresentationFactory, ScheduleFactory,
-    MeetingFactory, FloorPlanFactory, TimeSlotFactory )
+    MeetingFactory, FloorPlanFactory, TimeSlotFactory, SlideSubmissionFactory )
 from ietf.doc.factories import DocumentFactory
 from ietf.submit.tests import submission_file
 
@@ -2006,6 +2006,116 @@ class MaterialsTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(0,session.sessionpresentation_set.count())
         self.assertEqual(2,doc.docevent_set.count())
+
+    def test_propose_session_slides(self):
+        for type_id in ['ietf','interim']:
+            session = SessionFactory(meeting__type_id=type_id)
+            chair = RoleFactory(group=session.group,name_id='chair').person
+            session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+            newperson = PersonFactory()
+            
+            session_overview_url = urlreverse('ietf.meeting.views.session_details',kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
+            propose_url = urlreverse('ietf.meeting.views.propose_session_slides', kwargs={'session_id':session.pk, 'num': session.meeting.number})    
+
+            r = self.client.get(session_overview_url)
+            self.assertEqual(r.status_code,200)
+            q = PyQuery(r.content)
+            self.assertFalse(q('#uploadslides'))
+            self.assertFalse(q('#proposeslides'))
+
+            self.client.login(username=newperson.user.username,password=newperson.user.username+"+password")
+            r = self.client.get(session_overview_url)
+            self.assertEqual(r.status_code,200)
+            q = PyQuery(r.content)
+            self.assertTrue(q('#proposeslides'))
+            self.client.logout()
+
+            login_testing_unauthorized(self,newperson.user.username,propose_url)
+            r = self.client.get(propose_url)
+            self.assertEqual(r.status_code,200)
+            test_file = StringIO('this is not really a slide')
+            test_file.name = 'not_really.txt'
+            empty_outbox()
+            r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
+            self.assertEqual(r.status_code, 302)
+            session = Session.objects.get(pk=session.pk)
+            self.assertEqual(session.slidesubmission_set.count(),1)
+            self.assertEqual(len(outbox),1)
+
+            r = self.client.get(session_overview_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('#proposedslidelist p')), 1)
+
+            SlideSubmissionFactory(session = session)
+
+            self.client.logout()
+            self.client.login(username=chair.user.username, password=chair.user.username+"+password")
+            r = self.client.get(session_overview_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('#proposedslidelist p')), 2)
+            self.client.logout()
+
+    def test_disapprove_proposed_slides(self):
+        submission = SlideSubmissionFactory()
+        submission.session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        chair = RoleFactory(group=submission.session.group,name_id='chair').person
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        r = self.client.post(url,dict(title='some title',disapprove="disapprove"))
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(SlideSubmission.objects.count(), 0)
+
+    def test_approve_proposed_slides(self):
+        submission = SlideSubmissionFactory()
+        session = submission.session
+        session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        chair = RoleFactory(group=submission.session.group,name_id='chair').person
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        r = self.client.post(url,dict(title='different title',approve='approve'))
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(SlideSubmission.objects.count(), 0)
+        self.assertEqual(session.sessionpresentation_set.count(),1)
+        self.assertEqual(session.sessionpresentation_set.first().document.title,'different title')
+
+    def test_approve_proposed_slides_multisession_apply_one(self):
+        submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
+        session1 = submission.session
+        session2 = SessionFactory(group=submission.session.group, meeting=submission.session.meeting)
+        submission.session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        chair = RoleFactory(group=submission.session.group,name_id='chair').person
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('#id_apply_to_all'))
+        r = self.client.post(url,dict(title='yet another title',approve='approve'))
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(session1.sessionpresentation_set.count(),1)
+        self.assertEqual(session2.sessionpresentation_set.count(),0)
+
+    def test_approve_proposed_slides_multisession_apply_all(self):
+        submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
+        session1 = submission.session
+        session2 = SessionFactory(group=submission.session.group, meeting=submission.session.meeting)
+        submission.session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        chair = RoleFactory(group=submission.session.group,name_id='chair').person
+        url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        r = self.client.post(url,dict(title='yet another title',apply_to_all=1,approve='approve'))
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(session1.sessionpresentation_set.count(),1)
+        self.assertEqual(session2.sessionpresentation_set.count(),1)
+
 
 class SessionTests(TestCase):
 
