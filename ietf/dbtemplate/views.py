@@ -9,7 +9,7 @@ from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 
 
-def template_list(request, acronym):
+def group_template_list(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
     chairs = group.role_set.filter(name__slug='chair')
     if not has_role(request.user, "Secretariat") and not (request.user.id and chairs.filter(person__user=request.user).count()):
@@ -22,7 +22,7 @@ def template_list(request, acronym):
         })
 
 
-def template_edit(request, acronym, template_id, base_template='dbtemplate/template_edit.html', formclass=DBTemplateForm, extra_context=None):
+def group_template_edit(request, acronym, template_id, base_template='dbtemplate/template_edit.html', formclass=DBTemplateForm, extra_context=None):
     group = get_object_or_404(Group, acronym=acronym)
     chairs = group.role_set.filter(name__slug='chair')
     extra_context = extra_context or {}
@@ -46,7 +46,7 @@ def template_edit(request, acronym, template_id, base_template='dbtemplate/templ
     context.update(extra_context)
     return render(request, base_template, context)
 
-def template_show(request, acronym, template_id, base_template='dbtemplate/template_edit.html', extra_context=None):
+def group_template_show(request, acronym, template_id, base_template='dbtemplate/template_edit.html', extra_context=None):
     group = get_object_or_404(Group, acronym=acronym)
     chairs = group.role_set.filter(name__slug='chair')
     extra_context = extra_context or {}

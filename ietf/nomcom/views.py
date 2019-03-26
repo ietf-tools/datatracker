@@ -15,7 +15,7 @@ from django.forms.models import modelformset_factory, inlineformset_factory
 
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.dbtemplate.views import template_edit, template_show
+from ietf.dbtemplate.views import group_template_edit, group_template_show
 from ietf.name.models import NomineePositionStateName, FeedbackTypeName
 from ietf.group.models import Group, GroupEvent 
 from ietf.message.models import Message
@@ -1027,7 +1027,7 @@ def edit_template(request, year, template_id):
     return_url = request.META.get('HTTP_REFERER', None)
 
     if nomcom.group.state_id=='conclude':
-        return template_show(request, nomcom.group.acronym, template_id,
+        return group_template_show(request, nomcom.group.acronym, template_id,
                              base_template='nomcom/show_template.html',
                              extra_context={'year': year,
                                             'return_url': return_url,
@@ -1035,7 +1035,7 @@ def edit_template(request, year, template_id):
                                             'is_chair_task' : True,
                                            })
     else:
-        return template_edit(request, nomcom.group.acronym, template_id,
+        return group_template_edit(request, nomcom.group.acronym, template_id,
                              base_template='nomcom/edit_template.html',
                              formclass=NomComTemplateForm,
                              extra_context={'year': year,
