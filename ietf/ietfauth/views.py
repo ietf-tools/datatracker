@@ -200,7 +200,7 @@ def profile(request):
     person = request.user.person
 
     roles = Role.objects.filter(person=person, group__state='active').order_by('name__name', 'group__name')
-    emails = Email.objects.filter(person=person).order_by('-active','-time')
+    emails = Email.objects.filter(person=person).exclude(address__startswith='unknown-email-').order_by('-active','-time')
     new_email_forms = []
 
     if request.method == 'POST':
