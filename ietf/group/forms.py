@@ -323,7 +323,6 @@ class EndUnavailablePeriodForm(forms.Form):
 class ReviewSecretarySettingsForm(forms.ModelForm):
     class Meta:
         model = ReviewSecretarySettings
-        fields = ['remind_days_before_deadline', 'max_items_to_show_in_reviewer_list',
-                  'days_to_show_in_reviewer_list']
+        fields = ['remind_days_before_deadline']
 
 

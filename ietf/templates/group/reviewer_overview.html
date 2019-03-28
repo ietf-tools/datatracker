@@ -9,10 +9,6 @@
 {% block group_content %}
   {% origin %}
 
-  {% block pagehead %}
-    <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
-  {% endblock %}
-
   {% if can_access_stats %}
     <h1 class="pull-right"><a href="{% url "ietf.stats.views.review_stats" stats_type="completion" acronym=group.acronym %}" class="icon-link">&nbsp;<span class="small fa fa-bar-chart">&nbsp;</span></a></h1>
   {% endif %}
@@ -29,13 +25,11 @@
   </div>
 
   {% if reviewers %}
-    <table class="table reviewer-overview tablesorter">
+    <table class="table reviewer-overview">
       <thead>
         <tr>
-          <th>Next</th>
           <th>Reviewer</th>
           <th>Assigned/Deadline/state/time between assignment and closure for latest assignments</th>
-          <th>Days Since Completed</th>
           <th>Settings</th>
         </tr>
       </thead>
@@ -45,13 +39,12 @@
               {% elif person.busy %}class="busy"
               {% elif person.settings.skip_next %}class="skip-next"
               {% endif %}>
-            <td>{{ forloop.counter }}</td>
             <td>{% if person.settings_url %}<a href="{{ person.settings_url }}" title="{{person.settings.expertise}}">{% endif %}{{ person }}{% if person.settings_url %}</a>{% endif %}</td>
             <td>
               <table class="simple-table">
                 {% for req_pk, doc_name, reviewed_rev, assigned_time, deadline, state, assignment_to_closure_days in person.latest_reqs %}
                   <tr>
-                    <td><span style="display:none">X</span>{{ assigned_time|date }}</td>
+                    <td>{{ assigned_time|date }}</td>
                     <td><a href="{% url "ietf.doc.views_review.review_request" name=doc_name request_id=req_pk %}">{{ deadline|date }}</a></td>
                     <td>
                       <span class="label label-{% if state.slug == "completed" or state.slug == "part-completed" %}success{% elif state.slug == "no-response" %}danger{% elif state.slug == "overtaken" %}warning{% elif state.slug == "requested" or state.slug == "accepted" %}primary{% else %}default{% endif %}">{{ state.name }}</span>
@@ -64,7 +57,6 @@
                 {% endfor %}
               </table>
             </td>
-            <td> {% if person.days_since_completed_review %} {{ person.days_since_completed_review }} {% else %} <span style="display:none">99999{% endif %} </td>
             <td>
               {% if person.settings.min_interval %}
                 {{ person.settings.get_min_interval_display }}<br>
@@ -91,8 +83,4 @@
     <p>No reviewers found.</p>
   {% endif %}
 
-{% endblock %}
-
-{% block js %}
-  <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

@@ -36,7 +36,6 @@ from __future__ import unicode_literals, print_function
 
 import os
 import re
-import sys
 import json
 import math
 import itertools
@@ -1389,7 +1388,6 @@ def reviewer_overview(request, acronym, group_type=None):
         
 
         MAX_CLOSED_REQS = 10
-        days_since = sys.maxsize
         req_data = req_data_for_reviewers.get(person.pk, [])
         open_reqs = sum(1 for d in req_data if d.state in ["requested", "accepted"])
         latest_reqs = []
@@ -1398,17 +1396,7 @@ def reviewer_overview(request, acronym, group_type=None):
                 latest_reqs.append((d.req_pk, d.doc, d.reviewed_rev, d.assigned_time, d.deadline,
                                     review_state_by_slug.get(d.state),
                                     int(math.ceil(d.assignment_to_closure_days)) if d.assignment_to_closure_days is not None else None))
-            if d.state in ["completed", "completed_in_time", "completed_late"]:
-                if d.assigned_time is not None:
-                    delta = datetime.datetime.now() - d.assigned_time
-                    if d.assignment_to_closure_days is not None:
-                        days = int(delta.days - d.assignment_to_closure_days)
-                        if days_since > days: days_since = days
-
-        if days_since == sys.maxsize:
-            days_since = None
         person.latest_reqs = latest_reqs
-        person.days_since_completed_review = days_since
 
     return render(request, 'group/reviewer_overview.html',
                   construct_group_menu_context(request, group, "reviewers", group_type, {

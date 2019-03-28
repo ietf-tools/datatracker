@@ -167,12 +167,6 @@ if [ "$REPLY" != "" ]; then
 fi
 
 echo ""
-
-note "Writing commit script"
-echo -e "#!/bin/bash\n\nsvn commit -m \"Merged in [$rev] from $who:\n    ${comment//\"/\'} ${fix//\"/\'}\"" > ../cicmd/commit-${rev}-merge.sh
-chmod +x ../cicmd/commit-${rev}-merge.sh
-
-
 read -p "Continue with the merge? [Y/n] "
 [ "$REPLY" = "Y" -o  "$REPLY" = "y" -o  "$REPLY" = "" ] || exit
 
@@ -184,6 +178,10 @@ else
     svn merge -c $rev ${repo}/$branch . || die "Merge of $branch @$rev failed.  The merge command was:
   svn merge -c $rev ${repo}/$branch ."
 fi
+
+note "Writing commit script"
+echo -e "#!/bin/bash\n\nsvn commit -m \"Merged in [$rev] from $who:\n    ${comment//\"/\'} ${fix//\"/\'}\"" > ../cicmd/commit-${rev}-merge.sh
+chmod +x ../cicmd/commit-${rev}-merge.sh
 
 M=$(svn st | cut -c 1-7 | grep -oh 'M' | head -n 1)
 C=$(svn st | cut -c 1-7 | grep -oh 'C' | head -n 1)

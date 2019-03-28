@@ -519,15 +519,11 @@ class ReviewTests(TestCase):
 
         # set settings
         r = self.client.post(url, {
-            "remind_days_before_deadline": "6",
-            "max_items_to_show_in_reviewer_list": 10,
-            "days_to_show_in_reviewer_list": 365
+            "remind_days_before_deadline": "6"
         })
         self.assertEqual(r.status_code, 302)
         settings = ReviewSecretarySettings.objects.get(person=secretary, team=review_req.team)
         self.assertEqual(settings.remind_days_before_deadline, 6)
-        self.assertEqual(settings.max_items_to_show_in_reviewer_list, 10)
-        self.assertEqual(settings.days_to_show_in_reviewer_list, 365)
 
     def test_review_reminders(self):
         review_req = ReviewRequestFactory()
