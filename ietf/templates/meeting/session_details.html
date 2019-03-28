@@ -33,7 +33,7 @@
       </div>
     </div>
     <div class="panel panel-warning">
-      <div class="panel-heading">Uncheduled Sessions</div>
+      <div class="panel-heading">Unscheduled Sessions</div>
       <div class="panel-body">
     {% endif %}
         {% include 'meeting/session_details_panel.html' with sessions=unscheduled_sessions %}
@@ -42,6 +42,22 @@
     </div>
     {% endif %}
   {% endwith %}
+
+  {% if pending_suggestions %}
+    <div class="panel panel-info">
+      <div class="panel-heading">{% if can_manage_materials %}Proposed slides awaiting your approval{% else %}Your proposed slides awaiting chair approval{% endif %}</div>
+      <div id="proposedslidelist" class="panel-body">
+        {% for s in pending_suggestions %}
+          {% if can_manage_materials %}
+            <p><a href="{% url "ietf.meeting.views.approve_proposed_slides" slidesubmission_id=s.pk num=s.session.meeting.number %}">{{s.submitter}} - {{s.title}}</a></p>
+          {% else %}
+            <p>{{s.title}}</p>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
 
 {% endblock %}
 

@@ -1152,3 +1152,16 @@ class ImportantDate(models.Model):
 
     def __unicode__(self):
         return u'%s : %s : %s' % ( self.meeting, self.name, self.date )
+
+class SlideSubmission(models.Model):
+    session = ForeignKey(Session)
+    title = models.CharField(max_length=255)
+    filename = models.CharField(max_length=255)
+    apply_to_all = models.BooleanField(default=False)
+    submitter = ForeignKey(Person)
+
+    def staged_filepath(self):
+        return os.path.join(settings.SLIDE_STAGING_PATH , self.filename)
+
+    def staged_url(self):
+        return "".join([settings.SLIDE_STAGING_URL, self.filename])

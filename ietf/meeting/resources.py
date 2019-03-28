@@ -9,7 +9,7 @@ from ietf import api
 
 from ietf.meeting.models import ( Meeting, ResourceAssociation, Constraint, Room, Schedule, Session,
                                 TimeSlot, SchedTimeSessAssignment, SessionPresentation, FloorPlan,
-                                UrlResource, ImportantDate )
+                                UrlResource, ImportantDate, SlideSubmission )
 
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
@@ -301,3 +301,23 @@ class ImportantDateResource(ModelResource):
             "name": ALL_WITH_RELATIONS,
         }
 api.meeting.register(ImportantDateResource())
+
+
+from ietf.person.resources import PersonResource
+class SlideSubmissionResource(ModelResource):
+    session          = ToOneField(SessionResource, 'session')
+    submitter        = ToOneField(PersonResource, 'submitter')
+    class Meta:
+        queryset = SlideSubmission.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'slidesubmission'
+        filtering = { 
+            "id": ALL,
+            "title": ALL,
+            "filename": ALL,
+            "apply_to_all": ALL,
+            "session": ALL_WITH_RELATIONS,
+            "submitter": ALL_WITH_RELATIONS,
+        }
+api.meeting.register(SlideSubmissionResource())
