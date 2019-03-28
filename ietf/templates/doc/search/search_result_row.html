@@ -59,9 +59,15 @@
 
   <td>
     <span class="text-nowrap">
-    {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}<a href="{{ rfcdiff_base_url }}?url2={{ doc.name }}-{{ doc.rev }}">{% endif %}
-       {% if doc.get_state_slug == "rfc" %}{{ doc.latest_revision_date|date:"Y-m" }}{% else %}{{ doc.latest_revision_date|date:"Y-m-d" }}{% endif %}
-    {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}</a>{% endif %}
+
+    {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
+       {% if doc.replaces %}<a href="{{ rfcdiff_base_url }}?url1={{ doc.replaces_canonical_name}}&url2={{ doc.name }}-{{ doc.rev }}">
+       {% elif doc.rev != "00" %}<a href="{{ rfcdiff_base_url }}?url2={{ doc.name }}-{{ doc.rev }}">{% endif %}
+    {% endif %}
+          {% if doc.get_state_slug == "rfc" %}{{ doc.latest_revision_date|date:"Y-m" }}{% else %}{{ doc.latest_revision_date|date:"Y-m-d" }}{% endif %}
+    {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
+       {% if doc.rev != "00" or doc.replaces %}</a>{% endif %}
+    {% endif %}
     </span>
 
     {% for check in doc.submission.latest_checks %}

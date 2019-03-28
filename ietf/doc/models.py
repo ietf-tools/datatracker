@@ -465,6 +465,11 @@ class DocumentInfo(models.Model):
     def replaces(self):
         return set([ r.document for r in self.related_that_doc("replaces")])
 
+    def replaces_canonical_name(self):
+        s = set([ r.document for r in self.related_that_doc("replaces")])
+        first = list(s)[0] if s else None
+        return None if first is None else first.filename_with_rev()
+
     def replaced_by(self):
         return set([ r.document for r in self.related_that("replaces") ])
 
