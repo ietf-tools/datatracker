@@ -60,7 +60,7 @@
             <tbody>
 	      {% for group in area.groups %}
 	        <tr>
-		  <td class="anchor-target" id="{{group.acronym}}"><a href="{% url "ietf.group.views.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></td>
+		  <td><div class="anchor-target" id="{{group.acronym}}"><a href="{% url "ietf.group.views.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></div></td>
 	          <td>
 		    {% if group.ad_role %}
 		    <a href="mailto:{{ group.ad_role.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>
