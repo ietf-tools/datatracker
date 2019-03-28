@@ -17,7 +17,7 @@ class ReviewerSettingsAdmin(simple_history.admin.SimpleHistoryAdmin):
 admin.site.register(ReviewerSettings, ReviewerSettingsAdmin)
 
 class ReviewSecretarySettingsAdmin(admin.ModelAdmin):
-    list_display = [u'id', 'team', 'person', 'remind_days_before_deadline']
+    list_display = [u'id', 'team', 'person', 'remind_days_before_deadline', 'max_items_to_show_in_reviewer_list', 'days_to_show_in_reviewer_list']
     raw_id_fields = ['team', 'person']
 admin.site.register(ReviewSecretarySettings, ReviewSecretarySettingsAdmin)
 
