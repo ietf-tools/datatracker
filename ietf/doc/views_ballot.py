@@ -694,6 +694,7 @@ def ballot_rfceditornote(request, name):
                               )
                           )
                     send_mail_preformatted(request, msg)
+            return redirect('ietf.doc.views_doc.document_writeup', name=doc.name)
 
     if request.method == 'POST' and "clear_ballot_rfceditornote" in request.POST:
         e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login)
