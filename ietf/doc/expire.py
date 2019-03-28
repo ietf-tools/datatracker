@@ -21,16 +21,20 @@ def expirable_draft(draft):
     if draft.type_id != 'draft':
         return False
     log.assertion('draft.get_state_slug("draft-iesg")')
-    return (draft.expires and draft.get_state_slug() == "active"
-            and draft.get_state_slug("draft-iesg") in ("idexists", "watching", "dead")
-            and draft.get_state_slug("draft-stream-%s" % draft.stream_id) not in ("rfc-edit", "pub")
-            and not draft.tags.filter(slug="rfc-rev"))
+    # return (draft.expires and draft.get_state_slug() == "active"
+    #         and draft.get_state_slug("draft-iesg") in ("idexists", "watching", "dead")
+    #         and draft.get_state_slug("draft-stream-%s" % draft.stream_id) not in ("rfc-edit", "pub")
+    #         and not draft.tags.filter(slug="rfc-rev"))
+    return bool(expirable_drafts(Document.objects.filter(pk=draft.pk)))
 
-def expirable_drafts():
+def expirable_drafts(queryset=None):
     """Return a queryset with expirable drafts."""
     # the general rule is that each active draft is expirable, unless
     # it's in a state where we shouldn't touch it
-    d = Document.objects.filter(states__type="draft", states__slug="active").exclude(expires=None)
+    if not queryset:
+        queryset = Document.objects.all()
+
+    d = queryset.filter(states__type="draft", states__slug="active").exclude(expires=None)
 
     nonexpirable_states = []
     # all IESG states except I-D Exists, AD Watching, and Dead block expiry
@@ -38,6 +42,8 @@ def expirable_drafts():
     # sent to RFC Editor and RFC Published block expiry (the latter
     # shouldn't be possible for an active draft, though)
     nonexpirable_states += list(State.objects.filter(used=True, type__in=("draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"), slug__in=("rfc-edit", "pub")))
+    # other IRTF states that block expiration
+    nonexpirable_states += list(State.objects.filter(used=True, type_id="draft-stream-irtf", slug__in=("irsgpoll", "iesg-rev",)))
 
     d = d.exclude(states__in=nonexpirable_states)
 
