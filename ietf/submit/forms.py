@@ -148,7 +148,6 @@ class SubmissionBaseUploadForm(forms.Form):
                     self.xmltree = parser.parse(normalize=True)
                     root = self.xmltree.getroot()
                     ver = root.get('version', '2')
-                    debug.show('ver')
                     if ver == '2':
                         ok, errors = self.xmltree.validate()
                     else:
