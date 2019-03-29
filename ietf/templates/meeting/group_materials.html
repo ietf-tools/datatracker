@@ -57,6 +57,9 @@
           <span class="label label-warning">No minutes</span>
         {% endif %}
       {% endif %}
+      {% if not session.all_meeting_bluesheets %}
+        <span class="label label-warning">No bluesheets</span>
+      {% endif %}
     </td>
     <td>
       {% with session.all_meeting_slides as slides %}
