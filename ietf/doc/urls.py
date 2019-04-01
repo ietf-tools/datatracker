@@ -118,6 +118,7 @@ urlpatterns = [
     url(r'^%(name)s/edit/ballotrfceditornote/$' % settings.URL_REGEXPS, views_ballot.ballot_rfceditornote),
     url(r'^%(name)s/edit/approvaltext/$' % settings.URL_REGEXPS, views_ballot.ballot_approvaltext),
     url(r'^%(name)s/edit/approveballot/$' % settings.URL_REGEXPS, views_ballot.approve_ballot),
+    url(r'^%(name)s/edit/approvedownrefs/$' % settings.URL_REGEXPS, views_ballot.approve_downrefs),
     url(r'^%(name)s/edit/makelastcall/$' % settings.URL_REGEXPS, views_ballot.make_last_call),
     url(r'^%(name)s/edit/urls/$' % settings.URL_REGEXPS, views_draft.edit_document_urls),
     

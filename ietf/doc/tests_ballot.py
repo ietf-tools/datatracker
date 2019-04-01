@@ -702,6 +702,60 @@ class ApproveBallotTests(TestCase):
         self.assertEqual(ballot.ballotpositiondocevent_set.count(),0)
         self.assertNotEqual(old_ballot_id, ballot.id)
 
+    def test_ballot_downref_approve(self):
+        ad = Person.objects.get(name="Areað Irector")
+        draft = IndividualDraftFactory(ad=ad, intended_std_level_id='ps')
+        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="ann")) # make sure it's approved
+        LastCallDocEvent.objects.create(
+                  by=Person.objects.get(name='(System)'),
+                  type='sent_last_call',
+                  doc=draft,
+                  rev=draft.rev,
+                  desc='issued last call',
+                  expires = datetime.datetime.now()-datetime.timedelta(days=14) )
+        WriteupDocEvent.objects.create(
+                  by=Person.objects.get(name='(System)'),
+                  doc=draft,
+                  rev=draft.rev,
+                  type='changed_last_call_text',
+                  desc='Last call announcement was changed',
+                  text='this is simple last call text.' )
+        rfc = IndividualRfcFactory.create(
+                  stream_id='ise',
+                  other_aliases=['rfc6666',],
+                  states=[('draft','rfc'),('draft-iesg','pub')],
+                  std_level_id='inf', )
+
+        url = urlreverse('ietf.doc.views_ballot.approve_downrefs', kwargs=dict(name=draft.name))
+
+        # Only Secretariat can use this URL
+        login_testing_unauthorized(self, "ad", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+        self.assertTrue("Restricted to role Secretariat" in r.content)
+
+        # There are no downrefs, the page should say so
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("No downward references for" in r.content)
+
+        # Add a downref, the page should ask if it should be added to the registry
+        rel = draft.relateddocument_set.create(target=rfc.docalias_set.get(name='rfc6666'),relationship_id='refnorm')
+        d = [rdoc for rdoc in draft.relateddocument_set.all() if rel.is_approved_downref()]
+        original_len = len(d)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("normatively references rfc6666" in r.content)
+
+        # POST with the downref checked
+        r = self.client.post(url, dict(checkboxes=rel.pk))
+        self.assertEqual(r.status_code, 302)
+
+        # Confirm an entry was added to the downref registry
+        d = [rdoc for rdoc in draft.relateddocument_set.all() if rel.is_approved_downref()]
+        self.assertTrue(len(d) > original_len, "The downref approval was not added")
+
 class MakeLastCallTests(TestCase):
     def test_make_last_call(self):
         ad = Person.objects.get(user__username="ad")

@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent, BallotPositionDocEvent,
-    LastCallDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS )
+    LastCallDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS, RelatedDocument )
 from ietf.doc.utils import ( add_state_change_event, close_ballot, close_open_ballots,
     create_ballot_if_not_open, update_telechat )
 from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred, 
@@ -768,6 +768,7 @@ def ballot_approvaltext(request, name):
                                    need_intended_status=need_intended_status,
                                    ))
 
+
 @role_required('Secretariat')
 def approve_ballot(request, name):
     """Approve ballot, sending out announcement, changing state."""
@@ -871,12 +872,74 @@ def approve_ballot(request, name):
         msg.save()
         msg.related_docs.add(doc)
 
-        return HttpResponseRedirect(doc.get_absolute_url())
+        downrefs = [rel for rel in doc.relateddocument_set.all() if rel.is_downref() and not rel.is_approved_downref()]
+        if not downrefs:
+            return HttpResponseRedirect(doc.get_absolute_url())
+        else:
+            return HttpResponseRedirect(doc.get_absolute_url()+'edit/approvedownrefs/')
 
     return render(request, 'doc/ballot/approve_ballot.html',
                               dict(doc=doc,
                                    action=action,
                                    announcement=announcement))
+
+
+class ApproveDownrefsForm(forms.Form):
+    checkboxes = forms.ModelMultipleChoiceField(
+        widget = forms.CheckboxSelectMultiple,
+        queryset =  RelatedDocument.objects.none(), )
+
+
+    def __init__(self, queryset, *args, **kwargs):
+        super(ApproveDownrefsForm, self).__init__(*args, **kwargs)
+        self.fields['checkboxes'].queryset = queryset
+
+    def clean(self):
+        if 'checkboxes' not in self.cleaned_data:
+            raise forms.ValidationError("No RFCs were selected")
+
+@role_required('Secretariat')
+def approve_downrefs(request, name):
+    """Document ballot was just approved; add the checked downwared references to the downref registry."""
+    doc = get_object_or_404(Document, docalias__name=name)
+    if not doc.get_state("draft-iesg"):
+        raise Http404
+
+    login = request.user.person
+
+    downrefs_to_rfc = [rel for rel in doc.relateddocument_set.all() if rel.is_downref() and not rel.is_approved_downref() and rel.target.document.is_rfc()]
+
+    downrefs_to_rfc_qs = RelatedDocument.objects.filter(pk__in=[r.pk for r in downrefs_to_rfc])        
+
+    last_call_text = doc.latest_event(WriteupDocEvent, type="changed_last_call_text").text.strip()
+
+    if request.method == 'POST':
+        form = ApproveDownrefsForm(downrefs_to_rfc_qs, request.POST)
+        if form.is_valid():
+            for rel in form.cleaned_data['checkboxes']:
+                RelatedDocument.objects.create(source=rel.source,
+                        target=rel.target, relationship_id='downref-approval')
+                c = DocEvent(type="downref_approved", doc=rel.source,
+                        rev=rel.source.rev, by=login)
+                c.desc = "Downref to RFC %s approved by Last Call for %s-%s" % (
+                        rel.target.document.rfc_number(), rel.source, rel.source.rev)
+                c.save()
+                c = DocEvent(type="downref_approved", doc=rel.target.document,
+                        rev=rel.target.document.rev, by=login)
+                c.desc = "Downref to RFC %s approved by Last Call for %s-%s" % (
+                        rel.target.document.rfc_number(), rel.source, rel.source.rev)
+                c.save()
+
+            return HttpResponseRedirect(doc.get_absolute_url())
+
+    else:
+        form = ApproveDownrefsForm(downrefs_to_rfc_qs)
+
+    return render(request, 'doc/ballot/approve_downrefs.html',
+                            dict(doc=doc,
+                                 approve_downrefs_form=form,
+                                 last_call_text=last_call_text,
+                                 downrefs_to_rfc=downrefs_to_rfc))
 
 
 class MakeLastCallForm(forms.Form):
