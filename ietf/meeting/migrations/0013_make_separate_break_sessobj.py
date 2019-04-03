@@ -34,7 +34,7 @@ def backward(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('meeting', '0011_auto_20190114_0550'),
+        ('meeting', '0012_add_slide_submissions'),
     ]
 
     operations = [
