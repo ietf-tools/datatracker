@@ -655,6 +655,15 @@ class ExpireIDsTests(TestCase):
         self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, txt)))
 
+        draft.delete()
+
+        rgdraft = RgDraftFactory(expires=datetime.datetime.now())
+        self.assertEqual(len(list(get_expired_drafts())), 1)
+        for slug in ('iesg-rev','irsgpoll'):
+            rgdraft.set_state(State.objects.get(type_id='draft-stream-irtf',slug=slug))
+            self.assertEqual(len(list(get_expired_drafts())), 0)
+
+
     def test_clean_up_draft_files(self):
         draft = WgDraftFactory()
         
