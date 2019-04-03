@@ -399,7 +399,7 @@ class BallotWriteupsTests(TestCase):
         r = self.client.post(url, dict(
                 rfc_editor_note="This is a simple test.",
                 save_ballot_rfceditornote="1"))
-        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.status_code, 302)
         draft = Document.objects.get(name=draft.name)
         self.assertTrue(draft.has_rfc_editor_note())
         self.assertTrue("This is a simple test" in draft.latest_event(WriteupDocEvent, type="changed_rfc_editor_note_text").text)
@@ -419,7 +419,7 @@ class BallotWriteupsTests(TestCase):
         r = self.client.post(url, dict(
                 rfc_editor_note='This is a new note.',
                 save_ballot_rfceditornote="1"))
-        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox),1)
         self.assertIn('RFC Editor note changed',outbox[-1]['Subject'])
 
