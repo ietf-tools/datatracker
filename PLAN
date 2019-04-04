@@ -7,14 +7,17 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Fix the rfc sync script to update BCP changes (a BCP points to new RFC numbers)
+* Fix the DocAlias model to be m2m with documents, in order to be able to
+  model BCPs that represent groups of RFCs properly, then fix the rfc sync
+  script to update BCP aliases when changes occur changes (a BCP points to new
+  RFC numbers)
+
+* Transition to Python 3.  This will make it easier to add add support for
+  internationalsed email, and also other i18n enhancements.
 
 * Polish the htmlization pages, making the style identical with tools.ietf.org.
 
 * Revisit the review tool, work through the accumulated tickets.
-
-* Transition to Python 3.  This will make it easier to add add support for
-  internationalsed email, and also other i18n enhancements.
 
 * Review and change the draft submission and handling code to deal with UTF-8
   instead of ascii before upload of utf-8 drafts should be permitted.  
