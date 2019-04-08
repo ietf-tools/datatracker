@@ -6,7 +6,7 @@ import debug    # pyflakes:ignore
 
 from django.urls import reverse
 
-from ietf.doc.factories import WgDraftFactory, CharterFactory
+from ietf.doc.factories import WgDraftFactory, IndividualRfcFactory, CharterFactory
 from ietf.doc.models import BallotDocEvent, BallotType, BallotPositionDocEvent
 from ietf.doc.utils import update_telechat, create_ballot_if_not_open
 from ietf.utils.test_utils import TestCase
@@ -57,6 +57,26 @@ class SecrTelechatTestCase(TestCase):
         self.assertEqual(q("#telechat-positions-table").find("th:contains('Abstain')").length,1)
         self.assertEqual(q("#telechat-positions-table").find("th:contains('Recuse')").length,1)
         self.assertEqual(q("#telechat-positions-table").find("th:contains('No Record')").length,1)
+
+    def test_doc_detail_draft_with_downref(self):
+        ad = Person.objects.get(user__username="ad")
+        draft = WgDraftFactory(ad=ad, intended_std_level_id='ps', states=[('draft-iesg','pub-req'),])
+        rfc = IndividualRfcFactory.create(stream_id='irtf', other_aliases=['rfc6666',],
+                  states=[('draft','rfc'),('draft-iesg','pub')], std_level_id='inf', )
+        draft.relateddocument_set.create(target=rfc.docalias_set.get(name='rfc6666'),
+                  relationship_id='refnorm')
+        create_ballot_if_not_open(None, draft, ad, 'approve')
+        d = get_next_telechat_date()
+        date = d.strftime('%Y-%m-%d')
+        by=Person.objects.get(name="(System)")
+        update_telechat(None, draft, by, d)
+        url = reverse('ietf.secr.telechat.views.doc_detail', kwargs={'date':date, 'name':draft.name})
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue("Has downref: Yes" in response.content)
+        self.assertTrue("Add rfc6666" in response.content)
+        self.assertTrue("to downref registry" in response.content)
 
     def test_doc_detail_draft_invalid(self):
         '''Test using a document not on telechat agenda'''

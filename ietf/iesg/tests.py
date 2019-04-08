@@ -12,7 +12,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocEvent, BallotPositionDocEvent, TelechatDocEvent
 from ietf.doc.models import Document, DocAlias, State, RelatedDocument
-from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, ConflictReviewFactory, BaseDocumentFactory, CharterFactory, WgRfcFactory
+from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, ConflictReviewFactory, BaseDocumentFactory, CharterFactory, WgRfcFactory, IndividualRfcFactory
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.factories import RoleFactory, GroupFactory
 from ietf.group.models import Group, GroupMilestone, Role
@@ -90,7 +90,9 @@ class IESGTests(TestCase):
 class IESGAgendaTests(TestCase):
     def setUp(self):
         mars = GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut'))
-        WgDraftFactory(name='draft-ietf-mars-test',group=mars)
+        wgdraft = WgDraftFactory(name='draft-ietf-mars-test', group=mars, intended_std_level_id='ps')
+        rfc = IndividualRfcFactory.create(stream_id='irtf', other_aliases=['rfc6666',], states=[('draft','rfc'),('draft-iesg','pub')], std_level_id='inf', )
+        wgdraft.relateddocument_set.create(target=rfc.docalias_set.get(name='rfc6666'), relationship_id='refnorm')
         ise_draft = IndividualDraftFactory(name='draft-imaginary-independent-submission')
         ise_draft.stream = StreamName.objects.get(slug="ise")
         ise_draft.save_with_history([DocEvent(doc=ise_draft, rev=ise_draft.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
@@ -364,8 +366,14 @@ class IESGAgendaTests(TestCase):
                 self.assertTrue(d.group.name in unicontent(r), "%s not in response" % k)
                 self.assertTrue(d.group.acronym in unicontent(r), "%s acronym not in response" % k)
             else:
-                self.assertTrue(d.name in unicontent(r), "%s not in response" % k)
-                self.assertTrue(d.title in unicontent(r), "%s title not in response" % k)
+                if d.type_id == "draft" and d.name == "draft-ietf-mars-test":
+                    self.assertTrue(d.name in unicontent(r), "%s not in response" % k)
+                    self.assertTrue(d.title in unicontent(r), "%s title not in response" % k)
+                    self.assertTrue("Has downref: Yes" in unicontent(r), "%s downref not in response" % k)
+                    self.assertTrue("Add rfc6666" in unicontent(r), "%s downref not in response" % k)
+                else:
+                    self.assertTrue(d.name in unicontent(r), "%s not in response" % k)
+                    self.assertTrue(d.title in unicontent(r), "%s title not in response" % k)        
 
     def test_agenda_package(self):
         url = urlreverse("ietf.iesg.views.agenda_package")
