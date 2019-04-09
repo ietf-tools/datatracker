@@ -1,3 +1,108 @@
+ietfdb (6.95.0) ietf; urgency=medium
+
+  **IETF 104 code sprint**
+
+  This release contains datatracker bug fixes and enhancements from the
+  IETF-104 Code Sprint.  We have several first-time sprint contributors,
+  and a substantial set of improvements.  Thanks to everyone who contributed!
+
+  Notable improvements: 
+
+  The datatracker now supports reminders of and direct addition of downref
+  entries at the time of document approval.  Document review management has
+  been improved with table sort options.  There are a number of improvements
+  to the agenda and materials pages, and there is now support for meeting
+  session presenters to upload their own slides, for later approval by
+  chairs.
+
+  Additional comments, excerpted from the commit log:
+
+  * Merged in [16126] from housley@vigilsec.com:
+    Allow Secretariat to handle downrefs when they approve a document 
+
+  * Merged in [16124] from rcross@amsl.com:
+    Add No Bluesheets indicator to materials page.  
+
+  * Merged in [16121] from rjsparks@nostrum.com:
+    Provides menubar offset for wg anchors on the /wg page. Fixes #1481.  
+
+  * Merged in [16110] from rjsparks@nostrum.com:
+    Include the note itself in email sent when the RFC editor note changes 
+    after document approval. Also changed the flow to redirect back to the 
+    writeups pages after editing the RFC editor note. Fixes #2672.  
+
+  * Merged in [16109] from rjsparks@nostrum.com:
+    Protect drafts in certain IRTF states from expiring. Fixes #2669.  
+
+  * Merged in [16108] from fenton@bluepopcorn.net:
+    Moved old nomcom announcements to database and removed references to 
+    legacy website. Fixes #2686.  
+
+  * Merged in [16107] from rjsparks@nostrum.com:
+    Show the agenda note, if it exits, on a sessions SUMMARY line in the 
+    ical view of an agenda. Fixes #2676.  
+
+  * Merged in [16106] from rjsparks@nostrum.com:
+    Don't allow users to edit the 'active' value for unknown-email-* 
+    addresses. Related to #2696.  
+
+  * Merged in [16103] from rjsparks@nostrum.com:
+    Modified the admin model for SlideSubmission to use a couple of 
+    raw_id_field widgets.  
+
+  * Merged in [16102] from rjsparks@nostrum.com:
+    Allow logged in users to propose slides for meeting sessions. Fixes 
+    #2547 and #2403.  
+
+  * Merged in [16095] from peter@akayla.com:
+    Fixed bad calls to rfcdiff for -00 drafts and replaced drafts.  Fixes 
+    issue #2697.   
+
+  * Merged in [16094] from magnus.westerlund@ericsson.com:
+    Added sortable columns to Review Team Reviewers page. Partially 
+    addresses issue #2656  
+
+  * Merged in [16092] from rcross@amsl.com:
+    Remove ability to cancel a break session.  Fixes #2703.   
+
+  * Changed the etherpad url schema to https.
+
+  * Temorary workaround to upload xml validation.  The tree.validate() of 
+    xml2rfc should be updated to check vocabulary version and validate against 
+    the appropriate schema, to fix this properly.
+
+  * Added dbtemplate validation to the DBTemplate class, to make sure one
+    cannot enter invalid DBtemplates through the admin.
+
+  * Merged in [16089] from mahoney@nostrum.com:
+    added instructions for entering the draft name. Fixes #1375.  
+
+  * Added creation of a group with the user's GID inside the docker 
+    container, if it's missing.
+
+  * Merged in [16088] from rcross@amsl.com:
+    Fixed multiple issues with secretariat non-session view, including 
+    an indicator of cancelled sessions.  Fixes #2701.   
+
+  * Merged in [16087] from housley@vigilsec.com:
+    Add downward references to telechat moderator package and Secretariat 
+    telechat pages.   
+
+  * Merged in [16085] from rcross@amsl.com:
+    Fixed an issue where cancelling one break session would cause other
+    breaks to get cancelled.  Fixes #2699.  
+
+  * Added filtering by meeting for the UrlResource admin.
+
+  * Changed docker/updatedb to use https://, as cloudflare doesn't do the 
+    right thing for our http:// database dump URL any more.
+
+  * Added a skipIf() decorator for a test which should not be run unless 
+    the ghostscript binary is available in the test environment.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Apr 2019 11:55:21 +0000
+
+
 ietfdb (6.94.1) ietf; urgency=medium
 
   This is a minor bugfix release, to clear the slate for the IETF 104 sprint.
@@ -2162,7 +2267,7 @@ ietfdb (6.72.2) ietf; urgency=medium
   Bugfixes and minor features:
 
   * Added page counts for open review requests on the reviewer assignment 
-    drop-downs of /group/*/reviews/manage/unassigned/. Fixes issue #2449.
+    drop-downs of /group/\*/reviews/manage/unassigned/. Fixes issue #2449.
 
   * Added a patch for a faker problem with locale ro_RO names (default 
     first_names from a region without first_names explicitly declared are 
@@ -15106,6 +15211,7 @@ ietfdb (2.05) ietf; urgency=medium
   * Refactoring and cleanup work
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  31 Oct 2007 08:37:37 +0100
+
 ietfdb (2.04) ietf; urgency=medium
 
   * Fixed a number of issues with the meeting agenda page.
