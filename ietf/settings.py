@@ -357,7 +357,10 @@ MIDDLEWARE = (
     'ietf.middleware.SMTPExceptionMiddleware',
     'ietf.middleware.Utf8ExceptionMiddleware',
     'ietf.middleware.redirect_trailing_period_middleware',
+    'django_referrer_policy.middleware.ReferrerPolicyMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'csp.middleware.CSPMiddleware',
     'ietf.middleware.unicode_nfkc_normalization_middleware',
 )
 
@@ -464,6 +467,22 @@ BOOTSTRAP3 = {
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_METHODS = ( 'GET', 'OPTIONS', )
 CORS_URLS_REGEX = r'^(/api/.*|.*\.json|.*/json/?)$'
+
+# Setting for django_referrer_policy.middleware.ReferrerPolicyMiddleware
+REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+# Content security policy configuration (django-csp)
+CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", "data: https://datatracker.ietf.org/ https://www.ietf.org/")
+
+# django.middleware.security.SecurityMiddleware 
+SECURE_BROWSER_XSS_FILTER       = True
+SECURE_CONTENT_TYPE_NOSNIFF     = True
+SECURE_HSTS_INCLUDE_SUBDOMAINS  = True
+#SECURE_HSTS_PRELOAD             = True             # Enable after testing
+SECURE_HSTS_SECONDS             = 3600
+#SECURE_REDIRECT_EXEMPT
+#SECURE_SSL_HOST 
+#SECURE_SSL_REDIRECT             = True
 
 # Override this in your settings_local with the IP addresses relevant for you:
 INTERNAL_IPS = (
