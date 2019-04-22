@@ -59,6 +59,21 @@
       {% endif %}
     </td>
     <td>
+      {% if session.all_meeting_bluesheets %}
+        {% if session.all_meeting_bluesheets|length == 1 %}
+          <a href="{{ session.all_meeting_bluesheets.0|meeting_href:session.meeting }}">Bluesheets</a><br>
+        {% else %}
+          {% for bluesheets in session.all_meeting_bluesheets %}
+            <a href="{{ bluesheets|meeting_href:session.meeting}}">Bluesheets {{bluesheets.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i"}}</a></br>
+          {% endfor %}
+        {% endif %}
+      {% else %}
+        {% if show_agenda == "True" %}
+          <span class="label label-warning">No bluesheets</span>
+        {% endif %}
+      {% endif %}
+    </td>
+    <td>
       {% with session.all_meeting_slides as slides %}
         {% for slide in slides %}
 	  {% if slide.time > old %}
