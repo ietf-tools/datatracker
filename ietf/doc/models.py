@@ -20,7 +20,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.group.models import Group
 from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdLevelName, StdLevelName,
-    DocRelationshipName, DocReminderTypeName, BallotPositionName, ReviewRequestStateName, FormalLanguageName,
+    DocRelationshipName, DocReminderTypeName, BallotPositionName, ReviewRequestStateName, ReviewAssignmentStateName, FormalLanguageName,
     DocUrlTagName)
 from ietf.person.models import Email, Person
 from ietf.person.utils import get_active_ads
@@ -1148,6 +1148,10 @@ class TelechatDocEvent(DocEvent):
 class ReviewRequestDocEvent(DocEvent):
     review_request = ForeignKey('review.ReviewRequest')
     state = ForeignKey(ReviewRequestStateName, blank=True, null=True)
+
+class ReviewAssignmentDocEvent(DocEvent):
+    review_assignment = ForeignKey('review.ReviewAssignment')
+    state = ForeignKey(ReviewAssignmentStateName, blank=True, null=True)
 
 # charter events
 class InitialReviewDocEvent(DocEvent):

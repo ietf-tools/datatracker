@@ -12,26 +12,13 @@
   <p class="bg-warning">WARNING: currently in draft submission blackout period</p>
   {% endif %}
   
+  <p>This page is used to submit Internet-Drafts to the Internet-Draft repository.</p>
+  
   {% if form.cutoff_warning %}
     <div class="cutoff-warning">
       {{ form.cutoff_warning|safe }}
     </div>
   {% endif %}
-
-  <p>This page is used to submit Internet-Drafts to the
-    Internet-Draft repository. The list of current Internet-Drafts can be
-    accessed at <a href="https://www.ietf.org/ietf/1id-abstracts.txt">https://www.ietf.org/ietf/1id-abstracts.txt</a>.
-    An API for automated draft submission is available at
-    <a href="https://datatracker.ietf.org/api/submit/">https://datatracker.ietf.org/api/submit/</a>.
-  </p>
-
-  <p>Internet-Drafts are working documents of the Internet Engineering
-    Task Force (IETF), its areas, and its working groups. Note that other
-    groups may also distribute working documents as Internet-Drafts.</p>
-
-  <p>Internet-Drafts are draft documents, and are valid for a maximum of
-    six months. They may be updated, replaced, or obsoleted by other
-    documents at any time.</p>
 
   {% if not form.shutdown or user|has_role:"Secretariat" %}
     <p>If you run into problems when submitting an Internet-Draft
@@ -42,7 +29,13 @@
     </p>
 
     <p>
-      Before you submit your draft, it is recommended that you check it for nits
+      By submitting your I-D, you are granting some rights to the IETF Trust.  Before you submit your I-D,
+      review the information on the NOTE WELL tab and <a href="https://tools.ietf.org/html/bcp78">BCP 78</a>,
+      "Rights Contributors Provide to the IETF Trust".
+    </p>
+
+    <p>
+      Before you submit your I-D, it is recommended that you check it for nits
       using the <b><a href="https://tools.ietf.org/tools/idnits/">idnits tool</a></b>.
     </p>
     

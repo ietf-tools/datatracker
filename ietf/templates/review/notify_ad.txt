@@ -1,13 +1,13 @@
 {% load ietf_filters %}{% autoescape off %}From: {{settings.DEFAULT_FROM_EMAIL}}
 To: {{to}}{% if cc %}
 Cc: {{cc}}{% endif %}
-Subject: "{{review_req.result}}" review submitted for {{review_req.doc}}{% if review_req.reviewed_rev %}-{{review_req.reviewed_rev}}{% endif %}
+Subject: "{{assignment.result}}" review submitted for {{assignment.review_request.doc}}{% if assignment.reviewed_rev %}-{{assignment.reviewed_rev}}{% endif %}
 
-{{review_req.reviewer.person.name}} has submitted a "{{review_req.result}}" review result for {{review_req.doc}}{% if review_req.reviewed_rev %}-{{review_req.reviewed_rev}}{% endif %}.
+{{assignment.reviewer.person}} has submitted a "{{assignment.result}}" review result for {{assignment.review_request.doc}}{% if assignment.reviewed_rev %}-{{assignment.reviewed_rev}}{% endif %}.
 
-The review is available at {{settings.IDTRACKER_BASE_URL}}{% url 'ietf.doc.views_doc.document_main' name=review_req.review.name %}
+The review is available at {{settings.IDTRACKER_BASE_URL}}{% url 'ietf.doc.views_doc.document_main' name=assignment.review.name %}
 
-The document is available at {{settings.IDTRACKER_BASE_URL}}{% url 'ietf.doc.views_doc.document_main' name=review_req.doc.name %}
+The document is available at {{settings.IDTRACKER_BASE_URL}}{% url 'ietf.doc.views_doc.document_main' name=assignment.review_request.doc.name %}
 
 This message was sent because {% if explicit_request %}the reviewer indicated it should be on the review completion form{% else %}the review team settings indicated it should be{% endif %}.
 

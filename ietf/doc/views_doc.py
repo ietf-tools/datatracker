@@ -64,8 +64,8 @@ from ietf.doc.mails import email_comment
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions
-from ietf.review.models import ReviewRequest
-from ietf.review.utils import can_request_review_of_doc, review_requests_to_list_for_docs
+from ietf.review.models import ReviewAssignment
+from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
 from ietf.utils import markup_txt, log
 from ietf.utils.text import maybe_split
@@ -382,7 +382,7 @@ def document_main(request, name, rev=None):
         published = doc.latest_event(type="published_rfc")
         started_iesg_process = doc.latest_event(type="started_iesg_process")
 
-        review_requests = review_requests_to_list_for_docs([doc]).get(doc.pk, [])
+        review_assignments = review_assignments_to_list_for_docs([doc]).get(doc.pk, [])
         no_review_from_teams = no_review_from_teams_on_doc(doc, rev or doc.rev)
 
         return render(request, "doc/document_draft.html",
@@ -446,7 +446,7 @@ def document_main(request, name, rev=None):
                                        search_archive=search_archive,
                                        actions=actions,
                                        presentations=presentations,
-                                       review_requests=review_requests,
+                                       review_assignments=review_assignments,
                                        no_review_from_teams=no_review_from_teams,
                                        ))
 
@@ -598,11 +598,11 @@ def document_main(request, name, rev=None):
         # If we want to go back to using markup_txt.markup_unicode, call it explicitly here like this:
         # content = markup_txt.markup_unicode(content, split=False, width=80)
        
-        review_req = ReviewRequest.objects.filter(review=doc.name).first()
+        review_assignment = ReviewAssignment.objects.filter(review=doc.name).first()
 
         other_reviews = []
-        if review_req:
-            other_reviews = [r for r in review_requests_to_list_for_docs([review_req.doc]).get(doc.pk, []) if r != review_req]
+        if review_assignment:
+            other_reviews = [r for r in review_assignments_to_list_for_docs([review_assignment.review_request.doc]).get(doc.pk, []) if r != review_assignment]
 
         return render(request, "doc/document_review.html",
                       dict(doc=doc,
@@ -611,7 +611,7 @@ def document_main(request, name, rev=None):
                            revisions=revisions,
                            latest_rev=latest_rev,
                            snapshot=snapshot,
-                           review_req=review_req,
+                           review_req=review_assignment.review_request,
                            other_reviews=other_reviews,
                       ))
 

@@ -17,14 +17,14 @@ from pyquery import PyQuery
 import debug                            # pyflakes:ignore
 
 import ietf.review.mailarch
-from ietf.doc.factories import NewRevisionDocEventFactory, WgDraftFactory, WgRfcFactory
-from ietf.doc.models import DocumentAuthor, RelatedDocument, DocEvent, ReviewRequestDocEvent
+from ietf.doc.factories import NewRevisionDocEventFactory, WgDraftFactory, WgRfcFactory, ReviewFactory
+from ietf.doc.models import DocumentAuthor, RelatedDocument, DocEvent, ReviewAssignmentDocEvent
 from ietf.group.factories import RoleFactory, ReviewTeamFactory
 from ietf.group.models import Group
 from ietf.message.models import Message
-from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewTypeName
+from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAssignmentStateName
 from ietf.person.models import Email, Person
-from ietf.review.factories import ReviewRequestFactory
+from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import (ReviewRequest, ReviewerSettings,
                                 ReviewWish, UnavailablePeriod, NextReviewerInTeam)
 from ietf.review.utils import reviewer_rotation_list, possibly_advance_next_reviewer_for_team
@@ -60,7 +60,8 @@ class ReviewTests(TestCase):
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
         RoleFactory(group=review_team3,person__user__username='reviewsecretary3',person__user__email='reviewsecretary3@example.com',name_id='secr')
 
-        ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        ReviewAssignmentFactory(review_request = req, reviewer = rev_role.person.email_set.first(), state_id='accepted')
 
         url = urlreverse('ietf.doc.views_review.request_review', kwargs={ "name": doc.name })
         login_testing_unauthorized(self, "ad", url)
@@ -135,7 +136,8 @@ class ReviewTests(TestCase):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        ReviewAssignmentFactory(review_request=review_req, reviewer=rev_role.person.email_set.first(), state_id='accepted')
 
         # move the review request to a doubly-replaced document to
         # check we can fish it out
@@ -150,13 +152,15 @@ class ReviewTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         content = unicontent(r)
+        #debug.show('unicontent(r)')
         self.assertTrue("{} Review".format(review_req.type.name) in content)
 
     def test_review_request(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        ReviewAssignmentFactory(review_request = review_req, reviewer = rev_role.person.email_set.first(), state_id='accepted')
 
         url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
@@ -178,8 +182,8 @@ class ReviewTests(TestCase):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
-
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        ReviewAssignmentFactory(review_request=review_req, state_id='accepted', reviewer=rev_role.person.email_set.first())
         close_url = urlreverse('ietf.doc.views_review.close_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
 
@@ -287,7 +291,8 @@ class ReviewTests(TestCase):
         settings, _ = ReviewerSettings.objects.get_or_create(team=team, person=reviewers[2])
         settings.min_interval = 30
         settings.save()
-        ReviewRequest.objects.create(team=team, doc=doc, type_id="early", state_id="accepted", deadline=today, requested_by=reviewers[0], reviewer=reviewers[2].email_set.first())
+        req = ReviewRequest.objects.create(team=team, doc=doc, type_id="early", state_id="assigned", deadline=today, requested_by=reviewers[0])
+        ReviewAssignmentFactory(review_request=req, state_id="accepted", reviewer = reviewers[2].email_set.first(),assigned_on = req.time)
         possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[3].pk)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[4])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
@@ -314,17 +319,25 @@ class ReviewTests(TestCase):
         doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         # previous review
-        ReviewRequest.objects.create(
+        req = ReviewRequestFactory(
             time=datetime.datetime.now() - datetime.timedelta(days=100),
             requested_by=Person.objects.get(name="(System)"),
             doc=doc,
-            type=ReviewTypeName.objects.get(slug="early"),
+            type_id='early',
             team=review_req.team,
-            state=ReviewRequestStateName.objects.get(slug="completed"),
-            result_id='serious-issues',
-            reviewed_rev="01",
+            state_id='assigned',
+            requested_rev="01",
             deadline=datetime.date.today() - datetime.timedelta(days=80),
+        )
+        ReviewAssignmentFactory(
+            review_request = req,
+            state_id='completed',
+            result_id='serious-issues',
             reviewer=reviewer_email,
+            reviewed_rev="01",
+            review = ReviewFactory(),
+            assigned_on=req.time,
+            completed_on=req.time + datetime.timedelta(days=10),
         )
 
         reviewer_settings = ReviewerSettings.objects.get(person__email=reviewer_email, team=review_req.team)
@@ -387,37 +400,25 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 302)
 
         review_req = reload_db_objects(review_req)
-        self.assertEqual(review_req.state_id, "requested")
-        self.assertEqual(review_req.reviewer, reviewer)
+        self.assertEqual(review_req.state_id, "assigned")
+        self.assertEqual(review_req.reviewassignment_set.count(),1)
+        assignment = review_req.reviewassignment_set.first()
+        self.assertEqual(assignment.reviewer, reviewer)
+        self.assertEqual(assignment.state_id, "assigned")
         self.assertEqual(len(outbox), 1)
         self.assertTrue("assigned" in outbox[0].get_payload(decode=True).decode("utf-8"))
         self.assertEqual(NextReviewerInTeam.objects.get(team=review_req.team).next_reviewer, rotation_list[1])
-
-        # re-assign
-        empty_outbox()
-        review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
-        review_req.save()
-        reviewer = Email.objects.filter(role__name="reviewer", role__group=review_req.team, person=rotation_list[1]).first()
-        r = self.client.post(assign_url, { "action": "assign", "reviewer": reviewer.pk, "add_skip": 1 })
-        self.assertEqual(r.status_code, 302)
-
-        review_req = reload_db_objects(review_req)
-        self.assertEqual(review_req.state_id, "requested") # check that state is reset
-        self.assertEqual(review_req.reviewer, reviewer)
-        self.assertEqual(len(outbox), 2)
-        self.assertTrue("cancelled your assignment" in outbox[0].get_payload(decode=True).decode("utf-8"))
-        self.assertTrue("assigned" in outbox[1].get_payload(decode=True).decode("utf-8"))
-        self.assertEqual(ReviewerSettings.objects.get(person=reviewer.person).skip_next, 1)
 
     def test_accept_reviewer_assignment(self):
 
         doc = WgDraftFactory(group__acronym='mars',rev='01')
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='requested',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        assignment = ReviewAssignmentFactory(review_request=review_req, state_id='assigned', reviewer=rev_role.person.email_set.first())
 
         url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
-        username = review_req.reviewer.person.user.username
+        username = assignment.reviewer.person.user.username
         self.client.login(username=username, password=username + "+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -428,21 +429,22 @@ class ReviewTests(TestCase):
         r = self.client.post(url, { "action": "accept" })
         self.assertEqual(r.status_code, 302)
 
-        review_req = reload_db_objects(review_req)
-        self.assertEqual(review_req.state_id, "accepted")
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "accepted")
 
     def test_reject_reviewer_assignment(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        assignment = ReviewAssignmentFactory(review_request = review_req, reviewer=rev_role.person.email_set.first(), state_id='accepted')
 
-        reject_url = urlreverse('ietf.doc.views_review.reject_reviewer_assignment', kwargs={ "name": doc.name, "request_id": review_req.pk })
+        reject_url = urlreverse('ietf.doc.views_review.reject_reviewer_assignment', kwargs={ "name": doc.name, "assignment_id": assignment.pk })
 
 
         # follow link
-        req_url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
+        req_url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": assignment.review_request.pk })
         self.client.login(username="reviewsecretary", password="reviewsecretary+password")
         r = self.client.get(req_url)
         self.assertEqual(r.status_code, 200)
@@ -453,19 +455,18 @@ class ReviewTests(TestCase):
         login_testing_unauthorized(self, "reviewsecretary", reject_url)
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(unicode(review_req.reviewer.person) in unicontent(r))
+        self.assertTrue(unicode(assignment.reviewer.person) in unicontent(r))
 
         # reject
         empty_outbox()
         r = self.client.post(reject_url, { "action": "reject", "message_to_secretary": "Test message" })
         self.assertEqual(r.status_code, 302)
 
-        review_req = reload_db_objects(review_req)
-        self.assertEqual(review_req.state_id, "rejected")
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "rejected")
         e = doc.latest_event()
         self.assertEqual(e.type, "closed_review_request")
         self.assertTrue("rejected" in e.desc)
-        self.assertEqual(ReviewRequest.objects.filter(doc=review_req.doc, team=review_req.team, state="requested").count(), 1)
         self.assertEqual(len(outbox), 1)
         self.assertTrue("Test message" in outbox[0].get_payload(decode=True).decode("utf-8"))
 
@@ -509,7 +510,8 @@ class ReviewTests(TestCase):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        assignment = ReviewAssignmentFactory(review_request=review_req, reviewer=rev_role.person.email_set.first(), state_id='accepted')
 
         # test URL construction
         query_urls = ietf.review.mailarch.construct_query_urls(review_req)
@@ -525,7 +527,7 @@ class ReviewTests(TestCase):
             real_fn = ietf.review.mailarch.construct_query_urls
             ietf.review.mailarch.construct_query_urls = lambda review_req, query=None: { "query_data_url": "file://" + os.path.abspath(mbox_path) }
 
-            url = urlreverse('ietf.doc.views_review.search_mail_archive', kwargs={ "name": doc.name, "request_id": review_req.pk })
+            url = urlreverse('ietf.doc.views_review.search_mail_archive', kwargs={ "name": doc.name, "assignment_id": assignment.pk })
             login_testing_unauthorized(self, "reviewsecretary", url)
 
             r = self.client.get(url)
@@ -555,7 +557,7 @@ class ReviewTests(TestCase):
                 f.write('Content-Type: text/html\n\n<html><body><div class="xtr"><div class="xtd no-results">No results found</div></div>')
             ietf.review.mailarch.construct_query_urls = lambda review_req, query=None: { "query_data_url": "file://" + os.path.abspath(no_result_path) }
 
-            url = urlreverse('ietf.doc.views_review.search_mail_archive', kwargs={ "name": doc.name, "request_id": review_req.pk })
+            url = urlreverse('ietf.doc.views_review.search_mail_archive', kwargs={ "name": doc.name, "assignment_id": assignment.pk })
 
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
@@ -572,18 +574,19 @@ class ReviewTests(TestCase):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        assignment = ReviewAssignmentFactory(review_request=review_req, state_id='accepted', reviewer=rev_role.person.email_set.first())
         for r in ReviewResultName.objects.filter(slug__in=("issues", "ready")):
             review_req.team.reviewteamsettings.review_results.add(r)
 
-        url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": doc.name, "request_id": review_req.pk })
+        url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": doc.name, "assignment_id": review_req.pk })
 
-        return review_req, url
+        return assignment, url
 
     def test_complete_review_upload_content(self):
-        review_req, url = self.setup_complete_review_test()
+        assignment, url = self.setup_complete_review_test()
 
-        login_testing_unauthorized(self, review_req.reviewer.person.user.username, url)
+        login_testing_unauthorized(self, assignment.reviewer.person.user.username, url)
 
         # get
         r = self.client.get(url)
@@ -611,9 +614,9 @@ class ReviewTests(TestCase):
         test_file.name = "unnamed"
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="ready").pk,
-            "state": ReviewRequestStateName.objects.get(slug="completed").pk,
-            "reviewed_rev": review_req.doc.rev,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=assignment.review_request.team, slug="ready").pk,
+            "state": ReviewAssignmentStateName.objects.get(slug="completed").pk,
+            "reviewed_rev": assignment.review_request.doc.rev,
             "review_submission": "upload",
             "review_content": "",
             "review_url": "",
@@ -621,25 +624,25 @@ class ReviewTests(TestCase):
         })
         self.assertEqual(r.status_code, 302)
 
-        review_req = reload_db_objects(review_req)
-        self.assertEqual(review_req.state_id, "completed")
-        self.assertEqual(review_req.result_id, "ready")
-        self.assertEqual(review_req.reviewed_rev, review_req.doc.rev)
-        self.assertTrue(review_req.team.acronym.lower() in review_req.review.name)
-        self.assertTrue(review_req.doc.rev in review_req.review.name)
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "completed")
+        self.assertEqual(assignment.result_id, "ready")
+        self.assertEqual(assignment.reviewed_rev, assignment.review_request.doc.rev)
+        self.assertTrue(assignment.review_request.team.acronym.lower() in assignment.review.name)
+        self.assertTrue(assignment.review_request.doc.rev in assignment.review.name)
 
-        with open(os.path.join(self.review_subdir, review_req.review.name + ".txt")) as f:
+        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 1)
-        self.assertIn(review_req.team.list_email, outbox[0]["To"])
-        self.assertIn(review_req.reviewer.person.plain_name(), parseaddr(outbox[0]["From"])[0])
-        self.assertIn("This is a review", outbox[0].get_payload(decode=True).decode("utf-8"))
+        self.assertTrue(assignment.review_request.team.list_email in outbox[0]["To"])
+        self.assertTrue(assignment.reviewer.role_set.filter(group=assignment.review_request.team,name='reviewer').first().email.address in outbox[0]["From"])
+        self.assertTrue("This is a review" in outbox[0].get_payload(decode=True).decode("utf-8"))
 
-        self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in review_req.review.external_url)
+        self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in assignment.review.external_url)
 
         # Check that the review has the reviewer as author
-        self.assertEqual(review_req.reviewer, review_req.review.documentauthor_set.first().email)
+        self.assertEqual(assignment.reviewer, assignment.review.documentauthor_set.first().email)
 
         # Check that we have a copy of the outgoing message
         msgid = outbox[0]["Message-ID"]
@@ -650,25 +653,25 @@ class ReviewTests(TestCase):
         self.assertEqual(outbox[0].get_payload(decode=True).decode(str(outbox[0].get_charset())), message.body)
 
         # check the review document page
-        url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ "name": review_req.review.name })
+        url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ "name": assignment.review.name })
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         content = unicontent(r)
-        self.assertTrue("{} Review".format(review_req.type.name) in content)
+        self.assertTrue("{} Review".format(assignment.review_request.type.name) in content)
         self.assertTrue("This is a review" in content)
 
 
     def test_complete_review_enter_content(self):
-        review_req, url = self.setup_complete_review_test()
+        assignment, url = self.setup_complete_review_test()
 
-        login_testing_unauthorized(self, review_req.reviewer.person.user.username, url)
+        login_testing_unauthorized(self, assignment.reviewer.person.user.username, url)
 
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="ready").pk,
-            "state": ReviewRequestStateName.objects.get(slug="completed").pk,
-            "reviewed_rev": review_req.doc.rev,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=assignment.review_request.team, slug="ready").pk,
+            "state": ReviewAssignmentStateName.objects.get(slug="completed").pk,
+            "reviewed_rev": assignment.review_request.doc.rev,
             "review_submission": "enter",
             "review_content": "This is a review\nwith two lines",
             "review_url": "",
@@ -676,32 +679,33 @@ class ReviewTests(TestCase):
         })
         self.assertEqual(r.status_code, 302)
 
-        review_req = reload_db_objects(review_req)
-        self.assertEqual(review_req.state_id, "completed")
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "completed")
+        self.assertNotEqual(assignment.completed_on, None)
 
-        with open(os.path.join(self.review_subdir, review_req.review.name + ".txt")) as f:
+        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 1)
-        self.assertTrue(review_req.team.list_email in outbox[0]["To"])
+        self.assertTrue(assignment.review_request.team.list_email in outbox[0]["To"])
         self.assertTrue("This is a review" in outbox[0].get_payload(decode=True).decode("utf-8"))
 
-        self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in review_req.review.external_url)
+        self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in assignment.review.external_url)
 
     def test_complete_notify_ad_because_team_settings(self):
-        review_req, url = self.setup_complete_review_test()
-        review_req.team.reviewteamsettings.notify_ad_when.add(ReviewResultName.objects.get(slug='issues'))
+        assignment, url = self.setup_complete_review_test()
+        assignment.review_request.team.reviewteamsettings.notify_ad_when.add(ReviewResultName.objects.get(slug='issues'))
         # TODO - it's a little surprising that the factories so far didn't give this doc an ad
-        review_req.doc.ad = PersonFactory()
-        review_req.doc.save_with_history([DocEvent.objects.create(doc=review_req.doc, rev=review_req.doc.rev, by=review_req.reviewer.person, type='changed_document',desc='added an AD')])
-        login_testing_unauthorized(self, review_req.reviewer.person.user.username, url)
+        assignment.review_request.doc.ad = PersonFactory()
+        assignment.review_request.doc.save_with_history([DocEvent.objects.create(doc=assignment.review_request.doc, rev=assignment.review_request.doc.rev, by=assignment.reviewer.person, type='changed_document',desc='added an AD')])
+        login_testing_unauthorized(self, assignment.reviewer.person.user.username, url)
 
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="issues").pk,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=assignment.review_request.team, slug="issues").pk,
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
-            "reviewed_rev": review_req.doc.rev,
+            "reviewed_rev": assignment.review_request.doc.rev,
             "review_submission": "enter",
             "review_content": "This is a review\nwith two lines",
             "review_url": "",
@@ -714,17 +718,17 @@ class ReviewTests(TestCase):
         self.assertIn('settings indicated', outbox[-1].get_payload(decode=True).decode("utf-8"))
 
     def test_complete_notify_ad_because_checkbox(self):
-        review_req, url = self.setup_complete_review_test()
-        review_req.doc.ad = PersonFactory()
-        review_req.doc.save_with_history([DocEvent.objects.create(doc=review_req.doc, rev=review_req.doc.rev, by=review_req.reviewer.person, type='changed_document',desc='added an AD')])
-        login_testing_unauthorized(self, review_req.reviewer.person.user.username, url)
+        assignment, url = self.setup_complete_review_test()
+        assignment.review_request.doc.ad = PersonFactory()
+        assignment.review_request.doc.save_with_history([DocEvent.objects.create(doc=assignment.review_request.doc, rev=assignment.review_request.doc.rev, by=assignment.reviewer.person, type='changed_document',desc='added an AD')])
+        login_testing_unauthorized(self, assignment.reviewer.person.user.username, url)
 
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="issues").pk,
-            "state": ReviewRequestStateName.objects.get(slug="completed").pk,
-            "reviewed_rev": review_req.doc.rev,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=assignment.review_request.team, slug="issues").pk,
+            "state": ReviewAssignmentStateName.objects.get(slug="completed").pk,
+            "reviewed_rev": assignment.review_request.doc.rev,
             "review_submission": "enter",
             "review_content": "This is a review\nwith two lines",
             "review_url": "",
@@ -746,16 +750,16 @@ class ReviewTests(TestCase):
         mock.return_value = response
 
         # Run the test
-        review_req, url = self.setup_complete_review_test()
+        assignment, url = self.setup_complete_review_test()
 
-        login_testing_unauthorized(self, review_req.reviewer.person.user.username, url)
+        login_testing_unauthorized(self, assignment.reviewer.person.user.username, url)
 
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="ready").pk,
-            "state": ReviewRequestStateName.objects.get(slug="completed").pk,
-            "reviewed_rev": review_req.doc.rev,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=assignment.review_request.team, slug="ready").pk,
+            "state": ReviewAssignmentStateName.objects.get(slug="completed").pk,
+            "reviewed_rev": assignment.review_request.doc.rev,
             "review_submission": "link",
             "review_content": response.content,
             "review_url": "http://example.com/testreview/",
@@ -763,27 +767,27 @@ class ReviewTests(TestCase):
         })
         self.assertEqual(r.status_code, 302)
 
-        review_req = reload_db_objects(review_req)
-        self.assertEqual(review_req.state_id, "completed")
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "completed")
 
-        with open(os.path.join(self.review_subdir, review_req.review.name + ".txt")) as f:
+        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 0)
-        self.assertTrue("http://example.com" in review_req.review.external_url)
+        self.assertTrue("http://example.com" in assignment.review.external_url)
 
     def test_partially_complete_review(self):
-        review_req, url = self.setup_complete_review_test()
+        assignment, url = self.setup_complete_review_test()
 
-        login_testing_unauthorized(self, review_req.reviewer.person.user.username, url)
+        login_testing_unauthorized(self, assignment.reviewer.person.user.username, url)
 
         # partially complete
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="ready").pk,
-            "state": ReviewRequestStateName.objects.get(slug="part-completed").pk,
-            "reviewed_rev": review_req.doc.rev,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=assignment.review_request.team, slug="ready").pk,
+            "state": ReviewAssignmentStateName.objects.get(slug="part-completed").pk,
+            "reviewed_rev": assignment.review_request.doc.rev,
             "review_submission": "enter",
             "review_content": "This is a review with a somewhat long line spanning over 80 characters to test word wrapping\nand another line",
         })
@@ -791,16 +795,15 @@ class ReviewTests(TestCase):
 
 
 
-        review_req = reload_db_objects(review_req)
-        self.assertEqual(review_req.state_id, "part-completed")
-        self.assertTrue(review_req.doc.rev in review_req.review.name)
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "part-completed")
+        self.assertTrue(assignment.review_request.doc.rev in assignment.review.name)
 
         self.assertEqual(len(outbox), 2)
         self.assertTrue("reviewsecretary@example.com" in outbox[0]["To"])
         self.assertTrue("partially" in outbox[0]["Subject"].lower())
-        self.assertTrue("new review request" in outbox[0].get_payload(decode=True).decode("utf-8"))
 
-        self.assertTrue(review_req.team.list_email in outbox[1]["To"])
+        self.assertTrue(assignment.review_request.team.list_email in outbox[1]["To"])
         self.assertTrue("partial review" in outbox[1]["Subject"].lower())
         body = outbox[1].get_payload(decode=True).decode("utf-8")
         self.assertTrue("This is a review" in body)
@@ -810,30 +813,26 @@ class ReviewTests(TestCase):
         self.assertTrue(not any( len(line) > 100 for line in body.splitlines() ))
         self.assertTrue(any( len(line) > 80 for line in body.splitlines() ))
 
-        first_review = review_req.review
-        first_reviewer = review_req.reviewer
+        first_review = assignment.review
 
         # complete
-        review_req = ReviewRequest.objects.get(state="requested", doc=review_req.doc, team=review_req.team)
-        self.assertEqual(review_req.reviewer, None)
-        review_req.reviewer = first_reviewer # same reviewer, so we can test uniquification
-        review_req.save()
+        assignment = assignment.review_request.reviewassignment_set.create(state_id="assigned", reviewer=assignment.reviewer)
 
-        url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": review_req.doc.name, "request_id": review_req.pk })
+        url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": assignment.review_request.doc.name, "assignment_id": assignment.pk })
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="ready").pk,
-            "state": ReviewRequestStateName.objects.get(slug="completed").pk,
-            "reviewed_rev": review_req.doc.rev,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=assignment.review_request.team, slug="ready").pk,
+            "state": ReviewAssignmentStateName.objects.get(slug="completed").pk,
+            "reviewed_rev": assignment.review_request.doc.rev,
             "review_submission": "enter",
             "review_content": "This is another review with a really, really, really, really, really, really, really, really, really, really long line.",
         })
         self.assertEqual(r.status_code, 302)
 
-        review_req = reload_db_objects(review_req)
-        self.assertEqual(review_req.state_id, "completed")
-        self.assertTrue(review_req.doc.rev in review_req.review.name)
-        second_review = review_req.review
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "completed")
+        self.assertTrue(assignment.review_request.doc.rev in assignment.review.name)
+        second_review = assignment.review
         self.assertTrue(first_review.name != second_review.name)
         self.assertTrue(second_review.name.endswith("-2")) # uniquified
 
@@ -845,18 +844,18 @@ class ReviewTests(TestCase):
 
 
     def test_revise_review_enter_content(self):
-        review_req, url = self.setup_complete_review_test()
-        review_req.state = ReviewRequestStateName.objects.get(slug="no-response")
-        review_req.save()
+        assignment, url = self.setup_complete_review_test()
+        assignment.state = ReviewAssignmentStateName.objects.get(slug="no-response")
+        assignment.save()
 
-        login_testing_unauthorized(self, review_req.reviewer.person.user.username, url)
+        login_testing_unauthorized(self, assignment.reviewer.person.user.username, url)
 
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="ready").pk,
-            "state": ReviewRequestStateName.objects.get(slug="completed").pk,
-            "reviewed_rev": review_req.doc.rev,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=assignment.review_request.team, slug="ready").pk,
+            "state": ReviewAssignmentStateName.objects.get(slug="completed").pk,
+            "reviewed_rev": assignment.review_request.doc.rev,
             "review_submission": "enter",
             "review_content": "This is a review\nwith two lines",
             "review_url": "",
@@ -866,12 +865,12 @@ class ReviewTests(TestCase):
         })
         self.assertEqual(r.status_code, 302)
 
-        review_req = reload_db_objects(review_req)
-        self.assertEqual(review_req.state_id, "completed")
-        event = ReviewRequestDocEvent.objects.get(type="closed_review_request", review_request=review_req)
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "completed")
+        event = ReviewAssignmentDocEvent.objects.get(type="closed_review_request", review_assignment=assignment)
         self.assertEqual(event.time, datetime.datetime(2012, 12, 24, 12, 13, 14))
 
-        with open(os.path.join(self.review_subdir, review_req.review.name + ".txt")) as f:
+        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 0)
@@ -879,9 +878,9 @@ class ReviewTests(TestCase):
         # revise again
         empty_outbox()
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="ready").pk,
-            "state": ReviewRequestStateName.objects.get(slug="part-completed").pk,
-            "reviewed_rev": review_req.doc.rev,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=assignment.review_request.team, slug="ready").pk,
+            "state": ReviewAssignmentStateName.objects.get(slug="part-completed").pk,
+            "reviewed_rev": assignment.review_request.doc.rev,
             "review_submission": "enter",
             "review_content": "This is a revised review",
             "review_url": "",
@@ -891,9 +890,9 @@ class ReviewTests(TestCase):
         })
         self.assertEqual(r.status_code, 302)
 
-        review_req = reload_db_objects(review_req)
-        self.assertEqual(review_req.review.rev, "01")
-        event = ReviewRequestDocEvent.objects.get(type="closed_review_request", review_request=review_req)
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.review.rev, "01")
+        event = ReviewAssignmentDocEvent.objects.get(type="closed_review_request", review_assignment=assignment)
         self.assertEqual(event.time, datetime.datetime(2013, 12, 24, 11, 11, 11))
 
         self.assertEqual(len(outbox), 0)
@@ -903,7 +902,8 @@ class ReviewTests(TestCase):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        ReviewAssignmentFactory(review_request = review_req, reviewer = rev_role.person.email_set.first(), state_id='accepted')
 
         url = urlreverse('ietf.doc.views_review.edit_comment', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
@@ -924,7 +924,8 @@ class ReviewTests(TestCase):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
-        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
+        ReviewAssignmentFactory(review_request = review_req, reviewer = rev_role.person.email_set.first(), state_id='accepted')
 
         url = urlreverse('ietf.doc.views_review.edit_deadline', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
@@ -942,3 +943,34 @@ class ReviewTests(TestCase):
         review_req = reload_db_objects(review_req)
         self.assertEqual(review_req.deadline,new_deadline)
         self.assertTrue('Deadline changed' in outbox[-1]['Subject'])
+
+    def test_mark_no_response(self):
+        assignment = ReviewAssignmentFactory()
+        secr = RoleFactory(group=assignment.review_request.team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr').person
+        url = urlreverse('ietf.doc.views_review.mark_reviewer_assignment_no_response', kwargs={"name": assignment.review_request.doc.name, "assignment_id": assignment.pk})
+
+        login_testing_unauthorized(self, secr.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        r=self.client.post(url, data={"action":"noresponse"})
+        self.assertEqual(r.status_code, 302)
+
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, 'no-response')
+
+    def test_withdraw_assignment(self):
+        assignment = ReviewAssignmentFactory()
+        secr = RoleFactory(group=assignment.review_request.team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr').person
+        url = urlreverse('ietf.doc.views_review.withdraw_reviewer_assignment', kwargs={"name": assignment.review_request.doc.name, "assignment_id": assignment.pk})
+
+        login_testing_unauthorized(self, secr.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        r=self.client.post(url, data={"action":"withdraw"})
+        self.assertEqual(r.status_code, 302)
+
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, 'withdrawn')
+
