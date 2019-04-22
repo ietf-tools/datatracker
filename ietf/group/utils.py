@@ -223,7 +223,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     if group.features.has_reviews and can_manage_review_requests_for_team(request.user, group):
         import ietf.group.views
         actions.append((u"Manage unassigned reviews", urlreverse(ietf.group.views.manage_review_requests, kwargs=dict(assignment_status="unassigned", **kwargs))))
-        #actions.append((u"Manage assigned reviews", urlreverse(ietf.group.views.manage_review_requests, kwargs=dict(assignment_status="assigned", **kwargs))))
+        actions.append((u"Manage assigned reviews", urlreverse(ietf.group.views.manage_review_requests, kwargs=dict(assignment_status="assigned", **kwargs))))
 
         if Role.objects.filter(name="secr", group=group, person__user=request.user).exists():
             actions.append((u"Secretary settings", urlreverse(ietf.group.views.change_review_secretary_settings, kwargs=kwargs)))

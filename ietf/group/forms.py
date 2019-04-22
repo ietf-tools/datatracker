@@ -239,6 +239,8 @@ class ManageReviewRequestForm(forms.Form):
         close_initial = None
         if review_req.pk is None:
             close_initial = "no-review-version"
+        elif review_req.reviewer:
+            close_initial = "no-response"
         else:
             close_initial = "overtaken"
 

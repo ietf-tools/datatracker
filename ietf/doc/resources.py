@@ -12,7 +12,7 @@ from ietf.doc.models import (BallotType, DeletedEvent, StateType, State, Documen
     TelechatDocEvent, DocReminder, LastCallDocEvent, NewRevisionDocEvent, WriteupDocEvent,
     InitialReviewDocEvent, DocHistoryAuthor, BallotDocEvent, RelatedDocument,
     RelatedDocHistory, BallotPositionDocEvent, AddedMessageEvent, SubmissionDocEvent,
-    ReviewRequestDocEvent, ReviewAssignmentDocEvent, EditedAuthorsDocEvent, DocumentURL)
+    ReviewRequestDocEvent, EditedAuthorsDocEvent, DocumentURL)
 
 from ietf.name.resources import BallotPositionNameResource, DocTypeNameResource
 class BallotTypeResource(ModelResource):
@@ -652,32 +652,3 @@ class DocumentURLResource(ModelResource):
 api.doc.register(DocumentURLResource())
 
 
-
-
-from ietf.person.resources import PersonResource
-from ietf.review.resources import ReviewAssignmentResource
-from ietf.name.resources import ReviewAssignmentStateNameResource
-class ReviewAssignmentDocEventResource(ModelResource):
-    by               = ToOneField(PersonResource, 'by')
-    doc              = ToOneField(DocumentResource, 'doc')
-    docevent_ptr     = ToOneField(DocEventResource, 'docevent_ptr')
-    review_assignment = ToOneField(ReviewAssignmentResource, 'review_assignment')
-    state            = ToOneField(ReviewAssignmentStateNameResource, 'state', null=True)
-    class Meta:
-        queryset = ReviewAssignmentDocEvent.objects.all()
-        serializer = api.Serializer()
-        cache = SimpleCache()
-        #resource_name = 'reviewassignmentdocevent'
-        filtering = { 
-            "id": ALL,
-            "time": ALL,
-            "type": ALL,
-            "rev": ALL,
-            "desc": ALL,
-            "by": ALL_WITH_RELATIONS,
-            "doc": ALL_WITH_RELATIONS,
-            "docevent_ptr": ALL_WITH_RELATIONS,
-            "review_assignment": ALL_WITH_RELATIONS,
-            "state": ALL_WITH_RELATIONS,
-        }
-api.doc.register(ReviewAssignmentDocEventResource())

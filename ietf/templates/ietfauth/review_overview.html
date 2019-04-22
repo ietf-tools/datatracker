@@ -17,7 +17,7 @@
 
   <h2>Assigned reviews</h2>
 
-  {% if open_review_assignments %}
+  {% if open_review_requests %}
     <table class="table table-condensed table-striped">
       <thead>
         <tr>
@@ -30,15 +30,15 @@
         </tr>
       </thead>
       <tbody>
-        {% for r in open_review_assignments %}
+        {% for r in open_review_requests %}
           <tr>
-            <td><a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.review_request.doc.name request_id=r.review_request.pk %}"{% endif %}>{{ r.review_request.doc.name }}</a></td>
-            <td>{% if r.review_request.requested_rev %}{{ r.review_request.requested_rev }}{% else %}Current{% endif %}</td>
-            <td>{{r.review_request.doc.rev}}</td>
-            <td><a href="{% url 'ietf.group.views.review_requests' acronym=r.review_request.team.acronym %}">{{ r.review_request.team.acronym }}</a></td>
-            <td>{{ r.review_request.type.name }}</td>
+            <td><a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{{ r.doc.name }}</a></td>
+            <td>{% if r.requested_rev %}{{ r.requested_rev }}{% else %}Current{% endif %}</td>
+            <td>{{r.doc.rev}}</td>
+            <td><a href="{% url 'ietf.group.views.review_requests' acronym=r.team.acronym %}">{{ r.team.acronym }}</a></td>
+            <td>{{ r.type.name }}</td>
             <td>
-              {{ r.review_request.deadline|date:"Y-m-d" }}
+              {{ r.deadline|date:"Y-m-d" }}
               {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
             </td>
           </tr>
@@ -50,9 +50,9 @@
   {% endif %}
 
 
-  <h2>Latest closed review assignments</h2>
+  <h2>Latest closed review requests</h2>
 
-  {% if closed_review_assignments %}
+  {% if closed_review_requests %}
     <table class="table table-condensed table-striped">
       <thead>
         <tr>
@@ -66,14 +66,14 @@
         </tr>
       </thead>
       <tbody>
-        {% for r in closed_review_assignments %}
+        {% for r in closed_review_requests %}
           <tr>
-            <td><a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.review_request.doc.name request_id=r.review_request.pk %}"{% endif %}>{{ r.review_request.doc.name }}</a></td>
-            <td>{{r.reviewed_rev|default:"See review"}}{% if r.review_request.requested_rev %}{% if r.review_request.requested_rev != r.reviewed_rev %}({{ r.review_request.requested_rev }} requested){% endif %}{% endif %}</td>
-            <td><a href="{% url 'ietf.group.views.review_requests' acronym=r.review_request.team.acronym %}">{{ r.review_request.team.acronym }}</a></td>
-            <td>{{ r.review_request.type.name }}</td>
+            <td><a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{{ r.doc.name }}</a></td>
+            <td>{{r.reviewed_rev|default:"See review"}}{% if r.requested_rev %}{% if r.requested_rev != r.reviewed_rev %}({{ r.requested_rev }} requested){% endif %}{% endif %}</td>
+            <td><a href="{% url 'ietf.group.views.review_requests' acronym=r.team.acronym %}">{{ r.team.acronym }}</a></td>
+            <td>{{ r.type.name }}</td>
             <td>
-              {{ r.review_request.deadline|date:"Y-m-d" }}
+              {{ r.deadline|date:"Y-m-d" }}
               {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
             </td>
             <td><span class="{% if r.state_id == "completed" or r.state_id == "part-completed" %}bg-success{% endif %}">{{ r.state.name }}</span></td>

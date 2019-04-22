@@ -9,7 +9,7 @@ from ietf.name.models import (
     LiaisonStatementState, LiaisonStatementTagName, MeetingTypeName, NomineePositionStateName,
     ReviewRequestStateName, ReviewResultName, ReviewTypeName, RoleName, RoomResourceName,
     SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName, TopicAudienceName,
-    DocUrlTagName, ReviewAssignmentStateName)
+    DocUrlTagName)
 
 from ietf.stats.models import CountryAlias
 
@@ -68,7 +68,6 @@ admin.site.register(LiaisonStatementTagName, NameAdmin)
 admin.site.register(MeetingTypeName, NameAdmin)
 admin.site.register(NomineePositionStateName, NameAdmin)
 admin.site.register(ReviewRequestStateName, NameAdmin)
-admin.site.register(ReviewAssignmentStateName, NameAdmin)
 admin.site.register(ReviewResultName, NameAdmin)
 admin.site.register(ReviewTypeName, NameAdmin)
 admin.site.register(RoleName, NameAdmin)

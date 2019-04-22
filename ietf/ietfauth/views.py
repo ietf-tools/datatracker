@@ -65,7 +65,7 @@ from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.ietfauth.utils import role_required
 from ietf.mailinglists.models import Subscribed, Whitelisted
 from ietf.person.models import Person, Email, Alias, PersonalApiKey
-from ietf.review.models import ReviewerSettings, ReviewWish, ReviewAssignment
+from ietf.review.models import ReviewRequest, ReviewerSettings, ReviewWish
 from ietf.review.utils import unavailable_periods_to_list, get_default_filter_re
 from ietf.doc.fields import SearchableDocumentField
 from ietf.utils.decorators import person_required
@@ -433,18 +433,18 @@ class AddReviewWishForm(forms.Form):
 
 @login_required
 def review_overview(request):
-    open_review_assignments = ReviewAssignment.objects.filter(
+    open_review_requests = ReviewRequest.objects.filter(
         reviewer__person__user=request.user,
-        state__in=["assigned", "accepted"],
+        state__in=["requested", "accepted"],
     )
     today = Date.today()
-    for r in open_review_assignments:
-        r.due = max(0, (today - r.review_request.deadline).days)
+    for r in open_review_requests:
+        r.due = max(0, (today - r.deadline).days)
 
-    closed_review_assignments = ReviewAssignment.objects.filter(
+    closed_review_requests = ReviewRequest.objects.filter(
         reviewer__person__user=request.user,
         state__in=["no-response", "part-completed", "completed"],
-    ).order_by("-review_request__time")[:20]
+    ).order_by("-time")[:20]
 
     teams = Group.objects.filter(role__name="reviewer", role__person__user=request.user, state="active")
 
@@ -483,8 +483,8 @@ def review_overview(request):
     review_wishes = ReviewWish.objects.filter(person__user=request.user).prefetch_related("team")
 
     return render(request, 'ietfauth/review_overview.html', {
-        'open_review_assignments': open_review_assignments,
-        'closed_review_assignments': closed_review_assignments,
+        'open_review_requests': open_review_requests,
+        'closed_review_requests': closed_review_requests,
         'teams': teams,
         'review_wishes': review_wishes,
         'review_wish_form': review_wish_form,

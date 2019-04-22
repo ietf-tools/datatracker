@@ -1,7 +1,10 @@
 {% autoescape off %}Review was partially completed by {{ by }}.
 
-A new reviewer may need to be assigned to get a complete review.
-{% if existing_assignments %}
-The following are already assigned to review this document:{% for assignment in existing_assignments %}
-{{ assignment.reviewer.name }} : {{ assignment.state }}{% endfor %}
+{% if new_review_req_url %}
+A new review request has been added for completing the review:
+
+{{ new_review_req_url }}
+{% else %}
+Found {{ existing_open_reqs|length }} open review request{{ existing_open_reqs|pluralize }} on the document so a new
+review request has not been added.
 {% endif %}{% endautoescape %}

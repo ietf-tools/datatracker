@@ -12,7 +12,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import Document, LastCallDocEvent, ConsensusDocEvent
 from ietf.doc.utils_search import fill_in_telechat_date
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem
-from ietf.review.utils import review_assignments_to_list_for_docs
+from ietf.review.utils import review_requests_to_list_for_docs
 
 def get_agenda_date(date=None):
     if not date:
@@ -156,7 +156,7 @@ def fill_in_agenda_docs(date, sections, docs=None):
         docs = docs.select_related("stream", "group").distinct()
         fill_in_telechat_date(docs)
 
-    review_assignments_for_docs = review_assignments_to_list_for_docs(docs)
+    review_requests_for_docs = review_requests_to_list_for_docs(docs)
 
     for doc in docs:
         if doc.telechat_date() != date:
@@ -182,7 +182,7 @@ def fill_in_agenda_docs(date, sections, docs=None):
                 if e and (e.consensus != None):
                     doc.consensus = "Yes" if e.consensus else "No"
 
-            doc.review_assignments = review_assignments_for_docs.get(doc.pk, [])
+            doc.review_requests = review_requests_for_docs.get(doc.pk, [])
         elif doc.type_id == "conflrev":
             doc.conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
         elif doc.type_id == "charter":

@@ -11,14 +11,14 @@
 {% block content %}
   {% origin %}
   <h1>{% if revising_review %}Revise{% else %}Complete{% endif %} review<br>
-      <small>{{ assignment.review_request.doc.name }}</small>
+      <small>{{ review_req.doc.name }}</small>
   </h1>
 
   <p>
-    <div><strong>Review type:</strong> {{ assignment.review_request.team.acronym }} - {{ assignment.review_request.type }} review </div>
-    <div><strong>Requested version for review:</strong> {{ assignment.review_request.requested_rev|default:"Current" }} </div>
-    <div><strong>Requested:</strong> {{ assignment.review_request.time|date:"Y-m-d" }} </div>
-    <div><strong>Reviewer:</strong> {{ assignment.reviewer.person.name }}</div>
+    <div><strong>Review type:</strong> {{ review_req.team.acronym }} - {{ review_req.type }} review </div>
+    <div><strong>Requested version for review:</strong> {{ review_req.requested_rev|default:"Current" }} </div>
+    <div><strong>Requsted:</strong> {{ review_req.time|date:"Y-m-d" }} </div>
+    <div><strong>Reviewer:</strong> {{ review_req.reviewer.person.name }}</div>
   </p>
 
   {% if not revising_review %}
@@ -37,7 +37,7 @@
     {% bootstrap_form form layout="horizontal" %}
 
     {% buttons %}
-    <a class="btn btn-default" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=assignment.review_request.pk %}">Cancel</a>
+    <a class="btn btn-default" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=review_req.pk %}">Cancel</a>
     <button type="submit" class="btn btn-primary">{% if revising_review %}Revise{% else %}Complete{% endif %} review</button>
     {% endbuttons %}
 
@@ -95,7 +95,7 @@
 {% block js %}
   <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
   <script>
-   var searchMailArchiveUrl = "{% url "ietf.doc.views_review.search_mail_archive" name=assignment.review_request.doc.name assignment_id=assignment.pk %}";
+   var searchMailArchiveUrl = "{% url "ietf.doc.views_review.search_mail_archive" name=review_req.doc.name request_id=review_req.pk %}";
   </script>
   <script src="{% static 'ietf/js/complete-review.js' %}"></script>
 {% endblock %}

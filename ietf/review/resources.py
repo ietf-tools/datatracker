@@ -7,7 +7,7 @@ from tastypie.cache import SimpleCache
 from ietf import api
 from ietf.api import ToOneField                         # pyflakes:ignore
 
-from ietf.review.models import (ReviewerSettings, ReviewRequest, ReviewAssignment,
+from ietf.review.models import (ReviewerSettings, ReviewRequest,
                                 UnavailablePeriod, ReviewWish, NextReviewerInTeam,
                                 ReviewSecretarySettings, ReviewTeamSettings, 
                                 HistoricalReviewerSettings )
@@ -45,6 +45,9 @@ class ReviewRequestResource(ModelResource):
     doc              = ToOneField(DocumentResource, 'doc')
     team             = ToOneField(GroupResource, 'team')
     requested_by     = ToOneField(PersonResource, 'requested_by')
+    reviewer         = ToOneField(EmailResource, 'reviewer', null=True)
+    review           = ToOneField(DocumentResource, 'review', null=True)
+    result           = ToOneField(ReviewResultNameResource, 'result', null=True)
     class Meta:
         queryset = ReviewRequest.objects.all()
         serializer = api.Serializer()
@@ -56,38 +59,17 @@ class ReviewRequestResource(ModelResource):
             "deadline": ALL,
             "requested_rev": ALL,
             "comment": ALL,
+            "reviewed_rev": ALL,
             "state": ALL_WITH_RELATIONS,
             "type": ALL_WITH_RELATIONS,
             "doc": ALL_WITH_RELATIONS,
             "team": ALL_WITH_RELATIONS,
             "requested_by": ALL_WITH_RELATIONS,
-        }
-api.review.register(ReviewRequestResource())
-
-from ietf.name.resources import ReviewAssignmentStateNameResource
-class ReviewAssignmentResource(ModelResource):
-    review_request   = ToOneField(ReviewRequest, 'review_request')
-    state            = ToOneField(ReviewAssignmentStateNameResource, 'state')
-    reviewer         = ToOneField(EmailResource, 'reviewer', null=True)
-    review           = ToOneField(DocumentResource, 'review', null=True)
-    result           = ToOneField(ReviewResultNameResource, 'result', null=True)
-    class Meta:
-        queryset = ReviewAssignment.objects.all()
-        serializer = api.Serializer()
-        cache = SimpleCache()
-        #resource_name = 'reviewassignment'
-        filtering = { 
-            "id": ALL,
-            "reviewed_rev": ALL,
-            "mailarch_url": ALL,
-            "assigned_on": ALL,
-            "completed_on": ALL,
-            "state": ALL_WITH_RELATIONS,
             "reviewer": ALL_WITH_RELATIONS,
             "review": ALL_WITH_RELATIONS,
             "result": ALL_WITH_RELATIONS,
         }
-api.review.register(ReviewAssignmentResource())
+api.review.register(ReviewRequestResource())
 
 from ietf.person.resources import PersonResource
 from ietf.group.resources import GroupResource

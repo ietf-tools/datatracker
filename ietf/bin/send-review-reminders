@@ -19,19 +19,17 @@ django.setup()
 
 import datetime
 from ietf.review.utils import (
-    review_assignments_needing_reviewer_reminder, email_reviewer_reminder,
-    review_assignments_needing_secretary_reminder, email_secretary_reminder,
+    review_requests_needing_reviewer_reminder, email_reviewer_reminder,
+    review_requests_needing_secretary_reminder, email_secretary_reminder,
 )
 
 today = datetime.date.today()
 
-for assignment in review_assignments_needing_reviewer_reminder(today):
-    email_reviewer_reminder(assignment.review_request)
-    for review_assignment in assignments.review_req.reviewassignment_set.all():
-        print("Emailed reminder to {} for review of {} in {} (req. id {})".format(review_assignment.reviewer.address, assignment.review_req.doc_id, assignment.review_req.team.acronym, assignment.review_req.pk))
+for review_req in review_requests_needing_reviewer_reminder(today):
+    email_reviewer_reminder(review_req)
+    print("Emailed reminder to {} for review of {} in {} (req. id {})".format(review_req.reviewer.address, review_req.doc_id, review_req.team.acronym, review_req.pk))
 
-for assignment, secretary_role in review_assignments_needing_secretary_reminder(today):
-    email_secretary_reminder(assignment.review_request, secretary_role)
-    review_req = assignment.review_request
-    print("Emailed reminder to {} for review of {} in {} (req. id {})".format(secretary_role.email.address, review_req.doc_id, review_req.team.acronym, review_req.pk))
+for review_req, secretary_role in review_requests_needing_secretary_reminder(today):
+    email_secretary_reminder(review_req, secretary_role)
+    print("Emailed reminder to {} for review of {} in {} (req. id {})".format(review_req.secretary_role.email.address, review_req.doc_id, review_req.team.acronym, review_req.pk))
     
