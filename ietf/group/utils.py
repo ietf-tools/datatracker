@@ -98,6 +98,8 @@ def save_milestone_in_history(milestone):
     return h
 
 def can_manage_group_type(user, group, type_id=None):
+    if not user.is_authenticated:
+        return False
     if type_id is None:
         type_id = group.type_id
     log.assertion("isinstance(type_id, (type(''), type(u'')))")
@@ -117,7 +119,7 @@ def can_manage_group_type(user, group, type_id=None):
 def can_manage_group(user, group):
     if can_manage_group_type(user, group):
         return True
-    return group.has_role(user, group.features.admin_roles)
+    return group.has_role(user, group.features.groupman_roles)
 
 def milestone_reviewer_for_group_type(group_type):
     if group_type == "rg":
@@ -203,12 +205,11 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     # actions
     actions = []
 
-    is_admin = group.has_role(request.user, group.features.admin_roles)
-    can_manage = can_manage_group_type(request.user, group)
+    can_manage = can_manage_group(request.user, group)
     can_edit_group = False              # we'll set this further down
 
     if group.features.has_milestones:
-        if group.state_id != "proposed" and (is_admin or can_manage):
+        if group.state_id != "proposed" and can_manage:
             actions.append((u"Edit milestones", urlreverse('ietf.group.milestones.edit_milestones;current', kwargs=kwargs)))
 
     if group.features.has_documents:
@@ -229,11 +230,11 @@ def construct_group_menu_context(request, group, selected, group_type, others):
             actions.append((u"Secretary settings", urlreverse(ietf.group.views.change_review_secretary_settings, kwargs=kwargs)))
             actions.append((u"Email open assignments summary", urlreverse(ietf.group.views.email_open_review_assignments, kwargs=dict(acronym=group.acronym, group_type=group.type_id))))
 
-    if group.state_id != "conclude" and (is_admin or can_manage):
+    if group.state_id != "conclude" and can_manage:
         can_edit_group = True
         actions.append((u"Edit group", urlreverse("ietf.group.views.edit", kwargs=dict(kwargs, action="edit"))))
 
-    if group.features.customize_workflow and (is_admin or can_manage):
+    if group.features.customize_workflow and can_manage:
         actions.append((u"Customize workflow", urlreverse("ietf.group.views.customize_workflow", kwargs=kwargs)))
 
     if group.state_id in ("active", "dormant") and not group.type_id in ["sdo", "rfcedtyp", "isoc", ] and can_manage:

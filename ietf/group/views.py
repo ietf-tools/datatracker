@@ -899,7 +899,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
         if not group_type and group:
             group_type = group.type_id
         if not (can_manage_group(request.user, group)
-                or group.has_role(request.user, group.features.admin_roles)):
+                or group.has_role(request.user, group.features.groupman_roles)):
             return HttpResponseForbidden("You don't have permission to access this view")
 
     if request.method == 'POST':
@@ -1088,7 +1088,7 @@ def customize_workflow(request, group_type=None, acronym=None):
         raise Http404
 
     if not (can_manage_group(request.user, group)
-            or group.has_role(request.user, group.features.admin_roles)):
+            or group.has_role(request.user, group.features.groupman_roles)):
         return HttpResponseForbidden("You don't have permission to access this view")
 
     if group_type == "rg":

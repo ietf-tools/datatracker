@@ -718,7 +718,7 @@ def setup_reviewer_field(field, review_req):
 def get_default_filter_re(person):
     if type(person) != Person:
         person = Person.objects.get(id=person)
-    groups_to_avoid =  [ r.group for r in person.role_set.all() if r.name in r.group.features.admin_roles and r.group.features.acts_like_wg ]
+    groups_to_avoid =  [ r.group for r in person.role_set.all() if r.name in r.group.features.groupman_roles and r.group.features.acts_like_wg ]
     if not groups_to_avoid:
         return '^draft-%s-.*$' % ( person.last_name().lower(), )
     else:

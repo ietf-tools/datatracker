@@ -866,7 +866,7 @@ class MilestoneTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        milestones_before = GroupMilestone.objects.count()
+        milestones_before = GroupMilestone.objects.filter(group=group).count()
         events_before = group.groupevent_set.count()
         due = self.last_day_of_month(datetime.date.today() + datetime.timedelta(days=365))
 
@@ -881,7 +881,8 @@ class MilestoneTests(TestCase):
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(GroupMilestone.objects.count(), milestones_before + 1)
+        m = GroupMilestone.objects.filter(group=group)
+        self.assertEqual(m.count(), milestones_before + 1)
 
         m = GroupMilestone.objects.get(desc="Test 3")
         self.assertEqual(m.state_id, "review")
