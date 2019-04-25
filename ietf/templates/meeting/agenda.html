@@ -446,6 +446,20 @@
                $(i).html(data);
            });
        }
+       var j = $(this).find(".frame2");
+       if ($(j).data("src")) {
+           $.get($(j).data("src"), function (data, status, xhr) {
+               var t = xhr.getResponseHeader("content-type");
+               if (t.indexOf("text/plain") > -1) {
+                   data = "<pre class='agenda'>" + data + "</pre>";
+               } else if(t.indexOf("text/html") > -1) {
+                   // nothing to do here
+               } else {
+                   data = "<p>Unknown type: " + xhr.getResponseHeader("content-type") + "</p>";
+               }
+               $(j).html(data);
+           });
+       }
    });
   </script>
 {% endblock %}
