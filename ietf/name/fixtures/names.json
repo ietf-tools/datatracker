@@ -8879,10 +8879,10 @@
   "default_tab": "ietf.group.views.group_about",
   "material_types": "[\"slides\"]",
   "admin_roles": "[\"lead\"]",
-  "docman_roles": "[\"chair\",\"secr\"]",
-  "groupman_roles": "[\"chair\",\"secr\"]",
-  "matman_roles": "[\"chair\",\"secr\"]",
-  "role_order": "[\"chair\",\"secr\"]"
+  "docman_roles": "[\"lead\",\"secr\"]",
+  "groupman_roles": "[\"lead\",\"secr\"]",
+  "matman_roles": "[\"lead\",\"secr\"]",
+  "role_order": "[\"lead\",\"secr\"]"
  }
 },
 {
