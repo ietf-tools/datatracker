@@ -1733,6 +1733,7 @@ class MaterialsTests(TestCase):
         settings.AGENDA_PATH = self.saved_agenda_path
         settings.SLIDE_STAGING_PATH = self.saved_staging_path
         shutil.rmtree(self.materials_dir)
+        shutil.rmtree(self.staging_dir)
 
     def crawl_materials(self, url, top):
         seen = set()
