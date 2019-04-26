@@ -102,6 +102,8 @@
               IPR Disclosure ID #{{ item.target.id }},
               {% if item.target.state.slug == "removed" %}
                 "{{ item.target.title }}" (which was removed at the request of the submitter)
+	      {% elif item.target.state.slug == "rejected" %}
+                "{{ item.target.title }}" (which was rejected)
               {% else %}
                 "<a href="{% url "ietf.ipr.views.show" id=item.target.id %}">{{ item.target.title }}</a>"
               {% endif %}
