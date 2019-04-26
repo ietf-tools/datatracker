@@ -1,3 +1,40 @@
+ietfdb (6.95.1) ietf; urgency=medium
+
+  This is a bugfix release, addressing the following issues:
+
+  * Modified the display of updates to a rejected IPR to avoid links that 
+    result in 404 pages.
+
+  * Combined [16154] from rjsparks@nostrum.com with previous work on ticket
+    #2633 in [16124].  This adds bluesheet links to the meeting materials
+    page.  Fixes issue #2633.
+
+  * Merged in [16152] from rjsparks@nostrum.com:
+    Show minutes on the popup for the meeting materials button on the agenda
+    page when those minutes are available. Fixes #2711.  
+
+  * Updated the role handling to use GroupFeatures.groupman_roles
+    consistently for group management access.  Fixes a IRTF RG delegate
+    permissions issue.
+
+  * Fixed some program group feature settings.
+
+  * Added a missing test directory cleanup action.
+
+  * Merged in [16145] from housley@vigilsec.com:
+    Updated the out-of-date links in the footer of each datatracker page. 
+    Fixes #2710.  
+
+  * Merged in [16144] from housley@vigilsec.com:
+    Removed some clutter from I-D upload page.  The information was moved to 
+    the Instructions tab, but a higligh to the Note Well and BCP 78 was added. 
+    Fixes #2057.   
+
+  * Added some HTTP header settings for better security.  Brings results at 
+    https://securityheaders.com/ up to an 'A' grade.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Apr 2019 11:23:57 +0000
+
 ietfdb (6.95.0) ietf; urgency=medium
 
   **IETF 104 code sprint**
