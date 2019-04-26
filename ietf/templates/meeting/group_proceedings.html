@@ -53,7 +53,7 @@
               <a href="{{session.all_meeting_bluesheets.0|meeting_href:meeting}}">Bluesheets</a><br>
          {% else %}
            {% for bs in session.all_meeting_bluesheets %}
-              <a href="{{bs|meeting_href:meeting}}">Bluesheets {{bs.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i"}}</a></br>
+              <a href="{{bs|meeting_href:meeting}}">Bluesheets {{bs.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i"}}</a><br>
            {% endfor %}
         {% endif %}
       {% endif %}
