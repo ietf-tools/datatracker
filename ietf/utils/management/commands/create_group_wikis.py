@@ -232,9 +232,9 @@ class Command(BaseCommand):
 
     def update_trac_permissions(self, name, group, env):
         if self.dummy_run:
-            self.note("Would update Trac permissions for '%s'" % name)
+            self.note("Would update Trac permissions for '%s' from group %s" % (name, group.acronym))
         else:
-            self.note("Updating Trac permissions for '%s'" % name)
+            self.note("Updating Trac permissions for '%s' from group %s" % (name, group.acronym))
             mgr = PermissionSystem(env)
             permission_list = mgr.get_all_permissions()
             permission_list = [ (u,a) for (u,a) in permission_list if not u in ['anonymous', 'authenticated']]
@@ -392,8 +392,13 @@ class Command(BaseCommand):
                 if not trac_env and not self.dummy_run:
                     continue
 
-                group = Group.objects.get(acronym=acronym)
-                self.update_trac_permissions(name, group, trac_env)
+                if acronym.endswith('*'):
+                    groups = Group.objects.filter(acronym__startswith=acronym[:-1], state_id='active')
+                    for group in groups:
+                        self.update_trac_permissions(name, group, trac_env)                        
+                else:
+                    group = Group.objects.get(acronym=acronym)
+                    self.update_trac_permissions(name, group, trac_env)
 
             except Exception as e:
                 self.errors.append(e)

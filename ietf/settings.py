@@ -935,8 +935,10 @@ TRAC_SVN_DIR_PATTERN = "/a/svn/group/%s"
 TRAC_CREATE_GROUP_STATES = ['bof', 'active', ]
 TRAC_CREATE_GROUP_ACRONYMS = ['iesg', 'iaoc', 'ietf', ]
 TRAC_CREATE_ADHOC_WIKIS = [
-    # admin group, name, sub-path
+    # admin group acronym, name, sub-path
+    # A trailing fileglob wildcard is supported on group acronyms
     ('iesg', 'Meeting', "ietf/meeting"),
+    ('nomcom*', 'NomCom', 'nomcom'),
 ]
 
 SVN_PACKAGES = [
