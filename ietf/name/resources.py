@@ -14,8 +14,9 @@ from ietf.name.models import ( AgendaTypeName, BallotPositionName, ConstraintNam
     ImportantDateName, IntendedStdLevelName, IprDisclosureStateName, IprEventTypeName,
     IprLicenseTypeName, LiaisonStatementEventTypeName, LiaisonStatementPurposeName,
     LiaisonStatementState, LiaisonStatementTagName, MeetingTypeName, NomineePositionStateName,
-    ReviewRequestStateName, ReviewResultName, ReviewTypeName, RoleName, RoomResourceName,
-    SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName, TopicAudienceName, )
+    ReviewAssignmentStateName, ReviewRequestStateName, ReviewResultName, ReviewTypeName,
+    RoleName, RoomResourceName, SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName,
+    TopicAudienceName, )
 
 class TimeSlotTypeNameResource(ModelResource):
     class Meta:
@@ -428,6 +429,20 @@ class ReviewRequestStateNameResource(ModelResource):
         }
 api.name.register(ReviewRequestStateNameResource())
 
+class ReviewAssignmentStateNameResource(ModelResource):
+    class Meta:
+        cache = SimpleCache()
+        queryset = ReviewAssignmentStateName.objects.all()
+        #resource_name = 'reviewassignmentstatename'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(ReviewAssignmentStateNameResource())
+
 class ReviewTypeNameResource(ModelResource):
     class Meta:
         cache = SimpleCache()
@@ -567,3 +582,5 @@ class AgendaTypeNameResource(ModelResource):
             "order": ALL,
         }
 api.name.register(AgendaTypeNameResource())
+
+

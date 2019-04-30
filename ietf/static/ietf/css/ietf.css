@@ -451,7 +451,11 @@ table tbody.meta th:nth-child(2), table tbody.meta td:nth-child(2) {
 	width: 9em;
 }
 
-
+table tbody.panel-meta th, table tbody.panel-meta td { border-top: 0; }
+table tbody.panel-meta th:first-child, table tbody.panel-meta td:first-child {
+  text-align: right;
+  width: 9em;
+}
 
 td.area-director div { border-bottom: solid #ccc 1px; }
 

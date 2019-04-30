@@ -11,7 +11,7 @@
 
   <h1>Email summary of assigned review requests for {{ group.acronym }}</h1>
 
-  {% if review_requests %}
+  {% if review_assignments %}
     <form class="email-open-review-assignments" method="post">{% csrf_token %}
       {% bootstrap_form form %}
 

@@ -7,7 +7,7 @@ from django.db import models
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
-from ietf.name.models import ReviewTypeName, ReviewRequestStateName, ReviewResultName
+from ietf.name.models import ReviewTypeName, ReviewRequestStateName, ReviewResultName, ReviewAssignmentStateName
 from ietf.utils.validators import validate_regular_expression_string
 from ietf.utils.models import ForeignKey, OneToOneField
 
@@ -105,9 +105,7 @@ class NextReviewerInTeam(models.Model):
         verbose_name_plural = "next reviewer in team settings"
 
 class ReviewRequest(models.Model):
-    """Represents a request for a review and the process it goes through.
-    There should be one ReviewRequest entered for each combination of
-    document, rev, and reviewer."""
+    """Represents a request for a review and the process it goes through."""
     state         = ForeignKey(ReviewRequestStateName)
 
     # Fields filled in on the initial record creation - these
@@ -121,34 +119,38 @@ class ReviewRequest(models.Model):
     requested_rev = models.CharField(verbose_name="requested revision", max_length=16, blank=True, help_text="Fill in if a specific revision is to be reviewed, e.g. 02")
     comment       = models.TextField(verbose_name="Requester's comments and instructions", max_length=2048, blank=True, help_text="Provide any additional information to show to the review team secretary and reviewer", default='')
 
-    # Fields filled in as reviewer is assigned and as the review is
-    # uploaded. Once these are filled in and we progress beyond being
-    # requested/assigned, any changes to the assignment happens by
-    # closing down the current request and making a new one, copying
-    # the request-part fields above.
-    reviewer      = ForeignKey(Email, blank=True, null=True)
+    # Moved to class ReviewAssignment:
+    # These exist only to facilitate data migrations. They will be removed in the next release.
+    unused_reviewer      = ForeignKey(Email, blank=True, null=True)
 
-    review        = OneToOneField(Document, blank=True, null=True)
-    reviewed_rev  = models.CharField(verbose_name="reviewed revision", max_length=16, blank=True)
-    result        = ForeignKey(ReviewResultName, blank=True, null=True)
+    unused_review        = OneToOneField(Document, blank=True, null=True)
+    unused_reviewed_rev  = models.CharField(verbose_name="reviewed revision", max_length=16, blank=True)
+    unused_result        = ForeignKey(ReviewResultName, blank=True, null=True)
 
     def __unicode__(self):
         return u"%s review on %s by %s %s" % (self.type, self.doc, self.team, self.state)
 
-    def other_requests(self):
-        return self.doc.reviewrequest_set.exclude(id=self.id)
+    def all_completed_assignments_for_doc(self):
+        return ReviewAssignment.objects.filter(review_request__doc=self.doc, state__in=['completed','part-completed'])
 
-    def other_completed_requests(self):
-        return self.other_requests().filter(state_id__in=['completed','part-completed'])
+    def request_closed_time(self):
+        return self.doc.request_closed_time(self) or self.time
 
-    def review_done_time(self):
-        # First check if this is completed review having review and if so take time from there.
-        if self.review and self.review.time:
-            return self.review.time
-        # If not, then it is closed review, so it either has event in doc or if not then take
-        # time from the request.
-        time = self.doc.request_closed_time(self)
-        return time if time else self.time
+class ReviewAssignment(models.Model):
+    """ One of possibly many reviews assigned in response to a ReviewRequest """
+    review_request = ForeignKey(ReviewRequest)
+    state          = ForeignKey(ReviewAssignmentStateName)
+    reviewer       = ForeignKey(Email)
+    assigned_on    = models.DateTimeField(blank=True, null=True)
+    completed_on   = models.DateTimeField(blank=True, null=True)
+    review         = OneToOneField(Document, blank=True, null=True)
+    reviewed_rev   = models.CharField(verbose_name="reviewed revision", max_length=16, blank=True)
+    result         = ForeignKey(ReviewResultName, blank=True, null=True)
+    mailarch_url   = models.URLField(blank=True, null = True)
+
+    def __unicode__(self):
+        return u"Assignment for %s (%s) : %s %s of %s" % (self.reviewer.person, self.state, self.review_request.team.acronym, self.review_request.type, self.review_request.doc)
+
 
 def get_default_review_types():
     return ReviewTypeName.objects.filter(slug__in=['early','lc','telechat'])

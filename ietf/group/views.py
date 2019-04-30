@@ -86,7 +86,7 @@ from ietf.meeting.helpers import get_meeting
 from ietf.meeting.utils import group_sessions
 from ietf.name.models import GroupTypeName, StreamName
 from ietf.person.models import Email
-from ietf.review.models import ReviewRequest, ReviewerSettings, ReviewSecretarySettings
+from ietf.review.models import ReviewRequest, ReviewAssignment, ReviewerSettings, ReviewSecretarySettings
 from ietf.review.utils import (can_manage_review_requests_for_team,
                                can_access_review_stats_for_team,
 
@@ -99,7 +99,7 @@ from ietf.review.utils import (can_manage_review_requests_for_team,
                                current_unavailable_periods_for_reviewers,
                                email_reviewer_availability_change,
                                reviewer_rotation_list,
-                               latest_review_requests_for_reviewers,
+                               latest_review_assignments_for_reviewers,
                                augment_review_requests_with_events,
                                get_default_filter_re,
                                days_needed_to_fulfill_min_interval_for_reviewers,
@@ -108,7 +108,7 @@ from ietf.doc.models import LastCallDocEvent
 
 
 
-from ietf.name.models import ReviewRequestStateName
+from ietf.name.models import ReviewAssignmentStateName
 from ietf.utils.mail import send_mail_text, parse_preformatted
 
 from ietf.ietfauth.utils import user_is_person
@@ -1263,27 +1263,26 @@ def group_menu_data(request):
 # --- Review views -----------------------------------------------------
 
 def get_open_review_requests_for_team(team, assignment_status=None):
-    open_review_requests = ReviewRequest.objects.filter(
-        team=team,
-        state__in=("requested", "accepted")
+    open_review_requests = ReviewRequest.objects.filter(team=team).filter(
+        Q(state_id='requested') | Q(state_id='assigned',reviewassignment__state__in=('assigned','accepted'))
     ).prefetch_related(
-        "reviewer__person", "type", "state", "doc", "doc__states",
+        "type", "state", "doc", "doc__states",
     ).order_by("-time", "-id")
 
     if assignment_status == "unassigned":
-        open_review_requests = suggested_review_requests_for_team(team) + list(open_review_requests.filter(reviewer=None))
+        open_review_requests = suggested_review_requests_for_team(team) + list(open_review_requests.filter(state_id='requested'))
     elif assignment_status == "assigned":
-        open_review_requests = list(open_review_requests.exclude(reviewer=None))
+        open_review_requests = list(open_review_requests.filter(state_id='assigned'))
     else:
         open_review_requests = suggested_review_requests_for_team(team) + list(open_review_requests)
 
-    today = datetime.date.today()
-    unavailable_periods = current_unavailable_periods_for_reviewers(team)
-    for r in open_review_requests:
-        if r.reviewer:
-            r.reviewer_unavailable = any(p.availability == "unavailable"
-                                         for p in unavailable_periods.get(r.reviewer.person_id, []))
-        r.due = max(0, (today - r.deadline).days)
+    #today = datetime.date.today()
+    #unavailable_periods = current_unavailable_periods_for_reviewers(team)
+    #for r in open_review_requests:
+        #if r.reviewer:
+        #    r.reviewer_unavailable = any(p.availability == "unavailable"
+        #                                 for p in unavailable_periods.get(r.reviewer.person_id, []))
+        #r.due = max(0, (today - r.deadline).days)
 
     return open_review_requests
 
@@ -1292,25 +1291,19 @@ def review_requests(request, acronym, group_type=None):
     if not group.features.has_reviews:
         raise Http404
 
-    assigned_review_requests = []
-    unassigned_review_requests = []
+    unassigned_review_requests = [r for r in get_open_review_requests_for_team(group) if not r.state_id=='assigned']
 
-    for r in get_open_review_requests_for_team(group):
-        if r.reviewer:
-            assigned_review_requests.append(r)
-        else:
-            unassigned_review_requests.append(r)
+    open_review_assignments = list(ReviewAssignment.objects.filter(review_request__team=group, state_id__in=('assigned','accepted')).order_by('-assigned_on'))
+    today = datetime.date.today()
+    unavailable_periods = current_unavailable_periods_for_reviewers(group)
+    for a in open_review_assignments:
+        a.reviewer_unavailable = any(p.availability == "unavailable"
+                                     for p in unavailable_periods.get(a.reviewer.person_id, []))
+        a.due = max(0, (today - a.review_request.deadline).days)
 
-    open_review_requests = [
-        ("Unassigned", unassigned_review_requests),
-        ("Assigned", assigned_review_requests),
-    ]
+    closed_review_assignments = ReviewAssignment.objects.filter(review_request__team=group).exclude(state_id__in=('assigned','accepted')).prefetch_related("state","result").order_by('-assigned_on')
 
-    closed_review_requests = ReviewRequest.objects.filter(
-        team=group,
-    ).exclude(
-        state__in=("requested", "accepted")
-    ).prefetch_related("reviewer__person", "type", "state", "doc", "result").order_by("-time", "-id")
+    closed_review_requests = ReviewRequest.objects.filter(team=group).exclude(state__in=("requested", "assigned")).prefetch_related("type", "state", "doc").order_by("-time", "-id")
 
     since_choices = [
         (None, "1 month"),
@@ -1338,10 +1331,14 @@ def review_requests(request, acronym, group_type=None):
             | Q(reviewrequestdocevent__isnull=True, time__gte=datetime.date.today() - date_limit)
         ).distinct()
 
+        closed_review_assignments = closed_review_assignments.filter(completed_on__gte = datetime.date.today() - date_limit)
+
     return render(request, 'group/review_requests.html',
                   construct_group_menu_context(request, group, "review requests", group_type, {
-                      "open_review_requests": open_review_requests,
+                      "unassigned_review_requests": unassigned_review_requests,
+                      "open_review_assignments": open_review_assignments,
                       "closed_review_requests": closed_review_requests,
+                      "closed_review_assignments": closed_review_assignments,
                       "since_choices": since_choices,
                       "since": since,
                       "can_manage_review_requests": can_manage_review_requests_for_team(request.user, group),
@@ -1365,8 +1362,8 @@ def reviewer_overview(request, acronym, group_type=None):
 
     today = datetime.date.today()
 
-    req_data_for_reviewers = latest_review_requests_for_reviewers(group)
-    review_state_by_slug = { n.slug: n for n in ReviewRequestStateName.objects.all() }
+    req_data_for_reviewers = latest_review_assignments_for_reviewers(group)
+    assignment_state_by_slug = { n.slug: n for n in ReviewAssignmentStateName.objects.all() }
 
     days_needed = days_needed_to_fulfill_min_interval_for_reviewers(group)
 
@@ -1387,15 +1384,16 @@ def reviewer_overview(request, acronym, group_type=None):
             person.busy = person.id in days_needed 
         
 
+        # TODO - What is this MAX_CLOSED_REQS trying to accomplish?
         MAX_CLOSED_REQS = 10
         days_since = 9999
         req_data = req_data_for_reviewers.get(person.pk, [])
-        open_reqs = sum(1 for d in req_data if d.state in ["requested", "accepted"])
+        open_reqs = sum(1 for d in req_data if d.state in ["assigned", "accepted"])
         latest_reqs = []
         for d in req_data:
-            if d.state in ["requested", "accepted"] or len(latest_reqs) < MAX_CLOSED_REQS + open_reqs:
-                latest_reqs.append((d.req_pk, d.doc, d.reviewed_rev, d.assigned_time, d.deadline,
-                                    review_state_by_slug.get(d.state),
+            if d.state in ["assigned", "accepted"] or len(latest_reqs) < MAX_CLOSED_REQS + open_reqs:
+                latest_reqs.append((d.assignment_pk, d.doc, d.reviewed_rev, d.assigned_time, d.deadline,
+                                    assignment_state_by_slug.get(d.state),
                                     int(math.ceil(d.assignment_to_closure_days)) if d.assignment_to_closure_days is not None else None))
             if d.state in ["completed", "completed_in_time", "completed_late"]:
                 if d.assigned_time is not None:
@@ -1474,23 +1472,6 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
         for r in opened_reqs:
             review_requests_dict[r].form.add_error(None, "New request.")
 
-        for req in review_requests:
-            existing_reviewer = request.POST.get(req.form.prefix + "-existing_reviewer")
-            if existing_reviewer is None:
-                continue
-
-            if existing_reviewer != unicode(req.reviewer_id or ""):
-                msg = "Assignment was changed."
-                a = req.form["action"].value()
-                if a == "assign":
-                    msg += " Didn't assign reviewer."
-                elif a == "close":
-                    msg += " Didn't close request."
-                req.form.add_error(None, msg)
-                req.form.data[req.form.prefix + "-action"] = "" # cancel the action
-
-                newly_assigned += 1
-
         form_results = []
         for req in review_requests:
             form_results.append(req.form.is_valid())
@@ -1565,37 +1546,35 @@ def email_open_review_assignments(request, acronym, group_type=None):
     if not can_manage_review_requests_for_team(request.user, group):
         return HttpResponseForbidden("You do not have permission to perform this action")
 
-    review_requests = list(ReviewRequest.objects.filter(
-        team=group,
-        state__in=("requested", "accepted"),
-    ).exclude(
-        reviewer=None,
-    ).prefetch_related("reviewer", "type", "state", "doc").distinct().order_by("reviewer","-deadline"))
+    review_assignments = list(ReviewAssignment.objects.filter(
+        review_request__team=group,
+        state__in=("assigned", "accepted"),
+    ).prefetch_related("reviewer", "review_request__type", "state", "review_request__doc").distinct().order_by("reviewer","-review_request__deadline"))
 
-    review_requests.sort(key=lambda r:r.reviewer.person.last_name()+r.reviewer.person.first_name())
+    review_assignments.sort(key=lambda r:r.reviewer.person.last_name()+r.reviewer.person.first_name())
 
-    for r in review_requests:
-        if r.doc.telechat_date():
-            r.section = 'For telechat %s' % r.doc.telechat_date().isoformat()
+    for r in review_assignments:
+        if r.review_request.doc.telechat_date():
+            r.section = 'For telechat %s' % r.review_request.doc.telechat_date().isoformat()
             r.section_order='0'+r.section
-        elif r.type_id == 'early':
+        elif r.review_request.type_id == 'early':
             r.section = 'Early review requests:'
             r.section_order='2'
         else:
             r.section = 'Last calls:'
             r.section_order='1'
-        e = r.doc.latest_event(LastCallDocEvent, type="sent_last_call")
+        e = r.review_request.doc.latest_event(LastCallDocEvent, type="sent_last_call")
         r.lastcall_ends = e and e.expires.date().isoformat()
-        r.earlier_review = ReviewRequest.objects.filter(doc=r.doc,reviewer__in=r.reviewer.person.email_set.all(),state="completed")
+        r.earlier_review = ReviewAssignment.objects.filter(review_request__doc=r.review_request.doc,reviewer__in=r.reviewer.person.email_set.all(),state="completed")
         if r.earlier_review:
-            req_rev = r.requested_rev or r.doc.rev
+            req_rev = r.review_request.requested_rev or r.review_request.doc.rev
             earlier_review_rev = r.earlier_review.aggregate(Max('reviewed_rev'))['reviewed_rev__max']
             if req_rev == earlier_review_rev:
                 r.earlier_review_mark = '**'
             else:
                 r.earlier_review_mark = '*'
 
-    review_requests.sort(key=lambda r: r.section_order)
+    review_assignments.sort(key=lambda r: r.section_order)
 
     back_url = request.GET.get("next")
     if not back_url:
@@ -1630,7 +1609,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
             template = DBTemplate.objects.get(path="/group/defaults/email/open_assignments.txt")
 
         partial_msg = render_to_string(template.path, {
-            "review_requests": review_requests,
+            "review_assignments": review_assignments,
             "rotation_list": reviewer_rotation_list(group)[:10],
             "group" : group,
         })
@@ -1651,7 +1630,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
 
     return render(request, 'group/email_open_review_assignments.html', {
         'group': group,
-        'review_requests': review_requests,
+        'review_assignments': review_assignments,
         'form': form,
         'back_url': back_url,
     })
@@ -1737,14 +1716,14 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
                     # the secretary might need to reassign
                     # assignments, so mention the current ones
 
-                    review_reqs = ReviewRequest.objects.filter(state__in=["requested", "accepted"], reviewer=reviewer_role.email, team=group)
+                    review_assignments = ReviewAssignment.objects.filter(state__in=["assigned", "accepted"], reviewer=reviewer_role.email, review_request__team=group)
                     msg += "\n\n"
 
-                    if review_reqs:
+                    if review_assignments:
                         msg += "{} is currently assigned to review:".format(reviewer_role.person)
-                        for r in review_reqs:
+                        for r in review_assignments:
                             msg += "\n\n"
-                            msg += "{} (deadline: {})".format(r.doc_id, r.deadline.isoformat())
+                            msg += "{} (deadline: {})".format(r.review_request.doc_id, r.review_request.deadline.isoformat())
                     else:
                         msg += "{} does not have any assignments currently.".format(reviewer_role.person)
 

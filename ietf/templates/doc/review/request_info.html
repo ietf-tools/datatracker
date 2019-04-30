@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2017, All Rights Reserved #}{% load origin %}{% origin %}
+{# Copyright The IETF Trust 2017, All Rights Reserved #}{% load origin bootstrap3 %}{% origin %}
   <table class="table table-condensed">
     <tbody class="meta">
       <tr>
@@ -68,14 +68,20 @@
         </tr>
       {% endif %}
 
+      {% if doc.time %}
       <tr>
         <th></th>
-        <th>Other Reviews</th>
+        <th>Draft last updated</th>
+        <td>{{ doc.time|date:"Y-m-d" }}</td>
+      </tr>
+      {% endif %}
+
+      <tr>
+        <th></th>
+        <th>Completed reviews</th>
         <td>
-          {% for req in review_req.other_completed_requests %}
-            {% if req.reviewer == review_req.reviewer %}<strong>{% endif %}
-            <a href="{% url "ietf.doc.views_review.review_request" name=req.doc request_id=req.id %}">{{req.team.acronym|capfirst}} {{req.type.name}} review of -{{req.reviewed_rev}} by {{req.reviewer.person.plain_name}}</a> {% if req.reviewed_rev != req.doc.rev %} (<a href="{{ rfcdiff_base_url }}?url1={{ req.doc.name }}-{{ req.reviewed_rev }}&amp;url2={{ req.doc.name }}-{{ req.doc.rev }}">diff</a>){% endif %}<br>
-            {% if req.reviewer == review_req.reviewer %}</strong>{% endif %}
+          {% for a in review_req.all_completed_assignments_for_doc %}
+            <a href="{% url "ietf.doc.views_doc.document_main" name=a.review.name %}">{{a.review_request.team.acronym|capfirst}} {{a.review_request.type.name}} review of -{{a.reviewed_rev}} by {{a.reviewer.person.plain_name}}</a> {% if a.reviewed_rev != a.review_request.doc.rev %} (<a href="{{ rfcdiff_base_url }}?url1={{ a.review_request.doc.name }}-{{ a.reviewed_rev }}&amp;url2={{ a.review_request.doc.name }}-{{ a.review_request.doc.rev }}">diff</a>){% endif %}<br>
           {% endfor %}
         </td>
       </tr>
@@ -92,115 +98,107 @@
         </tr>
       {% endif %}
     </tbody>
-
-    <tbody class="meta">
-      <tr>
-        <th>Review</th>
-        <th>State</th>
-        <td>{{ review_req.state.name }}
-	    {% if snapshot %}
-               <span class="label label-warning">Snapshot</span>
-            {% endif %}
-	</td>
-      </tr>
-
-      <tr>
-        <th></th>
-        <th>Reviewer</th>
-        <td>
-          {% if review_req.reviewer %}
-            {{ review_req.reviewer.person }}
-          {% else %}
-            None assigned yet
-          {% endif %}
-
-          {% if can_assign_reviewer %}
-            <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.assign_reviewer" name=doc.name request_id=review_req.pk %}"><span class="fa fa-user"></span> {% if review_req.reviewer %}Reassign{% else %}Assign{% endif %} reviewer</a>
-          {% endif %}
-
-          {% if review_req.reviewer %}
-            {% if can_reject_reviewer_assignment or can_accept_reviewer_assignment %}
-              <div class="reviewer-assignment-not-accepted">
-                {% if review_req.state_id == "requested"%}
-                  <em>Assignment not accepted yet:</em>
-                {% else %}
-                  <em>Assignment accepted:</em>
-                {% endif %}
-
-                {% if can_reject_reviewer_assignment %}
-                  <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.reject_reviewer_assignment" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Reject</a>
-                {% endif %}
-                
-                {% if can_accept_reviewer_assignment %}
-                  <form style="display:inline" method="post" action="{% url "ietf.doc.views_review.review_request" name=doc.name request_id=review_req.pk %}">{% csrf_token %}<button class="btn btn-success btn-xs" type="submit" name="action" value="accept"><span class="fa fa-check"></span> Accept</button></form>
-                {% endif %}
-              </div>
-            {% endif %}
-          {% endif %}
-        </td>
-      </tr>
-
-      <tr>
-        <th></th>
-        <th>Review</th>
-        <td>
-          {% if review_req.review %}
-            <a href="{{ review_req.review.get_absolute_url }}">{{ review_req.review.name }}</a>
-          {% elif review_req.state_id == "requested" or review_req.state_id == "accepted" %}
-            Not completed yet
-          {% else %}
-            Not available
-          {% endif %}
-
-          {% if can_complete_review %}
-            <a class="btn btn-primary btn-xs" href="{% url "ietf.doc.views_review.complete_review" name=doc.name request_id=review_req.pk %}"><span class="fa fa-pencil-square-o"></span> {% if review_req.state_id == "requested" or review_req.state_id == "accepted" %}Complete review{% else %}Correct review{% endif %}</a>
-          {% endif %}
-        </td>
-      </tr>
-
-      {% if review_req.review and review_req.review.external_url %}
-        <tr>
-          <th></th>
-          <th>Posted at</th>
-          <td>
-            <a href="{{ review_req.review.external_url }}">{{ review_req.review.external_url }}</a>
-          </td>
-        </tr>
-      {% endif %}
-
-      {% if review_req.reviewed_rev %}
-        <tr>
-          <th></th>
-          <th>Reviewed rev.</th>
-          <td><a href="{% url "ietf.doc.views_doc.document_main" name=review_req.doc.name rev=review_req.reviewed_rev %}">{{ review_req.reviewed_rev }}</a> {% if review_req.reviewed_rev != review_req.doc.rev %}(document currently at {{ review_req.doc.rev }}){% endif %}</td>
-        </tr>
-      {% endif %}
-
-      {% if review_req.result %}
-        <tr>
-          <th></th>
-          <th>Review result</th>
-          <td>{{ review_req.result.name }}</td>
-        </tr>
-      {% endif %}
-
-      {% if doc.time %}
-      <tr>
-        <th></th>
-        <th>Draft last updated</th>
-        <td>{{ doc.time|date:"Y-m-d" }}</td>
-      </tr>
-      {% endif %}
-
-      {% if review_req.state_id == "completed" or review_req.state_id == "part-completed" %}
-	<tr>
-	  <th></th>
-	  <th>Review completed:</th>
-	  <td>
-	    {{ review_req.review_done_time|date:"Y-m-d" }}
-	  </td>
-	</tr>
-      {% endif %}
-    </tbody>
   </table>
 
+  <p><strong>Assignments</strong></p>
+    {% if can_assign_reviewer %}
+      <p>
+        <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.assign_reviewer" name=doc.name request_id=review_req.pk %}"><span class="fa fa-user"></span> Assign reviewer</a>
+      </p>
+    {% endif %}
+
+  {% for assignment in assignments %}
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        {{ assignment.reviewer.person }}
+        {% if assignment.can_reject_reviewer_assignment or assignment.can_accept_reviewer_assignment %}
+          <div class="reviewer-assignment-not-accepted">
+            {% if assignment.state_id == "assigned"%}
+              <em>Assignment not accepted yet:</em>
+            {% else %}
+              <em>Assignment accepted:</em>
+            {% endif %}
+            {% if assignment.can_reject_reviewer_assignment %}
+              <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.reject_reviewer_assignment" name=doc.name assignment_id=assignment.pk %}"><span class="fa fa-ban"></span> Reject</a>
+            {% endif %}
+            {% if assignment.can_accept_reviewer_assignment %}
+                <form style="display:inline" method="post" action="{% url "ietf.doc.views_review.review_request" name=doc.name request_id=review_req.pk %}">{% csrf_token %}<button class="btn btn-success btn-xs" type="submit" name="action" value="accept"><span class="fa fa-check"></span> Accept</button></form>
+            {% endif %}
+          </div>
+        {% endif %} 
+      </div>
+      <div class="panel-body">
+        <table class="table table-condensed">
+          <tbody class="panel-meta">
+            <tr>
+              <th>State</th>
+              <td>{{ assignment.state.name }}
+                {% if snapshot %}
+                   <span class="label label-warning">Snapshot</span>
+                {% endif %}
+              </td>
+            </tr>
+
+            {% if assignment.state_id != "withdrawn" and assignment.state_id != "no-response" and assignment.state_id != "rejected" %}
+              <tr>
+                <th>Review</th>
+                <td>
+                  {% if assignment.review %}
+                    <a href="{{ assignment.review.get_absolute_url }}">{{ assignment.review.name }}</a>
+                  {% elif assignment.state_id == "assigned" or assignment.state_id == "accepted" %}
+                    Not completed yet
+                  {% else %}
+                    Not available
+                  {% endif %}
+
+                  {% if assignment.can_complete_review %}
+                    <a class="btn btn-primary btn-xs" href="{% url "ietf.doc.views_review.complete_review" name=doc.name assignment_id=assignment.pk %}"><span class="fa fa-pencil-square-o"></span> {% if assignment.state_id == "assigned" or assignment.state_id == "accepted" %}Complete review{% else %}Correct review{% endif %}</a>
+                  {% endif %}
+
+                  {% if assignment.state_id == "assigned" or assignment.state_id == "accepted" %}
+                    {% if can_assign_reviewer %}
+                      <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.mark_reviewer_assignment_no_response" name=doc.name assignment_id=assignment.pk %}"><span class="fa fa-ban"></span> No response</a>
+                      <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.withdraw_reviewer_assignment" name=doc.name assignment_id=assignment.pk %}"><span class="fa fa-ban"></span> Withdraw</a>
+                    {% endif %}
+                  {% endif %}
+                </td>
+              </tr>
+            {% endif %}
+
+            {% if assignment.review and assignment.review.external_url %}
+              <tr>
+                <th>Posted at</th>
+                <td>
+                  <a href="{{ assignment.review.external_url }}">{{ assignment.review.external_url }}</a>
+                </td>
+              </tr>
+            {% endif %}
+
+            {% if assignment.reviewed_rev %}
+              <tr>
+                <th>Reviewed rev.</th>
+                <td><a href="{% url "ietf.doc.views_doc.document_main" name=review_req.doc.name rev=assignment.reviewed_rev %}">{{ assignment.reviewed_rev }}</a> {% if assignment.reviewed_rev != review_req.doc.rev %}(document currently at {{ review_req.doc.rev }}){% endif %}</td>
+              </tr>
+            {% endif %}
+
+            {% if assignment.result %}
+              <tr>
+                <th>Review result</th>
+                <td>{{ assignment.result.name }}</td>
+              </tr>
+            {% endif %}
+
+
+            {% if assignment.state_id == "completed" or assignment.state_id == "part-completed" %}
+            	<tr>
+            	  <th>Review completed:</th>
+            	  <td>
+            	    {{ assignment.completed_on|date:"Y-m-d" }}
+            	  </td>
+            	</tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endfor %}
