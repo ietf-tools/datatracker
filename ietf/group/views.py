@@ -757,26 +757,6 @@ def meetings(request, acronym=None, group_type=None):
                      'can_edit':can_edit,
                   }))
 
-def derived_archives(request, acronym=None, group_type=None):
-    group = get_group_or_404(acronym,group_type) if acronym else None
-
-    list_acronym = None
-
-    m = re.search('mailarchive.ietf.org/arch/search/?\?email_list=([-\w]+)\Z',group.list_archive)
-    if m:
-        list_acronym=m.group(1)
-
-    if not list_acronym:
-        m = re.search('mailarchive.ietf.org/arch/browse/([-\w]+)/?\Z',group.list_archive)
-        if m:
-            list_acronym=m.group(1)
-
-    return render(request, 'group/derived_archives.html',
-                  construct_group_menu_context(request, group, "list archive", group_type, {
-                     'group':group,
-                     'list_acronym':list_acronym,
-                  }))
-
 def chair_photos(request, group_type=None):
     roles = sorted(Role.objects.filter(group__type=group_type, group__state='active', name_id='chair'),key=lambda x: x.person.last_name()+x.person.name+x.group.acronym)
     for role in roles:

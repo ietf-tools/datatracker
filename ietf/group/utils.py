@@ -195,10 +195,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     entries.append(("Photos", urlreverse("ietf.group.views.group_photos", kwargs=kwargs)))
     entries.append(("Email expansions", urlreverse("ietf.group.views.email", kwargs=kwargs)))
     if group.list_archive.startswith("http:") or group.list_archive.startswith("https:") or group.list_archive.startswith("ftp:"):
-        if 'mailarchive.ietf.org' in group.list_archive:
-            entries.append(("List archive", urlreverse("ietf.group.views.derived_archives", kwargs=kwargs)))
-        else:
-            entries.append((mark_safe("List archive &raquo;"), group.list_archive))
+        entries.append((mark_safe("List archive &raquo;"), group.list_archive))
     if group.has_tools_page():
         entries.append((mark_safe("Tools &raquo;"), "https://tools.ietf.org/%s/%s/" % (group.type_id, group.acronym)))
 

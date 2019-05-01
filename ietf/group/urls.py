@@ -38,7 +38,6 @@ info_detail_urls = [
     url(r'^materials/$', views.materials),
     url(r'^materials/new/$', material_views.choose_material_type),
     url(r'^materials/new/(?P<doc_type>[\w-]+)/$', material_views.edit_material, { 'action': "new" }, 'ietf.doc.views_material.edit_material'),
-    url(r'^archives/$', views.derived_archives),
     url(r'^photos/$', views.group_photos),
     url(r'^reviews/$', views.review_requests),
     url(r'^reviews/manage/(?P<assignment_status>unassigned)/$', views.manage_review_requests),
