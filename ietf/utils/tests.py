@@ -73,10 +73,10 @@ body
 """
         send_mail_preformatted(None, msg, {}, {})
         recv = outbox[-1]
-        self.assertEqual(recv['To'], '<to1@example.com>, <to2@example.com>')
-        self.assertEqual(recv['From'], 'from1@ietf.org, from2@ietf.org')
-        self.assertEqual(recv['Cc'], 'cc1@example.com, cc2@example.com')
-        self.assertEqual(recv['Bcc'], None)
+        self.assertSameEmail(recv['To'], '<to1@example.com>, <to2@example.com>')
+        self.assertSameEmail(recv['From'], 'from1@ietf.org, from2@ietf.org')
+        self.assertSameEmail(recv['Cc'], 'cc1@example.com, cc2@example.com')
+        self.assertSameEmail(recv['Bcc'], None)
         self.assertEqual(recv['Subject'], 'subject')
         self.assertEqual(recv.get_payload(), 'body\n')
 
@@ -88,10 +88,10 @@ body
         }
         send_mail_preformatted(request=None, preformatted=msg, extra={}, override=override)
         recv = outbox[-1]
-        self.assertEqual(recv['To'], '<oto1@example.net>, <oto2@example.net>')
-        self.assertEqual(recv['From'], 'ofrom1@ietf.org, ofrom2@ietf.org')
-        self.assertEqual(recv['Cc'], 'occ1@example.net, occ2@example.net')
-        self.assertEqual(recv['Bcc'], None)
+        self.assertSameEmail(recv['To'], '<oto1@example.net>, <oto2@example.net>')
+        self.assertSameEmail(recv['From'], 'ofrom1@ietf.org, ofrom2@ietf.org')
+        self.assertSameEmail(recv['Cc'], 'occ1@example.net, occ2@example.net')
+        self.assertSameEmail(recv['Bcc'], None)
         self.assertEqual(recv['Subject'], 'osubject')
         self.assertEqual(recv.get_payload(), 'body\n')
 
@@ -103,10 +103,10 @@ body
         }
         send_mail_preformatted(request=None, preformatted=msg, extra={}, override=override)
         recv = outbox[-1]
-        self.assertEqual(recv['To'], '<oto1@example.net>, <oto2@example.net>')
-        self.assertEqual(recv['From'], '<ofrom1@ietf.org>, ofrom2@ietf.org')
-        self.assertEqual(recv['Cc'], '<occ1@example.net>, occ2@example.net')
-        self.assertEqual(recv['Bcc'], None)
+        self.assertSameEmail(recv['To'], '<oto1@example.net>, <oto2@example.net>')
+        self.assertSameEmail(recv['From'], '<ofrom1@ietf.org>, ofrom2@ietf.org')
+        self.assertSameEmail(recv['Cc'], '<occ1@example.net>, occ2@example.net')
+        self.assertSameEmail(recv['Bcc'], None)
         self.assertEqual(recv['Subject'], 'osubject')
         self.assertEqual(recv.get_payload(), 'body\n')
 

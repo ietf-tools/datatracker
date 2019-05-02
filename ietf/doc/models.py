@@ -994,6 +994,7 @@ EVENT_TYPES = [
     ("requested_review", "Requested review"),
     ("assigned_review_request", "Assigned review request"),
     ("closed_review_request", "Closed review request"),
+    ("closed_review_assignment", "Closed review assignment"),
 
     # downref
     ("downref_approved", "Downref approved"),

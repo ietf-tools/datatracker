@@ -333,7 +333,7 @@ def reject_reviewer_assignment(request, name, assignment_id):
             review_assignment.save()
 
             ReviewAssignmentDocEvent.objects.create(
-                type="closed_review_request",
+                type="closed_review_assignment",
                 doc=review_assignment.review_request.doc,
                 rev=review_assignment.review_request.doc.rev,
                 by=request.user.person,
@@ -378,7 +378,7 @@ def withdraw_reviewer_assignment(request, name, assignment_id):
         review_assignment.save()
 
         ReviewAssignmentDocEvent.objects.create(
-            type="closed_review_request",
+            type="closed_review_assignment",
             doc=review_assignment.review_request.doc,
             rev=review_assignment.review_request.doc.rev,
             by=request.user.person,
@@ -415,7 +415,7 @@ def mark_reviewer_assignment_no_response(request, name, assignment_id):
         review_assignment.save()
 
         ReviewAssignmentDocEvent.objects.create(
-            type="closed_review_request",
+            type="closed_review_assignment",
             doc=review_assignment.review_request.doc,
             rev=review_assignment.review_request.doc.rev,
             by=request.user.person,
@@ -652,9 +652,9 @@ def complete_review(request, name, assignment_id):
             if need_to_email_review:
                 desc += " " + "Sent review to list."
 
-            close_event = ReviewAssignmentDocEvent.objects.filter(type="closed_review_request", review_assignment=assignment).first()
+            close_event = ReviewAssignmentDocEvent.objects.filter(type="closed_review_assignment", review_assignment=assignment).first()
             if not close_event:
-                close_event = ReviewAssignmentDocEvent(type="closed_review_request", review_assignment=assignment)
+                close_event = ReviewAssignmentDocEvent(type="closed_review_assignment", review_assignment=assignment)
 
             close_event.doc = assignment.review_request.doc
             close_event.rev = assignment.review_request.doc.rev

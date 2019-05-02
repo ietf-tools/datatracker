@@ -583,7 +583,7 @@ def close_review_request(request, review_req, close_state):
             assignment.state_id = 'withdrawn'
             assignment.save()
             ReviewAssignmentDocEvent.objects.create(
-                type='closed_review_request',
+                type='closed_review_assignment',
                 doc=review_req.doc,
                 rev=review_req.doc.rev,
                 by=request.user.person,

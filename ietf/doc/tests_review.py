@@ -19,7 +19,7 @@ import debug                            # pyflakes:ignore
 
 import ietf.review.mailarch
 from ietf.doc.factories import NewRevisionDocEventFactory, WgDraftFactory, WgRfcFactory, ReviewFactory
-from ietf.doc.models import DocumentAuthor, RelatedDocument, DocEvent, ReviewAssignmentDocEvent
+from ietf.doc.models import DocumentAuthor, RelatedDocument, DocEvent, ReviewRequestDocEvent, ReviewAssignmentDocEvent
 from ietf.group.factories import RoleFactory, ReviewTeamFactory
 from ietf.group.models import Group
 from ietf.message.models import Message
@@ -207,9 +207,15 @@ class ReviewTests(TestCase):
 
         review_req = reload_db_objects(review_req)
         self.assertEqual(review_req.state_id, "withdrawn")
-        e = doc.latest_event()
+
+        e = doc.latest_event(ReviewRequestDocEvent)
         self.assertEqual(e.type, "closed_review_request")
         self.assertTrue("closed" in e.desc.lower())
+
+        e = doc.latest_event(ReviewAssignmentDocEvent)
+        self.assertEqual(e.type, "closed_review_assignment")
+        self.assertTrue("closed" in e.desc.lower())
+
         self.assertEqual(len(outbox), 1)
         self.assertTrue("closed" in outbox[0].get_payload(decode=True).decode("utf-8").lower())
 
@@ -465,7 +471,7 @@ class ReviewTests(TestCase):
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, "rejected")
         e = doc.latest_event()
-        self.assertEqual(e.type, "closed_review_request")
+        self.assertEqual(e.type, "closed_review_assignment")
         self.assertTrue("rejected" in e.desc)
         self.assertEqual(len(outbox), 1)
         self.assertTrue("Test message" in outbox[0].get_payload(decode=True).decode("utf-8"))
@@ -867,7 +873,7 @@ class ReviewTests(TestCase):
 
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, "completed")
-        event = ReviewAssignmentDocEvent.objects.get(type="closed_review_request", review_assignment=assignment)
+        event = ReviewAssignmentDocEvent.objects.get(type="closed_review_assignment", review_assignment=assignment)
         self.assertEqual(event.time, datetime.datetime(2012, 12, 24, 12, 13, 14))
 
         with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
@@ -892,7 +898,7 @@ class ReviewTests(TestCase):
 
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.review.rev, "01")
-        event = ReviewAssignmentDocEvent.objects.get(type="closed_review_request", review_assignment=assignment)
+        event = ReviewAssignmentDocEvent.objects.get(type="closed_review_assignment", review_assignment=assignment)
         self.assertEqual(event.time, datetime.datetime(2013, 12, 24, 11, 11, 11))
 
         self.assertEqual(len(outbox), 0)

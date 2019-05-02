@@ -129,7 +129,8 @@ def send_smtp(msg, bcc=None):
                 server.quit()
             except smtplib.SMTPServerDisconnected:
                 pass
-        log(u"sent email from '%s' to %s id %s subject '%s'" % (frm, to, msg.get('Message-ID', ''), msg.get('Subject', '[no subject]')))
+        subj = msg.get('Subject', u'[no subject]')
+        log(u"sent email from '%s' to %s id %s subject '%s'" % (frm, to, msg.get('Message-ID', u''), subj))
     
 def copy_email(msg, to, toUser=False, originalBcc=None):
     '''
@@ -376,6 +377,23 @@ def parse_preformatted(preformatted, extra={}, override={}):
             extra[k] = list(set(v + ev))
         else:
             extra[k] = v
+
+    # Handle non-ascii address names and some other fields
+    for key in ['To', 'From', 'Cc', 'Bcc']:
+        values = msg.get_all(key, [])
+        if values:
+            values = getaddresses(values)
+            del msg[key]
+            msg[key] = ',\n    '.join(formataddr(v) for v in values)
+    for key in ['Subject', ]:
+        values = msg.get_all(key)
+        if values:
+            del msg[key]
+            for v in values:
+                if isascii(v):
+                    msg[key] = v
+                else:
+                    msg[key] = Header(v, 'utf-8')
 
     bcc = msg['Bcc']
     del msg['Bcc']

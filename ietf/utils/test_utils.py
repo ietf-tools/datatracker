@@ -34,6 +34,7 @@
 
 import os
 import re
+import email
 import html5lib
 import sys
 import urllib2
@@ -108,6 +109,16 @@ class TestCase(django.test.TestCase):
         self.assertHttpOK(resp)
         self.assertTrue(resp['Content-Type'].startswith('text/html'))
         self.assertValidHTML(resp.content)
+
+    def assertSameEmail(self, a, b, msg=None):
+        def normalize(x):
+            if x:
+                if not isinstance(x, list):
+                    x = [ x ]
+                x = email.utils.getaddresses(x)
+                x.sort()
+            return x
+        return self.assertEqual(normalize(a), normalize(b), msg)
 
     def tempdir(self, label):
         slug = slugify(self.__class__.__name__.replace('.','-'))
