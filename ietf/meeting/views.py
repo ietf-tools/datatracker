@@ -2189,9 +2189,9 @@ def finalize_proceedings(request, num=None):
 
 def proceedings_acknowledgements(request, num=None):
     '''Display Acknowledgements for meeting'''
-    meeting = get_meeting(num)
-    if not num.isdigit():
+    if not (num and num.isdigit()):
         raise Http404
+    meeting = get_meeting(num)
     if int(meeting.number) < settings.NEW_PROCEEDINGS_START:
         return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/acknowledgement.html' % num )
     return render(request, "meeting/proceedings_acknowledgements.html", {
@@ -2200,9 +2200,9 @@ def proceedings_acknowledgements(request, num=None):
 
 def proceedings_attendees(request, num=None):
     '''Display list of meeting attendees'''
-    meeting = get_meeting(num)
-    if not num.isdigit():
+    if not (num and num.isdigit()):
         raise Http404
+    meeting = get_meeting(num)
     if int(meeting.number) < settings.NEW_PROCEEDINGS_START:
         return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/attendees.html' % num )
     overview_template = '/meeting/proceedings/%s/attendees.html' % meeting.number
@@ -2217,9 +2217,9 @@ def proceedings_attendees(request, num=None):
 
 def proceedings_overview(request, num=None):
     '''Display Overview for given meeting'''
-    meeting = get_meeting(num)
-    if not num.isdigit():
+    if not (num and num.isdigit()):
         raise Http404
+    meeting = get_meeting(num)
     if int(meeting.number) < settings.NEW_PROCEEDINGS_START:
         return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/overview.html' % num )
     overview_template = '/meeting/proceedings/%s/overview.rst' % meeting.number
@@ -2235,9 +2235,9 @@ def proceedings_overview(request, num=None):
 @cache_page( 60 * 60 )
 def proceedings_progress_report(request, num=None):
     '''Display Progress Report (stats since last meeting)'''
-    meeting = get_meeting(num)
-    if not num.isdigit():
+    if not (num and num.isdigit()):
         raise Http404
+    meeting = get_meeting(num)
     if int(meeting.number) < settings.NEW_PROCEEDINGS_START:
         return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/progress-report.html' % num )
     sdate = meeting.previous_meeting().date
