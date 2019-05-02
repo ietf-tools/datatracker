@@ -10,7 +10,13 @@ def forward(apps, schema_editor):
 
     # TODO: Remove these newly unused states in a future release
     ReviewRequestStateName.objects.filter(slug__in=['accepted', 'rejected', 'no-response', 'part-completed', 'completed', 'unknown']).update(used=False)
-    ReviewRequestStateName.objects.create(slug = 'assigned', name = 'Assigned', desc = 'The ReviewRequest has been assigned to at least one reviewer' , used = True, order = 0)
+    name, created = ReviewRequestStateName.objects.get_or_create(slug = 'assigned')
+    if created:
+        name.name = 'Assigned'
+        name.desc = 'The ReviewRequest has been assigned to at least one reviewer'
+        name.used = True
+        name.order = 0
+        name.save()
 
     assignment_states = [
         { 'slug': 'assigned',
