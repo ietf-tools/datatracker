@@ -9,6 +9,9 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('doc', '0011_reviewassignmentdocevent'),
+        # present to facilitate migration to just before reveiw.0010:
+        ('name', '0006_adjust_statenames'), 
+        ('dbtemplate', '0004_adjust_assignment_email_summary_templates'),
     ]
 
     operations = [

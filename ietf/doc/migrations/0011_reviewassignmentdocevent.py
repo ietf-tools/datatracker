@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('review', '0009_refactor_review_request'),
         ('name', '0005_reviewassignmentstatename'),
-        ('doc', '0010_alter_field_documenturl_url'),
+        ('doc', '0010_auto_20190225_1302'),
     ]
 
     operations = [

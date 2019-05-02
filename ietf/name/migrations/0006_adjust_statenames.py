@@ -76,8 +76,11 @@ def forward(apps, schema_editor):
     ]
 
     for entry in assignment_states:
-        ReviewAssignmentStateName.objects.create(**entry)
-
+        name, created = ReviewAssignmentStateName.objects.get_or_create(slug=entry['slug'])
+        if created:
+            for k, v in entry.items():
+                setattr(name, k, v)
+            name.save()
 
 def reverse(apps, schema_editor):
     ReviewRequestStateName = apps.get_model('name','ReviewRequestStateName')
