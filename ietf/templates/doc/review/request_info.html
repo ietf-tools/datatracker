@@ -81,7 +81,13 @@
         <th>Completed reviews</th>
         <td>
           {% for a in review_req.all_completed_assignments_for_doc %}
-            <a href="{% url "ietf.doc.views_doc.document_main" name=a.review.name %}">{{a.review_request.team.acronym|capfirst}} {{a.review_request.type.name}} review of -{{a.reviewed_rev}} by {{a.reviewer.person.plain_name}}</a> {% if a.reviewed_rev != a.review_request.doc.rev %} (<a href="{{ rfcdiff_base_url }}?url1={{ a.review_request.doc.name }}-{{ a.reviewed_rev }}&amp;url2={{ a.review_request.doc.name }}-{{ a.review_request.doc.rev }}">diff</a>){% endif %}<br>
+	    {% if a.review %}
+            <a href="{% url "ietf.doc.views_doc.document_main" name=a.review.name %}">{{a.review_request.team.acronym|capfirst}} {{a.review_request.type.name}} review of -{{a.reviewed_rev|default:"??"}} by {{a.reviewer.person.plain_name}}</a>
+	    {% else %}
+	    {{a.review_request.team.acronym|capfirst}} {{a.review_request.type.name}} review of -{{a.reviewed_rev|default:"??"}} by {{a.reviewer.person.plain_name}}
+	    {% endif %}
+	    {% if a.reviewed_rev and a.reviewed_rev != a.review_request.doc.rev %} (<a href="{{ rfcdiff_base_url }}?url1={{ a.review_request.doc.name }}-{{ a.reviewed_rev }}&amp;url2={{ a.review_request.doc.name }}-{{ a.review_request.doc.rev }}">diff</a>){% endif %}
+	    <br>
           {% endfor %}
         </td>
       </tr>
