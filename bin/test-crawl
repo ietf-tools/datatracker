@@ -23,6 +23,8 @@ parser.add_argument('--slow', dest='slow_threshold', type=float, default=1.0,
 parser.add_argument('--settings', help='Custom settings file')
 parser.add_argument('--logfile', help='Write to logfile')
 parser.add_argument('--user', help='Crawl logged in as this user', default=None)
+parser.add_argument('--no-follow', dest='follow', action='store_false', default=True,
+                    help='Do not follow URLs found in fetched pages, just check the given URLs')
 parser.add_argument('--validator-nu', dest='validator_nu', action='store_true',
                     help='Use validator.nu instead of html5lib for HTML validation')
 parser.add_argument('--pedantic', action='store_true',
@@ -384,7 +386,7 @@ if __name__ == "__main__":
 
                 if ctype == "text/html":
                     try:
-                        if not skip_extract_from(url):
+                        if args.follow and not skip_extract_from(url):
                             for u in extract_html_urls(r.content):
                                 if u not in visited and u not in urls:
                                     urls[u] = url
@@ -400,10 +402,11 @@ if __name__ == "__main__":
 
                 elif ctype == "application/json":
                     try:
-                        for u in extract_tastypie_urls(r.content):
-                            if u not in visited and u not in urls:
-                                urls[u] = url
-                                referrers[u] = url
+                        if args.follow:
+                            for u in extract_tastypie_urls(r.content):
+                                if u not in visited and u not in urls:
+                                    urls[u] = url
+                                    referrers[u] = url
                     except:
                         log("error extracting urls from %s" % url)
                         log("=============")
