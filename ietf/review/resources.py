@@ -34,7 +34,6 @@ class ReviewerSettingsResource(ModelResource):
 api.review.register(ReviewerSettingsResource())
 
 
-
 from ietf.doc.resources import DocumentResource
 from ietf.group.resources import GroupResource
 from ietf.name.resources import ReviewRequestStateNameResource, ReviewResultNameResource, ReviewTypeNameResource
@@ -64,30 +63,6 @@ class ReviewRequestResource(ModelResource):
         }
 api.review.register(ReviewRequestResource())
 
-from ietf.name.resources import ReviewAssignmentStateNameResource
-class ReviewAssignmentResource(ModelResource):
-    review_request   = ToOneField(ReviewRequest, 'review_request')
-    state            = ToOneField(ReviewAssignmentStateNameResource, 'state')
-    reviewer         = ToOneField(EmailResource, 'reviewer', null=True)
-    review           = ToOneField(DocumentResource, 'review', null=True)
-    result           = ToOneField(ReviewResultNameResource, 'result', null=True)
-    class Meta:
-        queryset = ReviewAssignment.objects.all()
-        serializer = api.Serializer()
-        cache = SimpleCache()
-        #resource_name = 'reviewassignment'
-        filtering = { 
-            "id": ALL,
-            "reviewed_rev": ALL,
-            "mailarch_url": ALL,
-            "assigned_on": ALL,
-            "completed_on": ALL,
-            "state": ALL_WITH_RELATIONS,
-            "reviewer": ALL_WITH_RELATIONS,
-            "review": ALL_WITH_RELATIONS,
-            "result": ALL_WITH_RELATIONS,
-        }
-api.review.register(ReviewAssignmentResource())
 
 from ietf.person.resources import PersonResource
 from ietf.group.resources import GroupResource
@@ -109,6 +84,7 @@ class UnavailablePeriodResource(ModelResource):
             "person": ALL_WITH_RELATIONS,
         }
 api.review.register(UnavailablePeriodResource())
+
 
 from ietf.person.resources import PersonResource
 from ietf.group.resources import GroupResource
@@ -132,7 +108,6 @@ class ReviewWishResource(ModelResource):
 api.review.register(ReviewWishResource())
 
 
-
 from ietf.person.resources import PersonResource
 from ietf.group.resources import GroupResource
 class NextReviewerInTeamResource(ModelResource):
@@ -149,6 +124,7 @@ class NextReviewerInTeamResource(ModelResource):
             "next_reviewer": ALL_WITH_RELATIONS,
         }
 api.review.register(NextReviewerInTeamResource())
+
 
 from ietf.person.resources import PersonResource
 from ietf.group.resources import GroupResource
@@ -192,7 +168,6 @@ class ReviewTeamSettingsResource(ModelResource):
 api.review.register(ReviewTeamSettingsResource())
 
 
-
 from ietf.person.resources import PersonResource
 from ietf.group.resources import GroupResource
 from ietf.utils.resources import UserResource
@@ -221,3 +196,30 @@ class HistoricalReviewerSettingsResource(ModelResource):
             "history_user": ALL_WITH_RELATIONS,
         }
 api.review.register(HistoricalReviewerSettingsResource())
+
+
+from ietf.name.resources import ReviewAssignmentStateNameResource
+class ReviewAssignmentResource(ModelResource):
+    review_request   = ToOneField(ReviewRequestResource, 'review_request')
+    state            = ToOneField(ReviewAssignmentStateNameResource, 'state')
+    reviewer         = ToOneField(EmailResource, 'reviewer')
+    review           = ToOneField(DocumentResource, 'review', null=True)
+    result           = ToOneField(ReviewResultNameResource, 'result', null=True)
+    class Meta:
+        queryset = ReviewAssignment.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'reviewassignment'
+        filtering = { 
+            "id": ALL,
+            "assigned_on": ALL,
+            "completed_on": ALL,
+            "reviewed_rev": ALL,
+            "mailarch_url": ALL,
+            "review_request": ALL_WITH_RELATIONS,
+            "state": ALL_WITH_RELATIONS,
+            "reviewer": ALL_WITH_RELATIONS,
+            "review": ALL_WITH_RELATIONS,
+            "result": ALL_WITH_RELATIONS,
+        }
+api.review.register(ReviewAssignmentResource())
