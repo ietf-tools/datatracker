@@ -51,7 +51,7 @@ ietfdb (6.96.0) ietf; urgency=medium
 
   * Fixed bad html in a proceedings template.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  06 May 2019 14:37:23 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 May 2019 15:34:13 +0000
 
 
 ietfdb (6.95.1) ietf; urgency=medium
