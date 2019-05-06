@@ -1,3 +1,59 @@
+ietfdb (6.96.0) ietf; urgency=medium
+
+  **Refactored review request handling, introducing review assingnments**
+
+  This release splits out document review assignments as individual objects,
+  instead of being part of review requests.  This makes handling of review
+  assignments more flexible and intuitive.  The datatracker menu URL for past
+  meeting proceedings has been corrected, as well as the URL for BOF requests,
+  and old, now invalid URLs to MHonArc mailing list repositories have been
+  removed.  The Wiki maintenance scripts now support a generic NomCom wiki,
+  managed by the chairs and adivisors of currently active NomComs.
+
+  Additional details from the commit log:
+
+  * Merged in a refactoring of document review code from 
+    rjsparks@nostrum.com.  This introduces ReviewAssignments, letting us do 
+    multiple assingments for a given RevieRequest, without conflating the 
+    assignments and their results with the request itself.
+
+  * Updated the ReviewAssignment api resource to match the current model.
+
+  * Added a no-follow option to the test crawler, in order to be able to 
+    easily test a specific list of URLs.
+
+  * Modified a template to handle old reviews with incomplete information 
+    appropriately, instead of giving 500 errors.
+
+  * Fixed a problem in 3 views that were accessible through URLs without 
+    meeting numbers (e.g., .../meeting/proceedings/overview/) but gave 500 
+    errors when accessed.
+
+  * Corrected an old URL for past meeting proceedings.
+
+  * Fixed some migrations issues that prevented the review assignment 
+    refactoring migrations from being reversed and re-applied.
+
+  * Changed a ReviewAssignmentDocEvent type from 'closed_review_request' to 
+    'closed_review_assignment', for consistency and readability.
+
+  * After having test_duplicate_person_name() fail for a non-ascii name, 
+    changed the test to always supply a non-ascii name.
+
+  * Removed links to the old MHonArc mail archives, and related view.
+
+  * Changed the BOF request procedures page URL.
+
+  * Tweaked the greate_group_wikis management command to accept trailing 
+    fileglob wildcards on adhoc wiki group acronyms.  Added a generic NomCom 
+    wiki to the list of adhoc wikis to be created and maintained, with admins 
+    from active nomcom* groups.
+
+  * Fixed bad html in a proceedings template.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 May 2019 14:37:23 +0000
+
+
 ietfdb (6.95.1) ietf; urgency=medium
 
   This is a bugfix release, addressing the following issues:
