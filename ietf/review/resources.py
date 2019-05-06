@@ -36,7 +36,7 @@ api.review.register(ReviewerSettingsResource())
 
 from ietf.doc.resources import DocumentResource
 from ietf.group.resources import GroupResource
-from ietf.name.resources import ReviewRequestStateNameResource, ReviewResultNameResource, ReviewTypeNameResource
+from ietf.name.resources import ReviewRequestStateNameResource, ReviewTypeNameResource
 from ietf.person.resources import PersonResource, EmailResource
 class ReviewRequestResource(ModelResource):
     state            = ToOneField(ReviewRequestStateNameResource, 'state')
