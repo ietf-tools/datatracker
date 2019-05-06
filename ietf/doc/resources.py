@@ -652,8 +652,6 @@ class DocumentURLResource(ModelResource):
 api.doc.register(DocumentURLResource())
 
 
-
-
 from ietf.person.resources import PersonResource
 from ietf.review.resources import ReviewAssignmentResource
 from ietf.name.resources import ReviewAssignmentStateNameResource
