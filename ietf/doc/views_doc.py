@@ -598,7 +598,8 @@ def document_main(request, name, rev=None):
         # If we want to go back to using markup_txt.markup_unicode, call it explicitly here like this:
         # content = markup_txt.markup_unicode(content, split=False, width=80)
        
-        review_assignment = ReviewAssignment.objects.filter(review=doc.name).first()
+        assignments = ReviewAssignment.objects.filter(review=doc.name)
+        review_assignment = assignments.first()
 
         other_reviews = []
         if review_assignment:
@@ -613,6 +614,7 @@ def document_main(request, name, rev=None):
                            snapshot=snapshot,
                            review_req=review_assignment.review_request,
                            other_reviews=other_reviews,
+                           assignments=assignments,
                       ))
 
     raise Http404("Document not found: %s" % (name + ("-%s"%rev if rev else "")))
