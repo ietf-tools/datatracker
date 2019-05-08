@@ -111,7 +111,11 @@
 	<th>{% if forloop.first %}Assignment{{assignments|pluralize}}{% endif %}</th>
 	<th>Reviewer</th>
 	<td>
-	  <b>{{ assignment.reviewer.person }}</b>
+	  <a href="{% url 'ietf.person.views.profile' email_or_name=assignment.reviewer.person.name %}"><b>{{ assignment.reviewer.person.plain_name }}</b></a>
+	  <a href="mailto:{{ assignment.reviewer.address }}"><span class="fa fa-envelope-o tiny"></span></a>
+
+
+
 	  {% if assignment.can_reject_reviewer_assignment or assignment.can_accept_reviewer_assignment %}
 	  <div class="reviewer-assignment-not-accepted">
 	    {% if assignment.state_id == "assigned"%}
