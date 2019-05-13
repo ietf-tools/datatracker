@@ -1404,7 +1404,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
     review_requests = get_open_review_requests_for_team(group, assignment_status=assignment_status)
 
     document_requests = extract_revision_ordered_review_requests_for_documents_and_replaced(
-        ReviewRequest.objects.filter(state__in=("part-completed", "completed"), team=group).prefetch_related("result"),
+        ReviewRequest.objects.filter(state__in=("part-completed", "completed", "assigned"), team=group).prefetch_related("reviewassignment_set__result"),
         set(r.doc_id for r in review_requests),
     )
 
@@ -1417,16 +1417,19 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
 
         # add previous requests
         l = []
+        rev = None
         for r in document_requests.get(req.doc_id, []):
             # take all on the latest reviewed rev
-            if l and l[0].reviewed_rev:
-                if r.doc_id == l[0].doc_id and r.reviewed_rev:
-                    if int(r.reviewed_rev) > int(l[0].reviewed_rev):
-                        l = [r]
-                    elif int(r.reviewed_rev) == int(l[0].reviewed_rev):
-                        l.append(r)
-            else:
-                l = [r]
+            for a in r.reviewassignment_set.all():
+                if l and rev:
+                    if r.doc_id == l[0].doc_id and a.reviewed_rev:
+                        if int(a.reviewed_rev) > rev:
+                            l = [r]
+                        elif int(a.reviewed_rev) == rev:
+                            l.append(r)
+                else:
+                    l = [r]
+                rev = l[0].reviewassignment_set.first().reviewed_rev
 
         augment_review_requests_with_events(l)
 
