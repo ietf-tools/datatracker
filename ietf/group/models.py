@@ -3,14 +3,21 @@
 
 import datetime
 import email.utils
+import json
 import jsonfield
 import os
 import re
+import requests
+
+from jwcrypto import jwk, jws
+from jwcrypto.common import json_encode
 from urlparse import urljoin
 
+from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.deletion import CASCADE
+from django.dispatch import receiver
 
 from simple_history.models import HistoricalRecords
 
@@ -349,3 +356,42 @@ class RoleHistory(models.Model):
 
     class Meta:
         verbose_name_plural = "role histories"
+
+
+# --- Signal hooks for group models ---
+
+@receiver(models.signals.pre_save, sender=Group)
+def notify_rfceditor_of_group_name_change(sender, instance=None, **kwargs):
+    if instance:
+        try:
+            current = Group.objects.get(pk=instance.pk)
+        except Group.DoesNotExist:
+            return
+        url = settings.RFC_EDITOR_GROUP_NOTIFICATION_URL
+        if url and instance.name != current.name:
+            data = {
+                'acronym': current.acronym,
+                'old_name': current.name,
+                'name': instance.name,
+            }
+            # Build signed data
+            key = jwk.JWK()
+            key.import_from_pem(settings.API_PRIVATE_KEY_PEM)
+            payload = json.dumps(data)
+            jwstoken = jws.JWS(payload.encode('utf-8'))
+            jwstoken.add_signature(key, None,
+                           json_encode({"alg": settings.API_KEY_TYPE}),
+                           json_encode({"kid": key.thumbprint()}))
+            sig = jwstoken.serialize()
+            # Send signed data
+            response = requests.post(url, data = { 'jws': sig, })
+            log.log("Sent notify: %s: '%s' --> '%s' to %s, result code %s" %
+                (current.acronym, current.name, instance.name, url, response.status_code))
+            # Verify locally, to make sure we've got things right
+            key = jwk.JWK()
+            key.import_from_pem(settings.API_PUBLIC_KEY_PEM)
+            jwstoken = jws.JWS()
+            jwstoken.deserialize(sig)
+            jwstoken.verify(key)
+            log.assertion('payload == jwstoken.payload')
+
