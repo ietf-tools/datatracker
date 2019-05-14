@@ -322,6 +322,24 @@
       <p>or alternatively:</p>
 
       <pre>{{key.export_to_pem}}</pre>
+
+      <p>
+	To verify a signature and get the verified data using Python with the
+	<a href="https://jwcrypto.readthedocs.io/en/latest/">jwcrypto</a> module,
+	you could do:
+	<pre>
+from jwcrypto import jwk, jws
+
+# ... receive json web signed data as 'data', used below ...
+
+key = jwk.JWK()
+key.import_from_pem(API_PUBLIC_KEY_PEM)   # the key above
+jwstoken = jws.JWS()
+jwstoken.deserialize(data)
+jwstoken.verify(key)
+payload = jwstoken.payload
+        </pre>
+      </p>
     </div>
 
   </div>
