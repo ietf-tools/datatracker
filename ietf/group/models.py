@@ -3,14 +3,10 @@
 
 import datetime
 import email.utils
-import json
 import jsonfield
 import os
 import re
-import requests
 
-from jwcrypto import jwk, jws
-from jwcrypto.common import json_encode
 from urlparse import urljoin
 
 from django.conf import settings
@@ -26,7 +22,7 @@ import debug                            # pyflakes:ignore
 from ietf.group.colors import fg_group_colors, bg_group_colors
 from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName, AgendaTypeName
 from ietf.person.models import Email, Person
-from ietf.utils.mail import formataddr
+from ietf.utils.mail import formataddr, send_mail_text
 from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
 
@@ -367,31 +363,50 @@ def notify_rfceditor_of_group_name_change(sender, instance=None, **kwargs):
             current = Group.objects.get(pk=instance.pk)
         except Group.DoesNotExist:
             return
-        url = settings.RFC_EDITOR_GROUP_NOTIFICATION_URL
-        if url and instance.name != current.name:
-            data = {
-                'acronym': current.acronym,
-                'old_name': current.name,
-                'name': instance.name,
-            }
-            # Build signed data
-            key = jwk.JWK()
-            key.import_from_pem(settings.API_PRIVATE_KEY_PEM)
-            payload = json.dumps(data)
-            jwstoken = jws.JWS(payload.encode('utf-8'))
-            jwstoken.add_signature(key, None,
-                           json_encode({"alg": settings.API_KEY_TYPE}),
-                           json_encode({"kid": key.thumbprint()}))
-            sig = jwstoken.serialize()
-            # Send signed data
-            response = requests.post(url, data = { 'jws': sig, })
-            log.log("Sent notify: %s: '%s' --> '%s' to %s, result code %s" %
-                (current.acronym, current.name, instance.name, url, response.status_code))
-            # Verify locally, to make sure we've got things right
-            key = jwk.JWK()
-            key.import_from_pem(settings.API_PUBLIC_KEY_PEM)
-            jwstoken = jws.JWS()
-            jwstoken.deserialize(sig)
-            jwstoken.verify(key)
-            log.assertion('payload == jwstoken.payload')
+        addr = settings.RFC_EDITOR_GROUP_NOTIFICATION_EMAIL
+        if addr and instance.name != current.name:
+            msg = """
+This is an automated notification of a group name change:
+
+  acronym:  %s
+  old name: %s
+  new name: %s
+
+  Regards,
+
+    The datatracker
+""" % (current.acronym, current.name, instance.name, )
+            send_mail_text(None, to=addr, frm=None, subject="Group '%s' name change"%instance.acronym, txt=msg)
+            log.log("Sent notification email: %s: '%s' --> '%s' to %s" % (current.acronym, current.name, instance.name, addr))
+
+            
+## Keep this code as a worked and tested example of sending signed notifies
+## by HTTP POST.  (superseded for this use case by email notification)
+#         url = settings.RFC_EDITOR_GROUP_NOTIFICATION_URL
+#         if url and instance.name != current.name:
+#             data = {
+#                 'acronym': current.acronym,
+#                 'old_name': current.name,
+#                 'name': instance.name,
+#             }
+#             # Build signed data
+#             key = jwk.JWK()
+#             key.import_from_pem(settings.API_PRIVATE_KEY_PEM)
+#             payload = json.dumps(data)
+#             jwstoken = jws.JWS(payload.encode('utf-8'))
+#             jwstoken.add_signature(key, None,
+#                            json_encode({"alg": settings.API_KEY_TYPE}),
+#                            json_encode({"kid": key.thumbprint()}))
+#             sig = jwstoken.serialize()
+#             # Send signed data
+#             response = requests.post(url, data = { 'jws': sig, })
+#             log.log("Sent notify: %s: '%s' --> '%s' to %s, result code %s" %
+#                 (current.acronym, current.name, instance.name, url, response.status_code))
+#             # Verify locally, to make sure we've got things right
+#             key = jwk.JWK()
+#             key.import_from_pem(settings.API_PUBLIC_KEY_PEM)
+#             jwstoken = jws.JWS()
+#             jwstoken.deserialize(sig)
+#             jwstoken.verify(key)
+#             log.assertion('payload == jwstoken.payload')
 

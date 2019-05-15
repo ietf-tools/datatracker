@@ -618,7 +618,7 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.groupurl_set.all()[0].url, "http://mars.mars")
         self.assertEqual(group.groupurl_set.all()[0].name, "MARS site")
         self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))))
-        self.assertEqual(len(outbox), 1)
+        self.assertEqual(len(outbox), 2)
         self.assertTrue('Personnel change' in outbox[0]['Subject'])
         for prefix in ['ad1','ad2','aread','marschairman','marsdelegate']:
             self.assertTrue(prefix+'@' in outbox[0]['To'])
