@@ -1,3 +1,48 @@
+ietfdb (6.97.0) ietf; urgency=medium
+
+  **Additional meeting-related links**
+
+  This is a small feature release which provides a new email notification to
+  the RFC Editor, new meeting-related menu links and iCalendar links, and
+  restores some review management page information inadvertently lost in
+  release 6.96.0.
+
+  From the commit log:
+
+  * Added a link to the meeting registration page to the meetings menu.
+
+  * Added a link to the registration page from the meeting 'Important 
+    Dates' page.
+
+  * Removed additional instances of links to unposted IPR disclosures that
+    would result in 404 pages.
+
+  * After feedback from the RFC-Editor staff, changed the URL POST 
+    notification of Group name changes to an Email notification.
+
+  * Added .ics links for future meetings to the group meetings tab.
+
+  * Added a signal receiver for notifications to the RFC editor about 
+    changed Group names.
+
+  * Added sample notification JWT signature verification code to 
+    /api/index.html.
+
+  * Updated settings with EC/P-256 api keys (JWT does not support RS2048, 
+    which is what we had).  Added a variable for RFC Editor group name 
+    notifications, with a placeholder value.
+
+  * Fixed template and view to restore previous review display on the 
+    Manage Unassigned Reviews page.  Fixes issue #2718.
+
+  * Tweaked the review assignment presentation in review/request_info.html.
+
+  * Added review assignment information to the review-document view.  
+    Addresses issue #2717.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 May 2019 15:09:45 +0000
+
+
 ietfdb (6.96.0) ietf; urgency=medium
 
   **Refactored review request handling, introducing review assingnments**
