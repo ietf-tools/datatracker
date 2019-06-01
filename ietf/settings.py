@@ -936,6 +936,8 @@ TRAC_SVN_DIR_PATTERN = "/a/svn/group/%s"
 #TRAC_CREATE_GROUP_TYPES = ['wg', 'rg', 'area', 'team', 'dir', 'review', 'ag', 'nomcom', ]
 TRAC_CREATE_GROUP_STATES = ['bof', 'active', ]
 TRAC_CREATE_GROUP_ACRONYMS = ['iesg', 'iaoc', 'ietf', ]
+
+# This is overridden in production's settings-local.  Make sure to update it.
 TRAC_CREATE_ADHOC_WIKIS = [
     # admin group acronym, name, sub-path
     # A trailing fileglob wildcard is supported on group acronyms
