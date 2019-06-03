@@ -192,8 +192,8 @@ def agenda(request, date=None):
     data = agenda_data(date)
 
     if has_role(request.user, ["Area Director", "IAB Chair", "Secretariat"]):
-        data["sections"]["1.1"]["title"] = data["sections"]["1.1"]["title"].replace("Roll call", '<a href="https://www6.ietf.org/iesg/internal/rollcall.txt">Roll Call</a>')
-        data["sections"]["1.3"]["title"] = data["sections"]["1.3"]["title"].replace("minutes", '<a href="https://www6.ietf.org/iesg/internal/minutes.txt">Minutes</a>')
+        data["sections"]["1.1"]["title"] = data["sections"]["1.1"]["title"].replace("Roll call", '<a href="%s">Roll Call</a>' % settings.IESG_ROLL_CALL_URL )
+        data["sections"]["1.3"]["title"] = data["sections"]["1.3"]["title"].replace("minutes", '<a href="%s">Minutes</a>' % settings.IESG_MINUTES_URL)
 
     request.session['ballot_edit_return_point'] = request.path_info
     return render(request, "iesg/agenda.html", {
@@ -283,7 +283,9 @@ def agenda_package(request, date=None):
             "date": data["date"],
             "sections": sorted(data["sections"].iteritems()),
             "roll_call": data["sections"]["1.1"]["text"],
+            "roll_call_url": settings.IESG_ROLL_CALL_URL
             "minutes": data["sections"]["1.3"]["text"],
+            "minutes_url": settings.IESG_MINUTES_URL
             "management_items": [(num, section) for num, section in data["sections"].iteritems() if "6" < num < "7"],
             }, content_type='text/plain')
 
