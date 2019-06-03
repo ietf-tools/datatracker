@@ -606,8 +606,22 @@ def get_draft_meta(form):
         if not ('txt' in form.cleaned_data and form.cleaned_data['txt']):
             file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (form.filename, form.revision))
             try:
-                pagedwriter = xml2rfc.PaginatedTextRfcWriter(form.xmltree, quiet=True)
-                pagedwriter.write(file_name['txt'])
+                xmlroot = form.xmltree.getroot()
+                xml_version = xmlroot.get('version', '2')
+                if xml_version != '3':
+                    pagedwriter = xml2rfc.PaginatedTextRfcWriter(form.xmltree, quiet=True)
+                    pagedwriter.write(file_name['txt'])
+                else:
+                    prep = xml2rfc.PrepToolWriter(form.xmltree, quiet=True)
+                    form.xmltree.tree = prep.prep()
+                    writer = xml2rfc.TextWriter(form.xmltree, quiet=True)
+                    writer.write(file_name['txt'])
+                log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
+                        (   os.path.dirname(file_name['xml']),
+                            xml2rfc.__version__,
+                            os.path.basename(file_name['txt']),
+                            os.path.basename(file_name['xml']),
+                            xml_version))
             except Exception as e:
                 raise ValidationError("Error from xml2rfc: %s" % e)
             file_size = os.stat(file_name['txt']).st_size
