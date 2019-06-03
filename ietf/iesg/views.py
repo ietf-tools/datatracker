@@ -283,9 +283,9 @@ def agenda_package(request, date=None):
             "date": data["date"],
             "sections": sorted(data["sections"].iteritems()),
             "roll_call": data["sections"]["1.1"]["text"],
-            "roll_call_url": settings.IESG_ROLL_CALL_URL
+            "roll_call_url": settings.IESG_ROLL_CALL_URL,
             "minutes": data["sections"]["1.3"]["text"],
-            "minutes_url": settings.IESG_MINUTES_URL
+            "minutes_url": settings.IESG_MINUTES_URL,
             "management_items": [(num, section) for num, section in data["sections"].iteritems() if "6" < num < "7"],
             }, content_type='text/plain')
 
