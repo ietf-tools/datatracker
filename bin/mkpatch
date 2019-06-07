@@ -109,6 +109,7 @@ if [ $# -lt 2 ]; then die "Expected patch name and file list on the command line
 if [[ $1 =~ / ]]; then die "Expected a patch name, but the first argument to $program seems to be a file path: '$1'"; fi
 
 name=$1; shift;
+if [ "$CHG" ]; then name="$name-c$CHG"; fi
 
 patchfile=$progdir/../../patches/$(date +%Y-%m-%d)-$name.patch
 if [ -e $patchfile ]; then die "Patchfile $patchfile already exists"; fi
