@@ -118,7 +118,7 @@ Confirm that any referenced IANA registries have been clearly
 identified. Confirm that newly created IANA registries include a
 detailed specification of the initial contents for the registry, that
 allocations procedures for future registrations are defined, and a
-reasonable name for the new registry has been suggested (see RFC 5226).
+reasonable name for the new registry has been suggested (see RFC 8126).
 
 (18) List any new IANA registries that require Expert Review for future
 allocations. Provide any public guidance that the IESG would find
@@ -249,7 +249,7 @@ Confirm that any referenced IANA registries have been clearly
 identified. Confirm that newly created IANA registries include a
 detailed specification of the initial contents for the registry, that
 allocations procedures for future registrations are defined, and a
-reasonable name for the new registry has been suggested (see RFC 5226).
+reasonable name for the new registry has been suggested (see RFC 8126).
 
 (18) List any new IANA registries that require Expert Review for future
 allocations. Provide any public guidance that the IESG would find
