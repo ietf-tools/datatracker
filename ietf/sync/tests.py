@@ -478,7 +478,7 @@ class RFCEditorUndoTests(TestCase):
         # get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(e2.doc_id in unicontent(r))
+        self.assertTrue(e2.doc.name in unicontent(r))
 
         # delete e2
         deleted_before = DeletedEvent.objects.count()

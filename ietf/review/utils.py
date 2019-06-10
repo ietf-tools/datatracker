@@ -167,7 +167,7 @@ def days_needed_to_fulfill_min_interval_for_reviewers(team):
     return res
 
 ReviewAssignmentData = namedtuple("ReviewAssignmentData", [
-    "assignment_pk", "doc", "doc_pages", "req_time", "state", "assigned_time", "deadline", "reviewed_rev", "result", "team", "reviewer",
+    "assignment_pk", "doc_name", "doc_pages", "req_time", "state", "assigned_time", "deadline", "reviewed_rev", "result", "team", "reviewer",
     "late_days",
     "request_to_assignment_days", "assignment_to_closure_days", "request_to_closure_days"])
 
@@ -194,7 +194,7 @@ def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, t
     event_qs = ReviewAssignment.objects.filter(filters)
 
     event_qs = event_qs.values_list(
-        "pk", "review_request__doc", "review_request__doc__pages", "review_request__time", "state", "review_request__deadline", "reviewed_rev", "result", "review_request__team",
+        "pk", "review_request__doc__name", "review_request__doc__pages", "review_request__time", "state", "review_request__deadline", "reviewed_rev", "result", "review_request__team",
         "reviewer__person", "assigned_on", "completed_on"
     )
 
@@ -215,7 +215,7 @@ def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, t
 
     for assignment in event_qs:
 
-        assignment_pk, doc, doc_pages, req_time, state, deadline, reviewed_rev, result, team, reviewer, assigned_on, completed_on = assignment
+        assignment_pk, doc_name, doc_pages, req_time, state, deadline, reviewed_rev, result, team, reviewer, assigned_on, completed_on = assignment
 
         requested_time = req_time
         assigned_time = assigned_on
@@ -226,7 +226,7 @@ def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, t
         assignment_to_closure_days = positive_days(assigned_time, closed_time)
         request_to_closure_days = positive_days(requested_time, closed_time)
 
-        d = ReviewAssignmentData(assignment_pk, doc, doc_pages, req_time, state, assigned_time, deadline, reviewed_rev, result, team, reviewer,
+        d = ReviewAssignmentData(assignment_pk, doc_name, doc_pages, req_time, state, assigned_time, deadline, reviewed_rev, result, team, reviewer,
                               late_days, request_to_assignment_days, assignment_to_closure_days,
                               request_to_closure_days)
 
@@ -659,7 +659,7 @@ def suggested_review_requests_for_team(team):
         # cancelled/moved
         telechat_events = TelechatDocEvent.objects.filter(
             # turn into list so we don't get a complex and slow join sent down to the DB
-            doc__in=list(telechat_docs.values_list("pk", flat=True)),
+            doc__id__in=list(telechat_docs.values_list("pk", flat=True)),
         ).values_list(
             "doc", "pk", "time", "telechat_date"
         ).order_by("doc", "-time", "-id").distinct()
@@ -688,7 +688,7 @@ def suggested_review_requests_for_team(team):
 
     # filter those with existing explicit requests 
     existing_requests = defaultdict(list)
-    for r in ReviewRequest.objects.filter(doc__in=requests.iterkeys(), team=team):
+    for r in ReviewRequest.objects.filter(doc__id__in=requests.iterkeys(), team=team):
         existing_requests[r.doc_id].append(r)
 
     def blocks(existing, request):
@@ -719,8 +719,10 @@ def extract_revision_ordered_review_assignments_for_documents_and_replaced(revie
     replaces = extract_complete_replaces_ancestor_mapping_for_docs(names)
 
     assignments_for_each_doc = defaultdict(list)
-    for r in review_assignment_queryset.filter(review_request__doc__in=set(e for l in replaces.itervalues() for e in l) | names).order_by("-reviewed_rev","-assigned_on", "-id").iterator():
-        assignments_for_each_doc[r.review_request.doc_id].append(r)
+    replacement_name_set = set(e for l in replaces.itervalues() for e in l) | names
+    for r in ( review_assignment_queryset.filter(review_request__doc__name__in=replacement_name_set)
+                                        .order_by("-reviewed_rev","-assigned_on", "-id").iterator()):
+        assignments_for_each_doc[r.review_request.doc.name].append(r)
 
     # now collect in breadth-first order to keep the revision order intact
     res = defaultdict(list)
@@ -765,8 +767,8 @@ def extract_revision_ordered_review_requests_for_documents_and_replaced(review_r
     replaces = extract_complete_replaces_ancestor_mapping_for_docs(names)
 
     requests_for_each_doc = defaultdict(list)
-    for r in review_request_queryset.filter(doc__in=set(e for l in replaces.itervalues() for e in l) | names).order_by("-time", "-id").iterator():
-        requests_for_each_doc[r.doc_id].append(r)
+    for r in review_request_queryset.filter(doc__name__in=set(e for l in replaces.itervalues() for e in l) | names).order_by("-time", "-id").iterator():
+        requests_for_each_doc[r.doc.name].append(r)
 
     # now collect in breadth-first order to keep the revision order intact
     res = defaultdict(list)
@@ -990,12 +992,12 @@ def email_reviewer_reminder(review_request):
 
     deadline_days = (review_request.deadline - datetime.date.today()).days
 
-    subject = "Reminder: deadline for review of {} in {} is {}".format(review_request.doc_id, team.acronym, review_request.deadline.isoformat())
+    subject = "Reminder: deadline for review of {} in {} is {}".format(review_request.doc.name, team.acronym, review_request.deadline.isoformat())
 
     import ietf.ietfauth.views
     overview_url = urlreverse(ietf.ietfauth.views.review_overview)
     import ietf.doc.views_review
-    request_url = urlreverse(ietf.doc.views_review.review_request, kwargs={ "name": review_request.doc_id, "request_id": review_request.pk })
+    request_url = urlreverse(ietf.doc.views_review.review_request, kwargs={ "name": review_request.doc.name, "request_id": review_request.pk })
 
     domain = Site.objects.get_current().domain
 
@@ -1034,12 +1036,12 @@ def email_secretary_reminder(review_request, secretary_role):
 
     deadline_days = (review_request.deadline - datetime.date.today()).days
 
-    subject = "Reminder: deadline for review of {} in {} is {}".format(review_request.doc_id, team.acronym, review_request.deadline.isoformat())
+    subject = "Reminder: deadline for review of {} in {} is {}".format(review_request.doc.name, team.acronym, review_request.deadline.isoformat())
 
     import ietf.group.views
     settings_url = urlreverse(ietf.group.views.change_review_secretary_settings, kwargs={ "acronym": team.acronym, "group_type": team.type_id })
     import ietf.doc.views_review
-    request_url = urlreverse(ietf.doc.views_review.review_request, kwargs={ "name": review_request.doc_id, "request_id": review_request.pk })
+    request_url = urlreverse(ietf.doc.views_review.review_request, kwargs={ "name": review_request.doc.name, "request_id": review_request.pk })
 
     domain = Site.objects.get_current().domain
 

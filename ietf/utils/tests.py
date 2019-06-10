@@ -37,7 +37,6 @@ from ietf.utils.bower_storage import BowerStorageFinder
 from ietf.utils.draft import Draft, getmeta
 from ietf.utils.log import unreachable, assertion
 from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox 
-from ietf.utils.management.commands import pyflakes
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase
 
@@ -50,15 +49,6 @@ except ImportError as e:
     skip_wiki_glue_testing = True
     skip_message = "Skipping trac tests: %s" % e
     sys.stderr.write("     "+skip_message+'\n')
-
-class PyFlakesTestCase(TestCase):
-
-    def test_pyflakes(self):
-        self.maxDiff = None
-        path = os.path.join(settings.BASE_DIR)
-        warnings = []
-        warnings = pyflakes.checkPaths([path], verbosity=0)
-        self.assertEqual([], [str(w) for w in warnings])
 
 class SendingMail(TestCase):
 

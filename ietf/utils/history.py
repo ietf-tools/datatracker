@@ -1,3 +1,8 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+import debug                            # pyflakes:ignore
+
 def find_history_active_at(obj, time):
     """Assumes obj has a corresponding history model (e.g. obj could
     be Document with a corresponding DocHistory model), then either

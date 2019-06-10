@@ -685,8 +685,8 @@ def extract_complete_replaces_ancestor_mapping_for_docs(names):
             break
 
         relations = RelatedDocument.objects.filter(
-            source__in=front, relationship="replaces"
-        ).select_related("target").values_list("source", "target__document")
+            source__name__in=front, relationship="replaces"
+        ).select_related("target").values_list("source__name", "target__document__name")
 
         if not relations:
             break

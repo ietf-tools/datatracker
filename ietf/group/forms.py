@@ -227,7 +227,7 @@ class ManageReviewRequestForm(forms.Form):
     def __init__(self, review_req, *args, **kwargs):
         if not "prefix" in kwargs:
             if review_req.pk is None:
-                kwargs["prefix"] = "r{}-{}".format(review_req.type_id, review_req.doc_id)
+                kwargs["prefix"] = "r{}-{}".format(review_req.type_id, review_req.doc.name)
             else:
                 kwargs["prefix"] = "r{}".format(review_req.pk)
 

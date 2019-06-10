@@ -478,7 +478,7 @@ def index_all_drafts(request):
         else:
             heading = "%s Internet-Drafts" % state.name
 
-        draft_names = DocAlias.objects.filter(document__states=state).values_list("name", "document")
+        draft_names = DocAlias.objects.filter(document__states=state).values_list("name", "document__name")
 
         names = []
         names_to_skip = set()

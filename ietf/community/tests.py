@@ -107,7 +107,7 @@ class CommunityListTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         # add document
-        r = self.client.post(url, { "action": "add_documents", "documents": draft.pk })
+        r = self.client.post(url, { "action": "add_documents", "documents": draft.name })
         self.assertEqual(r.status_code, 302)
         clist = CommunityList.objects.get(user__username="plain")
         self.assertTrue(clist.added_docs.filter(pk=draft.pk))
@@ -118,7 +118,7 @@ class CommunityListTests(TestCase):
         self.assertTrue(draft.name in unicontent(r))
 
         # remove document
-        r = self.client.post(url, { "action": "remove_document", "document": draft.pk })
+        r = self.client.post(url, { "action": "remove_document", "document": draft.name })
         self.assertEqual(r.status_code, 302)
         clist = CommunityList.objects.get(user__username="plain")
         self.assertTrue(not clist.added_docs.filter(pk=draft.pk))

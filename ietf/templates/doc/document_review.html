@@ -44,7 +44,7 @@
         <td class="edit"></td>
         <td>
           {% for review_assignment in other_reviews %}
-            {% include "doc/review_assignment_summary.html" with current_doc_name=review_assignemnt.review_request.doc_id current_rev=review_assignment.reviewed_rev %}
+            {% include "doc/review_assignment_summary.html" with current_doc_name=review_assignemnt.review_request.doc.name current_rev=review_assignment.reviewed_rev %}
           {% endfor %}
         </td>
       </tr>

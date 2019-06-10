@@ -382,7 +382,7 @@ def document_main(request, name, rev=None):
         published = doc.latest_event(type="published_rfc")
         started_iesg_process = doc.latest_event(type="started_iesg_process")
 
-        review_assignments = review_assignments_to_list_for_docs([doc]).get(doc.pk, [])
+        review_assignments = review_assignments_to_list_for_docs([doc]).get(doc.name, [])
         no_review_from_teams = no_review_from_teams_on_doc(doc, rev or doc.rev)
 
         return render(request, "doc/document_draft.html",
@@ -598,11 +598,11 @@ def document_main(request, name, rev=None):
         # If we want to go back to using markup_txt.markup_unicode, call it explicitly here like this:
         # content = markup_txt.markup_unicode(content, split=False, width=80)
        
-        review_assignment = ReviewAssignment.objects.filter(review=doc.name).first()
+        review_assignment = ReviewAssignment.objects.filter(review__name=doc.name).first()
 
         other_reviews = []
         if review_assignment:
-            other_reviews = [r for r in review_assignments_to_list_for_docs([review_assignment.review_request.doc]).get(doc.pk, []) if r != review_assignment]
+            other_reviews = [r for r in review_assignments_to_list_for_docs([review_assignment.review_request.doc]).get(doc.name, []) if r != review_assignment]
 
         return render(request, "doc/document_review.html",
                       dict(doc=doc,

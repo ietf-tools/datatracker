@@ -20,7 +20,7 @@ def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
         doc_ids = doc_dict.keys()        
 
     seen = set()
-    for e in TelechatDocEvent.objects.filter(doc__in=doc_ids, type="scheduled_for_telechat").order_by('-time'):
+    for e in TelechatDocEvent.objects.filter(doc__id__in=doc_ids, type="scheduled_for_telechat").order_by('-time'):
         if e.doc_id not in seen:
             d = doc_dict[e.doc_id]
             d.telechat_date = wrap_value(d.telechat_date(e))
@@ -49,7 +49,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     doc_dict = dict((d.pk, d) for d in docs)
     doc_ids = doc_dict.keys()
 
-    rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=doc_ids).values_list("document", "name"))
+    rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__id__in=doc_ids).values_list("document__id", "name"))
 
     # latest event cache
     event_types = ("published_rfc",
@@ -61,11 +61,11 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         for e in event_types:
             d.latest_event_cache[e] = None
 
-    for e in DocEvent.objects.filter(doc__in=doc_ids, type__in=event_types).order_by('time'):
+    for e in DocEvent.objects.filter(doc__id__in=doc_ids, type__in=event_types).order_by('time'):
         doc_dict[e.doc_id].latest_event_cache[e.type] = e
 
     seen = set()
-    for e in BallotDocEvent.objects.filter(doc__in=doc_ids, type__in=('created_ballot', 'closed_ballot')).order_by('-time','-id'):
+    for e in BallotDocEvent.objects.filter(doc__id__in=doc_ids, type__in=('created_ballot', 'closed_ballot')).order_by('-time','-id'):
         if not e.doc_id in seen:
             doc_dict[e.doc_id].ballot = e if e.type == 'created_ballot' else None
             seen.add(e.doc_id)

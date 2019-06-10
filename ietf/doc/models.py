@@ -609,7 +609,7 @@ validate_docname = RegexValidator(
 )
 
 class Document(DocumentInfo):
-    name = models.CharField(max_length=255, primary_key=True, validators=[validate_docname,])           # immutable
+    name = models.CharField(max_length=255, validators=[validate_docname,], unique=True)           # immutable
 
     def __unicode__(self):
         return self.name
@@ -908,8 +908,10 @@ class DocAlias(models.Model):
     same immutable Document.name, in the tables, but will be referred
     to by RFC number, primarily, after achieving RFC status.
     """
-    name = models.CharField(max_length=255, primary_key=True)
+    name = models.CharField(max_length=255, unique=True)
     document = ForeignKey(Document)
+#    docs = models.ManyToManyField(Document, related_name='aliases')
+
     def __unicode__(self):
         return "%s-->%s" % (self.name, self.document.name)
     document_link = admin_link("document")
@@ -1005,7 +1007,7 @@ class DocEvent(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened", db_index=True)
     type = models.CharField(max_length=50, choices=EVENT_TYPES)
     by = ForeignKey(Person)
-    doc = ForeignKey('doc.Document')
+    doc = ForeignKey(Document)
     rev = models.CharField(verbose_name="revision", max_length=16, null=True, blank=True)
     desc = models.TextField()
 

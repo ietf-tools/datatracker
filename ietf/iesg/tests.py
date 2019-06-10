@@ -493,7 +493,7 @@ class RescheduleOnAgendaTests(TestCase):
         e.returning_item = True
         e.save()
         
-        form_id = draft.pk
+        form_id = draft.name
         
         url = urlreverse('ietf.iesg.views.agenda_documents')
         

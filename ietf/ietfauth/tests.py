@@ -384,7 +384,7 @@ class IetfAuthTests(TestCase):
         # wish to review
         r = self.client.post(url, {
             "action": "add_wish",
-            'doc': doc.pk,
+            'doc': doc.name,
             "team": review_req.team_id,
         })
         self.assertEqual(r.status_code, 302)

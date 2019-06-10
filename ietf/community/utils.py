@@ -61,7 +61,7 @@ def augment_docs_with_tracking_info(docs, user):
     if user and user.is_authenticated:
         clist = CommunityList.objects.filter(user=user).first()
         if clist:
-            tracked.update(docs_tracked_by_community_list(clist).filter(pk__in=docs).values_list("pk", flat=True))
+            tracked.update(docs_tracked_by_community_list(clist).filter(pk__in=[ d.pk for d in docs ]).values_list("pk", flat=True))
 
     for d in docs:
         d.tracked_in_personal_community_list = d.pk in tracked

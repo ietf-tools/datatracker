@@ -21,6 +21,7 @@ warnings.filterwarnings("ignore", message="Deprecated allow_tags attribute used 
 warnings.filterwarnings("ignore", message="You passed a bytestring as `filenames`. This will not work on Python 3.")
 warnings.filterwarnings("ignore", message="django.forms.extras is deprecated.", module="bootstrap3")
 warnings.filterwarnings("ignore", message="defusedxml.lxml is no longer supported and will be removed in a future release.", module="tastypie")
+warnings.filterwarnings("ignore", message="Duplicate index '.*' defined on the table")
 
 
 try:

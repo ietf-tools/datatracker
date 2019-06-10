@@ -863,6 +863,7 @@ class SessionPresentation(models.Model):
     class Meta:
         db_table = 'meeting_session_materials'
         ordering = ('order',)
+        unique_together = (('session', 'document'),)
 
     def __unicode__(self):
         return u"%s -> %s-%s" % (self.session, self.document.name, self.rev)

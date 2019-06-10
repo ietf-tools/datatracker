@@ -1372,7 +1372,7 @@ def reviewer_overview(request, acronym, group_type=None):
         latest_reqs = []
         for d in req_data:
             if d.state in ["assigned", "accepted"] or len(latest_reqs) < MAX_CLOSED_REQS + open_reqs:
-                latest_reqs.append((d.assignment_pk, d.doc, d.reviewed_rev, d.assigned_time, d.deadline,
+                latest_reqs.append((d.assignment_pk, d.doc_name, d.reviewed_rev, d.assigned_time, d.deadline,
                                     assignment_state_by_slug.get(d.state),
                                     int(math.ceil(d.assignment_to_closure_days)) if d.assignment_to_closure_days is not None else None))
             if d.state in ["completed", "completed_in_time", "completed_late"]:
@@ -1405,7 +1405,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
 
     document_requests = extract_revision_ordered_review_requests_for_documents_and_replaced(
         ReviewRequest.objects.filter(state__in=("part-completed", "completed"), team=group).prefetch_related("result"),
-        set(r.doc_id for r in review_requests),
+        set(r.doc.name for r in review_requests),
     )
 
     # we need a mutable query dict for resetting upon saving with
@@ -1417,7 +1417,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
 
         # add previous requests
         l = []
-        for r in document_requests.get(req.doc_id, []):
+        for r in document_requests.get(req.doc.name, []):
             # take all on the latest reviewed rev
             if l and l[0].reviewed_rev:
                 if r.doc_id == l[0].doc_id and r.reviewed_rev:
@@ -1703,7 +1703,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
                         msg += "{} is currently assigned to review:".format(reviewer_role.person)
                         for r in review_assignments:
                             msg += "\n\n"
-                            msg += "{} (deadline: {})".format(r.review_request.doc_id, r.review_request.deadline.isoformat())
+                            msg += "{} (deadline: {})".format(r.review_request.doc.name, r.review_request.deadline.isoformat())
                     else:
                         msg += "{} does not have any assignments currently.".format(reviewer_role.person)
 
