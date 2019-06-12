@@ -18,7 +18,7 @@ from ietf.utils.models import VersionInfo
 from ietf.utils.pipe import pipe
 from ietf.utils.test_runner import set_coverage_checking
 
-class DraftSubmissionChecker():
+class DraftSubmissionChecker(object):
     name = ""
 
     def check_file_txt(self, text):
