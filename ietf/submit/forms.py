@@ -24,7 +24,7 @@ from ietf.meeting.models import Meeting
 from ietf.message.models import Message
 from ietf.name.models import FormalLanguageName, GroupTypeName
 from ietf.submit.models import Submission, Preapproval
-from ietf.submit.utils import validate_submission_rev, validate_submission_document_date
+from ietf.submit.utils import validate_submission_name, validate_submission_rev, validate_submission_document_date
 from ietf.submit.parsers.pdf_parser import PDFParser
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.ps_parser import PSParser
@@ -173,6 +173,9 @@ class SubmissionBaseUploadForm(forms.Form):
                 draftname = self.xmlroot.attrib.get('docName')
                 if draftname is None:
                     raise forms.ValidationError("No docName attribute found in the xml root element")
+                name_error = validate_submission_name(draftname)
+                if name_error:
+                    raise forms.ValidationError(name_error)
                 revmatch = re.search("-[0-9][0-9]$", draftname)
                 if revmatch:
                     self.revision = draftname[-2:]

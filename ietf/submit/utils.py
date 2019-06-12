@@ -1,8 +1,9 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import os
 import datetime
+import os
+import re
 import six                              # pyflakes:ignore
 import xml2rfc
 
@@ -77,6 +78,10 @@ def has_been_replaced_by(name):
         return doc.related_that("replaces")
 
     return None
+
+def validate_submission_name(name):
+    if not re.search(r'^draft-[a-z][-a-z0-9]{0,39}$', name):
+        return "Expected name 'draft-...' using lowercase ascii letters, digits, and hyphen; found '%s'." % name
 
 def validate_submission_rev(name, rev):
     if not rev:
