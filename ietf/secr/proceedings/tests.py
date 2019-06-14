@@ -132,8 +132,8 @@ class RecordingTestCase(TestCase):
         import_audio_files(meeting)
         doc = mars_session.materials.filter(type='recording').first()
         self.assertTrue(doc in ames_session.materials.all())
-        self.assertTrue(doc.docalias_set.filter(name='recording-42-mars-1'))
-        self.assertTrue(doc.docalias_set.filter(name='recording-42-ames-1'))
+        self.assertTrue(doc.docalias.filter(name='recording-42-mars-1'))
+        self.assertTrue(doc.docalias.filter(name='recording-42-ames-1'))
 
     def test_normalize_room_name(self):
         self.assertEqual(normalize_room_name('Test Room'),'testroom')

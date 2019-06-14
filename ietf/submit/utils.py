@@ -1,8 +1,9 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import os
 import datetime
+import os
+import re
 import six                              # pyflakes:ignore
 import xml2rfc
 
@@ -259,7 +260,8 @@ def post_submission(request, submission, approvedDesc):
     events.append(e)
 
     # update related objects
-    DocAlias.objects.get_or_create(name=submission.name, document=draft)
+    alias, __ = DocAlias.objects.get_or_create(name=submission.name)
+    alias.docs.add(draft)
 
     draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
 
@@ -373,7 +375,7 @@ def update_replaces_from_submission(request, submission, draft):
     if request.user.is_authenticated:
         is_chair_of = list(Group.objects.filter(role__person__user=request.user, role__name="chair"))
 
-    replaces = DocAlias.objects.filter(name__in=submission.replaces.split(",")).select_related("document", "document__group")
+    replaces = DocAlias.objects.filter(name__in=submission.replaces.split(",")).prefetch_related("docs", "docs__group")
     existing_replaces = list(draft.related_that_doc("replaces"))
     existing_suggested = set(draft.related_that_doc("possibly-replaces"))
 

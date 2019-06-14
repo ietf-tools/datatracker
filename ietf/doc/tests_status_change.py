@@ -74,7 +74,7 @@ class StatusChangeTests(TestCase):
         self.assertEqual(status_change.rev,u'00')
         self.assertEqual(status_change.ad.name,u'Areað Irector')
         self.assertEqual(status_change.notify,u'ipu@ietf.org')
-        self.assertTrue(status_change.relateddocument_set.filter(relationship__slug='tois',target__document__name='draft-ietf-random-thing'))
+        self.assertTrue(status_change.relateddocument_set.filter(relationship__slug='tois',target__docs__name='draft-ietf-random-thing'))
 
     def test_change_state(self):
 

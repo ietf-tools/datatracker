@@ -113,10 +113,10 @@ def attach_recording(doc, sessions):
                 document=doc,
                 rev=doc.rev)
             session.sessionpresentation_set.add(presentation)
-            if not doc.docalias_set.filter(name__startswith='recording-{}-{}'.format(session.meeting.number,session.group.acronym)):
+            if not doc.docalias.filter(name__startswith='recording-{}-{}'.format(session.meeting.number,session.group.acronym)):
                 sequence = get_next_sequence(session.group,session.meeting,'recording')
                 name = 'recording-{}-{}-{}'.format(session.meeting.number,session.group.acronym,sequence)
-                doc.docalias_set.create(name=name)
+                DocAlias.objects.create(name=name).docs.add(doc)
 
 def normalize_room_name(name):
     '''Returns room name converted to be used as portion of filename'''
@@ -150,7 +150,7 @@ def create_recording(session, url, title=None, user=None):
                                   type_id='recording')
     doc.set_state(State.objects.get(type='recording', slug='active'))
 
-    doc.docalias_set.create(name=name)
+    DocAlias.objects.create(name=doc.name).docs.add(doc)
     
     # create DocEvent
     NewRevisionDocEvent.objects.create(type='new_revision',

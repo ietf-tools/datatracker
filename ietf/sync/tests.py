@@ -22,7 +22,7 @@ from ietf.utils.test_utils import TestCase
 class IANASyncTests(TestCase):
     def test_protocol_page_sync(self):
         draft = WgDraftFactory()
-        DocAlias.objects.create(name="rfc1234", document=draft)
+        DocAlias.objects.create(name="rfc1234").docs.add(draft)
         DocEvent.objects.create(doc=draft, rev=draft.rev, type="published_rfc", by=Person.objects.get(name="(System)"))
 
         rfc_names = iana.parse_protocol_page('<html><a href="/go/rfc1234/">RFC 1234</a></html>')
@@ -234,8 +234,8 @@ class RFCSyncTests(TestCase):
         # too, but for testing purposes ...
 
         updated_doc = Document.objects.create(name="draft-ietf-something")
-        DocAlias.objects.create(name=updated_doc.name, document=updated_doc)
-        DocAlias.objects.create(name="rfc123", document=updated_doc)
+        DocAlias.objects.create(name=updated_doc.name).docs.add(updated_doc)
+        DocAlias.objects.create(name="rfc123").docs.add(updated_doc)
 
         today = datetime.date.today()
 
@@ -337,10 +337,10 @@ class RFCSyncTests(TestCase):
         self.assertEqual(doc.docevent_set.all()[1].type, "published_rfc")
         self.assertEqual(doc.docevent_set.all()[1].time.date(), today)
         self.assertTrue("errata" in doc.tags.all().values_list("slug", flat=True))
-        self.assertTrue(DocAlias.objects.filter(name="rfc1234", document=doc))
-        self.assertTrue(DocAlias.objects.filter(name="bcp1", document=doc))
-        self.assertTrue(DocAlias.objects.filter(name="fyi1", document=doc))
-        self.assertTrue(DocAlias.objects.filter(name="std1", document=doc))
+        self.assertTrue(DocAlias.objects.filter(name="rfc1234", docs=doc))
+        self.assertTrue(DocAlias.objects.filter(name="bcp1", docs=doc))
+        self.assertTrue(DocAlias.objects.filter(name="fyi1", docs=doc))
+        self.assertTrue(DocAlias.objects.filter(name="std1", docs=doc))
         self.assertTrue(RelatedDocument.objects.filter(source=doc, target__name="rfc123", relationship="updates"))
         self.assertEqual(doc.title, "A Testing RFC")
         self.assertEqual(doc.abstract, "This is some interesting text.")

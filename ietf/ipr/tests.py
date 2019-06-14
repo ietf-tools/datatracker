@@ -157,7 +157,7 @@ class IprTests(TestCase):
         self.assertTrue(draft.name in unicontent(r))
         self.assertTrue(ipr.title not in unicontent(r))
 
-        DocAlias.objects.create(name="rfc321", document=draft)
+        DocAlias.objects.create(name="rfc321").docs.add(draft)
 
         # find RFC
         r = self.client.get(url + "?submit=rfc&rfc=321")
@@ -260,7 +260,7 @@ class IprTests(TestCase):
             "ietfer_contact_info": "555-555-0101",
             "iprdocrel_set-TOTAL_FORMS": 2,
             "iprdocrel_set-INITIAL_FORMS": 0,
-            "iprdocrel_set-0-document": "%s" % draft.docalias_set.first().name,
+            "iprdocrel_set-0-document": "%s" % draft.docalias.first().name,
             "iprdocrel_set-0-revisions": '00',
             "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().name,
             "patent_number": "SE12345678901",
@@ -303,7 +303,7 @@ class IprTests(TestCase):
             "ietfer_contact_info": "555-555-0101",
             "iprdocrel_set-TOTAL_FORMS": 2,
             "iprdocrel_set-INITIAL_FORMS": 0,
-            "iprdocrel_set-0-document": "%s" % draft.docalias_set.first().name,
+            "iprdocrel_set-0-document": "%s" % draft.docalias.first().name,
             "iprdocrel_set-0-revisions": '00',
             "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().name,
             "patent_number": "SE12345678901",
@@ -351,7 +351,7 @@ class IprTests(TestCase):
             "holder_legal_name": "Test Legal",
             "ietfer_contact_info": "555-555-0101",
             "ietfer_name": "Test Participant",
-            "iprdocrel_set-0-document": "%s" % draft.docalias_set.first().name,
+            "iprdocrel_set-0-document": "%s" % draft.docalias.first().name,
             "iprdocrel_set-0-revisions": '00',
             "iprdocrel_set-INITIAL_FORMS": 0,
             "iprdocrel_set-TOTAL_FORMS": 1,
@@ -400,7 +400,7 @@ class IprTests(TestCase):
             "ietfer_contact_info": "555-555-0101",
             "iprdocrel_set-TOTAL_FORMS": 2,
             "iprdocrel_set-INITIAL_FORMS": 0,
-            "iprdocrel_set-0-document": "%s" % draft.docalias_set.first().name,
+            "iprdocrel_set-0-document": "%s" % draft.docalias.first().name,
             "iprdocrel_set-0-revisions": '00',
             "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().name,
             "patent_number": "SE12345678901",
@@ -438,7 +438,7 @@ class IprTests(TestCase):
             "holder_contact_email": "test@holder.com",
             "iprdocrel_set-TOTAL_FORMS": 1,
             "iprdocrel_set-INITIAL_FORMS": 0,
-            "iprdocrel_set-0-document": "%s" % draft.docalias_set.first().name,
+            "iprdocrel_set-0-document": "%s" % draft.docalias.first().name,
             "iprdocrel_set-0-revisions": '00',
             "patent_number": "SE12345678901",
             "patent_inventor": "A. Nonymous",

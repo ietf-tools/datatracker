@@ -579,7 +579,7 @@ def view(request, id):
     draft.rfc_number = get_rfc_num(draft)
     
     # check for replaced bys
-    qs = Document.objects.filter(relateddocument__target__document=draft, relateddocument__relationship='replaces')
+    qs = Document.objects.filter(relateddocument__target__docs=draft, relateddocument__relationship='replaces')
     if qs:
         draft.replaced_by = qs[0]
     

@@ -834,7 +834,7 @@ def make_assignment_choices(email_queryset, review_req):
     possible_emails = list(email_queryset)
     possible_person_ids = [e.person_id for e in possible_emails]
 
-    aliases = DocAlias.objects.filter(document=doc).values_list("name", flat=True)
+    aliases = DocAlias.objects.filter(docs=doc).values_list("name", flat=True)
 
     # settings
     reviewer_settings = {

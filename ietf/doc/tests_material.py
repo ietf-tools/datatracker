@@ -52,7 +52,7 @@ class GroupMaterialTests(TestCase):
         doc = Document.objects.create(name="slides-testteam-test-file", rev="01", type_id="slides", group=group)
         doc.set_state(State.objects.get(type="slides", slug="active"))
         doc.set_state(State.objects.get(type="reuse_policy", slug="multiple"))
-        DocAlias.objects.create(name=doc.name, document=doc)
+        DocAlias.objects.create(name=doc.name).docs.add(doc)
         NewRevisionDocEvent.objects.create(doc=doc,by=Person.objects.get(name="(System)"),rev='00',type='new_revision',desc='New revision available')
         NewRevisionDocEvent.objects.create(doc=doc,by=Person.objects.get(name="(System)"),rev='01',type='new_revision',desc='New revision available')
 

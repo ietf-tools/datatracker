@@ -392,7 +392,7 @@ def submit(request, name, option=None):
                     abstract=group.name,
                     rev=next_rev,
                 )
-                DocAlias.objects.create(name=charter.name, document=charter)
+                DocAlias.objects.create(name=charter.name).docs.add(charter)
 
                 charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
 

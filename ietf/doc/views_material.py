@@ -142,7 +142,8 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                         dest.write(chunk)
 
             if action == "new":
-                DocAlias.objects.get_or_create(name=doc.name, document=doc)
+                alias, __ = DocAlias.objects.get_or_create(name=doc.name)
+                alias.docs.add(doc)
 
             if prev_rev != doc.rev:
                 e = NewRevisionDocEvent(type="new_revision", doc=doc, rev=doc.rev)

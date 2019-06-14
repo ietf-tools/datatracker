@@ -205,13 +205,13 @@ def document_stats(request, stats_type=None):
 
         if any(stats_type == t[0] for t in possible_document_stats_types):
             # filter documents
-            docalias_filters = Q(document__type="draft")
+            docalias_filters = Q(docs__type="draft")
 
             rfc_state = State.objects.get(type="draft", slug="rfc")
             if document_type == "rfc":
-                docalias_filters &= Q(document__states=rfc_state)
+                docalias_filters &= Q(docs__states=rfc_state)
             elif document_type == "draft":
-                docalias_filters &= ~Q(document__states=rfc_state)
+                docalias_filters &= ~Q(docs__states=rfc_state)
 
             if from_time:
                 # this is actually faster than joining in the database,
@@ -222,7 +222,7 @@ def document_stats(request, stats_type=None):
                     docevent__type__in=["published_rfc", "new_revision"],
                 ).values_list("pk"))
 
-                docalias_filters &= Q(document__in=docs_within_time_constraint)
+                docalias_filters &= Q(docs__in=docs_within_time_constraint)
 
             docalias_qs = DocAlias.objects.filter(docalias_filters)
 
@@ -233,10 +233,10 @@ def document_stats(request, stats_type=None):
             else:
                 doc_label = "document"
 
-            total_docs = docalias_qs.values_list("document").distinct().count()
+            total_docs = docalias_qs.values_list("docs__name").distinct().count()
 
             def generate_canonical_names(docalias_qs):
-                for doc_id, ts in itertools.groupby(docalias_qs.order_by("document"), lambda t: t[0]):
+                for doc_id, ts in itertools.groupby(docalias_qs.order_by("docs__name"), lambda t: t[0]):
                     chosen = None
                     for t in ts:
                         if chosen is None:
@@ -254,7 +254,7 @@ def document_stats(request, stats_type=None):
 
                 bins = defaultdict(set)
 
-                for name, canonical_name, author_count in generate_canonical_names(docalias_qs.values_list("document", "name").annotate(Count("document__documentauthor"))):
+                for name, canonical_name, author_count in generate_canonical_names(docalias_qs.values_list("docs__name", "name").annotate(Count("docs__documentauthor"))):
                     bins[author_count].add(canonical_name)
 
                 series_data = []
@@ -270,7 +270,7 @@ def document_stats(request, stats_type=None):
 
                 bins = defaultdict(set)
 
-                for name, canonical_name, pages in generate_canonical_names(docalias_qs.values_list("document", "name", "document__pages")):
+                for name, canonical_name, pages in generate_canonical_names(docalias_qs.values_list("docs__name", "name", "docs__pages")):
                     bins[pages].add(canonical_name)
 
                 series_data = []
@@ -289,7 +289,7 @@ def document_stats(request, stats_type=None):
 
                 bins = defaultdict(set)
 
-                for name, canonical_name, words in generate_canonical_names(docalias_qs.values_list("document", "name", "document__words")):
+                for name, canonical_name, words in generate_canonical_names(docalias_qs.values_list("docs__name", "name", "docs__words")):
                     bins[put_into_bin(words, bin_size)].add(canonical_name)
 
                 series_data = []
@@ -314,7 +314,7 @@ def document_stats(request, stats_type=None):
                     submission_types[doc_name] = file_types
 
                 doc_names_with_missing_types = {}
-                for doc_name, canonical_name, rev in generate_canonical_names(docalias_qs.values_list("document", "name", "document__rev")):
+                for doc_name, canonical_name, rev in generate_canonical_names(docalias_qs.values_list("docs__name", "name", "docs__rev")):
                     types = submission_types.get(doc_name)
                     if types:
                         for dot_ext in types.split(","):
@@ -359,7 +359,7 @@ def document_stats(request, stats_type=None):
 
                 bins = defaultdict(set)
 
-                for name, canonical_name, formal_language_name in generate_canonical_names(docalias_qs.values_list("document", "name", "document__formal_languages__name")):
+                for name, canonical_name, formal_language_name in generate_canonical_names(docalias_qs.values_list("docs__name", "name", "docs__formal_languages__name")):
                     bins[formal_language_name].add(canonical_name)
 
                 series_data = []

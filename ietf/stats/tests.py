@@ -71,10 +71,10 @@ class StatisticsTests(TestCase):
             words=100
             )
         referencing_draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
-        DocAlias.objects.create(document=referencing_draft, name=referencing_draft.name)
+        DocAlias.objects.create(name=referencing_draft.name).docs.add(referencing_draft)
         RelatedDocument.objects.create(
             source=referencing_draft,
-            target=draft.docalias_set.first(),
+            target=draft.docalias.first(),
             relationship=DocRelationshipName.objects.get(slug="refinfo")
         )
         NewRevisionDocEvent.objects.create(

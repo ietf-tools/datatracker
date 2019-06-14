@@ -29,9 +29,9 @@ def all_id_txt():
         return t.strftime("%Y-%m-%d") if t else ""
 
     rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc",
-                                               document__states=State.objects.get(type="draft", slug="rfc")).values_list("document__name", "name"))
+                                               docs__states=State.objects.get(type="draft", slug="rfc")).values_list("docs__name", "name"))
 
-    replacements = dict(RelatedDocument.objects.filter(target__document__states=State.objects.get(type="draft", slug="repl"),
+    replacements = dict(RelatedDocument.objects.filter(target__docs__states=State.objects.get(type="draft", slug="repl"),
                                                        relationship="replaces").values_list("target__name", "source__name"))
 
 
@@ -110,9 +110,9 @@ def all_id2_txt():
     drafts = drafts.prefetch_related("states")
 
     rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc",
-                                               document__states=State.objects.get(type="draft", slug="rfc")).values_list("document__name", "name"))
+                                               docs__states=State.objects.get(type="draft", slug="rfc")).values_list("docs__name", "name"))
 
-    replacements = dict(RelatedDocument.objects.filter(target__document__states=State.objects.get(type="draft", slug="repl"),
+    replacements = dict(RelatedDocument.objects.filter(target__docs__states=State.objects.get(type="draft", slug="repl"),
                                                        relationship="replaces").values_list("target__name", "source__name"))
 
     revision_time = dict(DocEvent.objects.filter(type="new_revision", doc__name__startswith="draft-").order_by('time').values_list("doc__name", "time"))

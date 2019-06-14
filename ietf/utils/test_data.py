@@ -158,10 +158,7 @@ def make_test_data():
     charter.set_state(State.objects.get(used=True, slug="approved", type="charter"))
     group.charter = charter
     group.save()
-    DocAlias.objects.create(
-        name=charter.name,
-        document=charter
-        )
+    DocAlias.objects.create(name=charter.name).docs.add(charter)
     setup_default_community_list_for_group(group)
 
     # ames WG
@@ -183,10 +180,7 @@ def make_test_data():
         rev="00",
         )
     charter.set_state(State.objects.get(used=True, slug="infrev", type="charter"))
-    DocAlias.objects.create(
-        name=charter.name,
-        document=charter
-        )
+    DocAlias.objects.create(name=charter.name).docs.add(charter)
     group.charter = charter
     group.save()
     setup_default_community_list_for_group(group)
@@ -220,10 +214,7 @@ def make_test_data():
     #    rev="00",
     #    )
     #charter.set_state(State.objects.get(used=True, slug="infrev", type="charter"))
-    #DocAlias.objects.create(
-    #    name=charter.name,
-    #    document=charter
-    #    )
+    #DocAlias.objects.create(name=charter.name).docs.add(charter)
     #group.charter = charter
     #group.save()
 
@@ -266,7 +257,8 @@ def make_test_data():
         expires=datetime.datetime.now(),
         )
     old_draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
-    old_alias = DocAlias.objects.create(document=old_draft, name=old_draft.name)
+    old_alias = DocAlias.objects.create(name=old_draft.name)
+    old_alias.docs.add(old_draft)
 
     # draft
     draft = Document.objects.create(
@@ -291,10 +283,8 @@ def make_test_data():
     draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="pub-req"))
     draft.set_state(State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
 
-    doc_alias = DocAlias.objects.create(
-        document=draft,
-        name=draft.name,
-        )
+    doc_alias = DocAlias.objects.create(name=draft.name)
+    doc_alias.docs.add(draft)
 
     RelatedDocument.objects.create(source=draft, target=old_alias, relationship=DocRelationshipName.objects.get(slug='replaces'))
     old_draft.set_state(State.objects.get(type='draft', slug='repl'))
@@ -371,16 +361,17 @@ def make_test_data():
     doc = Document.objects.create(name='draft-imaginary-independent-submission',type_id='draft',rev='00',
         title="Some Independent Notes on Imagination")
     doc.set_state(State.objects.get(used=True, type="draft", slug="active"))    
-    DocAlias.objects.create(name=doc.name, document=doc)
+    DocAlias.objects.create(name=doc.name).docs.add(doc)
 
     # an irtf submission mid review
     doc = Document.objects.create(name='draft-imaginary-irtf-submission', type_id='draft',rev='00',
         stream=StreamName.objects.get(slug='irtf'), title="The Importance of Research Imagination")
-    docalias = DocAlias.objects.create(name=doc.name, document=doc)
+    docalias = DocAlias.objects.create(name=doc.name)
+    docalias.docs.add(doc)
     doc.set_state(State.objects.get(type="draft", slug="active"))
     crdoc = Document.objects.create(name='conflict-review-imaginary-irtf-submission', type_id='conflrev',
         rev='00', notify="fsm@ietf.org", title="Conflict Review of IRTF Imagination Document")
-    DocAlias.objects.create(name=crdoc.name, document=crdoc)
+    DocAlias.objects.create(name=crdoc.name).docs.add(crdoc)
     crdoc.set_state(State.objects.get(name='Needs Shepherd', type__slug='conflrev'))
     crdoc.relateddocument_set.create(target=docalias,relationship_id='conflrev')
     
@@ -389,14 +380,15 @@ def make_test_data():
     doc = Document.objects.create(name='status-change-imaginary-mid-review',type_id='statchg', rev='00',
         notify="fsm@ietf.org", group=iesg, title="Status Change Review without Imagination")
     doc.set_state(State.objects.get(slug='needshep',type__slug='statchg'))
-    docalias = DocAlias.objects.create(name='status-change-imaginary-mid-review',document=doc)
+    docalias = DocAlias.objects.create(name='status-change-imaginary-mid-review')
+    docalias.docs.add(doc)
 
     # Some things for a status change to affect
     def rfc_for_status_change_test_factory(name,rfc_num,std_level_id):
         target_rfc = Document.objects.create(name=name, type_id='draft', std_level_id=std_level_id, notify="%s@ietf.org"%name)
         target_rfc.set_state(State.objects.get(slug='rfc',type__slug='draft'))
-        docalias = DocAlias.objects.create(name=name,document=target_rfc)
-        docalias = DocAlias.objects.create(name='rfc%d'%rfc_num,document=target_rfc) # pyflakes:ignore
+        DocAlias.objects.create(name=name).docs.add(target_rfc)
+        DocAlias.objects.create(name='rfc%d'%rfc_num).docs.add(target_rfc)
         return target_rfc
     rfc_for_status_change_test_factory('draft-ietf-random-thing',9999,'ps')
     rfc_for_status_change_test_factory('draft-ietf-random-otherthing',9998,'inf')

@@ -478,7 +478,7 @@ def index_all_drafts(request):
         else:
             heading = "%s Internet-Drafts" % state.name
 
-        draft_names = DocAlias.objects.filter(document__states=state).values_list("name", "document__name")
+        draft_names = DocAlias.objects.filter(docs__states=state).values_list("name", "docs__name")
 
         names = []
         names_to_skip = set()
@@ -528,7 +528,7 @@ def ajax_select2_search_docs(request, model_name, doc_type):
         if model == Document:
             qs = qs.filter(type=doc_type)
         elif model == DocAlias:
-            qs = qs.filter(document__type=doc_type)
+            qs = qs.filter(docs__type=doc_type)
 
         for t in q:
             qs = qs.filter(name__icontains=t)

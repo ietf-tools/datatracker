@@ -271,7 +271,7 @@ class InterimSessionModelForm(forms.ModelForm):
                 # FIXME: What about agendas in html or markdown format?
                 uploaded_filename='{}-00.txt'.format(filename))
             doc.set_state(State.objects.get(type__slug=doc.type.slug, slug='active'))
-            DocAlias.objects.create(name=doc.name, document=doc)
+            DocAlias.objects.create(name=doc.name).docs.add(doc)
             self.instance.sessionpresentation_set.create(document=doc, rev=doc.rev)
             NewRevisionDocEvent.objects.create(
                 type='new_revision',

@@ -741,7 +741,7 @@ class ApproveBallotTests(TestCase):
         self.assertTrue("No downward references for" in r.content)
 
         # Add a downref, the page should ask if it should be added to the registry
-        rel = draft.relateddocument_set.create(target=rfc.docalias_set.get(name='rfc6666'),relationship_id='refnorm')
+        rel = draft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'),relationship_id='refnorm')
         d = [rdoc for rdoc in draft.relateddocument_set.all() if rel.is_approved_downref()]
         original_len = len(d)
         r = self.client.get(url)
@@ -970,7 +970,7 @@ class RegenerateLastCallTestCase(TestCase):
                   std_level_id='inf',
               )
 
-        draft.relateddocument_set.create(target=rfc.docalias_set.get(name='rfc6666'),relationship_id='refnorm')
+        draft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'),relationship_id='refnorm')
 
         r = self.client.post(url, dict(regenerate_last_call_text="1"))
         self.assertEqual(r.status_code, 200)
@@ -980,7 +980,7 @@ class RegenerateLastCallTestCase(TestCase):
         self.assertTrue("rfc6666" in lc_text)
         self.assertTrue("Independent Submission Editor stream" in lc_text)
 
-        draft.relateddocument_set.create(target=rfc.docalias_set.get(name='rfc6666'),relationship_id='downref-approval')
+        draft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'),relationship_id='downref-approval')
 
         r = self.client.post(url, dict(regenerate_last_call_text="1"))
         self.assertEqual(r.status_code, 200)

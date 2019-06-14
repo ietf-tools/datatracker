@@ -527,7 +527,7 @@ def start_rfc_status_change(request,name):
             )
             status_change.set_state(form.cleaned_data['create_in_state'])
 
-            DocAlias.objects.create( name= 'status-change-'+form.cleaned_data['document_name'], document=status_change )
+            DocAlias.objects.create( name= 'status-change-'+form.cleaned_data['document_name']).docs.add(status_change)
             
             for key in form.cleaned_data['relations']:
                 status_change.relateddocument_set.create(target=DocAlias.objects.get(name=key),

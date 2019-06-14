@@ -91,7 +91,7 @@ admin.site.register(IprDocRel, IprDocRelAdmin)
 
 class RelatedIprAdmin(admin.ModelAdmin):
     list_display = ['source', 'target', 'relationship', ]
-    search_fields = ['source__name', 'target__name', 'target__document__name', ]
+    search_fields = ['source__name', 'target__name', 'target__docs__name', ]
     raw_id_fields = ['source', 'target', ]
 admin.site.register(RelatedIpr, RelatedIprAdmin)
 

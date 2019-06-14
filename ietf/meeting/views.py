@@ -38,7 +38,7 @@ from django.views.generic import RedirectView
 
 
 from ietf.doc.fields import SearchableDocumentsField
-from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
+from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocAlias
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.ietfauth.utils import role_required, has_role
@@ -1218,7 +1218,7 @@ def upload_session_bluesheets(request, session_id, num):
                           rev = '00',
                       )
                 doc.states.add(State.objects.get(type_id='bluesheets',slug='active'))
-                doc.docalias_set.create(name=doc.name)
+                DocAlias.objects.create(name=doc.name).docs.add(doc)
                 session.sessionpresentation_set.create(document=doc,rev='00')
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
             doc.uploaded_filename = filename
@@ -1307,7 +1307,7 @@ def upload_session_minutes(request, session_id, num):
                               group = session.group,
                               rev = '00',
                           )
-                    doc.docalias_set.create(name=doc.name)
+                    DocAlias.objects.create(name=doc.name).docs.add(doc)
                 doc.states.add(State.objects.get(type_id='minutes',slug='active'))
                 if session.sessionpresentation_set.filter(document=doc).exists():
                     sp = session.sessionpresentation_set.get(document=doc)
@@ -1410,7 +1410,7 @@ def upload_session_agenda(request, session_id, num):
                               group = session.group,
                               rev = '00',
                           )
-                    doc.docalias_set.create(name=doc.name)
+                    DocAlias.objects.create(name=doc.name).docs.add(doc)
                 doc.states.add(State.objects.get(type_id='agenda',slug='active'))
             if session.sessionpresentation_set.filter(document=doc).exists():
                 sp = session.sessionpresentation_set.get(document=doc)
@@ -1513,7 +1513,7 @@ def upload_session_slides(request, session_id, num, name):
                               group = session.group,
                               rev = '00',
                           )
-                    doc.docalias_set.create(name=doc.name)
+                    DocAlias.objects.create(name=doc.name).docs.add(doc)
                 doc.states.add(State.objects.get(type_id='slides',slug='active'))
                 doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
             if session.sessionpresentation_set.filter(document=doc).exists():
@@ -2448,7 +2448,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                               group = submission.session.group,
                               rev = '00',
                           )
-                    doc.docalias_set.create(name=doc.name)
+                    DocAlias.objects.create(name=doc.name).docs.add(doc)
                 doc.states.add(State.objects.get(type_id='slides',slug='active'))
                 doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
                 if submission.session.sessionpresentation_set.filter(document=doc).exists():

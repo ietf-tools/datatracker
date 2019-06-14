@@ -63,7 +63,7 @@ class SecrTelechatTestCase(TestCase):
         draft = WgDraftFactory(ad=ad, intended_std_level_id='ps', states=[('draft-iesg','pub-req'),])
         rfc = IndividualRfcFactory.create(stream_id='irtf', other_aliases=['rfc6666',],
                   states=[('draft','rfc'),('draft-iesg','pub')], std_level_id='inf', )
-        draft.relateddocument_set.create(target=rfc.docalias_set.get(name='rfc6666'),
+        draft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'),
                   relationship_id='refnorm')
         create_ballot_if_not_open(None, draft, ad, 'approve')
         d = get_next_telechat_date()

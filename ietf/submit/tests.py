@@ -224,8 +224,8 @@ class SubmitTests(TestCase):
             note="",
         )
         sug_replaced_draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
-        sug_replaced_alias = DocAlias.objects.create(document=sug_replaced_draft, name=sug_replaced_draft.name)
-
+        sug_replaced_alias = DocAlias.objects.create(name=sug_replaced_draft.name)
+        sug_replaced_alias.docs.add(sug_replaced_draft)
 
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
@@ -235,7 +235,7 @@ class SubmitTests(TestCase):
 
         # supply submitter info, then draft should be in and ready for approval
         mailbox_before = len(outbox)
-        replaced_alias = draft.docalias_set.first()
+        replaced_alias = draft.docalias.first()
         r = self.supply_extra_metadata(name, status_url, author.ascii, author.email().address.lower(),
                                        replaces=str(replaced_alias.name) + "," + str(sug_replaced_alias.name))
 
@@ -593,7 +593,7 @@ class SubmitTests(TestCase):
         rev = '%02d'%(int(draft.rev)+1)
         status_url, author = self.do_submission(name,rev)
         mailbox_before = len(outbox)
-        replaced_alias = draft.docalias_set.first()
+        replaced_alias = draft.docalias.first()
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.name))
         self.assertEqual(r.status_code, 200)
         self.assertTrue('cannot replace itself' in unicontent(r))
@@ -737,7 +737,7 @@ class SubmitTests(TestCase):
             "edit-pages": "123",
             "submitter-name": "Some Random Test Person",
             "submitter-email": "random@example.com",
-            "replaces": str(draft.docalias_set.all().first().name),
+            "replaces": str(draft.docalias.first().name),
             "edit-note": "no comments",
             "authors-0-name": "Person 1",
             "authors-0-email": "person1@example.com",
@@ -757,7 +757,7 @@ class SubmitTests(TestCase):
         self.assertEqual(submission.pages, 123)
         self.assertEqual(submission.note, "no comments")
         self.assertEqual(submission.submitter, "Some Random Test Person <random@example.com>")
-        self.assertEqual(submission.replaces, draft.docalias_set.all().first().name)
+        self.assertEqual(submission.replaces, draft.docalias.first().name)
         self.assertEqual(submission.state_id, "manual")
 
         authors = submission.authors

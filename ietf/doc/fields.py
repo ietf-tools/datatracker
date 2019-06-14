@@ -59,7 +59,7 @@ class SearchableDocumentsField(forms.CharField):
             value = self.model.objects.filter(Q(name__in=names)|Q(id__in=ids))
             filter_args = {}
             if self.model == DocAlias:
-                filter_args["document__type"] = self.doc_type
+                filter_args["docs__type"] = self.doc_type
             else:
                 filter_args["type"] = self.doc_type
             value = value.filter(**filter_args)

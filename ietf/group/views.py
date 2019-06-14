@@ -188,7 +188,7 @@ def fill_in_wg_roles(group):
     group.secretaries = get_roles("secr", [])
 
 def fill_in_wg_drafts(group):
-    aliases = DocAlias.objects.filter(document__type="draft", document__group=group).select_related('document').order_by("name")
+    aliases = DocAlias.objects.filter(docs__type="draft", docs__group=group).prefetch_related('docs').order_by("name")
     group.drafts = []
     group.rfcs = []
     for a in aliases:
@@ -804,7 +804,7 @@ def group_photos(request, group_type=None, acronym=None):
 #         charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
 # 
 #         # Create an alias as well
-#         DocAlias.objects.create(name=charter.name, document=charter)
+#         DocAlias.objects.create(name=charter.name).docs.add(charter)
 # 
 #     return charter
 # 
