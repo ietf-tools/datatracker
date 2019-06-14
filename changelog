@@ -1,3 +1,29 @@
+ietfdb (6.97.1) ietf; urgency=medium
+
+  This is a bugfix release which clears the way for the upcoming major
+  release.  From the commit log:
+
+  * Added validation of draft names extracted from XML submission files.
+
+  * Added static resources for favicon.ico and robots.txt at the top of
+    the ietf static tree.
+
+  * Updated references to RFC 5226, to RFC 8126, which obsoletes 5226.  This
+    fixes issue #2726.
+
+  * Fixed an issue where the 'Request closing group' button incorrectly was
+    showing for group chairs.  Fixes issue #2724.
+
+  * Moved some explicit URLs from code and templates to settings (related 
+    to the production server www6/ directory cleanup).
+
+  * Refined the handling of draft xml version 3 versus version 2.  This fixes
+    a problem where v3 documents were rendered with no section titles in the
+    Table of Contents.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Jun 2019 13:30:43 +0000
+
+
 ietfdb (6.97.0) ietf; urgency=medium
 
   **Additional meeting-related links**
