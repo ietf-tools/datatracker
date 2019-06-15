@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Copyright The IETF Trust 2017-2019, All Rights Reserved
 
 from __future__ import print_function, unicode_literals
 
@@ -68,9 +69,9 @@ def unicode(text):
 
 start = time.time()
 say("Running query for documents to process ...")
-for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documentauthor_set", "documentauthor_set__person", "documentauthor_set__person__alias_set"):
+for doc in docs_qs.prefetch_related("docalias", "formal_languages", "documentauthor_set", "documentauthor_set__person", "documentauthor_set__person__alias_set"):
     canonical_name = doc.name
-    for n in doc.docalias_set.all():
+    for n in doc.docalias.all():
         if n.name.startswith("rfc"):
             canonical_name = n.name
 

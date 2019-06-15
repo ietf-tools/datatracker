@@ -64,6 +64,7 @@ from django.template import TemplateDoesNotExist
 from django.template.loaders.base import Loader as BaseLoader
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
+
 from django.urls import RegexURLResolver
 
 import debug                            # pyflakes:ignore
@@ -72,7 +73,9 @@ debug.debug = True
 import ietf
 import ietf.utils.mail
 from ietf.checks import maybe_create_svn_symlinks
+from ietf.utils.management.commands import pyflakes
 from ietf.utils.test_smtpserver import SMTPTestServerDriver
+from ietf.utils.test_utils import TestCase
 
 
 loaded_templates = set()
@@ -120,6 +123,19 @@ def safe_destroy_test_db(*args, **kwargs):
             print '     NOT SAFE; Changing settings.DATABASES["default"]["NAME"] from %s to %s' % (settings.DATABASES["default"]["NAME"], test_database_name)
             settings.DATABASES["default"]["NAME"] = test_database_name
     return old_destroy(*args, **kwargs)
+
+class PyFlakesTestCase(TestCase):
+
+    def __init__(self, test_runner=None, **kwargs):
+        self.runner = test_runner
+        super(PyFlakesTestCase, self).__init__(**kwargs)
+
+    def pyflakes_test(self):
+        self.maxDiff = None
+        path = os.path.join(settings.BASE_DIR)
+        warnings = []
+        warnings = pyflakes.checkPaths([path], verbosity=0)
+        self.assertEqual([], [str(w) for w in warnings])
 
 class TemplateCoverageLoader(BaseLoader):
     is_usable = True
@@ -375,6 +391,8 @@ class CoverageTest(unittest.TestCase):
             self.skipTest("Coverage switched off with --skip-coverage")
 
     def interleaved_migrations_test(self):
+        if self.runner.permit_mixed_migrations:
+            return
 #        from django.apps import apps
 #         unreleased = {}
 #         for appconf in apps.get_app_configs():
@@ -474,12 +492,16 @@ class IetfTestRunner(DiscoverRunner):
         parser.add_argument('--html-report',
             action='store_true', default=False,
             help='Generate a html code coverage report in %s' % settings.TEST_CODE_COVERAGE_REPORT_DIR)
+        parser.add_argument('--permit-mixed-migrations',
+            action='store_true', default=False,
+            help='Permit interleaved unreleased migrations')
 
-    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, **kwargs):
+    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, **kwargs):
         #
         self.check_coverage = not skip_coverage
         self.save_version_coverage = save_version_coverage
         self.html_report = html_report
+        self.permit_mixed_migrations = permit_mixed_migrations
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
         self.coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_MASTER_FILE)
@@ -668,6 +690,7 @@ class IetfTestRunner(DiscoverRunner):
             code_coverage_collection = True
             url_coverage_collection = True
             extra_tests += [
+                PyFlakesTestCase(test_runner=self, methodName='pyflakes_test'),
                 CoverageTest(test_runner=self, methodName='interleaved_migrations_test'),
                 CoverageTest(test_runner=self, methodName='url_coverage_test'),
                 CoverageTest(test_runner=self, methodName='template_coverage_test'),
@@ -679,7 +702,7 @@ class IetfTestRunner(DiscoverRunner):
             # parent classes to later subclasses, the parent classes will
             # determine the ordering, so use the most specific classes
             # necessary to get the right ordering:
-            self.reorder_by += (StaticLiveServerTestCase, TemplateTagTest, CoverageTest, ) 
+            self.reorder_by = (PyFlakesTestCase, ) + self.reorder_by + (StaticLiveServerTestCase, TemplateTagTest, CoverageTest, )
 
         failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
 

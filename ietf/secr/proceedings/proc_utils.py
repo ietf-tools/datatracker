@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 '''
 proc_utils.py
 
@@ -113,10 +116,10 @@ def attach_recording(doc, sessions):
                 document=doc,
                 rev=doc.rev)
             session.sessionpresentation_set.add(presentation)
-            if not doc.docalias_set.filter(name__startswith='recording-{}-{}'.format(session.meeting.number,session.group.acronym)):
+            if not doc.docalias.filter(name__startswith='recording-{}-{}'.format(session.meeting.number,session.group.acronym)):
                 sequence = get_next_sequence(session.group,session.meeting,'recording')
                 name = 'recording-{}-{}-{}'.format(session.meeting.number,session.group.acronym,sequence)
-                doc.docalias_set.create(name=name)
+                DocAlias.objects.create(name=name).docs.add(doc)
 
 def normalize_room_name(name):
     '''Returns room name converted to be used as portion of filename'''
@@ -150,7 +153,7 @@ def create_recording(session, url, title=None, user=None):
                                   type_id='recording')
     doc.set_state(State.objects.get(type='recording', slug='active'))
 
-    doc.docalias_set.create(name=name)
+    DocAlias.objects.create(name=doc.name).docs.add(doc)
     
     # create DocEvent
     NewRevisionDocEvent.objects.create(type='new_revision',
@@ -207,10 +210,10 @@ def get_progress_stats(sdate,edate):
     new_draft_events = events.filter(newrevisiondocevent__rev='00')
     new_drafts = list(set([ e.doc_id for e in new_draft_events ]))
     data['new_drafts_count'] = len(new_drafts)
-    data['new_drafts_updated_count'] = events.filter(doc__in=new_drafts,newrevisiondocevent__rev='01').count()
-    data['new_drafts_updated_more_count'] = events.filter(doc__in=new_drafts,newrevisiondocevent__rev='02').count()
+    data['new_drafts_updated_count'] = events.filter(doc__id__in=new_drafts,newrevisiondocevent__rev='01').count()
+    data['new_drafts_updated_more_count'] = events.filter(doc__id__in=new_drafts,newrevisiondocevent__rev='02').count()
     
-    update_events = events.filter(type='new_revision').exclude(doc__in=new_drafts)
+    update_events = events.filter(type='new_revision').exclude(doc__id__in=new_drafts)
     data['updated_drafts_count'] = len(set([ e.doc_id for e in update_events ]))
     
     # Calculate Final Four Weeks stats (ffw)
@@ -224,7 +227,7 @@ def get_progress_stats(sdate,edate):
     data['ffw_new_count'] = ffw_new_count
     data['ffw_new_percent'] = ffw_new_percent
     
-    ffw_update_events = events.filter(time__gte=ffwdate,type='new_revision').exclude(doc__in=new_drafts)
+    ffw_update_events = events.filter(time__gte=ffwdate,type='new_revision').exclude(doc__id__in=new_drafts)
     ffw_update_count = len(set([ e.doc_id for e in ffw_update_events ]))
     try:
         ffw_update_percent = format(ffw_update_count / float(data['updated_drafts_count']),'.0%')

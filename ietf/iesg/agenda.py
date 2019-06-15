@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 # utilities for constructing agendas for IESG telechats
 
 import codecs
@@ -182,7 +185,7 @@ def fill_in_agenda_docs(date, sections, docs=None):
                 if e and (e.consensus != None):
                     doc.consensus = "Yes" if e.consensus else "No"
 
-            doc.review_assignments = review_assignments_for_docs.get(doc.pk, [])
+            doc.review_assignments = review_assignments_for_docs.get(doc.name, [])
         elif doc.type_id == "conflrev":
             doc.conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
         elif doc.type_id == "charter":

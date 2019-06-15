@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import csv
 import uuid
 import datetime
@@ -57,9 +60,9 @@ def manage_list(request, username=None, acronym=None, group_type=None):
         add_doc_form = AddDocumentsForm()
 
     if request.method == 'POST' and action == 'remove_document':
-        document_pk = request.POST.get('document')
-        if clist.pk is not None and document_pk:
-            document = get_object_or_404(clist.added_docs, pk=document_pk)
+        document_name = request.POST.get('document')
+        if clist.pk is not None and document_name:
+            document = get_object_or_404(clist.added_docs, name=document_name)
             clist.added_docs.remove(document)
 
             return HttpResponseRedirect("")
@@ -209,7 +212,7 @@ def feed(request, username=None, acronym=None, group_type=None):
     since = datetime.datetime.now() - datetime.timedelta(days=14)
 
     events = DocEvent.objects.filter(
-        doc__in=documents,
+        doc__id__in=documents,
         time__gte=since,
     ).distinct().order_by('-time', '-id').select_related("doc")
 

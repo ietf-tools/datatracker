@@ -1,4 +1,5 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
 import datetime
 import debug                            # pyflakes:ignore
@@ -20,7 +21,7 @@ def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
         doc_ids = doc_dict.keys()        
 
     seen = set()
-    for e in TelechatDocEvent.objects.filter(doc__in=doc_ids, type="scheduled_for_telechat").order_by('-time'):
+    for e in TelechatDocEvent.objects.filter(doc__id__in=doc_ids, type="scheduled_for_telechat").order_by('-time'):
         if e.doc_id not in seen:
             d = doc_dict[e.doc_id]
             d.telechat_date = wrap_value(d.telechat_date(e))
@@ -49,7 +50,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     doc_dict = dict((d.pk, d) for d in docs)
     doc_ids = doc_dict.keys()
 
-    rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=doc_ids).values_list("document", "name"))
+    rfc_aliases = dict([ (a.document.id, a.name) for a in DocAlias.objects.filter(name__startswith="rfc", docs__id__in=doc_ids) ])
 
     # latest event cache
     event_types = ("published_rfc",
@@ -61,11 +62,11 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         for e in event_types:
             d.latest_event_cache[e] = None
 
-    for e in DocEvent.objects.filter(doc__in=doc_ids, type__in=event_types).order_by('time'):
+    for e in DocEvent.objects.filter(doc__id__in=doc_ids, type__in=event_types).order_by('time'):
         doc_dict[e.doc_id].latest_event_cache[e.type] = e
 
     seen = set()
-    for e in BallotDocEvent.objects.filter(doc__in=doc_ids, type__in=('created_ballot', 'closed_ballot')).order_by('-time','-id'):
+    for e in BallotDocEvent.objects.filter(doc__id__in=doc_ids, type__in=('created_ballot', 'closed_ballot')).order_by('-time','-id'):
         if not e.doc_id in seen:
             doc_dict[e.doc_id].ballot = e if e.type == 'created_ballot' else None
             seen.add(e.doc_id)
@@ -122,11 +123,10 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         d.updated_by_list = []
 
     xed_by = RelatedDocument.objects.filter(target__name__in=rfc_aliases.values(),
-                                            relationship__in=("obs", "updates")).select_related('target__document')
-    rel_rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc",
-                                                   document__in=[rel.source_id for rel in xed_by]).values_list('document', 'name'))
+                                            relationship__in=("obs", "updates")).select_related('target')
+    rel_rfc_aliases = dict([ (a.document.id, a.name) for a in DocAlias.objects.filter(name__startswith="rfc", docs__id__in=[rel.source_id for rel in xed_by]) ])
     for rel in xed_by:
-        d = doc_dict[rel.target.document_id]
+        d = doc_dict[rel.target.document.id]
         if rel.relationship_id == "obs":
             l = d.obsoleted_by_list
         elif rel.relationship_id == "updates":
@@ -146,7 +146,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
         # the number of queries
         docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream", "shepherd", )
         docs = docs.prefetch_related("states__type", "tags", "groupmilestone_set__group", "reviewrequest_set__team",
-                                     "submission_set__checks", "ad__email_set", "docalias_set__iprdocrel_set")
+                                     "submission_set__checks", "ad__email_set", "docalias__iprdocrel_set")
 
     if docs.count() > max_results:
         docs = docs[:max_results]

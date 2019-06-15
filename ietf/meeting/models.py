@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 # old meeting models can be found in ../proceedings/models.py
 
 import pytz
@@ -863,6 +866,7 @@ class SessionPresentation(models.Model):
     class Meta:
         db_table = 'meeting_session_materials'
         ordering = ('order',)
+        unique_together = (('session', 'document'),)
 
     def __unicode__(self):
         return u"%s -> %s-%s" % (self.session, self.document.name, self.rev)

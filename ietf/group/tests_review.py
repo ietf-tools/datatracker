@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import datetime
 import debug      # pyflakes:ignore
 
@@ -237,7 +240,7 @@ class ReviewTests(TestCase):
                                  content = """
                                      {% autoescape off %}
                                      Reviewer               Deadline   Draft
-                                     {% for r in review_assignments %}{{ r.reviewer.person.plain_name|ljust:"22" }} {{ r.review_request.deadline|date:"Y-m-d" }} {{ r.review_request.doc_id }}-{% if r.review_request.requested_rev %}{{ r.review_request.requested_rev }}{% else %}{{ r.review_request.doc.rev }}{% endif %}
+                                     {% for r in review_assignments %}{{ r.reviewer.person.plain_name|ljust:"22" }} {{ r.review_request.deadline|date:"Y-m-d" }} {{ r.review_request.doc.name }}-{% if r.review_request.requested_rev %}{{ r.review_request.requested_rev }}{% else %}{{ r.review_request.doc.rev }}{% endif %}
                                      {% endfor %}
                                      {% if rotation_list %}Next in the reviewer rotation:
 
@@ -480,13 +483,13 @@ class ReviewTests(TestCase):
         empty_outbox()
         email_reviewer_reminder(review_req)
         self.assertEqual(len(outbox), 1)
-        self.assertTrue(review_req.doc_id in outbox[0].get_payload(decode=True).decode("utf-8"))
+        self.assertTrue(review_req.doc.name in outbox[0].get_payload(decode=True).decode("utf-8"))
 
         # email secretary
         empty_outbox()
         email_secretary_reminder(review_req, secretary_role)
         self.assertEqual(len(outbox), 1)
-        self.assertTrue(review_req.doc_id in outbox[0].get_payload(decode=True).decode("utf-8"))
+        self.assertTrue(review_req.doc.name in outbox[0].get_payload(decode=True).decode("utf-8"))
 
 
 

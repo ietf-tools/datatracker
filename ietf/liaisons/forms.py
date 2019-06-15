@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import datetime, os
 import operator
 import six
@@ -25,7 +28,7 @@ from ietf.liaisons.fields import SearchableLiaisonStatementsField
 from ietf.group.models import Group
 from ietf.person.models import Email
 from ietf.person.fields import SearchableEmailField
-from ietf.doc.models import Document
+from ietf.doc.models import Document, DocAlias
 from ietf.utils.fields import DatepickerDateField
 
 '''
@@ -370,7 +373,7 @@ class LiaisonModelForm(BetterModelForm):
                     )
                 )
             if created:
-                attach.docalias_set.create(name=attach.name)
+                DocAlias.objects.create(name=attach.name).docs.add(attach)
             LiaisonStatementAttachment.objects.create(statement=self.instance,document=attach)
             attach_file = open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'w')
             attach_file.write(attached_file.read())

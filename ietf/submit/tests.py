@@ -1,5 +1,5 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2011, All Rights Reserved
 from __future__ import unicode_literals, print_function
 
 import datetime
@@ -181,7 +181,7 @@ class SubmitTests(TestCase):
         if r.status_code == 302:
             submission = Submission.objects.get(name=name)
             self.assertEqual(submission.submitter, email.utils.formataddr((submitter_name, submitter_email)))
-            self.assertEqual(submission.replaces, ",".join(d.name for d in DocAlias.objects.filter(pk__in=replaces.split(",") if replaces else [])))
+            self.assertEqual(submission.replaces, ",".join(d.name for d in DocAlias.objects.filter(name__in=replaces.split(",") if replaces else [])))
 
         return r
 
@@ -224,8 +224,8 @@ class SubmitTests(TestCase):
             note="",
         )
         sug_replaced_draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
-        sug_replaced_alias = DocAlias.objects.create(document=sug_replaced_draft, name=sug_replaced_draft.name)
-
+        sug_replaced_alias = DocAlias.objects.create(name=sug_replaced_draft.name)
+        sug_replaced_alias.docs.add(sug_replaced_draft)
 
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
@@ -235,9 +235,9 @@ class SubmitTests(TestCase):
 
         # supply submitter info, then draft should be in and ready for approval
         mailbox_before = len(outbox)
-        replaced_alias = draft.docalias_set.first()
+        replaced_alias = draft.docalias.first()
         r = self.supply_extra_metadata(name, status_url, author.ascii, author.email().address.lower(),
-                                       replaces=str(replaced_alias.pk) + "," + str(sug_replaced_alias.pk))
+                                       replaces=str(replaced_alias.name) + "," + str(sug_replaced_alias.name))
 
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
@@ -593,17 +593,17 @@ class SubmitTests(TestCase):
         rev = '%02d'%(int(draft.rev)+1)
         status_url, author = self.do_submission(name,rev)
         mailbox_before = len(outbox)
-        replaced_alias = draft.docalias_set.first()
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
+        replaced_alias = draft.docalias.first()
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.name))
         self.assertEqual(r.status_code, 200)
         self.assertTrue('cannot replace itself' in unicontent(r))
         replaced_alias = DocAlias.objects.get(name='draft-ietf-random-thing')
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.name))
         self.assertEqual(r.status_code, 200)
         self.assertTrue('cannot replace an RFC' in unicontent(r))
         replaced_alias.document.set_state(State.objects.get(type='draft-iesg',slug='approved'))
         replaced_alias.document.set_state(State.objects.get(type='draft',slug='active'))
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.name))
         self.assertEqual(r.status_code, 200)
         self.assertTrue('approved by the IESG and cannot' in unicontent(r))
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces='')
@@ -737,7 +737,7 @@ class SubmitTests(TestCase):
             "edit-pages": "123",
             "submitter-name": "Some Random Test Person",
             "submitter-email": "random@example.com",
-            "replaces": str(draft.docalias_set.all().first().pk),
+            "replaces": str(draft.docalias.first().name),
             "edit-note": "no comments",
             "authors-0-name": "Person 1",
             "authors-0-email": "person1@example.com",
@@ -757,7 +757,7 @@ class SubmitTests(TestCase):
         self.assertEqual(submission.pages, 123)
         self.assertEqual(submission.note, "no comments")
         self.assertEqual(submission.submitter, "Some Random Test Person <random@example.com>")
-        self.assertEqual(submission.replaces, draft.docalias_set.all().first().name)
+        self.assertEqual(submission.replaces, draft.docalias.first().name)
         self.assertEqual(submission.state_id, "manual")
 
         authors = submission.authors

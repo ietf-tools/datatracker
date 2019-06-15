@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import os
 from unittest import skipIf
 
@@ -71,7 +74,7 @@ class GroupDocDependencyGraphTests(TestCase):
         set_coverage_checking(False)
         a = WgDraftFactory()
         b = WgDraftFactory()
-        RelatedDocument.objects.create(source=a,target=b.docalias_set.first(),relationship_id='normref')
+        RelatedDocument.objects.create(source=a,target=b.docalias.first(),relationship_id='normref')
 
     def tearDown(self):
         set_coverage_checking(True)

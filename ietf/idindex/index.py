@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 # code to generate plain-text index files that are placed on
 # www.ietf.org in the same directory as the I-Ds
 
@@ -22,17 +25,17 @@ def all_id_txt():
     # this returns a lot of data so try to be efficient
 
     # precalculations
-    revision_time = dict(NewRevisionDocEvent.objects.filter(type="new_revision", doc__name__startswith="draft-").order_by('time').values_list("doc_id", "time"))
+    revision_time = dict(NewRevisionDocEvent.objects.filter(type="new_revision", doc__name__startswith="draft-").order_by('time').values_list("doc__name", "time"))
 
     def formatted_rev_date(name):
         t = revision_time.get(name)
         return t.strftime("%Y-%m-%d") if t else ""
 
     rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc",
-                                               document__states=State.objects.get(type="draft", slug="rfc")).values_list("document_id", "name"))
+                                               docs__states=State.objects.get(type="draft", slug="rfc")).values_list("docs__name", "name"))
 
-    replacements = dict(RelatedDocument.objects.filter(target__document__states=State.objects.get(type="draft", slug="repl"),
-                                                       relationship="replaces").values_list("target__document_id", "source"))
+    replacements = dict(RelatedDocument.objects.filter(target__docs__states=State.objects.get(type="draft", slug="repl"),
+                                                       relationship="replaces").values_list("target__name", "source__name"))
 
 
     # we need a distinct to prevent the queries below from multiplying the result
@@ -66,7 +69,7 @@ def all_id_txt():
 
     # handle the rest
 
-    not_in_process = all_ids.exclude(pk__in=[d.name for d in in_iesg_process])
+    not_in_process = all_ids.exclude(pk__in=[d.pk for d in in_iesg_process])
 
     for s in State.objects.filter(type="draft").order_by("order"):
         for name, rev in not_in_process.filter(states=s).values_list("name", "rev"):
@@ -110,21 +113,21 @@ def all_id2_txt():
     drafts = drafts.prefetch_related("states")
 
     rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc",
-                                               document__states=State.objects.get(type="draft", slug="rfc")).values_list("document_id", "name"))
+                                               docs__states=State.objects.get(type="draft", slug="rfc")).values_list("docs__name", "name"))
 
-    replacements = dict(RelatedDocument.objects.filter(target__document__states=State.objects.get(type="draft", slug="repl"),
-                                                       relationship="replaces").values_list("target__document_id", "source"))
+    replacements = dict(RelatedDocument.objects.filter(target__docs__states=State.objects.get(type="draft", slug="repl"),
+                                                       relationship="replaces").values_list("target__name", "source__name"))
 
-    revision_time = dict(DocEvent.objects.filter(type="new_revision", doc__name__startswith="draft-").order_by('time').values_list("doc_id", "time"))
+    revision_time = dict(DocEvent.objects.filter(type="new_revision", doc__name__startswith="draft-").order_by('time').values_list("doc__name", "time"))
 
     file_types = file_types_for_drafts()
 
     authors = {}
     for a in DocumentAuthor.objects.filter(document__name__startswith="draft-").order_by("order").select_related("email", "person").iterator():
-        if a.document_id not in authors:
-            l = authors[a.document_id] = []
+        if a.document.name not in authors:
+            l = authors[a.document.name] = []
         else:
-            l = authors[a.document_id]
+            l = authors[a.document.name]
         if a.email:
             l.append(u'%s <%s>' % (a.person.plain_name().replace("@", ""), a.email.address.replace(",", "")))
         else:
@@ -239,8 +242,8 @@ def active_drafts_index_by_group(extra_values=()):
         docs_dict[d.name]['group_id'] = individual.id
 
     # add initial and latest revision time
-    for time, doc_id in NewRevisionDocEvent.objects.filter(type="new_revision", doc__states=active_state).order_by('-time').values_list("time", "doc_id"):
-        d = docs_dict.get(doc_id)
+    for time, doc_name in NewRevisionDocEvent.objects.filter(type="new_revision", doc__states=active_state).order_by('-time').values_list("time", "doc__name"):
+        d = docs_dict.get(doc_name)
         if d:
             if "rev_time" not in d:
                 d["rev_time"] = time
@@ -248,7 +251,7 @@ def active_drafts_index_by_group(extra_values=()):
 
     # add authors
     for a in DocumentAuthor.objects.filter(document__states=active_state).order_by("order").select_related("person"):
-        d = docs_dict.get(a.document_id)
+        d = docs_dict.get(a.document.name)
         if d:
             if "authors" not in d:
                 d["authors"] = []

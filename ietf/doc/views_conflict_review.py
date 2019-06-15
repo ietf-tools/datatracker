@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import datetime, os
 
 from django import forms
@@ -388,7 +391,7 @@ def start_review_sanity_check(request, name):
         raise Http404
 
     # sanity check that there's not already a conflict review document for this document
-    if [ rel.source for alias in doc_to_review.docalias_set.all() for rel in alias.relateddocument_set.filter(relationship='conflrev') ]:
+    if [ rel.source for alias in doc_to_review.docalias.all() for rel in alias.relateddocument_set.filter(relationship='conflrev') ]:
         raise Http404
 
     return doc_to_review
@@ -421,7 +424,8 @@ def build_conflict_review_document(login, doc_to_review, ad, notify, create_in_s
     )
     conflict_review.set_state(create_in_state)
 
-    DocAlias.objects.create( name=review_name , document=conflict_review )
+    DocAlias.objects.create( name=review_name).docs.add( conflict_review )
+
             
     conflict_review.relateddocument_set.create(target=DocAlias.objects.get(name=doc_to_review.name),relationship_id='conflrev')
 

@@ -1,4 +1,6 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
+
 import os
 import shutil
 import datetime
@@ -1569,7 +1571,7 @@ class ChangeReplacesTests(TestCase):
         
         # Post that says replacea replaces base a
         empty_outbox()
-        RelatedDocument.objects.create(source=self.replacea, target=self.basea.docalias_set.first(),
+        RelatedDocument.objects.create(source=self.replacea, target=self.basea.docalias.first(),
                                        relationship=DocRelationshipName.objects.get(slug="possibly-replaces"))
         self.assertEqual(self.basea.get_state().slug,'active')
         r = self.client.post(url, dict(replaces=self.basea.name))
@@ -1617,7 +1619,7 @@ class ChangeReplacesTests(TestCase):
 
 
     def test_review_possibly_replaces(self):
-        replaced = self.basea.docalias_set.first()
+        replaced = self.basea.docalias.first()
         RelatedDocument.objects.create(source=self.replacea, target=replaced,
                                        relationship=DocRelationshipName.objects.get(slug="possibly-replaces"))
 

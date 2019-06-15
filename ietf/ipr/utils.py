@@ -1,3 +1,8 @@
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+import debug                            # pyflakes:ignore
+
 def get_genitive(name):
     """Return the genitive form of name"""
     return name + "'" if name.endswith('s') else name + "'s"
@@ -29,23 +34,30 @@ def iprs_from_docs(aliases,**kwargs):
     """Returns a list of IPRs related to doc aliases"""
     iprdocrels = []
     for alias in aliases:
-        if alias.document.ipr(**kwargs):
-            iprdocrels += alias.document.ipr(**kwargs)
+        for document in alias.docs.all():
+            if document.ipr(**kwargs):
+                iprdocrels += document.ipr(**kwargs)
     return list(set([i.disclosure for i in iprdocrels]))
     
 def related_docs(alias, relationship=('replaces', 'obs')):
     """Returns list of related documents"""
-    results = list(alias.document.docalias_set.all())
+
+    results = []
+    for doc in alias.docs.all():
+        results += list(doc.docalias.all())
     
-    rels = alias.document.all_relations_that_doc(relationship)
+    rels = []
+    for doc in alias.docs.all():
+        rels += list(doc.all_relations_that_doc(relationship))
 
     for rel in rels:
-        rel_aliases = list(rel.target.document.docalias_set.all())
+        rel_aliases = list(rel.target.document.docalias.all())
         
         for x in rel_aliases:
             x.related = rel
             x.relation = rel.relationship.revname
         results += rel_aliases
+
     return list(set(results))
 
     

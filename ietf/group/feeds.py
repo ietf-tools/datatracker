@@ -1,4 +1,5 @@
-# Copyright The IETF Trust 2011, All Rights Reserved
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
@@ -38,7 +39,7 @@ class GroupChangesFeed(Feed):
 
     def item_link(self, obj):
         if isinstance(obj, DocEvent):
-            return urlreverse("ietf.doc.views_doc.document_main", kwargs={'name': obj.doc_id })
+            return urlreverse("ietf.doc.views_doc.document_main", kwargs={'name': obj.doc.name })
         elif isinstance(obj, GroupEvent):
             return obj.group.about_url()
 

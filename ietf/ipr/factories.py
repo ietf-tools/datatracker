@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2018-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import datetime
 import factory
 
@@ -34,7 +37,7 @@ class IprDisclosureBaseFactory(factory.DjangoModelFactory):
             return
         if extracted:
             for doc in extracted:
-                IprDocRel.objects.create(disclosure=self,document=doc.docalias_set.first())
+                IprDocRel.objects.create(disclosure=self,document=doc.docalias.first())
 
     @factory.post_generation
     def updates(self, create, extracted, **kwargs):

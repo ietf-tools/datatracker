@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Copyright The IETF Trust 2017-2019, All Rights Reserved
 
 import datetime
 import os
@@ -79,7 +80,7 @@ for name in sorted(names):
                                                   words=draft.get_wordcount(),
                                                   expires=time+datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
                                                  )
-                    doc.docalias_set.create(name=doc.name)
+                    DocAlias.objects.create(name=doc.name).docs.add(doc)
                     doc.states.add(expired)
                 # update authors
                 authors = []

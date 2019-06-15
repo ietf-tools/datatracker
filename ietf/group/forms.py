@@ -1,4 +1,5 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
 # Stdlib imports
@@ -227,7 +228,7 @@ class ManageReviewRequestForm(forms.Form):
     def __init__(self, review_req, *args, **kwargs):
         if not "prefix" in kwargs:
             if review_req.pk is None:
-                kwargs["prefix"] = "r{}-{}".format(review_req.type_id, review_req.doc_id)
+                kwargs["prefix"] = "r{}-{}".format(review_req.type_id, review_req.doc.name)
             else:
                 kwargs["prefix"] = "r{}".format(review_req.pk)
 

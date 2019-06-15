@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import os
 import re
 import urllib
@@ -684,10 +687,8 @@ def extract_complete_replaces_ancestor_mapping_for_docs(names):
         if not front:
             break
 
-        relations = RelatedDocument.objects.filter(
-            source__in=front, relationship="replaces"
-        ).select_related("target").values_list("source", "target__document")
-
+        relations = ( RelatedDocument.objects.filter(source__name__in=front, relationship="replaces")
+                          .select_related("target").values_list("source__name", "target__docs__name") )
         if not relations:
             break
 

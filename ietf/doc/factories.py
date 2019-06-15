@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import debug    # pyflakes:ignore
 import factory
 import datetime
@@ -33,13 +36,14 @@ class BaseDocumentFactory(factory.DjangoModelFactory):
 
     newrevisiondocevent = factory.RelatedFactory('ietf.doc.factories.NewRevisionDocEventFactory','doc')
 
-    alias = factory.RelatedFactory('ietf.doc.factories.DocAliasFactory','document')
-
     @factory.post_generation
     def other_aliases(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
+        alias = DocAliasFactory(name=obj.name)
+        alias.docs.add(obj)
         if create and extracted:
-            for alias in extracted:
-                obj.docalias_set.create(name=alias) 
+            for name in extracted:
+                alias = DocAliasFactory(name=name)
+                alias.docs.add(obj)
 
     @factory.post_generation
     def states(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
@@ -61,10 +65,14 @@ class BaseDocumentFactory(factory.DjangoModelFactory):
     @factory.post_generation
     def relations(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         if create and extracted:
-            for (rel_id,docalias) in extracted:
-                if isinstance(docalias,Document):
-                    docalias = docalias.docalias_set.first()
-                obj.relateddocument_set.create(relationship_id=rel_id,target=docalias)
+            for (rel_id, doc) in extracted:
+                if isinstance(doc, Document):
+                    docalias = doc.docalias.first()
+                elif isinstance(doc, DocAlias):
+                    docalias = doc
+                else:
+                    continue
+                obj.relateddocument_set.create(relationship_id=rel_id, target=docalias)
 
     @classmethod
     def _after_postgeneration(cls, obj, create, results=None):
@@ -195,9 +203,9 @@ class ConflictReviewFactory(BaseDocumentFactory):
         if not create:
             return
         if extracted:
-            obj.relateddocument_set.create(relationship_id='conflrev',target=extracted.docalias_set.first())
+            obj.relateddocument_set.create(relationship_id='conflrev',target=extracted.docalias.first())
         else:
-            obj.relateddocument_set.create(relationship_id='conflrev',target=DocumentFactory(type_id='draft',group=Group.objects.get(type_id='individ')).docalias_set.first())
+            obj.relateddocument_set.create(relationship_id='conflrev',target=DocumentFactory(type_id='draft',group=Group.objects.get(type_id='individ')).docalias.first())
 
     @factory.post_generation
     def states(obj, create, extracted, **kwargs):
@@ -219,12 +227,18 @@ class DocAliasFactory(factory.DjangoModelFactory):
     class Meta:
         model = DocAlias
 
-    document = factory.SubFactory('ietf.doc.factories.DocumentFactory')
+    @factory.post_generation
+    def document(self, create, extracted, **kwargs):
+        if create and extracted:
+            self.docs.add(extracted)
 
-    @factory.lazy_attribute
-    def name(self):
-        return self.document.name
-    
+    @factory.post_generation
+    def docs(self, create, extracted, **kwargs):
+        if create and extracted:
+            for doc in extracted:
+                if not doc in self.docs.all():
+                    self.docs.add(doc)
+
 
 class DocEventFactory(factory.DjangoModelFactory):
     class Meta:

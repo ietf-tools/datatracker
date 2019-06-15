@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2017, All Rights Reserved
+# Copyright The IETF Trust 2017-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 from __future__ import unicode_literals
@@ -21,7 +21,7 @@ class Downref(TestCase):
         WgDraftFactory(name='draft-ietf-mars-test')
         doc = WgDraftFactory(name='draft-ietf-mars-approved-document',states=[('draft-iesg','rfcqueue')])
         rfc = WgRfcFactory(alias2__name='rfc9998')
-        RelatedDocument.objects.create(source=doc, target=rfc.docalias_set.get(name='rfc9998'),relationship_id='downref-approval')
+        RelatedDocument.objects.create(source=doc, target=rfc.docalias.get(name='rfc9998'),relationship_id='downref-approval')
 
     def test_downref_registry(self):
         url = urlreverse('ietf.doc.views_downref.downref_registry')
@@ -118,7 +118,7 @@ class Downref(TestCase):
         draft = WgDraftFactory(name='draft-ietf-mars-ready-for-lc-document',intended_std_level_id='ps',states=[('draft-iesg','iesg-eva')])
         WgDraftFactory(name='draft-ietf-mars-another-approved-document',states=[('draft-iesg','rfcqueue')])
         rfc9999 = WgRfcFactory(alias2__name='rfc9999', std_level_id=None)
-        RelatedDocument.objects.create(source=draft, target=rfc9999.docalias_set.get(name='rfc9999'), relationship_id='refnorm')
+        RelatedDocument.objects.create(source=draft, target=rfc9999.docalias.get(name='rfc9999'), relationship_id='refnorm')
         url = urlreverse('ietf.doc.views_ballot.lastcalltext', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -130,7 +130,7 @@ class Downref(TestCase):
         self.assertIn('The document contains these normative downward references', text)
 
         # now, the announcement text about the downref to RFC 9999 should be gone
-        RelatedDocument.objects.create(source=draft, target=rfc9999.docalias_set.get(name='rfc9999'),relationship_id='downref-approval')
+        RelatedDocument.objects.create(source=draft, target=rfc9999.docalias.get(name='rfc9999'),relationship_id='downref-approval')
         r = self.client.post(url, dict(regenerate_last_call_text="1"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)

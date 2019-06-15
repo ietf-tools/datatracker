@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import re
 import base64
 import datetime
@@ -370,7 +373,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
         # make sure we got the document and alias
         doc = None
         name = "rfc%s" % rfc_number
-        a = DocAlias.objects.filter(name=name).select_related("document")
+        a = DocAlias.objects.filter(name=name)
         if a:
             doc = a[0].document
         else:
@@ -385,7 +388,8 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
                 doc = Document.objects.create(name=name, type=DocTypeName.objects.get(slug="draft"))
 
             # add alias
-            DocAlias.objects.get_or_create(name=name, document=doc)
+            alias, __ = DocAlias.objects.get_or_create(name=name)
+            alias.docs.add(doc)
             changes.append("created alias %s" % prettify_std_name(name))
 
         # check attributes
@@ -458,7 +462,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
                 if x[:3] in ("NIC", "IEN", "STD", "RTR"):
                     # try translating this to RFCs that we can handle
                     # sensibly; otherwise we'll have to ignore them
-                    l = DocAlias.objects.filter(name__startswith="rfc", document__docalias__name=x.lower())
+                    l = DocAlias.objects.filter(name__startswith="rfc", docs__docalias__name=x.lower())
                 else:
                     l = DocAlias.objects.filter(name=x.lower())
 
@@ -481,7 +485,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
             for a in also:
                 a = a.lower()
                 if not DocAlias.objects.filter(name=a):
-                    DocAlias.objects.create(name=a, document=doc)
+                    DocAlias.objects.create(name=a).docs.add(doc)
                     changes.append("created alias %s" % prettify_std_name(a))
 
         if has_errata:

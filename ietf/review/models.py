@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+
 import datetime
 
 from simple_history.models import HistoricalRecords
@@ -118,14 +120,6 @@ class ReviewRequest(models.Model):
     requested_by  = ForeignKey(Person)
     requested_rev = models.CharField(verbose_name="requested revision", max_length=16, blank=True, help_text="Fill in if a specific revision is to be reviewed, e.g. 02")
     comment       = models.TextField(verbose_name="Requester's comments and instructions", max_length=2048, blank=True, help_text="Provide any additional information to show to the review team secretary and reviewer", default='')
-
-    # Moved to class ReviewAssignment:
-    # These exist only to facilitate data migrations. They will be removed in the next release.
-    unused_reviewer      = ForeignKey(Email, blank=True, null=True)
-
-    unused_review        = OneToOneField(Document, blank=True, null=True)
-    unused_reviewed_rev  = models.CharField(verbose_name="reviewed revision", max_length=16, blank=True)
-    unused_result        = ForeignKey(ReviewResultName, blank=True, null=True)
 
     def __unicode__(self):
         return u"%s review on %s by %s %s" % (self.type, self.doc, self.team, self.state)

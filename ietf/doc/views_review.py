@@ -1,5 +1,5 @@
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2011, All Rights Reserved
 from __future__ import unicode_literals, print_function
 
 import os
@@ -593,7 +593,7 @@ def complete_review(request, name, assignment_id):
                     name = "-".join(c for c in name_components if c).lower()
                     if not Document.objects.filter(name=name).exists():
                         review = Document.objects.create(name=name)
-                        DocAlias.objects.create(document=review, name=review.name)
+                        DocAlias.objects.create(name=review.name).docs.add(review)
                         break
 
                 review.type = DocTypeName.objects.get(slug="review")

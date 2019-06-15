@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2017, All Rights Reserved
+# Copyright The IETF Trust 2017-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
@@ -384,7 +384,7 @@ class IetfAuthTests(TestCase):
         # wish to review
         r = self.client.post(url, {
             "action": "add_wish",
-            'doc': doc.pk,
+            'doc': doc.name,
             "team": review_req.team_id,
         })
         self.assertEqual(r.status_code, 302)

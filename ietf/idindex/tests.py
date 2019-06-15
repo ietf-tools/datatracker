@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 import os
@@ -47,7 +48,7 @@ class IndexTests(TestCase):
 
         # published
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
-        DocAlias.objects.create(name="rfc1234", document=draft)
+        DocAlias.objects.create(name="rfc1234").docs.add(draft)
 
         txt = all_id_txt()
         self.assertTrue(draft.name + "-" + draft.rev in txt)
@@ -59,7 +60,7 @@ class IndexTests(TestCase):
         RelatedDocument.objects.create(
             relationship=DocRelationshipName.objects.get(slug="replaces"),
             source=Document.objects.create(type_id="draft", rev="00", name="draft-test-replacement"),
-            target=draft.docalias_set.get(name__startswith="draft"))
+            target=draft.docalias.get(name__startswith="draft"))
 
         txt = all_id_txt()
         self.assertTrue(draft.name + "-" + draft.rev in txt)
@@ -109,7 +110,7 @@ class IndexTests(TestCase):
 
         # test RFC
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
-        DocAlias.objects.create(name="rfc1234", document=draft)
+        DocAlias.objects.create(name="rfc1234").docs.add(draft)
         t = get_fields(all_id2_txt())
         self.assertEqual(t[4], "1234")
 
@@ -118,7 +119,7 @@ class IndexTests(TestCase):
         RelatedDocument.objects.create(
             relationship=DocRelationshipName.objects.get(slug="replaces"),
             source=Document.objects.create(type_id="draft", rev="00", name="draft-test-replacement"),
-            target=draft.docalias_set.get(name__startswith="draft"))
+            target=draft.docalias.get(name__startswith="draft"))
 
         t = get_fields(all_id2_txt())
         self.assertEqual(t[5], "draft-test-replacement")

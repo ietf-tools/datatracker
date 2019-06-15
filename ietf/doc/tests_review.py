@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 import datetime, os, shutil, json
@@ -144,8 +145,8 @@ class ReviewTests(TestCase):
         # check we can fish it out
         old_doc = WgDraftFactory(name="draft-foo-mars-test")
         older_doc = WgDraftFactory(name="draft-older")
-        RelatedDocument.objects.create(source=old_doc, target=older_doc.docalias_set.first(), relationship_id='replaces')
-        RelatedDocument.objects.create(source=doc, target=old_doc.docalias_set.first(), relationship_id='replaces')
+        RelatedDocument.objects.create(source=old_doc, target=older_doc.docalias.first(), relationship_id='replaces')
+        RelatedDocument.objects.create(source=doc, target=old_doc.docalias.first(), relationship_id='replaces')
         review_req.doc = older_doc
         review_req.save()
 

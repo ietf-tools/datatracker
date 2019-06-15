@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 from django.contrib import admin
 from django import forms
 
@@ -19,9 +22,9 @@ class StateAdmin(admin.ModelAdmin):
     filter_horizontal = ["next_states"]
 admin.site.register(State, StateAdmin)
 
-class DocAliasInline(admin.TabularInline):
-    model = DocAlias
-    extra = 1
+# class DocAliasInline(admin.TabularInline):
+#     model = DocAlias
+#     extra = 1
 
 class DocAuthorInline(admin.TabularInline):
     model = DocumentAuthor
@@ -58,7 +61,7 @@ class DocumentAdmin(admin.ModelAdmin):
     search_fields = ['name']
     list_filter = ['type']
     raw_id_fields = ['group', 'shepherd', 'ad']
-    inlines = [DocAliasInline, DocAuthorInline, RelatedDocumentInline, ]
+    inlines = [DocAuthorInline, RelatedDocumentInline, ]
     form = DocumentForm
 
     def save_model(self, request, obj, form, change):
@@ -88,9 +91,9 @@ class DocHistoryAdmin(admin.ModelAdmin):
 admin.site.register(DocHistory, DocHistoryAdmin)
 
 class DocAliasAdmin(admin.ModelAdmin):
-    list_display = ['name', 'document_link']
-    search_fields = ['name', 'document__name']
-    raw_id_fields = ['document']
+#     list_display = ['name', 'document_link']
+#     search_fields = ['name', 'document__name']
+    raw_id_fields = ['docs']
 admin.site.register(DocAlias, DocAliasAdmin)
 
 class DocReminderAdmin(admin.ModelAdmin):
@@ -102,7 +105,7 @@ admin.site.register(DocReminder, DocReminderAdmin)
 class RelatedDocumentAdmin(admin.ModelAdmin):
     list_display = ['source', 'target', 'relationship', ]
     list_filter = ['relationship', ]
-    search_fields = ['source__name', 'target__name', 'target__document__name', ]
+    search_fields = ['source__name', 'target__name', 'target__docs__name', ]
     raw_id_fields = ['source', 'target', ]
 admin.site.register(RelatedDocument, RelatedDocumentAdmin)
 

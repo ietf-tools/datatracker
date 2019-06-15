@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import os
 import shutil
 import datetime
@@ -216,7 +219,7 @@ class SearchTests(TestCase):
         draft.set_state(State.objects.get(type='draft-iesg', slug='lc'))
         rfc = IndividualDraftFactory(ad=ad)
         rfc.set_state(State.objects.get(type='draft', slug='rfc'))
-        rfc.docalias_set.create(name='rfc6666')
+        DocAlias.objects.create(name='rfc6666').docs.add(rfc)
         conflrev = DocumentFactory(type_id='conflrev',ad=ad)
         conflrev.set_state(State.objects.get(type='conflrev', slug='iesgeval'))
         statchg = DocumentFactory(type_id='statchg',ad=ad)
@@ -278,7 +281,7 @@ class SearchTests(TestCase):
         self.assertEqual(data[0]["id"], draft.pk)
 
         # DocAlias
-        doc_alias = draft.docalias_set.get()
+        doc_alias = draft.docalias.first()
 
         url = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
             "model_name": "docalias",
@@ -499,7 +502,7 @@ Man                    Expires September 22, 2015               [Page 3]
         draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01')
         HolderIprDisclosureFactory(docs=[draft])
         replaced = IndividualDraftFactory()
-        draft.relateddocument_set.create(relationship_id='replaces',source=draft,target=replaced.docalias_set.first())
+        draft.relateddocument_set.create(relationship_id='replaces',source=draft,target=replaced.docalias.first())
 
         # these tests aren't testing all attributes yet, feel free to
         # expand them
@@ -580,7 +583,7 @@ Man                    Expires September 22, 2015               [Page 3]
             shepherd_id=draft.shepherd_id, ad_id=draft.ad_id, expires=draft.expires,
             notify=draft.notify, note=draft.note)
         rel = RelatedDocument.objects.create(source=replacement,
-                                             target=draft.docalias_set.get(name__startswith="draft"),
+                                             target=draft.docalias.get(name__startswith="draft"),
                                              relationship_id="replaces")
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
@@ -595,8 +598,10 @@ Man                    Expires September 22, 2015               [Page 3]
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="published_rfc", by=Person.objects.get(name="(System)"))])
 
 
-        rfc_alias = DocAlias.objects.create(name="rfc123456", document=draft)
-        bcp_alias = DocAlias.objects.create(name="bcp123456", document=draft)
+        rfc_alias = DocAlias.objects.create(name="rfc123456")
+        rfc_alias.docs.add(draft)
+        bcp_alias = DocAlias.objects.create(name="bcp123456")
+        bcp_alias.docs.add(draft)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 302)
@@ -759,8 +764,8 @@ class DocTestCase(TestCase):
         self.assertFalse('more YES or NO' in unicontent(r))
 
         # status change
-        IndividualDraftFactory().docalias_set.create(name='rfc9998')
-        IndividualDraftFactory().docalias_set.create(name='rfc9999')
+        DocAlias.objects.create(name='rfc9998').docs.add(IndividualDraftFactory())
+        DocAlias.objects.create(name='rfc9999').docs.add(IndividualDraftFactory())
         doc = DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review')
         iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
         self.client.login(username='ad', password='ad+password')
@@ -1003,7 +1008,7 @@ class ReferencesTest(TestCase):
 
     def test_references(self):
         doc1 = WgDraftFactory(name='draft-ietf-mars-test')
-        doc2 = IndividualDraftFactory(name='draft-imaginary-independent-submission').docalias_set.first()
+        doc2 = IndividualDraftFactory(name='draft-imaginary-independent-submission').docalias.first()
         RelatedDocument.objects.get_or_create(source=doc1,target=doc2,relationship=DocRelationshipName.objects.get(slug='refnorm'))
         url = urlreverse('ietf.doc.views_doc.document_references', kwargs=dict(name=doc1.name))
         r = self.client.get(url)

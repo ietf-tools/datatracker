@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 import os
@@ -325,7 +326,7 @@ class GroupPagesTests(TestCase):
             type_id="slides",
         )
         doc.set_state(State.objects.get(type="slides", slug="active"))
-        DocAlias.objects.create(name=doc.name, document=doc)
+        DocAlias.objects.create(name=doc.name).docs.add(doc)
 
         for url in group_urlreverse_list(group, 'ietf.group.views.materials'):
             r = self.client.get(url)

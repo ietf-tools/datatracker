@@ -1,7 +1,11 @@
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import json
 
 from django.utils.html import escape
 from django import forms
+from django.db.models import Q
 from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
@@ -52,11 +56,13 @@ class SearchableDocumentsField(forms.CharField):
         if isinstance(value, (int, long)):
             value = str(value)
         if isinstance(value, basestring):
-            pks = self.parse_select2_value(value)
-            value = self.model.objects.filter(pk__in=pks)
+            items = self.parse_select2_value(value)
+            names = [ i for i in items if not i.isdigit() ]
+            ids   = [ i for i in items if i.isdigit() ]
+            value = self.model.objects.filter(Q(name__in=names)|Q(id__in=ids))
             filter_args = {}
             if self.model == DocAlias:
-                filter_args["document__type"] = self.doc_type
+                filter_args["docs__type"] = self.doc_type
             else:
                 filter_args["type"] = self.doc_type
             value = value.filter(**filter_args)
@@ -76,17 +82,17 @@ class SearchableDocumentsField(forms.CharField):
 
     def clean(self, value):
         value = super(SearchableDocumentsField, self).clean(value)
-        pks = self.parse_select2_value(value)
+        names = self.parse_select2_value(value)
 
-        objs = self.model.objects.filter(pk__in=pks)
+        objs = self.model.objects.filter(name__in=names)
 
-        found_pks = [str(o.pk) for o in objs]
-        failed_pks = [x for x in pks if x not in found_pks]
-        if failed_pks:
-            raise forms.ValidationError(u"Could not recognize the following documents: {pks}. You can only input documents already registered in the Datatracker.".format(pks=", ".join(failed_pks)))
+        found_names = [str(o.name) for o in objs]
+        failed_names = [x for x in names if x not in found_names]
+        if failed_names:
+            raise forms.ValidationError(u"Could not recognize the following documents: {names}. You can only input documents already registered in the Datatracker.".format(names=", ".join(failed_names)))
 
         if self.max_entries != None and len(objs) > self.max_entries:
-            raise forms.ValidationError(u"You can select at most %s entries only." % self.max_entries)
+            raise forms.ValidationError(u"You can select at most %s entries." % self.max_entries)
 
         return objs
 

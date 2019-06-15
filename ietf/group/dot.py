@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 # -*- check-flake8 -*-
 from __future__ import unicode_literals, print_function
 
@@ -100,7 +100,7 @@ def get_node_styles(node, group):
 
 def make_dot(group):
     references = Q(source__group=group, source__type='draft', relationship__slug__startswith='ref')
-    both_rfcs  = Q(source__states__slug='rfc', target__document__states__slug='rfc')
+    both_rfcs  = Q(source__states__slug='rfc', target__docs__states__slug='rfc')
     inactive   = Q(source__states__slug__in=['expired', 'repl'])
     attractor  = Q(target__name__in=['rfc5000', 'rfc5741'])
     removed    = Q(source__states__slug__in=['auth-rm', 'ietf-rm'])
@@ -114,7 +114,7 @@ def make_dot(group):
             edges.add(Edge(x))
 
     replacements = RelatedDocument.objects.filter(relationship__slug='replaces',
-                            target__document__in=[x.relateddocument.target.document for x in edges])
+                            target__docs__in=[x.relateddocument.target.document for x in edges])
 
     for x in replacements:
         edges.add(Edge(x))

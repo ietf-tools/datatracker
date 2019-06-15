@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import os, datetime, textwrap, json
 
 from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden, Http404
@@ -392,7 +395,7 @@ def submit(request, name, option=None):
                     abstract=group.name,
                     rev=next_rev,
                 )
-                DocAlias.objects.create(name=charter.name, document=charter)
+                DocAlias.objects.create(name=charter.name).docs.add(charter)
 
                 charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
 

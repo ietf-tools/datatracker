@@ -1,4 +1,5 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
 import datetime
 import itertools
@@ -460,16 +461,16 @@ def by_draft_recursive_txt(request):
 
     for o in IprDocRel.objects.filter(disclosure__state='posted').select_related('document'):
         alias = o.document
-        document = alias.document
         name = alias.name
-        related = set(document.docalias_set.all()) | set(document.all_related_that_doc(('obs', 'replaces')))
-        for alias in related:
-            name = alias.name
-            if name.startswith("rfc"):
-                name = name.upper()
-            if not name in docipr:
-                docipr[name] = []
-            docipr[name].append(o.disclosure_id)
+        for document in alias.docs.all():
+            related = set(document.docalias.all()) | set(document.all_related_that_doc(('obs', 'replaces')))
+            for alias in related:
+                name = alias.name
+                if name.startswith("rfc"):
+                    name = name.upper()
+                if not name in docipr:
+                    docipr[name] = []
+                docipr[name].append(o.disclosure_id)
 
     lines = [ u"# Machine-readable list of IPR disclosures by draft name" ]
     for name, iprs in docipr.iteritems():
@@ -700,7 +701,7 @@ def search(request):
             # Search by wg acronym
             # Document list with IPRs
             elif search_type == "group":
-                docs = list(DocAlias.objects.filter(document__group=q))
+                docs = list(DocAlias.objects.filter(docs__group=q))
                 related = []
                 for doc in docs:
                     doc.product_of_this_wg = True
@@ -714,7 +715,7 @@ def search(request):
             # Search by rfc and id title
             # Document list with IPRs
             elif search_type == "doctitle":
-                docs = list(DocAlias.objects.filter(document__title__icontains=q))
+                docs = list(DocAlias.objects.filter(docs__title__icontains=q))
                 related = []
                 for doc in docs:
                     related += related_docs(doc)

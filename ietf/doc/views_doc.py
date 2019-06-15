@@ -103,7 +103,7 @@ def document_main(request, name, rev=None):
     doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
 
     # take care of possible redirections
-    aliases = DocAlias.objects.filter(document=doc).values_list("name", flat=True)
+    aliases = DocAlias.objects.filter(docs=doc).values_list("name", flat=True)
     if rev==None and doc.type_id == "draft" and not name.startswith("rfc"):
         for a in aliases:
             if a.startswith("rfc"):
@@ -382,7 +382,7 @@ def document_main(request, name, rev=None):
         published = doc.latest_event(type="published_rfc")
         started_iesg_process = doc.latest_event(type="started_iesg_process")
 
-        review_assignments = review_assignments_to_list_for_docs([doc]).get(doc.pk, [])
+        review_assignments = review_assignments_to_list_for_docs([doc]).get(doc.name, [])
         no_review_from_teams = no_review_from_teams_on_doc(doc, rev or doc.rev)
 
         return render(request, "doc/document_draft.html",
@@ -598,12 +598,12 @@ def document_main(request, name, rev=None):
         # If we want to go back to using markup_txt.markup_unicode, call it explicitly here like this:
         # content = markup_txt.markup_unicode(content, split=False, width=80)
        
-        assignments = ReviewAssignment.objects.filter(review=doc.name)
+        assignments = ReviewAssignment.objects.filter(review__name=doc.name)
         review_assignment = assignments.first()
 
         other_reviews = []
         if review_assignment:
-            other_reviews = [r for r in review_assignments_to_list_for_docs([review_assignment.review_request.doc]).get(doc.pk, []) if r != review_assignment]
+            other_reviews = [r for r in review_assignments_to_list_for_docs([review_assignment.review_request.doc]).get(doc.name, []) if r != review_assignment]
 
         return render(request, "doc/document_review.html",
                       dict(doc=doc,
@@ -716,7 +716,7 @@ def document_history(request, name):
 
         if doc.get_state_slug() == "rfc":
             e = doc.latest_event(type="published_rfc")
-            aliases = doc.docalias_set.filter(name__startswith="rfc")
+            aliases = doc.docalias.filter(name__startswith="rfc")
             if aliases:
                 name = aliases[0].name
             diff_revisions.append((name, "", e.time if e else doc.time, name))
@@ -1011,7 +1011,7 @@ def document_json(request, name, rev=None):
     data["expires"] = doc.expires.strftime("%Y-%m-%d %H:%M:%S") if doc.expires else None
     data["title"] = doc.title
     data["abstract"] = doc.abstract
-    data["aliases"] = list(doc.docalias_set.values_list("name", flat=True))
+    data["aliases"] = list(doc.docalias.values_list("name", flat=True))
     data["state"] = extract_name(doc.get_state())
     data["intended_std_level"] = extract_name(doc.intended_std_level)
     data["std_level"] = extract_name(doc.std_level)

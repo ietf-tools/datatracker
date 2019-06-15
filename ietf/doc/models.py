@@ -1,4 +1,5 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
 import datetime
 import logging
@@ -323,7 +324,7 @@ class DocumentInfo(models.Model):
             elif state.slug == "repl":
                 rs = self.related_that("replaces")
                 if rs:
-                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=alias.document)), alias.document) for alias in rs))
+                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=alias.document.name)), alias.document) for alias in rs))
                 else:
                     return "Replaced"
             elif state.slug == "active":
@@ -411,9 +412,9 @@ class DocumentInfo(models.Model):
         if not isinstance(relationship, tuple):
             raise TypeError("Expected a string or tuple, received %s" % type(relationship))
         if isinstance(self, Document):
-            return RelatedDocument.objects.filter(target__document=self, relationship__in=relationship).select_related('source')
+            return RelatedDocument.objects.filter(target__docs=self, relationship__in=relationship).select_related('source')
         elif isinstance(self, DocHistory):
-            return RelatedDocHistory.objects.filter(target__document=self.doc, relationship__in=relationship).select_related('source')
+            return RelatedDocHistory.objects.filter(target__docs=self.doc, relationship__in=relationship).select_related('source')
         else:
             raise TypeError("Expected method called on Document or DocHistory")
 
@@ -434,9 +435,9 @@ class DocumentInfo(models.Model):
         if not isinstance(relationship, tuple):
             raise TypeError("Expected a string or tuple, received %s" % type(relationship))
         if isinstance(self, Document):
-            return RelatedDocument.objects.filter(source=self, relationship__in=relationship).select_related('target__document')
+            return RelatedDocument.objects.filter(source=self, relationship__in=relationship).select_related('target')
         elif isinstance(self, DocHistory):
-            return RelatedDocHistory.objects.filter(source=self, relationship__in=relationship).select_related('target__document')
+            return RelatedDocHistory.objects.filter(source=self, relationship__in=relationship).select_related('target')
         else:
             raise TypeError("Expected method called on Document or DocHistory")
 
@@ -447,14 +448,15 @@ class DocumentInfo(models.Model):
         for r in rels:
             if not r in related:
                 related += ( r, )
-                related = r.target.document.all_relations_that_doc(relationship, related)
+                for doc in r.target.docs.all():
+                    related = doc.all_relations_that_doc(relationship, related)
         return related
 
     def related_that(self, relationship):
-        return list(set([x.source.docalias_set.get(name=x.source.name) for x in self.relations_that(relationship)]))
+        return list(set([x.source.docalias.get(name=x.source.name) for x in self.relations_that(relationship)]))
 
     def all_related_that(self, relationship, related=None):
-        return list(set([x.source.docalias_set.get(name=x.source.name) for x in self.all_relations_that(relationship)]))
+        return list(set([x.source.docalias.get(name=x.source.name) for x in self.all_relations_that(relationship)]))
 
     def related_that_doc(self, relationship):
         return list(set([x.target for x in self.relations_that_doc(relationship)]))
@@ -463,7 +465,7 @@ class DocumentInfo(models.Model):
         return list(set([x.target for x in self.all_relations_that_doc(relationship)]))
 
     def replaces(self):
-        return set([ r.document for r in self.related_that_doc("replaces")])
+        return set([ d for r in self.related_that_doc("replaces") for d in r.docs.all() ])
 
     def replaces_canonical_name(self):
         s = set([ r.document for r in self.related_that_doc("replaces")])
@@ -609,7 +611,7 @@ validate_docname = RegexValidator(
 )
 
 class Document(DocumentInfo):
-    name = models.CharField(max_length=255, primary_key=True, validators=[validate_docname,])           # immutable
+    name = models.CharField(max_length=255, validators=[validate_docname,], unique=True)           # immutable
 
     def __unicode__(self):
         return self.name
@@ -657,7 +659,7 @@ class Document(DocumentInfo):
         if not hasattr(self, '_canonical_name'):
             name = self.name
             if self.type_id == "draft" and self.get_state_slug() == "rfc":
-                a = self.docalias_set.filter(name__startswith="rfc").order_by('-name').first()
+                a = self.docalias.filter(name__startswith="rfc").order_by('-name').first()
                 if a:
                     name = a.name
             elif self.type_id == "charter":
@@ -671,7 +673,7 @@ class Document(DocumentInfo):
 
 
     def canonical_docalias(self):
-        return self.docalias_set.get(name=self.name)
+        return self.docalias.get(name=self.name)
 
     def display_name(self):
         name = self.canonical_name()
@@ -766,14 +768,14 @@ class Document(DocumentInfo):
     def ipr(self,states=('posted','removed')):
         """Returns the IPR disclosures against this document (as a queryset over IprDocRel)."""
         from ietf.ipr.models import IprDocRel
-        return IprDocRel.objects.filter(document__document=self,disclosure__state__in=states)
+        return IprDocRel.objects.filter(document__docs=self, disclosure__state__in=states)
 
     def related_ipr(self):
         """Returns the IPR disclosures against this document and those documents this
         document directly or indirectly obsoletes or replaces
         """
         from ietf.ipr.models import IprDocRel
-        iprs = IprDocRel.objects.filter(document__in=list(self.docalias_set.all())+self.all_related_that_doc(('obs','replaces'))).filter(disclosure__state__in=('posted','removed')).values_list('disclosure', flat=True).distinct()
+        iprs = IprDocRel.objects.filter(document__in=list(self.docalias.all())+self.all_related_that_doc(('obs','replaces'))).filter(disclosure__state__in=('posted','removed')).values_list('disclosure', flat=True).distinct()
         return iprs
 
     def future_presentations(self):
@@ -889,8 +891,9 @@ class DocHistory(DocumentInfo):
         return self.doc.groupmilestone_set
 
     @property
-    def docalias_set(self):
-        return self.doc.docalias_set
+    def docalias(self):
+        log.unreachable('2019-06-11')
+        return self.doc.docalias
 
     def is_dochistory(self):
         return True
@@ -908,10 +911,15 @@ class DocAlias(models.Model):
     same immutable Document.name, in the tables, but will be referred
     to by RFC number, primarily, after achieving RFC status.
     """
-    name = models.CharField(max_length=255, primary_key=True)
-    document = ForeignKey(Document)
+    name = models.CharField(max_length=255, unique=True)
+    docs = models.ManyToManyField(Document, related_name='docalias')
+
+    @property
+    def document(self):
+        return self.docs.first()
+
     def __unicode__(self):
-        return "%s-->%s" % (self.name, self.document.name)
+        return "%s-->%s" % (self.name, ','.join([unicode(d.name) for d in self.docs.all() if isinstance(d, Document) ]))
     document_link = admin_link("document")
     class Meta:
         verbose_name = "document alias"
@@ -1005,7 +1013,7 @@ class DocEvent(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened", db_index=True)
     type = models.CharField(max_length=50, choices=EVENT_TYPES)
     by = ForeignKey(Person)
-    doc = ForeignKey('doc.Document')
+    doc = ForeignKey(Document)
     rev = models.CharField(verbose_name="revision", max_length=16, null=True, blank=True)
     desc = models.TextField()
 

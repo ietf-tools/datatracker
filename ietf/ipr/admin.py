@@ -1,4 +1,6 @@
-#coding: utf-8
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 from django import forms
 from django.contrib import admin
 from ietf.name.models import DocRelationshipName
@@ -91,7 +93,7 @@ admin.site.register(IprDocRel, IprDocRelAdmin)
 
 class RelatedIprAdmin(admin.ModelAdmin):
     list_display = ['source', 'target', 'relationship', ]
-    search_fields = ['source__name', 'target__name', 'target__document__name', ]
+    search_fields = ['source__name', 'target__name', 'target__docs__name', ]
     raw_id_fields = ['source', 'target', ]
 admin.site.register(RelatedIpr, RelatedIprAdmin)
 

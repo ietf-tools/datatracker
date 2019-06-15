@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2019, All Rights Reserved #}
 {% load origin %}{% origin %}
 
 {% load ietf_filters staticfiles bootstrap3 %}
@@ -63,14 +63,14 @@
 			<div>
 			  {% if alatest.reviewed_rev %}
 			    Previous review of
-			    <a href="{% url "ietf.doc.views_doc.document_main" name=rlatest.doc_id rev=alatest.reviewed_rev %}?include_text=1">{% if rlatest.doc_id != r.doc_id %}{{ rlatest.doc_id }}{% endif %}-{{ alatest.reviewed_rev }}</a>{% if alatest.reviewed_rev != r.doc.rev %}
+			    <a href="{% url "ietf.doc.views_doc.document_main" name=rlatest.doc.name rev=alatest.reviewed_rev %}?include_text=1">{% if rlatest.doc.name != r.doc.name %}{{ rlatest.doc.name }}{% endif %}-{{ alatest.reviewed_rev }}</a>{% if alatest.reviewed_rev != r.doc.rev %}
 			    (<a href="{{ rfcdiff_base_url }}?url1={{ rlatest.doc.name }}-{{ alatest.reviewed_rev }}&url2={{ r.doc.name }}-{{ r.doc.rev }}">diff</a>){% endif %}:
 			    <a href="{{ alatest.review.get_absolute_url }}">{% if alatest.result %}{{ alatest.result.name }}{% else %}result unavail.{% endif %}</a>
 			    by {{ alatest.reviewer.person }}{% if alatest.closed_review_request_event %} {{ alatest.closed_review_request_event.time.date|date }}{% endif %}
 			  {% else %}
 			    Previous review of
-			    <a href="{% url "ietf.doc.views_doc.document_main" name=rlatest.doc_id %}?include_text=1">{% if rlatest.doc_id != r.doc_id %}{{ rlatest.doc_id }}{% else %}this document{% endif %}</a>:
-			    <a href="{% url "ietf.doc.views_review.review_request" name=rlatest.doc_id request_id=rlatest.pk %}">{% if alatest.result %}{{ alatest.result.name }}{% else %}result unavail.{% endif %}</a>
+			    <a href="{% url "ietf.doc.views_doc.document_main" name=rlatest.doc.name %}?include_text=1">{% if rlatest.doc.name != r.doc.name %}{{ rlatest.doc.name }}{% else %}this document{% endif %}</a>:
+			    <a href="{% url "ietf.doc.views_review.review_request" name=rlatest.doc.name request_id=rlatest.pk %}">{% if alatest.result %}{{ alatest.result.name }}{% else %}result unavail.{% endif %}</a>
 			    by {{ alatest.reviewer.person }}{% if alatest.closed_review_request_event %} {{ alatest.closed_review_request_event.time.date|date }}{% endif %}
 			  {% endif %}
 			</div>
