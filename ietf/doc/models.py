@@ -892,7 +892,6 @@ class DocHistory(DocumentInfo):
 
     @property
     def docalias(self):
-        log.unreachable('2019-06-11')
         return self.doc.docalias
 
     def is_dochistory(self):
