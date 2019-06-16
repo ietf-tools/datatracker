@@ -1,3 +1,35 @@
+ietfdb (6.98.0) ietf; urgency=medium
+
+  **Refactoring of the primary index type for Document and DocAlias objects**
+
+  This release contains a series of 216 migration steps that changes the
+  Document and DocAlias primary keys from character strings to integers, and
+  makes corresponding code changes.
+
+  This was prompted by database limitations discovered when trying to make
+  DocAlias use a m2m document field; with 255 long strings as primary keys for
+  Document and DocAlias this violated the MySQL database limitations.
+
+  Changing the primary keys to integers should also improve efficiency.  
+
+  Additionally, in order to make it possible to have DocAlias objects referring
+  to multiple documents, in order to reflect STD and BCP names that refer to 
+  multiple RFCs, DocAlias has been refactored to use many-to-many tables instead
+  of foreign keys do toduments.
+
+  Due to the data migrations which create the new integer primary keys and adds
+  corresponding integer foreign keys matching the previous string foreign keys
+  in all tables having foreign keys to Document and DocAlias, some of these
+  migrations take a long time.  The total set of migrations are expected to have
+  a runtime on the order of 2 hours.
+
+  This release is scheduled to be deployed on 16 Jun 2019 at 16:00 UTC, with
+  an expected datatracker downtime, for safety backup and application of the
+  migrations to run, of about 3 hours.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jun 2019 14:16:12 +0000
+
+
 ietfdb (6.97.1) ietf; urgency=medium
 
   This is a bugfix release which clears the way for the upcoming major
