@@ -225,13 +225,13 @@ note "Upgrading the python library modules before checking migrations and runnin
 $do pip install --upgrade -r requirements.txt
 
 note "Checking that all model changes have been captured in migrations ..."
-$do ietf/manage.py makemigrations | tee /dev/stderr | grep -q "^No changes detected$" || die "Model changes without migrations found."
+$do ietf/manage.py makemigrations | tee /dev/stderr | $do grep -q "^No changes detected$" || die "Model changes without migrations found."
 
 note "Making sure all migrations have been run ..."
 $do ietf/manage.py migrate
 
 note "Running the tests suite and writing release coverage data ..."
-$do ietf/manage.py test --settings=ietf.settings_releasetest --save-version-coverage=$VER
+$do ietf/manage.py test --settings=ietf.settings_releasetest --save-version-coverage=$VER ${PERMIT_MIGR_MIX:+"--permit-mixed-migrations"}
 
 note "Committing the release coverage data ..."
 $do svn commit release-coverage.json.gz -m "Code coverage data for release $VER"
