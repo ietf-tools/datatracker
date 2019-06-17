@@ -128,6 +128,9 @@ if __name__ == '__main__':
     afile = open(settings.DRAFT_ALIASES_PATH, "w")
     vfile = open(settings.DRAFT_VIRTUAL_PATH, "w")
 
+    stdout.write("Writing aliases file: %s\n" % afile.name)
+    stdout.write("Writing virtual file: %s\n" % vfile.name)
+
     afile.write(signature)
     vfile.write(signature)
     vfile.write("%s anything\n" % settings.DRAFT_VIRTUAL_DOMAIN)
@@ -145,7 +148,7 @@ if __name__ == '__main__':
     alias_domains = ['ietf.org', ]
     for draft in interesting_drafts.distinct().iterator():
         # Omit RFCs, we care only about drafts
-        if draft.docalias_set.filter(name__startswith='rfc'):
+        if draft.docalias.filter(name__startswith='rfc'):
             if  (datetime.datetime.now() - draft.latest_event(type='published_rfc').time) > datetime.timedelta(days= 365 * 3 ):
                 continue
 
