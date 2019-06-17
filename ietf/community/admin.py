@@ -8,12 +8,13 @@ from ietf.community.models import CommunityList, SearchRule, EmailSubscription
 
 class CommunityListAdmin(admin.ModelAdmin):
     list_display = [u'id', 'user', 'group']
-    raw_id_fields = ['user', 'group']
+    raw_id_fields = ['user', 'group', 'added_docs']
 admin.site.register(CommunityList, CommunityListAdmin)
 
 class SearchRuleAdmin(admin.ModelAdmin):
     list_display = [u'id', 'community_list', 'rule_type', 'state', 'group', 'person', 'text']
     raw_id_fields = ['community_list', 'state', 'group', 'person', 'name_contains_index']
+    search_fields = ['person__name', 'group__acronym', 'text', ]
 admin.site.register(SearchRule, SearchRuleAdmin)
 
 class EmailSubscriptionAdmin(admin.ModelAdmin):
