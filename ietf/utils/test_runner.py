@@ -391,8 +391,6 @@ class CoverageTest(unittest.TestCase):
             self.skipTest("Coverage switched off with --skip-coverage")
 
     def interleaved_migrations_test(self):
-        if self.runner.permit_mixed_migrations:
-            return
 #        from django.apps import apps
 #         unreleased = {}
 #         for appconf in apps.get_app_configs():
@@ -470,7 +468,7 @@ class CoverageTest(unittest.TestCase):
             if unreleased[s][1] != 'data':
                 break
         mixed = [ unreleased[i] for i in range(s+1,len(unreleased)) if unreleased[i][1] != unreleased[i-1][1] ]
-        if len(mixed) > 1:
+        if len(mixed) > 1 and not self.runner.permit_mixed_migrations:
             raise self.failureException('Found interleaved schema and data operations in unreleased migrations;'
                 ' please see if they can be re-ordered with all data migrations before the schema migrations:\n'
                 +('\n'.join(['    %-6s:  %-12s, %s (%s)'% (op, node.key[0], node.key[1], nm) for (node, op, nm) in unreleased ])))
