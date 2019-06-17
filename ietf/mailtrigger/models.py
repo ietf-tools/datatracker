@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2015, All Rights Reserved
+# Copyright The IETF Trust 2015-2019, All Rights Reserved
 
 from django.db import models
 from django.template import Template, Context
@@ -9,8 +9,6 @@ from ietf.person.models import Email
 from ietf.review.models import ReviewTeamSettings
 
 import debug                            # pyflakes:ignore
-
-from ietf.group.models import Role
 
 def clean_duplicates(addrlist):
     address_info = {}
@@ -295,7 +293,7 @@ class Recipient(models.Model):
     def gather_doc_ipr_group_or_ad(self, **kwargs):
         """A document's group email list if the document is a group document, 
            otherwise, the document's AD if the document is active, otherwise 
-           the IETF chair"""
+           nobody (in the past, the default was the IETF chair)"""
         addrs=[]
         if 'doc' in kwargs:
             doc=kwargs['doc']
@@ -303,7 +301,7 @@ class Recipient(models.Model):
                 if doc.ad and doc.get_state_slug('draft')=='active':
                     addrs.extend(Recipient.objects.get(slug='doc_ad').gather(**kwargs))
                 else:
-                    addrs.extend(Role.objects.filter(group__acronym='gen',name='ad').values_list('email__address',flat=True))
+                    pass
             else:
                 addrs.extend(Recipient.objects.get(slug='doc_group_mail_list').gather(**kwargs)) 
         return addrs
