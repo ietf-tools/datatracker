@@ -128,9 +128,6 @@ if __name__ == '__main__':
     afile = open(settings.DRAFT_ALIASES_PATH, "w")
     vfile = open(settings.DRAFT_VIRTUAL_PATH, "w")
 
-    stdout.write("Writing aliases file: %s\n" % afile.name)
-    stdout.write("Writing virtual file: %s\n" % vfile.name)
-
     afile.write(signature)
     vfile.write(signature)
     vfile.write("%s anything\n" % settings.DRAFT_VIRTUAL_DOMAIN)
