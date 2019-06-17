@@ -81,7 +81,7 @@ def update_name_contains_indexes_with_new_doc(doc):
         # Django doesn't support a reversed regex operator, and regexp
         # support needs backend-specific code so custom SQL is a bit
         # cumbersome too
-        if re.search(r.text, doc.name):
+        if re.search(r.text, doc.name) and not d in r.name_contains_index.all():
             r.name_contains_index.add(doc)
 
 def docs_matching_community_list_rule(rule):
