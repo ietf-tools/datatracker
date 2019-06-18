@@ -25,6 +25,7 @@ class BallotTypeResource(ModelResource):
         queryset = BallotType.objects.all()
         serializer = api.Serializer()
         #resource_name = 'ballottype'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "slug": ALL,
@@ -47,6 +48,7 @@ class DeletedEventResource(ModelResource):
         queryset = DeletedEvent.objects.all()
         serializer = api.Serializer()
         #resource_name = 'deletedevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "json": ALL,
@@ -62,6 +64,7 @@ class StateTypeResource(ModelResource):
         queryset = StateType.objects.all()
         serializer = api.Serializer()
         #resource_name = 'statetype'
+        ordering = ['id', ]
         filtering = { 
             "slug": ALL,
             "label": ALL,
@@ -76,6 +79,7 @@ class StateResource(ModelResource):
         queryset = State.objects.all()
         serializer = api.Serializer()
         #resource_name = 'state'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "slug": ALL,
@@ -109,6 +113,7 @@ class DocumentResource(ModelResource):
         serializer = api.Serializer()
         detail_uri_name = 'name'
         #resource_name = 'document'
+        ordering = ['id', ]
         filtering = { 
             "time": ALL,
             "title": ALL,
@@ -145,6 +150,7 @@ class DocumentAuthorResource(ModelResource):
         queryset = DocumentAuthor.objects.all()
         serializer = api.Serializer()
         #resource_name = 'documentauthor'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "affiliation": ALL,
@@ -165,6 +171,7 @@ class DocEventResource(ModelResource):
         queryset = DocEvent.objects.all()
         serializer = api.Serializer()
         #resource_name = 'docevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
@@ -188,6 +195,7 @@ class StateDocEventResource(ModelResource):
         queryset = StateDocEvent.objects.all()
         serializer = api.Serializer()
         #resource_name = 'statedocevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
@@ -221,6 +229,7 @@ class DocHistoryResource(ModelResource):
         queryset = DocHistory.objects.all()
         serializer = api.Serializer()
         #resource_name = 'dochistory'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
@@ -259,6 +268,7 @@ class ConsensusDocEventResource(ModelResource):
         queryset = ConsensusDocEvent.objects.all()
         serializer = api.Serializer()
         #resource_name = 'consensusdocevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
@@ -280,6 +290,7 @@ class DocAliasResource(ModelResource):
         serializer = api.Serializer()
         detail_uri_name = 'name'
         #resource_name = 'docalias'
+        ordering = ['id', ]
         filtering = { 
             "name": ALL,
             "document": ALL_WITH_RELATIONS,
@@ -296,6 +307,7 @@ class TelechatDocEventResource(ModelResource):
         queryset = TelechatDocEvent.objects.all()
         serializer = api.Serializer()
         #resource_name = 'telechatdocevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
@@ -319,6 +331,7 @@ class DocReminderResource(ModelResource):
         queryset = DocReminder.objects.all()
         serializer = api.Serializer()
         #resource_name = 'docreminder'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "due": ALL,
@@ -338,6 +351,7 @@ class LastCallDocEventResource(ModelResource):
         queryset = LastCallDocEvent.objects.all()
         serializer = api.Serializer()
         #resource_name = 'lastcalldocevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
@@ -361,6 +375,7 @@ class NewRevisionDocEventResource(ModelResource):
         queryset = NewRevisionDocEvent.objects.all()
         serializer = api.Serializer()
         #resource_name = 'newrevisiondocevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
@@ -383,6 +398,7 @@ class WriteupDocEventResource(ModelResource):
         queryset = WriteupDocEvent.objects.all()
         serializer = api.Serializer()
         #resource_name = 'writeupdocevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
@@ -406,6 +422,7 @@ class InitialReviewDocEventResource(ModelResource):
         queryset = InitialReviewDocEvent.objects.all()
         serializer = api.Serializer()
         #resource_name = 'initialreviewdocevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
@@ -429,6 +446,7 @@ class DocHistoryAuthorResource(ModelResource):
         queryset = DocHistoryAuthor.objects.all()
         serializer = api.Serializer()
         #resource_name = 'dochistoryauthor'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "affiliation": ALL,
@@ -451,6 +469,7 @@ class BallotDocEventResource(ModelResource):
         queryset = BallotDocEvent.objects.all()
         serializer = api.Serializer()
         #resource_name = 'ballotdocevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
@@ -474,6 +493,7 @@ class RelatedDocumentResource(ModelResource):
         queryset = RelatedDocument.objects.all()
         serializer = api.Serializer()
         #resource_name = 'relateddocument'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "source": ALL_WITH_RELATIONS,
@@ -492,6 +512,7 @@ class RelatedDocHistoryResource(ModelResource):
         queryset = RelatedDocHistory.objects.all()
         serializer = api.Serializer()
         #resource_name = 'relateddochistory'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "source": ALL_WITH_RELATIONS,
@@ -514,6 +535,7 @@ class BallotPositionDocEventResource(ModelResource):
         queryset = BallotPositionDocEvent.objects.all()
         serializer = api.Serializer()
         #resource_name = 'ballotpositiondocevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
@@ -546,6 +568,7 @@ class AddedMessageEventResource(ModelResource):
         serializer = api.Serializer()
         cache = SimpleCache()
         #resource_name = 'addedmessageevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
@@ -573,6 +596,7 @@ class SubmissionDocEventResource(ModelResource):
         serializer = api.Serializer()
         cache = SimpleCache()
         #resource_name = 'submissiondocevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
@@ -599,6 +623,7 @@ class ReviewRequestDocEventResource(ModelResource):
         serializer = api.Serializer()
         cache = SimpleCache()
         #resource_name = 'reviewrequestdocevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
@@ -623,6 +648,7 @@ class EditedAuthorsDocEventResource(ModelResource):
         serializer = api.Serializer()
         cache = SimpleCache()
         #resource_name = 'editedauthorsdocevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
@@ -646,6 +672,7 @@ class DocumentURLResource(ModelResource):
         serializer = api.Serializer()
         cache = SimpleCache()
         #resource_name = 'documenturl'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "desc": ALL,
@@ -670,6 +697,7 @@ class ReviewAssignmentDocEventResource(ModelResource):
         serializer = api.Serializer()
         cache = SimpleCache()
         #resource_name = 'reviewassignmentdocevent'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,
