@@ -26,7 +26,7 @@ from ietf.name.models import StreamName, FormalLanguageName
 from ietf.person.models import Person, Email
 from ietf.community.utils import update_name_contains_indexes_with_new_doc
 from ietf.submit.mail import ( announce_to_lists, announce_new_version, announce_to_authors,
-    send_approval_request_to_group, send_submission_confirmation )
+    send_approval_request_to_group, send_submission_confirmation, announce_new_wg_00 )
 from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName, SubmissionCheck
 from ietf.utils import log
 from ietf.utils.accesstoken import generate_random_key
@@ -361,6 +361,8 @@ def post_submission(request, submission, approvedDesc):
     update_name_contains_indexes_with_new_doc(draft)
 
     announce_to_lists(request, submission)
+    if submission.group and submission.group.type_id == 'wg' and draft.rev == '00':
+        announce_new_wg_00(request, submission)
     announce_new_version(request, submission, draft, state_change_msg)
     announce_to_authors(request, submission)
 

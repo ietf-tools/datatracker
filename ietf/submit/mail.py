@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+
 import re
 import email
 import datetime
@@ -105,6 +107,28 @@ def announce_to_lists(request, submission):
     m.subject = 'I-D Action: %s-%s.txt' % (submission.name, submission.rev)
     m.frm = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
     (m.to, m.cc) = gather_address_lists('sub_announced',submission=submission)
+    if m.cc:
+        m.reply_to = m.cc
+    m.body = render_to_string('submit/announce_to_lists.txt',
+                              dict(submission=submission,
+                                   settings=settings))
+    m.save()
+    m.related_docs.add(Document.objects.get(name=submission.name))
+
+    send_mail_message(request, m)
+
+
+def announce_new_wg_00(request, submission):
+    m = Message()
+    m.by = Person.objects.get(name="(System)")
+    if request.user.is_authenticated:
+        try:
+            m.by = request.user.person
+        except Person.DoesNotExist:
+            pass
+    m.subject = 'I-D Action: %s-%s.txt' % (submission.name, submission.rev)
+    m.frm = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
+    (m.to, m.cc) = gather_address_lists('sub_new_wg_00',submission=submission)
     if m.cc:
         m.reply_to = m.cc
     m.body = render_to_string('submit/announce_to_lists.txt',
