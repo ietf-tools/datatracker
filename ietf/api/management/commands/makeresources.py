@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 from __future__ import print_function
 
 import os
@@ -37,6 +39,7 @@ class {{model.name}}Resource(ModelResource):{% if model.foreign_keys %}{% for fk
         serializer = api.Serializer()
         cache = SimpleCache()
         #resource_name = '{{model.resource_name}}'
+        ordering = ['{{model.pk_name}}', ]
         filtering = { {% for name in model.plain_names %}
             "{{ name }}": ALL,{%endfor%}{% for name in model.fk_names%}
             "{{ name }}": ALL_WITH_RELATIONS,{%endfor%}{% for name in model.m2m_names %}
@@ -92,6 +95,7 @@ class Command(AppCommand):
                         plain_names = []
                         fk_names = []
                         m2m_names = []
+                        pk_name = model._meta.pk.name
                         #debug.pprint('dir(model)')
                         for field in model._meta.fields:
                             if isinstance(field, (models.ForeignKey, models.OneToOneField)):
@@ -167,6 +171,7 @@ class Command(AppCommand):
                             plain_names=plain_names,
                             fk_names=fk_names,
                             m2m_names=m2m_names,
+                            pk_name=pk_name,
                         )
 
                     # Sort resources according to internal FK reference depth
