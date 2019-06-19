@@ -110,7 +110,7 @@ class CommunityListTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         # add document
-        r = self.client.post(url, { "action": "add_documents", "documents": draft.name })
+        r = self.client.post(url, { "action": "add_documents", "documents": draft.pk })
         self.assertEqual(r.status_code, 302)
         clist = CommunityList.objects.get(user__username="plain")
         self.assertTrue(clist.added_docs.filter(pk=draft.pk))

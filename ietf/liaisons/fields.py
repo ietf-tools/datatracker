@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import json
 
 from django.utils.html import escape
@@ -35,6 +38,12 @@ class SearchableLiaisonStatementsField(forms.CharField):
     def parse_select2_value(self, value):
         return [x.strip() for x in value.split(",") if x.strip()]
 
+    def check_pks(self, pks):
+        for pk in pks:
+            if not pk.isdigit():
+                raise forms.ValidationError("Unexpected value: %s" % pk)
+        return pks
+
     def prepare_value(self, value):
         if not value:
             value = ""
@@ -56,7 +65,7 @@ class SearchableLiaisonStatementsField(forms.CharField):
 
     def clean(self, value):
         value = super(SearchableLiaisonStatementsField, self).clean(value)
-        pks = self.parse_select2_value(value)
+        pks = self.check_pks(self.parse_select2_value(value))
 
         objs = self.model.objects.filter(pk__in=pks)
 

@@ -181,7 +181,7 @@ class SubmitTests(TestCase):
         if r.status_code == 302:
             submission = Submission.objects.get(name=name)
             self.assertEqual(submission.submitter, email.utils.formataddr((submitter_name, submitter_email)))
-            self.assertEqual(submission.replaces, ",".join(d.name for d in DocAlias.objects.filter(name__in=replaces.split(",") if replaces else [])))
+            self.assertEqual(submission.replaces, ",".join(d.name for d in DocAlias.objects.filter(pk__in=replaces.split(",") if replaces else [])))
 
         return r
 
@@ -237,7 +237,7 @@ class SubmitTests(TestCase):
         mailbox_before = len(outbox)
         replaced_alias = draft.docalias.first()
         r = self.supply_extra_metadata(name, status_url, author.ascii, author.email().address.lower(),
-                                       replaces=str(replaced_alias.name) + "," + str(sug_replaced_alias.name))
+                                       replaces=str(replaced_alias.pk) + "," + str(sug_replaced_alias.pk))
 
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
@@ -594,16 +594,16 @@ class SubmitTests(TestCase):
         status_url, author = self.do_submission(name,rev)
         mailbox_before = len(outbox)
         replaced_alias = draft.docalias.first()
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.name))
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
         self.assertEqual(r.status_code, 200)
         self.assertTrue('cannot replace itself' in unicontent(r))
         replaced_alias = DocAlias.objects.get(name='draft-ietf-random-thing')
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.name))
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
         self.assertEqual(r.status_code, 200)
         self.assertTrue('cannot replace an RFC' in unicontent(r))
         replaced_alias.document.set_state(State.objects.get(type='draft-iesg',slug='approved'))
         replaced_alias.document.set_state(State.objects.get(type='draft',slug='active'))
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.name))
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
         self.assertEqual(r.status_code, 200)
         self.assertTrue('approved by the IESG and cannot' in unicontent(r))
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces='')
@@ -737,7 +737,7 @@ class SubmitTests(TestCase):
             "edit-pages": "123",
             "submitter-name": "Some Random Test Person",
             "submitter-email": "random@example.com",
-            "replaces": str(draft.docalias.first().name),
+            "replaces": str(draft.docalias.first().pk),
             "edit-note": "no comments",
             "authors-0-name": "Person 1",
             "authors-0-email": "person1@example.com",
@@ -745,7 +745,6 @@ class SubmitTests(TestCase):
             "authors-1-email": "person2@example.com",
             "authors-2-name": "Person 3",
             "authors-2-email": "",
-
             "authors-prefix": ["authors-", "authors-0", "authors-1", "authors-2"],
         })
         self.assertNoFormPostErrors(r, ".has-error,.alert-danger")

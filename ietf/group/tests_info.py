@@ -45,6 +45,9 @@ def group_urlreverse_list(group, viewname):
     ]
 
 
+def pklist(docs):
+    return [ str(doc.pk) for doc in docs.all() ]
+
 class GroupPagesTests(TestCase):
     def setUp(self):
         self.charter_dir = self.tempdir('charter')
@@ -811,7 +814,7 @@ class MilestoneTests(TestCase):
 
         milestones_before = GroupMilestone.objects.count()
         events_before = group.groupevent_set.count()
-        docs = Document.objects.filter(type="draft").values_list("name", flat=True)
+        doc_pks = pklist(Document.objects.filter(type="draft"))
 
         due = self.last_day_of_month(datetime.date.today() + datetime.timedelta(days=365))
 
@@ -821,7 +824,7 @@ class MilestoneTests(TestCase):
                                     'm-1-desc': "", # no description
                                     'm-1-due': due.strftime("%B %Y"),
                                     'm-1-resolved': "",
-                                    'm-1-docs': ",".join(docs),
+                                    'm-1-docs': ",".join(doc_pks),
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 200)
@@ -836,7 +839,7 @@ class MilestoneTests(TestCase):
                                     'm-1-desc': "Test 3",
                                     'm-1-due': due.strftime("%B %Y"),
                                     'm-1-resolved': "",
-                                    'm-1-docs': ",".join(docs),
+                                    'm-1-docs': ",".join(doc_pks),
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
@@ -847,7 +850,7 @@ class MilestoneTests(TestCase):
         self.assertEqual(m.state_id, "active")
         self.assertEqual(m.due, due)
         self.assertEqual(m.resolved, "")
-        self.assertEqual(set(m.docs.values_list("name", flat=True)), set(docs))
+        self.assertEqual(set(pklist(m.docs)), set(doc_pks))
         self.assertTrue("Added milestone" in m.milestonegroupevent_set.all()[0].desc)
         self.assertEqual(len(outbox),mailbox_before+2)
         self.assertFalse(any('Review Required' in x['Subject'] for x in outbox[-2:]))
@@ -913,7 +916,7 @@ class MilestoneTests(TestCase):
                                     'm1-desc': m1.desc,
                                     'm1-due': m1.due.strftime("%B %Y"),
                                     'm1-resolved': m1.resolved,
-                                    'm1-docs': ",".join(m1.docs.values_list("name", flat=True)),
+                                    'm1-docs': ",".join(pklist(m1.docs)),
                                     'm1-review': "accept",
                                     'action': "save",
                                     })
@@ -939,7 +942,7 @@ class MilestoneTests(TestCase):
                                     'm1-desc': m1.desc,
                                     'm1-due': m1.due.strftime("%B %Y"),
                                     'm1-resolved': "",
-                                    'm1-docs': ",".join(m1.docs.values_list("name", flat=True)),
+                                    'm1-docs': ",".join(pklist(m1.docs)),
                                     'm1-delete': "checked",
                                     'action': "save",
                                     })
@@ -959,7 +962,7 @@ class MilestoneTests(TestCase):
 
         milestones_before = GroupMilestone.objects.count()
         events_before = group.groupevent_set.count()
-        docs = Document.objects.filter(type="draft").values_list("name", flat=True)
+        doc_pks = pklist(Document.objects.filter(type="draft"))
 
         due = self.last_day_of_month(datetime.date.today() + datetime.timedelta(days=365))
 
@@ -969,7 +972,7 @@ class MilestoneTests(TestCase):
                                     'm1-desc': "", # no description
                                     'm1-due': due.strftime("%B %Y"),
                                     'm1-resolved': "",
-                                    'm1-docs': ",".join(docs),
+                                    'm1-docs': ",".join(doc_pks),
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 200)
@@ -987,7 +990,7 @@ class MilestoneTests(TestCase):
                                     'm1-due': due.strftime("%B %Y"),
                                     'm1-resolved': "Done",
                                     'm1-resolved_checkbox': "checked",
-                                    'm1-docs': ",".join(docs),
+                                    'm1-docs': ",".join(doc_pks),
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
@@ -998,7 +1001,7 @@ class MilestoneTests(TestCase):
         self.assertEqual(m.state_id, "active")
         self.assertEqual(m.due, due)
         self.assertEqual(m.resolved, "Done")
-        self.assertEqual(set(m.docs.values_list("name", flat=True)), set(docs))
+        self.assertEqual(set(pklist(m.docs)), set(doc_pks))
         self.assertTrue("Changed milestone" in m.milestonegroupevent_set.all()[0].desc)
         self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue("Milestones changed" in outbox[-2]["Subject"])

@@ -761,13 +761,13 @@ class SessionDetailsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(old_draft.name in unicontent(r))
 
-        r = self.client.post(url,dict(drafts=[new_draft.name,old_draft.name]))
+        r = self.client.post(url,dict(drafts=[new_draft.pk, old_draft.pk]))
         self.assertTrue(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue("Already linked:" in q('form .alert-danger').text())
 
         self.assertEqual(1,session.sessionpresentation_set.count())
-        r = self.client.post(url,dict(drafts=[new_draft.name,]))
+        r = self.client.post(url,dict(drafts=[new_draft.pk,]))
         self.assertTrue(r.status_code, 302)
         self.assertEqual(2,session.sessionpresentation_set.count())
 
