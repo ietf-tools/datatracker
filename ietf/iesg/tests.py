@@ -314,11 +314,11 @@ class IESGAgendaTests(TestCase):
 
         for k, d in self.telechat_docs.iteritems():
             if d.type_id == "charter":
-                self.assertTrue(d.group.name in unicontent(r), "%s not in response" % k)
-                self.assertTrue(d.group.acronym in unicontent(r), "%s acronym not in response" % k)
+                self.assertTrue(d.group.name in unicontent(r), "%s '%s' not in response" % (k, d.group.name))
+                self.assertTrue(d.group.acronym in unicontent(r), "%s '%s' acronym not in response" % (k, d.group.acronym))
             else:
-                self.assertTrue(d.name in unicontent(r), "%s not in response" % k)
-                self.assertTrue(d.title in unicontent(r), "%s title not in response" % k)
+                self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name))
+                self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title))
 
         self.assertTrue(json.loads(r.content))
 
@@ -328,11 +328,11 @@ class IESGAgendaTests(TestCase):
 
         for k, d in self.telechat_docs.iteritems():
             if d.type_id == "charter":
-                self.assertTrue(d.group.name in unicontent(r), "%s not in response" % k)
-                self.assertTrue(d.group.acronym in unicontent(r), "%s acronym not in response" % k)
+                self.assertTrue(d.group.name in unicontent(r), "%s '%s' not in response" % (k, d.group.name))
+                self.assertTrue(d.group.acronym in unicontent(r), "%s '%s' acronym not in response" % (k, d.group.acronym))
             else:
-                self.assertTrue(d.name in unicontent(r), "%s not in response" % k)
-                self.assertTrue(d.title in unicontent(r), "%s title not in response" % k)
+                self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name))
+                self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title))
 
     def test_agenda_txt(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_txt"))
@@ -340,11 +340,11 @@ class IESGAgendaTests(TestCase):
 
         for k, d in self.telechat_docs.iteritems():
             if d.type_id == "charter":
-                self.assertTrue(d.group.name in unicontent(r), "%s not in response" % k)
-                self.assertTrue(d.group.acronym in unicontent(r), "%s acronym not in response" % k)
+                self.assertTrue(d.group.name in unicontent(r), "%s '%s' not in response" % (k, d.group.name))
+                self.assertTrue(d.group.acronym in unicontent(r), "%s '%s' acronym not in response" % (k, d.group.acronym))
             else:
-                self.assertTrue(d.name in unicontent(r), "%s not in response" % k)
-                self.assertTrue(d.title in unicontent(r), "%s title not in response" % k)
+                self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name))
+                self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title))
 
     def test_agenda_scribe_template(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_scribe_template"))
@@ -354,8 +354,8 @@ class IESGAgendaTests(TestCase):
             if d.type_id == "charter":
                 continue # scribe template doesn't contain chartering info
 
-            self.assertTrue(d.name in unicontent(r), "%s not in response" % k)
-            self.assertTrue(d.title in unicontent(r), "%s title not in response" % k)
+            self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name))
+            self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title))
 
     def test_agenda_moderator_package(self):
         url = urlreverse("ietf.iesg.views.agenda_moderator_package")
@@ -365,17 +365,17 @@ class IESGAgendaTests(TestCase):
 
         for k, d in self.telechat_docs.iteritems():
             if d.type_id == "charter":
-                self.assertTrue(d.group.name in unicontent(r), "%s not in response" % k)
-                self.assertTrue(d.group.acronym in unicontent(r), "%s acronym not in response" % k)
+                self.assertTrue(d.group.name in unicontent(r), "%s '%s' not in response" % (k, d.group.name))
+                self.assertTrue(d.group.acronym in unicontent(r), "%s '%s' acronym not in response" % (k, d.group.acronym))
             else:
                 if d.type_id == "draft" and d.name == "draft-ietf-mars-test":
-                    self.assertTrue(d.name in unicontent(r), "%s not in response" % k)
-                    self.assertTrue(d.title in unicontent(r), "%s title not in response" % k)
-                    self.assertTrue("Has downref: Yes" in unicontent(r), "%s downref not in response" % k)
-                    self.assertTrue("Add rfc6666" in unicontent(r), "%s downref not in response" % k)
+                    self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name))
+                    self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title))
+                    self.assertTrue("Has downref: Yes" in unicontent(r), "%s downref not in response" % (k, ))
+                    self.assertTrue("Add rfc6666" in unicontent(r), "%s downref not in response" % (k, ))
                 else:
-                    self.assertTrue(d.name in unicontent(r), "%s not in response" % k)
-                    self.assertTrue(d.title in unicontent(r), "%s title not in response" % k)        
+                    self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name))
+                    self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title))        
 
     def test_agenda_package(self):
         url = urlreverse("ietf.iesg.views.agenda_package")
@@ -385,11 +385,11 @@ class IESGAgendaTests(TestCase):
 
         for k, d in self.telechat_docs.iteritems():
             if d.type_id == "charter":
-                self.assertTrue(d.group.name in unicontent(r), "%s not in response" % k)
-                self.assertTrue(d.group.acronym in unicontent(r), "%s acronym not in response" % k)
+                self.assertTrue(d.group.name in unicontent(r), "%s '%s' not in response" % (k, d.group.name, ))
+                self.assertTrue(d.group.acronym in unicontent(r), "%s '%s' acronym not in response" % (k, d.group.acronym, ))
             else:
-                self.assertTrue(d.name in unicontent(r), "%s not in response" % k)
-                self.assertTrue(d.title in unicontent(r), "%s title not in response" % k)
+                self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name, ))
+                self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title, ))
 
     def test_agenda_documents_txt(self):
         url = urlreverse("ietf.iesg.views.agenda_documents_txt")
@@ -397,7 +397,7 @@ class IESGAgendaTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.iteritems():
-            self.assertTrue(d.name in unicontent(r), "%s not in response" % k)
+            self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name, ))
 
     def test_agenda_documents(self):
         url = urlreverse("ietf.iesg.views.agenda_documents")
@@ -405,8 +405,8 @@ class IESGAgendaTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.iteritems():
-            self.assertTrue(d.name in unicontent(r), "%s not in response" % k)
-            self.assertTrue(d.title in unicontent(r), "%s title not in response" % k)
+            self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name, ))
+            self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title, ))
 
     def test_past_documents(self):
         url = urlreverse("ietf.iesg.views.past_documents")
