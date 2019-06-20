@@ -1,3 +1,54 @@
+ietfdb (6.98.1) ietf; urgency=medium
+
+  This is a bugfix release that cleans up some remaining issues from the
+  Document/DocAlias primary key refactoring, and also fixes some other
+  unrelated issues.  From the commit log:
+
+  * Fixed bad logic for the display of previous related IPR information in 
+    the IPR details template.
+
+  * Tweaked some test failure messages for better debugging.
+
+  * Merged in [16287] from rjsparks@nostrum.com:
+    Send mail to a list when a new IETF WG -00 is submitted. Fixes #2730.  
+
+  * Fixed some name versus pk issues lingering after the Document/DocAlias 
+    primary key refactoring.  Fixes issue #2729.
+
+  * Added the option to order API resource lists by primary key, for stable 
+    ordering when paging through a list.
+
+  * Added generation of Meta.ordering for API ModelResources in the
+  * mkresources management command.
+
+  * The Document and DocAlias primary key refactoring caused the Tastypie 
+    API under /api/v1/ to change -- reverting that to use the old form, with 
+    name ask API key.
+
+  * Added a better error message for too long draft names during submission.
+
+  * Adjusted the test_runner to generate migration coverage data also when 
+    permitting mixed migrations.
+
+  * Added a guard against duplicate insertions in 
+    SearchRule.name_contains_index
+
+  * Fixed a docalias problem with generate-draft-aliases
+
+  * Merged in [16248] from rjsparks@nostrum.com:
+    Removed the IETF chair as a recipient of new IPR disclosures if there 
+    is no group or active document to send them to. Fixes #2727.  
+
+  * Added a management command to update the index table used by some 
+    community list search rules.  Running this fixes the missing listings
+    of drafts related to a group on group document pages and in searches.
+
+  * Improved the support for the mixed-release switch in the bin/mkrelease
+    script.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Jun 2019 13:16:54 +0000
+
+
 ietfdb (6.98.0) ietf; urgency=medium
 
   **Refactoring of the primary index type for Document and DocAlias objects**
