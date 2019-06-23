@@ -1,0 +1,203 @@
+#!/usr/bin/env python
+# -*- python -*-
+# Copyright The IETF Trust 2019, All Rights Reserved
+"""
+NAME
+	$program - Check for current copyright notice in given files
+
+SYNOPSIS
+	$program [OPTIONS] ARGS
+
+DESCRIPTION
+	Given a list of files or filename wildcard patterns, check all for
+	an IETF Trust copyright notice with the current year.
+
+%(options)s
+
+FILES
+
+AUTHOR
+	Written by Henrik Levkowetz, <henrik@tools.ietf.org>
+
+COPYRIGHT
+	Copyright 2019 the IETF Trust
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the Simplified BSD license as published by the
+        Open Source Initiative at http://opensource.org/licenses/BSD-2-Clause.
+
+"""
+from __future__ import print_function
+
+import os
+import sys
+import time
+
+path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if not path in sys.path:
+    sys.path.insert(0, path)
+
+import getopt
+import re
+import pytz
+import tzparse
+import debug
+
+version = "0.10"
+program = os.path.basename(sys.argv[0])
+progdir = os.path.dirname(sys.argv[0])
+
+# ----------------------------------------------------------------------
+# Parse options
+
+options = ""
+for line in re.findall("\n +(if|elif) +opt in \[(.+)\]:\s+#(.+)\n", open(sys.argv[0]).read()):
+    if not options:
+        options += "OPTIONS\n"
+    options += "        %-16s %s\n" % (line[1].replace('"', ''), line[2])
+options = options.strip()
+
+# with ' < 1:' on the next line, this is a no-op:
+if len(sys.argv) < 1:
+    print(__doc__ % locals())
+    sys.exit(1)
+
+try:
+    opts, files = getopt.gnu_getopt(sys.argv[1:], "hvV", ["help", "version", "verbose",])
+except Exception, e:
+    print( "%s: %s" % (program, e))
+    sys.exit(1)
+
+# ----------------------------------------------------------------------
+# Handle options
+
+# set default values, if any
+opt_verbose = 0
+
+# handle individual options
+for opt, value in opts:
+    if   opt in ["-h", "--help"]: # Output this help, then exit
+        print( __doc__ % locals() )
+        sys.exit(1)
+    elif opt in ["-V", "--version"]: # Output version information, then exit
+        print( program, version )
+        sys.exit(0)
+    elif opt in ["-v", "--verbose"]: # Output version information, then exit
+        opt_verbose += 1
+
+# ----------------------------------------------------------------------
+def say(s):
+    sys.stderr.write("%s\n" % (s))
+
+# ----------------------------------------------------------------------
+def note(s):
+    if opt_verbose:
+        sys.stderr.write("%s\n" % (s))
+
+# ----------------------------------------------------------------------
+def die(s, error=1):
+    sys.stderr.write("\n%s: Error: %s\n\n" % (program, s))
+    sys.exit(error)
+
+# ----------------------------------------------------------------------
+
+def pipe(cmd, inp=None):
+    import shlex
+    from subprocess import Popen, PIPE
+    args = shlex.split(cmd)
+    bufsize = 4096
+    stdin = PIPE if inp else None
+    pipe = Popen(args, stdin=stdin, stdout=PIPE, stderr=PIPE, bufsize=bufsize)
+    out, err = pipe.communicate(inp)
+    code = pipe.returncode
+    if code != 0:
+        raise OSError(err)
+    return out
+
+# ----------------------------------------------------------------------
+def split_loginfo(line):
+    try:
+        parts = line.split()
+        rev  = parts[0][1:]
+        who  = parts[2]
+        date = parts[4]
+        time = parts[5]
+        tz   = parts[6]
+        when = tzparse.tzparse(" ".join(parts[4:7]), "%Y-%m-%d %H:%M:%S %Z")
+        when = when.astimezone(pytz.utc)
+    except ValueError as e:
+        sys.stderr.write("Bad log line format: %s\n  %s\n" % (line, e))
+
+    return rev, who, when
+
+# ----------------------------------------------------------------------
+def get_first_commit(path):
+    note("Getting first commit for '%s'" % path)
+    cmd = 'svn log %s' % path
+    if opt_verbose > 1:
+        note("Running '%s' ..." % cmd)
+    commit_log = pipe(cmd)
+    commit_log = commit_log.splitlines()
+    commit_log.reverse()
+    for line in commit_log:
+        if re.search(loginfo_format, line):
+            rev, who, when = split_loginfo(line)
+            break
+        else:
+            pass
+    return { path: { 'rev': rev, 'who': who, 'date': when.strftime('%Y-%m-%d %H:%M:%S'), }, }
+
+
+# ----------------------------------------------------------------------
+# The program itself    
+
+import os
+import json
+
+cwd = os.getcwd()
+
+if cwd.split(os.path.sep)[-1] != 'trunk':
+    die("Expected to run this operation in trunk, but the current\ndirectory is '%s'" % cwd)
+
+# Get current initinfo from cache and svn
+cachefn = os.path.join(os.environ.get('HOME', '.'), '.initinfo')
+
+if os.path.exists(cachefn):
+    note("Reading initinfo cache file %s" % cachefn)
+    with open(cachefn, "r") as file:
+        cache = json.load(file)
+else:
+    sys.stderr.write("No  initinfo cache file found -- will have to extract all information from SVN.\n"+
+        "This may take some time.\n\n")
+    cache = {}
+initinfo = cache
+
+merged_revs = {}
+write_cache = False
+loginfo_format = r'^r[0-9]+ \| [^@]+@[^@]+ \| \d\d\d\d-\d\d-\d\d '
+
+year = time.strftime('%Y')
+for path in files:
+    note("Checking path %s" % path)
+    if not path in initinfo:
+        initinfo.update(get_first_commit(path))
+        write_cache = True
+    date = initinfo[path]['date']
+    init = date[:4]
+    copyright = "(?i)Copyright The IETF Trust (%s-)?%s, All Rights Reserved" % (init, year)
+    with open(path) as file:
+        chunk = file.read(4000)
+        if os.path.basename(path) == '__init__.py' and len(chunk)==0:
+            continue
+        if not re.search(copyright, chunk):
+            sys.stdout.write("%s(1): Error: Missing or bad copyright.  " % path)
+            if year == init:
+                print("  Expected: Copyright The IETF Trust %s, All Rights Reserved" % year)
+            else:
+                print("  Expected: Copyright The IETF Trust %s-%s, All Rights Reserved" % (init, year))
+
+if write_cache:
+    cache = initinfo
+    with open(cachefn, "w") as file:
+        json.dump(cache, file, indent=2, sort_keys=True)
+
