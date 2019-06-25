@@ -53,7 +53,8 @@ def manage_list(request, username=None, acronym=None, group_type=None):
                 clist.save()
 
             for d in add_doc_form.cleaned_data['documents']:
-                clist.added_docs.add(d)
+                if not d in clist.added_docs.all():
+                    clist.added_docs.add(d)
 
             return HttpResponseRedirect("")
     else:
@@ -130,7 +131,8 @@ def track_document(request, name, username=None, acronym=None):
         if clist.pk is None:
             clist.save()
 
-        clist.added_docs.add(doc)
+        if not doc in clist.added_docs.all():
+            clist.added_docs.add(doc)
 
         if request.is_ajax():
             return HttpResponse(json.dumps({ 'success': True }), content_type='text/plain')

@@ -87,7 +87,8 @@ class CommunityListTests(TestCase):
 
         # with list
         clist = CommunityList.objects.create(user=User.objects.get(username="plain"))
-        clist.added_docs.add(draft)
+        if not draft in clist.added_docs.all():
+            clist.added_docs.add(draft)
         SearchRule.objects.create(
             community_list=clist,
             rule_type="name_contains",
@@ -249,7 +250,8 @@ class CommunityListTests(TestCase):
 
         # with list
         clist = CommunityList.objects.create(user=User.objects.get(username="plain"))
-        clist.added_docs.add(draft)
+        if not draft in clist.added_docs.all():
+            clist.added_docs.add(draft)
         SearchRule.objects.create(
             community_list=clist,
             rule_type="name_contains",
@@ -284,7 +286,8 @@ class CommunityListTests(TestCase):
 
         # with list
         clist = CommunityList.objects.create(user=User.objects.get(username="plain"))
-        clist.added_docs.add(draft)
+        if not draft in clist.added_docs.all():
+            clist.added_docs.add(draft)
         SearchRule.objects.create(
             community_list=clist,
             rule_type="name_contains",
@@ -325,7 +328,8 @@ class CommunityListTests(TestCase):
 
         # subscription with list
         clist = CommunityList.objects.create(user=User.objects.get(username="plain"))
-        clist.added_docs.add(draft)
+        if not draft in clist.added_docs.all():
+            clist.added_docs.add(draft)
         SearchRule.objects.create(
             community_list=clist,
             rule_type="name_contains",
@@ -368,7 +372,8 @@ class CommunityListTests(TestCase):
         draft = WgDraftFactory()
 
         clist = CommunityList.objects.create(user=User.objects.get(username="plain"))
-        clist.added_docs.add(draft)
+        if not draft in clist.added_docs.all():
+            clist.added_docs.add(draft)
 
         EmailSubscription.objects.create(community_list=clist, email=Email.objects.filter(person__user__username="plain").first(), notify_on="significant")
 
