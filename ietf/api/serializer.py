@@ -17,7 +17,7 @@ import debug                            # pyflakes:ignore
 def filter_from_queryargs(request):
     #@debug.trace
     def fix_ranges(d):
-        for k,v in list(d.items()):
+        for k,v in d.items():
             if v.startswith("[") and v.endswith("]"):
                 d[k] = [ s for s in v[1:-1].split(",") if s ]
             elif "," in v:

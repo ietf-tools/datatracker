@@ -93,7 +93,7 @@ class RedirectsTests(TestCase):
     fixtures = ["initial_data.xml", ]
 
     def test_redirects(self):
-        for src, dst in list(REDIRECT_TESTS.items()):
+        for src, dst in REDIRECT_TESTS.items():
             baseurl, args = split_url(src)
             response = self.client.get(baseurl, args)
             self.assertTrue(str(response.status_code).startswith("3"))

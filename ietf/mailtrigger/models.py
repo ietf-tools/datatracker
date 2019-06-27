@@ -18,7 +18,7 @@ def clean_duplicates(addrlist):
         # name from the last one:
         address_info[addr] = (name, a)
     addresses = []
-    for addr, info in list(address_info.items()):
+    for addr, info in address_info.items():
         name, a = info
         if (name,addr)==('',''):
             addresses.append(a)

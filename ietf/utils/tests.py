@@ -205,7 +205,7 @@ class TemplateChecksTestCase(TestCase):
 
     def apply_template_test(self, func, node_type, msg, *args, **kwargs):
         errors = []
-        for path, template in list(self.templates.items()):
+        for path, template in self.templates.items():
             origin = str(template.origin).replace(settings.BASE_DIR, '')
             for node in template:
                 for child in node.get_nodes_by_type(node_type):

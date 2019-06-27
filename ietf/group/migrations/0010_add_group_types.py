@@ -128,13 +128,13 @@ def forward(apps, schema_editor):
     for slug in group_type_features:
         typename = group_type_features[slug]['grouptypename']
         gt, _ = GroupTypeName.objects.get_or_create(slug=slug)
-        for k,v in list(typename.items()):
+        for k,v in typename.items():
             setattr(gt, k, v)
         gt.save()
         #
         features = group_type_features[slug]['groupfeatures']
         gf, _ = GroupFeatures.objects.get_or_create(type_id=slug)
-        for k,v in list(features.items()):
+        for k,v in features.items():
             setattr(gf, k, v)
         gf.save()
 

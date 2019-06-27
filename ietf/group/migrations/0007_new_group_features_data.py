@@ -224,7 +224,7 @@ def forward(apps, schema_editor):
     for type in group_type_features:
         features = group_type_features[type]
         gf = GroupFeatures.objects.get(type=type)
-        for k,v in list(features.items()):
+        for k,v in features.items():
             setattr(gf, k, v)
         gf.save()
 # This migration does not remove or change any previous fields, and executes

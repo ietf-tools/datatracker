@@ -79,7 +79,7 @@ def forward(apps, schema_editor):
     for entry in assignment_states:
         name, created = ReviewAssignmentStateName.objects.get_or_create(slug=entry['slug'])
         if created:
-            for k, v in list(entry.items()):
+            for k, v in entry.items():
                 setattr(name, k, v)
             name.save()
 

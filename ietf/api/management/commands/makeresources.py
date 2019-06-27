@@ -66,7 +66,7 @@ class Command(AppCommand):
             app_resources = {}
             if os.path.exists(resource_file_path):
                 resources = import_module("%s.resources" % app.name)
-                for n,v in list(resources.__dict__.items()):
+                for n,v in resources.__dict__.items():
                     if issubclass(type(v), type(ModelResource)):
                         app_resources[n] = v
 

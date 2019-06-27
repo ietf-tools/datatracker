@@ -174,7 +174,7 @@ def text_to_dict(t):
 def dict_to_text(d):
     "Convert a dictionary to RFC2822-formatted text"
     t = ""
-    for k, v in list(d.items()):
+    for k, v in d.items():
         t += "%s: %s\n" % (k, v)
     return t
 

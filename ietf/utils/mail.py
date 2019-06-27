@@ -284,7 +284,7 @@ def condition_message(to, frm, subject, msg, cc, extra):
     msg['Auto-Submitted'] = "auto-generated"
     msg['Precedence'] = "bulk"
     if extra:
-        for k, v in list(extra.items()):
+        for k, v in extra.items():
             if v:
                 assertion('len(list(set(v))) == len(v)')
                 try:
