@@ -5,7 +5,7 @@ import json
 import os
 import shutil
 import datetime
-import urlparse
+import urllib.parse
 import random
 from unittest import skipIf
 
@@ -17,7 +17,7 @@ from django.contrib.auth.models import User
 
 from mock import patch
 from pyquery import PyQuery
-from StringIO import StringIO
+from io import StringIO
 from bs4 import BeautifulSoup
 
 from ietf.doc.models import Document
@@ -134,7 +134,7 @@ class MeetingTests(TestCase):
         # future meeting, no agenda
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=future_meeting.number)))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, u"There is no agenda available yet.")
+        self.assertContains(r, "There is no agenda available yet.")
         self.assertTemplateUsed(r, 'meeting/no-agenda.html')
 
         # text
@@ -618,7 +618,7 @@ class EditTests(TestCase):
             })
         self.assertEqual(r.status_code, 302)
         # Verify that we actually got redirected to a new place.
-        self.assertNotEqual(urlparse.urlparse(r.url).path, url)
+        self.assertNotEqual(urllib.parse.urlparse(r.url).path, url)
 
         # get
         schedule = meeting.get_schedule_by_name("foo")
@@ -664,7 +664,7 @@ class EditTests(TestCase):
             'saveas': "saveas",
             })
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r.url).path, url)
+        self.assertEqual(urllib.parse.urlparse(r.url).path, url)
         # TODO: Verify that an error message was in fact returned.
 
         r = self.client.post(url, {
@@ -673,16 +673,16 @@ class EditTests(TestCase):
             })
         # TODO: Verify that an error message was in fact returned.
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r.url).path, url)
+        self.assertEqual(urllib.parse.urlparse(r.url).path, url)
 
         # Non-ASCII alphanumeric characters
         r = self.client.post(url, {
-            'savename': u"f\u00E9ling",
+            'savename': "f\u00E9ling",
             'saveas': "saveas",
             })
         # TODO: Verify that an error message was in fact returned.
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r.url).path, url)
+        self.assertEqual(urllib.parse.urlparse(r.url).path, url)
         
 
     def test_edit_timeslots(self):
@@ -1749,7 +1749,7 @@ class MaterialsTests(TestCase):
                     soup = BeautifulSoup(page, 'html.parser')
                     for a in soup('a'):
                         href = a.get('href')
-                        path = urlparse.urlparse(href).path
+                        path = urllib.parse.urlparse(href).path
                         if (path and path not in seen and path.startswith(top)):
                             follow(path)
         follow(url)
@@ -1761,7 +1761,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue('Upload' in unicode(q("title")))
+        self.assertTrue('Upload' in str(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
         test_file = StringIO(b'%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
@@ -1772,7 +1772,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue('Revise' in unicode(q("title")))
+        self.assertTrue('Revise' in str(q("title")))
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some different text for a test')
         test_file.name = "also_not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
@@ -1796,7 +1796,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue('Upload' in unicode(q("title")))
+        self.assertTrue('Upload' in str(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
         test_file = StringIO(b'%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
@@ -1814,7 +1814,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue('Upload' in unicode(q("title")))
+        self.assertTrue('Upload' in str(q("title")))
         
 
     def test_upload_minutes_agenda(self):
@@ -1829,7 +1829,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue('Upload' in unicode(q("Title")))
+            self.assertTrue('Upload' in str(q("Title")))
             self.assertFalse(session.sessionpresentation_set.exists())
             self.assertFalse(q('form input[type="checkbox"]'))
     
@@ -1872,7 +1872,7 @@ class MaterialsTests(TestCase):
             self.assertNotIn('<section>', text)
             self.assertIn('charset="utf-8"', text)
 
-            test_file = StringIO(u'This is some text for a test, with the word\nvirtual at the beginning of a line.')
+            test_file = StringIO('This is some text for a test, with the word\nvirtual at the beginning of a line.')
             test_file.name = "not_really.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=False))
             self.assertEqual(r.status_code, 302)
@@ -1883,7 +1883,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue('Revise' in unicode(q("Title")))
+            self.assertTrue('Revise' in str(q("Title")))
             test_file = StringIO('this is some different text for a test')
             test_file.name = "also_not_really.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=True))
@@ -1893,7 +1893,7 @@ class MaterialsTests(TestCase):
             self.assertTrue(session2.sessionpresentation_set.filter(document__type_id=doctype))
 
             # Test bad encoding
-            test_file = StringIO(u'<html><h1>Title</h1><section>Some\x93text</section></html>'.encode('latin1'))
+            test_file = StringIO('<html><h1>Title</h1><section>Some\x93text</section></html>'.encode('latin1'))
             test_file.name = "some.html"
             r = self.client.post(url,dict(file=test_file))
             self.assertContains(r, 'Could not identify the file encoding')
@@ -1917,7 +1917,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue('Upload' in unicode(q("Title")))
+            self.assertTrue('Upload' in str(q("Title")))
             self.assertFalse(session.sessionpresentation_set.exists())
             self.assertFalse(q('form input[type="checkbox"]'))
 
@@ -1938,7 +1938,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertTrue('Upload' in unicode(q("title")))
+            self.assertTrue('Upload' in str(q("title")))
             self.assertFalse(session.sessionpresentation_set.filter(document__type_id=doctype))
             test_file = StringIO('this is some text for a test')
             test_file.name = "not_really.txt"
@@ -1961,7 +1961,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue('Upload' in unicode(q("title")))
+        self.assertTrue('Upload' in str(q("title")))
         self.assertFalse(session1.sessionpresentation_set.filter(document__type_id='slides'))
         test_file = StringIO('this is not really a slide')
         test_file.name = 'not_really.txt'
@@ -1982,14 +1982,14 @@ class MaterialsTests(TestCase):
         self.assertEqual(session2.sessionpresentation_set.count(),2)
         sp = session2.sessionpresentation_set.get(document__name__endswith='-a-different-slide-file')
         self.assertEqual(sp.order,2)
-        self.assertEqual(sp.rev,u'00')
-        self.assertEqual(sp.document.rev,u'00')
+        self.assertEqual(sp.rev,'00')
+        self.assertEqual(sp.document.rev,'00')
 
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session2.meeting.number,'session_id':session2.id,'name':session2.sessionpresentation_set.get(order=2).document.name})
         r = self.client.get(url)
         self.assertTrue(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue('Revise' in unicode(q("title")))
+        self.assertTrue('Revise' in str(q("title")))
         test_file = StringIO('new content for the second slide deck')
         test_file.name = 'doesnotmatter.txt'
         r = self.client.post(url,dict(file=test_file,title='rename the presentation',apply_to_all=False))
@@ -1997,8 +1997,8 @@ class MaterialsTests(TestCase):
         self.assertEqual(session1.sessionpresentation_set.count(),1)
         self.assertEqual(session2.sessionpresentation_set.count(),2)
         sp = session2.sessionpresentation_set.get(order=2)
-        self.assertEqual(sp.rev,u'01')
-        self.assertEqual(sp.document.rev,u'01')
+        self.assertEqual(sp.rev,'01')
+        self.assertEqual(sp.document.rev,'01')
  
     def test_remove_sessionpresentation(self):
         session = SessionFactory(meeting__type_id='ietf')

@@ -1,6 +1,6 @@
-# Copyright The IETF Trust 2017, All Rights Reserved
+# Copyright The IETF Trust 2017-2019, All Rights Reserved
 
-from __future__ import unicode_literals
+
 
 from django.urls import reverse as urlreverse
 from django.http import HttpResponseRedirect

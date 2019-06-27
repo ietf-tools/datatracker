@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 import re
@@ -132,7 +132,7 @@ def api_submit(request):
                 requires_prev_authors_approval = Document.objects.filter(name=submission.name)
 
                 sent_to, desc, docDesc = send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval)
-                msg = u"Set submitter to \"%s\" and %s" % (submission.submitter, desc)
+                msg = "Set submitter to \"%s\" and %s" % (submission.submitter, desc)
                 create_submission_event(request, submission, msg)
                 docevent_from_submission(request, submission, docDesc, who="(System)")
 
@@ -229,7 +229,7 @@ def submission_status(request, submission_id, access_token=None):
     if submission.state_id == "cancel":
         message = ('error', 'This submission has been cancelled, modification is no longer possible.')
     elif submission.state_id == "auth":
-        message = ('success', u'The submission is pending email authentication. An email has been sent to: %s' % ", ".join(confirmation_list))
+        message = ('success', 'The submission is pending email authentication. An email has been sent to: %s' % ", ".join(confirmation_list))
     elif submission.state_id == "grp-appr":
         message = ('success', 'The submission is pending approval by the group chairs.')
     elif submission.state_id == "aut-appr":
@@ -262,12 +262,12 @@ def submission_status(request, submission_id, access_token=None):
                     # go directly to posting submission
                     docevent_from_submission(request, submission, desc="Uploaded new revision")
 
-                    desc = u"Secretariat manually posting. Approvals already received"
+                    desc = "Secretariat manually posting. Approvals already received"
                     post_submission(request, submission, desc)
                     create_submission_event(request, submission, desc)
                 else:
                     sent_to, desc, docDesc = send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval)
-                    msg = u"Set submitter to \"%s\", replaces to %s and %s" % (
+                    msg = "Set submitter to \"%s\", replaces to %s and %s" % (
                         submission.submitter,
                         ", ".join(prettify_std_name(r.name) for r in replaces) if replaces else "(none)",
                         desc)
@@ -288,9 +288,9 @@ def submission_status(request, submission_id, access_token=None):
         elif action == "sendfullurl" and submission.state_id not in ("cancel", "posted"):
             sent_to = send_full_url(request, submission)
 
-            message = ('success', u'An email has been sent with the full access URL to: %s' % u",".join(confirmation_list))
+            message = ('success', 'An email has been sent with the full access URL to: %s' % ",".join(confirmation_list))
 
-            create_submission_event(request, submission, u"Sent full access URL to: %s" % u", ".join(sent_to))
+            create_submission_event(request, submission, "Sent full access URL to: %s" % ", ".join(sent_to))
 
         elif action == "cancel" and submission.state.next_states.filter(slug="cancel"):
             if not can_cancel:
@@ -418,7 +418,7 @@ def edit_submission(request, submission_id, access_token=None):
             ]
 
             if changed_fields:
-                desc = u"Edited %s and sent request for manual post" % u", ".join(changed_fields)
+                desc = "Edited %s and sent request for manual post" % ", ".join(changed_fields)
             else:
                 desc = "Sent request for manual post"
 

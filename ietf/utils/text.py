@@ -1,4 +1,5 @@
-from __future__ import unicode_literals
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+
 
 import re
 import textwrap
@@ -11,7 +12,7 @@ from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
-from texescape import init as texescape_init, tex_escape_map
+from .texescape import init as texescape_init, tex_escape_map
 
 @keep_lazy(six.text_type)
 def xslugify(value):
@@ -57,7 +58,7 @@ def fill(text, width):
 def wordwrap(text, width=80):
     """Wraps long lines without loosing the formatting and indentation
        of short lines"""
-    if not isinstance(text, (types.StringType,types.UnicodeType)):
+    if not isinstance(text, (bytes,str)):
         return text
     width = int(width)                  # ensure we have an int, if this is used as a template filter
     text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings
@@ -173,7 +174,7 @@ def text_to_dict(t):
 def dict_to_text(d):
     "Convert a dictionary to RFC2822-formatted text"
     t = ""
-    for k, v in d.items():
+    for k, v in list(d.items()):
         t += "%s: %s\n" % (k, v)
     return t
 

@@ -151,7 +151,7 @@ class ReviewTests(TestCase):
                     urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })]:
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            self.assertIn(unicode(reviewer), unicontent(r))
+            self.assertIn(str(reviewer), unicontent(r))
             self.assertIn(review_req1.doc.name, unicontent(r))
             # without a login, reason for being unavailable should not be seen
             self.assertNotIn("Availability", unicontent(r))
@@ -178,7 +178,7 @@ class ReviewTests(TestCase):
     def test_manage_review_requests(self):
         group = ReviewTeamFactory()
         RoleFactory(name_id='reviewer',group=group,person__user__username='reviewer').person
-        marsperson = RoleFactory(name_id='reviewer',group=group,person=PersonFactory(name=u"Mars Anders Chairman",user__username='marschairman')).person
+        marsperson = RoleFactory(name_id='reviewer',group=group,person=PersonFactory(name="Mars Anders Chairman",user__username='marschairman')).person
         review_req1 = ReviewRequestFactory(doc__pages=2,doc__shepherd=marsperson.email(),team=group)
         review_req2 = ReviewRequestFactory(team=group)
         review_req3 = ReviewRequestFactory(team=group)
@@ -188,10 +188,10 @@ class ReviewTests(TestCase):
         login_testing_unauthorized(self, "secretary", unassigned_url)
 
         # Need one more person in review team one so we can test incrementing skip_count without immediately decrementing it
-        another_reviewer = PersonFactory.create(name = u"Extra TestReviewer") # needs to be lexically greater than the exsting one
+        another_reviewer = PersonFactory.create(name = "Extra TestReviewer") # needs to be lexically greater than the exsting one
         another_reviewer.role_set.create(name_id='reviewer', email=another_reviewer.email(), group=review_req1.team)
         ReviewerSettingsFactory(team=review_req3.team, person = another_reviewer)
-        yet_another_reviewer = PersonFactory.create(name = u"YetAnotherExtra TestReviewer") # needs to be lexically greater than the exsting one
+        yet_another_reviewer = PersonFactory.create(name = "YetAnotherExtra TestReviewer") # needs to be lexically greater than the exsting one
         yet_another_reviewer.role_set.create(name_id='reviewer', email=yet_another_reviewer.email(), group=review_req1.team)
         ReviewerSettingsFactory(team=review_req3.team, person = yet_another_reviewer)
 
@@ -262,7 +262,7 @@ class ReviewTests(TestCase):
         q = PyQuery(r.content)
         generated_text = q("[name=body]").text()
         self.assertTrue(review_req1.doc.name in generated_text)
-        self.assertTrue(unicode(Person.objects.get(user__username="marschairman")) in generated_text)
+        self.assertTrue(str(Person.objects.get(user__username="marschairman")) in generated_text)
 
         empty_outbox()
         r = self.client.post(url, {

@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import os
 import datetime
@@ -771,7 +771,7 @@ def search_mail_archive(request, name, assignment_id):
     except KeyError as e:
         res["error"] = "No results found"
     except Exception as e:
-        res["error"] = "Retrieval from mail archive failed: %s" % unicode(e)
+        res["error"] = "Retrieval from mail archive failed: %s" % str(e)
         # raise # useful when debugging
 
     return JsonResponse(res)

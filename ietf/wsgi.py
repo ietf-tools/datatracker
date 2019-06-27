@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 """
 WSGI configuration for the datatracker.
 
@@ -50,7 +51,7 @@ syslog.openlog("datatracker", syslog.LOG_PID, syslog.LOG_USER)
 virtualenv_activation = os.path.join(path, "env", "bin", "activate_this.py")
 if os.path.exists(virtualenv_activation):
     syslog.syslog("Starting datatracker wsgi with virtualenv %s" % os.path.dirname(os.path.dirname(virtualenv_activation)))
-    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
+    exec(compile(open(virtualenv_activation, "rb").read(), virtualenv_activation, 'exec'), dict(__file__=virtualenv_activation))
 else:
     syslog.syslog("Starting datatracker wsgi without virtualenv")
 

@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 '''
 Functions to aid unit testing
 '''
@@ -9,7 +10,7 @@ def reset():
     me = Person.objects.get(name='Ryan Cross')
     me.role_set.all().delete()
     Role.objects.create(person=me,email_id='rcross@amsl.com',name_id='secr',group_id=4)
-    print me.role_set.all()
+    print(me.role_set.all())
     
 def copy_roles(person):
     '''Copy the roles of person'''

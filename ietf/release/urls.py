@@ -1,6 +1,6 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2015-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 from django.views.generic import TemplateView
 

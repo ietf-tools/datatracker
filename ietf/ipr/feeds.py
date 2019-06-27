@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 
 from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Atom1Feed
@@ -22,7 +22,7 @@ class LatestIprDisclosuresFeed(Feed):
         return mark_safe(item.title)
 
     def item_description(self, item):
-        return unicode(item.title)
+        return str(item.title)
         
     def item_pubdate(self, item):
         return item.time

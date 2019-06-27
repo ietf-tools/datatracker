@@ -1,5 +1,5 @@
-# Copyright The IETF Trust 2018, All Rights Reserved
-from __future__ import unicode_literals
+# Copyright The IETF Trust 2018-2019, All Rights Reserved
+
 
 import datetime
 

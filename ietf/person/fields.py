@@ -1,8 +1,9 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 import json
 import six
 
 from collections import Counter
-from urllib import urlencode
+from urllib.parse import urlencode
 
 from django.utils.html import escape
 from django import forms
@@ -14,7 +15,7 @@ from ietf.person.models import Email, Person
 
 def select2_id_name_json(objs):
     def format_email(e):
-        return escape(u"%s <%s>" % (e.person.name, e.address))
+        return escape("%s <%s>" % (e.person.name, e.address))
     def format_person(p):
         if p.name_count > 1:
             return escape('%s (%s)' % (p.name,p.email().address if p.email() else 'no email address'))
@@ -73,7 +74,7 @@ class SearchablePersonsField(forms.CharField):
     def prepare_value(self, value):
         if not value:
             value = ""
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             pks = self.parse_select2_value(value)
             if self.model == Person:
                 value = self.model.objects.filter(pk__in=pks)
@@ -95,7 +96,7 @@ class SearchablePersonsField(forms.CharField):
         if query_args:    
             self.widget.attrs["data-ajax-url"] += "?%s" % urlencode(query_args)
 
-        return u",".join(str(p.pk) for p in value)
+        return ",".join(str(p.pk) for p in value)
 
     def clean(self, value):
         value = super(SearchablePersonsField, self).clean(value)
@@ -112,10 +113,10 @@ class SearchablePersonsField(forms.CharField):
         found_pks = [ six.text_type(o.pk) for o in objs]
         failed_pks = [x for x in pks if x not in found_pks]
         if failed_pks:
-            raise forms.ValidationError(u"Could not recognize the following {model_name}s: {pks}. You can only input {model_name}s already registered in the Datatracker.".format(pks=", ".join(failed_pks), model_name=self.model.__name__.lower()))
+            raise forms.ValidationError("Could not recognize the following {model_name}s: {pks}. You can only input {model_name}s already registered in the Datatracker.".format(pks=", ".join(failed_pks), model_name=self.model.__name__.lower()))
 
         if self.max_entries != None and len(objs) > self.max_entries:
-            raise forms.ValidationError(u"You can select at most %s entries only." % self.max_entries)
+            raise forms.ValidationError("You can select at most %s entries only." % self.max_entries)
 
         return objs
 
@@ -162,9 +163,9 @@ class PersonEmailChoiceField(forms.ModelChoiceField):
 
     def label_from_instance(self, email):
         if self.label_with == "person":
-            return unicode(email.person)
+            return str(email.person)
         elif self.label_with == "email":
             return email.address
         else:
-            return u"{} <{}>".format(email.person, email.address)
+            return "{} <{}>".format(email.person, email.address)
 

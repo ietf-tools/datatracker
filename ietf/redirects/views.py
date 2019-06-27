@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 
 from django.http import HttpResponsePermanentRedirect, Http404, BadHeaderError
 from django.shortcuts import get_object_or_404
@@ -28,7 +28,7 @@ def redirect(request, path="", script=""):
 	if len(fc) > 1:
 	    if rparam.get('command') != fc[1]:
 		continue
-	if rparam.has_key(fc[0]):
+	if fc[0] in rparam:
 	    remove_args.append(fc[0])
 	    num = re.match('(\d+)', rparam[fc[0]])
 	    if (num and int(num.group(1))) or (num is None):
@@ -84,7 +84,7 @@ def redirect(request, path="", script=""):
     get = request.GET.copy()
     remove_args += re.findall(r'%\(([^)]+)\)', rest)
     for arg in remove_args:
-	if get.has_key(arg):
+	if arg in get:
 	    get.pop(arg)
     if get:
 	url += '?' + get.urlencode()

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 
 import re
 import six
@@ -19,7 +19,7 @@ class MultiEmailField(forms.Field):
         if not value:
             return []
 
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             values = value.split(',')
             return [ x.strip() for x in values if x.strip() ]
         else:
@@ -72,7 +72,7 @@ class DatepickerDateField(forms.DateField):
         self.widget.attrs["data-date-format"] = date_format
         if "placeholder" not in self.widget.attrs:
             self.widget.attrs["placeholder"] = date_format
-        for k, v in picker_settings.iteritems():
+        for k, v in picker_settings.items():
             self.widget.attrs["data-date-%s" % k] = v
 
 

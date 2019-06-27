@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
 # Taken from http://code.google.com/p/soclone/source/browse/trunk/soclone/utils/html.py
 
 """Utilities for working with HTML."""
@@ -54,7 +55,7 @@ class Cleaner(lxml.html.clean.Cleaner):
     # Copied from lxml 4.2.0 and modified to insert charset meta:
     def clean_html(self, html):
         result_type = type(html)
-        if isinstance(html, basestring):
+        if isinstance(html, str):
             doc = lxml.html.fromstring(html)
         else:
             doc = copy.deepcopy(html)

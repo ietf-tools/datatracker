@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
 # Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -42,7 +43,7 @@ from ietf.utils.text import wordwrap
 def markup_ascii(content, width=None):
     log.unreachable('2017-12-08')
     if six.PY2:
-        assert isinstance(content, basestring)
+        assert isinstance(content, str)
         # at this point, "content" is normal string
         # fix most common non-ASCII characters
         t1 = string.maketrans("\x91\x92\x93\x94\x95\x96\x97\xc6\xe8\xe9", "\'\'\"\"o--\'ee")

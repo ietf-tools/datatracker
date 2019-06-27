@@ -30,7 +30,7 @@ def has_role(user, role_names, *args, **kwargs):
     """Determines whether user has any of the given standard roles
     given. Role names must be a list or, in case of a single value, a
     string."""
-    if isinstance(role_names, str) or isinstance(role_names, unicode):
+    if isinstance(role_names, str) or isinstance(role_names, str):
         role_names = [ role_names ]
     
     if not user or not user.is_authenticated:

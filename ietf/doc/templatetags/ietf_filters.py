@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 
 import bleach
 import datetime
@@ -64,7 +64,7 @@ def parse_email_list(value):
 
 
     """
-    if value and isinstance(value, (types.StringType,types.UnicodeType)): # testing for 'value' being true isn't necessary; it's a fast-out route
+    if value and isinstance(value, (bytes,str)): # testing for 'value' being true isn't necessary; it's a fast-out route
         addrs = re.split(", ?", value)
         ret = []
         for addr in addrs:
@@ -109,7 +109,7 @@ def make_one_per_line(value):
     >>> make_one_per_line(None)
 
     """
-    if value and isinstance(value, (types.StringType,types.UnicodeType)):
+    if value and isinstance(value, (bytes,str)):
         return re.sub(", ?", "\n", value)
     else:
         return value
@@ -145,7 +145,7 @@ def sanitize(value):
 @register.filter(name='bracket')
 def square_brackets(value):
     """Adds square brackets around text."""
-    if isinstance(value, (types.StringType,types.UnicodeType)):
+    if isinstance(value, (bytes,str)):
 	if value == "":
 	     value = " "
         return "[ %s ]" % value
@@ -195,7 +195,7 @@ def rfcnospace(string):
 @register.filter
 def prettystdname(string):
     from ietf.doc.utils import prettify_std_name
-    return prettify_std_name(unicode(string or ""))
+    return prettify_std_name(str(string or ""))
 
 @register.filter(name='rfcurl')
 def rfclink(string):
@@ -338,7 +338,7 @@ def expires_soon(x,request):
 
 @register.filter(name='startswith')
 def startswith(x, y):
-    return unicode(x).startswith(y)
+    return str(x).startswith(y)
 
 @register.filter
 def has_role(user, role_names):
@@ -377,14 +377,14 @@ def format_snippet(text, trunc_words=25):
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_fragment(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
-        return mark_safe(u'<div class="snippet">%s<button class="btn btn-xs btn-default show-all"><span class="fa fa-caret-down"></span></button></div><div class="hidden full">%s</div>' % (snippet, full))
+        return mark_safe('<div class="snippet">%s<button class="btn btn-xs btn-default show-all"><span class="fa fa-caret-down"></span></button></div><div class="hidden full">%s</div>' % (snippet, full))
     return full
 
 @register.simple_tag
 def doc_edit_button(url_name, *args, **kwargs):
     """Given URL name/args/kwargs, looks up the URL just like "url" tag and returns a properly formatted button for the document material tables."""
     from django.urls import reverse as urlreverse
-    return mark_safe(u'<a class="btn btn-default btn-xs" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
+    return mark_safe('<a class="btn btn-default btn-xs" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
 
 @register.filter
 def textify(text):
@@ -419,7 +419,7 @@ if __name__ == "__main__":
     _test()
 
 @register.filter
-def plural(text, seq, arg=u's'):
+def plural(text, seq, arg='s'):
     "Similar to pluralize, but looks at the text, too"
     from django.template.defaultfilters import pluralize
     if text.endswith('s'):
@@ -505,9 +505,9 @@ def nbsp(value):
 @register.filter()
 def comma_separated_list(seq, end_word="and"):
     if len(seq) < 2:
-        return u"".join(seq)
+        return "".join(seq)
     else:
-        return u", ".join(seq[:-1]) + u" %s %s"%(end_word, seq[-1])
+        return ", ".join(seq[:-1]) + " %s %s"%(end_word, seq[-1])
 
 @register.filter()
 def zaptmp(s):

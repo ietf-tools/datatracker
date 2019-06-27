@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
 
 import sys
 import time
@@ -148,7 +148,7 @@ class SlideReorderTests(StaticLiveServerTestCase):
 
         time.sleep(0.1) # The API that modifies the database runs async
         names=self.session.sessionpresentation_set.values_list('document__name',flat=True) 
-        self.assertEqual(list(names),[u'one',u'three',u'two'])
+        self.assertEqual(list(names),['one','three','two'])
 
 # The following are useful debugging tools
 

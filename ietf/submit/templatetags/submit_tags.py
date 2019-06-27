@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
 import os
 
 from django import template
@@ -26,7 +27,7 @@ def show_submission_files(context, submission):
 @register.filter
 def two_pages_decorated_with_errors(submission, errors):
     pages = submission.first_two_pages or ''
-    if 'rev' not in errors.keys():
+    if 'rev' not in list(errors.keys()):
         return mark_safe('<pre>%s</pre>' % escape(pages))
     result = '<pre>\n'
     for line in pages.split('\n'):

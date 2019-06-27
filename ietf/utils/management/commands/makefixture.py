@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 # From https://github.com/ericholscher/django-test-utils/blob/master/test_utils/management/commands/makefixture.py
 """
 "Make fixture" command.
@@ -101,7 +102,7 @@ class Command(LabelCommand):
 
         objects = []
         for model, slice in models:
-            if isinstance(slice, basestring) and slice:
+            if isinstance(slice, str) and slice:
                 objects.extend(model._default_manager.filter(pk__exact=slice))
             elif not slice or type(slice) is list:
                 items = model._default_manager.all()
@@ -132,7 +133,7 @@ class Command(LabelCommand):
                 related = []
                 for obj in objects:
                     if DEBUG:
-                        print "Adding %s[%s]" % (model_name(obj), obj.pk)
+                        print("Adding %s[%s]" % (model_name(obj), obj.pk))
                     # follow forward relation fields
                     for f in obj.__class__._meta.fields + obj.__class__._meta.many_to_many:
                         if isinstance(f, ForeignKey):
@@ -150,7 +151,7 @@ class Command(LabelCommand):
 
         try:
             return serializers.serialize(format, all, indent=indent)
-        except Exception, e:
+        except Exception as e:
             if show_traceback:
                 raise
             raise CommandError("Unable to serialize database: %s" % e)

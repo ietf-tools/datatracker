@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -15,12 +15,12 @@ from ietf.utils.models import ForeignKey
 
 # maps (previous state id, new state id) to event type id
 STATE_EVENT_MAPPING = {
-    (u'pending','approved'):'approved',
-    (u'pending','dead'):'killed',
-    (u'pending','posted'):'posted',
-    (u'approved','posted'):'posted',
-    (u'dead','pending'):'resurrected',
-    (u'pending','pending'):'submitted'
+    ('pending','approved'):'approved',
+    ('pending','dead'):'killed',
+    ('pending','posted'):'posted',
+    ('approved','posted'):'posted',
+    ('dead','pending'):'resurrected',
+    ('pending','pending'):'submitted'
 }
 
 
@@ -50,7 +50,7 @@ class LiaisonStatement(models.Model):
         
 
     def __unicode__(self):
-        return self.title or u"<no title>"
+        return self.title or "<no title>"
 
     def change_state(self,state_id=None,person=None):
         '''Helper function to change state of liaison statement and create appropriate
@@ -213,7 +213,7 @@ class RelatedLiaisonStatement(models.Model):
     relationship = ForeignKey(DocRelationshipName)
 
     def __unicode__(self):
-        return u"%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
+        return "%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
 
 
 class LiaisonStatementGroupContacts(models.Model):
@@ -222,7 +222,7 @@ class LiaisonStatementGroupContacts(models.Model):
     cc_contacts = models.CharField(max_length=255,blank=True)
 
     def __unicode__(self):
-        return u"%s" % self.group.name
+        return "%s" % self.group.name
 
 
 class LiaisonStatementEvent(models.Model):
@@ -233,7 +233,7 @@ class LiaisonStatementEvent(models.Model):
     desc = models.TextField()
 
     def __unicode__(self):
-        return u"%s %s by %s at %s" % (self.statement.title, self.type.slug, self.by.plain_name(), self.time)
+        return "%s %s by %s at %s" % (self.statement.title, self.type.slug, self.by.plain_name(), self.time)
 
     class Meta:
         ordering = ['-time', '-id']

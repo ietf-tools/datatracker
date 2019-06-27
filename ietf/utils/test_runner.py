@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -93,14 +93,14 @@ def safe_create_test_db(self, verbosity, *args, **kwargs):
     global test_database_name, old_create
     keepdb = kwargs.get('keepdb', False)
     if not keepdb:
-        print "     Creating test database..."
+        print("     Creating test database...")
         if settings.DATABASES["default"]["ENGINE"] == 'django.db.backends.mysql':
             settings.DATABASES["default"]["OPTIONS"] = settings.DATABASE_TEST_OPTIONS
-            print "     Using OPTIONS: %s" % settings.DATABASES["default"]["OPTIONS"]
+            print("     Using OPTIONS: %s" % settings.DATABASES["default"]["OPTIONS"])
     test_database_name = old_create(self, 0, *args, **kwargs)
 
     if settings.GLOBAL_TEST_FIXTURES:
-        print "     Loading global test fixtures: %s" % ", ".join(settings.GLOBAL_TEST_FIXTURES)
+        print("     Loading global test fixtures: %s" % ", ".join(settings.GLOBAL_TEST_FIXTURES))
         loadable = [f for f in settings.GLOBAL_TEST_FIXTURES if "." not in f]
         call_command('loaddata', *loadable, verbosity=int(verbosity)-1, commit=False, database="default")
 
@@ -120,7 +120,7 @@ def safe_destroy_test_db(*args, **kwargs):
     keepdb = kwargs.get('keepdb', False)
     if not keepdb:
         if settings.DATABASES["default"]["NAME"] != test_database_name:
-            print '     NOT SAFE; Changing settings.DATABASES["default"]["NAME"] from %s to %s' % (settings.DATABASES["default"]["NAME"], test_database_name)
+            print('     NOT SAFE; Changing settings.DATABASES["default"]["NAME"] from %s to %s' % (settings.DATABASES["default"]["NAME"], test_database_name))
             settings.DATABASES["default"]["NAME"] = test_database_name
     return old_destroy(*args, **kwargs)
 
@@ -296,11 +296,11 @@ class CoverageTest(unittest.TestCase):
             latest_coverage_version = self.runner.coverage_master["version"]
 
             master_data = self.runner.coverage_master[latest_coverage_version][test]
-            master_missing = [ k for k,v in master_data["covered"].items() if not v ]
+            master_missing = [ k for k,v in list(master_data["covered"].items()) if not v ]
             master_coverage = master_data["coverage"]
 
             test_data = self.runner.coverage_data[test]
-            test_missing = [ k for k,v in test_data["covered"].items() if not v ]
+            test_missing = [ k for k,v in list(test_data["covered"].items()) if not v ]
             test_coverage = test_data["coverage"]
 
             # Assert coverage failure only if we're running the full test suite -- if we're
@@ -564,7 +564,7 @@ class IetfTestRunner(DiscoverRunner):
                 self.code_coverage_checker.start()
 
         if settings.SITE_ID != 1:
-            print "     Changing SITE_ID to '1' during testing."
+            print("     Changing SITE_ID to '1' during testing.")
             settings.SITE_ID = 1
 
         if settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] != '':
@@ -572,7 +572,7 @@ class IetfTestRunner(DiscoverRunner):
             settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] = ''
 
         if settings.INTERNAL_IPS:
-            print "     Changing INTERNAL_IPS to '[]' during testing."
+            print("     Changing INTERNAL_IPS to '[]' during testing.")
             settings.INTERNAL_IPS = []
 
         assert not settings.IDTRACKER_BASE_URL.endswith('/')
@@ -586,7 +586,7 @@ class IetfTestRunner(DiscoverRunner):
                 ietf.utils.mail.SMTP_ADDR['port'] = base + offset 
                 self.smtpd_driver = SMTPTestServerDriver((ietf.utils.mail.SMTP_ADDR['ip4'],ietf.utils.mail.SMTP_ADDR['port']),None) 
                 self.smtpd_driver.start()
-                print("     Running an SMTP test server on %(ip4)s:%(port)s to catch outgoing email." % ietf.utils.mail.SMTP_ADDR)
+                print(("     Running an SMTP test server on %(ip4)s:%(port)s to catch outgoing email." % ietf.utils.mail.SMTP_ADDR))
                 break
             except socket.error:
                 pass
@@ -594,9 +594,9 @@ class IetfTestRunner(DiscoverRunner):
         maybe_create_svn_symlinks(settings)
 
         if os.path.exists(settings.UTILS_TEST_RANDOM_STATE_FILE):
-            print "     Loading factory-boy random state from %s" % settings.UTILS_TEST_RANDOM_STATE_FILE
+            print("     Loading factory-boy random state from %s" % settings.UTILS_TEST_RANDOM_STATE_FILE)
         else:
-            print "     Saving factory-boy random state to %s" % settings.UTILS_TEST_RANDOM_STATE_FILE
+            print("     Saving factory-boy random state to %s" % settings.UTILS_TEST_RANDOM_STATE_FILE)
             with open(settings.UTILS_TEST_RANDOM_STATE_FILE, 'w') as f:
                 s = factory.random.get_random_state()
                 json.dump(s, f)
@@ -709,7 +709,7 @@ class IetfTestRunner(DiscoverRunner):
             if self.run_full_test_suite:
                 print("Test coverage data:")
             else:
-                print("Test coverage for this test run across the related app%s (%s):" % (("s" if len(self.test_apps)>1 else ""), ", ".join(self.test_apps)))
+                print(("Test coverage for this test run across the related app%s (%s):" % (("s" if len(self.test_apps)>1 else ""), ", ".join(self.test_apps))))
             for test in ["template", "url", "code"]:
                 latest_coverage_version = self.coverage_master["version"]
 
@@ -724,19 +724,19 @@ class IetfTestRunner(DiscoverRunner):
                 test_coverage = test_data["coverage"]
 
                 if self.run_full_test_suite:
-                    print("      %8s coverage: %6.2f%%  (%s: %6.2f%%)" %
-                        (test.capitalize(), test_coverage*100, latest_coverage_version, master_coverage*100, ))
+                    print(("      %8s coverage: %6.2f%%  (%s: %6.2f%%)" %
+                        (test.capitalize(), test_coverage*100, latest_coverage_version, master_coverage*100, )))
                 else:
-                    print("      %8s coverage: %6.2f%%" %
-                        (test.capitalize(), test_coverage*100, ))
+                    print(("      %8s coverage: %6.2f%%" %
+                        (test.capitalize(), test_coverage*100, )))
 
-            print("""
+            print(("""
                 Per-file code and template coverage and per-url-pattern url coverage data
                 for the latest test run has been written to %s.
 
                 Per-statement code coverage data has been written to '.coverage', readable
                 by the 'coverage' program.
-                """.replace("    ","") % (settings.TEST_COVERAGE_LATEST_FILE))
+                """.replace("    ","") % (settings.TEST_COVERAGE_LATEST_FILE)))
 
         save_test_results(failures, test_labels)
 

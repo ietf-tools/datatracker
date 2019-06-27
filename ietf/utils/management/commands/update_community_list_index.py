@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 
 from django.core.management.base import BaseCommand
@@ -11,7 +11,7 @@ from ietf.community.models import SearchRule
 from ietf.community.utils import reset_name_contains_index_for_rule
 
 class Command(BaseCommand):
-    help = (u"""
+    help = ("""
         Update the index tables for stored regex-based document search rules.
         """)
 

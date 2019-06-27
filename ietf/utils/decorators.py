@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 
 import datetime
 
@@ -79,7 +79,7 @@ def require_api_key(f, request, *args, **kwargs):
 def _memoize(func, self, *args, **kwargs):
     ''''Memoize wrapper for instance methouds.  Use @lru_cache for functions.'''
     if kwargs:  # frozenset is used to ensure hashability
-        key = args, frozenset(kwargs.items())
+        key = args, frozenset(list(kwargs.items()))
     else:
         key = args
     # instance method, set up cache if needed

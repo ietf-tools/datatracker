@@ -392,7 +392,7 @@ def clean_helper(form, formtype):
         new_relations = {}
         rfc_fields = {}
         status_fields={}
-        for k in sorted(form.data.iterkeys()):
+        for k in sorted(form.data.keys()):
             v = form.data[k]
             if k.startswith('new_relation_row'):
                 if re.match('\d{1,4}',v):
@@ -634,7 +634,7 @@ def generate_last_call_text(request, doc):
     e.doc = doc
     e.rev = doc.rev
     e.desc = 'Last call announcement was generated'
-    e.text = unicode(new_text)
+    e.text = str(new_text)
     e.save()
 
     return e 

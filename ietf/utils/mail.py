@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 
 import copy
 import datetime
@@ -49,11 +49,11 @@ def empty_outbox():
     outbox[:] = []
 
 def add_headers(msg):
-    if not(msg.has_key('Message-ID')):
+    if not('Message-ID' in msg):
 	msg['Message-ID'] = make_msgid('idtracker')
-    if not(msg.has_key('Date')):
+    if not('Date' in msg):
 	msg['Date'] = formatdate(time.time(), True)
-    if not(msg.has_key('From')):
+    if not('From' in msg):
 	msg['From'] = settings.DEFAULT_FROM_EMAIL
     return msg
 
@@ -90,7 +90,7 @@ def send_smtp(msg, bcc=None):
         addrlist += [bcc]
     to = [addr for name, addr in getaddresses(addrlist) if ( addr != '' and not addr.startswith('unknown-email-') )]
     if not to:
-        log(u"No addressees for email from '%s', subject '%s'.  Nothing sent." % (frm, msg.get('Subject', '[no subject]')))
+        log("No addressees for email from '%s', subject '%s'.  Nothing sent." % (frm, msg.get('Subject', '[no subject]')))
     else:
         if test_mode:
             outbox.append(msg)
@@ -118,7 +118,7 @@ def send_smtp(msg, bcc=None):
                 raise SMTPSomeRefusedRecipients(message="%d addresses were refused"%len(unhandled),original_msg=msg,refusals=unhandled)
         except Exception as e:
             # need to improve log message
-            log(u"Exception while trying to send email from '%s' to %s subject '%s'" % (frm, to, msg.get('Subject', '[no subject]')))
+            log("Exception while trying to send email from '%s' to %s subject '%s'" % (frm, to, msg.get('Subject', '[no subject]')))
             if isinstance(e, smtplib.SMTPException):
                 e.original_msg=msg
                 raise 
@@ -129,8 +129,8 @@ def send_smtp(msg, bcc=None):
                 server.quit()
             except smtplib.SMTPServerDisconnected:
                 pass
-        subj = msg.get('Subject', u'[no subject]')
-        log(u"sent email from '%s' to %s id %s subject '%s'" % (frm, to, msg.get('Message-ID', u''), subj))
+        subj = msg.get('Subject', '[no subject]')
+        log("sent email from '%s' to %s id %s subject '%s'" % (frm, to, msg.get('Message-ID', ''), subj))
     
 def copy_email(msg, to, toUser=False, originalBcc=None):
     '''
@@ -178,7 +178,7 @@ def send_mail(request, to, frm, subject, template, context, *args, **kwargs):
     return send_mail_text(request, to, frm, subject, txt, *args, **kwargs)
 
 def encode_message(txt):
-    assert isinstance(txt, unicode)
+    assert isinstance(txt, str)
     return MIMEText(txt.encode('utf-8'), 'plain', 'UTF-8')
 
 def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=False, bcc=None, copy=True):
@@ -230,7 +230,7 @@ def parseaddr(addr):
     which case a 2-tuple of ('', '') is returned.
 
     """
-    addr = u''.join( [ s.decode(m) if m else unicode(s) for (s,m) in decode_header(addr) ] )
+    addr = ''.join( [ s.decode(m) if m else str(s) for (s,m) in decode_header(addr) ] )
     name, addr = simple_parseaddr(addr)
     return name, addr
 
@@ -284,7 +284,7 @@ def condition_message(to, frm, subject, msg, cc, extra):
     msg['Auto-Submitted'] = "auto-generated"
     msg['Precedence'] = "bulk"
     if extra:
-	for k, v in extra.items():
+	for k, v in list(extra.items()):
             if v:
                 assertion('len(list(set(v))) == len(v)')
                 try:
@@ -332,7 +332,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     elif settings.SERVER_MODE == 'test':
 	if toUser:
 	    copy_email(msg, to, toUser=True, originalBcc=bcc)
-	elif request and request.COOKIES.has_key( 'testmailcc' ):
+	elif request and 'testmailcc' in request.COOKIES:
 	    copy_email(msg, request.COOKIES[ 'testmailcc' ],originalBcc=bcc)
     try:
 	copy_to = settings.EMAIL_COPY_TO
@@ -355,7 +355,7 @@ def parse_preformatted(preformatted, extra={}, override={}):
     msg = message_from_string(preformatted.encode("utf-8"))
     msg.set_charset('UTF-8')
 
-    for k, v in override.iteritems():
+    for k, v in override.items():
         if k in msg:
             del msg[k]
         if v:
@@ -368,7 +368,7 @@ def parse_preformatted(preformatted, extra={}, override={}):
     headers = copy.copy(msg)            # don't modify the message
     for key in ['To', 'From', 'Subject', 'Bcc']:
         del headers[key]
-    for k in headers.keys():
+    for k in list(headers.keys()):
         v = headers.get_all(k, [])
         if k in extra:
             ev = extra[k]
@@ -398,7 +398,7 @@ def parse_preformatted(preformatted, extra={}, override={}):
     bcc = msg['Bcc']
     del msg['Bcc']
 
-    for v in extra.values():
+    for v in list(extra.values()):
         assertion('len(list(set(v))) == len(v)')
     return (msg, extra, bcc)
 
@@ -427,7 +427,7 @@ def send_mail_message(request, message, extra={}):
 
 def exception_components(e):
     # See if it's a non-smtplib exception that we faked
-    if len(e.args)==1 and isinstance(e.args[0],dict) and e.args[0].has_key('really'):
+    if len(e.args)==1 and isinstance(e.args[0],dict) and 'really' in e.args[0]:
         orig = e.args[0]
         extype = orig['really']
         tb = orig['tb']

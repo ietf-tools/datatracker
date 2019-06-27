@@ -89,7 +89,7 @@ def all_id_txt():
                      last_field,
                     )
 
-    return u"\n".join(res) + "\n"
+    return "\n".join(res) + "\n"
 
 def file_types_for_drafts():
     """Look in the draft directory and return file types found as dict (name + rev -> [t1, t2, ...])."""
@@ -129,7 +129,7 @@ def all_id2_txt():
         else:
             l = authors[a.document.name]
         if a.email:
-            l.append(u'%s <%s>' % (a.person.plain_name().replace("@", ""), a.email.address.replace(",", "")))
+            l.append('%s <%s>' % (a.person.plain_name().replace("@", ""), a.email.address.replace(",", "")))
         else:
             l.append(a.person.plain_name())
 
@@ -191,7 +191,7 @@ def all_id2_txt():
                 area = d.group.parent.acronym
         fields.append(area)
         # 9 responsible AD name
-        fields.append(unicode(d.ad) if d.ad else "")
+        fields.append(str(d.ad) if d.ad else "")
         # 10
         fields.append(d.intended_std_level.name if d.intended_std_level else "")
         # 11
@@ -208,16 +208,16 @@ def all_id2_txt():
         # 13
         fields.append(clean_whitespace(d.title)) # FIXME: we should make sure this is okay in the database and in submit
         # 14
-        fields.append(u", ".join(authors.get(d.name, [])))
+        fields.append(", ".join(authors.get(d.name, [])))
         # 15
         fields.append(shepherds.get(d.shepherd_id, ""))
         # 16 Responsible AD name and email
         fields.append(ads.get(d.ad_id, ""))
 
         #
-        res.append(u"\t".join(fields))
+        res.append("\t".join(fields))
 
-    return render_to_string("idindex/all_id2.txt", {'data': u"\n".join(res) })
+    return render_to_string("idindex/all_id2.txt", {'data': "\n".join(res) })
 
 def active_drafts_index_by_group(extra_values=()):
     """Return active drafts grouped into their corresponding
@@ -258,7 +258,7 @@ def active_drafts_index_by_group(extra_values=()):
             d["authors"].append(a.person.plain_ascii()) # This should probably change to .plain_name() when non-ascii names are permitted
 
     # put docs into groups
-    for d in docs_dict.itervalues():
+    for d in docs_dict.values():
         group = groups_dict.get(d["group_id"])
         if not group:
             continue
@@ -268,7 +268,7 @@ def active_drafts_index_by_group(extra_values=()):
 
         group.active_drafts.append(d)
 
-    groups = [g for g in groups_dict.itervalues() if hasattr(g, "active_drafts")]
+    groups = [g for g in groups_dict.values() if hasattr(g, "active_drafts")]
     groups.sort(key=lambda g: g.acronym)
 
     fallback_time = datetime.datetime(1950, 1, 1)

@@ -468,7 +468,7 @@ def start_review_as_secretariat(request, name):
         notify_addresses = build_notify_addresses(doc_to_review)
         init = { 
                 "ad" : Role.objects.filter(group__acronym='ietf',name='chair')[0].person.id,
-                "notify" : u', '.join(notify_addresses),
+                "notify" : ', '.join(notify_addresses),
                }
         form = StartReviewForm(initial=init)
 
@@ -502,7 +502,7 @@ def start_review_as_stream_owner(request, name):
         notify_addresses = build_notify_addresses(doc_to_review)
         
         init = { 
-                "notify" : u', '.join(notify_addresses),
+                "notify" : ', '.join(notify_addresses),
                }
         form = SimpleStartReviewForm(initial=init)
 

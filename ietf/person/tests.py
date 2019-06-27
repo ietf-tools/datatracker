@@ -1,10 +1,11 @@
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import datetime
 import json
 from pyquery import PyQuery
-from StringIO import StringIO
+from io import StringIO
 from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
@@ -68,28 +69,28 @@ class PersonTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_name_methods(self):
-        person = PersonFactory(name=u"Dr. Jens F. Möller", )
+        person = PersonFactory(name="Dr. Jens F. Möller", )
 
-        self.assertEqual(person.name, u"Dr. Jens F. Möller" )
-        self.assertEqual(person.ascii_name(), u"Dr. Jens F. Moller" )
-        self.assertEqual(person.plain_name(), u"Jens Möller" )
-        self.assertEqual(person.plain_ascii(), u"Jens Moller" )
-        self.assertEqual(person.initials(), u"J. F.")
-        self.assertEqual(person.first_name(), u"Jens" )
-        self.assertEqual(person.last_name(), u"Möller" )
+        self.assertEqual(person.name, "Dr. Jens F. Möller" )
+        self.assertEqual(person.ascii_name(), "Dr. Jens F. Moller" )
+        self.assertEqual(person.plain_name(), "Jens Möller" )
+        self.assertEqual(person.plain_ascii(), "Jens Moller" )
+        self.assertEqual(person.initials(), "J. F.")
+        self.assertEqual(person.first_name(), "Jens" )
+        self.assertEqual(person.last_name(), "Möller" )
 
-        person = PersonFactory(name=u"吴建平")
+        person = PersonFactory(name="吴建平")
         # The following are probably incorrect because the given name should
         # be Jianping and the surname should be Wu ...
         # TODO: Figure out better handling for names with CJK characters.
         # Maybe use ietf.person.cjk.*
-        self.assertEqual(person.ascii_name(), u"Wu Jian Ping")
+        self.assertEqual(person.ascii_name(), "Wu Jian Ping")
 
     def test_duplicate_person_name(self):
         empty_outbox()
         p = PersonFactory(name="Föö Bär")
         PersonFactory(name=p.name)
-        self.assertTrue("possible duplicate" in unicode(outbox[0]["Subject"]).lower())
+        self.assertTrue("possible duplicate" in str(outbox[0]["Subject"]).lower())
 
     def test_merge(self):
         url = urlreverse("ietf.person.views.merge")

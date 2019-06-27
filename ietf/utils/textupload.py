@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 import re
 
 from django.core.exceptions import ValidationError
@@ -11,7 +12,7 @@ def get_cleaned_text_file_content(uploaded_file):
     django.core.exceptions.ValidationError exceptions."""
 
     if not uploaded_file:
-        return u""
+        return ""
 
     if uploaded_file.size and uploaded_file.size > 10 * 1000 * 1000:
         raise ValidationError("Text file too large (size %s)." % uploaded_file.size)

@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
 import re, datetime, os, shutil
 
 from django.conf import settings
@@ -140,8 +141,8 @@ def generate_ballot_writeup(request, doc):
     e.by = request.user.person
     e.doc = doc
     e.rev = doc.rev,
-    e.desc = u"Ballot writeup was generated"
-    e.text = unicode(render_to_string("doc/charter/ballot_writeup.txt"))
+    e.desc = "Ballot writeup was generated"
+    e.text = str(render_to_string("doc/charter/ballot_writeup.txt"))
 
     # caller is responsible for saving, if necessary
     return e

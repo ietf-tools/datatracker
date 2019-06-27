@@ -1,5 +1,5 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
-from __future__ import unicode_literals, print_function
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+
 
 import os
 import re
@@ -7,7 +7,7 @@ import sys
 from xym import xym
 import shutil
 import tempfile
-import StringIO
+import io
 
 from django.conf import settings
 
@@ -142,8 +142,8 @@ class DraftYangChecker(object):
                 # This places the yang models as files in workdir
                 saved_stdout = sys.stdout
                 saved_stderr = sys.stderr
-                sys.stdout = StringIO.StringIO()
-                sys.stderr = StringIO.StringIO()
+                sys.stdout = io.StringIO()
+                sys.stderr = io.StringIO()
                 extractor.extract_yang_model(file.readlines())
                 model_list = extractor.get_extracted_models(False, True)
                 out = sys.stdout.getvalue()

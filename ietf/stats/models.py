@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2017, All Rights Reserved
+# Copyright The IETF Trust 2017-2019, All Rights Reserved
 
 from django.db import models
 
@@ -18,7 +18,7 @@ class AffiliationAlias(models.Model):
     name = models.CharField(max_length=255)
 
     def __unicode__(self):
-        return u"{} -> {}".format(self.alias, self.name)
+        return "{} -> {}".format(self.alias, self.name)
 
     def save(self, *args, **kwargs):
         self.alias = self.alias.lower()
@@ -43,7 +43,7 @@ class CountryAlias(models.Model):
     country = ForeignKey(CountryName, max_length=255)
 
     def __unicode__(self):
-        return u"{} -> {}".format(self.alias, self.country.name)
+        return "{} -> {}".format(self.alias, self.country.name)
 
     class Meta:
         verbose_name_plural = "country aliases"
@@ -59,4 +59,4 @@ class MeetingRegistration(models.Model):
     email =  models.EmailField(blank=True, null=True)
     
     def __unicode__(self):
-        return u"{} {}".format(self.first_name, self.last_name)
+        return "{} {}".format(self.first_name, self.last_name)

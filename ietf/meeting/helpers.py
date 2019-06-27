@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 
 import datetime
 import os
@@ -288,13 +288,13 @@ def agenda_permissions(meeting, schedule, user):
     return cansee, canedit, secretariat
 
 def session_constraint_expire(request,session):
-    from ajax import session_constraints
+    from .ajax import session_constraints
     path = reverse(session_constraints, args=[session.meeting.number, session.pk])
     temp_request = HttpRequest()
     temp_request.path = path
     temp_request.META['HTTP_HOST'] = request.META['HTTP_HOST']
     key = get_cache_key(temp_request)
-    if key is not None and cache.has_key(key):
+    if key is not None and key in cache:
         cache.delete(key)
 
 # -------------------------------------------------

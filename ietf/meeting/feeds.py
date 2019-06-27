@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 import os
 
 from django.contrib.syndication.views import Feed
@@ -33,7 +34,7 @@ class LatestMeetingMaterialFeed(Feed):
         return "Meeting Materials Activity"
 
     def item_title(self, item):
-        return u"%s: %s" % (item["group_acronym"], escape(item["title"]))
+        return "%s: %s" % (item["group_acronym"], escape(item["title"]))
 
     def item_description(self, item):
         return ""

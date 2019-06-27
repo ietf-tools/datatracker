@@ -259,7 +259,7 @@ def authors(request, id):
 
             authors = draft.documentauthor_set.all()
             if authors:
-                order = authors.aggregate(Max('order')).values()[0] + 1
+                order = list(authors.aggregate(Max('order')).values())[0] + 1
             else:
                 order = 1
             DocumentAuthor.objects.create(document=draft, person=person, email=email, affiliation=affiliation, country=country, order=order)
@@ -418,7 +418,7 @@ def email(request, id):
     # other problems with get_email_initial
     try:
         form = EmailForm(initial=get_email_initial(draft,action=action,input=data))
-    except Exception, e:
+    except Exception as e:
         return render(request, 'drafts/error.html', { 'error': e},)
 
     return render(request, 'drafts/email.html', {

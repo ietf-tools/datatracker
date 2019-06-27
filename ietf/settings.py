@@ -1058,7 +1058,7 @@ for app in INSTALLED_APPS:
     if app.startswith('ietf'):
         app_settings_file = os.path.join(BASE_DIR, '../', app.replace('.', os.sep), "settings.py")
         if os.path.exists(app_settings_file):
-            exec "from %s import *" % (app+".settings")
+            exec("from %s import *" % (app+".settings"))
 
 # Add DEV_APPS to INSTALLED_APPS
 INSTALLED_APPS += DEV_APPS

@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2018-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 # Copied from https://github.com/sphinx-doc/sphinx/blob/master/sphinx/util/texescape.py
 # Copyright and license as indicated in the original and below
@@ -11,7 +12,7 @@
     :license: BSD, see LICENSE for details.
 """
 
-from __future__ import unicode_literals
+
 
 tex_replacements = [
     # map TeX special chars

@@ -1,7 +1,8 @@
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
 import re
 import six
 import datetime
-from urllib import urlencode
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
@@ -129,9 +130,9 @@ class ToOneField(tastypie.fields.ToOneField):
         if not foreign_obj:
             if not self.null:
                 if callable(self.attribute):
-                    raise ApiFieldError(u"The related resource for resource %s could not be found." % (previous_obj))
+                    raise ApiFieldError("The related resource for resource %s could not be found." % (previous_obj))
                 else:
-                    raise ApiFieldError(u"The model '%r' has an empty attribute '%s' and doesn't allow a null value." % (previous_obj, attr))
+                    raise ApiFieldError("The model '%r' has an empty attribute '%s' and doesn't allow a null value." % (previous_obj, attr))
             return None
 
         fk_resource = self.get_related_resource(foreign_obj)

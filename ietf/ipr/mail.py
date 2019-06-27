@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
 import base64
 import email
 import datetime
@@ -194,5 +195,5 @@ def process_response_email(msg):
         in_reply_to = to_message
     )
     
-    log(u"Received IPR email from %s" % ietf_message.frm)
+    log("Received IPR email from %s" % ietf_message.frm)
     return ietf_message

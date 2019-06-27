@@ -1,6 +1,6 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2018-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import datetime
 import time
@@ -14,7 +14,7 @@ from ietf.person.models import Person, PersonEvent
 from ietf.utils.mail import send_mail
 
 class Command(BaseCommand):
-    help = (u"""
+    help = ("""
         Send GDPR consent request emails to persons who have not indicated consent
         to having their personal information stored.  Each send is logged as a
         PersonEvent.

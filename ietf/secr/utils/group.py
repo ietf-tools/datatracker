@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 # Python imports
 import os
 
@@ -95,7 +96,7 @@ def groups_by_session(user, meeting, types=None):
                 groups_no_session.append(group)
 
     if types:
-        groups_session = filter(lambda x: x.type_id in types,groups_session)
-        groups_no_session = filter(lambda x: x.type_id in types,groups_no_session)
+        groups_session = [x for x in groups_session if x.type_id in types]
+        groups_no_session = [x for x in groups_no_session if x.type_id in types]
         
     return groups_session, groups_no_session

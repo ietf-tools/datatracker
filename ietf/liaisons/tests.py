@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
 import datetime, os, shutil
 import json
 
@@ -7,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.urls import reverse as urlreverse
 from django.db.models import Q
-from StringIO import StringIO
+from io import StringIO
 from pyquery import PyQuery
 
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
@@ -205,7 +206,7 @@ class AjaxTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         data = json.loads(r.content)
-        self.assertEqual(data["to_contacts"],[u'test@example.com'])
+        self.assertEqual(data["to_contacts"],['test@example.com'])
 
     def test_ajax_select2_search_liaison_statements(self):
         liaison = LiaisonStatementFactory()

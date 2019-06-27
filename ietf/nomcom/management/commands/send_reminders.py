@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 import datetime
 import syslog
 
@@ -17,7 +18,7 @@ def is_time_to_send(nomcom,send_date,nomination_date):
         return bool(nomcom.reminderdates_set.filter(date=send_date))
 
 class Command(BaseCommand):
-    help = (u"Send acceptance and questionnaire reminders to nominees")
+    help = ("Send acceptance and questionnaire reminders to nominees")
 
     def handle(self, *args, **options):
         for nomcom in NomCom.objects.filter(group__state__slug='active'):

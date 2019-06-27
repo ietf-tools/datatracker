@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
 import datetime
 
 from django.conf import settings
@@ -8,7 +9,7 @@ from ietf.group.models import Role
 from ietf.mailtrigger.utils import gather_address_lists
 
 def send_liaison_by_email(request, liaison):
-    subject = u'New Liaison Statement, "%s"' % (liaison.title)
+    subject = 'New Liaison Statement, "%s"' % (liaison.title)
     from_email = settings.LIAISON_UNIVERSAL_FROM
     (to_email, cc) = gather_address_lists('liaison_statement_posted',liaison=liaison)
     bcc = ['statements@ietf.org']
@@ -20,7 +21,7 @@ def notify_pending_by_email(request, liaison):
     '''Send mail requesting approval of pending liaison statement.  Send mail to
     the intersection of approvers for all from_groups
     '''
-    subject = u'New Liaison Statement, "%s" needs your approval' % (liaison.title)
+    subject = 'New Liaison Statement, "%s" needs your approval' % (liaison.title)
     from_email = settings.LIAISON_UNIVERSAL_FROM
     (to, cc) = gather_address_lists('liaison_approval_requested',liaison=liaison)
     body = render_to_string('liaisons/pending_liaison_mail.txt', dict(liaison=liaison))
@@ -58,7 +59,7 @@ def possibly_send_deadline_reminder(liaison):
         }
 
     days_to_go = (liaison.deadline - datetime.date.today()).days
-    if not (days_to_go < 0 or days_to_go in PREVIOUS_DAYS.keys()):
+    if not (days_to_go < 0 or days_to_go in list(PREVIOUS_DAYS.keys())):
         return None # no reminder
 
     if days_to_go < 0:

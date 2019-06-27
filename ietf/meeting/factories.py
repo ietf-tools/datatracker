@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 import factory
 import random
 import datetime
@@ -146,8 +147,8 @@ class FloorPlanFactory(factory.DjangoModelFactory):
     class Meta:
         model = FloorPlan
 
-    name = factory.Sequence(lambda n: u'Venue Floor %d' % n)
-    short = factory.Sequence(lambda n: u'%d' % n)
+    name = factory.Sequence(lambda n: 'Venue Floor %d' % n)
+    short = factory.Sequence(lambda n: '%d' % n)
     meeting = factory.SubFactory(MeetingFactory)
     order = factory.Sequence(lambda n: n)
     image = factory.LazyAttribute(

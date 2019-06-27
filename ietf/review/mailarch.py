@@ -1,9 +1,10 @@
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 # various utilities for working with the mailarch mail archive at
 # mailarchive.ietf.org
 
 import datetime, tarfile, mailbox, tempfile, hashlib, base64, email.utils
-import urllib
-import urllib2, contextlib
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse, contextlib
 import debug                            # pyflakes:ignore
 import debug                            # pyflakes:ignore
 
@@ -34,7 +35,7 @@ def construct_query_urls(review_req, query=None):
     if not query:
         query = review_req.doc.name
 
-    encoded_query = "?" + urllib.urlencode({
+    encoded_query = "?" + urllib.parse.urlencode({
         "qdr": "c", # custom time frame
         "start_date": (datetime.date.today() - datetime.timedelta(days=180)).isoformat(),
         "email_list": list_name,
@@ -63,7 +64,7 @@ def retrieve_messages_from_mbox(mbox_fileobj):
 
         mbox = mailbox.mbox(mbox_file.name, create=False)
         for msg in mbox:
-            content = u""
+            content = ""
 
             for part in msg.walk():
                 if part.get_content_type() == "text/plain":
@@ -93,7 +94,7 @@ def retrieve_messages(query_data_url):
     """Retrieve and return selected content from mailarch."""
     res = []
 
-    with contextlib.closing(urllib2.urlopen(query_data_url, timeout=15)) as fileobj:
+    with contextlib.closing(urllib.request.urlopen(query_data_url, timeout=15)) as fileobj:
         content_type = fileobj.info()["Content-type"]
         if not content_type.startswith("application/x-tar"):
             if content_type.startswith("text/html"):

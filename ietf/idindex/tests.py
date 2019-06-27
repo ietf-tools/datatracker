@@ -70,7 +70,7 @@ class IndexTests(TestCase):
         draft = WgDraftFactory(
                     states=[('draft','active'),('draft-iesg','review-e')],
                     ad=PersonFactory(),
-                    shepherd=EmailFactory(address='shepherd@example.com',person__name=u'Draft δραφτυ Shepherd'),
+                    shepherd=EmailFactory(address='shepherd@example.com',person__name='Draft δραφτυ Shepherd'),
                     group__parent=GroupFactory(type_id='area'),
                     intended_std_level_id = 'ps',
                     authors=[EmailFactory().person]
@@ -97,15 +97,15 @@ class IndexTests(TestCase):
         self.assertEqual(t[6], draft.latest_event(type="new_revision").time.strftime("%Y-%m-%d"))
         self.assertEqual(t[7], draft.group.acronym)
         self.assertEqual(t[8], draft.group.parent.acronym)
-        self.assertEqual(t[9], unicode(draft.ad))
+        self.assertEqual(t[9], str(draft.ad))
         self.assertEqual(t[10], draft.intended_std_level.name)
         self.assertEqual(t[11], "")
         self.assertEqual(t[12], ".pdf,.txt")
         self.assertEqual(t[13], draft.title)
         author = draft.documentauthor_set.order_by("order").get()
-        self.assertEqual(t[14], u"%s <%s>" % (author.person.name, author.email.address))
-        self.assertEqual(t[15], u"%s <%s>" % (draft.shepherd.person.plain_ascii(), draft.shepherd.address))
-        self.assertEqual(t[16], u"%s <%s>" % (draft.ad.plain_ascii(), draft.ad.email_address()))
+        self.assertEqual(t[14], "%s <%s>" % (author.person.name, author.email.address))
+        self.assertEqual(t[15], "%s <%s>" % (draft.shepherd.person.plain_ascii(), draft.shepherd.address))
+        self.assertEqual(t[16], "%s <%s>" % (draft.ad.plain_ascii(), draft.ad.email_address()))
 
 
         # test RFC

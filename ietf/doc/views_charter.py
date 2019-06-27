@@ -808,7 +808,7 @@ def charter_with_milestones_txt(request, name, rev):
 
     try:
         with open(os.path.join(settings.CHARTER_PATH, filename), 'r') as f:
-            charter_text = unicode(f.read(), errors='ignore')
+            charter_text = str(f.read(), errors='ignore')
     except IOError:
         charter_text = "Error reading charter text %s" % filename
 

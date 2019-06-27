@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 import os
 import string
 from docutils.core import publish_string
@@ -54,7 +55,7 @@ class RSTTemplate(PlainTemplate):
                                       'template': RST_TEMPLATE,
                                       'halt_level': 2,
                                   })
-        except SystemMessage, e:
+        except SystemMessage as e:
             e.message = e.message.replace('<string>:', 'line ')
             args = list(e.args)
             args[0] = args[0].replace('<string>:', 'line ')

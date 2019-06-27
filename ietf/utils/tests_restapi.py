@@ -1,4 +1,5 @@
-from __future__ import print_function
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
+
 
 import debug
 debug.debug = True
@@ -73,6 +74,6 @@ class RestApi(ResourceTestCaseMixin, TestCase):
         for doc in doclist:
             for key in doc:
                 value = doc[key]
-                if isinstance(value, basestring) and value.startswith('%s/'%apitop):
+                if isinstance(value, str) and value.startswith('%s/'%apitop):
                     self.api_client.get(value, format='json')
                     

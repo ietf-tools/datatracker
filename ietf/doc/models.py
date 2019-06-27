@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 import datetime
@@ -372,7 +372,7 @@ class DocumentInfo(models.Model):
         return self.rfc_number()
 
     def author_list(self):
-        return u", ".join(author.email_id for author in self.documentauthor_set.all() if author.email_id)
+        return ", ".join(author.email_id for author in self.documentauthor_set.all() if author.email_id)
 
     def authors(self):
         return [ a.person for a in self.documentauthor_set.all() ]
@@ -531,7 +531,7 @@ class RelatedDocument(models.Model):
     def action(self):
         return self.relationship.name
     def __unicode__(self):
-        return u"%s %s %s" % (self.source.name, self.relationship.name.lower(), self.target.name)
+        return "%s %s %s" % (self.source.name, self.relationship.name.lower(), self.target.name)
 
     def is_downref(self):
 
@@ -601,7 +601,7 @@ class DocumentAuthor(DocumentAuthorInfo):
     document = ForeignKey('Document')
 
     def __unicode__(self):
-        return u"%s %s (%s)" % (self.document.name, self.person, self.order)
+        return "%s %s (%s)" % (self.document.name, self.person, self.order)
 
 
 validate_docname = RegexValidator(
@@ -641,10 +641,10 @@ class Document(DocumentInfo):
         return self._cached_absolute_url
 
     def file_tag(self):
-        return u"<%s>" % self.filename_with_rev()
+        return "<%s>" % self.filename_with_rev()
 
     def filename_with_rev(self):
-        return u"%s-%s.txt" % (self.name, self.rev)
+        return "%s-%s.txt" % (self.name, self.rev)
     
     def latest_event(self, *args, **filter_args):
         """Get latest event of optional Python type and with filter
@@ -850,7 +850,7 @@ class RelatedDocHistory(models.Model):
     target = ForeignKey('DocAlias', related_name="reversely_related_document_history_set")
     relationship = ForeignKey(DocRelationshipName)
     def __unicode__(self):
-        return u"%s %s %s" % (self.source.doc.name, self.relationship.name.lower(), self.target.name)
+        return "%s %s %s" % (self.source.doc.name, self.relationship.name.lower(), self.target.name)
 
 class DocHistoryAuthor(DocumentAuthorInfo):
     # use same naming convention as non-history version to make it a bit
@@ -858,7 +858,7 @@ class DocHistoryAuthor(DocumentAuthorInfo):
     document = ForeignKey('DocHistory', related_name="documentauthor_set")
 
     def __unicode__(self):
-        return u"%s %s (%s)" % (self.document.doc.name, self.person, self.order)
+        return "%s %s (%s)" % (self.document.doc.name, self.person, self.order)
 
 class DocHistory(DocumentInfo):
     doc = ForeignKey(Document, related_name="history_set")
@@ -869,7 +869,7 @@ class DocHistory(DocumentInfo):
     name = models.CharField(max_length=255)
 
     def __unicode__(self):
-        return unicode(self.doc.name)
+        return str(self.doc.name)
 
     def canonical_name(self):
         if hasattr(self, '_canonical_name'):
@@ -918,7 +918,7 @@ class DocAlias(models.Model):
         return self.docs.first()
 
     def __unicode__(self):
-        return "%s-->%s" % (self.name, ','.join([unicode(d.name) for d in self.docs.all() if isinstance(d, Document) ]))
+        return "%s-->%s" % (self.name, ','.join([str(d.name) for d in self.docs.all() if isinstance(d, Document) ]))
     document_link = admin_link("document")
     class Meta:
         verbose_name = "document alias"
@@ -1024,7 +1024,7 @@ class DocEvent(models.Model):
         return DocHistory.objects.filter(time__lte=self.time,doc__name=self.doc.name).order_by('-time', '-pk').first()
 
     def __unicode__(self):
-        return u"%s %s by %s at %s" % (self.doc.name, self.get_type_display().lower(), self.by.plain_name(), self.time)
+        return "%s %s by %s at %s" % (self.doc.name, self.get_type_display().lower(), self.by.plain_name(), self.time)
 
     def save(self, *args, **kwargs):
         super(DocEvent, self).save(*args, **kwargs)        
@@ -1057,7 +1057,7 @@ class BallotType(models.Model):
     positions = models.ManyToManyField(BallotPositionName, blank=True)
 
     def __unicode__(self):
-        return u"%s: %s" % (self.name, self.doc_type.name)
+        return "%s: %s" % (self.name, self.doc_type.name)
     
     class Meta:
         ordering = ['order']
@@ -1184,7 +1184,7 @@ class DeletedEvent(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
 
     def __unicode__(self):
-        return u"%s by %s %s" % (self.content_type, self.by, self.time)
+        return "%s by %s %s" % (self.content_type, self.by, self.time)
 
 class EditedAuthorsDocEvent(DocEvent):
     """ Capture the reasoning or authority for changing a document author list.

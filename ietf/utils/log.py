@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 
 import sys
 import logging
@@ -44,7 +44,7 @@ def log(msg):
     elif settings.DEBUG == True:
         _logfunc = debug.say
         _flushfunc = sys.stdout.flush   # pyflakes:ignore (intentional redefinition)
-    if isinstance(msg, unicode):
+    if isinstance(msg, str):
         msg = msg.encode('unicode_escape')
     try:
         mod, cls, func, file, line = getcaller()

@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
 # generation of mails 
 
 import textwrap, datetime
@@ -55,7 +56,7 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
         return
     
     if not text:
-        text = u"Stream changed to <b>%s</b> from %s" % (new_stream, old_stream)
+        text = "Stream changed to <b>%s</b> from %s" % (new_stream, old_stream)
     text = strip_tags(text)
 
     send_mail(request, to, None,
@@ -119,8 +120,8 @@ def generate_ballot_writeup(request, doc):
     e.by = request.user.person
     e.doc = doc
     e.rev = doc.rev
-    e.desc = u"Ballot writeup was generated"
-    e.text = unicode(render_to_string("doc/mail/ballot_writeup.txt", {'iana': iana}))
+    e.desc = "Ballot writeup was generated"
+    e.text = str(render_to_string("doc/mail/ballot_writeup.txt", {'iana': iana}))
 
     # caller is responsible for saving, if necessary
     return e
@@ -131,8 +132,8 @@ def generate_ballot_rfceditornote(request, doc):
     e.by = request.user.person
     e.doc = doc
     e.rev = doc.rev
-    e.desc = u"RFC Editor Note for ballot was generated"
-    e.text = unicode(render_to_string("doc/mail/ballot_rfceditornote.txt"))
+    e.desc = "RFC Editor Note for ballot was generated"
+    e.text = str(render_to_string("doc/mail/ballot_rfceditornote.txt"))
     e.save()
     
     return e
@@ -176,8 +177,8 @@ def generate_last_call_announcement(request, doc):
     e.by = request.user.person
     e.doc = doc
     e.rev = doc.rev
-    e.desc = u"Last call announcement was generated"
-    e.text = unicode(mail)
+    e.desc = "Last call announcement was generated"
+    e.text = str(mail)
 
     # caller is responsible for saving, if necessary
     return e
@@ -196,8 +197,8 @@ def generate_approval_mail(request, doc):
     e.by = request.user.person
     e.doc = doc
     e.rev = doc.rev
-    e.desc = u"Ballot approval text was generated"
-    e.text = unicode(mail)
+    e.desc = "Ballot approval text was generated"
+    e.text = str(mail)
 
     # caller is responsible for saving, if necessary
     return e
@@ -374,7 +375,7 @@ def generate_issue_ballot_mail(request, doc, ballot):
                                  last_call_has_expired=last_call_has_expired,
                                  needed_ballot_positions=
                                    needed_ballot_positions(doc,
-                                     doc.active_ballot().active_ad_positions().values()
+                                     list(doc.active_ballot().active_ad_positions().values())
                                    ),
                                  )
                             )
@@ -451,7 +452,7 @@ def email_adopted(request, doc, prev_state, new_state, by, comment=""):
     state_type = (prev_state or new_state).type
 
     send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
-              u'The %s %s has placed %s in state "%s"' % 
+              'The %s %s has placed %s in state "%s"' % 
                   (doc.group.acronym.upper(),doc.group.type_id.upper(), doc.name, new_state or "None"),
               'doc/mail/doc_adopted_email.txt',
               dict(doc=doc,
@@ -469,7 +470,7 @@ def email_stream_state_changed(request, doc, prev_state, new_state, by, comment=
     state_type = (prev_state or new_state).type
 
     send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
-              u"%s changed for %s" % (state_type.label, doc.name),
+              "%s changed for %s" % (state_type.label, doc.name),
               'doc/mail/stream_state_changed_email.txt',
               dict(doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
@@ -485,7 +486,7 @@ def email_stream_tags_changed(request, doc, added_tags, removed_tags, by, commen
     (to, cc) = gather_address_lists('doc_stream_state_edited',doc=doc)
 
     send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
-              u"Tags changed for %s" % doc.name,
+              "Tags changed for %s" % doc.name,
               'doc/mail/stream_tags_changed_email.txt',
               dict(doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),

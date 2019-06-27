@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Copyright The IETF Trust 2017-2019, All Rights Reserved
 
-from __future__ import print_function, unicode_literals
+
 
 import sys
 import os
@@ -16,7 +16,7 @@ os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
 
 virtualenv_activation = os.path.join(basedir, "env", "bin", "activate_this.py")
 if os.path.exists(virtualenv_activation):
-    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
+    exec(compile(open(virtualenv_activation, "rb").read(), virtualenv_activation, 'exec'), dict(__file__=virtualenv_activation))
 
 import django
 django.setup()
@@ -54,7 +54,7 @@ def say(msg):
     logfile.write(msg)
     logfile.write('\n')
 
-def unicode(text):
+def str(text):
     if text is None:
         return text
     # order matters here:
@@ -87,7 +87,7 @@ for doc in docs_qs.prefetch_related("docalias", "formal_languages", "documentaut
     with open(path, 'rb') as f:
         say("\nProcessing %s" % doc.name)
         sys.stdout.flush()
-        d = Draft(unicode(f.read()), path)
+        d = Draft(str(f.read()), path)
 
         updated = False
 

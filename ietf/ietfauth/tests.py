@@ -1,9 +1,9 @@
-# Copyright The IETF Trust 2017-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import os, shutil, time, datetime
-from urlparse import urlsplit
+from urllib.parse import urlsplit
 from pyquery import PyQuery
 from unittest import skipIf
 
@@ -216,9 +216,9 @@ class IetfAuthTests(TestCase):
         self.assertEqual(len(q('[name="active_emails"][value="%s"][checked]' % email_address)), 1)
 
         base_data = {
-            "name": u"Test Nãme",
-            "ascii": u"Test Name",
-            "ascii_short": u"T. Name",
+            "name": "Test Nãme",
+            "ascii": "Test Name",
+            "ascii_short": "T. Name",
             "affiliation": "Test Org",
             "active_emails": email_address,
             "consent": True,
@@ -226,7 +226,7 @@ class IetfAuthTests(TestCase):
 
         # edit details - faulty ASCII
         faulty_ascii = base_data.copy()
-        faulty_ascii["ascii"] = u"Test Nãme"
+        faulty_ascii["ascii"] = "Test Nãme"
         r = self.client.post(url, faulty_ascii)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -234,7 +234,7 @@ class IetfAuthTests(TestCase):
 
         # edit details - blank ASCII
         blank_ascii = base_data.copy()
-        blank_ascii["ascii"] = u""
+        blank_ascii["ascii"] = ""
         r = self.client.post(url, blank_ascii)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -245,14 +245,14 @@ class IetfAuthTests(TestCase):
         r = self.client.post(url, base_data)
         self.assertEqual(r.status_code, 200)
         person = Person.objects.get(user__username=username)
-        self.assertEqual(person.name, u"Test Nãme")
-        self.assertEqual(person.ascii, u"Test Name")
-        self.assertEqual(Person.objects.filter(alias__name=u"Test Name", user__username=username).count(), 1)
-        self.assertEqual(Person.objects.filter(alias__name=u"Test Nãme", user__username=username).count(), 1)
+        self.assertEqual(person.name, "Test Nãme")
+        self.assertEqual(person.ascii, "Test Name")
+        self.assertEqual(Person.objects.filter(alias__name="Test Name", user__username=username).count(), 1)
+        self.assertEqual(Person.objects.filter(alias__name="Test Nãme", user__username=username).count(), 1)
         self.assertEqual(Email.objects.filter(address=email_address, person__user__username=username, active=True).count(), 1)
 
         # deactivate address
-        without_email_address = { k: v for k, v in base_data.iteritems() if k != "active_emails" }
+        without_email_address = { k: v for k, v in base_data.items() if k != "active_emails" }
 
         r = self.client.post(url, without_email_address)
         self.assertEqual(r.status_code, 200)
@@ -460,7 +460,7 @@ class IetfAuthTests(TestCase):
         self.assertRedirects(r, prof_url)
         # refresh user object
         user = User.objects.get(username="someone@example.com")
-        self.assertTrue(user.check_password(u'foobar'))
+        self.assertTrue(user.check_password('foobar'))
 
     def test_change_username(self):
 
@@ -508,7 +508,7 @@ class IetfAuthTests(TestCase):
         prev = user
         user = User.objects.get(username="othername@example.org")
         self.assertEqual(prev, user)
-        self.assertTrue(user.check_password(u'password'))
+        self.assertTrue(user.check_password('password'))
 
     def test_apikey_management(self):
         person = PersonFactory()

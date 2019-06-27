@@ -10,7 +10,7 @@ import datetime
 import os
 import re
 import subprocess
-from urllib import urlencode
+from urllib.parse import urlencode
 
 import debug        # pyflakes:ignore
 

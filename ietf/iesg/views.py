@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 
 # Portion Copyright (C) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -35,7 +35,7 @@
 import os
 import datetime
 import tarfile
-import StringIO
+import io
 import time
 import itertools
 import json
@@ -80,7 +80,7 @@ def review_decisions(request, year=None):
     #proto_levels = ["bcp", "ds", "ps", "std"]
     #doc_levels = ["exp", "inf"]
 
-    timeframe = u"%s" % year if year else u"the past 6 months"
+    timeframe = "%s" % year if year else "the past 6 months"
 
     return render(request, 'iesg/review_decisions.html',
                               dict(events=events,
@@ -99,7 +99,7 @@ def agenda_json(request, date=None):
         "sections": {},
         }
 
-    for num, section in data["sections"].iteritems():
+    for num, section in data["sections"].items():
         s = res["sections"][num] = {
             "title": section["title"],
             }
@@ -198,7 +198,7 @@ def agenda(request, date=None):
     request.session['ballot_edit_return_point'] = request.path_info
     return render(request, "iesg/agenda.html", {
             "date": data["date"],
-            "sections": sorted(data["sections"].iteritems()),
+            "sections": sorted(data["sections"].items()),
             "settings": settings,
             } )
 
@@ -206,13 +206,13 @@ def agenda_txt(request, date=None):
     data = agenda_data(date)
     return render(request, "iesg/agenda.txt", {
             "date": data["date"],
-            "sections": sorted(data["sections"].iteritems()),
+            "sections": sorted(data["sections"].items()),
             "domain": Site.objects.get_current().domain,
             }, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
 def agenda_scribe_template(request, date=None):
     data = agenda_data(date)
-    sections = sorted((num, section) for num, section in data["sections"].iteritems() if "2" <= num < "4")
+    sections = sorted((num, section) for num, section in data["sections"].items() if "2" <= num < "4")
     appendix_docs = []
     for num, section in sections:
         if "docs" in section:
@@ -237,7 +237,7 @@ def agenda_moderator_package(request, date=None):
                     or (num == "6" and "6.1" not in data["sections"]))
 
     # sort and prune non-leaf headlines
-    sections = sorted((num, section) for num, section in data["sections"].iteritems()
+    sections = sorted((num, section) for num, section in data["sections"].items()
                       if leaf_section(num, section))
 
     # add parents field to each section
@@ -245,7 +245,7 @@ def agenda_moderator_package(request, date=None):
         s["parents"] = []
         split = num.split(".")
 
-        for i in xrange(num.count(".")):
+        for i in range(num.count(".")):
             parent_num = ".".join(split[:i + 1])
             parent = data["sections"].get(parent_num)
             if parent:
@@ -281,12 +281,12 @@ def agenda_package(request, date=None):
     data = agenda_data(date)
     return render(request, "iesg/agenda_package.txt", {
             "date": data["date"],
-            "sections": sorted(data["sections"].iteritems()),
+            "sections": sorted(data["sections"].items()),
             "roll_call": data["sections"]["1.1"]["text"],
             "roll_call_url": settings.IESG_ROLL_CALL_URL,
             "minutes": data["sections"]["1.3"]["text"],
             "minutes_url": settings.IESG_MINUTES_URL,
-            "management_items": [(num, section) for num, section in data["sections"].iteritems() if "6" < num < "7"],
+            "management_items": [(num, section) for num, section in data["sections"].items() if "6" < num < "7"],
             }, content_type='text/plain')
 
 
@@ -311,14 +311,14 @@ def agenda_documents_txt(request):
         row = (
             d.computed_telechat_date.isoformat(),
             d.name,
-            unicode(d.intended_std_level),
+            str(d.intended_std_level),
             "1" if d.stream_id in ("ise", "irtf") else "0",
-            unicode(d.area_acronym()).lower(),
+            str(d.area_acronym()).lower(),
             d.ad.plain_name() if d.ad else "None Assigned",
             d.rev,
             )
         rows.append("\t".join(row))
-    return HttpResponse(u"\n".join(rows), content_type='text/plain')
+    return HttpResponse("\n".join(rows), content_type='text/plain')
 
 class RescheduleForm(forms.Form):
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
@@ -378,7 +378,7 @@ def agenda_documents(request):
 
     reschedule_status = { "changed": False }
 
-    for i in itertools.chain(*docs_by_date.values()):
+    for i in itertools.chain(*list(docs_by_date.values())):
         i.reschedule_form = handle_reschedule_form(request, i, dates, reschedule_status)
 
     if reschedule_status["changed"]:
@@ -397,7 +397,7 @@ def agenda_documents(request):
         telechats.append({
                 "date":     date,
                 "pages":    pages,
-                "sections": sorted((num, section) for num, section in sections.iteritems()
+                "sections": sorted((num, section) for num, section in sections.items()
                                    if "2" <= num < "5")
                 })
     request.session['ballot_edit_return_point'] = request.path_info
@@ -454,7 +454,7 @@ def telechat_docs_tarfile(request, date):
 
     tarstream = tarfile.open('', 'w:gz', response)
 
-    manifest = StringIO.StringIO()
+    manifest = io.StringIO()
 
     for doc in docs:
         doc_path = os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + ".txt")
@@ -524,10 +524,10 @@ def milestones_needing_review(request):
             milestones.append(m)
 
     ad_list = []
-    for ad, groups in ads.iteritems():
+    for ad, groups in ads.items():
         ad_list.append(ad)
         ad.groups_needing_review = sorted(groups, key=lambda g: g.acronym)
-        for g, milestones in groups.iteritems():
+        for g, milestones in groups.items():
             g.milestones_needing_review = sorted(milestones, key=lambda m: m.due)
 
     return render(request, 'iesg/milestones_needing_review.html',

@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 import datetime
 import hashlib
 import os
@@ -399,9 +400,9 @@ def getheader(header_text, default="ascii"):
     """Decode the specified header"""
 
     headers = decode_header(header_text)
-    header_sections = [unicode(text, charset or default)
+    header_sections = [str(text, charset or default)
                        for text, charset in headers]
-    return u"".join(header_sections)
+    return "".join(header_sections)
 
 
 def get_charset(message, default="ascii"):
@@ -427,22 +428,22 @@ def get_body(message):
         body = []
         for part in text_parts:
             charset = get_charset(part, get_charset(message))
-            body.append(unicode(part.get_payload(decode=True),
+            body.append(str(part.get_payload(decode=True),
                                 charset,
                                 "replace"))
 
-        return u"\n".join(body).strip()
+        return "\n".join(body).strip()
 
     else:  # if it is not multipart, the payload will be a string
            # representing the message body
-        body = unicode(message.get_payload(decode=True),
+        body = str(message.get_payload(decode=True),
                        get_charset(message),
                        "replace")
         return body.strip()
 
 
 def parse_email(text):
-    if isinstance(text, unicode):
+    if isinstance(text, str):
         text = smart_str(text)
     msg = message_from_string(text)
 

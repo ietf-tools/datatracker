@@ -34,7 +34,7 @@ class ReviewerSettings(models.Model):
     expertise = models.TextField(verbose_name="Reviewer's expertise in this team's area", max_length=2048, blank=True, help_text="Describe the reviewer's expertise in this team's area", default='')
 
     def __unicode__(self):
-        return u"{} in {}".format(self.person, self.team)
+        return "{} in {}".format(self.person, self.team)
 
     class Meta:
         verbose_name_plural = "reviewer settings"
@@ -46,7 +46,7 @@ class ReviewSecretarySettings(models.Model):
     remind_days_before_deadline = models.IntegerField(null=True, blank=True, help_text="To get an email reminder in case a reviewer forgets to do an assigned review, enter the number of days before review deadline you want to receive it. Clear the field if you don't want a reminder.")
 
     def __unicode__(self):
-        return u"{} in {}".format(self.person, self.team)
+        return "{} in {}".format(self.person, self.team)
 
     class Meta:
         verbose_name_plural = "review secretary settings"
@@ -79,7 +79,7 @@ class UnavailablePeriod(models.Model):
             return "future"
 
     def __unicode__(self):
-        return u"{} is unavailable in {} {} - {}".format(self.person, self.team.acronym, self.start_date or "", self.end_date or "")
+        return "{} is unavailable in {} {} - {}".format(self.person, self.team.acronym, self.start_date or "", self.end_date or "")
 
 class ReviewWish(models.Model):
     """Reviewer wishes to review a document when it becomes available for review."""
@@ -89,7 +89,7 @@ class ReviewWish(models.Model):
     doc         = ForeignKey(Document)
 
     def __unicode__(self):
-        return u"{} wishes to review {} in {}".format(self.person, self.doc.name, self.team.acronym)
+        return "{} wishes to review {} in {}".format(self.person, self.doc.name, self.team.acronym)
 
     class Meta:
         verbose_name_plural = "review wishes"
@@ -100,7 +100,7 @@ class NextReviewerInTeam(models.Model):
     next_reviewer = ForeignKey(Person)
 
     def __unicode__(self):
-        return u"{} next in {}".format(self.next_reviewer, self.team)
+        return "{} next in {}".format(self.next_reviewer, self.team)
 
     class Meta:
         verbose_name = "next reviewer in team setting"
@@ -122,7 +122,7 @@ class ReviewRequest(models.Model):
     comment       = models.TextField(verbose_name="Requester's comments and instructions", max_length=2048, blank=True, help_text="Provide any additional information to show to the review team secretary and reviewer", default='')
 
     def __unicode__(self):
-        return u"%s review on %s by %s %s" % (self.type, self.doc, self.team, self.state)
+        return "%s review on %s by %s %s" % (self.type, self.doc, self.team, self.state)
 
     def all_completed_assignments_for_doc(self):
         return ReviewAssignment.objects.filter(review_request__doc=self.doc, state__in=['completed','part-completed'])
@@ -143,7 +143,7 @@ class ReviewAssignment(models.Model):
     mailarch_url   = models.URLField(blank=True, null = True)
 
     def __unicode__(self):
-        return u"Assignment for %s (%s) : %s %s of %s" % (self.reviewer.person, self.state, self.review_request.team.acronym, self.review_request.type, self.review_request.doc)
+        return "Assignment for %s (%s) : %s %s of %s" % (self.reviewer.person, self.state, self.review_request.team.acronym, self.review_request.type, self.review_request.doc)
 
 
 def get_default_review_types():
@@ -162,7 +162,7 @@ class ReviewTeamSettings(models.Model):
     secr_mail_alias = models.CharField(verbose_name="Email alias for all of the review team secretaries", max_length=255, blank=True, help_text="Email alias for all of the review team secretaries")
 
     def __unicode__(self):
-        return u"%s" % (self.group.acronym,)
+        return "%s" % (self.group.acronym,)
 
     class Meta:
         verbose_name = "Review team settings"

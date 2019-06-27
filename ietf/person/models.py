@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
 
 import datetime
 import email.utils
@@ -7,7 +7,7 @@ import six
 import uuid
 
 from hashids import Hashids
-from urlparse import urljoin
+from urllib.parse import urljoin
 
 from django.conf import settings
 
@@ -83,7 +83,7 @@ class Person(models.Model):
             else:
                 ascii = unidecode_name(self.name)
             prefix, first, middle, last, suffix = name_parts(ascii)
-            self._cached_plain_ascii = u" ".join([first, last])
+            self._cached_plain_ascii = " ".join([first, last])
         return self._cached_plain_ascii
     def initials(self):
         return initials(self.ascii or self.name)
@@ -96,7 +96,7 @@ class Person(models.Model):
         may be an object or the group acronym."""
         if group:
             from ietf.group.models import Group
-            if isinstance(group, str) or isinstance(group, unicode):
+            if isinstance(group, str) or isinstance(group, str):
                 group = Group.objects.get(acronym=group)
             e = Email.objects.filter(person=self, role__group=group, role__name=role_name)
         else:
@@ -144,7 +144,7 @@ class Person(models.Model):
     def photo_name(self,thumb=False):
         hasher = Hashids(salt='Person photo name salt',min_length=5)
         _, first, _, last, _ = name_parts(self.ascii)
-        return u'%s-%s%s' % ( slugify(u"%s %s" % (first, last)), hasher.encode(self.id), '-th' if thumb else '' )
+        return '%s-%s%s' % ( slugify("%s %s" % (first, last)), hasher.encode(self.id), '-th' if thumb else '' )
 
     def has_drafts(self):
         from ietf.doc.models import Document
@@ -281,9 +281,9 @@ class Email(models.Model):
         Use self.formatted_email() for that.
         """
         if self.person:
-            return u"%s <%s>" % (self.person.plain_name(), self.address)
+            return "%s <%s>" % (self.person.plain_name(), self.address)
         else:
-            return u"<%s>" % self.address
+            return "<%s>" % self.address
 
     def formatted_email(self):
         """
@@ -376,7 +376,7 @@ class PersonEvent(models.Model):
     desc = models.TextField()
 
     def __unicode__(self):
-        return u"%s %s at %s" % (self.person.plain_name(), self.get_type_display().lower(), self.time)
+        return "%s %s at %s" % (self.person.plain_name(), self.get_type_display().lower(), self.time)
 
     class Meta:
         ordering = ['-time', '-id']

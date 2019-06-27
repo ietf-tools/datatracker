@@ -3,7 +3,7 @@
 
 import os
 import re
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import math
 import datetime
 import hashlib
@@ -56,7 +56,7 @@ def save_document_in_history(doc):
     def transfer_fields(obj, HistModel):
         mfields = get_model_fields_as_dict(item)
         # map doc -> dochist
-        for k, v in mfields.iteritems():
+        for k, v in mfields.items():
             if v == doc:
                 mfields[k] = dochist
         HistModel.objects.create(**mfields)
@@ -209,7 +209,7 @@ def create_ballot(request, doc, by, ballot_slug, time=None):
     else:
         e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev)
     e.ballot_type = BallotType.objects.get(doc_type=doc.type, slug=ballot_slug)
-    e.desc = u'Created "%s" ballot' % e.ballot_type.name
+    e.desc = 'Created "%s" ballot' % e.ballot_type.name
     e.save()
 
 def create_ballot_if_not_open(request, doc, by, ballot_slug, time=None):
@@ -220,7 +220,7 @@ def create_ballot_if_not_open(request, doc, by, ballot_slug, time=None):
         else:
             e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev)
         e.ballot_type = ballot_type
-        e.desc = u'Created "%s" ballot' % e.ballot_type.name
+        e.desc = 'Created "%s" ballot' % e.ballot_type.name
         e.save()
         return e
     else:
@@ -313,7 +313,7 @@ def add_links_in_new_revision_events(doc, events, diff_revisions):
             links += ""
 
         if prev != None:
-            links += ' (<a href="%s?url1=%s&url2=%s">diff from previous</a>)' % (settings.RFCDIFF_BASE_URL, urllib.quote(prev, safe="~"), urllib.quote(diff_url, safe="~"))
+            links += ' (<a href="%s?url1=%s&url2=%s">diff from previous</a>)' % (settings.RFCDIFF_BASE_URL, urllib.parse.quote(prev, safe="~"), urllib.parse.quote(diff_url, safe="~"))
 
         # replace the bold filename part
         e.desc = re.sub(r"<b>(.+-[0-9][0-9].txt)</b>", links, e.desc)
@@ -363,7 +363,7 @@ def get_document_content(key, filename, split=True, markup=True):
     return text.decode(raw_content)
 
 def tags_suffix(tags):
-    return (u"::" + u"::".join(t.name for t in tags)) if tags else u""
+    return ("::" + "::".join(t.name for t in tags)) if tags else ""
 
 def add_state_change_event(doc, by, prev_state, new_state, prev_tags=[], new_tags=[], timestamp=None):
     """Add doc event to explain that state change just happened."""
@@ -551,7 +551,7 @@ def rebuild_reference_relations(doc,filename=None):
     warnings = []
     errors = []
     unfound = set()
-    for ( ref, refType ) in refs.iteritems():
+    for ( ref, refType ) in refs.items():
         refdoc = DocAlias.objects.filter( name=ref )
         count = refdoc.count()
         if count == 0:
@@ -587,9 +587,9 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
     events = []
 
     e = DocEvent(doc=doc, rev=doc.rev, by=by, type='changed_document')
-    new_replaces_names = u", ".join(d.name for d in new_replaces) or u"None"
-    old_replaces_names = u", ".join(d.name for d in old_replaces) or u"None"
-    e.desc = u"This document now replaces <b>%s</b> instead of %s" % (new_replaces_names, old_replaces_names)
+    new_replaces_names = ", ".join(d.name for d in new_replaces) or "None"
+    old_replaces_names = ", ".join(d.name for d in old_replaces) or "None"
+    e.desc = "This document now replaces <b>%s</b> instead of %s" % (new_replaces_names, old_replaces_names)
     e.save()
 
     events.append(e)
@@ -661,7 +661,7 @@ def get_initial_notify(doc,extra=None):
     receivers = []
 
     if extra:
-        if isinstance(extra,basestring):
+        if isinstance(extra,str):
             extra = extra.split(', ')
         receivers.extend(extra)
 
@@ -759,14 +759,14 @@ def make_rev_history(doc):
         }
         if hasattr(e, 'newrevisiondocevent') and doc.history_set.filter(rev=e.newrevisiondocevent.rev).exists():
             history[url]['pages'] = doc.history_set.filter(rev=e.newrevisiondocevent.rev).first().pages
-    history = history.values()
+    history = list(history.values())
     return sorted(history, key=lambda x: x['published'])
 
 
 def get_search_cache_key(params):
     from ietf.doc.views_search import SearchForm
     fields = set(SearchForm.base_fields) - set(['sort',])
-    kwargs = dict([ (k,v) for (k,v) in params.items() if k in fields ])
+    kwargs = dict([ (k,v) for (k,v) in list(params.items()) if k in fields ])
     key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True)).hexdigest()
     return key
     

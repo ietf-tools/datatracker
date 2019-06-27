@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 
 from django.db import connection
 from django.db.utils import OperationalError
@@ -58,7 +58,7 @@ def unicode_nfkc_normalization_middleware(get_response):
     def unicode_nfkc_normalization(request):
         """Do Unicode NFKC normalization to turn ligatures into individual characters.
         This was prompted by somebody actually requesting an url for /wg/ipfix/charter
-        where the 'fi' was composed of an \ufb01 ligature...
+        where the 'fi' was composed of an \\ufb01 ligature...
 
         There are probably other elements of a request which may need this normalization
         too, but let's put that in as it comes up, rather than guess ahead.

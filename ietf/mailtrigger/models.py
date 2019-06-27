@@ -18,7 +18,7 @@ def clean_duplicates(addrlist):
         # name from the last one:
         address_info[addr] = (name, a)
     addresses = []
-    for addr, info in address_info.items():
+    for addr, info in list(address_info.items()):
         name, a = info
         if (name,addr)==('',''):
             addresses.append(a)
@@ -265,7 +265,7 @@ class Recipient(models.Model):
             doc = kwargs['doc']
             active_ballot = doc.active_ballot()
             if active_ballot:
-                for ad, pos in active_ballot.active_ad_positions().iteritems():
+                for ad, pos in active_ballot.active_ad_positions().items():
                     if pos and pos.pos_id == "discuss":
                         addrs.append(ad.role_email("ad").address)
         return addrs

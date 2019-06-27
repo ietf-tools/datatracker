@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+
 # Portions Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -29,8 +31,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-# Copyright The IETF Trust 2007, All Rights Reserved
 
 import importlib
 
@@ -228,7 +228,7 @@ def profile(request):
                 auth = django.core.signing.dumps([person.user.username, to_email], salt="add_email")
 
                 domain = Site.objects.get_current().domain
-                subject = u'Confirm email address for %s' % person.name
+                subject = 'Confirm email address for %s' % person.name
                 from_email = settings.DEFAULT_FROM_EMAIL
 
                 send_mail(request, to_email, from_email, subject, 'registration/add_email_email.txt', {

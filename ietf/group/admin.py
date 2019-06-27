@@ -38,7 +38,7 @@ class GroupAdmin(admin.ModelAdmin):
         roles = Role.objects.filter(group=obj).order_by("name", "person__name").select_related('person')
         res = []
         for r in roles:
-            res.append(u'<a href="../../person/person/%s/">%s</a> (<a href="../../group/role/%s/">%s)' % (r.person.pk, escape(r.person.plain_name()), r.pk, r.name.name))
+            res.append('<a href="../../person/person/%s/">%s</a> (<a href="../../group/role/%s/">%s)' % (r.person.pk, escape(r.person.plain_name()), r.pk, r.name.name))
         return ", ".join(res)
     role_list.short_description = "Persons"
     role_list.allow_tags = True
@@ -144,7 +144,7 @@ class GroupHistoryAdmin(admin.ModelAdmin):
 admin.site.register(GroupHistory, GroupHistoryAdmin)
 
 class GroupURLAdmin(admin.ModelAdmin):
-    list_display = [u'id', 'group', 'name', 'url']
+    list_display = ['id', 'group', 'name', 'url']
     raw_id_fields = ['group']
     search_fields = ['name']
 admin.site.register(GroupURL, GroupURLAdmin)
@@ -157,7 +157,7 @@ admin.site.register(GroupMilestone, GroupMilestoneAdmin)
 admin.site.register(GroupMilestoneHistory, GroupMilestoneAdmin)
 
 class GroupStateTransitionsAdmin(admin.ModelAdmin):
-    list_display = [u'id', 'group', 'state']
+    list_display = ['id', 'group', 'state']
     raw_id_fields = ['group', 'state']
 admin.site.register(GroupStateTransitions, GroupStateTransitionsAdmin)
 
@@ -183,7 +183,7 @@ class ChangeStateGroupEventAdmin(admin.ModelAdmin):
 admin.site.register(ChangeStateGroupEvent, ChangeStateGroupEventAdmin)
 
 class MilestoneGroupEventAdmin(admin.ModelAdmin):
-    list_display = [u'id', 'group', 'time', 'type', 'by', 'desc', 'milestone']
+    list_display = ['id', 'group', 'time', 'type', 'by', 'desc', 'milestone']
     list_filter = ['time']
     raw_id_fields = ['group', 'by', 'milestone']
 admin.site.register(MilestoneGroupEvent, MilestoneGroupEventAdmin)

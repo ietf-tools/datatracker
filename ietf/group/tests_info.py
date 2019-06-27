@@ -6,7 +6,7 @@ import shutil
 import calendar
 import datetime
 import json
-import StringIO
+import io
 import bleach
 import six
 
@@ -1293,7 +1293,7 @@ class StatusUpdateTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(chair.group.latest_event(type='status_update').desc,'Direct content typed into form')
 
-        test_file = StringIO.StringIO("This came from a file.")
+        test_file = io.StringIO("This came from a file.")
         test_file.name = "unnamed"
         response = self.client.post(url,dict(txt=test_file,submit_response="1"))
         self.assertEqual(response.status_code, 302)

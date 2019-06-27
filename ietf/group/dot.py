@@ -1,6 +1,6 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2017-2019, All Rights Reserved
 # -*- check-flake8 -*-
-from __future__ import unicode_literals, print_function
+
 
 from django.db.models import Q
 from django.template.loader import render_to_string

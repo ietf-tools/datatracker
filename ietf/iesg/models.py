@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 
 # Portion Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -51,7 +51,7 @@ class TelechatAgendaItem(models.Model):
 
     def __unicode__(self):
         type_name = self.TYPE_CHOICES_DICT.get(self.type, str(self.type))
-        return u'%s: %s' % (type_name, self.title or "")
+        return '%s: %s' % (type_name, self.title or "")
 
 class Telechat(models.Model):
     telechat_id = models.IntegerField(primary_key=True)
@@ -64,7 +64,7 @@ class Telechat(models.Model):
     mi_frozen = models.IntegerField(null=True, blank=True)
 
     class Meta:
-        db_table = u'telechat'
+        db_table = 'telechat'
 
 
 def next_telechat_date():

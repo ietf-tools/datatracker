@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 import sys
 import os
 
@@ -21,7 +22,7 @@ def write(fn, new):
         f.close()
 
 class Command(BaseCommand):
-    help = (u'Generate draft bibxml files, for xml2rfc references')
+    help = ('Generate draft bibxml files, for xml2rfc references')
 
     def handle(self, *args, **options):
         documents = Document.objects.filter(type__slug='draft')

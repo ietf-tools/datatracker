@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
 from django.contrib import admin
 from django.urls import reverse
 
@@ -29,13 +30,13 @@ class LiaisonStatementAdmin(admin.ModelAdmin):
     related_to.allow_tags = True
 
 class LiaisonStatementAttachmentAdmin(admin.ModelAdmin):
-    list_display = [u'id', 'statement', 'document', 'removed']
+    list_display = ['id', 'statement', 'document', 'removed']
     list_filter = ['removed']
     raw_id_fields = ['statement', 'document']
 admin.site.register(LiaisonStatementAttachment, LiaisonStatementAttachmentAdmin)
 
 class RelatedLiaisonStatementAdmin(admin.ModelAdmin):
-    list_display = [u'id', 'source', 'target', 'relationship']
+    list_display = ['id', 'source', 'target', 'relationship']
     list_filter = ['relationship']
     raw_id_fields = ['source', 'target']
 admin.site.register(RelatedLiaisonStatement, RelatedLiaisonStatementAdmin)

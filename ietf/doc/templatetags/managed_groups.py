@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django import template
 

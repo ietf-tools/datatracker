@@ -18,7 +18,7 @@ class GroupChangesFeed(Feed):
         return Group.objects.get(acronym=acronym)
 
     def title(self, obj):
-        return u"Changes for %s %s" % (obj.acronym, obj.type)
+        return "Changes for %s %s" % (obj.acronym, obj.type)
 
     def link(self, obj):
 	if not obj:
@@ -47,8 +47,8 @@ class GroupChangesFeed(Feed):
 	return obj.time
 
     def item_title(self, obj):
-        title = u"%s - %s" % (truncatewords(strip_tags(obj.desc), 10), obj.by)
+        title = "%s - %s" % (truncatewords(strip_tags(obj.desc), 10), obj.by)
         if isinstance(obj, DocEvent):
-            title = u"Chartering: %s" % title
+            title = "Chartering: %s" % title
 
         return title

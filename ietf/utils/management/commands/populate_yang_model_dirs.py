@@ -1,11 +1,12 @@
-from __future__ import print_function, unicode_literals
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+
 
 import os
 import sys
 import time
 
 from pathlib2 import Path
-from StringIO import StringIO
+from io import StringIO
 from textwrap import dedent
 from xym import xym
 

@@ -1,7 +1,7 @@
-# Copyright The IETF Trust 2017, All Rights Reserved
+# Copyright The IETF Trust 2017-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
+
 
 from jwcrypto.jwk import JWK
 

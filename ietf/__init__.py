@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import checks                           # pyflakes:ignore
+from . import checks                           # pyflakes:ignore
 
 # Don't add patch number here:
 __version__ = "6.98.2.dev0"

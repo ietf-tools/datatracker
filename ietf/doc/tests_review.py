@@ -5,7 +5,7 @@ import datetime, os, shutil, json
 import tarfile, tempfile, mailbox
 import email.mime.multipart, email.mime.text, email.utils
 
-from StringIO import StringIO
+from io import StringIO
 from mock import patch
 from requests import Response
 
@@ -311,8 +311,8 @@ class ReviewTests(TestCase):
     def test_assign_reviewer(self):
         doc = WgDraftFactory(pages=2)
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
-        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',person__name=u'Some Reviewer',name_id='reviewer')
-        RoleFactory(group=review_team,person__user__username='marschairman',person__name=u'WG Cháir Man',name_id='reviewer')
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',person__name='Some Reviewer',name_id='reviewer')
+        RoleFactory(group=review_team,person__user__username='marschairman',person__name='WG Cháir Man',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
         ReviewerSettings.objects.create(team=review_team, person=rev_role.person, min_interval=14, skip_next=0)
 
@@ -353,7 +353,7 @@ class ReviewTests(TestCase):
         reviewer_settings.save()
 
         # Need one more person in review team one so we can test incrementing skip_count without immediately decrementing it
-        another_reviewer = PersonFactory.create(name = u"Extra TestReviewer") # needs to be lexically greater than the existing one
+        another_reviewer = PersonFactory.create(name = "Extra TestReviewer") # needs to be lexically greater than the existing one
         another_reviewer.role_set.create(name_id='reviewer', email=another_reviewer.email(), group=review_req.team)
 
         UnavailablePeriod.objects.create(
@@ -462,7 +462,7 @@ class ReviewTests(TestCase):
         login_testing_unauthorized(self, "reviewsecretary", reject_url)
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(unicode(assignment.reviewer.person) in unicontent(r))
+        self.assertTrue(str(assignment.reviewer.person) in unicontent(r))
 
         # reject
         empty_outbox()

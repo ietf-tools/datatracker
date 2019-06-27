@@ -1,4 +1,5 @@
-from __future__ import unicode_literals, print_function
+# Copyright The IETF Trust 2015-2019, All Rights Reserved
+
 import datetime
 import os
 import pprint 

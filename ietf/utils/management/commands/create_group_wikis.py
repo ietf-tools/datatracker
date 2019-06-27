@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 # Copyright 2016 IETF Trust
 
 import os
@@ -326,7 +327,7 @@ class Command(BaseCommand):
         if not self.group_list is None:
             self.group_list = self.group_list.split('.')
 
-        if isinstance(self.verbosity, (type(""), type(u""))) and self.verbosity.isdigit():
+        if isinstance(self.verbosity, (type(""), type(""))) and self.verbosity.isdigit():
             self.verbosity = int(self.verbosity)
 
         if self.dummy_run and self.verbosity < 2:

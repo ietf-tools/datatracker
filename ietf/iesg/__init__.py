@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 # coding: latin-1
 
 from types import ModuleType
@@ -9,7 +9,7 @@ DEBUG_EMAILS = [
     ('Ole Laursen', 'olau@iola.dk'),
 ]
 
-for k in locals().keys():
+for k in list(locals().keys()):
     m = locals()[k]
     if isinstance(m, ModuleType):
         if hasattr(m, "DEBUG_EMAILS"):

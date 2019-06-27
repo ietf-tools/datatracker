@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 from django.conf import settings
 from django import forms
 from django.urls import reverse
@@ -32,12 +33,12 @@ class PositionNomineeField(forms.ChoiceField):
         results = []
         for position in positions:
             accepted_nominees = [np.nominee for np in NomineePosition.objects.filter(position=position,state='accepted').exclude(nominee__duplicated__isnull=False)]
-            nominees = [('%s_%s' % (position.id, i.id), unicode(i)) for i in accepted_nominees]
+            nominees = [('%s_%s' % (position.id, i.id), str(i)) for i in accepted_nominees]
             if nominees:
                 results.append((position.name+" (Accepted)", nominees))
         for position in positions:
             other_nominees = [np.nominee for np in NomineePosition.objects.filter(position=position).exclude(state='accepted').exclude(nominee__duplicated__isnull=False)]
-            nominees = [('%s_%s' % (position.id, i.id), unicode(i)) for i in other_nominees]
+            nominees = [('%s_%s' % (position.id, i.id), str(i)) for i in other_nominees]
             if nominees:
                 results.append((position.name+" (Declined or Pending)", nominees))
         kwargs['choices'] = results

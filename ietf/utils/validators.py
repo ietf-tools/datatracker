@@ -1,6 +1,6 @@
 # -*- python -*-
-# Copyright The IETF Trust 2007, All Rights Reserved
-from __future__ import unicode_literals
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+
 
 import os
 import re

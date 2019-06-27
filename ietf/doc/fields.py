@@ -53,9 +53,9 @@ class SearchableDocumentsField(forms.CharField):
     def prepare_value(self, value):
         if not value:
             value = ""
-        if isinstance(value, (int, long)):
+        if isinstance(value, int):
             value = str(value)
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             items = self.parse_select2_value(value)
             # accept both names and pks here
             names = [ i for i in items if not i.isdigit() ]
@@ -79,7 +79,7 @@ class SearchableDocumentsField(forms.CharField):
             "model_name": self.model.__name__.lower()
         })
 
-        return u",".join(unicode(o.pk) for o in value)
+        return ",".join(str(o.pk) for o in value)
 
     def clean(self, value):
         value = super(SearchableDocumentsField, self).clean(value)
@@ -90,10 +90,10 @@ class SearchableDocumentsField(forms.CharField):
         found_pks = [ str(o.pk) for o in objs ]
         failed_pks = [ x for x in pks if x not in found_pks ]
         if failed_pks:
-            raise forms.ValidationError(u"Could not recognize the following documents: {names}. You can only input documents already registered in the Datatracker.".format(names=", ".join(failed_pks)))
+            raise forms.ValidationError("Could not recognize the following documents: {names}. You can only input documents already registered in the Datatracker.".format(names=", ".join(failed_pks)))
 
         if self.max_entries != None and len(objs) > self.max_entries:
-            raise forms.ValidationError(u"You can select at most %s entries." % self.max_entries)
+            raise forms.ValidationError("You can select at most %s entries." % self.max_entries)
 
         return objs
 

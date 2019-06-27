@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 import datetime
 import glob
 import itertools
@@ -276,7 +277,7 @@ def recording_edit(request, meeting_num, name):
                 by=request.user.person,
                 doc=recording,
                 rev=recording.rev,
-                desc=u'Changed URL to %s' % recording.external_url,
+                desc='Changed URL to %s' % recording.external_url,
             )
             recording.save_with_history([e])
 

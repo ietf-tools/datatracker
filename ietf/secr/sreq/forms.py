@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 from django import forms
 
 import debug                            # pyflakes:ignore
@@ -98,7 +99,7 @@ class SessionForm(forms.Form):
                 self.fields['third_session'].initial = True
 
         if self.hidden:
-            for key in self.fields.keys():
+            for key in list(self.fields.keys()):
                 self.fields[key].widget = forms.HiddenInput()
             self.fields['resources'].widget = forms.MultipleHiddenInput()
 

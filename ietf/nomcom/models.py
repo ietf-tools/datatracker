@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 import os
 
@@ -108,7 +109,7 @@ class Nomination(models.Model):
         verbose_name_plural = 'Nominations'
 
     def __unicode__(self):
-        return u"%s (%s)" % (self.candidate_name, self.candidate_email)
+        return "%s (%s)" % (self.candidate_name, self.candidate_email)
 
 
 class Nominee(models.Model):
@@ -128,13 +129,13 @@ class Nominee(models.Model):
 
     def __unicode__(self):
         if self.email.person and self.email.person.name:
-            return u'%s <%s> %s' % (self.email.person.plain_name(), self.email.address, self.nomcom.year())
+            return '%s <%s> %s' % (self.email.person.plain_name(), self.email.address, self.nomcom.year())
         else:
-            return u'%s %s' % (self.email.address, self.nomcom.year())
+            return '%s %s' % (self.email.address, self.nomcom.year())
 
     def name(self):
         if self.email.person and self.email.person.name:
-            return u'%s' % (self.email.person.plain_name(),)
+            return '%s' % (self.email.person.plain_name(),)
         else:
             return self.email.address
 
@@ -159,7 +160,7 @@ class NomineePosition(models.Model):
         super(NomineePosition, self).save(**kwargs)
 
     def __unicode__(self):
-        return u"%s - %s - %s" % (self.nominee, self.state, self.position)
+        return "%s - %s - %s" % (self.nominee, self.state, self.position)
 
     @property
     def questionnaires(self):
@@ -257,7 +258,7 @@ class Feedback(models.Model):
     objects = FeedbackManager()
 
     def __unicode__(self):
-        return u"from %s" % self.author
+        return "from %s" % self.author
 
     class Meta:
         ordering = ['time']

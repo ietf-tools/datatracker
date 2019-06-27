@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
 #!/usr/bin/python
 # -*- python -*-
 """
@@ -30,8 +31,8 @@ COPYRIGHT
 
 """
 
-from __future__ import unicode_literals
-from __future__ import print_function
+
+
 
 import datetime
 import getopt

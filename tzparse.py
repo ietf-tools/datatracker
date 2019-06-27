@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 #!/usr/bin/env python
 
 """
@@ -8,7 +9,7 @@ SYNOPSIS
     >>> tzparse("2008-09-08 14:40:35 +0200", "%Y-%m-%d %H:%M:%S %Z")
     datetime.datetime(2008, 9, 8, 14, 40, 35, tzinfo=pytz.FixedOffset(120))
     
-    >>> print tzparse("14:40:35 CEST, 08 Sep 2008", "%H:%M:%S %Z, %d %b %Y")
+    >>> print(tzparse("14:40:35 CEST, 08 Sep 2008", "%H:%M:%S %Z, %d %b %Y"))
     2008-09-08 14:40:35+02:00
 
 DESCRIPTION
@@ -94,31 +95,31 @@ def tzparse(string, format):
     Given a time specification string and a format, tzparse() returns a localized
     datetime.datetime.
 
-    >>> print tzparse("9 Oct 2009 CEST 13:58", "%d %b %Y %Z %H:%M")
+    >>> print(tzparse("9 Oct 2009 CEST 13:58", "%d %b %Y %Z %H:%M"))
     2009-10-09 13:58:00+02:00
 
-    >>> print tzparse("9 Oct 2009 13:58:00 Europe/Stockholm", "%d %b %Y %H:%M:%S %Z") 
+    >>> print(tzparse("9 Oct 2009 13:58:00 Europe/Stockholm", "%d %b %Y %H:%M:%S %Z"))
     2009-10-09 13:58:00+02:00
 
-    >>> print tzparse("9 Oct 2009 13:58:00 +0200", "%d %b %Y %H:%M:%S %Z") 
+    >>> print(tzparse("9 Oct 2009 13:58:00 +0200", "%d %b %Y %H:%M:%S %Z"))
     2009-10-09 13:58:00+02:00
 
-    >>> print tzparse("Fri, 9 Oct 2009 13:58:00 +0200", "%a, %d %b %Y %H:%M:%S %Z") 
+    >>> print(tzparse("Fri, 9 Oct 2009 13:58:00 +0200", "%a, %d %b %Y %H:%M:%S %Z"))
     2009-10-09 13:58:00+02:00
 
-    >>> print tzparse("2009-10-09 13:58:00 EST", '%Y-%m-%d %H:%M:%S %Z')
+    >>> print(tzparse("2009-10-09 13:58:00 EST", '%Y-%m-%d %H:%M:%S %Z'))
     2009-10-09 13:58:00-05:00
 
-    >>> print tzparse("2009-10-09 13:58:00+02:00", "%Y-%m-%d %H:%M:%S%Z")
+    >>> print(tzparse("2009-10-09 13:58:00+02:00", "%Y-%m-%d %H:%M:%S%Z"))
     2009-10-09 13:58:00+02:00
     
-    >>> print tzparse("1985-04-12T23:20:50Z", "%Y-%m-%dT%H:%M:%S%Z")
+    >>> print(tzparse("1985-04-12T23:20:50Z", "%Y-%m-%dT%H:%M:%S%Z"))
     1985-04-12 23:20:50+00:00
 
-    >>> print tzparse("1996-12-19T16:39:57-08:00", "%Y-%m-%dT%H:%M:%S%Z")
+    >>> print(tzparse("1996-12-19T16:39:57-08:00", "%Y-%m-%dT%H:%M:%S%Z"))
     1996-12-19 16:39:57-08:00
 
-    >>> print tzparse("1996-12-19T16:39:57", "%Y-%m-%dT%H:%M:%S")
+    >>> print(tzparse("1996-12-19T16:39:57", "%Y-%m-%dT%H:%M:%S"))
     1996-12-19 16:39:57+01:00
 
     """
@@ -131,8 +132,8 @@ def tzparse(string, format):
         # from the string, too.
 
         def fmt2pat(s):
-            s = re.sub("%[dHIjmMSUwWyY]", "\d+", s)
-            s = re.sub("%[aAbBp]", "\w+", s)
+            s = re.sub("%[dHIjmMSUwWyY]", r"\\d+", s)
+            s = re.sub("%[aAbBp]", r"\\w+", s)
             s = re.sub("%[cxX]", ".+", s)
             s = s.replace("%%", "%")
             return s
@@ -177,9 +178,9 @@ def tzparse(string, format):
 if __name__ == "__main__":
     import sys
     if len(sys.argv[1:]) == 2:
-        print tzparse(sys.argv[1], sys.argv[2])
+        print(tzparse(sys.argv[1], sys.argv[2]))
     else:
-        print "Running module tests:\n"
+        print("Running module tests:\n")
         import doctest
-        print doctest.testmod()
+        print(doctest.testmod())
     

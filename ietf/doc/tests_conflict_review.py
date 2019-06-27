@@ -1,10 +1,11 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 import debug    # pyflakes:ignore
 import os
 import shutil
 
 from pyquery import PyQuery
-from StringIO import StringIO
+from io import StringIO
 from textwrap import wrap
 
 from django.conf import settings
@@ -63,9 +64,9 @@ class ConflictReviewTests(TestCase):
         self.assertEqual(r.status_code, 302)
         review_doc = Document.objects.get(name='conflict-review-imaginary-independent-submission')
         self.assertEqual(review_doc.get_state('conflrev').slug,'needshep')
-        self.assertEqual(review_doc.rev,u'00')
-        self.assertEqual(review_doc.ad.name,u'Areað Irector')
-        self.assertEqual(review_doc.notify,u'ipu@ietf.org')
+        self.assertEqual(review_doc.rev,'00')
+        self.assertEqual(review_doc.ad.name,'Areað Irector')
+        self.assertEqual(review_doc.notify,'ipu@ietf.org')
         doc = Document.objects.get(name='draft-imaginary-independent-submission')
         self.assertTrue(doc in [x.target.document for x in review_doc.relateddocument_set.filter(relationship__slug='conflrev')])
 
@@ -87,34 +88,34 @@ class ConflictReviewTests(TestCase):
 
         # can't start conflict reviews on documents not in a stream
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 404)
+        self.assertEqual(r.status_code, 404)
 
 
         # can't start conflict reviews on documents in some other stream
         doc.stream = StreamName.objects.get(slug='irtf')
         doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 404)
+        self.assertEqual(r.status_code, 404)
 
         # successful get 
         doc.stream = StreamName.objects.get(slug='ise')
         doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form input[name=notify]')),1)
-        self.assertEquals(len(q('form select[name=ad]')),0)
+        self.assertEqual(len(q('form input[name=notify]')),1)
+        self.assertEqual(len(q('form select[name=ad]')),0)
 
         # successfully starts a review, and notifies the secretariat
         messages_before = len(outbox)
         r = self.client.post(url,dict(notify='ipu@ietf.org'))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
         review_doc = Document.objects.get(name='conflict-review-imaginary-independent-submission')
-        self.assertEquals(review_doc.get_state('conflrev').slug,'needshep')
-        self.assertEquals(review_doc.rev,u'00')
-        self.assertEquals(review_doc.telechat_date(),None)
-        self.assertEquals(review_doc.ad.name,u'Ietf Chair')
-        self.assertEquals(review_doc.notify,u'ipu@ietf.org')
+        self.assertEqual(review_doc.get_state('conflrev').slug,'needshep')
+        self.assertEqual(review_doc.rev,'00')
+        self.assertEqual(review_doc.telechat_date(),None)
+        self.assertEqual(review_doc.ad.name,'Ietf Chair')
+        self.assertEqual(review_doc.notify,'ipu@ietf.org')
         doc = Document.objects.get(name='draft-imaginary-independent-submission')
         self.assertTrue(doc in [x.target.document for x in review_doc.relateddocument_set.filter(relationship__slug='conflrev')])
 
@@ -297,9 +298,9 @@ class ConflictReviewTests(TestCase):
         self.assertIn('ietf-announce@', outbox[0]['Cc'])
         self.assertIn('iana@', outbox[0]['Cc'])
         if approve_type == 'appr-noprob':
-            self.assertIn( 'IESG has no problem', ''.join(wrap(unicode(outbox[0]),2**16)))
+            self.assertIn( 'IESG has no problem', ''.join(wrap(str(outbox[0]),2**16)))
         else:
-            self.assertIn( 'NOT be published', ''.join(wrap(unicode(outbox[0]),2**16)))
+            self.assertIn( 'NOT be published', ''.join(wrap(str(outbox[0]),2**16)))
         
        
     def test_approve_reqnopub(self):
@@ -330,12 +331,12 @@ class ConflictReviewSubmitTests(TestCase):
 
         # sane post using textbox
         path = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
-        self.assertEqual(doc.rev,u'00')
+        self.assertEqual(doc.rev,'00')
         self.assertFalse(os.path.exists(path))
         r = self.client.post(url,dict(content="Some initial review text\n",submit_response="1"))
         self.assertEqual(r.status_code,302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
-        self.assertEqual(doc.rev,u'00')
+        self.assertEqual(doc.rev,'00')
         with open(path) as f:
             self.assertEqual(f.read(),"Some initial review text\n")
             f.close()
@@ -348,7 +349,7 @@ class ConflictReviewSubmitTests(TestCase):
 
         # A little additional setup 
         # doc.rev is u'00' per the test setup - double-checking that here - if it fails, the breakage is in setUp
-        self.assertEqual(doc.rev,u'00')
+        self.assertEqual(doc.rev,'00')
         path = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
         with open(path,'w') as f:
             f.write('This is the old proposal.')
@@ -375,7 +376,7 @@ class ConflictReviewSubmitTests(TestCase):
         r = self.client.post(url,dict(txt=test_file,submit_response="1"))
         self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
-        self.assertEqual(doc.rev,u'01')
+        self.assertEqual(doc.rev,'01')
         path = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
         with open(path) as f:
             self.assertEqual(f.read(),"This is a new proposal.")

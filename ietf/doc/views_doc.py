@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -33,7 +33,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os, datetime, urllib, json, glob, re
+import os, datetime, urllib.request, urllib.parse, urllib.error, json, glob, re
 
 from django.http import HttpResponse, Http404 , HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
@@ -251,7 +251,7 @@ def document_main(request, name, rev=None):
         if iesg_state and iesg_state.slug in IESG_BALLOT_ACTIVE_STATES:
             active_ballot = doc.active_ballot()
             if active_ballot:
-                ballot_summary = needed_ballot_positions(doc, active_ballot.active_ad_positions().values())
+                ballot_summary = needed_ballot_positions(doc, list(active_ballot.active_ad_positions().values()))
 
         # submission
         submission = ""
@@ -312,7 +312,7 @@ def document_main(request, name, rev=None):
         if doc.stream_id == "ietf" and group.type_id == "wg" and group.list_archive:
             search_archive = group.list_archive
 
-        search_archive = urllib.quote(search_archive, safe="~")
+        search_archive = urllib.parse.quote(search_archive, safe="~")
 
         # conflict reviews
         conflict_reviews = [d.document.name for d in doc.related_that("conflrev")]
@@ -458,7 +458,7 @@ def document_main(request, name, rev=None):
         if doc.get_state_slug() in ("intrev", "iesgrev"):
             active_ballot = doc.active_ballot()
             if active_ballot:
-                ballot_summary = needed_ballot_positions(doc, active_ballot.active_ad_positions().values())
+                ballot_summary = needed_ballot_positions(doc, list(active_ballot.active_ad_positions().values()))
             else:
                 ballot_summary = "No active ballot found."
 
@@ -493,14 +493,14 @@ def document_main(request, name, rev=None):
 
         if doc.rev == "00" and not os.path.isfile(pathname):
             # This could move to a template
-            content = u"A conflict review response has not yet been proposed."
+            content = "A conflict review response has not yet been proposed."
         else:     
             content = doc.text_or_error() # pyflakes:ignore
             content = markup_txt.markup(content)
 
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval") and doc.active_ballot():
-            ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
+            ballot_summary = needed_ballot_positions(doc, list(doc.active_ballot().active_ad_positions().values()))
 
         return render(request, "doc/document_conflict_review.html",
                                   dict(doc=doc,
@@ -521,13 +521,13 @@ def document_main(request, name, rev=None):
 
         if doc.rev == "00" and not os.path.isfile(pathname):
             # This could move to a template
-            content = u"Status change text has not yet been proposed."
+            content = "Status change text has not yet been proposed."
         else:     
             content = doc.text_or_error() # pyflakes:ignore
 
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval"):
-            ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
+            ballot_summary = needed_ballot_positions(doc, list(doc.active_ballot().active_ad_positions().values()))
      
         if isinstance(doc,Document):
             sorted_relations=doc.relateddocument_set.all().order_by('relationship__name')
@@ -1263,7 +1263,7 @@ def add_sessionpresentation(request,name):
     if doc.group:
         sessions = sorted(sessions,key=lambda x:0 if x.group==doc.group else 1)
 
-    session_choices = [(s.pk,unicode(s)) for s in sessions]
+    session_choices = [(s.pk,str(s)) for s in sessions]
 
     if request.method == 'POST':
         version_form = VersionForm(request.POST,choices=version_choices)

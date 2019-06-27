@@ -1,6 +1,6 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import re
 from unidecode import unidecode
@@ -126,7 +126,7 @@ def get_person_form(*args, **kwargs):
                 self.unidecoded_ascii = name != reconstructed_name
 
         def clean_name(self):
-            name = self.cleaned_data.get("name") or u""
+            name = self.cleaned_data.get("name") or ""
             prevent_at_symbol(name)
             prevent_system_name(name)
             return name
@@ -135,13 +135,13 @@ def get_person_form(*args, **kwargs):
             if self.unidecoded_ascii:
                 raise forms.ValidationError("Name contained non-ASCII characters, and was automatically reconstructed using only Latin characters. Check the result - if you are happy, just hit Submit again.")
 
-            name = self.cleaned_data.get("ascii") or u""
+            name = self.cleaned_data.get("ascii") or ""
             prevent_at_symbol(name)
             prevent_system_name(name)
             return ascii_cleaner(name)
 
         def clean_ascii_short(self):
-            name = self.cleaned_data.get("ascii_short") or u""
+            name = self.cleaned_data.get("ascii_short") or ""
             prevent_at_symbol(name)
             prevent_system_name(name)
             return ascii_cleaner(name)
@@ -184,11 +184,11 @@ class RoleEmailForm(forms.Form):
         super(RoleEmailForm, self).__init__(*args, **kwargs)
 
         f = self.fields["email"]
-        f.label = u"%s in %s" % (role.name, role.group.acronym.upper())
-        f.help_text = u"Email to use for <i>%s</i> role in %s" % (role.name, role.group.name)
+        f.label = "%s in %s" % (role.name, role.group.acronym.upper())
+        f.help_text = "Email to use for <i>%s</i> role in %s" % (role.name, role.group.name)
         f.queryset = f.queryset.filter(models.Q(person=role.person_id) | models.Q(role=role)).distinct()
         f.initial = role.email_id
-        f.choices = [(e.pk, e.address if e.active else u"({})".format(e.address)) for e in f.queryset]
+        f.choices = [(e.pk, e.address if e.active else "({})".format(e.address)) for e in f.queryset]
 
 
 class ResetPasswordForm(forms.Form):

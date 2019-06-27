@@ -6,7 +6,7 @@ import shutil
 import datetime
 import json
 import sys
-import urlparse
+import urllib.parse
 import bibtexparser
 if sys.version_info[0] == 2 and sys.version_info[1] < 7:
     import unittest2 as unittest
@@ -14,7 +14,7 @@ else:
     import unittest
 from pyquery import PyQuery
 from tempfile import NamedTemporaryFile
-from Cookie import SimpleCookie
+from http.cookies import SimpleCookie
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -142,71 +142,71 @@ class SearchTests(TestCase):
         # exact match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # prefix match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(draft.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # non-prefix match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(draft.name.split("-")[1:]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # other doctypes than drafts
         doc = Document.objects.get(name='charter-ietf-mars')
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name='charter-ietf-ma')))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
+        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='conflict-review-').first()
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
+        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='status-change-').first()
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
+        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='agenda-').first()
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
+        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='minutes-').first()
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
+        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='slides-').first()
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
+        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         # match with revision
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name + "-" + prev_rev)))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=prev_rev)))
+        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=prev_rev)))
 
         # match with non-existing revision
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name + "-09")))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # match with revision and extension
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name + "-" + prev_rev + ".txt")))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=prev_rev)))
+        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=prev_rev)))
         
         # no match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="draft-ietf-doesnotexist-42")))
         self.assertEqual(r.status_code, 302)
 
-        parsed = urlparse.urlparse(r["Location"])
+        parsed = urllib.parse.urlparse(r["Location"])
         self.assertEqual(parsed.path, urlreverse('ietf.doc.views_search.search'))
-        self.assertEqual(urlparse.parse_qs(parsed.query)["name"][0], "draft-ietf-doesnotexist-42")
+        self.assertEqual(urllib.parse.parse_qs(parsed.query)["name"][0], "draft-ietf-doesnotexist-42")
 
     def test_frontpage(self):
         r = self.client.get("/")
@@ -919,11 +919,11 @@ class DocTestCase(TestCase):
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=rfc.name))
         r = self.client.get(url)
         entry = bibtexparser.loads(r.content).get_entry_dict()["rfc%s"%num]
-        self.assertEqual(entry['series'],   u'Request for Comments')
+        self.assertEqual(entry['series'],   'Request for Comments')
         self.assertEqual(entry['number'],   num)
-        self.assertEqual(entry['doi'],      u'10.17487/RFC%s'%num)
-        self.assertEqual(entry['year'],     u'2010')
-        self.assertEqual(entry['month'],    u'oct')
+        self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
+        self.assertEqual(entry['year'],     '2010')
+        self.assertEqual(entry['month'],    'oct')
         #
         self.assertNotIn('day', entry)
 
@@ -931,7 +931,7 @@ class DocTestCase(TestCase):
                   stream_id =       'rse',
                   states =          [('draft','rfc'),('draft-iesg','pub')],
                   std_level_id =    'ind',
-                  time =            datetime.datetime(1990,04,01),
+                  time =            datetime.datetime(1990,0o4,0o1),
               )
         num = april1.rfc_number()
         DocEventFactory.create(doc=april1, type='published_rfc', time = '1990-04-01')
@@ -939,20 +939,20 @@ class DocTestCase(TestCase):
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=april1.name))
         r = self.client.get(url)
         entry = bibtexparser.loads(r.content).get_entry_dict()['rfc%s'%num]
-        self.assertEqual(entry['series'],   u'Request for Comments')
+        self.assertEqual(entry['series'],   'Request for Comments')
         self.assertEqual(entry['number'],   num)
-        self.assertEqual(entry['doi'],      u'10.17487/RFC%s'%num)
-        self.assertEqual(entry['year'],     u'1990')
-        self.assertEqual(entry['month'],    u'apr')
-        self.assertEqual(entry['day'],      u'1')
+        self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
+        self.assertEqual(entry['year'],     '1990')
+        self.assertEqual(entry['month'],    'apr')
+        self.assertEqual(entry['day'],      '1')
 
         draft = IndividualDraftFactory.create()
-        docname = u'%s-%s' % (draft.name, draft.rev)
+        docname = '%s-%s' % (draft.name, draft.rev)
         bibname = docname[6:]           # drop the 'draft-' prefix
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=draft.name))
         r = self.client.get(url)
         entry = bibtexparser.loads(r.content).get_entry_dict()[bibname]
-        self.assertEqual(entry['note'],     u'Work in Progress')
+        self.assertEqual(entry['note'],     'Work in Progress')
         self.assertEqual(entry['number'],   docname)
         self.assertEqual(entry['year'],     str(draft.pub_date().year))
         self.assertEqual(entry['month'],    draft.pub_date().strftime('%b').lower())
@@ -1012,11 +1012,11 @@ class ReferencesTest(TestCase):
         RelatedDocument.objects.get_or_create(source=doc1,target=doc2,relationship=DocRelationshipName.objects.get(slug='refnorm'))
         url = urlreverse('ietf.doc.views_doc.document_references', kwargs=dict(name=doc1.name))
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertTrue(doc2.name in unicontent(r))
         url = urlreverse('ietf.doc.views_doc.document_referenced_by', kwargs=dict(name=doc2.name))
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertTrue(doc1.name in unicontent(r))
        
 

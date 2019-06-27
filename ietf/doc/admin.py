@@ -4,7 +4,7 @@
 from django.contrib import admin
 from django import forms
 
-from models import (StateType, State, RelatedDocument, DocumentAuthor, Document, RelatedDocHistory,
+from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document, RelatedDocHistory,
     DocHistoryAuthor, DocHistory, DocAlias, DocReminder, DocEvent, NewRevisionDocEvent,
     StateDocEvent, ConsensusDocEvent, BallotType, BallotDocEvent, WriteupDocEvent, LastCallDocEvent,
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
@@ -155,7 +155,7 @@ admin.site.register(EditedAuthorsDocEvent, DocEventAdmin)
 
 
 class DeletedEventAdmin(admin.ModelAdmin):
-    list_display = [u'id', 'content_type', 'json', 'by', 'time']
+    list_display = ['id', 'content_type', 'json', 'by', 'time']
     list_filter = ['time']
     raw_id_fields = ['content_type', 'by']
 admin.site.register(DeletedEvent, DeletedEventAdmin)

@@ -7,7 +7,7 @@ import shutil
 import debug    # pyflakes:ignore
 
 from pyquery import PyQuery
-from StringIO import StringIO
+from io import StringIO
 from textwrap import wrap
 
 from django.conf import settings
@@ -73,9 +73,9 @@ class StatusChangeTests(TestCase):
         self.assertEqual(r.status_code, 302)
         status_change = Document.objects.get(name='status-change-imaginary-new')        
         self.assertEqual(status_change.get_state('statchg').slug,'adrev')
-        self.assertEqual(status_change.rev,u'00')
-        self.assertEqual(status_change.ad.name,u'Areað Irector')
-        self.assertEqual(status_change.notify,u'ipu@ietf.org')
+        self.assertEqual(status_change.rev,'00')
+        self.assertEqual(status_change.ad.name,'Areað Irector')
+        self.assertEqual(status_change.notify,'ipu@ietf.org')
         self.assertTrue(status_change.relateddocument_set.filter(relationship__slug='tois',target__docs__name='draft-ietf-random-thing'))
 
     def test_change_state(self):
@@ -112,10 +112,10 @@ class StatusChangeTests(TestCase):
         doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
         lc_req_pk = str(State.objects.get(slug='lc-req',type__slug='statchg').pk)
         r = self.client.post(url,dict(new_state=lc_req_pk))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        self.assertEquals(doc.get_state('statchg').slug,'lc-req')
-        self.assertEquals(len(outbox), messages_before + 1)
+        self.assertEqual(doc.get_state('statchg').slug,'lc-req')
+        self.assertEqual(len(outbox), messages_before + 1)
         self.assertTrue('Last Call:' in outbox[-1]['Subject'])
 
         # successful change to IESG Evaluation 
@@ -171,15 +171,15 @@ class StatusChangeTests(TestCase):
 
         # normal get 
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('input[name=title]')),1)
+        self.assertEqual(len(q('input[name=title]')),1)
 
         # change title
         r = self.client.post(url,dict(title='New title'))
-        self.assertEquals(r.status_code,302)
+        self.assertEqual(r.status_code,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        self.assertEquals(doc.title,'New title')
+        self.assertEqual(doc.title,'New title')
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Title changed'))       
 
     def test_edit_ad(self):
@@ -288,7 +288,7 @@ class StatusChangeTests(TestCase):
         self.assertTrue( 'Last call requested' in ''.join(wrap(r.content,2**16)))
         self.assertEqual(len(outbox), messages_before + 1)
         self.assertTrue('Last Call:' in outbox[-1]['Subject'])
-        self.assertTrue('Last Call Request has been submitted' in ''.join(wrap(unicode(outbox[-1]),2**16)))
+        self.assertTrue('Last Call Request has been submitted' in ''.join(wrap(str(outbox[-1]),2**16)))
 
 
     def test_approve(self):
@@ -328,8 +328,8 @@ class StatusChangeTests(TestCase):
         self.assertTrue('Action:' in outbox[-1]['Subject'])
         self.assertTrue('ietf-announce' in outbox[-1]['To'])
         self.assertTrue('rfc-editor' in outbox[-1]['Cc'])
-        self.assertTrue('(rfc9998) to Historic' in ''.join(wrap(unicode(outbox[-1])+unicode(outbox[-2]),2**16)))
-        self.assertTrue('(rfc9999) to Internet Standard' in ''.join(wrap(unicode(outbox[-1])+unicode(outbox[-2]),2**16)))
+        self.assertTrue('(rfc9998) to Historic' in ''.join(wrap(str(outbox[-1])+str(outbox[-2]),2**16)))
+        self.assertTrue('(rfc9999) to Internet Standard' in ''.join(wrap(str(outbox[-1])+str(outbox[-2]),2**16)))
 
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('The following approval message was sent'))       
 
@@ -415,12 +415,12 @@ class StatusChangeSubmitTests(TestCase):
 
         # sane post using textbox
         path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
-        self.assertEqual(doc.rev,u'00')
+        self.assertEqual(doc.rev,'00')
         self.assertFalse(os.path.exists(path))
         r = self.client.post(url,dict(content="Some initial review text\n",submit_response="1"))
         self.assertEqual(r.status_code,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        self.assertEqual(doc.rev,u'00')
+        self.assertEqual(doc.rev,'00')
         with open(path) as f:
             self.assertEqual(f.read(),"Some initial review text\n")
         self.assertTrue( "mid-review-00" in doc.latest_event(NewRevisionDocEvent).desc)
@@ -432,7 +432,7 @@ class StatusChangeSubmitTests(TestCase):
 
         # A little additional setup 
         # doc.rev is u'00' per the test setup - double-checking that here - if it fails, the breakage is in setUp
-        self.assertEqual(doc.rev,u'00')
+        self.assertEqual(doc.rev,'00')
         path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
         with open(path,'w') as f:
             f.write('This is the old proposal.')
@@ -464,7 +464,7 @@ class StatusChangeSubmitTests(TestCase):
         r = self.client.post(url,dict(txt=test_file,submit_response="1"))
         self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        self.assertEqual(doc.rev,u'01')
+        self.assertEqual(doc.rev,'01')
         path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
         with open(path) as f:
             self.assertEqual(f.read(),"This is a new proposal.")

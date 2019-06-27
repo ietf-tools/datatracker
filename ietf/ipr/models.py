@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 
 import datetime
 
@@ -174,9 +174,9 @@ class IprDocRel(models.Model):
 
     def __unicode__(self):
         if self.revisions:
-            return u"%s which applies to %s-%s" % (self.disclosure, self.document.name, self.revisions)
+            return "%s which applies to %s-%s" % (self.disclosure, self.document.name, self.revisions)
         else:
-            return u"%s which applies to %s" % (self.disclosure, self.document.name)
+            return "%s which applies to %s" % (self.disclosure, self.document.name)
 
 class RelatedIpr(models.Model):
     source       = ForeignKey(IprDisclosureBase,related_name='relatedipr_source_set')
@@ -184,7 +184,7 @@ class RelatedIpr(models.Model):
     relationship = ForeignKey(DocRelationshipName) # Re-use; change to a dedicated RelName if needed
 
     def __unicode__(self):
-        return u"%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
+        return "%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
 
 class IprEvent(models.Model):
     time        = models.DateTimeField(auto_now_add=True)
@@ -197,7 +197,7 @@ class IprEvent(models.Model):
     response_due= models.DateTimeField(blank=True,null=True)
 
     def __unicode__(self):
-        return u"%s %s by %s at %s" % (self.disclosure.title, self.type.name.lower(), self.by.plain_name(), self.time)
+        return "%s %s by %s at %s" % (self.disclosure.title, self.type.name.lower(), self.by.plain_name(), self.time)
 
     def response_past_due(self):
         """Returns true if it's beyond the response_due date and no response has been

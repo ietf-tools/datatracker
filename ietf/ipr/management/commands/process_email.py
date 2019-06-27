@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
 import sys
 
 from django.core.management.base import BaseCommand, CommandError
@@ -7,7 +8,7 @@ from ietf.ipr.mail import process_response_email
 import debug                            # pyflakes:ignore
 
 class Command(BaseCommand):
-    help = (u"Process incoming email responses to ipr mail")
+    help = ("Process incoming email responses to ipr mail")
 
     def add_arguments(self, parser):
         parser.add_argument('--email-file', dest='email', help='File containing email (default: stdin)')

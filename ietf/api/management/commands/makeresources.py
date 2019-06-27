@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import print_function
+
 
 import os
 import datetime
@@ -66,7 +66,7 @@ class Command(AppCommand):
             app_resources = {}
             if os.path.exists(resource_file_path):
                 resources = import_module("%s.resources" % app.name)
-                for n,v in resources.__dict__.items():
+                for n,v in list(resources.__dict__.items()):
                     if issubclass(type(v), type(ModelResource)):
                         app_resources[n] = v
 
@@ -164,7 +164,7 @@ class Command(AppCommand):
                             fields=model._meta.fields,
                             m2m_fields=model._meta.many_to_many,
                             name=model_name,
-                            imports=[ v for k,v in imports.items() ],
+                            imports=[ v for k,v in list(imports.items()) ],
                             foreign_keys=foreign_keys,
                             m2m_keys=m2m_keys,
                             resource_name=resource_name,
@@ -184,7 +184,7 @@ class Command(AppCommand):
                     while len(new_models) > 0:
                         list_len = len(new_models)
                         #debug.show('len(new_models)')
-                        keys = new_models.keys()
+                        keys = list(new_models.keys())
                         for model_name in keys:
                             internal_fk_count = 0
                             for fk in new_models[model_name]["foreign_keys"]+new_models[model_name]["m2m_keys"]:
@@ -207,7 +207,7 @@ class Command(AppCommand):
                                 internal_fk_count_limit += 1
                             else:
                                 print("Failed also with partial ordering, writing resource classes without ordering")
-                                new_model_list = [ v for k,v in new_models.items() ]
+                                new_model_list = [ v for k,v in list(new_models.items()) ]
                                 break
 
                     if rfile.tell() == 0:

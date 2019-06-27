@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2015-2019, All Rights Reserved
 
 import os
 import json
@@ -64,7 +64,7 @@ class Command(BaseCommand):
                 else:
                     file = codecs.open(filename, "r", encoding="utf-8")
             except IOError as e:
-                self.stderr.write(u"%s" % e)
+                self.stderr.write("%s" % e)
                 exit(1)
         else:
             file = filename
@@ -87,8 +87,8 @@ class Command(BaseCommand):
             lcoverage = latest_coverage[section]["covered"]
             lformat   = latest_coverage[section].get("format", 1)
             #
-            mkeys = mcoverage.keys()
-            lkeys = lcoverage.keys()
+            mkeys = list(mcoverage.keys())
+            lkeys = list(lcoverage.keys())
             #
             keys = list(lkeys)
             keys.sort()
@@ -181,7 +181,7 @@ class Command(BaseCommand):
             lcoverage = latest_coverage[section]["covered"]
             lformat   = latest_coverage[section].get("format", 1)
             #
-            lkeys = lcoverage.keys()
+            lkeys = list(lcoverage.keys())
             #
             keys = list(lkeys)
             keys.sort()

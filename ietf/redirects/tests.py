@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
 # Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -92,7 +93,7 @@ class RedirectsTests(TestCase):
     fixtures = ["initial_data.xml", ]
 
     def test_redirects(self):
-        for src, dst in REDIRECT_TESTS.items():
+        for src, dst in list(REDIRECT_TESTS.items()):
             baseurl, args = split_url(src)
             response = self.client.get(baseurl, args)
             self.assertTrue(str(response.status_code).startswith("3"))

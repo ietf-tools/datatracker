@@ -1,6 +1,6 @@
-# Copyright The IETF Trust 2014-2018, All Rights Reserved
+# Copyright The IETF Trust 2015-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import os
 import factory
@@ -53,11 +53,11 @@ class PersonFactory(factory.DjangoModelFactory):
         model = Person
 
     user = factory.SubFactory(UserFactory)
-    name = factory.LazyAttribute(lambda p: normalize_name(u'%s %s'%(p.user.first_name, p.user.last_name)))
-    ascii = factory.LazyAttribute(lambda p: unicode(unidecode_name(p.name)))
+    name = factory.LazyAttribute(lambda p: normalize_name('%s %s'%(p.user.first_name, p.user.last_name)))
+    ascii = factory.LazyAttribute(lambda p: str(unidecode_name(p.name)))
 
     class Params:
-        with_bio = factory.Trait(biography = u"\n\n".join(fake.paragraphs()))
+        with_bio = factory.Trait(biography = "\n\n".join(fake.paragraphs()))
 
     @factory.post_generation
     def default_aliases(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
@@ -82,7 +82,7 @@ class PersonFactory(factory.DjangoModelFactory):
         import atexit
         if obj.biography:
             photo_name = obj.photo_name()
-            media_name = u"%s/%s.jpg" % (settings.PHOTOS_DIRNAME, photo_name)
+            media_name = "%s/%s.jpg" % (settings.PHOTOS_DIRNAME, photo_name)
             obj.photo = media_name
             obj.photo_thumb = media_name
             photosrc = os.path.join(settings.TEST_DATA_DIR, "profile-default.jpg")

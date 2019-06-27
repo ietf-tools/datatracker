@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # -*- Python -*-
@@ -38,7 +39,7 @@ def rewrite_address_list(l):
     h = {}
     for address in l:
         #address = address.strip()
-        if h.has_key(address): continue
+        if address in h: continue
         h[address] = True
         yield address
 
@@ -46,12 +47,12 @@ def dump_sublist(afile, vfile, alias, adomains, vdomain, emails):
     if not emails:
         return emails
     # Nones in the list should be skipped
-    emails = filter(None, emails)
+    emails = [_f for _f in emails if _f]
 
     # Make sure emails are sane and eliminate the Nones again for
     # non-sane ones
     emails = [rewrite_email_address(e) for e in emails]
-    emails = filter(None, emails)
+    emails = [_f for _f in emails if _f]
 
     # And we'll eliminate the duplicates too but preserve order
     emails = list(rewrite_address_list(emails))
@@ -71,7 +72,7 @@ def dump_sublist(afile, vfile, alias, adomains, vdomain, emails):
         # If there's unicode in email address, something is badly
         # wrong and we just silently punt
         # XXX - is there better approach?
-        print '# Error encoding', alias, repr(emails)
+        print('# Error encoding', alias, repr(emails))
         return []
     return emails
 

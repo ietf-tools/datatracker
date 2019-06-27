@@ -119,7 +119,7 @@ class IESGAgendaTests(TestCase):
         self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
         settings.INTERNET_DRAFT_PATH = self.draft_dir
 
-        for d in self.telechat_docs.values():
+        for d in list(self.telechat_docs.values()):
             TelechatDocEvent.objects.create(type="scheduled_for_telechat",
                                             doc=d,
                                             rev=d.rev,
@@ -304,7 +304,7 @@ class IESGAgendaTests(TestCase):
         r = self.client.get("/feed/iesg-agenda/")
         self.assertEqual(r.status_code, 200)
 
-        for d in self.telechat_docs.values():
+        for d in list(self.telechat_docs.values()):
             self.assertTrue(d.name in unicontent(r))
             self.assertTrue(d.title in unicontent(r))
 
@@ -312,7 +312,7 @@ class IESGAgendaTests(TestCase):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_json"))
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
                 self.assertTrue(d.group.name in unicontent(r), "%s '%s' not in response" % (k, d.group.name))
                 self.assertTrue(d.group.acronym in unicontent(r), "%s '%s' acronym not in response" % (k, d.group.acronym))
@@ -326,7 +326,7 @@ class IESGAgendaTests(TestCase):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda"))
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
                 self.assertTrue(d.group.name in unicontent(r), "%s '%s' not in response" % (k, d.group.name))
                 self.assertTrue(d.group.acronym in unicontent(r), "%s '%s' acronym not in response" % (k, d.group.acronym))
@@ -338,7 +338,7 @@ class IESGAgendaTests(TestCase):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_txt"))
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
                 self.assertTrue(d.group.name in unicontent(r), "%s '%s' not in response" % (k, d.group.name))
                 self.assertTrue(d.group.acronym in unicontent(r), "%s '%s' acronym not in response" % (k, d.group.acronym))
@@ -350,7 +350,7 @@ class IESGAgendaTests(TestCase):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_scribe_template"))
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
                 continue # scribe template doesn't contain chartering info
 
@@ -363,7 +363,7 @@ class IESGAgendaTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
                 self.assertTrue(d.group.name in unicontent(r), "%s '%s' not in response" % (k, d.group.name))
                 self.assertTrue(d.group.acronym in unicontent(r), "%s '%s' acronym not in response" % (k, d.group.acronym))
@@ -383,7 +383,7 @@ class IESGAgendaTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
                 self.assertTrue(d.group.name in unicontent(r), "%s '%s' not in response" % (k, d.group.name, ))
                 self.assertTrue(d.group.acronym in unicontent(r), "%s '%s' acronym not in response" % (k, d.group.acronym, ))
@@ -396,7 +396,7 @@ class IESGAgendaTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name, ))
 
     def test_agenda_documents(self):
@@ -404,7 +404,7 @@ class IESGAgendaTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name, ))
             self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title, ))
 
@@ -413,7 +413,7 @@ class IESGAgendaTests(TestCase):
         # We haven't put any documents on past telechats, so this should be empty
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             self.assertNotIn(d.name, unicontent(r))
             self.assertNotIn(d.title, unicontent(r))
         # Add the documents to a past telechat
@@ -421,7 +421,7 @@ class IESGAgendaTests(TestCase):
         date = datetime.date.today() - datetime.timedelta(days=14)
         approved = State.objects.get(type='draft-iesg', slug='approved')
         iesg_eval = State.objects.get(type='draft-iesg', slug='iesg-eva')
-        for d in self.telechat_docs.values():
+        for d in list(self.telechat_docs.values()):
             if d.type_id in ['draft', 'charter']:
                 create_ballot_if_not_open(None, d, by, 'approve')
             TelechatDocEvent.objects.create(type="scheduled_for_telechat",
@@ -435,7 +435,7 @@ class IESGAgendaTests(TestCase):
         # Now check that they are present on the past documents page
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             if d.states.get(type='draft-iesg').slug in ['approved', 'iesg-eva', ]:
                 self.assertIn(d.name, unicontent(r))
             else:
@@ -455,9 +455,9 @@ class IESGAgendaTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        import tarfile, StringIO
+        import tarfile, io
 
-        tar = tarfile.open(None, fileobj=StringIO.StringIO(r.content))
+        tar = tarfile.open(None, fileobj=io.StringIO(r.content))
         names = tar.getnames()
         self.assertIn(d1_filename, names)
         self.assertNotIn(d2_filename, names)

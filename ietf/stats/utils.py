@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2017-2019, All Rights Reserved
 import re
 import requests
 from collections import defaultdict
@@ -83,7 +84,7 @@ def get_aliased_affiliations(affiliations):
 
     # now we just need to pick the most popular uppercase/lowercase
     # spelling for each affiliation with more than one
-    for similar_affiliations in affiliations_with_case_spellings.itervalues():
+    for similar_affiliations in affiliations_with_case_spellings.values():
         if len(similar_affiliations) > 1:
             most_popular = sorted(similar_affiliations, key=affiliation_sort_key, reverse=True)[0]
             for affiliation in similar_affiliations:
@@ -112,8 +113,8 @@ def get_aliased_countries(countries):
         return possible_alias
 
     known_re_aliases = {
-        re.compile(u"\\b{}\\b".format(re.escape(alias))): name
-        for alias, name in known_aliases.iteritems()
+        re.compile("\\b{}\\b".format(re.escape(alias))): name
+        for alias, name in known_aliases.items()
     }
 
     # specific hack: check for zip codes from the US since in the
@@ -127,7 +128,7 @@ def get_aliased_countries(countries):
             t = t.strip()
             if t:
                 return t
-        return u""
+        return ""
 
     known_countries = set(CountryName.objects.values_list("name", flat=True))
 
@@ -177,7 +178,7 @@ def get_aliased_countries(countries):
         # country name anywhere
         country_lower = country.lower()
         found = False
-        for alias_re, name in known_re_aliases.iteritems():
+        for alias_re, name in known_re_aliases.items():
             if alias_re.search(country) or alias_re.search(country_lower):
                 res[original_country] = name
                 found = True

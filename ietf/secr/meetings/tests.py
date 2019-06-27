@@ -1,8 +1,9 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 import datetime
 import os
 import shutil
 from pyquery import PyQuery
-from StringIO import StringIO
+from io import StringIO
 
 import debug         # pyflakes:ignore
 

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 import datetime
@@ -7,7 +7,7 @@ import jsonfield
 import os
 import re
 
-from urlparse import urljoin
+from urllib.parse import urljoin
 
 from django.conf import settings
 from django.core.validators import RegexValidator
@@ -91,7 +91,7 @@ class Group(GroupInfo):
         return e[0] if e else None
 
     def has_role(self, user, role_names):
-        if isinstance(role_names, str) or isinstance(role_names, unicode):
+        if isinstance(role_names, str) or isinstance(role_names, str):
             role_names = [role_names]
         return user.is_authenticated and self.role_set.filter(name__in=role_names, person__user=user).exists()
 
@@ -253,7 +253,7 @@ class GroupURL(models.Model):
     url = models.URLField()
 
     def __unicode__(self):
-        return u"%s (%s)" % (self.url, self.name)
+        return "%s (%s)" % (self.url, self.name)
 
 class GroupMilestoneInfo(models.Model):
     group = ForeignKey(Group)
@@ -289,7 +289,7 @@ class GroupStateTransitions(models.Model):
     next_states = models.ManyToManyField('doc.State', related_name='previous_groupstatetransitions_states')
 
     def __unicode__(self):
-        return u'%s "%s" -> %s' % (self.group.acronym, self.state.name, [s.name for s in self.next_states.all()])
+        return '%s "%s" -> %s' % (self.group.acronym, self.state.name, [s.name for s in self.next_states.all()])
 
 GROUP_EVENT_CHOICES = [
     ("changed_state", "Changed state"),
@@ -310,7 +310,7 @@ class GroupEvent(models.Model):
     desc = models.TextField()
 
     def __unicode__(self):
-        return u"%s %s at %s" % (self.by.plain_name(), self.get_type_display().lower(), self.time)
+        return "%s %s at %s" % (self.by.plain_name(), self.get_type_display().lower(), self.time)
 
     class Meta:
         ordering = ['-time', 'id']
@@ -327,7 +327,7 @@ class Role(models.Model):
     person = ForeignKey(Person)
     email = ForeignKey(Email, help_text="Email address used by person for this role.")
     def __unicode__(self):
-        return u"%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym or self.group.name)
+        return "%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym or self.group.name)
 
     def formatted_ascii_email(self):
         return email.utils.formataddr((self.person.plain_ascii(), self.email.address))
@@ -348,7 +348,7 @@ class RoleHistory(models.Model):
     person = ForeignKey(Person)
     email = ForeignKey(Email, help_text="Email address used by person for this role.")
     def __unicode__(self):
-        return u"%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym)
+        return "%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym)
 
     class Meta:
         verbose_name_plural = "role histories"

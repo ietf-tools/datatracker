@@ -5,7 +5,7 @@
 
 import pytz
 import datetime
-from urlparse import urljoin
+from urllib.parse import urljoin
 import os
 import re
 import string
@@ -33,7 +33,7 @@ from ietf.utils.text import xslugify
 from ietf.utils.timezone import date2datetime
 from ietf.utils.models import ForeignKey
 
-countries = pytz.country_names.items()
+countries = list(pytz.country_names.items())
 countries.sort(lambda x,y: cmp(x[1], y[1]))
 
 timezones = []
@@ -100,12 +100,12 @@ class Meeting(models.Model):
     agenda_warning_note = models.TextField(blank=True, help_text="Text in this field will be placed more prominently at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.")
     agenda     = ForeignKey('Schedule',null=True,blank=True, related_name='+')
     session_request_lock_message = models.CharField(blank=True,max_length=255) # locked if not empty
-    proceedings_final = models.BooleanField(default=False, help_text=u"Are the proceedings for this meeting complete?")
+    proceedings_final = models.BooleanField(default=False, help_text="Are the proceedings for this meeting complete?")
     acknowledgements = models.TextField(blank=True, help_text="Acknowledgements for use in meeting proceedings.  Use ReStructuredText markup.")
     overview = ForeignKey(DBTemplate, related_name='overview', null=True, editable=False)
     show_important_dates = models.BooleanField(default=False)
     attendees = models.IntegerField(blank=True, null=True, default=None,
-                                    help_text=u"Number of Attendees for backfilled meetings, leave it blank for new meetings, and then it is calculated from the registrations")
+                                    help_text="Number of Attendees for backfilled meetings, leave it blank for new meetings, and then it is calculated from the registrations")
 
     def __unicode__(self):
         if self.type_id == "ietf":
@@ -413,7 +413,7 @@ class UrlResource(models.Model):
 
 def floorplan_path(instance, filename):
     root, ext = os.path.splitext(filename)
-    return u"%s/floorplan-%s-%s%s" % (settings.FLOORPLAN_MEDIA_DIR, instance.meeting.number, xslugify(instance.name), ext)
+    return "%s/floorplan-%s-%s%s" % (settings.FLOORPLAN_MEDIA_DIR, instance.meeting.number, xslugify(instance.name), ext)
 
 class FloorPlan(models.Model):
     name    = models.CharField(max_length=255)
@@ -444,7 +444,7 @@ class TimeSlot(models.Model):
     duration = models.DurationField(default=datetime.timedelta(0))
     location = ForeignKey(Room, blank=True, null=True)
     show_location = models.BooleanField(default=True, help_text="Show location in agenda.")
-    sessions = models.ManyToManyField('Session', related_name='slots', through='SchedTimeSessAssignment', blank=True, help_text=u"Scheduled session, if any.")
+    sessions = models.ManyToManyField('Session', related_name='slots', through='SchedTimeSessAssignment', blank=True, help_text="Scheduled session, if any.")
     modified = models.DateTimeField(auto_now=True)
     #
 
@@ -456,7 +456,7 @@ class TimeSlot(models.Model):
 
     @property
     def time_desc(self):
-        return u"%s-%s" % (self.time.strftime("%H%M"), (self.time + self.duration).strftime("%H%M"))
+        return "%s-%s" % (self.time.strftime("%H%M"), (self.time + self.duration).strftime("%H%M"))
 
     def meeting_date(self):
         return self.time.date()
@@ -477,7 +477,7 @@ class TimeSlot(models.Model):
         if not location:
             location = "(no location)"
 
-        return u"%s: %s-%s %s, %s" % (self.meeting.number, self.time.strftime("%m-%d %H:%M"), (self.time + self.duration).strftime("%H:%M"), self.name, location)
+        return "%s: %s-%s %s, %s" % (self.meeting.number, self.time.strftime("%m-%d %H:%M"), (self.time + self.duration).strftime("%H:%M"), self.name, location)
 
     def end_time(self):
         return self.time + self.duration
@@ -611,13 +611,13 @@ class Schedule(models.Model):
     meeting  = ForeignKey(Meeting, null=True)
     name     = models.CharField(max_length=16, blank=False)
     owner    = ForeignKey(Person)
-    visible  = models.BooleanField(default=True, help_text=u"Make this agenda available to those who know about it.")
-    public   = models.BooleanField(default=True, help_text=u"Make this agenda publically available.")
+    visible  = models.BooleanField(default=True, help_text="Make this agenda available to those who know about it.")
+    public   = models.BooleanField(default=True, help_text="Make this agenda publically available.")
     badness  = models.IntegerField(null=True, blank=True)
     # considering copiedFrom = ForeignKey('Schedule', blank=True, null=True)
 
     def __unicode__(self):
-        return u"%s:%s(%s)" % (self.meeting, self.name, self.owner)
+        return "%s:%s(%s)" % (self.meeting, self.name, self.owner)
 
     def base_url(self):
         return "/meeting/%s/agenda/%s/%s" % (self.meeting.number, self.owner_email(), self.name)
@@ -714,9 +714,9 @@ class SchedTimeSessAssignment(models.Model):
     a specific person/user.
     """
     timeslot = ForeignKey('TimeSlot', null=False, blank=False, related_name='sessionassignments')
-    session  = ForeignKey('Session', null=True, default=None, related_name='timeslotassignments', help_text=u"Scheduled session.")
+    session  = ForeignKey('Session', null=True, default=None, related_name='timeslotassignments', help_text="Scheduled session.")
     schedule = ForeignKey('Schedule', null=False, blank=False, related_name='assignments')
-    extendedfrom = ForeignKey('self', null=True, default=None, help_text=u"Timeslot this session is an extension of.")
+    extendedfrom = ForeignKey('self', null=True, default=None, help_text="Timeslot this session is an extension of.")
     modified = models.DateTimeField(auto_now=True)
     notes    = models.TextField(blank=True)
     badness  = models.IntegerField(default=0, blank=True, null=True)
@@ -726,7 +726,7 @@ class SchedTimeSessAssignment(models.Model):
         ordering = ["timeslot__time", "timeslot__type__slug", "session__group__parent__name", "session__group__acronym", "session__name", ]
 
     def __unicode__(self):
-        return u"%s [%s<->%s]" % (self.schedule, self.session, self.timeslot)
+        return "%s [%s<->%s]" % (self.schedule, self.session, self.timeslot)
 
     @property
     def room_name(self):
@@ -807,7 +807,7 @@ class SchedTimeSessAssignment(models.Model):
 
                 components.append(g.acronym)
 
-        return u"-".join(components).lower()
+        return "-".join(components).lower()
 
 class Constraint(models.Model):
     """
@@ -829,15 +829,15 @@ class Constraint(models.Model):
     active_status = None
 
     def __unicode__(self):
-        return u"%s %s target=%s person=%s" % (self.source, self.name.name.lower(), self.target, self.person)
+        return "%s %s target=%s person=%s" % (self.source, self.name.name.lower(), self.target, self.person)
 
     def brief_display(self):
         if self.target and self.person:
-            return u"%s ; %s" % (self.target.acronym, self.person)
+            return "%s ; %s" % (self.target.acronym, self.person)
         elif self.target and not self.person:
-            return u"%s " % (self.target.acronym)
+            return "%s " % (self.target.acronym)
         elif not self.target and self.person:
-            return u"%s " % (self.person)
+            return "%s " % (self.person)
 
     def json_url(self):
         return "/meeting/%s/constraint/%s.json" % (self.meeting.number, self.id)
@@ -869,7 +869,7 @@ class SessionPresentation(models.Model):
         unique_together = (('session', 'document'),)
 
     def __unicode__(self):
-        return u"%s -> %s-%s" % (self.session, self.document.name, self.rev)
+        return "%s -> %s-%s" % (self.session, self.document.name, self.rev)
 
 constraint_cache_uses = 0
 constraint_cache_initials = 0
@@ -1018,7 +1018,7 @@ class Session(models.Model):
             ss = self.timeslotassignments.filter(schedule=self.meeting.agenda).order_by('timeslot__time')
             if ss:
                 ss0name = ','.join([x.timeslot.time.strftime("%a-%H%M") for x in ss])
-        return u"%s: %s %s %s" % (self.meeting, self.group.acronym, self.name, ss0name)
+        return "%s: %s %s %s" % (self.meeting, self.group.acronym, self.name, ss0name)
 
     @property
     def short_name(self):
@@ -1028,7 +1028,7 @@ class Session(models.Model):
             return self.short
         if self.group:
             return self.group.acronym
-        return u"req#%u" % (id)
+        return "req#%u" % (id)
 
     @property
     def special_request_token(self):
@@ -1155,7 +1155,7 @@ class ImportantDate(models.Model):
         ordering = ["-meeting_id","date", ]
 
     def __unicode__(self):
-        return u'%s : %s : %s' % ( self.meeting, self.name, self.date )
+        return '%s : %s : %s' % ( self.meeting, self.name, self.date )
 
 class SlideSubmission(models.Model):
     session = ForeignKey(Session)

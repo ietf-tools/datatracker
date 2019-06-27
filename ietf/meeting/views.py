@@ -9,7 +9,7 @@ import os
 import pytz
 import re
 import tarfile
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from calendar import timegm
 from collections import OrderedDict, Counter, deque
@@ -523,7 +523,7 @@ def agenda_csv(schedule, filtered_assignments):
     headings = ["Date", "Start", "End", "Session", "Room", "Area", "Acronym", "Type", "Description", "Session ID", "Agenda", "Slides"]
 
     def write_row(row):
-        encoded_row = [v.encode('utf-8') if isinstance(v, unicode) else v for v in row]
+        encoded_row = [v.encode('utf-8') if isinstance(v, str) else v for v in row]
 
         while len(encoded_row) < len(headings):
             encoded_row.append(None) # produce empty entries at the end as necessary
@@ -693,7 +693,7 @@ def session_draft_tarfile(request, num, acronym):
             try:
                 tarstream.add(pdf_path, str(doc_name + ".pdf"))
                 manifest.write("Included:  "+pdf_path+"\n")
-            except Exception, e:
+            except Exception as e:
                 manifest.write(("Failed (%s): "%e)+pdf_path+"\n")
         else:
             manifest.write("Not found: "+pdf_path+"\n")
@@ -873,7 +873,7 @@ def ical_agenda(request, num=None, name=None, acronym=None, session_id=None):
         raise Http404
 
     q = request.META.get('QUERY_STRING','') or ""
-    filter = set(urllib.unquote(q).lower().split(','))
+    filter = set(urllib.parse.unquote(q).lower().split(','))
     include = [ i for i in filter if not (i.startswith('-') or i.startswith('~')) ]
     include_types = set(["plenary","other"])
     exclude = []

@@ -1,6 +1,7 @@
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 import datetime
 import json
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -87,8 +88,8 @@ def create_proceedings_templates(meeting):
     # Get meeting attendees from registration system
     url = settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number)
     try:
-        attendees = json.load(urllib2.urlopen(url))
-    except (ValueError, urllib2.HTTPError):
+        attendees = json.load(urllib.request.urlopen(url))
+    except (ValueError, urllib.error.HTTPError):
         attendees = []
 
     if attendees:

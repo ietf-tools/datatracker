@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 
 import datetime
 
@@ -35,7 +35,7 @@ class DocumentChangesFeed(Feed):
 	return events
 
     def item_title(self, item):
-        return u"[%s] %s [rev. %s]" % (item.by, truncatewords(strip_tags(item.desc), 15), item.rev)
+        return "[%s] %s [rev. %s]" % (item.by, truncatewords(strip_tags(item.desc), 15), item.rev)
 
     def item_description(self, item):
         return truncatewords_html(format_textarea(item.desc), 20)
@@ -44,7 +44,7 @@ class DocumentChangesFeed(Feed):
 	return item.time
 
     def item_author_name(self, item):
-	return unicode(item.by)
+	return str(item.by)
 
     def item_link(self, item):
         return urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=item.doc.canonical_name())) + "#history-%s" % item.pk
@@ -67,7 +67,7 @@ class InLastCallFeed(Feed):
 	return docs
 
     def item_title(self, item):
-        return u"%s (%s - %s)" % (item.name,
+        return "%s (%s - %s)" % (item.name,
                                 datefilter(item.lc_event.time, "F j"),
                                 datefilter(item.lc_event.expires, "F j, Y"))
 

@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import signals
@@ -89,7 +90,7 @@ class EmailSubscription(models.Model):
     notify_on = models.CharField(max_length=30, choices=NOTIFICATION_CHOICES, default="all")
 
     def __unicode__(self):
-        return u"%s to %s (%s changes)" % (self.email, self.community_list, self.notify_on)
+        return "%s to %s (%s changes)" % (self.email, self.community_list, self.notify_on)
 
 
 def notify_events(sender, instance, **kwargs):

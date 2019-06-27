@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 #!/usr/bin/env python
 
 import os
@@ -11,7 +12,7 @@ os.chdir(path)
 # Virtualenv support
 virtualenv_activation = os.path.join(path, "env", "bin", "activate_this.py")
 if os.path.exists(virtualenv_activation):
-    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
+    exec(compile(open(virtualenv_activation, "rb").read(), virtualenv_activation, 'exec'), dict(__file__=virtualenv_activation))
 else:
     raise RuntimeError("Could not find the expected virtual python environment.")
 

@@ -1,6 +1,6 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2018-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import gzip
 import os
@@ -26,7 +26,7 @@ import debug                            # pyflakes:ignore
 from ietf.community.models import notify_events
 
 class Command(loaddata.Command):
-    help = (u"""
+    help = ("""
 
         Load a fixture of related objects to the database.  The fixture is expected
         to contain a set of related objects, created with the 'dumprelated' management

@@ -1,6 +1,6 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2018-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import flufl.bounce
 import mailbox
@@ -18,7 +18,7 @@ from ietf.person.models import Email, PersonEvent
 
 
 class Command(BaseCommand):
-    help = (u"""
+    help = ("""
         Deactivate bouncing email addresses.
 
         Take one or more email addresses to deactivate from the command line,

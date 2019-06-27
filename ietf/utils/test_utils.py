@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
 
 # Portion Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -37,7 +37,7 @@ import re
 import email
 import html5lib
 import sys
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from unittest.util import strclass
 from bs4 import BeautifulSoup
@@ -53,7 +53,7 @@ real_database_name = settings.DATABASES["default"]["NAME"]
 def split_url(url):
     if "?" in url:
         url, args = url.split("?", 1)
-        args = dict([ map(urllib2.unquote,arg.split("=", 1)) for arg in args.split("&") if "=" in arg ])
+        args = dict([ list(map(urllib.parse.unquote,arg.split("=", 1))) for arg in args.split("&") if "=" in arg ])
     else:
         args = {}
     return url, args
@@ -145,7 +145,7 @@ class TestCase(django.test.TestCase):
 
             errors = [html.tostring(n).decode() for n in PyQuery(response.content)(error_css_selector)]
             if errors:
-                explanation = u"{} != {}\nGot form back with errors:\n----\n".format(response.status_code, 302) + u"----\n".join(errors)
+                explanation = "{} != {}\nGot form back with errors:\n----\n".format(response.status_code, 302) + "----\n".join(errors)
                 self.assertEqual(response.status_code, 302, explanation)
 
         self.assertEqual(response.status_code, 302)

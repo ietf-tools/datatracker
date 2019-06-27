@@ -1,6 +1,7 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 import datetime
 import json
-from urlparse import urlsplit
+from urllib.parse import urlsplit
 
 from django.urls import reverse as urlreverse
 

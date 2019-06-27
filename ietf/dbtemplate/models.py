@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
-from __future__ import unicode_literals, print_function
+
 
 
 from django.db import models
@@ -41,6 +41,6 @@ class DBTemplate(models.Model):
                 PlainTemplate(self.content).render(Context({}))
             else:
                 raise ValidationError("Unexpected DBTemplate.type.slug: %s" % self.type.slug)
-        except Exception, e:
+        except Exception as e:
             raise ValidationError(e)
 

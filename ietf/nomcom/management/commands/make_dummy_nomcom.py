@@ -1,6 +1,6 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2017-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import socket
 
@@ -14,7 +14,7 @@ from ietf.group.models import Group
 from ietf.person.models import User
 
 class Command(BaseCommand):
-    help = (u"Create (or delete) a dummy nomcom for test and development purposes.")
+    help = ("Create (or delete) a dummy nomcom for test and development purposes.")
 
     def add_arguments(self, parser):
         parser.add_argument('--delete', dest='delete', action='store_true', help='Delete the test and development dummy nomcom')
@@ -39,22 +39,22 @@ class Command(BaseCommand):
                                                                   populate_personnel=False,
                                                                   populate_positions=False))
 
-                e = EmailFactory(person__name=u'Dummy Chair', address=u'dummychair@example.com', person__user__username=u'dummychair', person__default_emails=False, origin='dummychair')
+                e = EmailFactory(person__name='Dummy Chair', address='dummychair@example.com', person__user__username='dummychair', person__default_emails=False, origin='dummychair')
                 e.person.user.set_password('password')
                 e.person.user.save()
-                nc.group.role_set.create(name_id=u'chair',person=e.person,email=e)
+                nc.group.role_set.create(name_id='chair',person=e.person,email=e)
 
-                e = EmailFactory(person__name=u'Dummy Member', address=u'dummymember@example.com', person__user__username=u'dummymember', person__default_emails=False, origin='dummymember')
+                e = EmailFactory(person__name='Dummy Member', address='dummymember@example.com', person__user__username='dummymember', person__default_emails=False, origin='dummymember')
                 e.person.user.set_password('password')
                 e.person.user.save()
-                nc.group.role_set.create(name_id=u'member',person=e.person,email=e)
+                nc.group.role_set.create(name_id='member',person=e.person,email=e)
 
 
-                e = EmailFactory(person__name=u'Dummy Candidate', address=u'dummycandidate@example.com', person__user__username=u'dummycandidate', person__default_emails=False, origin='dummycandidate')
+                e = EmailFactory(person__name='Dummy Candidate', address='dummycandidate@example.com', person__user__username='dummycandidate', person__default_emails=False, origin='dummycandidate')
                 e.person.user.set_password('password')
                 e.person.user.save()
                 NomineePositionFactory(nominee__nomcom=nc, nominee__person=e.person,
-                                       position__nomcom=nc, position__name=u'Dummy Area Director',
+                                       position__nomcom=nc, position__name='Dummy Area Director',
                                       )
 
                 self.stdout.write("%s\n" % key)

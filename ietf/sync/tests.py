@@ -4,7 +4,7 @@
 import os
 import json
 import datetime
-import StringIO
+import io
 import shutil
 
 from django.conf import settings
@@ -136,8 +136,8 @@ class IANASyncTests(TestCase):
     def test_iana_review_mail(self):
         draft = WgDraftFactory()
 
-        subject_template = u'Subject: [IANA #12345] Last Call: <%(draft)s-%(rev)s.txt> (Long text) to Informational RFC'
-        msg_template = u"""From: "%(person)s via RT" <drafts-lastcall@iana.org>
+        subject_template = 'Subject: [IANA #12345] Last Call: <%(draft)s-%(rev)s.txt> (Long text) to Informational RFC'
+        msg_template = """From: "%(person)s via RT" <drafts-lastcall@iana.org>
 Date: Thu, 10 May 2012 12:00:0%(rtime)d +0000
 %(subject)s
 
@@ -306,7 +306,7 @@ class RFCSyncTests(TestCase):
                        area=doc.group.parent.acronym,
                        group=doc.group.acronym)
 
-        data = rfceditor.parse_index(StringIO.StringIO(t))
+        data = rfceditor.parse_index(io.StringIO(t))
         self.assertEqual(len(data), 1)
 
         rfc_number, title, authors, rfc_published_date, current_status, updates, updated_by, obsoletes, obsoleted_by, also, draft, has_errata, stream, wg, file_formats, pages, abstract = data[0]
@@ -387,7 +387,7 @@ class RFCSyncTests(TestCase):
                               group=draft.group.name,
                               ref="draft-ietf-test")
 
-        drafts, warnings = rfceditor.parse_queue(StringIO.StringIO(t))
+        drafts, warnings = rfceditor.parse_queue(io.StringIO(t))
         self.assertEqual(len(drafts), 1)
         self.assertEqual(len(warnings), 0)
 

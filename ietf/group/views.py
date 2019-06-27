@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
-from __future__ import unicode_literals, print_function
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
+
 
 # Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -150,7 +150,7 @@ def fill_in_charter_info(group, include_drafts=False):
             personnel["ad"] = ad_roles
 
     group.personnel = []
-    for role_name_slug, roles in personnel.iteritems():
+    for role_name_slug, roles in personnel.items():
         label = roles[0].name.name
         if len(roles) > 1:
             if label.endswith("y"):
@@ -168,7 +168,7 @@ def fill_in_charter_info(group, include_drafts=False):
     if group.charter:
         group.charter_text = get_charter_text(group)
     else:
-        group.charter_text = u"Not chartered yet."
+        group.charter_text = "Not chartered yet."
 
 def extract_last_name(role):
     return role.person.name_parts()[3]
@@ -268,7 +268,7 @@ def wg_charters_by_acronym(request, group_type):
         raise Http404
     areas = dict((a.id, a) for a in Group.objects.filter(type="area", state="active").order_by("name"))
 
-    for area in areas.itervalues():
+    for area in areas.values():
         area.ads = sorted(roles(area, "ad"), key=extract_last_name)
 
     groups = Group.objects.filter(type="wg", state="active").exclude(parent=None).order_by("acronym")
@@ -414,7 +414,7 @@ def concluded_groups(request):
     sections['Review teams'] = Group.objects.filter(type='review', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
     sections['Teams'] = Group.objects.filter(type='team', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
 
-    for name, groups in sections.items():
+    for name, groups in list(sections.items()):
         
         # add start/conclusion date
         d = dict((g.pk, g) for g in groups)
@@ -496,7 +496,7 @@ def group_documents_txt(request, acronym, group_type=None):
         d.prefix = d.get_state().name
 
     for d in docs_related:
-        d.prefix = u"Related %s" % d.get_state().name
+        d.prefix = "Related %s" % d.get_state().name
 
     rows = []
     for d in itertools.chain(docs, docs_related):
@@ -506,9 +506,9 @@ def group_documents_txt(request, acronym, group_type=None):
         else:
             name = "%s-%s" % (d.name, d.rev)
 
-        rows.append(u"\t".join((d.prefix, name, clean_whitespace(d.title))))
+        rows.append("\t".join((d.prefix, name, clean_whitespace(d.title))))
 
-    return HttpResponse(u"\n".join(rows), content_type='text/plain; charset=UTF-8')
+    return HttpResponse("\n".join(rows), content_type='text/plain; charset=UTF-8')
 
 def group_about(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
@@ -679,7 +679,7 @@ def materials(request, acronym, group_type=None):
 
     return render(request, 'group/materials.html',
                   construct_group_menu_context(request, group, "materials", group_type, {
-                      "doc_types": doc_types.items(),
+                      "doc_types": list(doc_types.items()),
                       "can_manage_materials": can_manage_materials(request.user, group)
                   }))
 
@@ -853,7 +853,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
         res = []
         for u in urls:
             if u.name:
-                res.append(u"%s (%s)" % (u.url, u.name))
+                res.append("%s (%s)" % (u.url, u.name))
             else:
                 res.append(u.url)
         return fs.join(res)
@@ -930,7 +930,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
             personnel_change_text=""
             changed_personnel = set()
             # update roles
-            for attr, f in form.fields.iteritems():
+            for attr, f in form.fields.items():
                 if not (attr.endswith("_roles") or attr == "ad"):
                     continue
 
@@ -1443,9 +1443,9 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
         saving = form_action.startswith("save")
 
         # check for conflicts
-        review_requests_dict = { unicode(r.pk): r for r in review_requests }
+        review_requests_dict = { str(r.pk): r for r in review_requests }
         posted_reqs = set(request.POST.getlist("reviewrequest", []))
-        current_reqs = set(review_requests_dict.iterkeys())
+        current_reqs = set(review_requests_dict.keys())
 
         closed_reqs = posted_reqs - current_reqs
         newly_closed = len(closed_reqs)

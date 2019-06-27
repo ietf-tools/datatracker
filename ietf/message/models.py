@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 import datetime
 import email.utils
 
@@ -67,7 +68,7 @@ class SendQueue(models.Model):
         ordering = ['time']
 
     def __unicode__(self):
-        return u"'%s' %s -> %s (sent at %s)" % (self.message.subject, self.message.frm, self.message.to, self.sent_at or "<not yet>")
+        return "'%s' %s -> %s (sent at %s)" % (self.message.subject, self.message.frm, self.message.to, self.sent_at or "<not yet>")
 
 
 class AnnouncementFrom(models.Model):

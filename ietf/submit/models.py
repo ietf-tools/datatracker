@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
 import datetime
 import email
 
@@ -55,7 +56,7 @@ class Submission(models.Model):
     draft = ForeignKey(Document, null=True, blank=True)
 
     def __unicode__(self):
-        return u"%s-%s" % (self.name, self.rev)
+        return "%s-%s" % (self.name, self.rev)
 
     def submitter_parsed(self):
         return parse_email_line(self.submitter)
@@ -95,7 +96,7 @@ class SubmissionEvent(models.Model):
     desc = models.TextField()
 
     def __unicode__(self):
-        return u"%s %s by %s at %s" % (self.submission.name, self.desc, self.by.plain_name() if self.by else "(unknown)", self.time)
+        return "%s %s by %s at %s" % (self.submission.name, self.desc, self.by.plain_name() if self.by else "(unknown)", self.time)
 
     class Meta:
         ordering = ("-time", "-id")
@@ -116,7 +117,7 @@ class SubmissionEmailEvent(SubmissionEvent):
     in_reply_to = ForeignKey(Message, null=True, blank=True,related_name='irtomanual')
 
     def __unicode__(self):
-        return u"%s %s by %s at %s" % (self.submission.name, self.desc, self.by.plain_name() if self.by else "(unknown)", self.time)
+        return "%s %s by %s at %s" % (self.submission.name, self.desc, self.by.plain_name() if self.by else "(unknown)", self.time)
 
     class Meta:
         ordering = ['-time', '-id']

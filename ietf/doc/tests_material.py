@@ -1,10 +1,10 @@
-# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 import os
 import shutil
 import datetime
-from StringIO import StringIO
+from io import StringIO
 from pyquery import PyQuery
 
 import debug              # pyflakes:ignore

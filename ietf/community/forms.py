@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 from django import forms
 from django.db.models import Q
 
@@ -82,9 +83,9 @@ class SearchRuleForm(forms.ModelForm):
 
         if 'group' in self.fields:
             self.fields['group'].queryset = self.fields['group'].queryset.filter(state="active").order_by("acronym")
-            self.fields['group'].choices = [(g.pk, u"%s - %s" % (g.acronym, g.name)) for g in self.fields['group'].queryset]
+            self.fields['group'].choices = [(g.pk, "%s - %s" % (g.acronym, g.name)) for g in self.fields['group'].queryset]
 
-        for name, f in self.fields.iteritems():
+        for name, f in self.fields.items():
             f.required = True
 
     def clean_text(self):

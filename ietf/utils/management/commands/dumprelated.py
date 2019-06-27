@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2018-2019, All Rights Reserved
 import warnings
 from collections import OrderedDict
 
@@ -152,7 +153,7 @@ class Command(BaseCommand):
             Collate the objects to be serialized. If count_only is True, just
             count the number of objects to be serialized.
             """
-            models = serializers.sort_dependencies(app_list.items())
+            models = serializers.sort_dependencies(list(app_list.items()))
             for model in models:
                 if model in excluded_models:
                     continue

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from pyquery import PyQuery
 
@@ -187,12 +187,12 @@ class IprTests(TestCase):
         self.assertTrue(ipr.title in unicontent(r))
 
         # find by doc title
-        r = self.client.get(url + "?submit=doctitle&doctitle=%s" % urllib.quote(draft.title))
+        r = self.client.get(url + "?submit=doctitle&doctitle=%s" % urllib.parse.quote(draft.title))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(ipr.title in unicontent(r))
 
         # find by ipr title
-        r = self.client.get(url + "?submit=iprtitle&iprtitle=%s" % urllib.quote(ipr.title))
+        r = self.client.get(url + "?submit=iprtitle&iprtitle=%s" % urllib.parse.quote(ipr.title))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(ipr.title in unicontent(r))
 
@@ -283,7 +283,7 @@ class IprTests(TestCase):
         ipr = iprs[0]
         self.assertEqual(ipr.holder_legal_name, "Test Legal")
         self.assertEqual(ipr.state.slug, 'pending')
-        for item in [u'SE12345678901','A method of transfering bits','2000-01-01']:
+        for item in ['SE12345678901','A method of transfering bits','2000-01-01']:
             self.assertIn(item, ipr.get_child().patent_info)
         self.assertTrue(isinstance(ipr.get_child(),HolderIprDisclosure))
         self.assertEqual(len(outbox),1)
@@ -326,7 +326,7 @@ class IprTests(TestCase):
         ipr = iprs[0]
         self.assertEqual(ipr.holder_legal_name, "Test Legal")
         self.assertEqual(ipr.state.slug, "pending")
-        for item in [u'SE12345678901','A method of transfering bits','2000-01-01' ]:
+        for item in ['SE12345678901','A method of transfering bits','2000-01-01' ]:
             self.assertIn(item, ipr.get_child().patent_info)
         self.assertTrue(isinstance(ipr.get_child(),ThirdPartyIprDisclosure))
         self.assertEqual(len(outbox),1)
@@ -374,7 +374,7 @@ class IprTests(TestCase):
         self.assertEqual(len(iprs), 1)
         ipr = iprs[0].get_child()
         self.assertEqual(ipr.holder_legal_name, "Test Legal")
-        patent_info_dict = dict( (k.replace('patent_','').capitalize(), v) for k, v in post_data.items() if k.startswith('patent_') )
+        patent_info_dict = dict( (k.replace('patent_','').capitalize(), v) for k, v in list(post_data.items()) if k.startswith('patent_') )
         self.assertEqual(text_to_dict(ipr.patent_info), patent_info_dict)
         self.assertEqual(ipr.state.slug, 'posted')
 

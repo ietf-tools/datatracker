@@ -1,4 +1,5 @@
-from __future__ import absolute_import
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
+
 import ast
 import os
 from pyflakes import checker, messages
@@ -50,7 +51,7 @@ def check(codeString, filename, verbosity=1):
     try:
         with BlackHole():
             tree = ast.parse(codeString, filename)
-    except SyntaxError, e:
+    except SyntaxError as e:
         return [PySyntaxError(filename, e.lineno, e.offset, e.text)]
     else:
         # Okay, it's syntactically valid.  Now parse it into an ast and check
@@ -82,7 +83,7 @@ def checkPath(filename, verbosity):
     """
     try:
         return check(file(filename, 'U').read() + '\n', filename, verbosity)
-    except IOError, msg:
+    except IOError as msg:
         return ["%s: %s" % (filename, msg.args[1])]
     except TypeError:
         pass
@@ -97,7 +98,7 @@ def checkPaths(filenames, verbosity):
                         try:
                             warnings.extend(checkPath(os.path.join(dirpath, filename), verbosity))
                         except TypeError as e:
-                            print("Exception while processing dirpath=%s, filename=%s: %s" % (dirpath, filename,e ))
+                            print(("Exception while processing dirpath=%s, filename=%s: %s" % (dirpath, filename,e )))
                             raise
         else:
             warnings.extend(checkPath(arg, verbosity))
@@ -114,11 +115,11 @@ class Command(BaseCommand):
             filenames = getattr(settings, 'PYFLAKES_DEFAULT_ARGS', ['.'])
         verbosity = int(options.get('verbosity'))
         warnings = checkPaths(filenames, verbosity=verbosity)
-        print ""
+        print("")
         for warning in warnings:
-            print warning
+            print(warning)
 
         if warnings:
-            print 'Total warnings: %d' % len(warnings)
+            print('Total warnings: %d' % len(warnings))
             raise SystemExit(1)
             

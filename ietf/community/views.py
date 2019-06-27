@@ -196,7 +196,7 @@ def export_to_csv(request, username=None, acronym=None, group_type=None):
         row.append(e.time.strftime("%Y-%m-%d") if e else "")
         row.append(strip_tags(doc.friendly_state()))
         row.append(doc.group.acronym if doc.group else "")
-        row.append(unicode(doc.ad) if doc.ad else "")
+        row.append(str(doc.ad) if doc.ad else "")
         e = doc.latest_event()
         row.append(e.time.strftime("%Y-%m-%d") if e else "")
         writer.writerow([v.encode("utf-8") for v in row])
@@ -222,7 +222,7 @@ def feed(request, username=None, acronym=None, group_type=None):
     host = request.get_host()
     feed_url = 'https://%s%s' % (host, request.get_full_path())
     feed_id = uuid.uuid5(uuid.NAMESPACE_URL, feed_url.encode('utf-8'))
-    title = u'%s RSS Feed' % clist.long_name()
+    title = '%s RSS Feed' % clist.long_name()
     if significant:
         subtitle = 'Significant document changes'
     else:

@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 import datetime
 import re
 from collections import OrderedDict, Counter
@@ -179,7 +180,7 @@ def private_index(request, year):
                 'position__id':p.pk,
                 'position': p,
               } for p in positions]
-    states = list(NomineePositionStateName.objects.values('slug', 'name')) + [{'slug': questionnaire_state, 'name': u'Questionnaire'}]
+    states = list(NomineePositionStateName.objects.values('slug', 'name')) + [{'slug': questionnaire_state, 'name': 'Questionnaire'}]
     positions = set([ n.position for n in all_nominee_positions.order_by('position__name') ])
     for s in stats:
         for state in states:

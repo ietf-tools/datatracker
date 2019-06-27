@@ -82,7 +82,7 @@ def send_approval_request_to_group(request, submission):
     return all_addrs
 
 def send_manual_post_request(request, submission, errors):
-    subject = u'Manual Post Requested for %s' % submission.name
+    subject = 'Manual Post Requested for %s' % submission.name
     from_email = settings.IDSUBMIT_FROM_EMAIL
     (to_email,cc) = gather_address_lists('sub_manual_post_requested',submission=submission)
     checker = DraftIdnitsChecker(options=[]) # don't use the default --submitcheck limitation
@@ -234,7 +234,7 @@ def process_response_email(msg):
 
     save_submission_email_attachments(submission_email_event, parts)
 
-    log(u"Received submission email from %s" % msg.frm)
+    log("Received submission email from %s" % msg.frm)
     return msg
 
 

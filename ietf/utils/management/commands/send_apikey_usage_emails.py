@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2017, All Rights Reserved
-from __future__ import print_function, unicode_literals
+# Copyright The IETF Trust 2017-2019, All Rights Reserved
+
 
 import datetime
 

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010, All Rights Reserved
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
 
 from django.shortcuts import render
 from django.conf import settings
@@ -10,7 +10,7 @@ def preferences(request, **kwargs):
     new_cookies = {}
     del_cookies = []
     preferences['defaults'] = settings.USER_PREFERENCE_DEFAULTS
-    for key in settings.USER_PREFERENCE_DEFAULTS.keys():
+    for key in list(settings.USER_PREFERENCE_DEFAULTS.keys()):
         if key in kwargs:
             if kwargs[key] == None:
                 del_cookies += [key]

@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
 # expiry of Internet Drafts
 
 from django.conf import settings
@@ -92,7 +93,7 @@ def send_expire_warning_for_draft(doc):
     request = None
     if to or cc:
         send_mail(request, to, frm,
-                  u"Expiration impending: %s" % doc.file_tag(),
+                  "Expiration impending: %s" % doc.file_tag(),
                   "doc/draft/expire_warning_email.txt",
                   dict(doc=doc,
                        state=state,
@@ -112,7 +113,7 @@ def send_expire_notice_for_draft(doc):
     (to,cc) = gather_address_lists('doc_expired',doc=doc)
     send_mail(request, to,
               "I-D Expiring System <ietf-secretariat-reply@ietf.org>",
-              u"I-D was expired %s" % doc.file_tag(),
+              "I-D was expired %s" % doc.file_tag(),
               "doc/draft/id_expired_email.txt",
               dict(doc=doc,
                    state=state,

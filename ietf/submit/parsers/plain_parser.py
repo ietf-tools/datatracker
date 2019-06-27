@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
 import re
 
 from ietf.submit.parsers.base import FileParser
@@ -55,16 +56,16 @@ class PlainParser(FileParser):
             extra_chars = re.sub('[0-9a-z\-]', '', name)
             if extra_chars:
                 if len(extra_chars) == 1:
-                    self.parsed_info.add_error((u'The document name on the first page, "%s", contains a disallowed character with byte code: %s ' % (name.decode('utf-8','replace'), ord(extra_chars[0]))) +
-                                                u'(see https://www.ietf.org/id-info/guidelines.html#naming for details).')
+                    self.parsed_info.add_error(('The document name on the first page, "%s", contains a disallowed character with byte code: %s ' % (name.decode('utf-8','replace'), ord(extra_chars[0]))) +
+                                                '(see https://www.ietf.org/id-info/guidelines.html#naming for details).')
                 else:
-                    self.parsed_info.add_error((u'The document name on the first page, "%s", contains disallowed characters with byte codes: %s ' % (name.decode('utf-8','replace'), (', '.join([ str(ord(c)) for c in extra_chars] )))) +
-                                                u'(see https://www.ietf.org/id-info/guidelines.html#naming for details).')
+                    self.parsed_info.add_error(('The document name on the first page, "%s", contains disallowed characters with byte codes: %s ' % (name.decode('utf-8','replace'), (', '.join([ str(ord(c)) for c in extra_chars] )))) +
+                                                '(see https://www.ietf.org/id-info/guidelines.html#naming for details).')
             match_revision = revisionre.match(name)
             if match_revision:
                 self.parsed_info.metadata.rev = match_revision.group(1)
             else:
-                self.parsed_info.add_error(u'The name found on the first page of the document does not contain a revision: "%s"' % (name.decode('utf-8','replace'),))
+                self.parsed_info.add_error('The name found on the first page of the document does not contain a revision: "%s"' % (name.decode('utf-8','replace'),))
             name = re.sub('-\d+$', '', name)
             self.parsed_info.metadata.name = name
             return

@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
 #!/usr/bin/env python
 # Portions Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -38,4 +39,4 @@ import django
 django.setup()
 
 from ietf.idindex.index import id_index_txt
-print id_index_txt(with_abstracts=True).encode('utf-8'),
+print(id_index_txt(with_abstracts=True).encode('utf-8'), end=' ')

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2011, All Rights Reserved
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
 
 import os, shutil, datetime
-from StringIO import StringIO
+from io import StringIO
 from pyquery import PyQuery
 
 from django.conf import settings
@@ -70,8 +70,8 @@ class EditCharterTests(TestCase):
 
         ames = GroupFactory(acronym='ames',state_id='proposed',list_email='ames-wg@ietf.org',parent=area)
         RoleFactory(name_id='ad',group=ames,person=Person.objects.get(user__username='ad'))
-        RoleFactory(name_id='chair',group=ames,person__name=u'Ames Man',person__user__email='ameschairman@example.org')
-        RoleFactory(name_id='secr',group=ames,person__name=u'Secretary',person__user__email='amessecretary@example.org')
+        RoleFactory(name_id='chair',group=ames,person__name='Ames Man',person__user__email='ameschairman@example.org')
+        RoleFactory(name_id='secr',group=ames,person__name='Secretary',person__user__email='amessecretary@example.org')
         CharterFactory(group=ames)
 
         mars = GroupFactory(acronym='mars',parent=area)
@@ -591,8 +591,8 @@ class EditCharterTests(TestCase):
         RoleFactory(name_id='ad',group=area,person=Person.objects.get(user__username='ad'))
         charter = CharterFactory(group__acronym='ames',group__list_email='ames-wg@ietf.org',group__parent=area,group__state_id='bof')
         group = charter.group
-        RoleFactory(name_id='chair',group=group,person__name=u'Ames Man',person__user__email='ameschairman@example.org')
-        RoleFactory(name_id='secr',group=group,person__name=u'Secretary',person__user__email='amessecretary@example.org')
+        RoleFactory(name_id='chair',group=group,person__name='Ames Man',person__user__email='ameschairman@example.org')
+        RoleFactory(name_id='secr',group=group,person__name='Secretary',person__user__email='amessecretary@example.org')
 
         url = urlreverse('ietf.doc.views_charter.approve', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)

@@ -540,8 +540,8 @@ class BallotWriteupsTests(TestCase):
         e.by = Person.objects.get(name="(System)")
         e.doc = draft
         e.rev = draft.rev
-        e.desc = u"Ballot approval text was generated"
-        e.text = u"Test approval text."
+        e.desc = "Ballot approval text was generated"
+        e.text = "Test approval text."
         e.save()
         events.append(e)
 
@@ -550,8 +550,8 @@ class BallotWriteupsTests(TestCase):
         e.by = Person.objects.get(name="(System)")
         e.doc = draft
         e.rev = draft.rev
-        e.desc = u"Ballot writeup was generated"
-        e.text = u"Test ballot writeup text."
+        e.desc = "Ballot writeup was generated"
+        e.text = "Test ballot writeup text."
         e.save()
         events.append(e)
 
@@ -560,8 +560,8 @@ class BallotWriteupsTests(TestCase):
         e.by = Person.objects.get(name="(System)")
         e.doc = draft
         e.rev = draft.rev
-        e.desc = u"RFC Editor Note for ballot was generated"
-        e.text = u"Test note to the RFC Editor text."
+        e.desc = "RFC Editor Note for ballot was generated"
+        e.text = "Test note to the RFC Editor text."
         e.save()
         events.append(e)
 
@@ -588,7 +588,7 @@ class BallotWriteupsTests(TestCase):
 
         # RFC Editor Notes for documents in the IRTF Stream
         e = DocEvent(doc=draft, rev=draft.rev, by=Person.objects.get(name="(System)"), type='changed_stream')
-        e.desc = u"Changed stream to <b>%s</b>" % 'irtf'
+        e.desc = "Changed stream to <b>%s</b>" % 'irtf'
         e.save()
 
         draft.stream_id = 'irtf'
@@ -603,7 +603,7 @@ class BallotWriteupsTests(TestCase):
 
         # RFC Editor Notes for documents in the IAB Stream
         e = DocEvent(doc=draft, rev=draft.rev, by=Person.objects.get(name="(System)"), type='changed_stream')
-        e.desc = u"Changed stream to <b>%s</b>" % 'ise'
+        e.desc = "Changed stream to <b>%s</b>" % 'ise'
         e.save()
 
         draft.stream_id = 'ise'

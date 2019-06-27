@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 import datetime
 
 from django.urls import reverse as urlreverse
@@ -40,7 +41,7 @@ class SendScheduledAnnouncementsTests(TestCase):
             frm="testmonkey@example.com",
             cc="cc.a@example.com, cc.b@example.com",
             bcc="bcc@example.com",
-            body=u"Hello World!",
+            body="Hello World!",
             content_type="",
             )
 
@@ -66,7 +67,7 @@ class SendScheduledAnnouncementsTests(TestCase):
             frm="testmonkey@example.com",
             cc="cc.a@example.com, cc.b@example.com",
             bcc="bcc@example.com",
-            body=u'--NextPart\r\n\r\nA New Internet-Draft is available from the on-line Internet-Drafts directories.\r\n--NextPart\r\nContent-Type: Message/External-body;\r\n\tname="draft-huang-behave-bih-01.txt";\r\n\tsite="ftp.ietf.org";\r\n\taccess-type="anon-ftp";\r\n\tdirectory="internet-drafts"\r\n\r\nContent-Type: text/plain\r\nContent-ID:     <2010-07-30001541.I-D@ietf.org>\r\n\r\n--NextPart--',
+            body='--NextPart\r\n\r\nA New Internet-Draft is available from the on-line Internet-Drafts directories.\r\n--NextPart\r\nContent-Type: Message/External-body;\r\n\tname="draft-huang-behave-bih-01.txt";\r\n\tsite="ftp.ietf.org";\r\n\taccess-type="anon-ftp";\r\n\tdirectory="internet-drafts"\r\n\r\nContent-Type: text/plain\r\nContent-ID:     <2010-07-30001541.I-D@ietf.org>\r\n\r\n--NextPart--',
             content_type='Multipart/Mixed; Boundary="NextPart"',
             )
 
