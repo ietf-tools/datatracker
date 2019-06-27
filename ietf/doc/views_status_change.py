@@ -395,7 +395,7 @@ def clean_helper(form, formtype):
         for k in sorted(form.data.keys()):
             v = form.data[k]
             if k.startswith('new_relation_row'):
-                if re.match('\d{1,4}',v):
+                if re.match(r'\d{1,4}',v):
                     v = 'rfc'+v
                 rfc_fields[k[17:]]=v
             elif k.startswith('statchg_relation_row'):
@@ -412,7 +412,7 @@ def clean_helper(form, formtype):
         errors=[]
         for key in new_relations:
 
-           if not re.match('(?i)rfc\d{1,4}',key):
+           if not re.match(r'(?i)rfc\d{1,4}',key):
               errors.append(key+" is not a valid RFC - please use the form RFCn\n")
            elif not DocAlias.objects.filter(name=key):
               errors.append(key+" does not exist\n")

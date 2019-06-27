@@ -168,7 +168,7 @@ def clean_up_draft_files():
     cut_off = datetime.date.today()
 
     pattern = os.path.join(settings.INTERNET_DRAFT_PATH, "draft-*.*")
-    filename_re = re.compile('^(.*)-(\d\d)$')
+    filename_re = re.compile(r'^(.*)-(\d\d)$')
 
     def splitext(fn):
         """

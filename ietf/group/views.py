@@ -201,7 +201,7 @@ def fill_in_wg_drafts(group):
 
 
 def check_group_email_aliases():
-    pattern = re.compile('expand-(.*?)(-\w+)@.*? +(.*)$')
+    pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
     tot_count = 0
     good_count = 0
     with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
@@ -414,7 +414,7 @@ def concluded_groups(request):
     sections['Review teams'] = Group.objects.filter(type='review', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
     sections['Teams'] = Group.objects.filter(type='team', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
 
-    for name, groups in list(sections.items()):
+    for name, groups in sections.items():
         
         # add start/conclusion date
         d = dict((g.pk, g) for g in groups)
@@ -625,9 +625,9 @@ def group_about_status_edit(request, acronym, group_type=None):
 
 def get_group_email_aliases(acronym, group_type):
     if acronym:
-        pattern = re.compile('expand-(%s)(-\w+)@.*? +(.*)$'%acronym)
+        pattern = re.compile(r'expand-(%s)(-\w+)@.*? +(.*)$'%acronym)
     else:
-        pattern = re.compile('expand-(.*?)(-\w+)@.*? +(.*)$')
+        pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
 
     aliases = []
     with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
@@ -976,7 +976,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                     group.groupurl_set.all().delete()
                     # Add new ones
                     for u in new_urls:
-                        m = re.search('(?P<url>[\w\d:#@%/;$()~_?\+-=\\\.&]+)( \((?P<name>.+)\))?', u)
+                        m = re.search(r'(?P<url>[\w\d:#@%/;$()~_?\+-=\\\.&]+)( \((?P<name>.+)\))?', u)
                         if m:
                             if m.group('name'):
                                 url = GroupURL(url=m.group('url'), name=m.group('name'), group=group)

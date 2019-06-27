@@ -238,7 +238,7 @@ def convert_draft_to_pdf(doc_name):
     for line in infile:
         line = re.sub("\r","",line)
         line = re.sub("[ \t]+$","",line)
-        if re.search("\[?[Pp]age [0-9ivx]+\]?[ \t]*$",line):
+        if re.search(r"\[?[Pp]age [0-9ivx]+\]?[ \t]*$",line):
             pageend=1
             tempfile.write(line)
             continue

@@ -34,7 +34,7 @@ def get_cleaned_text_file_content(uploaded_file):
     if not filetype.startswith("text"):
         raise ValidationError("Uploaded file does not appear to be a text file.")
 
-    match = re.search("charset=([\w-]+)", filetype)
+    match = re.search(r"charset=([\w-]+)", filetype)
     if not match:
         raise ValidationError("File has unknown encoding.")
 
