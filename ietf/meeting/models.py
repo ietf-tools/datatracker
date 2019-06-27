@@ -34,7 +34,7 @@ from ietf.utils.timezone import date2datetime
 from ietf.utils.models import ForeignKey
 
 countries = list(pytz.country_names.items())
-countries.sort(lambda x,y: cmp(x[1], y[1]))
+countries.sort(key=lambda x: x[1])
 
 timezones = []
 for name in pytz.common_timezones:
