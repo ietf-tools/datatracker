@@ -8,7 +8,7 @@ import debug                            # pyflakes:ignore
 from django.template.loaders.base import Loader as BaseLoader
 from django.template.base import Template as DjangoTemplate, TemplateEncodingError
 from django.template.exceptions import TemplateDoesNotExist
-from django.utils.encoding import smart_unicode
+from django.utils.encoding import smart_text
 
 from ietf.dbtemplate.models import DBTemplate
 
@@ -21,7 +21,7 @@ class Template(object):
 
     def __init__(self, template_string, origin=None, name='<Unknown Template>'):
         try:
-            template_string = smart_unicode(template_string)
+            template_string = smart_text(template_string)
         except UnicodeDecodeError:
             raise TemplateEncodingError("Templates can only be constructed from unicode or UTF-8 strings.")
         self.template_string = string.Template(template_string)
