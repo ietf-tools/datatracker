@@ -40,7 +40,7 @@ class ChangeStateTests(TestCase):
 
         url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "ad", url)
-	
+        
         # normal get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)

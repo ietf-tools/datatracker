@@ -79,7 +79,7 @@ class LiaisonStatementsFeed(Feed):
 
         qs = qs.prefetch_related("attachments")
 
-	return qs
+        return qs
 
     def title(self, obj):
         return obj['title']

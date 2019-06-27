@@ -26,12 +26,12 @@ WSGIPythonEggs /var/www/.python-eggs/
     WSGIScriptAlias / /srv/www/ietfdb/ietf/wsgi.py
 
     <Location "/accounts/login">
-	AuthType Digest
-	AuthName "IETF"
-	AuthUserFile /var/local/loginmgr/digest
-	AuthGroupFile /var/local/loginmgr/groups
-	AuthDigestDomain http://tools.ietf.org/
-	Require valid-user
+        AuthType Digest
+        AuthName "IETF"
+        AuthUserFile /var/local/loginmgr/digest
+        AuthGroupFile /var/local/loginmgr/groups
+        AuthDigestDomain http://tools.ietf.org/
+        Require valid-user
     </Location>
 </VirtualHost>
 ----

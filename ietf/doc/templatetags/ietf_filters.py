@@ -146,8 +146,8 @@ def sanitize(value):
 def square_brackets(value):
     """Adds square brackets around text."""
     if isinstance(value, (bytes,str)):
-	if value == "":
-	     value = " "
+        if value == "":
+             value = " "
         return "[ %s ]" % value
     elif value > 0:
         return "[ X ]"

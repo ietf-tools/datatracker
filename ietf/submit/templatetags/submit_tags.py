@@ -20,7 +20,7 @@ def show_submission_files(context, submission):
             continue
         result.append({'ext': '%s' % ext[1:],
                        'exists': exists,
-		       'url': '%s%s-%s%s' % (settings.IDSUBMIT_STAGING_URL, submission.name, submission.rev, ext)})
+                       'url': '%s%s-%s%s' % (settings.IDSUBMIT_STAGING_URL, submission.name, submission.rev, ext)})
     return {'files': result}
 
 

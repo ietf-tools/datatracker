@@ -1127,7 +1127,7 @@ class InactiveNomcomTests(TestCase):
 
     def test_acceptance_closed(self):
         today = datetime.date.today().strftime('%Y%m%d')
-	pid = self.nc.position_set.first().nomineeposition_set.order_by('pk').first().id 
+        pid = self.nc.position_set.first().nomineeposition_set.order_by('pk').first().id 
         url = reverse('ietf.nomcom.views.process_nomination_status', kwargs = {
                       'year' : self.nc.year(),
                       'nominee_position_id' : pid,

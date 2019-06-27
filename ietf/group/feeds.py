@@ -21,12 +21,12 @@ class GroupChangesFeed(Feed):
         return "Changes for %s %s" % (obj.acronym, obj.type)
 
     def link(self, obj):
-	if not obj:
-	    raise FeedDoesNotExist
+        if not obj:
+            raise FeedDoesNotExist
         return obj.about_url()
 
     def description(self, obj):
-	return self.title(obj)
+        return self.title(obj)
 
     def items(self, obj):
         events = list(obj.groupevent_set.all().select_related("group"))
@@ -44,7 +44,7 @@ class GroupChangesFeed(Feed):
             return obj.group.about_url()
 
     def item_pubdate(self, obj):
-	return obj.time
+        return obj.time
 
     def item_title(self, obj):
         title = "%s - %s" % (truncatewords(strip_tags(obj.desc), 10), obj.by)

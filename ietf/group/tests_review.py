@@ -349,7 +349,7 @@ class ReviewTests(TestCase):
             'start_date': start_date.isoformat(),
             'end_date': "",
             'availability': "unavailable",
-	    'reason': "Whimsy",
+            'reason': "Whimsy",
         })
         self.assertEqual(r.status_code, 302)
         period = UnavailablePeriod.objects.get(person=reviewer, team=review_req.team, start_date=start_date)
@@ -359,7 +359,7 @@ class ReviewTests(TestCase):
         msg_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
         self.assertTrue(start_date.isoformat(), msg_content)
         self.assertTrue("indefinite", msg_content)
-    	self.assertEqual(period.reason, "Whimsy")
+        self.assertEqual(period.reason, "Whimsy")
 
         # end unavailable period
         empty_outbox()

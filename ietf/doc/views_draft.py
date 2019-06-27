@@ -134,7 +134,7 @@ def change_state(request, name):
                 email_state_changed(request, doc, msg,'doc_state_edited')
                 
                 if new_state.slug == "approved" and new_tags == [] and has_role(request.user, "Area Director"):
-					email_ad_approved_doc(request, doc, comment)
+                                        email_ad_approved_doc(request, doc, comment)
 
                 if prev_state and prev_state.slug in ("ann", "rfcqueue") and new_state.slug not in ("rfcqueue", "pub"):
                     email_pulled_from_rfc_queue(request, doc, comment, prev_state, new_state)
@@ -578,7 +578,7 @@ def to_iesg(request,name):
                 doc.notify = notify
                 changes.append("State Change Notice email list changed to %s" % doc.notify)
 
-	    # Get the last available writeup
+            # Get the last available writeup
             previous_writeup = doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup")
             if previous_writeup != None:
                 changes.append(previous_writeup.text)
@@ -904,7 +904,7 @@ def edit_shepherd_writeup(request, name):
                      writeup = form.cleaned_data['content']
                 e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login, type="changed_protocol_writeup")
 
-		# Add the shepherd writeup to description if the document is in submitted for publication state
+                # Add the shepherd writeup to description if the document is in submitted for publication state
                 stream_state = doc.get_state("draft-stream-%s" % doc.stream_id)
                 iesg_state   = doc.get_state("draft-iesg")
                 if (iesg_state or (stream_state and stream_state.slug=='sub-pub')):

@@ -7,7 +7,7 @@
 #
 
 import os 
-from .settings import *                                          # pyflakes:ignore
+from ietf.settings import *                                          # pyflakes:ignore
 import debug                            # pyflakes:ignore
 debug.debug = True
 

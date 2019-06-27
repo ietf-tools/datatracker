@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 
 from django.db import models
 
@@ -22,7 +22,7 @@ class Redirect(models.Model):
     rest = models.CharField(max_length=100, blank=True)
     remove = models.CharField(max_length=50, blank=True)
     def __str__(self):
-	return "%s -> %s/%s" % (self.cgi, self.url, self.rest)
+        return "%s -> %s/%s" % (self.cgi, self.url, self.rest)
 
 class Suffix(models.Model):
     """This is a "rest" and "remove" (see Redirect class)
@@ -31,7 +31,7 @@ class Suffix(models.Model):
     rest = models.CharField(max_length=100, blank=True)
     remove = models.CharField(max_length=50, blank=True)
     def __str__(self):
-	return "-> %s - %s" % (self.rest, self.remove)
+        return "-> %s - %s" % (self.rest, self.remove)
     class Meta:
         verbose_name_plural="Suffixes"
 
@@ -47,12 +47,12 @@ class Command(models.Model):
     script = ForeignKey(Redirect, related_name='commands', editable=False)
     suffix = ForeignKey(Suffix, null=True, blank=True)
     def __str__(self):
-	ret = "%s?command=%s" % (self.script.cgi, self.command)
-	if self.suffix_id:
-	    ret += " %s" % (self.suffix)
-	return ret
+        ret = "%s?command=%s" % (self.script.cgi, self.command)
+        if self.suffix_id:
+            ret += " %s" % (self.suffix)
+        return ret
     class Meta:
-	unique_together = (("script", "command"), )
+        unique_together = (("script", "command"), )
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core

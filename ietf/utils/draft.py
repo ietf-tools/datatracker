@@ -3,10 +3,10 @@
 # -*- python -*-
 """
 NAME
-	%(program)s - Extract meta-information from an IETF draft.
+        %(program)s - Extract meta-information from an IETF draft.
 
 SYNOPSIS
-	%(program)s [OPTIONS] DRAFTLIST_FILE
+        %(program)s [OPTIONS] DRAFTLIST_FILE
 
 DESCRIPTION
         Extract information about authors' names and email addresses,
@@ -17,17 +17,17 @@ DESCRIPTION
 %(options)s
 
 AUTHOR
-	Written by Henrik Levkowetz, <henrik@levkowetz.com>
+        Written by Henrik Levkowetz, <henrik@levkowetz.com>
 
 COPYRIGHT
-	Copyright 2008 Henrik Levkowetz
+        Copyright 2008 Henrik Levkowetz
 
-	This program is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or (at
-	your option) any later version. There is NO WARRANTY; not even the
-	implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-	PURPOSE. See the GNU General Public License for more details.
+        This program is free software; you can redistribute it and/or modify
+        it under the terms of the GNU General Public License as published by
+        the Free Software Foundation; either version 2 of the License, or (at
+        your option) any later version. There is NO WARRANTY; not even the
+        implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+        PURPOSE. See the GNU General Public License for more details.
 
 """
 

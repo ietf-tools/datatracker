@@ -48,11 +48,11 @@ class StatusUpdateForm(forms.Form):
 
     def clean(self):
         if (self.cleaned_data['content'] and self.cleaned_data['content'].strip() and self.cleaned_data['txt']):
-	    raise forms.ValidationError("Cannot enter both text box and TXT file")
-	elif (self.cleaned_data['content'] and not self.cleaned_data['content'].strip() and not self.cleaned_data['txt']):
+            raise forms.ValidationError("Cannot enter both text box and TXT file")
+        elif (self.cleaned_data['content'] and not self.cleaned_data['content'].strip() and not self.cleaned_data['txt']):
             raise forms.ValidationError("NULL input is not a valid option")
         elif (self.cleaned_data['txt'] and not self.cleaned_data['txt'].strip()) :
-	    raise forms.ValidationError("NULL TXT file input is not a valid option")
+            raise forms.ValidationError("NULL TXT file input is not a valid option")
 
 class ConcludeGroupForm(forms.Form):
     instructions = forms.CharField(widget=forms.Textarea(attrs={'rows': 30}), required=True, strip=False)

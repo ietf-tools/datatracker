@@ -337,8 +337,8 @@ def active_programs(request):
     return render(request, 'group/active_programs.html', {'programs' : programs })
 
 def active_areas(request):
-	areas = Group.objects.filter(type="area", state="active").order_by("name")  
-	return render(request, 'group/active_areas.html', {'areas': areas })
+        areas = Group.objects.filter(type="area", state="active").order_by("name")  
+        return render(request, 'group/active_areas.html', {'areas': areas })
 
 def active_wgs(request):
     areas = Group.objects.filter(type="area", state="active").order_by("name")
@@ -1692,7 +1692,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
                     period.start_date.isoformat() if period.start_date else "indefinite",
                     period.end_date.isoformat() if period.end_date else "indefinite",
                     period.get_availability_display(),
-		    period.reason,
+                    period.reason,
                 )
 
                 if period.availability == "unavailable":

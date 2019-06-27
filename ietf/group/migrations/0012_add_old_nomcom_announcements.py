@@ -12,14 +12,14 @@ from datetime import datetime
 
 def forward(apps, schema_editor):
 
- 	p=Person.objects.filter(name="Jim Fenton")[0]
+        p=Person.objects.filter(name="Jim Fenton")[0]
 
 # Unfortunately, get_nomcom_by_year only works for 2013 and later, so we need to do things the hard way.
 
-	n = Group.objects.filter(acronym="nomcom2002")[0]
+        n = Group.objects.filter(acronym="nomcom2002")[0]
  
-   	n.message_set.create(by=p, subject="nomcom call for volunteers", time=datetime(2002,7,30),
-   		frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="nomcom call for volunteers", time=datetime(2002,7,30),
+                frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 This is the call for volunteers to participate in the 2002 IETF
 Nominations Committee, the committee that will select this year's
 nominees for the IAB and the IESG.  Details about the Nominations
@@ -116,8 +116,8 @@ Nordstrom (JWN)
 
 """)
 
-	n.message_set.create(by=p, subject="Selection of the Nominations Committee", time=datetime(2002,9,17),
-		frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="Selection of the Nominations Committee", time=datetime(2002,9,17),
+                frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 STOCKS USED IN THE NOMCOM SELECTION PROCESS, published result (in 100s), 
 number used as input (using 000s, rounded):
 
@@ -225,10 +225,10 @@ Nominations committee:
 140. Eva Gustaffson
 
 """
-	)
+        )
 
-	n.message_set.create(by=p, subject="Announcement of the Nominations Committee", time=datetime(2002,9,18),
-		frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="Announcement of the Nominations Committee", time=datetime(2002,9,18),
+                frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 We have completed selection of the 2002 
 Nominations committee.
 
@@ -256,10 +256,10 @@ Theodore Ts'o <tytso@mit.edu> (previous nomcom chair)
 Information on this year's selection process is available at: 
 <http://www.ietf.org/nomcom/select-announce.txt>
 """
-	)
+        )
 
-	n.message_set.create(by=p, subject="Announcement of IESG and IAB Nominations Requests", time=datetime(2002,10,21),
-		frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="Announcement of IESG and IAB Nominations Requests", time=datetime(2002,10,21),
+                frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 The 2002-2003 Nominations Committee is now
 soliciting nominations for the open
 slots on the IESG and IAB. 
@@ -343,8 +343,8 @@ also serves as a non-voting liaison.
 
 """)
 
-	n.message_set.create(by=p, subject="Announcement of IESG and IAB Nominations Requests", time=datetime(2002,11,0o5),
-		frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="Announcement of IESG and IAB Nominations Requests", time=datetime(2002,11,0o5),
+                frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 The 2002-2003 Nominations Committee is now
 soliciting nominations for the open
 slots on the IESG and IAB.
@@ -430,8 +430,8 @@ open position.  The Chair of the prior year's nominating committee
 also serves as a non-voting liaison.
 """)
 
-	n.message_set.create(by=p, subject="Announcement of IESG and IAB Nominations Requests", time=datetime(2002,11,12),
-		frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="Announcement of IESG and IAB Nominations Requests", time=datetime(2002,11,12),
+                frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 The 2002-2003 Nominations Committee is now
 soliciting nominations for the open
 slots on the IESG and IAB.
@@ -516,10 +516,10 @@ committee from their current membership who are not sitting in an
 open position.  The Chair of the prior year's nominating committee 
 also serves as a non-voting liaison.
 """
-	)
+        )
 
-	n.message_set.create(by=p, subject="IETF Nomcom Announcement", time=datetime(2003,2,27),
-		frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="IETF Nomcom Announcement", time=datetime(2003,2,27),
+                frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 The nomcom is pleased to announce the results of the 2002-2003
 selection process.  The IAB has approved the IESG candidates and
 the ISOC has approved the IAB candidates.  Please welcome them
@@ -581,8 +581,8 @@ Eric Rescorla - IAB liaison
 Ted Ts'o - past chair
 """)
 
-	n.message_set.create(by=p, subject="Announcement of IESG and IAB Nominations Request", time=datetime(2003,6,11),
-		frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="Announcement of IESG and IAB Nominations Request", time=datetime(2003,6,11),
+                frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
  The nominations committee has received notice to fill the vacancy in the
  Internet Area created with Erik Nordmark's departure. The nominations
  committee is seeking nominees to fill the open position. The chosen
@@ -641,8 +641,8 @@ Ted Ts'o - past chair
  also serves as a non-voting liaison.
 """)
 
-	n.message_set.create(by=p, subject="Nomcom result announcement", time=datetime(2003,7,15),
-		frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="Nomcom result announcement", time=datetime(2003,7,15),
+                frm="Phil Roberts <PRoberts@MEGISTO.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
  The nomcom is pleased to announce that it has selected Margaret Wasserman
  to fill the mid-term vacancy left by Erik Nordmark's resignation.
    
@@ -681,10 +681,10 @@ Ted Ts'o - past chair
  Ted Ts'o - past chair
 """)
 
-	n = Group.objects.filter(acronym="nomcom2003")[0]
+        n = Group.objects.filter(acronym="nomcom2003")[0]
 
-	n.message_set.create(by=p, subject="IETF Nominations Committee Chair Announcement", time=datetime(2003,8,25),
-		frm="Lynn St. Amour", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="IETF Nominations Committee Chair Announcement", time=datetime(2003,8,25),
+                frm="Lynn St. Amour", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
  One of the roles of the ISOC President is to appoint the IETF Nominations 
 Committee chair. This is done through consultation with the IETF and IAB Chairs 
 as well as the ISOC Executive Committee and it gives us great pleasure to announce 
@@ -706,8 +706,8 @@ President & CEO
 The Internet Society
 """)
 
-	n.message_set.create(by=p, subject="NomCom call for volunteers", time=datetime(2003,9,22),
-		frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="NomCom call for volunteers", time=datetime(2003,9,22),
+                frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 This is the call for volunteers to participate in the 2003 IETF Nominations Committee, 
 the committee that will select this year's nominees for the IAB and the IESG.
 
@@ -797,8 +797,8 @@ Corning (GLW)
 Tyco International (TYC)
 """)
 
-	n.message_set.create(by=p, subject="NomCom volunteer list", time=datetime(2003,10,6),
-		frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="NomCom volunteer list", time=datetime(2003,10,6),
+                frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 The final list of volunteers for the 2003 NomCom can be found at
 http://www.ietf.org/nomcom. I would like to thank everyone who
 volunteered.
@@ -845,8 +845,8 @@ Corning (GLW)
 Tyco International (TYC)
 """)
 
-	n.message_set.create(by=p, subject="Selection of the Nominations Committee", time=datetime(2003,10,10),
-		frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="Selection of the Nominations Committee", time=datetime(2003,10,10),
+                frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 STOCKS USED IN THE NOMCOM SELECTION PROCESS, published result (in 100s), 
 number used as input (using 000s, rounded):
 
@@ -972,8 +972,8 @@ Nominations committee:
 108. Andrew Thiessen <Andrew@its.bldrdoc.gov>
 """)
 
-	n.message_set.create(by=p, subject="NomCom Selection", time=datetime(2003,10,10),
-		frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="NomCom Selection", time=datetime(2003,10,10),
+                frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 Please welcome the voting members of this year's nomcom:
 
 Kireeti Kompella <kireeti@juniper.net>
@@ -1010,8 +1010,8 @@ Thanks,
 Rich
 """)
 
-	n.message_set.create(by=p, subject="Call for Nominees", time=datetime(2003,10,17),
-		frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="Call for Nominees", time=datetime(2003,10,17),
+                frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 Please send the NomCom <nomcom@ietf.org> nominations for the open IESG
 and IAB positions:
 
@@ -1042,8 +1042,8 @@ Thanks,
 Rich
 """)
 
-	n.message_set.create(by=p, subject="NomCom members", time=datetime(2003,10,24),
-		frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="NomCom members", time=datetime(2003,10,24),
+                frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 AB has appointed Geoff Huston as its non-voting liaison to the
 nomcom.
 
@@ -1075,8 +1075,8 @@ Thanks,
 Rich
 """)
 
-	n.message_set.create(by=p, subject="NomCom at IETF", time=datetime(2003,11,7),
-		frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="NomCom at IETF", time=datetime(2003,11,7),
+                frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 Members of the nomcom at IETF will be happy to chat with you in person
 about what the nomcom should look for in candidates for the IESG and
 IAB, specific feedback about the incumbents or potential nominees,
@@ -1095,8 +1095,8 @@ Thanks,
 Rich
 """)
 
-	n.message_set.create(by=p, subject="NomCom News", time=datetime(2003,11,14),
-		frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="NomCom News", time=datetime(2003,11,14),
+                frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 Randy Bush has resigned from his position as O&M Area Director. Hence,
 the nomcom will be filling Randy's position in addition to the
 previously announced positions.
@@ -1120,8 +1120,8 @@ Thanks,
 Rich
 """)
 
- 	n.message_set.create(by=p, subject="reminder - nominations to replace Randy Bush", time=datetime(2003,11,26),
-		frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="reminder - nominations to replace Randy Bush", time=datetime(2003,11,26),
+                frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 At IETF Randy Bush resigned from his position as Operations & Management
 Area Director for the IETF. This creates a mid-term vacancy that the
 IETF NomCom needs to fill. Randy's replacement will have a one-year
@@ -1144,8 +1144,8 @@ Thanks,
 Rich
 """)
 
- 	n.message_set.create(by=p, subject="Randy Bush replacement schedule", time=datetime(2003,12,1),
-		frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="Randy Bush replacement schedule", time=datetime(2003,12,1),
+                frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 For mid-term vacancies, RFC 2727 says "the selection and confirmation
 process is expected to be completed within 1 month." However, there are
 several factors that make a one-month schedule impractical in this
@@ -1171,8 +1171,8 @@ Thanks,
 Rich
 """)
 
-  	n.message_set.create(by=p, subject="Randy Bush replacement", time=datetime(2004,1,14),
-		frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="Randy Bush replacement", time=datetime(2004,1,14),
+                frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 I am pleased to announce that the IAB has confirmed the NomCom's
 selection of David Kessens for a one-year term as O&M Area Director,
 filling the mid-term vacancy left by Randy Bush's resignation.
@@ -1181,8 +1181,8 @@ Thanks,
 Rich
 """)
 
-  	n.message_set.create(by=p, subject="NomCom results", time=datetime(2004,2,13),
-		frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="NomCom results", time=datetime(2004,2,13),
+                frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 I am pleased to announce the results of the 2003-2004 NomCom selection
 process. The IAB has approved the IESG candidates and the ISOC board has
 approved the IAB candidates. Please welcome them in their roles:
@@ -1241,8 +1241,8 @@ Thanks,
 Rich
 """)
 
-  	n.message_set.create(by=p, subject="call for Security AD nominations", time=datetime(2004,9,28),
-		frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="call for Security AD nominations", time=datetime(2004,9,28),
+                frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 Steve Bellovin has resigned from his position as Security Area Director,
 effective the end of the November IETF meeting. The IESG has asked the
 2003-2004 NomCom to fill the mid-term vacancy. Steve's replacement will
@@ -1266,8 +1266,8 @@ Thanks,
 Rich
 """)
 
-  	n.message_set.create(by=p, subject="Steve Bellovin replacement", time=datetime(2004,11,7),
-		frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
+        n.message_set.create(by=p, subject="Steve Bellovin replacement", time=datetime(2004,11,7),
+                frm="Richard Draves <richdr@microsoft.com>", to="IETF Announcement list <ietf-announce@ietf.org>", body="""
 I am pleased to announce that the IAB has confirmed the NomCom's
 selection of Sam Hartman for a one-year term as Security Area Director,
 filling the mid-term vacancy left by Steve Bellovin's resignation.
@@ -1281,20 +1281,20 @@ Thanks,
 Rich
 """)
 
-	return
-	
+        return
+        
 
 def reverse(apps, schema_editor):
-	n = Group.objects.filter(acronym="nomcom2002")[0]
+        n = Group.objects.filter(acronym="nomcom2002")[0]
 
-	announcements = Message.objects.filter(related_groups=n)
-	announcements.delete()
+        announcements = Message.objects.filter(related_groups=n)
+        announcements.delete()
 
-	n = Group.objects.filter(acronym="nomcom2003")[0]
- 	announcements = Message.objects.filter(related_groups=n)
-	announcements.delete()
+        n = Group.objects.filter(acronym="nomcom2003")[0]
+        announcements = Message.objects.filter(related_groups=n)
+        announcements.delete()
 
-	return
+        return
 
 
 class Migration(migrations.Migration):
@@ -1304,5 +1304,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        	migrations.RunPython(forward, reverse)
+                migrations.RunPython(forward, reverse)
     ]
