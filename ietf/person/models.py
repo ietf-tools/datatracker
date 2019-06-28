@@ -16,6 +16,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
+from django.utils.encoding import smart_bytes
 from django.utils.text import slugify
 from simple_history.models import HistoricalRecords
 
@@ -336,9 +337,10 @@ class PersonalApiKey(models.Model):
     def validate_key(cls, s):
         import struct, hashlib, base64
         try:
-            key = base64.urlsafe_b64decode(six.binary_type(s))
-        except TypeError:
+            key = base64.urlsafe_b64decode(s)
+        except TypeError as e:
             return None
+
         id, salt, hash = struct.unpack(KEY_STRUCT, key)
         k = cls.objects.filter(id=id)
         if not k.exists():
@@ -346,6 +348,7 @@ class PersonalApiKey(models.Model):
         k = k.first()
         check = hashlib.sha256()
         for v in (str(id), str(k.person.id), k.created.isoformat(), k.endpoint, str(k.valid), salt, settings.SECRET_KEY):
+            v = smart_bytes(v)
             check.update(v)
         return k if check.digest() == hash else None
 
@@ -355,9 +358,10 @@ class PersonalApiKey(models.Model):
             hash = hashlib.sha256()
             # Hash over: ( id, person, created, endpoint, valid, salt, secret )
             for v in (str(self.id), str(self.person.id), self.created.isoformat(), self.endpoint, str(self.valid), self.salt, settings.SECRET_KEY):
+                v = smart_bytes(v)
                 hash.update(v)
             key = struct.pack(KEY_STRUCT, self.id, six.binary_type(self.salt), hash.digest())
-            self._cached_hash =  base64.urlsafe_b64encode(key)
+            self._cached_hash =  base64.urlsafe_b64encode(key).decode('ascii')
         return self._cached_hash
 
     def __unicode__(self):
