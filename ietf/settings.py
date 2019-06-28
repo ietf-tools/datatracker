@@ -389,7 +389,6 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.staticfiles',
     # External apps 
-    'anora',
     'bootstrap3',
     'corsheaders',
     'django_markup',
@@ -1035,13 +1034,13 @@ UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS = 30
 
 
 API_KEY_TYPE="ES256"                    # EC / P=256
-API_PUBLIC_KEY_PEM = """
+API_PUBLIC_KEY_PEM = b"""
 -----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqVojsaofDJScuMJN+tshumyNM5ME
 garzVPqkVovmF6yE7IJ/dv4FcV+QKCtJ/rOS8e36Y8ZAEVYuukhes0yZ1w==
 -----END PUBLIC KEY-----
 """
-API_PRIVATE_KEY_PEM = """
+API_PRIVATE_KEY_PEM = b"""
 -----BEGIN PRIVATE KEY-----
 MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgoI6LJkopKq8XrHi9
 QqGQvE4A83TFYjqLz+8gULYecsqhRANCAASpWiOxqh8MlJy4wk362yG6bI0zkwSB
