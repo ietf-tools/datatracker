@@ -1,6 +1,10 @@
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
+
 import smtpd
 import threading
 import asyncore
+
+import debug                            # pyflakes:ignore
 
 class AsyncCoreLoopThread(object):
 
@@ -27,18 +31,22 @@ class AsyncCoreLoopThread(object):
 
 class SMTPTestChannel(smtpd.SMTPChannel):
 
+#    mail_options = ['BODY=8BITMIME', 'SMTPUTF8']
+
     def smtp_RCPT(self, arg):
-        if not self._SMTPChannel__mailfrom:
+        self.rcpt_options = []
+        if not self.mailfrom:
             self.push('503 Error: need MAIL command')
             return
-        address = self._SMTPChannel__getaddr('TO:', arg) if arg else None
+        arg = self._strip_command_keyword('TO:', arg)
+        address, params = self._getaddr(arg)
         if not address:
             self.push('501 Syntax: RCPT TO: <address>')
             return
         if "poison" in address:
            self.push('550 Error: Not touching that')
            return
-        self._SMTPChannel__rcpttos.append(address)
+        self.rcpttos.append(address)
         self.push('250 Ok')
 
 class SMTPTestServer(smtpd.SMTPServer):
@@ -57,7 +65,7 @@ class SMTPTestServer(smtpd.SMTPServer):
             #channel = SMTPTestChannel(self, conn, addr)
             SMTPTestChannel(self, conn, addr)
 
-    def process_message(self, peer, mailfrom, rcpttos, data):
+    def process_message(self, peer, mailfrom, rcpttos, data, mail_options=[], rcpt_options=[]):
         self.inbox.append(data)
 
 
