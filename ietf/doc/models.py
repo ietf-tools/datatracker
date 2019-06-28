@@ -38,7 +38,7 @@ class StateType(models.Model):
     slug = models.CharField(primary_key=True, max_length=30) # draft, draft-iesg, charter, ...
     label = models.CharField(max_length=255, help_text="Label that should be used (e.g. in admin) for state drop-down for this type of state") # State, IESG state, WG state, ...
 
-    def __unicode__(self):
+    def __str__(self):
         return self.slug
 
 @checks.register('db-consistency')
@@ -65,7 +65,7 @@ class State(models.Model):
 
     next_states = models.ManyToManyField('State', related_name="previous_states", blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
     
     class Meta:
@@ -530,7 +530,7 @@ class RelatedDocument(models.Model):
     relationship = ForeignKey(DocRelationshipName)
     def action(self):
         return self.relationship.name
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s %s" % (self.source.name, self.relationship.name.lower(), self.target.name)
 
     def is_downref(self):
@@ -600,7 +600,7 @@ class DocumentAuthorInfo(models.Model):
 class DocumentAuthor(DocumentAuthorInfo):
     document = ForeignKey('Document')
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s (%s)" % (self.document.name, self.person, self.order)
 
 
@@ -613,7 +613,7 @@ validate_docname = RegexValidator(
 class Document(DocumentInfo):
     name = models.CharField(max_length=255, validators=[validate_docname,], unique=True)           # immutable
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def get_absolute_url(self):
@@ -849,7 +849,7 @@ class RelatedDocHistory(models.Model):
     source = ForeignKey('DocHistory')
     target = ForeignKey('DocAlias', related_name="reversely_related_document_history_set")
     relationship = ForeignKey(DocRelationshipName)
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s %s" % (self.source.doc.name, self.relationship.name.lower(), self.target.name)
 
 class DocHistoryAuthor(DocumentAuthorInfo):
@@ -857,7 +857,7 @@ class DocHistoryAuthor(DocumentAuthorInfo):
     # easier to write generic code
     document = ForeignKey('DocHistory', related_name="documentauthor_set")
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s (%s)" % (self.document.doc.name, self.person, self.order)
 
 class DocHistory(DocumentInfo):
@@ -868,7 +868,7 @@ class DocHistory(DocumentInfo):
     # property
     name = models.CharField(max_length=255)
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.doc.name)
 
     def canonical_name(self):
@@ -917,7 +917,7 @@ class DocAlias(models.Model):
     def document(self):
         return self.docs.first()
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s-->%s" % (self.name, ','.join([str(d.name) for d in self.docs.all() if isinstance(d, Document) ]))
     document_link = admin_link("document")
     class Meta:
@@ -1023,7 +1023,7 @@ class DocEvent(models.Model):
     def get_dochistory(self):
         return DocHistory.objects.filter(time__lte=self.time,doc__name=self.doc.name).order_by('-time', '-pk').first()
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s by %s at %s" % (self.doc.name, self.get_type_display().lower(), self.by.plain_name(), self.time)
 
     def save(self, *args, **kwargs):
@@ -1056,7 +1056,7 @@ class BallotType(models.Model):
     order = models.IntegerField(default=0)
     positions = models.ManyToManyField(BallotPositionName, blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s: %s" % (self.name, self.doc_type.name)
     
     class Meta:
@@ -1183,7 +1183,7 @@ class DeletedEvent(models.Model):
     by = ForeignKey(Person)
     time = models.DateTimeField(default=datetime.datetime.now)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s by %s %s" % (self.content_type, self.by, self.time)
 
 class EditedAuthorsDocEvent(DocEvent):

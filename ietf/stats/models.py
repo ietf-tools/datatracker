@@ -17,7 +17,7 @@ class AffiliationAlias(models.Model):
     alias = models.CharField(max_length=255, help_text="Note that aliases will be matched case-insensitive and both before and after some clean-up.", unique=True)
     name = models.CharField(max_length=255)
 
-    def __unicode__(self):
+    def __str__(self):
         return "{} -> {}".format(self.alias, self.name)
 
     def save(self, *args, **kwargs):
@@ -32,7 +32,7 @@ class AffiliationIgnoredEnding(models.Model):
 
     ending = models.CharField(max_length=255, help_text="Regexp with ending, e.g. 'Inc\\.?' - remember to escape .!")
 
-    def __unicode__(self):
+    def __str__(self):
         return self.ending
 
 class CountryAlias(models.Model):
@@ -42,7 +42,7 @@ class CountryAlias(models.Model):
     alias = models.CharField(max_length=255, help_text="Note that lower-case aliases are matched case-insensitive while aliases with at least one uppercase letter is matched case-sensitive. So 'United States' is best entered as 'united states' so it both matches 'United States' and 'United states' and 'UNITED STATES', whereas 'US' is best entered as 'US' so it doesn't accidentally match an ordinary word like 'us'.")
     country = ForeignKey(CountryName, max_length=255)
 
-    def __unicode__(self):
+    def __str__(self):
         return "{} -> {}".format(self.alias, self.country.name)
 
     class Meta:
@@ -58,5 +58,5 @@ class MeetingRegistration(models.Model):
     person = ForeignKey(Person, blank=True, null=True)
     email =  models.EmailField(blank=True, null=True)
     
-    def __unicode__(self):
+    def __str__(self):
         return "{} {}".format(self.first_name, self.last_name)

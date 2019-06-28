@@ -29,7 +29,7 @@ class IprDisclosureBase(models.Model):
     class Meta:
         ordering = ['-time', '-id']
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     def get_absolute_url(self):
@@ -172,7 +172,7 @@ class IprDocRel(models.Model):
         else:
             return name
 
-    def __unicode__(self):
+    def __str__(self):
         if self.revisions:
             return "%s which applies to %s-%s" % (self.disclosure, self.document.name, self.revisions)
         else:
@@ -183,7 +183,7 @@ class RelatedIpr(models.Model):
     target       = ForeignKey(IprDisclosureBase,related_name='relatedipr_target_set')
     relationship = ForeignKey(DocRelationshipName) # Re-use; change to a dedicated RelName if needed
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
 
 class IprEvent(models.Model):
@@ -196,7 +196,7 @@ class IprEvent(models.Model):
     in_reply_to = ForeignKey(Message, null=True, blank=True,related_name='irtoevents')
     response_due= models.DateTimeField(blank=True,null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s by %s at %s" % (self.disclosure.title, self.type.name.lower(), self.by.plain_name(), self.time)
 
     def response_past_due(self):

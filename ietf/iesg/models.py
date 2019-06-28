@@ -49,7 +49,7 @@ class TelechatAgendaItem(models.Model):
     type = models.IntegerField(db_column='template_type', choices=TYPE_CHOICES, default=3)
     title = models.CharField(max_length=255, db_column='template_title')
 
-    def __unicode__(self):
+    def __str__(self):
         type_name = self.TYPE_CHOICES_DICT.get(self.type, str(self.type))
         return '%s: %s' % (type_name, self.title or "")
 
@@ -82,7 +82,7 @@ class TelechatDate(models.Model):
 
     date = models.DateField(default=next_telechat_date)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.date.isoformat()
 
     class Meta:

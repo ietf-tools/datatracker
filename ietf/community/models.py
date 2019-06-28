@@ -22,7 +22,7 @@ class CommunityList(models.Model):
         else:
             return 'ID list'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.long_name()
 
     def get_absolute_url(self):
@@ -76,7 +76,7 @@ class SearchRule(models.Model):
     # when new documents are submitted
     name_contains_index = models.ManyToManyField(Document)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s %s/%s/%s/%s" % (self.community_list, self.rule_type, self.state, self.group, self.person, self.text)
 
 class EmailSubscription(models.Model):
@@ -89,7 +89,7 @@ class EmailSubscription(models.Model):
     ]
     notify_on = models.CharField(max_length=30, choices=NOTIFICATION_CHOICES, default="all")
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s to %s (%s changes)" % (self.email, self.community_list, self.notify_on)
 
 

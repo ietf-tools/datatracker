@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
 
 from django.db import models
 
@@ -11,7 +11,7 @@ class NameModel(models.Model):
     used = models.BooleanField(default=True)
     order = models.IntegerField(default=0)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     class Meta:

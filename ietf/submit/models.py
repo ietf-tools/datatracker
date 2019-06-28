@@ -55,7 +55,7 @@ class Submission(models.Model):
 
     draft = ForeignKey(Document, null=True, blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s-%s" % (self.name, self.rev)
 
     def submitter_parsed(self):
@@ -82,7 +82,7 @@ class SubmissionCheck(models.Model):
     items = jsonfield.JSONField(null=True, blank=True, default='{}')
     symbol = models.CharField(max_length=64, default='')
     #
-    def __unicode__(self):
+    def __str__(self):
         return "%s submission check: %s: %s" % (self.checker, 'Passed' if self.passed else 'Failed', self.message[:48]+'...')
     def has_warnings(self):
         return self.warnings != '[]'
@@ -95,7 +95,7 @@ class SubmissionEvent(models.Model):
     by = ForeignKey(Person, null=True, blank=True)
     desc = models.TextField()
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s by %s at %s" % (self.submission.name, self.desc, self.by.plain_name() if self.by else "(unknown)", self.time)
 
     class Meta:
@@ -108,7 +108,7 @@ class Preapproval(models.Model):
     by = ForeignKey(Person)
     time = models.DateTimeField(default=datetime.datetime.now)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 class SubmissionEmailEvent(SubmissionEvent):
@@ -116,7 +116,7 @@ class SubmissionEmailEvent(SubmissionEvent):
     msgtype     = models.CharField(max_length=25)
     in_reply_to = ForeignKey(Message, null=True, blank=True,related_name='irtomanual')
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s by %s at %s" % (self.submission.name, self.desc, self.by.plain_name() if self.by else "(unknown)", self.time)
 
     class Meta:

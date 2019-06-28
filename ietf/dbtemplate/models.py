@@ -27,7 +27,7 @@ class DBTemplate(models.Model):
     content = models.TextField( blank=False, null=False, )
     group = ForeignKey( Group, blank=True, null=True, )
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     def clean(self):

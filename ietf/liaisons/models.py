@@ -49,7 +49,7 @@ class LiaisonStatement(models.Model):
         ordering = ['id']
         
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title or "<no title>"
 
     def change_state(self,state_id=None,person=None):
@@ -203,7 +203,7 @@ class LiaisonStatementAttachment(models.Model):
     document = ForeignKey(Document)
     removed = models.BooleanField(default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.document.name
 
 
@@ -212,7 +212,7 @@ class RelatedLiaisonStatement(models.Model):
     target = ForeignKey(LiaisonStatement, related_name='target_of_set')
     relationship = ForeignKey(DocRelationshipName)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
 
 
@@ -221,7 +221,7 @@ class LiaisonStatementGroupContacts(models.Model):
     contacts = models.CharField(max_length=255,blank=True)
     cc_contacts = models.CharField(max_length=255,blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s" % self.group.name
 
 
@@ -232,7 +232,7 @@ class LiaisonStatementEvent(models.Model):
     statement = ForeignKey(LiaisonStatement)
     desc = models.TextField()
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s by %s at %s" % (self.statement.title, self.type.slug, self.by.plain_name(), self.time)
 
     class Meta:

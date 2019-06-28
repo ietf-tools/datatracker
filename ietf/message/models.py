@@ -33,7 +33,7 @@ class Message(models.Model):
     class Meta:
         ordering = ['time']
 
-    def __unicode__(self):
+    def __str__(self):
         return "'%s' %s -> %s" % (self.subject, self.frm, self.to)
 
     def get(self, field):
@@ -49,7 +49,7 @@ class MessageAttachment(models.Model):
     removed = models.BooleanField(default=False)
     body = models.TextField()
 
-    def __unicode__(self):
+    def __str__(self):
         return self.filename
 
 
@@ -67,7 +67,7 @@ class SendQueue(models.Model):
     class Meta:
         ordering = ['time']
 
-    def __unicode__(self):
+    def __str__(self):
         return "'%s' %s -> %s (sent at %s)" % (self.message.subject, self.message.frm, self.message.to, self.sent_at or "<not yet>")
 
 
@@ -76,7 +76,7 @@ class AnnouncementFrom(models.Model):
     group = ForeignKey(Group)
     address = models.CharField(max_length=255)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.address
 
     class Meta:

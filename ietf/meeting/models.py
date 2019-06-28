@@ -107,7 +107,7 @@ class Meeting(models.Model):
     attendees = models.IntegerField(blank=True, null=True, default=None,
                                     help_text="Number of Attendees for backfilled meetings, leave it blank for new meetings, and then it is calculated from the registrations")
 
-    def __unicode__(self):
+    def __str__(self):
         if self.type_id == "ietf":
             return "IETF-%s" % (self.number)
         else:
@@ -315,7 +315,7 @@ class ResourceAssociation(models.Model):
     icon = models.CharField(max_length=64)       # icon to be found in /static/img
     desc = models.CharField(max_length=256)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.desc
 
     def json_dict(self, host_scheme):
@@ -344,7 +344,7 @@ class Room(models.Model):
     y2 = models.SmallIntegerField(null=True, blank=True, default=None)
     # end floorplan-related stuff
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s size: %s" % (self.name, self.capacity)
 
     def delete_timeslots(self):
@@ -426,7 +426,7 @@ class FloorPlan(models.Model):
     class Meta:
         ordering = ['-id',]
     #
-    def __unicode__(self):
+    def __str__(self):
         return 'floorplan-%s-%s' % (self.meeting.number, xslugify(self.name))
 
 # === Schedules, Sessions, Timeslots and Assignments ===========================
@@ -472,7 +472,7 @@ class TimeSlot(models.Model):
                 self._reg_info = None
         return self._reg_info
 
-    def __unicode__(self):
+    def __str__(self):
         location = self.get_location()
         if not location:
             location = "(no location)"
@@ -616,7 +616,7 @@ class Schedule(models.Model):
     badness  = models.IntegerField(null=True, blank=True)
     # considering copiedFrom = ForeignKey('Schedule', blank=True, null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s:%s(%s)" % (self.meeting, self.name, self.owner)
 
     def base_url(self):
@@ -725,7 +725,7 @@ class SchedTimeSessAssignment(models.Model):
     class Meta:
         ordering = ["timeslot__time", "timeslot__type__slug", "session__group__parent__name", "session__group__acronym", "session__name", ]
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s [%s<->%s]" % (self.schedule, self.session, self.timeslot)
 
     @property
@@ -828,7 +828,7 @@ class Constraint(models.Model):
 
     active_status = None
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s target=%s person=%s" % (self.source, self.name.name.lower(), self.target, self.person)
 
     def brief_display(self):
@@ -868,7 +868,7 @@ class SessionPresentation(models.Model):
         ordering = ('order',)
         unique_together = (('session', 'document'),)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s -> %s-%s" % (self.session, self.document.name, self.rev)
 
 constraint_cache_uses = 0
@@ -1007,7 +1007,7 @@ class Session(models.Model):
     def is_material_submission_cutoff(self):
         return datetime.date.today() > self.meeting.get_submission_correction_date()
 
-    def __unicode__(self):
+    def __str__(self):
         if self.meeting.type_id == "interim":
             return self.meeting.number
 
@@ -1154,7 +1154,7 @@ class ImportantDate(models.Model):
     class Meta:
         ordering = ["-meeting_id","date", ]
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s : %s : %s' % ( self.meeting, self.name, self.date )
 
 class SlideSubmission(models.Model):

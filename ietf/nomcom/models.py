@@ -59,7 +59,7 @@ class NomCom(models.Model):
         verbose_name_plural = 'NomComs'
         verbose_name = 'NomCom'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.group.acronym
 
     def save(self, *args, **kwargs):
@@ -108,7 +108,7 @@ class Nomination(models.Model):
     class Meta:
         verbose_name_plural = 'Nominations'
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s (%s)" % (self.candidate_name, self.candidate_email)
 
 
@@ -127,7 +127,7 @@ class Nominee(models.Model):
         unique_together = ('email', 'nomcom')
         ordering = ['-nomcom__group__acronym', 'person__name', ]
 
-    def __unicode__(self):
+    def __str__(self):
         if self.email.person and self.email.person.name:
             return '%s <%s> %s' % (self.email.person.plain_name(), self.email.address, self.nomcom.year())
         else:
@@ -159,7 +159,7 @@ class NomineePosition(models.Model):
             self.state = NomineePositionStateName.objects.get(slug='pending')
         super(NomineePosition, self).save(**kwargs)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s - %s - %s" % (self.nominee, self.state, self.position)
 
     @property
@@ -182,7 +182,7 @@ class Position(models.Model):
     class Meta:
         verbose_name_plural = 'Positions'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def save(self, *args, **kwargs):
@@ -224,7 +224,7 @@ class Topic(models.Model):
     class Meta:
         verbose_name_plural = 'Topics'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.subject
 
     def save(self, *args, **kwargs):
@@ -257,7 +257,7 @@ class Feedback(models.Model):
 
     objects = FeedbackManager()
 
-    def __unicode__(self):
+    def __str__(self):
         return "from %s" % self.author
 
     class Meta:

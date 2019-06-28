@@ -42,7 +42,7 @@ class GroupInfo(models.Model):
     unused_states = models.ManyToManyField('doc.State', help_text="Document states that have been disabled for the group.", blank=True)
     unused_tags = models.ManyToManyField(DocTagName, help_text="Document tags that have been disabled for the group.", blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def ad_role(self):
@@ -252,7 +252,7 @@ class GroupURL(models.Model):
     name = models.CharField(max_length=255)
     url = models.URLField()
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s (%s)" % (self.url, self.name)
 
 class GroupMilestoneInfo(models.Model):
@@ -268,7 +268,7 @@ class GroupMilestoneInfo(models.Model):
 
     docs = models.ManyToManyField('doc.Document', blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.desc[:20] + "..."
     class Meta:
         abstract = True
@@ -288,7 +288,7 @@ class GroupStateTransitions(models.Model):
     state = ForeignKey('doc.State', help_text="State for which the next states should be overridden")
     next_states = models.ManyToManyField('doc.State', related_name='previous_groupstatetransitions_states')
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s "%s" -> %s' % (self.group.acronym, self.state.name, [s.name for s in self.next_states.all()])
 
 GROUP_EVENT_CHOICES = [
@@ -309,7 +309,7 @@ class GroupEvent(models.Model):
     by = ForeignKey(Person)
     desc = models.TextField()
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s at %s" % (self.by.plain_name(), self.get_type_display().lower(), self.time)
 
     class Meta:
@@ -326,7 +326,7 @@ class Role(models.Model):
     group = ForeignKey(Group)
     person = ForeignKey(Person)
     email = ForeignKey(Email, help_text="Email address used by person for this role.")
-    def __unicode__(self):
+    def __str__(self):
         return "%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym or self.group.name)
 
     def formatted_ascii_email(self):
@@ -347,7 +347,7 @@ class RoleHistory(models.Model):
     group = ForeignKey(GroupHistory)
     person = ForeignKey(Person)
     email = ForeignKey(Email, help_text="Email address used by person for this role.")
-    def __unicode__(self):
+    def __str__(self):
         return "%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym)
 
     class Meta:

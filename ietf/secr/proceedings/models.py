@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 import os
 
 from django.conf import settings
@@ -63,7 +64,7 @@ class Registration(models.Model):
     company = models.CharField(max_length=255)
     country = models.CharField(max_length=2)
     
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s" % (self.fname, self.lname)
     class Meta:
         db_table = 'registrations'

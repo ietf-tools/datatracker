@@ -48,7 +48,7 @@ class Person(models.Model):
     name_from_draft = models.CharField("Full Name (from submission)", null=True, max_length=255, editable=False, help_text="Name as found in a draft submission.")
     consent = models.NullBooleanField("I hereby give my consent to the use of the personal details I have provided (photo, bio, name, email) within the IETF Datatracker", null=True, default=None)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.plain_name()
     def name_parts(self):
         return name_parts(self.name)
@@ -248,7 +248,7 @@ class Alias(models.Model):
                 send_mail_preformatted(None, msg)
 
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
     class Meta:
         verbose_name_plural = "Aliases"
@@ -263,7 +263,7 @@ class Email(models.Model):
     active = models.BooleanField(default=True)      # Old email addresses are *not* purged, as history
                                                     # information points to persons through these
 
-    def __unicode__(self):
+    def __str__(self):
         return self.address or "Email object with id: %s"%self.pk
 
     def get_name(self):
@@ -364,7 +364,7 @@ class PersonalApiKey(models.Model):
             self._cached_hash =  base64.urlsafe_b64encode(key).decode('ascii')
         return self._cached_hash
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s (%s): %s ..." % (self.endpoint, self.created.strftime("%Y-%m-%d %H:%M"), self.hash()[:16])
 
 PERSON_EVENT_CHOICES = [
@@ -379,7 +379,7 @@ class PersonEvent(models.Model):
     type = models.CharField(max_length=50, choices=PERSON_EVENT_CHOICES)
     desc = models.TextField()
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s at %s" % (self.person.plain_name(), self.get_type_display().lower(), self.time)
 
     class Meta:

@@ -37,7 +37,7 @@ class MailTrigger(models.Model):
     class Meta:
         ordering = ["slug"]
 
-    def __unicode__(self):
+    def __str__(self):
         return self.slug
 
 class Recipient(models.Model):
@@ -48,7 +48,7 @@ class Recipient(models.Model):
     class Meta:
         ordering = ["slug"]
 
-    def __unicode__(self):
+    def __str__(self):
         return self.slug
 
     def gather(self, **kwargs):
