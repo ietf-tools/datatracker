@@ -8,6 +8,8 @@ import sys
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
+import debug                            # pyflakes:ignore
+
 # BlackHole, PySyntaxError and checking based on 
 # https://github.com/patrys/gedit-pyflakes-plugin.git
 class BlackHole(object):
@@ -82,7 +84,7 @@ def checkPath(filename, verbosity):
     @return: the number of warnings printed
     """
     try:
-        return check(file(filename, 'U').read() + '\n', filename, verbosity)
+        return check(open(filename, 'U').read() + '\n', filename, verbosity)
     except IOError as msg:
         return ["%s: %s" % (filename, msg.args[1])]
     except TypeError:
