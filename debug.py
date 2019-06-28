@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 import os
 import sys
 import time as timeutils
@@ -165,12 +166,13 @@ def dir(name):
 
 def type(name):
     if debug:
-        name = "type(%s)" % name
         frame = inspect.stack()[1][0]
         value = eval(name, frame.f_globals, frame.f_locals)
+        name = "type(%s)" % name
+        tvalue = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
-        sys.stderr.write("%s%s: %s\n" % (indent, name, value))
-            
+        sys.stderr.write("%s%s: %s %s\n" % (indent, name, tvalue, value))
+
 def say(s):
     if debug:
         indent = ' ' * (_report_indent[0])
