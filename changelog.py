@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 import re
 from tzparse import tzparse
 from datetime import datetime as Datetime
@@ -66,5 +67,5 @@ def parse(logfile):
         elif entry:
             entry.logentry += line
         else:
-            print "Unexpected line: '%s'" % line
+            print("Unexpected line: '%s'" % line)
     return entries
