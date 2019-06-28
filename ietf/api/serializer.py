@@ -90,7 +90,7 @@ class AdminJsonSerializer(Serializer):
     use_natural_keys = False
 
     def serialize(self, queryset, **options):
-        qi = options.get('query_info', '')
+        qi = options.get('query_info', '').encode('utf-8')
         if len(list(queryset)) == 1:
             obj = queryset[0]
             key = 'json:%s:%s' % (hashlib.md5(qi).hexdigest(), unique_obj_name(obj))
