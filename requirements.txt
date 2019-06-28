@@ -1,7 +1,6 @@
 # -*- conf-mode -*-
 setuptools>=18.5			# Require this first, to prevent later errors
 #
-#anora>=0.1.2
 argon2-cffi>=16.1.0		# For the Argon2 password hasher option
 beautifulsoup4>=4.5.0
 bibtexparser>=0.6.2,<1.0	# Version 1.0 doesn't work under python 2.7.  1.0.1 doesn't recognize month names or abbreviations.
