@@ -221,7 +221,7 @@ def feed(request, username=None, acronym=None, group_type=None):
 
     host = request.get_host()
     feed_url = 'https://%s%s' % (host, request.get_full_path())
-    feed_id = uuid.uuid5(uuid.NAMESPACE_URL, feed_url.encode('utf-8'))
+    feed_id = uuid.uuid5(uuid.NAMESPACE_URL, feed_url)
     title = '%s RSS Feed' % clist.long_name()
     if significant:
         subtitle = 'Significant document changes'
@@ -233,7 +233,7 @@ def feed(request, username=None, acronym=None, group_type=None):
         'entries': events[:50],
         'title': title,
         'subtitle': subtitle,
-        'id': feed_id.get_urn(),
+        'id': feed_id.urn,
         'updated': datetime.datetime.now(),
     }, content_type='text/xml')
 
