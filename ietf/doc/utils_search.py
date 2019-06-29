@@ -163,13 +163,16 @@ def prepare_document_table(request, docs, query=None, max_results=200):
 
     # sort
     def generate_sort_key(d):
+        def num(i):
+            # sortable representation of number as string
+            return ('%09d' % int(i))
+
         res = []
 
         rfc_num = d.rfc_number()
 
-
         if d.type_id == "draft":
-            res.append(["Active", "Expired", "Replaced", "Withdrawn", "RFC"].index(d.search_heading.split()[0]))
+            res.append(num(["Active", "Expired", "Replaced", "Withdrawn", "RFC"].index(d.search_heading.split()[0])))
         else:
             res.append(d.type_id);
             res.append("-");
@@ -182,14 +185,14 @@ def prepare_document_table(request, docs, query=None, max_results=200):
             res.append(str(d.latest_revision_date))
         elif sort_key == "status":
             if rfc_num != None:
-                res.append(int(rfc_num))
+                res.append(num(rfc_num))
             else:
-                res.append(d.get_state().order if d.get_state() else None)
+                res.append(num(d.get_state().order) if d.get_state() else None)
         elif sort_key == "ipr":
             res.append(len(d.ipr()))
         elif sort_key == "ad":
             if rfc_num != None:
-                res.append(int(rfc_num))
+                res.append(num(rfc_num))
             elif d.get_state_slug() == "active":
                 if d.get_state("draft-iesg"):
                     res.append(d.get_state("draft-iesg").order)
@@ -197,7 +200,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
                     res.append(0)
         else:
             if rfc_num != None:
-                res.append(int(rfc_num))
+                res.append(num(rfc_num))
             else:
                 res.append(d.canonical_name())
 
