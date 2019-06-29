@@ -767,7 +767,7 @@ def get_search_cache_key(params):
     from ietf.doc.views_search import SearchForm
     fields = set(SearchForm.base_fields) - set(['sort',])
     kwargs = dict([ (k,v) for (k,v) in list(params.items()) if k in fields ])
-    key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True)).hexdigest()
+    key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode()).hexdigest()
     return key
     
 def label_wrap(label, items, joiner=',', max=50):
@@ -817,21 +817,21 @@ def build_doc_meta_block(doc, path):
         ipr_url = "%s?submit=draft&amp;id=%s" % (urlreverse('ietf.ipr.views.search'), name)
         for i, line in enumerate(lines):
             # add draft links
-            line = re.sub(r'\b(draft-[-a-z0-9]+)\b', '<a href="%s/\g<1>">\g<1></a>'%(path, ), line)
+            line = re.sub(r'\b(draft-[-a-z0-9]+)\b', r'<a href="%s/\g<1>">\g<1></a>'%(path, ), line)
             # add rfcXXXX to RFC links
-            line = re.sub(r' (rfc[0-9]+)\b', ' <a href="%s/\g<1>">\g<1></a>'%(path, ), line)
+            line = re.sub(r' (rfc[0-9]+)\b', r' <a href="%s/\g<1>">\g<1></a>'%(path, ), line)
             # add XXXX to RFC links
-            line = re.sub(r' ([0-9]{3,5})\b', ' <a href="%s/rfc\g<1>">\g<1></a>'%(path, ), line)
+            line = re.sub(r' ([0-9]{3,5})\b', r' <a href="%s/rfc\g<1>">\g<1></a>'%(path, ), line)
             # add draft revision links
-            line = re.sub(r' ([0-9]{2})\b', ' <a href="%s/%s-\g<1>">\g<1></a>'%(path, name, ), line)
+            line = re.sub(r' ([0-9]{2})\b', r' <a href="%s/%s-\g<1>">\g<1></a>'%(path, name, ), line)
             if rfcnum:
                 # add errata link
-                line = re.sub(r'Errata exist', '<a class="text-warning" href="%s">Errata exist</a>'%(errata_url, ), line)
+                line = re.sub(r'Errata exist', r'<a class="text-warning" href="%s">Errata exist</a>'%(errata_url, ), line)
             if is_hst or not rfcnum:
                 # make current draft rev bold
                 line = re.sub(r'>(%s)<'%rev, '><b>\g<1></b><', line)
-            line = re.sub(r'IPR declarations', '<a class="text-warning" href="%s">IPR declarations</a>'%(ipr_url, ), line)
-            line = line.replace(r'[txt]', '[<a href="%s">txt</a>]' % doc.href())
+            line = re.sub(r'IPR declarations', r'<a class="text-warning" href="%s">IPR declarations</a>'%(ipr_url, ), line)
+            line = line.replace(r'[txt]', r'[<a href="%s">txt</a>]' % doc.href())
             lines[i] = line
         return lines
     #
