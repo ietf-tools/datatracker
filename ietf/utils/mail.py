@@ -113,7 +113,7 @@ def send_smtp(msg, bcc=None):
                 # advertise the AUTH capability.
                 server.ehlo()
                 server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
-            unhandled = server.sendmail(frm, to, msg.as_string())
+            unhandled = server.sendmail(frm, to, msg.as_bytes())
             if unhandled != {}:
                 raise SMTPSomeRefusedRecipients(message="%d addresses were refused"%len(unhandled),original_msg=msg,refusals=unhandled)
         except Exception as e:
@@ -352,7 +352,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
 
 def parse_preformatted(preformatted, extra={}, override={}):
     """Parse preformatted string containing mail with From:, To:, ...,"""
-    msg = message_from_string(preformatted.encode("utf-8"))
+    msg = message_from_string(preformatted)
     msg.set_charset('UTF-8')
 
     for k, v in override.items():
@@ -408,7 +408,7 @@ def send_mail_preformatted(request, preformatted, extra={}, override={}):
     extra headers as needed)."""
 
     (msg, extra, bcc) = parse_preformatted(preformatted, extra, override)
-    txt = msg.get_payload().decode(str(msg.get_charset()))
+    txt = msg.get_payload()
     send_mail_text(request, msg['To'], msg["From"], msg["Subject"], txt, extra=extra, bcc=bcc)
     return msg
 

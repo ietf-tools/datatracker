@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 import re, datetime, email
 
 from ietf.utils.mail import send_mail_text, send_mail_mime
@@ -6,16 +7,16 @@ from ietf.message.models import Message
 first_dot_on_line_re = re.compile(r'^\.', re.MULTILINE)
 
 def infer_message(s):
-    parsed = email.message_from_string(s.encode("utf-8"))
+    parsed = email.message_from_string(s)
 
     m = Message()
-    m.subject = parsed.get("Subject", "").decode("utf-8")
-    m.frm = parsed.get("From", "").decode("utf-8")
-    m.to = parsed.get("To", "").decode("utf-8")
-    m.cc = parsed.get("Cc", "").decode("utf-8")
-    m.bcc = parsed.get("Bcc", "").decode("utf-8")
-    m.reply_to = parsed.get("Reply-To", "").decode("utf-8")
-    m.body = parsed.get_payload().decode("utf-8")
+    m.subject = parsed.get("Subject", "")
+    m.frm = parsed.get("From", "")
+    m.to = parsed.get("To", "")
+    m.cc = parsed.get("Cc", "")
+    m.bcc = parsed.get("Bcc", "")
+    m.reply_to = parsed.get("Reply-To", "")
+    m.body = parsed.get_payload()
 
     return m
 
