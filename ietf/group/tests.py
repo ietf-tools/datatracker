@@ -39,7 +39,7 @@ class StreamTests(TestCase):
     def test_streams(self):
         r = self.client.get(urlreverse("ietf.group.views.streams"))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Independent Submission Editor" in unicontent(r))
+        self.assertContains(r, "Independent Submission Editor")
 
     def test_stream_documents(self):
         draft = DocumentFactory(type_id='draft',group__acronym='iab',states=[('draft','active')])
@@ -48,7 +48,7 @@ class StreamTests(TestCase):
 
         r = self.client.get(urlreverse("ietf.group.views.stream_documents", kwargs=dict(acronym="iab")))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.name in unicontent(r))
+        self.assertContains(r, draft.name)
 
     def test_stream_edit(self):
         EmailFactory(address="ad2@ietf.org")

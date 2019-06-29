@@ -96,7 +96,7 @@ class CommunityListTests(TestCase):
         )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.name in unicontent(r))
+        self.assertContains(r, draft.name)
 
     def test_manage_personal_list(self):
         PersonFactory(user__username='plain')
@@ -118,7 +118,7 @@ class CommunityListTests(TestCase):
         # document shows up on GET
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.name in unicontent(r))
+        self.assertContains(r, draft.name)
 
         # remove document
         r = self.client.post(url, { "action": "remove_document", "document": draft.name })
@@ -259,7 +259,7 @@ class CommunityListTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         # this is a simple-minded test, we don't actually check the fields
-        self.assertTrue(draft.name in unicontent(r))
+        self.assertContains(r, draft.name)
 
     def test_csv_for_group(self):
         draft = WgDraftFactory()
@@ -293,12 +293,12 @@ class CommunityListTests(TestCase):
         )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.name in unicontent(r))
+        self.assertContains(r, draft.name)
 
         # only significant
         r = self.client.get(url + "?significant=1")
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('<entry>' not in unicontent(r))
+        self.assertContains(r, '<entry>' not)
 
     def test_feed_for_group(self):
         draft = WgDraftFactory()

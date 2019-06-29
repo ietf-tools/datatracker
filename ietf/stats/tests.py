@@ -158,7 +158,7 @@ class StatisticsTests(TestCase):
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("United States" in unicontent(r))
+        self.assertContains(r, "United States")
 
     def test_review_stats(self):
         reviewer = PersonFactory()

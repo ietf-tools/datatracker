@@ -51,7 +51,7 @@ class ReviewTests(TestCase):
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(review_req.doc.name in unicontent(r))
+        self.assertContains(r, review_req.doc.name)
 
     def test_suggested_review_requests(self):
         review_req = ReviewRequestFactory(state_id='assigned')
@@ -198,7 +198,7 @@ class ReviewTests(TestCase):
         # get
         r = self.client.get(unassigned_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(review_req1.doc.name in unicontent(r))
+        self.assertContains(r, review_req1.doc.name)
 
         # Test that conflicts are detected
         r = self.client.post(unassigned_url, {

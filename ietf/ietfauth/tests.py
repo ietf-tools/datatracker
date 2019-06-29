@@ -379,7 +379,7 @@ class IetfAuthTests(TestCase):
         # get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(review_req.doc.name in unicontent(r))
+        self.assertContains(r, review_req.doc.name)
 
         # wish to review
         r = self.client.post(url, {

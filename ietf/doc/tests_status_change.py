@@ -456,7 +456,7 @@ class StatusChangeSubmitTests(TestCase):
         test_file.name = "unnamed"
         r = self.client.post(url, dict(txt=test_file,submit_response="1"))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("does not appear to be a text file" in unicontent(r))
+        self.assertContains(r, "does not appear to be a text file")
 
         # sane post uploading a file
         test_file = StringIO("This is a new proposal.")
@@ -481,7 +481,7 @@ class StatusChangeSubmitTests(TestCase):
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=doc.name,rev='00'))
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
-        self.assertTrue("This is the old proposal." in unicontent(r))
+        self.assertContains(r, "This is the old proposal.")
 
     def setUp(self):
         DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',notify='notify@example.org')

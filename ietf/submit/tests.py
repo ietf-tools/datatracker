@@ -393,7 +393,7 @@ class SubmitTests(TestCase):
         status_url = r["Location"]
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("The submission is pending approval by the authors" in unicontent(r))
+        self.assertContains(r, "The submission is pending approval by the authors")
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         confirm_email = outbox[-1]
@@ -547,7 +547,7 @@ class SubmitTests(TestCase):
         status_url = r["Location"]
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("The submission is pending email authentication" in unicontent(r))
+        self.assertContains(r, "The submission is pending email authentication")
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         confirm_email = outbox[-1]
@@ -598,16 +598,16 @@ class SubmitTests(TestCase):
         replaced_alias = draft.docalias.first()
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('cannot replace itself' in unicontent(r))
+        self.assertContains(r, 'cannot replace itself')
         replaced_alias = DocAlias.objects.get(name='draft-ietf-random-thing')
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('cannot replace an RFC' in unicontent(r))
+        self.assertContains(r, 'cannot replace an RFC')
         replaced_alias.document.set_state(State.objects.get(type='draft-iesg',slug='approved'))
         replaced_alias.document.set_state(State.objects.get(type='draft',slug='active'))
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('approved by the IESG and cannot' in unicontent(r))
+        self.assertContains(r, 'approved by the IESG and cannot')
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces='')
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
@@ -805,7 +805,7 @@ class SubmitTests(TestCase):
         # search status page
         r = self.client.get(urlreverse("ietf.submit.views.search_submission"))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("submission status" in unicontent(r))
+        self.assertContains(r, "submission status")
 
         # search
         r = self.client.post(urlreverse("ietf.submit.views.search_submission"), dict(name=name))

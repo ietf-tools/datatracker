@@ -363,7 +363,7 @@ class BallotWriteupsTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
         self.assertTrue(q('[type=submit]:contains("Save")'))
-        self.assertTrue("IANA does not" in unicontent(r))
+        self.assertContains(r, "IANA does not")
 
         # save
         r = self.client.post(url, dict(
@@ -393,8 +393,8 @@ class BallotWriteupsTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=rfc_editor_note]')), 1)
         self.assertTrue(q('[type=submit]:contains("Save")'))
-        self.assertTrue("<label class=\"control-label\">RFC Editor Note</label>" in r.content)
-        self.assertTrue("This is a note for the RFC Editor" in r.content)
+        self.assertContains(r, "<label class=\"control-label\">RFC Editor Note</label>")
+        self.assertContains(r, "This is a note for the RFC Editor")
 
         # save with a note
         empty_outbox()
@@ -734,13 +734,13 @@ class ApproveBallotTests(TestCase):
         login_testing_unauthorized(self, "ad", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 403)
-        self.assertTrue("Restricted to role Secretariat" in r.content)
+        self.assertContains(r, "Restricted to role Secretariat")
 
         # There are no downrefs, the page should say so
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("No downward references for" in r.content)
+        self.assertContains(r, "No downward references for")
 
         # Add a downref, the page should ask if it should be added to the registry
         rel = draft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'),relationship_id='refnorm')
@@ -748,7 +748,7 @@ class ApproveBallotTests(TestCase):
         original_len = len(d)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("normatively references rfc6666" in r.content)
+        self.assertContains(r, "normatively references rfc6666")
 
         # POST with the downref checked
         r = self.client.post(url, dict(checkboxes=rel.pk))

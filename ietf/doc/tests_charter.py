@@ -394,7 +394,7 @@ class EditCharterTests(TestCase):
 
         r = self.client.post(url, dict(txt=test_file))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("does not appear to be a text file" in unicontent(r))
+        self.assertContains(r, "does not appear to be a text file")
 
         # post
         prev_rev = charter.rev
@@ -696,7 +696,7 @@ class EditCharterTests(TestCase):
         url = urlreverse('ietf.doc.views_charter.charter_with_milestones_txt', kwargs=dict(name=charter.name, rev=charter.rev))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(m.desc in unicontent(r))
+        self.assertContains(r, m.desc)
 
     def test_chartering_from_bof(self):
         ad_role = RoleFactory(group__type_id='area',name_id='ad')

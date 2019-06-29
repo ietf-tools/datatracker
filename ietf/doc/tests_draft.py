@@ -210,7 +210,7 @@ class ChangeStateTests(TestCase):
         self.assertTrue(not draft.latest_event(type="changed_ballot_writeup_text"))
         r = self.client.post(url, dict(state=State.objects.get(used=True, type="draft-iesg", slug="lc-req").pk))
         self.assertEqual(r.status_code,200)
-        self.assertTrue("Your request to issue" in unicontent(r))
+        self.assertContains(r, "Your request to issue")
 
         # last call text
         e = draft.latest_event(WriteupDocEvent, type="changed_last_call_text")

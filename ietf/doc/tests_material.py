@@ -68,7 +68,7 @@ class GroupMaterialTests(TestCase):
         # normal get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Slides" in unicontent(r))
+        self.assertContains(r, "Slides")
 
         url = urlreverse('ietf.doc.views_material.choose_material_type', kwargs=dict(acronym='mars'))
         r = self.client.get(url)

@@ -487,9 +487,9 @@ class NomcomViewsTest(TestCase):
         
         r = self.client.get(reverse('ietf.nomcom.views.announcements'))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(("Messages from %s" % nomcom.time.year) in unicontent(r))
-        self.assertTrue(nomcom.role_set.filter(name="chair")[0].person.email_address() in unicontent(r))
-        self.assertTrue(msg.subject in unicontent(r))
+        self.assertContains(r, ("Messages from %s" % nomcom.time.year))
+        self.assertContains(r, nomcom.role_set.filter(name="chair")[0].person.email_address())
+        self.assertContains(r, msg.subject)
 
 
     def test_requirements_view(self):

@@ -26,10 +26,10 @@ class MessageTests(TestCase):
 
         r = self.client.get(urlreverse("ietf.message.views.message", kwargs=dict(message_id=msg.id)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(msg.subject in unicontent(r))
-        self.assertTrue(msg.to in unicontent(r))
-        self.assertTrue(msg.frm in unicontent(r))
-        self.assertTrue("Hello World!" in unicontent(r))
+        self.assertContains(r, msg.subject)
+        self.assertContains(r, msg.to)
+        self.assertContains(r, msg.frm)
+        self.assertContains(r, "Hello World!")
 
 
 class SendScheduledAnnouncementsTests(TestCase):

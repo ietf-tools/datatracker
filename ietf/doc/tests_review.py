@@ -193,7 +193,7 @@ class ReviewTests(TestCase):
         self.client.login(username="reviewsecretary", password="reviewsecretary+password")
         r = self.client.get(req_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(close_url in unicontent(r))
+        self.assertContains(r, close_url)
         self.client.logout()
 
         # get close page
@@ -381,7 +381,7 @@ class ReviewTests(TestCase):
         self.client.login(username="reviewsecretary", password="reviewsecretary+password")
         r = self.client.get(req_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(assign_url in unicontent(r))
+        self.assertContains(r, assign_url)
         self.client.logout()
 
         # get assign page
@@ -455,14 +455,14 @@ class ReviewTests(TestCase):
         self.client.login(username="reviewsecretary", password="reviewsecretary+password")
         r = self.client.get(req_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(reject_url in unicontent(r))
+        self.assertContains(r, reject_url)
         self.client.logout()
 
         # get reject page
         login_testing_unauthorized(self, "reviewsecretary", reject_url)
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(str(assignment.reviewer.person) in unicontent(r))
+        self.assertContains(r, str(assignment.reviewer.person))
 
         # reject
         empty_outbox()

@@ -42,8 +42,8 @@ class IESGTests(TestCase):
         r = self.client.get(urlreverse("ietf.iesg.views.discusses"))
         self.assertEqual(r.status_code, 200)
 
-        self.assertTrue(draft.name in unicontent(r))
-        self.assertTrue(pos.ad.plain_name() in unicontent(r))
+        self.assertContains(r, draft.name)
+        self.assertContains(r, pos.ad.plain_name())
 
     def test_milestones_needing_review(self):
         draft = WgDraftFactory()
@@ -58,7 +58,7 @@ class IESGTests(TestCase):
         login_testing_unauthorized(self, "ad", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(m.desc in unicontent(r))
+        self.assertContains(r, m.desc)
         draft.group.state_id = 'conclude'
         draft.group.save()
         r = self.client.get(url)
@@ -79,7 +79,7 @@ class IESGTests(TestCase):
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.name in unicontent(r))
+        self.assertContains(r, draft.name)
 
     def test_photos(self):
         url = urlreverse("ietf.iesg.views.photos")
@@ -305,8 +305,8 @@ class IESGAgendaTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         for d in list(self.telechat_docs.values()):
-            self.assertTrue(d.name in unicontent(r))
-            self.assertTrue(d.title in unicontent(r))
+            self.assertContains(r, d.name)
+            self.assertContains(r, d.title)
 
     def test_agenda_json(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_json"))

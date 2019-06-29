@@ -368,7 +368,7 @@ class ConflictReviewSubmitTests(TestCase):
         test_file.name = "unnamed"
         r = self.client.post(url, dict(txt=test_file,submit_response="1"))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("does not appear to be a text file" in unicontent(r))
+        self.assertContains(r, "does not appear to be a text file")
 
         # sane post uploading a file
         test_file = StringIO("This is a new proposal.")

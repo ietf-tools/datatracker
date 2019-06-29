@@ -205,7 +205,7 @@ ICANN
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("new changes at" in unicontent(r))
+        self.assertContains(r, "new changes at")
 
         # we don't actually try posting as that would trigger a real run
         
@@ -430,7 +430,7 @@ class DiscrepanciesTests(TestCase):
         doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="ann"))
 
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
-        self.assertTrue(doc.name in unicontent(r))
+        self.assertContains(r, doc.name)
 
         # draft with IANA state "In Progress" but RFC Editor state not IANA
         doc = Document.objects.create(name="draft-ietf-test2", type_id="draft")
@@ -439,7 +439,7 @@ class DiscrepanciesTests(TestCase):
         doc.set_state(State.objects.get(used=True, type="draft-rfceditor", slug="auth"))
 
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
-        self.assertTrue(doc.name in unicontent(r))
+        self.assertContains(r, doc.name)
 
         # draft with IANA state "Waiting on RFC Editor" or "RFC-Ed-Ack"
         # but RFC Editor state is IANA
@@ -449,7 +449,7 @@ class DiscrepanciesTests(TestCase):
         doc.set_state(State.objects.get(used=True, type="draft-rfceditor", slug="iana"))
 
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
-        self.assertTrue(doc.name in unicontent(r))
+        self.assertContains(r, doc.name)
 
         # draft with state other than "RFC Ed Queue" or "RFC Published"
         # that are in RFC Editor or IANA queues
@@ -458,7 +458,7 @@ class DiscrepanciesTests(TestCase):
         doc.set_state(State.objects.get(used=True, type="draft-rfceditor", slug="auth"))
 
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
-        self.assertTrue(doc.name in unicontent(r))
+        self.assertContains(r, doc.name)
 
 class RFCEditorUndoTests(TestCase):
     def test_rfceditor_undo(self):
@@ -480,7 +480,7 @@ class RFCEditorUndoTests(TestCase):
         # get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(e2.doc.name in unicontent(r))
+        self.assertContains(r, e2.doc.name)
 
         # delete e2
         deleted_before = DeletedEvent.objects.count()

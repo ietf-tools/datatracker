@@ -147,7 +147,7 @@ class SubmitRequestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('#session-request-form')),1)
-        self.assertTrue('You must enter a length for all sessions' in unicontent(r))
+        self.assertContains(r, 'You must enter a length for all sessions')
 
     def test_request_notification(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
@@ -248,11 +248,11 @@ class NotMeetingCase(TestCase):
 
         # This is a sign of a problem - a get shouldn't have a side-effect like this one does
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('A message was sent to notify not having a session' in unicontent(r))
+        self.assertContains(r, 'A message was sent to notify not having a session')
 
         r = self.client.get(url,follow=True)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('is already marked as not meeting' in unicontent(r))
+        self.assertContains(r, 'is already marked as not meeting')
 
         self.assertEqual(len(outbox),1)
         self.assertTrue('Not having a session' in outbox[0]['Subject'])
