@@ -23,6 +23,8 @@ warnings.filterwarnings("ignore", message="You passed a bytestring as `filenames
 warnings.filterwarnings("ignore", message="django.forms.extras is deprecated.", module="bootstrap3")
 warnings.filterwarnings("ignore", message="defusedxml.lxml is no longer supported and will be removed in a future release.", module="tastypie")
 warnings.filterwarnings("ignore", message="Duplicate index '.*' defined on the table")
+# Warnings found under Python 3.7:
+warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="docutils.io")
 
 
 try:
