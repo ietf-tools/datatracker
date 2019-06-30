@@ -708,7 +708,7 @@ def dependencies(request, acronym, group_type=None, output_type="pdf"):
     pipe("%s -f -l 10 -o %s %s" % (settings.UNFLATTEN_BINARY, unflatname, dotname))
     pipe("%s -T%s -o %s %s" % (settings.DOT_BINARY, output_type, outname, unflatname))
 
-    outhandle = open(outname, "r")
+    outhandle = open(outname, "rb")
     out = outhandle.read()
     outhandle.close()
 
