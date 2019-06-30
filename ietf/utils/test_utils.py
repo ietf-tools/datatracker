@@ -73,7 +73,7 @@ def unicontent(r):
 
 def textcontent(r):
     text = BeautifulSoup(r.content, 'lxml').get_text()
-    text = re.sub('(\n\s+){2,}', '\n\n', text)
+    text = re.sub(r'(\n\s+){2,}', '\n\n', text)
     return text
 
 def reload_db_objects(*objects):
@@ -163,7 +163,7 @@ class TestCase(django.test.TestCase):
         if subject:
             mlist = [ m for m in mlist if subject in m["Subject"] ]
         if text:
-            mlist = [ m for m in mlist if text in m.get_payload(decode=True) ]
+            mlist = [ m for m in mlist if text in m.get_payload() ]
         if count and len(mlist) != count:
             sys.stderr.write("Wrong count in assertMailboxContains().  The complete mailbox contains %s emails:\n\n" % len(mailbox))
             for m in mailbox:

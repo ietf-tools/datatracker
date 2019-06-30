@@ -41,7 +41,7 @@ def send_scheduled_message_from_send_queue(send_queue):
         # make body a real message so we can parse it
         body = ("MIME-Version: 1.0\r\nContent-Type: %s\r\n" % message.content_type) + body
         
-        msg = email.message_from_string(body.encode("utf-8"))
+        msg = email.message_from_string(body)
         send_mail_mime(None, message.to, message.frm, message.subject,
                        msg, cc=message.cc, bcc=message.bcc)
 

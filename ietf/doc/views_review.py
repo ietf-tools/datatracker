@@ -620,13 +620,13 @@ def complete_review(request, name, assignment_id):
 
             # save file on disk
             if review_submission == "upload":
-                encoded_content = form.cleaned_data['review_file']
+                content = form.cleaned_data['review_file']
             else:
-                encoded_content = form.cleaned_data['review_content'].encode("utf-8")
+                content = form.cleaned_data['review_content']
 
             filename = os.path.join(review.get_file_path(), '{}.txt'.format(review.name, review.rev))
-            with open(filename, 'wb') as destination:
-                destination.write(encoded_content)
+            with open(filename, 'w', encoding='utf-8') as destination:
+                destination.write(content)
 
             completion_datetime = datetime.datetime.now()
             if "completion_date" in form.cleaned_data:
@@ -699,7 +699,7 @@ def complete_review(request, name, assignment_id):
                         cc=form.cleaned_data["cc"],
                         body = render_to_string("review/completed_review.txt", {
                             "assignment": assignment,
-                            "content": encoded_content.decode("utf-8"),
+                            "content": content,
                         }),
                     )
                 msg.related_groups.add(*related_groups)

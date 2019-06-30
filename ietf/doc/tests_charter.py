@@ -399,9 +399,9 @@ class EditCharterTests(TestCase):
         # post
         prev_rev = charter.rev
 
-        latin_1_snippet = '\xe5' * 10
-        utf_8_snippet = '\xc3\xa5' * 10
-        test_file = StringIO("Windows line\r\nMac line\rUnix line\n" + latin_1_snippet)
+        latin_1_snippet = b'\xe5' * 10
+        utf_8_snippet = b'\xc3\xa5' * 10
+        test_file = StringIO("Windows line\r\nMac line\rUnix line\n" + latin_1_snippet.decode('latin-1'))
         test_file.name = "unnamed"
 
         r = self.client.post(url, dict(txt=test_file))
@@ -413,7 +413,7 @@ class EditCharterTests(TestCase):
 
         with open(os.path.join(self.charter_dir, charter.canonical_name() + "-" + charter.rev + ".txt")) as f:
             self.assertEqual(f.read(),
-                              "Windows line\nMac line\nUnix line\n" + utf_8_snippet)
+                              "Windows line\nMac line\nUnix line\n" + utf_8_snippet.decode('utf_8'))
 
     def test_submit_initial_charter(self):
         group = GroupFactory(type_id='wg',acronym='mars',list_email='mars-wg@ietf.org')

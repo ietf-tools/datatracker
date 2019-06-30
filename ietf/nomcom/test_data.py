@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 import tempfile
 import os
 
@@ -38,7 +39,7 @@ POSITIONS = [
 
 def generate_cert():
     """Function to generate cert"""
-    config = """
+    config = b"""
             [ req ]
             distinguished_name = req_distinguished_name
             string_mask        = utf8only
@@ -89,7 +90,7 @@ def check_comments(encryped, plain, privatekey_file):
 
     decrypted_file.close()
     encrypted_file.close()
-    decrypted_comments = open(decrypted_file.name, 'r').read().decode('utf8')
+    decrypted_comments = open(decrypted_file.name, 'r').read()
     os.unlink(encrypted_file.name)
     os.unlink(decrypted_file.name)
 

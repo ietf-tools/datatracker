@@ -17,7 +17,7 @@ def get_cleaned_text_file_content(uploaded_file):
     if uploaded_file.size and uploaded_file.size > 10 * 1000 * 1000:
         raise ValidationError("Text file too large (size %s)." % uploaded_file.size)
 
-    content = "".join(uploaded_file.chunks())
+    content = b"".join(uploaded_file.chunks())
 
     # try to fixup encoding
     import magic
@@ -39,13 +39,12 @@ def get_cleaned_text_file_content(uploaded_file):
         raise ValidationError("File has unknown encoding.")
 
     encoding = match.group(1)
-    if "ascii" not in encoding:
-        try:
-            content = content.decode(encoding)
-        except Exception as e:
-            raise ValidationError("Error decoding file (%s). Try submitting with UTF-8 encoding or remove non-ASCII characters." % str(e))
+    try:
+        content = content.decode(encoding)
+    except Exception as e:
+        raise ValidationError("Error decoding file (%s). Try submitting with UTF-8 encoding or remove non-ASCII characters." % str(e))
 
     # turn line-endings into Unix style
     content = content.replace("\r\n", "\n").replace("\r", "\n")
 
-    return content.encode("utf-8")
+    return content

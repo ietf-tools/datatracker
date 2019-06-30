@@ -87,7 +87,7 @@ def get_user_email(user):
     return user._email_cache
 
 def get_hash_nominee_position(date, nominee_position_id):
-    return hashlib.md5('%s%s%s' % (settings.SECRET_KEY, date, nominee_position_id)).hexdigest()
+    return hashlib.md5(('%s%s%s' % (settings.SECRET_KEY, date, nominee_position_id)).encode()).hexdigest()
 
 
 def initialize_templates_for_group(group):
@@ -160,7 +160,7 @@ def retrieve_nomcom_private_key(request, year):
 
     command = "%s bf -d -in /dev/stdin -k \"%s\" -a"
     code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
-                                       settings.SECRET_KEY), private_key)
+                                       settings.SECRET_KEY), private_key.encode())
     if code != 0:
         log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
     return out
@@ -399,9 +399,8 @@ def make_nomineeposition_for_newperson(nomcom, candidate_name, candidate_email, 
 def getheader(header_text, default="ascii"):
     """Decode the specified header"""
 
-    headers = decode_header(header_text)
-    header_sections = [str(text, charset or default)
-                       for text, charset in headers]
+    tuples = decode_header(header_text)
+    header_sections = [ text.decode(charset or default) if isinstance(text, bytes) else text for text, charset in tuples]
     return "".join(header_sections)
 
 
