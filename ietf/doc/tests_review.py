@@ -152,9 +152,7 @@ class ReviewTests(TestCase):
 
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ "name": doc.name })
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        content = unicontent(r)
-        self.assertTrue("{} Review".format(review_req.type.name) in content)
+        self.assertContains(r, ("{} Review".format(review_req.type.name))
 
     def test_review_request(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
@@ -166,9 +164,8 @@ class ReviewTests(TestCase):
         url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertIn(review_req.team.acronym, unicontent(r))
-        self.assertIn(review_req.team.name, unicontent(r))
+        self.assertContains(r, review_req.team.acronym)
+        self.assertContains(r, review_req.team.name)
 
         url = urlreverse('ietf.doc.views_review.review_request_forced_login', kwargs={ "name": doc.name, "request_id": review_req.pk })
         r = self.client.get(url)
@@ -539,7 +536,7 @@ class ReviewTests(TestCase):
 
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            messages = json.loads(r.content)["messages"]
+            messages = r.json()["messages"]
             self.assertEqual(len(messages), 2)
 
             today = datetime.date.today()
@@ -568,7 +565,7 @@ class ReviewTests(TestCase):
 
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            result = json.loads(r.content)
+            result = r.json()
             self.assertNotIn('messages', result)
             self.assertIn('No results found', result['error'])
 
@@ -662,10 +659,8 @@ class ReviewTests(TestCase):
         # check the review document page
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ "name": assignment.review.name })
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        content = unicontent(r)
-        self.assertIn("{} Review".format(assignment.review_request.type.name), content)
-        self.assertIn("This is a review", content)
+        self.assertContains("{} Review".format(assignment.review_request.type.name))
+        self.assertContains("This is a review")
 
 
     def test_complete_review_enter_content(self):

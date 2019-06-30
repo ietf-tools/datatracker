@@ -225,7 +225,7 @@ class CommunityListTests(TestCase):
         # track
         r = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(json.loads(r.content)["success"], True)
+        self.assertEqual(r.json()["success"], True)
         clist = CommunityList.objects.get(user__username="plain")
         self.assertEqual(list(clist.added_docs.all()), [draft])
 
@@ -233,7 +233,7 @@ class CommunityListTests(TestCase):
         url = urlreverse(ietf.community.views.untrack_document, kwargs={ "username": "plain", "name": draft.name })
         r = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(json.loads(r.content)["success"], True)
+        self.assertEqual(r.json()["success"], True)
         clist = CommunityList.objects.get(user__username="plain")
         self.assertEqual(list(clist.added_docs.all()), [])
 

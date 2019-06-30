@@ -275,7 +275,7 @@ class SearchTests(TestCase):
         })
         r = self.client.get(url, dict(q=draft.name))
         self.assertEqual(r.status_code, 200)
-        data = json.loads(r.content)
+        data = r.json()
         self.assertEqual(data[0]["id"], draft.pk)
 
         # DocAlias
@@ -288,7 +288,7 @@ class SearchTests(TestCase):
 
         r = self.client.get(url, dict(q=doc_alias.name))
         self.assertEqual(r.status_code, 200)
-        data = json.loads(r.content)
+        data = r.json()
         self.assertEqual(data[0]["id"], doc_alias.pk)
 
     def test_recent_drafts(self):
@@ -786,7 +786,7 @@ class DocTestCase(TestCase):
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_json", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        data = json.loads(r.content)
+        data = r.json()
         self.assertEqual(doc.name, data['name'])
         self.assertEqual(doc.pages,data['pages'])
 
@@ -1268,12 +1268,12 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         # No match
         r = self.client.get(conf_url + '?activedrafts=on&name=thisisnotadocumentname')
         self.assertValidJSONResponse(r)
-        d = json.loads(unicontent(r))
+        d = r.json()
         self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
 
         r = self.client.get(conf_url + '?activedrafts=on&name=%s'%doc.name[6:12])
         self.assertValidJSONResponse(r)
-        d = json.loads(unicontent(r))
+        d = r.json()
         self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
         self.assertEqual(len(d['series'][0]['data']), 0)
 
@@ -1290,12 +1290,12 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         # No match
         r = self.client.get(data_url + '?activedrafts=on&name=thisisnotadocumentname')
         self.assertValidJSONResponse(r)
-        d = json.loads(unicontent(r))
+        d = r.json()
         self.assertEqual(unicontent(r), '[]')
 
         r = self.client.get(data_url + '?activedrafts=on&name=%s'%doc.name[6:12])
         self.assertValidJSONResponse(r)
-        d = json.loads(unicontent(r))
+        d = r.json()
         self.assertEqual(len(d), 1)
         self.assertEqual(len(d[0]), 2)
 
@@ -1319,7 +1319,7 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
 
         r = self.client.get(conf_url)
         self.assertValidJSONResponse(r)
-        d = json.loads(unicontent(r))
+        d = r.json()
         self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
         self.assertEqual("New draft revisions over time for %s" % person.name, d['title']['text'])
 
@@ -1327,7 +1327,7 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
 
         r = self.client.get(data_url)
         self.assertValidJSONResponse(r)
-        d = json.loads(unicontent(r))
+        d = r.json()
         self.assertEqual(len(d), 1)
         self.assertEqual(len(d[0]), 2)
 

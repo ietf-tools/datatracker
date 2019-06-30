@@ -187,7 +187,7 @@ class AjaxTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        data = json.loads(r.content)
+        data = r.json()
         self.assertEqual(data["error"], False)
         self.assertEqual(data["post_only"], False)
         self.assertTrue('cc' in data)
@@ -205,7 +205,7 @@ class AjaxTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        data = json.loads(r.content)
+        data = r.json()
         self.assertEqual(data["to_contacts"],['test@example.com'])
 
     def test_ajax_select2_search_liaison_statements(self):
@@ -216,14 +216,14 @@ class AjaxTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        data = json.loads(r.content)
+        data = r.json()
         self.assertTrue(liaison.pk in [ x['id'] for x in data ])
 
         # test id search
         url = urlreverse('ietf.liaisons.views.ajax_select2_search_liaison_statements') + "?q=%s" % liaison.pk
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        data = json.loads(r.content)
+        data = r.json()
         self.assertTrue(liaison.pk in [ x['id'] for x in data ])
 
 
@@ -303,7 +303,7 @@ class LiaisonManagementTests(TestCase):
         self.assertContains(r, 'Private comment')
         self.client.logout()
         r = self.client.get(url)
-        self.assertFalse('Private comment' in r.content)
+        self.assertNotContains(r, 'Private comment')
 
     def test_taken_care_of(self):
         liaison = LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
