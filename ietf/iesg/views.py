@@ -49,6 +49,7 @@ from django.db import models
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib.sites.models import Site
+from django.utils.encoding import force_bytes
 #from django.views.decorators.cache import cache_page
 #from django.views.decorators.vary import vary_on_cookie
 
@@ -454,22 +455,22 @@ def telechat_docs_tarfile(request, date):
 
     tarstream = tarfile.open('', 'w:gz', response)
 
-    manifest = io.StringIO()
+    manifest = io.BytesIO()
 
     for doc in docs:
-        doc_path = os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + ".txt")
+        doc_path = force_bytes(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + ".txt"))
         if os.path.exists(doc_path):
             try:
                 tarstream.add(doc_path, str(doc.name + "-" + doc.rev + ".txt"))
-                manifest.write("Included:  %s\n" % doc_path)
+                manifest.write(b"Included:  %s\n" % doc_path)
             except Exception as e:
-                manifest.write("Failed (%s): %s\n" % (e, doc_path))
+                manifest.write(b"Failed (%s): %s\n" % (force_bytes(e), doc_path))
         else:
-            manifest.write("Not found: %s\n" % doc_path)
+            manifest.write(b"Not found: %s\n" % doc_path)
 
     manifest.seek(0)
     t = tarfile.TarInfo(name="manifest.txt")
-    t.size = len(manifest.buf)
+    t.size = len(manifest.getvalue())
     t.mtime = time.time()
     tarstream.addfile(t, manifest)
 

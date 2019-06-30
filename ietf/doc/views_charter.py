@@ -413,11 +413,11 @@ def submit(request, name, option=None):
 
             # Save file on disk
             filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-            with open(filename, 'wb') as destination:
+            with open(filename, 'w', encoding='utf-8') as destination:
                 if form.cleaned_data['txt']:
                     destination.write(form.cleaned_data['txt'])
                 else:
-                    destination.write(form.cleaned_data['content'].encode("utf-8"))
+                    destination.write(form.cleaned_data['content'])
 
             if option in ['initcharter','recharter'] and charter.ad == None:
                 charter.ad = getattr(group.ad_role(),'person',None)

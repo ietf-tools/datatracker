@@ -159,7 +159,7 @@ class UploadForm(forms.Form):
 
     def save(self, review):
         filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.canonical_name(), review.rev))
-        with open(filename, 'wb') as destination:
+        with open(filename, 'w', encoding='utf-8') as destination:
             if self.cleaned_data['txt']:
                 destination.write(self.cleaned_data['txt'])
             else:

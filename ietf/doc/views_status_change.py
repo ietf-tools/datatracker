@@ -124,7 +124,7 @@ class UploadForm(forms.Form):
 
     def save(self, doc):
        filename = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
-       with open(filename, 'wb') as destination:
+       with open(filename, 'w', encoding='utf-8') as destination:
            if self.cleaned_data['txt']:
                destination.write(self.cleaned_data['txt'])
            else:
