@@ -1456,7 +1456,7 @@ def release_draft(request, name):
             events = []
 
             if doc.stream.slug == 'ise' or doc.group.type_id != 'individ':
-                existing_tags = set(doc.tags.all())
+                existing_tags = list(doc.tags.all())
                 if existing_tags:
                     doc.tags.clear()
                     e = DocEvent(type="changed_document", doc=doc, rev=doc.rev, by=by)
