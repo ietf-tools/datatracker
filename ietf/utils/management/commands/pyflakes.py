@@ -66,7 +66,7 @@ def check(codeString, filename, verbosity=1):
                     if lines[message.lineno-1].find('pyflakes:ignore') < 0]
         # honour pyflakes:
 
-        messages.sort(lambda a, b: cmp(a.lineno, b.lineno))
+        messages.sort(key=lambda x: x.lineno)
         if verbosity > 0:
             if len(messages):
                 sys.stderr.write('F')

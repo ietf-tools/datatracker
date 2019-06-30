@@ -476,7 +476,7 @@ class IprTests(TestCase):
         self.assertContains(r, 'Private comment')
         self.client.logout()
         r = self.client.get(url)
-        self.assertFalse('Private comment' in unicontent(r))
+        self.assertNotContains(r, 'Private comment')
         
     def test_addemail(self):
         ipr = HolderIprDisclosureFactory()

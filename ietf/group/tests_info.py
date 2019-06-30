@@ -1153,7 +1153,7 @@ expand-ames-chairs@virtual.ietf.org                              mars_chair@ietf
         url = urlreverse('ietf.group.views.email_aliases', kwargs=dict(group_type="rg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
-        self.assertFalse('mars-ads@' in unicontent(r))
+        self.assertNotContains(r, 'mars-ads@')
 
     def testExpansions(self):
         url = urlreverse('ietf.group.views.email', kwargs=dict(acronym="mars"))
@@ -1173,7 +1173,7 @@ class AjaxTests(TestCase):
         r = self.client.get(urlreverse('ietf.group.views.group_menu_data'))
         self.assertEqual(r.status_code, 200)
 
-        parents = json.loads(r.content)
+        parents = r.json()
 
         area = Group.objects.get(type="area", acronym="farfut")
         self.assertTrue(str(area.id) in parents)

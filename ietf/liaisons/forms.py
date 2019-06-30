@@ -376,7 +376,7 @@ class LiaisonModelForm(BetterModelForm):
             if created:
                 DocAlias.objects.create(name=attach.name).docs.add(attach)
             LiaisonStatementAttachment.objects.create(statement=self.instance,document=attach)
-            attach_file = open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'w')
+            attach_file = open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'wb')
             attach_file.write(attached_file.read())
             attach_file.close()
 

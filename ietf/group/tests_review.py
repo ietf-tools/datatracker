@@ -39,8 +39,8 @@ class ReviewTests(TestCase):
                     urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym , 'group_type': group.type_id})]:
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            self.assertIn(review_req.doc.name, unicontent(r))
-            self.assertIn(assignment.reviewer.person.__unicode__(), unicontent(r))
+            self.assertContains(r, review_req.doc.name)
+            self.assertContains(r, str(assignment.reviewer.person))
 
         url = urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym })
 
@@ -151,29 +151,29 @@ class ReviewTests(TestCase):
                     urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })]:
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            self.assertIn(str(reviewer), unicontent(r))
-            self.assertIn(review_req1.doc.name, unicontent(r))
+            self.assertContains(r, str(reviewer))
+            self.assertContains(r, review_req1.doc.name)
             # without a login, reason for being unavailable should not be seen
-            self.assertNotIn("Availability", unicontent(r))
+            self.assertNotContains(r, "Availability")
 
         url = urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym })
         self.client.login(username="plain", password="plain+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         # not on review team, should not see reason for being unavailable
-        self.assertNotIn("Availability", unicontent(r))
+        self.assertNotContains(r, "Availability")
 
         self.client.login(username="reviewer", password="reviewer+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         # review team members can see reason for being unavailable
-        self.assertIn("Availability", unicontent(r))
+        self.assertContains(r, "Availability")
 
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         # secretariat can see reason for being unavailable
-        self.assertIn("Availability", unicontent(r))
+        self.assertContains(r, "Availability")
 
     def test_manage_review_requests(self):
         group = ReviewTeamFactory()
@@ -211,9 +211,7 @@ class ReviewTests(TestCase):
             
             "action": "save",
         })
-        self.assertEqual(r.status_code, 200)
-        content = unicontent(r).lower()
-        self.assertTrue("2 requests opened" in content)
+        self.assertContains(r, "2 requests opened")
 
         r = self.client.post(unassigned_url, {
             "reviewrequest": [str(review_req1.pk),str(review_req2.pk),str(review_req3.pk)],

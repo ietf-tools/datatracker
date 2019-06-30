@@ -112,8 +112,7 @@ class EditPositionTests(TestCase):
                                         discuss=" This is a discussion test. \n ",
                                         comment=" This is a test. \n ")
             )
-        self.assertEqual(r.content, "Done")
-        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Done")
 
         pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
         self.assertEqual(pos.pos.slug, "discuss")
@@ -733,13 +732,11 @@ class ApproveBallotTests(TestCase):
         # Only Secretariat can use this URL
         login_testing_unauthorized(self, "ad", url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 403)
-        self.assertContains(r, "Restricted to role Secretariat")
+        self.assertContains(r, "Restricted to role Secretariat", status_code=403)
 
         # There are no downrefs, the page should say so
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "No downward references for")
 
         # Add a downref, the page should ask if it should be added to the registry
@@ -747,7 +744,6 @@ class ApproveBallotTests(TestCase):
         d = [rdoc for rdoc in draft.relateddocument_set.all() if rel.is_approved_downref()]
         original_len = len(d)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "normatively references rfc6666")
 
         # POST with the downref checked

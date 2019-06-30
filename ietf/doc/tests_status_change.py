@@ -265,8 +265,8 @@ class StatusChangeTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('form.edit-last-call-text')),1)
 
-        self.assertTrue( 'RFC9999 from Proposed Standard to Internet Standard' in ''.join(wrap(r.content,2**16)))
-        self.assertTrue( 'RFC9998 from Informational to Historic' in ''.join(wrap(r.content,2**16)))
+        self.assertContains(r,  'RFC9999 from Proposed Standard to Internet Standard')
+        self.assertContains(r,  'RFC9998 from Informational to Historic')
         
         # save
         r = self.client.post(url,dict(last_call_text="Bogus last call text",save_last_call_text="1"))
@@ -278,17 +278,17 @@ class StatusChangeTests(TestCase):
         # reset
         r = self.client.post(url,dict(regenerate_last_call_text="1"))
         self.assertEqual(r.status_code,200)
-        self.assertTrue( 'RFC9999 from Proposed Standard to Internet Standard' in ''.join(wrap(r.content,2**16)))
-        self.assertTrue( 'RFC9998 from Informational to Historic' in ''.join(wrap(r.content,2**16)))
+        self.assertContains(r,  'RFC9999 from Proposed Standard to Internet Standard')
+        self.assertContains(r,  'RFC9998 from Informational to Historic')
       
         # request last call
         messages_before = len(outbox)
         r = self.client.post(url,dict(last_call_text='stuff',send_last_call_request='Save+and+Request+Last+Call'))
         self.assertEqual(r.status_code,200)
-        self.assertTrue( 'Last call requested' in ''.join(wrap(r.content,2**16)))
+        self.assertContains(r,  'Last call requested')
         self.assertEqual(len(outbox), messages_before + 1)
         self.assertTrue('Last Call:' in outbox[-1]['Subject'])
-        self.assertTrue('Last Call Request has been submitted' in ''.join(wrap(str(outbox[-1]),2**16)))
+        self.assertTrue('Last Call Request has been submitted' in ''.join(wrap(outbox[-1].as_string()),2**16)))
 
 
     def test_approve(self):
@@ -310,8 +310,8 @@ class StatusChangeTests(TestCase):
         self.assertEqual(len(q('[type=submit]:contains("Send announcement")')), 1)
         # There should be two messages to edit
         self.assertEqual(q('input#id_form-TOTAL_FORMS').val(),'2')
-        self.assertTrue( '(rfc9999) to Internet Standard' in ''.join(wrap(r.content,2**16)))
-        self.assertTrue( '(rfc9998) to Historic' in ''.join(wrap(r.content,2**16)))
+        self.assertContains(r,  '(rfc9999) to Internet Standard')
+        self.assertContains(r,  '(rfc9998) to Historic')
         
         # submit
         messages_before = len(outbox)
@@ -328,10 +328,10 @@ class StatusChangeTests(TestCase):
         self.assertTrue('Action:' in outbox[-1]['Subject'])
         self.assertTrue('ietf-announce' in outbox[-1]['To'])
         self.assertTrue('rfc-editor' in outbox[-1]['Cc'])
-        self.assertTrue('(rfc9998) to Historic' in ''.join(wrap(str(outbox[-1])+str(outbox[-2]),2**16)))
-        self.assertTrue('(rfc9999) to Internet Standard' in ''.join(wrap(str(outbox[-1])+str(outbox[-2]),2**16)))
+        self.assertTrue('(rfc9998) to Historic' in ''.join(wrap(outbox[-1].as_string()+outbox[-2].as_string(), 2**16)))
+        self.assertTrue('(rfc9999) to Internet Standard' in ''.join(wrap(outbox[-1].as_string()+outbox[-2].as_string(),2**16)))
 
-        self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('The following approval message was sent'))       
+        self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('The following approval message was sent'))
 
     def test_edit_relations(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')

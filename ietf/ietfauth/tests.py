@@ -98,7 +98,7 @@ class IetfAuthTests(TestCase):
 
     def extract_confirm_url(self, confirm_email):
         # dig out confirm_email link
-        msg = confirm_email.get_payload(decode=True)
+        msg = confirm_email.get_payload(decode=True).decode(confirm_email.get_content_charset())
         line_start = "http"
         confirm_url = None
         for line in msg.split("\n"):
@@ -131,7 +131,7 @@ class IetfAuthTests(TestCase):
         empty_outbox()
         r = self.client.post(url, { 'email': email })
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Account creation failed", unicontent(r))
+        self.assertContains(r, "Account creation failed")
 
     def register_and_verify(self, email):
         url = urlreverse(ietf.ietfauth.views.create_account)
@@ -140,7 +140,7 @@ class IetfAuthTests(TestCase):
         empty_outbox()
         r = self.client.post(url, { 'email': email })
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Account request received", unicontent(r))
+        self.assertContains(r, "Account request received")
         self.assertEqual(len(outbox), 1)
 
         # go to confirm page
@@ -172,11 +172,11 @@ class IetfAuthTests(TestCase):
 
         r = self.client.get(urlreverse(ietf.ietfauth.views.add_account_whitelist))
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Add a whitelist entry", unicontent(r))
+        self.assertContains(r, "Add a whitelist entry")
 
         r = self.client.post(urlreverse(ietf.ietfauth.views.add_account_whitelist), {"email": email})
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Whitelist entry creation successful", unicontent(r))
+        self.assertContains(r, "Whitelist entry creation successful")
 
         # log out
         r = self.client.get(urlreverse(django.contrib.auth.views.logout))
@@ -590,19 +590,19 @@ class IetfAuthTests(TestCase):
             # missing apikey
             r = self.client.post(url, {'dummy':'dummy',})
             self.assertEqual(r.status_code, 400)
-            self.assertIn('Missing apikey parameter', unicontent(r))
+            self.assertContains(r, 'Missing apikey parameter')
 
             # invalid apikey
             r = self.client.post(url, {'apikey':BAD_KEY, 'dummy':'dummy',})
             self.assertEqual(r.status_code, 400)
-            self.assertIn('Invalid apikey', unicontent(r))
+            self.assertContains(r, 'Invalid apikey')
 
             # too long since regular login
             person.user.last_login = datetime.datetime.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS+1)
             person.user.save()
             r = self.client.post(url, {'apikey':key.hash(), 'dummy':'dummy',})
             self.assertEqual(r.status_code, 400)
-            self.assertIn('Too long since last regular login', unicontent(r))
+            self.assertContains(r, 'Too long since last regular login')
             person.user.last_login = datetime.datetime.now()
             person.user.save()
 
@@ -610,7 +610,7 @@ class IetfAuthTests(TestCase):
             key2 = PersonalApiKey.objects.create(person=person, endpoint='/')
             r = self.client.post(url, {'apikey':key2.hash(), 'dummy':'dummy',})
             self.assertEqual(r.status_code, 400)
-            self.assertIn('Apikey endpoint mismatch', unicontent(r))
+            self.assertContains(r, 'Apikey endpoint mismatch')
             key2.delete()
 
     def test_send_apikey_report(self):

@@ -1461,7 +1461,7 @@ class NewActiveNomComTests(TestCase):
         fb_count_before = Feedback.objects.count()
         response = self.client.post(url,{'email_text':"""To: rjsparks@nostrum.com
 From: Robert Sparks <rjsparks@nostrum.com>
-Subject: Junk message for feedback testing
+Subject: Junk message for feedback testing =?iso-8859-1?q?p=F6stal?=
 Message-ID: <566F2FE5.1050401@nostrum.com>
 Date: Mon, 14 Dec 2015 15:08:53 -0600
 Content-Type: text/plain; charset=utf-8; format=flowed
@@ -2058,8 +2058,7 @@ class TopicTests(TestCase):
             feedback_url = reverse('ietf.nomcom.views.public_feedback',kwargs={'year':self.nc.year() })
             login_testing_unauthorized(self, self.plain_person.user.username, feedback_url)
             r = self.client.get(feedback_url)
-            self.assertEqual(r.status_code,200)
-            self.assertNotIn(topic.subject, unicontent(r))
+            self.assertNotContains(r, topic.subject)
             topic_url = feedback_url + '?topic=%d'%topic.pk
             r = self.client.get(topic_url)
             self.assertEqual(r.status_code,404)
@@ -2073,8 +2072,7 @@ class TopicTests(TestCase):
                 valid_user = self.nc.nominee_set.first().person
             self.client.login(username=valid_user.user.username,password=valid_user.user.username+"+password")
             r = self.client.get(feedback_url)
-            self.assertEqual(r.status_code,200)
-            self.assertIn(topic.subject, unicontent(r))
+            self.assertContains(r, topic.subject)
             r = self.client.get(topic_url)
             self.assertEqual(r.status_code,200)
             r = self.client.post(topic_url, {'comments':'junk', 'confirmation':False})

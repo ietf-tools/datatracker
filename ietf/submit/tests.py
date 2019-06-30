@@ -499,8 +499,8 @@ class SubmitTests(TestCase):
         self.assertTrue(name in str(outbox[-1]))
         r = self.client.get(urlreverse('ietf.doc.views_search.recent_drafts'))
         self.assertEqual(r.status_code, 200)
-        self.assertIn(draft.name,  unicontent(r))
-        self.assertIn(draft.title, unicontent(r))
+        self.assertContains(r, draft.name)
+        self.assertContains(r, draft.title)
 
 
     def test_submit_existing_txt(self):
@@ -624,9 +624,8 @@ class SubmitTests(TestCase):
         self.assertEqual(draft.relateddocument_set.filter(relationship_id='replaces').count(), replaces_count)
         #
         r = self.client.get(urlreverse('ietf.doc.views_search.recent_drafts'))
-        self.assertEqual(r.status_code, 200)
-        self.assertIn(draft.name,  unicontent(r))
-        self.assertIn(draft.title, unicontent(r))
+        self.assertContains(r, draft.name)
+        self.assertContains(r, draft.title)
 
     def test_submit_cancel_confirmation(self):
         ad=Person.objects.get(user__username='ad')
@@ -819,8 +818,7 @@ class SubmitTests(TestCase):
 
         # status page as unpriviliged => no edit button
         r = self.client.get(unprivileged_status_url)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue(("submission status of %s" % name) in unicontent(r).lower())
+        self.assertContains(r, "submission status of %s" % name)
         q = PyQuery(r.content)
         adjust_button = q('[type=submit]:contains("Adjust")')
         self.assertEqual(len(adjust_button), 0)

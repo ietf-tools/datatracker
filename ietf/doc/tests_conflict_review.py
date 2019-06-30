@@ -279,9 +279,9 @@ class ConflictReviewTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('[type=submit]:contains("Send announcement")')), 1)
         if approve_type == 'appr-noprob':
-            self.assertIn( 'IESG has no problem', ''.join(wrap(r.content,2**16)))
+            self.assertContains(r, 'IESG has no problem')
         else:
-            self.assertIn( 'NOT be published', ''.join(wrap(r.content,2**16)))
+            self.assertContains(r, 'NOT be published')
         
         # submit
         empty_outbox()
@@ -298,9 +298,9 @@ class ConflictReviewTests(TestCase):
         self.assertIn('ietf-announce@', outbox[0]['Cc'])
         self.assertIn('iana@', outbox[0]['Cc'])
         if approve_type == 'appr-noprob':
-            self.assertIn( 'IESG has no problem', ''.join(wrap(str(outbox[0]),2**16)))
+            self.assertContains(r, 'IESG has no problem')
         else:
-            self.assertIn( 'NOT be published', ''.join(wrap(str(outbox[0]),2**16)))
+            self.assertContains(r, 'NOT be published')
         
        
     def test_approve_reqnopub(self):
