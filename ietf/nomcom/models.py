@@ -11,20 +11,20 @@ from django.template.defaultfilters import linebreaks
 
 import debug                            # pyflakes:ignore
 
-from ietf.nomcom.fields import EncryptedTextField
 from ietf.person.models import Person,Email
 from ietf.group.models import Group
 from ietf.name.models import NomineePositionStateName, FeedbackTypeName, TopicAudienceName
 from ietf.dbtemplate.models import DBTemplate
 
-from ietf.nomcom.managers import NomineePositionManager, NomineeManager, \
-                                 PositionManager, FeedbackManager
+from ietf.nomcom.managers import (NomineePositionManager, NomineeManager, 
+                                  PositionManager, FeedbackManager, )
 from ietf.nomcom.utils import (initialize_templates_for_group,
                                initialize_questionnaire_for_position,
                                initialize_requirements_for_position,
                                initialize_description_for_topic,
                                delete_nomcom_templates)
 from ietf.utils.models import ForeignKey
+from ietf.utils.pipe import pipe
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 
 
@@ -78,6 +78,21 @@ class NomCom(models.Model):
 
     def pending_email_count(self):
         return self.feedback_set.filter(type__isnull=True).count()
+
+    def encrypt(self, cleartext:str) -> bytes:
+        try:
+            cert_file = self.public_key.path
+        except ValueError as e:
+            raise ValueError("Trying to read the NomCom public key: " + str(e))
+
+        command = "%s smime -encrypt -in /dev/stdin %s" % (settings.OPENSSL_COMMAND, cert_file)
+        code, out, error = pipe(command, cleartext.encode())
+        if code != 0:
+            log("openssl error: %s:\n  Error %s: %s" %(command, code, error))
+        if not error:
+            return out
+        else:
+            raise EncryptedException(error)
 
 
 def delete_nomcom(sender, **kwargs):
@@ -250,7 +265,7 @@ class Feedback(models.Model):
     nominees = models.ManyToManyField('Nominee', blank=True)
     topics = models.ManyToManyField('Topic', blank=True)
     subject = models.TextField(verbose_name='Subject', blank=True)
-    comments = EncryptedTextField(verbose_name='Comments')
+    comments = models.BinaryField(verbose_name='Comments')
     type = ForeignKey(FeedbackTypeName, blank=True, null=True)
     user = ForeignKey(User, editable=False, blank=True, null=True, on_delete=models.SET_NULL)
     time = models.DateTimeField(auto_now_add=True)

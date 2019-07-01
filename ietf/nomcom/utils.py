@@ -61,7 +61,7 @@ def get_nomcom_by_year(year):
 
 def get_year_by_nomcom(nomcom):
     acronym = nomcom.group.acronym
-    m = re.search('(?P<year>\d\d\d\d)', acronym)
+    m = re.search(r'(?P<year>\d\d\d\d)', acronym)
     return m.group(0)
 
 
@@ -172,7 +172,7 @@ def store_nomcom_private_key(request, year, private_key):
     else:
         command = "%s bf -e -in /dev/stdin -k \"%s\" -a"
         code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
-                                           settings.SECRET_KEY), private_key)
+                                           settings.SECRET_KEY), private_key.encode())
         if code != 0:
             log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
         if error:
@@ -182,7 +182,7 @@ def store_nomcom_private_key(request, year, private_key):
 
 def validate_private_key(key):
     key_file = tempfile.NamedTemporaryFile(delete=False)
-    key_file.write(key)
+    key_file.write(key.encode())
     key_file.close()
 
     command = "%s rsa -in %s -check -noout"
@@ -460,6 +460,10 @@ def create_feedback_email(nomcom, msg):
     feedback = Feedback(nomcom=nomcom,
                         author=by,
                         subject=subject or '',
-                        comments=body)
+                        comments=nomcom.encrypt(body))
     feedback.save()
     return feedback
+
+class EncryptedException(Exception):
+    pass
+    

@@ -422,18 +422,18 @@ class NomcomViewsTest(TestCase):
         nominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
         position = Position.objects.get(name='OAM')
 
-        comments = 'Plain text. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
+        comment_text = 'Plain text. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
         nomcom = get_nomcom_by_year(self.year)
         feedback = Feedback.objects.create(nomcom=nomcom,
-                                           comments=comments,
+                                           comments=nomcom.encrypt(comment_text),
                                            type=FeedbackTypeName.objects.get(slug='nomina'))
         feedback.positions.add(position)
         feedback.nominees.add(nominee)
 
         # to check feedback comments are saved like enrypted data
-        self.assertNotEqual(feedback.comments, comments)
+        self.assertNotEqual(feedback.comments, comment_text)
 
-        self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
+        self.assertEqual(check_comments(feedback.comments, comment_text, self.privatekey_file), True)
 
         # Check that the set reminder date is present
         reminder_dates = dict([ (d.id,str(d.date)) for d in nomcom.reminderdates_set.all() ])
@@ -629,13 +629,13 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(len(q("#nominate-form")), 1)
 
         position = Position.objects.get(name=position_name)
-        comments = 'Test nominate view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
+        comment_text = 'Test nominate view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
         candidate_phone = '123456'
 
         test_data = {'searched_email': searched_email.pk,
                      'candidate_phone': candidate_phone,
                      'position': position.id,
-                     'qualifications': comments,
+                     'qualifications': comment_text,
                      'confirmation': confirmation}
         if not public:
             test_data['nominator_email'] = nominator_email
@@ -655,9 +655,9 @@ class NomcomViewsTest(TestCase):
             self.assertEqual(feedback.author, nominator_email)
 
         # to check feedback comments are saved like enrypted data
-        self.assertNotEqual(feedback.comments, comments)
+        self.assertNotEqual(feedback.comments, comment_text)
 
-        self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
+        self.assertEqual(check_comments(feedback.comments, comment_text, self.privatekey_file), True)
         Nomination.objects.get(position=position,
                                candidate_name=nominee.person.plain_name(),
                                candidate_email=searched_email.address,
@@ -697,14 +697,14 @@ class NomcomViewsTest(TestCase):
         position = Position.objects.get(name=position_name)
         candidate_email = nominee_email
         candidate_name = 'nominee'
-        comments = 'Test nominate view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
+        comment_text = 'Test nominate view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
         candidate_phone = '123456'
 
         test_data = {'candidate_name': candidate_name,
                      'candidate_email': candidate_email,
                      'candidate_phone': candidate_phone,
                      'position': position.id,
-                     'qualifications': comments,
+                     'qualifications': comment_text,
                      'confirmation': confirmation}
         if not public:
             test_data['nominator_email'] = nominator_email
@@ -727,9 +727,9 @@ class NomcomViewsTest(TestCase):
             self.assertEqual(feedback.author, nominator_email)
 
         # to check feedback comments are saved like enrypted data
-        self.assertNotEqual(feedback.comments, comments)
+        self.assertNotEqual(feedback.comments, comment_text)
 
-        self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
+        self.assertEqual(check_comments(feedback.comments, comment_text, self.privatekey_file), True)
         Nomination.objects.get(position=position,
                                candidate_name=candidate_name,
                                candidate_email=candidate_email,
@@ -772,14 +772,13 @@ class NomcomViewsTest(TestCase):
         position = Position.objects.get(name=position_name)
         nominee = Nominee.objects.get(email__address=nominee_email)
 
-        comments = 'Test add questionnaire view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
+        comment_text = 'Test add questionnaire view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
 
-        test_data = {'comments': comments,
+        test_data = {'comment_text': comment_text,
                      'nominee': '%s_%s' % (position.id, nominee.id)}
 
         response = self.client.post(self.add_questionnaire_url, test_data)
 
-        self.assertEqual(response.status_code, 200)
         self.assertContains(response, "alert-success")
 
         ## check objects
@@ -788,9 +787,9 @@ class NomcomViewsTest(TestCase):
                                            type=FeedbackTypeName.objects.get(slug='questio')).latest('id')
 
         ## to check feedback comments are saved like enrypted data
-        self.assertNotEqual(feedback.comments, comments)
+        self.assertNotEqual(feedback.comments, comment_text)
 
-        self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
+        self.assertEqual(check_comments(feedback.comments, comment_text, self.privatekey_file), True)
 
     def test_public_feedback(self):
         login_testing_unauthorized(self, COMMUNITY_USER, self.public_feedback_url)
@@ -859,7 +858,7 @@ class NomcomViewsTest(TestCase):
 
         comments = 'Test feedback view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
 
-        test_data = {'comments': comments,
+        test_data = {'comment_text': comments,
                      'position_name': position.name,
                      'nominee_name': nominee.email.person.name,
                      'nominee_email': nominee.email.address,
@@ -882,7 +881,6 @@ class NomcomViewsTest(TestCase):
             nominee_position.save()
 
         response = self.client.post(feedback_url, test_data)
-        self.assertEqual(response.status_code, 200)
         self.assertContains(response, "alert-success")
         self.assertNotContains(response, "feedbackform")
 
@@ -961,7 +959,8 @@ class FeedbackTest(TestCase):
         #nomcom.public_key.storage.location = tempfile.gettempdir()
         nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
-        comments = 'Plain text. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
+        comment_text = 'Plain text. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
+        comments = nomcom.encrypt(comment_text)
         feedback = Feedback.objects.create(nomcom=nomcom,
                                            comments=comments,
                                            type=FeedbackTypeName.objects.get(slug='nomina'))
@@ -969,9 +968,8 @@ class FeedbackTest(TestCase):
         feedback.nominees.add(nominee)
 
         # to check feedback comments are saved like enrypted data
-        self.assertNotEqual(feedback.comments, comments)
-
-        self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
+        self.assertNotEqual(feedback.comments, comment_text)
+        self.assertEqual(check_comments(feedback.comments, comment_text, self.privatekey_file), True)
 
 class ReminderTest(TestCase):
 
@@ -1011,7 +1009,7 @@ class ReminderTest(TestCase):
         np.time = t_minus_4
         np.save()
         feedback = Feedback.objects.create(nomcom=self.nomcom,
-                                           comments='some non-empty comments',
+                                           comments=self.nomcom.encrypt('some non-empty comments'),
                                            type=FeedbackTypeName.objects.get(slug='questio'),
                                            user=User.objects.get(username=CHAIR_USER))
         feedback.positions.add(gen)
@@ -1104,7 +1102,7 @@ class InactiveNomcomTests(TestCase):
             
             empty_outbox()
             fb_before = self.nc.feedback_set.count()
-            test_data = {'comments': 'Test feedback view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.',
+            test_data = {'comment_text': 'Test feedback view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.',
                          'nominator_email': self.plain_person.email_set.first().address,
                          'confirmation': True}
             response = self.client.post(url, test_data)
@@ -1764,7 +1762,7 @@ Junk body for testing
                                          'duplicate_persons':[nominee2.person.pk]})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(len(outbox),1)
-        self.assertTrue(all([str(x.person.pk) in outbox[0].get_payload(decode=True) for x in [nominee1,nominee2]]))
+        self.assertTrue(all([str(x.person.pk) in outbox[0].get_payload() for x in [nominee1,nominee2]]))
 
     def test_extract_email(self):
         url = reverse('ietf.nomcom.views.extract_email_lists',kwargs={'year':self.nc.year()})
@@ -1905,7 +1903,7 @@ class AcceptingTests(TestCase):
         response = self.client.get(posurl)
         self.assertIn('not currently accepting feedback', unicontent(response))
 
-        test_data = {'comments': 'junk',
+        test_data = {'comment_text': 'junk',
                      'position_name': pos.name,
                      'nominee_name': pos.nominee_set.first().email.person.name,
                      'nominee_email': pos.nominee_set.first().email.address,
@@ -1920,7 +1918,7 @@ class AcceptingTests(TestCase):
         response = self.client.get(topicurl)
         self.assertIn('not currently accepting feedback', unicontent(response))
 
-        test_data = {'comments': 'junk',
+        test_data = {'comment_text': 'junk',
                      'confirmation': False,
                     }
         response = self.client.post(topicurl, test_data)
@@ -2046,7 +2044,7 @@ class TopicTests(TestCase):
         url = reverse('ietf.nomcom.views.public_feedback',kwargs={'year':self.nc.year() })
         url += '?topic=%d'%topic.pk
         login_testing_unauthorized(self, self.plain_person.user.username, url)
-        response=self.client.post(url, {'comments':'junk', 'confirmation':False})
+        response=self.client.post(url, {'comment_text':'junk', 'confirmation':False})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "alert-success")
         self.assertNotContains(response, "feedbackform")
@@ -2062,7 +2060,7 @@ class TopicTests(TestCase):
             topic_url = feedback_url + '?topic=%d'%topic.pk
             r = self.client.get(topic_url)
             self.assertEqual(r.status_code,404)
-            r = self.client.post(topic_url, {'comments':'junk', 'confirmation':False})
+            r = self.client.post(topic_url, {'comment_text':'junk', 'confirmation':False})
             self.assertEqual(r.status_code,404)
 
             self.client.logout()
@@ -2075,7 +2073,7 @@ class TopicTests(TestCase):
             self.assertContains(r, topic.subject)
             r = self.client.get(topic_url)
             self.assertEqual(r.status_code,200)
-            r = self.client.post(topic_url, {'comments':'junk', 'confirmation':False})
+            r = self.client.post(topic_url, {'comment_text':'junk', 'confirmation':False})
             self.assertEqual(r.status_code,200)
             self.assertEqual(topic.feedback_set.count(),1)
             self.client.logout()

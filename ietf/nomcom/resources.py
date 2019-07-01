@@ -129,7 +129,7 @@ class FeedbackResource(ModelResource):
             "id": ALL,
             "author": ALL,
             "subject": ALL,
-            "comments": ALL,
+            # "comments": ALL,
             "time": ALL,
             "nomcom": ALL_WITH_RELATIONS,
             "type": ALL_WITH_RELATIONS,

@@ -640,7 +640,7 @@ def private_questionnaire(request, year):
         if form.is_valid():
             form.save()
             messages.success(request, 'The questionnaire response has been registered.')
-            questionnaire_response = form.cleaned_data['comments']
+            questionnaire_response = form.cleaned_data['comment_text']
             form = QuestionnaireForm(nomcom=nomcom, user=request.user)
     else:
         form = QuestionnaireForm(nomcom=nomcom, user=request.user)
@@ -688,7 +688,7 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
                 f = Feedback.objects.create(nomcom = nomcom,
                                             author = nominee_position.nominee.email,
                                             subject = '%s nomination %s'%(nominee_position.nominee.name(),state),
-                                            comments = form.cleaned_data['comments'],
+                                            comments = nomcom.encrypt(form.cleaned_data['comments']),
                                             type_id = 'comment', 
                                             user = who,
                                            )
