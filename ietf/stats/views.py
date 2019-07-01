@@ -86,7 +86,7 @@ def add_url_to_choices(choices, url_builder):
 
 def put_into_bin(value, bin_size):
     if value is None:
-        return (value, value)
+        return (0, '')
 
     v = (value // bin_size) * bin_size
     return (v, "{} - {}".format(v, v + bin_size - 1))
@@ -114,7 +114,7 @@ def add_labeled_top_series_from_bins(chart_data, bins, limit):
 
     xs = list(sorted(xs))
 
-    sorted_bins = sorted(iter(aggregated_bins.items()), key=lambda t: len(t[1]), reverse=True)
+    sorted_bins = sorted(aggregated_bins.items(), key=lambda t: len(t[1]), reverse=True)
     top = [ label for label, names in list(sorted_bins)[:limit]]
 
     for label in top:
@@ -238,8 +238,8 @@ def document_stats(request, stats_type=None):
 
             total_docs = docalias_qs.values_list("docs__name").distinct().count()
 
-            def generate_canonical_names(docalias_qs):
-                for doc_id, ts in itertools.groupby(docalias_qs.order_by("docs__name"), lambda t: t[0]):
+            def generate_canonical_names(values):
+                for doc_id, ts in itertools.groupby(values.order_by("docs__name"), lambda a: a[0]):
                     chosen = None
                     for t in ts:
                         if chosen is None:
@@ -249,7 +249,6 @@ def document_stats(request, stats_type=None):
                                 chosen = t
                             elif t[1].startswith("draft") and not chosen[1].startswith("rfc"):
                                 chosen = t
-
                     yield chosen
 
             if stats_type == "authors":
@@ -258,10 +257,10 @@ def document_stats(request, stats_type=None):
                 bins = defaultdict(set)
 
                 for name, canonical_name, author_count in generate_canonical_names(docalias_qs.values_list("docs__name", "name").annotate(Count("docs__documentauthor"))):
-                    bins[author_count].add(canonical_name)
+                    bins[author_count or 0].add(canonical_name)
 
                 series_data = []
-                for author_count, names in sorted(iter(bins.items()), key=lambda t: t[0]):
+                for author_count, names in sorted(bins.items(), key=lambda t: t[0]):
                     percentage = len(names) * 100.0 / (total_docs or 1)
                     series_data.append((author_count, percentage))
                     table_data.append((author_count, percentage, len(names), list(names)[:names_limit]))
@@ -274,10 +273,10 @@ def document_stats(request, stats_type=None):
                 bins = defaultdict(set)
 
                 for name, canonical_name, pages in generate_canonical_names(docalias_qs.values_list("docs__name", "name", "docs__pages")):
-                    bins[pages].add(canonical_name)
+                    bins[pages or 0].add(canonical_name)
 
                 series_data = []
-                for pages, names in sorted(iter(bins.items()), key=lambda t: t[0]):
+                for pages, names in sorted(bins.items(), key=lambda t: t[0]):
                     percentage = len(names) * 100.0 / (total_docs or 1)
                     if pages is not None:
                         series_data.append((pages, len(names)))
@@ -296,7 +295,7 @@ def document_stats(request, stats_type=None):
                     bins[put_into_bin(words, bin_size)].add(canonical_name)
 
                 series_data = []
-                for (value, words), names in sorted(iter(bins.items()), key=lambda t: t[0][0]):
+                for (value, words), names in sorted(bins.items(), key=lambda t: t[0][0]):
                     percentage = len(names) * 100.0 / (total_docs or 1)
                     if words is not None:
                         series_data.append((value, len(names)))
@@ -349,7 +348,7 @@ def document_stats(request, stats_type=None):
                         bins[ext.upper()].add(canonical_name)
 
                 series_data = []
-                for fmt, names in sorted(iter(bins.items()), key=lambda t: t[0]):
+                for fmt, names in sorted(bins.items(), key=lambda t: t[0]):
                     percentage = len(names) * 100.0 / (total_docs or 1)
                     series_data.append((fmt, len(names)))
 
@@ -366,7 +365,7 @@ def document_stats(request, stats_type=None):
                     bins[formal_language_name].add(canonical_name)
 
                 series_data = []
-                for formal_language, names in sorted(iter(bins.items()), key=lambda t: t[0]):
+                for formal_language, names in sorted(bins.items(), key=lambda t: t[0]):
                     percentage = len(names) * 100.0 / (total_docs or 1)
                     if formal_language is not None:
                         series_data.append((formal_language, len(names)))
@@ -412,12 +411,12 @@ def document_stats(request, stats_type=None):
                 person_qs = Person.objects.filter(person_filters)
 
                 for name, document_count in person_qs.values_list("name").annotate(Count("documentauthor")):
-                    bins[document_count].add(name)
+                    bins[document_count or 0].add(name)
 
                 total_persons = count_bins(bins)
 
                 series_data = []
-                for document_count, names in sorted(iter(bins.items()), key=lambda t: t[0]):
+                for document_count, names in sorted(bins.items(), key=lambda t: t[0]):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     series_data.append((document_count, percentage))
                     plain_names = [ plain_name(n) for n in names ]
@@ -450,7 +449,7 @@ def document_stats(request, stats_type=None):
                 total_persons = count_bins(bins)
 
                 series_data = []
-                for affiliation, names in sorted(iter(bins.items()), key=lambda t: t[0].lower()):
+                for affiliation, names in sorted(bins.items(), key=lambda t: t[0].lower()):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     if affiliation:
                         series_data.append((affiliation, len(names)))
@@ -462,7 +461,7 @@ def document_stats(request, stats_type=None):
 
                 chart_data.append({ "data": series_data })
 
-                for alias, name in sorted(iter(aliases.items()), key=lambda t: t[1]):
+                for alias, name in sorted(aliases.items(), key=lambda t: t[1]):
                     alias_data.append((name, alias))
 
             elif stats_type == "author/country":
@@ -499,7 +498,7 @@ def document_stats(request, stats_type=None):
                 total_persons = count_bins(bins)
 
                 series_data = []
-                for country, names in sorted(iter(bins.items()), key=lambda t: t[0].lower()):
+                for country, names in sorted(bins.items(), key=lambda t: t[0].lower()):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     if country:
                         series_data.append((country, len(names)))
@@ -541,7 +540,7 @@ def document_stats(request, stats_type=None):
                 total_persons = count_bins(bins)
 
                 series_data = []
-                for continent, names in sorted(iter(bins.items()), key=lambda t: t[0].lower()):
+                for continent, names in sorted(bins.items(), key=lambda t: t[0].lower()):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     if continent:
                         series_data.append((continent, len(names)))
@@ -563,12 +562,12 @@ def document_stats(request, stats_type=None):
                 person_qs = Person.objects.filter(person_filters)
 
                 for name, citations in person_qs.values_list("name").annotate(Count("documentauthor__document__docalias__relateddocument")):
-                    bins[citations].add(name)
+                    bins[citations or 0].add(name)
 
                 total_persons = count_bins(bins)
 
                 series_data = []
-                for citations, names in sorted(iter(bins.items()), key=lambda t: t[0], reverse=True):
+                for citations, names in sorted(bins.items(), key=lambda t: t[0], reverse=True):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     series_data.append((citations, percentage))
                     plain_names = [ plain_name(n) for n in names ]
@@ -589,12 +588,12 @@ def document_stats(request, stats_type=None):
                 values = person_qs.values_list("name", "documentauthor__document").annotate(Count("documentauthor__document__docalias__relateddocument"))
                 for name, ts in itertools.groupby(values.order_by("name"), key=lambda t: t[0]):
                     h_index = compute_hirsch_index([citations for _, document, citations in ts])
-                    bins[h_index].add(name)
+                    bins[h_index or 0].add(name)
 
                 total_persons = count_bins(bins)
 
                 series_data = []
-                for citations, names in sorted(iter(bins.items()), key=lambda t: t[0], reverse=True):
+                for citations, names in sorted(bins.items(), key=lambda t: t[0], reverse=True):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     series_data.append((citations, percentage))
                     plain_names = [ plain_name(n) for n in names ]
@@ -835,7 +834,7 @@ def meeting_stats(request, num=None, stats_type=None):
                 total_attendees = count_bins(bins)
 
                 series_data = []
-                for country, names in sorted(iter(bins.items()), key=lambda t: t[0].lower()):
+                for country, names in sorted(bins.items(), key=lambda t: t[0].lower()):
                     percentage = len(names) * 100.0 / (total_attendees or 1)
                     if country:
                         series_data.append((country, len(names)))
@@ -869,7 +868,7 @@ def meeting_stats(request, num=None, stats_type=None):
                 total_attendees = count_bins(bins)
 
                 series_data = []
-                for continent, names in sorted(iter(bins.items()), key=lambda t: t[0].lower()):
+                for continent, names in sorted(bins.items(), key=lambda t: t[0].lower()):
                     percentage = len(names) * 100.0 / (total_attendees or 1)
                     if continent:
                         series_data.append((continent, len(names)))
