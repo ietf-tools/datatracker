@@ -245,7 +245,7 @@ class PersonUtilsTests(TestCase):
         nomcom = NomComFactory()
         position = PositionFactory(nomcom=nomcom)
         nominee = NomineeFactory(nomcom=nomcom, person=mars.get_chair().person)
-        feedback = FeedbackFactory(user=source, author=person, nomcom=nomcom)
+        feedback = FeedbackFactory(user=source, author=person.email().address, nomcom=nomcom)
         feedback.nominees.add(nominee)
         nomination = NominationFactory(nominee=nominee, user=source, position=position, comments=feedback)
 
