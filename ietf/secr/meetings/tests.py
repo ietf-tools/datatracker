@@ -224,7 +224,7 @@ class SecrMeetingTestCase(TestCase):
             'name':'Test Morning Session'
         }, follow=True)
         self.assertRedirects(response, url)
-        self.assertTrue('Test Morning Session' in response.content)
+        self.assertContains(response, 'Test Morning Session')
 
     def test_meetings_times_delete(self):
         meeting = make_meeting_test_data()
@@ -310,7 +310,7 @@ class SecrMeetingTestCase(TestCase):
             'group':group.pk,
         })
         self.assertEqual(response.status_code, 200)
-        self.assertTrue('invalid format' in response.content)
+        self.assertContains(response, 'invalid format')
 
     def test_meetings_nonsession_edit(self):
         meeting = make_meeting_test_data()

@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 from django.urls import reverse
 from ietf.utils.test_utils import TestCase
@@ -47,7 +48,7 @@ class SecrRolesMainTestCase(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,post_data,follow=True)
         self.assertRedirects(response, target)
-        self.assertTrue('added successfully' in response.content)
+        self.assertContains(response, 'added successfully')
 
     def test_roles_add_no_group(self):
         person = Person.objects.get(name='Areað Irector')
@@ -60,4 +61,4 @@ class SecrRolesMainTestCase(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,post_data,follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertTrue('You must select a group' in response.content)
+        self.assertContains(response, 'You must select a group')

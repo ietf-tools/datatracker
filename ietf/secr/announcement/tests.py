@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 from django.urls import reverse
 
 from pyquery import PyQuery
@@ -94,8 +95,7 @@ class SubmitAnnouncementCase(TestCase):
                      'body':'This is a test.'}
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,post_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue('Confirm Announcement' in response.content)
+        self.assertContains(response, 'Confirm Announcement')
         response = self.client.post(confirm_url,post_data,follow=True)
         self.assertRedirects(response, url)
         self.assertEqual(len(outbox),1)

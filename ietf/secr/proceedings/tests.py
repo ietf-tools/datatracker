@@ -87,7 +87,7 @@ class RecordingTestCase(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,data,follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(group.acronym in response.content)
+        self.assertContains(response, group.acronym)
         
         # now test edit
         doc = session.materials.filter(type='recording').first()
@@ -95,7 +95,7 @@ class RecordingTestCase(TestCase):
         url = reverse('ietf.secr.proceedings.views.recording_edit', kwargs={'meeting_num':meeting.number,'name':doc.name})
         response = self.client.post(url,dict(external_url=external_url),follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(external_url in response.content)
+        self.assertContains(response, external_url)
             
     def test_import_audio_files(self):
         session = SessionFactory(status_id='sched',meeting__type_id='ietf')
