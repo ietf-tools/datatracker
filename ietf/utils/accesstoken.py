@@ -1,10 +1,12 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 import time, random, hashlib
 
 from django.conf import settings
+from django.utils.encoding import force_bytes
 
 def generate_random_key(max_length=32):
     """Generate a random access token."""
-    return hashlib.sha256(settings.SECRET_KEY + ("%.16f" % time.time()) + ("%.16f" % random.random())).hexdigest()[:max_length]
+    return hashlib.sha256(force_bytes(settings.SECRET_KEY) + (b"%.16f" % time.time()) + (b"%.16f" % random.random())).hexdigest()[:max_length]
 
 def generate_access_token(key, max_length=32):
     """Make an access token out of key."""
@@ -12,4 +14,4 @@ def generate_access_token(key, max_length=32):
     # we hash it with the private key to make sure only we can
     # generate and use the final token - so storing the key in the
     # database is safe
-    return hashlib.sha256(settings.SECRET_KEY + key).hexdigest()[:max_length]
+    return hashlib.sha256(force_bytes(settings.SECRET_KEY) + force_bytes(key)).hexdigest()[:max_length]
