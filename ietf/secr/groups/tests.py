@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 from django.urls import reverse
 from ietf.utils.test_utils import TestCase
@@ -26,9 +27,7 @@ class GroupsTest(TestCase):
         post_data = {'group_acronym':group.acronym,'submit':'Search'}
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,post_data,follow=True)
-        #assert False, response.content
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(group.acronym in response.content)
+        self.assertContains(response, group.acronym)
 
     # ------- Test Add -------- #
     def test_add_button(self):
@@ -48,8 +47,7 @@ class GroupsTest(TestCase):
                      'submit':'Save'}
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,post_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue('This field is required' in response.content)
+        self.assertContains(response, 'This field is required')
 
     def test_add_group_dupe(self):
         group = GroupFactory()
@@ -65,9 +63,7 @@ class GroupsTest(TestCase):
                      'submit':'Save'}
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,post_data)
-        #print response.content
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue('Group with this Acronym already exists' in response.content)
+        self.assertContains(response, 'Group with this Acronym already exists')
 
     def test_add_group_success(self):
         area = GroupFactory(type_id='area')
@@ -113,7 +109,7 @@ class GroupsTest(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,post_data,follow=True)
         self.assertRedirects(response, target)
-        self.assertTrue('changed successfully' in response.content)
+        self.assertContains(response, 'changed successfully')
 
     def test_edit_non_wg_group(self):
         parent_sdo = GroupFactory.create(type_id='sdo',state_id='active')
@@ -133,7 +129,7 @@ class GroupsTest(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,post_data,follow=True)
         self.assertRedirects(response, target)
-        self.assertTrue('changed successfully' in response.content)
+        self.assertContains(response, 'changed successfully')
 
     # ------- Test People -------- #
     def test_people_delete(self):
@@ -161,4 +157,4 @@ class GroupsTest(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,post_data,follow=True)
         self.assertRedirects(response, url)
-        self.assertTrue('added successfully' in response.content)
+        self.assertContains(response, 'added successfully')
