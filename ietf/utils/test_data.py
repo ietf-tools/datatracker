@@ -77,16 +77,16 @@ def make_immutable_base_data():
     iab = create_group(name="Internet Architecture Board", acronym="iab", type_id="ietf", parent=ietf)
     create_person(iab, "chair")
 
-    ise = create_group(name="Independent Submission Editor", acronym="ise", type_id="ietf")
+    ise = create_group(name="Independent Submission Editor", acronym="ise", type_id="rfcedtyp")
     create_person(ise, "chair")
 
-    rsoc = create_group(name="RFC Series Oversight Committee", acronym="rsoc", type_id="ietf")
+    rsoc = create_group(name="RFC Series Oversight Committee", acronym="rsoc", type_id="rfcedtyp")
     create_person(rsoc, "chair")
 
-    iepg = create_group(name="IEPG", acronym="iepg", type_id="ietf")
+    iepg = create_group(name="IEPG", acronym="iepg", type_id="adhoc")
     create_person(iepg, "chair")
     
-    iana = create_group(name="IANA", acronym="iana", type_id="ietf")
+    iana = create_group(name="IANA", acronym="iana", type_id="iana")
     create_person(iana, "auth", name="Iña Iana", username="iana", email_address="iana@ia.na")
 
     rfc_editor = create_group(name="RFC Editor", acronym="rfceditor", type_id="rfcedtyp")

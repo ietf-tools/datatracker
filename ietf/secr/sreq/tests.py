@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 from django.urls import reverse
 import datetime
 
@@ -42,7 +45,7 @@ class SessionRequestTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         sched = r.context['scheduled_groups']
         unsched = r.context['unscheduled_groups']
-        self.assertEqual(len(unsched),3)
+        self.assertEqual(len(unsched),8)
         self.assertEqual(len(sched),2)
 
     def test_approve(self):
