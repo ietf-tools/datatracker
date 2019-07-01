@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 import datetime
 import os
 import shutil
@@ -60,8 +61,7 @@ class SecrDraftsTestCase(TestCase):
         url = urlreverse('ietf.secr.drafts.views.approvals') 
         self.client.login(username="secretary", password="secretary+password") 
         response = self.client.get(url) 
-        self.assertEqual(response.status_code, 200) 
-        self.assertTrue('draft-dummy' in response.content) 
+        self.assertContains(response, 'draft-dummy')
 
     def test_edit(self):
         draft = WgDraftFactory(states=[('draft','active'),('draft-stream-ietf','wg-doc'),('draft-iesg','ad-eval')], shepherd=EmailFactory())
@@ -105,8 +105,7 @@ class SecrDraftsTestCase(TestCase):
         
         post = dict(filename='draft',state=1,submit='submit')
         response = self.client.post(url, post)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(draft.name in response.content)
+        self.assertContains(response, draft.name)
 
     def test_view(self):
         draft = WgDraftFactory()
@@ -141,8 +140,7 @@ class SecrDraftsTestCase(TestCase):
         subject =  'Resurrection of %s' % draft.get_base_name()
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(email_url)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue('<title>Drafts - Email</title>' in response.content)
+        self.assertContains(response, '<title>Drafts - Email</title>')
         q = PyQuery(response.content)
         self.assertEqual(q("#id_subject").val(), subject)
         post_data = {
@@ -154,8 +152,7 @@ class SecrDraftsTestCase(TestCase):
             'submit': 'Save'
         }
         response = self.client.post(confirm_url, post_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue('<title>Drafts - Confirm</title>' in response.content)
+        self.assertContains(response, '<title>Drafts - Confirm</title>')
         self.assertEqual(response.context['email']['subject'], subject)
         response = self.client.post(do_action_url, post_data)
         self.assertRedirects(response, view_url)
@@ -193,8 +190,7 @@ class SecrDraftsTestCase(TestCase):
         response = self.client.post(url, extend_data)
         self.assertRedirects(response, email_url + '?' + urlencode(extend_data))
         response = self.client.post(confirm_url, post_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue('<title>Drafts - Confirm</title>' in response.content)
+        self.assertContains(response, '<title>Drafts - Confirm</title>')
         self.assertEqual(response.context['email']['subject'], subject)
         response = self.client.post(do_action_url, post_data)
         self.assertRedirects(response, view_url)
@@ -227,8 +223,7 @@ class SecrDraftsTestCase(TestCase):
         response = self.client.post(url, withdraw_data)
         self.assertRedirects(response, email_url + '?' + urlencode(withdraw_data))
         response = self.client.post(confirm_url, post_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue('<title>Drafts - Confirm</title>' in response.content)
+        self.assertContains(response, '<title>Drafts - Confirm</title>')
         self.assertEqual(response.context['email']['subject'], subject)
         response = self.client.post(do_action_url, post_data)
         self.assertRedirects(response, view_url)
