@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import re
 import requests
 from collections import defaultdict
@@ -289,15 +292,23 @@ def get_meeting_registration_data(meeting):
                         )
 
                     aliases = Alias.objects.filter(name=regname)
-                    if aliases.exists():
-                        person = aliases.first().person
-                    else:
-                        # Create the new Person object.
-                        person = Person.objects.create(
-                            name=regname,
-                            ascii=ascii_name,
-                            user=user,
-                        )
+                    try:
+                        if user.person:
+                            person = user.person
+                        else:
+                            person = None
+                    except Person.DoesNotExist:
+                            person = None
+                    if person is None:
+                        if aliases.exists():
+                            person = aliases.first().person
+                        else:
+                            # Create the new Person object.
+                            person = Person.objects.create(
+                                name=regname,
+                                ascii=ascii_name,
+                                user=user,
+                            )
 
                     # Create an associated Email address for this Person
                     try:
