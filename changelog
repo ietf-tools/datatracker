@@ -1,3 +1,34 @@
+ietfdb (6.98.2) ietf; urgency=medium
+
+  This is a minor release that fixes some bugs and tweaks some settings.
+  From the commit log:
+
+  * Changed some tests to match production group type changes for some special
+    groups.
+
+  * Made the bin/daily cron script quiteter.
+
+  * Various changes to make yang-related management commands quieter
+
+  * Added a fix for an issue in get_meeting_registration_data() which could
+    happen if we tried to create a Person record for with a user of an
+    existing Person.
+
+  * Changed the permitted length of patent_title from 127 to 255.
+
+  * Added additional guards against duplicate m2m entries.
+
+  * Added a utility to check copyright statements in specified files.
+
+  * Updated some functions and views in secr/srec/ to use GroupFeatures 
+    instead of hardcoded lists of group types.
+
+  * Made session requests also work for ad-hoc groups, which may not have a 
+    parent area.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Jul 2019 20:27:54 +0000
+
+
 ietfdb (6.98.1) ietf; urgency=medium
 
   This is a bugfix release that cleans up some remaining issues from the
