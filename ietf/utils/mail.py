@@ -217,10 +217,7 @@ def formataddr(addrtuple):
     address field.  Does what's needed, and returns a string value suitable for
     use in a To: or Cc: email header field.
     """
-    name, addr = addrtuple
-    if name and not isascii(name):
-        name = str(Header(name, 'utf-8'))
-    return simple_formataddr((name, addr))
+    return simple_formataddr(addrtuple, charset='utf-8')
 
 def parseaddr(addr):
     """
@@ -230,7 +227,8 @@ def parseaddr(addr):
     which case a 2-tuple of ('', '') is returned.
 
     """
-    addr = ''.join( [ s.decode(m) if m else str(s) for (s,m) in decode_header(addr) ] )
+    if not isinstance(addr, str):
+        addr = ''.join( [ s.decode(m) if m else s.decode() for (s,m) in decode_header(addr) ] )
     name, addr = simple_parseaddr(addr)
     return name, addr
 
