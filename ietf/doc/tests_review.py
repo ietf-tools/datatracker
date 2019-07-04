@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import datetime, os, shutil, json
+import datetime, os, shutil
 import tarfile, tempfile, mailbox
 import email.mime.multipart, email.mime.text, email.utils
 
@@ -33,7 +33,7 @@ from ietf.review.utils import reviewer_rotation_list, possibly_advance_next_revi
 
 from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import create_person
-from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
+from ietf.utils.test_utils import login_testing_unauthorized, reload_db_objects
 from ietf.utils.mail import outbox, empty_outbox, parseaddr, on_behalf_of
 from ietf.person.factories import PersonFactory
 
@@ -152,7 +152,7 @@ class ReviewTests(TestCase):
 
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ "name": doc.name })
         r = self.client.get(url)
-        self.assertContains(r, ("{} Review".format(review_req.type.name))
+        self.assertContains(r, "{} Review".format(review_req.type.name))
 
     def test_review_request(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
@@ -748,7 +748,7 @@ class ReviewTests(TestCase):
         # Mock up the url response for the request.get() call to retrieve the mailing list url
         response = Response()
         response.status_code = 200
-        response._content = "This is a review\nwith two lines"
+        response._content = b"This is a review\nwith two lines"
         mock.return_value = response
 
         # Run the test

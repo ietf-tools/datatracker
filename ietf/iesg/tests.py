@@ -3,7 +3,6 @@
 
 import os
 import shutil
-import json
 import datetime
 from pyquery import PyQuery
 
@@ -315,11 +314,11 @@ class IESGAgendaTests(TestCase):
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
-                self.assertContains(r, d.group.name, "%s '%s' not in response" % (k, d.group.name))
-                self.assertContains(r, d.group.acronym, "%s '%s' acronym not in response" % (k, d.group.acronym))
+                self.assertContains(r, d.group.name, msg_prefix="%s '%s' not in response" % (k, d.group.name))
+                self.assertContains(r, d.group.acronym, msg_prefix="%s '%s' acronym not in response" % (k, d.group.acronym))
             else:
-                self.assertContains(r, d.name, "%s '%s' not in response" % (k, d.name))
-                self.assertContains(r, d.title, "%s '%s' title not in response" % (k, d.title))
+                self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
+                self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))
 
         self.assertTrue(r.json())
 
@@ -329,11 +328,11 @@ class IESGAgendaTests(TestCase):
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
-                self.assertContains(r, d.group.name, "%s '%s' not in response" % (k, d.group.name))
-                self.assertContains(r, d.group.acronym, "%s '%s' acronym not in response" % (k, d.group.acronym))
+                self.assertContains(r, d.group.name, msg_prefix="%s '%s' not in response" % (k, d.group.name))
+                self.assertContains(r, d.group.acronym, msg_prefix="%s '%s' acronym not in response" % (k, d.group.acronym))
             else:
-                self.assertContains(r, d.name, "%s '%s' not in response" % (k, d.name))
-                self.assertContains(r, d.title, "%s '%s' title not in response" % (k, d.title))
+                self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
+                self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))
 
     def test_agenda_txt(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_txt"))
@@ -341,11 +340,11 @@ class IESGAgendaTests(TestCase):
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
-                self.assertContains(r, d.group.name, "%s '%s' not in response" % (k, d.group.name))
-                self.assertContains(r, d.group.acronym, "%s '%s' acronym not in response" % (k, d.group.acronym))
+                self.assertContains(r, d.group.name, msg_prefix="%s '%s' not in response" % (k, d.group.name))
+                self.assertContains(r, d.group.acronym, msg_prefix="%s '%s' acronym not in response" % (k, d.group.acronym))
             else:
-                self.assertContains(r, d.name, "%s '%s' not in response" % (k, d.name))
-                self.assertContains(r, d.title, "%s '%s' title not in response" % (k, d.title))
+                self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
+                self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))
 
     def test_agenda_scribe_template(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_scribe_template"))
@@ -355,8 +354,8 @@ class IESGAgendaTests(TestCase):
             if d.type_id == "charter":
                 continue # scribe template doesn't contain chartering info
 
-            self.assertContains(r, d.name, "%s '%s' not in response" % (k, d.name))
-            self.assertContains(r, d.title, "%s '%s' title not in response" % (k, d.title))
+            self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
+            self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))
 
     def test_agenda_moderator_package(self):
         url = urlreverse("ietf.iesg.views.agenda_moderator_package")
@@ -366,17 +365,17 @@ class IESGAgendaTests(TestCase):
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
-                self.assertContains(r, d.group.name, "%s '%s' not in response" % (k, d.group.name))
-                self.assertContains(r, d.group.acronym, "%s '%s' acronym not in response" % (k, d.group.acronym))
+                self.assertContains(r, d.group.name, msg_prefix="%s '%s' not in response" % (k, d.group.name))
+                self.assertContains(r, d.group.acronym, msg_prefix="%s '%s' acronym not in response" % (k, d.group.acronym))
             else:
                 if d.type_id == "draft" and d.name == "draft-ietf-mars-test":
-                    self.assertContains(r, d.name, "%s '%s' not in response" % (k, d.name))
-                    self.assertContains(r, d.title, "%s '%s' title not in response" % (k, d.title))
-                    self.assertContains(r, "Has downref: Yes", "%s downref not in response" % (k, ))
-                    self.assertContains(r, "Add rfc6666", "%s downref not in response" % (k, ))
+                    self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
+                    self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))
+                    self.assertContains(r, "Has downref: Yes", msg_prefix="%s downref not in response" % (k, ))
+                    self.assertContains(r, "Add rfc6666", msg_prefix="%s downref not in response" % (k, ))
                 else:
-                    self.assertContains(r, d.name, "%s '%s' not in response" % (k, d.name))
-                    self.assertContains(r, d.title, "%s '%s' title not in response" % (k, d.title))        
+                    self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
+                    self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))        
 
     def test_agenda_package(self):
         url = urlreverse("ietf.iesg.views.agenda_package")
@@ -386,11 +385,11 @@ class IESGAgendaTests(TestCase):
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
-                self.assertContains(r, d.group.name, "%s '%s' not in response" % (k, d.group.name, ))
-                self.assertContains(r, d.group.acronym, "%s '%s' acronym not in response" % (k, d.group.acronym, ))
+                self.assertContains(r, d.group.name, msg_prefix="%s '%s' not in response" % (k, d.group.name, ))
+                self.assertContains(r, d.group.acronym, msg_prefix="%s '%s' acronym not in response" % (k, d.group.acronym, ))
             else:
-                self.assertContains(r, d.name, "%s '%s' not in response" % (k, d.name, ))
-                self.assertContains(r, d.title, "%s '%s' title not in response" % (k, d.title, ))
+                self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name, ))
+                self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title, ))
 
     def test_agenda_documents_txt(self):
         url = urlreverse("ietf.iesg.views.agenda_documents_txt")
@@ -398,7 +397,7 @@ class IESGAgendaTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.items():
-            self.assertContains(r, d.name, "%s '%s' not in response" % (k, d.name, ))
+            self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name, ))
 
     def test_agenda_documents(self):
         url = urlreverse("ietf.iesg.views.agenda_documents")
@@ -406,8 +405,8 @@ class IESGAgendaTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.items():
-            self.assertContains(r, d.name, "%s '%s' not in response" % (k, d.name, ))
-            self.assertContains(r, d.title, "%s '%s' title not in response" % (k, d.title, ))
+            self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name, ))
+            self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title, ))
 
     def test_past_documents(self):
         url = urlreverse("ietf.iesg.views.past_documents")

@@ -21,7 +21,7 @@ from ietf.ipr.utils import get_genitive, get_ipr_summary
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.text import text_to_dict
 
 
@@ -158,7 +158,7 @@ class IprTests(TestCase):
         r = self.client.get(url + "?submit=draft&draft=draft")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
-        self.assertContains(r, ipr.title not)
+        self.assertContains(r, ipr.title)
 
         DocAlias.objects.create(name="rfc321").docs.add(draft)
 
