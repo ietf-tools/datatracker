@@ -50,7 +50,7 @@ REDIRECT_TESTS = {
     '/public/idindex.cgi?command=do_search_id&filename=draft-mills-sntp-v4-00.txt':
         '/drafts/?filename=draft-mills-sntp-v4-00.txt',
     '/public/idindex.cgi?command=do_search_id&filename=draft-ietf-isis-interoperable&search_button=SEARCH':
-        '/drafts/?search_button=SEARCH&filename=draft-ietf-isis-interoperable',
+        '/drafts/?filename=draft-ietf-isis-interoperable&search_button=SEARCH',
     '/public/idindex.cgi?command=do_search_id&filename=rfc0038.txt':
         '/drafts/?filename=rfc0038.txt',
     '/public/idindex.cgi?command=id_detail&id=7096':

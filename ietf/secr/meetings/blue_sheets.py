@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 from django.conf import settings
 
-'''
+r'''
 RTF quick reference (from Word2007RTFSpec9.doc):
 \fs24       : sets the font size to 24 half points
 \header     : header on all pages

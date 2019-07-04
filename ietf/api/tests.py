@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2015-2019, All Rights Reserved
 
-import json
 import os
 import sys
 

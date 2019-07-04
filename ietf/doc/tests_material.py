@@ -19,7 +19,7 @@ from ietf.meeting.factories import MeetingFactory
 from ietf.meeting.models import Meeting, Session, SessionPresentation
 from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 
 
 class GroupMaterialTests(TestCase):

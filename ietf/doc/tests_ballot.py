@@ -19,7 +19,7 @@ from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person, PersonalApiKey
 from ietf.person.factories import PersonFactory
-from ietf.utils.test_utils import TestCase, unicontent, login_testing_unauthorized
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.text import unwrap
 

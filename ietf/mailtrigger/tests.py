@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2015-2019, All Rights Reserved
 from django.urls import reverse as urlreverse
 
-from ietf.utils.test_utils import TestCase, unicontent
+from ietf.utils.test_utils import TestCase
 
 class EventMailTests(TestCase):
 
