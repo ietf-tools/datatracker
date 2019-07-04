@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2009-2019, All Rights Reserved
 import datetime, os, shutil
+import json
 
 import debug    # pyflakes:ignore
 
@@ -10,7 +11,7 @@ from django.db.models import Q
 from io import StringIO
 from pyquery import PyQuery
 
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.mail import outbox
 
 from ietf.group.factories import GroupFactory, RoleFactory

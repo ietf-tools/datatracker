@@ -11,8 +11,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from fnmatch import fnmatch
 from importlib import import_module
-#from .pipe import pipe
-#from io import StringIO
+from .pipe import pipe
+from io import StringIO
 from textwrap import dedent
 from unittest import skipIf
 from tempfile import mkdtemp
@@ -20,7 +20,7 @@ from tempfile import mkdtemp
 from django.apps import apps
 from django.contrib.auth.models import User
 from django.conf import settings
-#from django.core.management import call_command
+from django.core.management import call_command
 from django.template import Context
 from django.template.defaulttags import URLNode
 from django.template.loader import get_template
@@ -29,8 +29,8 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-#from ietf.group.factories import GroupFactory
-#from ietf.group.models import Group
+from ietf.group.factories import GroupFactory
+from ietf.group.models import Group
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.bower_storage import BowerStorageFinder
@@ -294,43 +294,43 @@ class TestWikiGlueManagementCommand(TestCase):
         shutil.rmtree(os.path.dirname(self.wiki_dir_pattern))
         shutil.rmtree(os.path.dirname(self.svn_dir_pattern))
 
-#     def test_wiki_create_output(self):
-#         for type in ['wg','rg','ag','area']:
-#             GroupFactory(type_id=type)
-#         groups = Group.objects.filter(
-#                         type__slug__in=['wg','rg','ag','area'],
-#                         state__slug='active'
-#                     ).order_by('acronym')
-#         out = StringIO()
-#         err = StringIO()
-#         call_command('create_group_wikis', stdout=out, stderr=err, verbosity=2,
-#             wiki_dir_pattern=self.wiki_dir_pattern,
-#             svn_dir_pattern=self.svn_dir_pattern,
-#         )
-#         command_output = out.getvalue()
-#         command_errors = err.getvalue()
-#         self.assertEqual("", command_errors)
-#         for group in groups:
-#             self.assertIn("Processing group '%s'" % group.acronym, command_output)
-#             # Do a bit of verification using trac-admin, too
-#             admin_code, admin_output, admin_error = pipe(
-#                 'trac-admin %s permission list' % (self.wiki_dir_pattern % group.acronym))
-#             self.assertEqual(admin_code, 0)
-#             roles = group.role_set.filter(name_id__in=['chair', 'secr', 'ad'])
-#             for role in roles:
-#                 user = role.email.address.lower()
-#                 self.assertIn("Granting admin permission for %s" % user, command_output)
-#                 self.assertIn(user, admin_output)
-#             docs = group.document_set.filter(states__slug='active', type_id='draft')
-#             for doc in docs:
-#                 name = doc.name
-#                 name = name.replace('draft-','')
-#                 name = name.replace(doc.stream_id+'-', '')
-#                 name = name.replace(group.acronym+'-', '')
-#                 self.assertIn("Adding component %s"%name, command_output)
-#         for page in settings.TRAC_WIKI_PAGES_TEMPLATES:
-#             self.assertIn("Adding page %s" % os.path.basename(page), command_output)
-#         self.assertIn("Indexing default repository", command_output)
+    def test_wiki_create_output(self):
+        for type in ['wg','rg','ag','area']:
+            GroupFactory(type_id=type)
+        groups = Group.objects.filter(
+                        type__slug__in=['wg','rg','ag','area'],
+                        state__slug='active'
+                    ).order_by('acronym')
+        out = StringIO()
+        err = StringIO()
+        call_command('create_group_wikis', stdout=out, stderr=err, verbosity=2,
+            wiki_dir_pattern=self.wiki_dir_pattern,
+            svn_dir_pattern=self.svn_dir_pattern,
+        )
+        command_output = out.getvalue()
+        command_errors = err.getvalue()
+        self.assertEqual("", command_errors)
+        for group in groups:
+            self.assertIn("Processing group '%s'" % group.acronym, command_output)
+            # Do a bit of verification using trac-admin, too
+            admin_code, admin_output, admin_error = pipe(
+                'trac-admin %s permission list' % (self.wiki_dir_pattern % group.acronym))
+            self.assertEqual(admin_code, 0)
+            roles = group.role_set.filter(name_id__in=['chair', 'secr', 'ad'])
+            for role in roles:
+                user = role.email.address.lower()
+                self.assertIn("Granting admin permission for %s" % user, command_output)
+                self.assertIn(user, admin_output)
+            docs = group.document_set.filter(states__slug='active', type_id='draft')
+            for doc in docs:
+                name = doc.name
+                name = name.replace('draft-','')
+                name = name.replace(doc.stream_id+'-', '')
+                name = name.replace(group.acronym+'-', '')
+                self.assertIn("Adding component %s"%name, command_output)
+        for page in settings.TRAC_WIKI_PAGES_TEMPLATES:
+            self.assertIn("Adding page %s" % os.path.basename(page), command_output)
+        self.assertIn("Indexing default repository", command_output)
 
 OMITTED_APPS = [
     'ietf.secr.meetings',

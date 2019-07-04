@@ -72,7 +72,6 @@ def check(codeString, filename, verbosity=1):
                 sys.stderr.write('F')
             else:
                 sys.stderr.write('.')
-            sys.stderr.flush()
         if verbosity > 1:
             sys.stderr.write("  %s\n" % filename)
         return messages
@@ -85,7 +84,7 @@ def checkPath(filename, verbosity):
     @return: the number of warnings printed
     """
     try:
-        return check(open(filename).read() + '\n', filename, verbosity)
+        return check(open(filename, 'U').read() + '\n', filename, verbosity)
     except IOError as msg:
         return ["%s: %s" % (filename, msg.args[1])]
     except TypeError:
@@ -101,7 +100,7 @@ def checkPaths(filenames, verbosity):
                         try:
                             warnings.extend(checkPath(os.path.join(dirpath, filename), verbosity))
                         except TypeError as e:
-                            print("Exception while processing dirpath=%s, filename=%s: %s" % (dirpath, filename, e ))
+                            print(("Exception while processing dirpath=%s, filename=%s: %s" % (dirpath, filename,e )))
                             raise
         else:
             warnings.extend(checkPath(arg, verbosity))

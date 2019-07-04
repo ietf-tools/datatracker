@@ -3,6 +3,7 @@
 
 import re
 import textwrap
+import types
 import unicodedata
 
 from django.utils.functional import keep_lazy

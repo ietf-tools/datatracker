@@ -19,7 +19,7 @@ from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.utils.test_runner import set_coverage_checking
 from ietf.person.factories import EmailFactory
 from ietf.person.models import Person
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 
 if   getattr(settings,'SKIP_DOT_TO_PDF', False):
     skip_dot_to_pdf = True

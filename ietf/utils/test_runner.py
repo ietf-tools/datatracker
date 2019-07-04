@@ -239,6 +239,7 @@ def save_test_results(failures, test_labels):
             tfile.write("%s OK\n" % (timestr, ))
     tfile.close()
 
+
 def set_coverage_checking(flag=True):
     global template_coverage_collection
     global code_coverage_collection

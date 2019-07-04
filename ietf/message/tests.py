@@ -3,7 +3,7 @@ import datetime
 
 from django.urls import reverse as urlreverse
 
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.mail import outbox
 
 from ietf.message.models import Message, SendQueue

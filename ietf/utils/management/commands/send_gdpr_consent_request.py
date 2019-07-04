@@ -97,7 +97,7 @@ class Command(BaseCommand):
                             'person': person, 'settings': settings,
                             },
                         )
-                    PersonEvent.objects.create(person=person, type='gdpr_notice_email', 
+                    e = PersonEvent.objects.create(person=person, type='gdpr_notice_email', 
                                                desc="Sent GDPR notice email to %s with confirmation deadline %s" % (to, date))
                     time.sleep(delay)
                 

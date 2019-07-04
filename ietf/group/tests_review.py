@@ -8,7 +8,7 @@ from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
 
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase, reload_db_objects
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
 from ietf.doc.models import TelechatDocEvent
 from ietf.group.models import Role
 from ietf.iesg.models import TelechatDate

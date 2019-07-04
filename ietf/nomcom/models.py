@@ -22,10 +22,7 @@ from ietf.nomcom.utils import (initialize_templates_for_group,
                                initialize_questionnaire_for_position,
                                initialize_requirements_for_position,
                                initialize_description_for_topic,
-                               delete_nomcom_templates,
-                               EncryptedException,
-                              )
-from ietf.utils.log import log
+                               delete_nomcom_templates)
 from ietf.utils.models import ForeignKey
 from ietf.utils.pipe import pipe
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage

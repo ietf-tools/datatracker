@@ -4,7 +4,7 @@ import datetime
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, unicontent
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.meeting.models import Session, ResourceAssociation
 from ietf.meeting.factories import MeetingFactory, SessionFactory

@@ -14,7 +14,7 @@ from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.group.models import Group, Role, RoleName
 from ietf.group.factories import GroupFactory, RoleFactory
