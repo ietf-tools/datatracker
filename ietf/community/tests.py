@@ -1,8 +1,6 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import json
-
 from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
@@ -19,7 +17,7 @@ from ietf.group.utils import setup_default_community_list_for_group
 from ietf.doc.models import State
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person, Email
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.mail import outbox
 from ietf.doc.factories import WgDraftFactory
 from ietf.group.factories import GroupFactory, RoleFactory
@@ -298,7 +296,7 @@ class CommunityListTests(TestCase):
         # only significant
         r = self.client.get(url + "?significant=1")
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, '<entry>' not)
+        self.assertNotContains(r, '<entry>')
 
     def test_feed_for_group(self):
         draft = WgDraftFactory()
