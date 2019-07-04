@@ -27,7 +27,7 @@ def get_charter_text(group):
     '''
     charter = group.charter
     path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-    f = file(path,'r')
+    f = open(path,'r')
     text = f.read()
     f.close()
 
