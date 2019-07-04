@@ -1,4 +1,5 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
+
 import base64
 import email
 import datetime
@@ -6,7 +7,10 @@ from dateutil.tz import tzoffset
 import os
 import pytz
 import re
+
 from django.template.loader import render_to_string
+
+import debug                            # pyflakes:ignore
 
 from ietf.ipr.models import IprEvent
 from ietf.message.models import Message

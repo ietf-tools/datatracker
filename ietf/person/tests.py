@@ -3,7 +3,6 @@
 
 
 import datetime
-import json
 from pyquery import PyQuery
 from io import StringIO
 from django.urls import reverse as urlreverse

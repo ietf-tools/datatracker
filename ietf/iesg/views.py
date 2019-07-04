@@ -179,7 +179,7 @@ def agenda_json(request, date=None):
 
                 s["docs"].append(docinfo)
 
-    return HttpResponse(json.dumps(res, indent=2), content_type='text/plain')
+    return HttpResponse(json.dumps(res, indent=2), content_type='application/json')
 
 # def past_agendas(request):
 #     # This is not particularly useful with the current way of constructing

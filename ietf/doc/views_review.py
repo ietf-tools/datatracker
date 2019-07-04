@@ -769,7 +769,7 @@ def search_mail_archive(request, name, assignment_id):
     try:
         res["messages"] = mailarch.retrieve_messages(res["query_data_url"])[:MAX_RESULTS]
     except KeyError as e:
-        res["error"] = "No results found"
+        res["error"] = "No results found (%s)" % str(e)
     except Exception as e:
         res["error"] = "Retrieval from mail archive failed: %s" % str(e)
         # raise # useful when debugging

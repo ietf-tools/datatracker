@@ -25,7 +25,7 @@ from ietf.person.factories import PersonFactory
 from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting, MeetingTypeName
 from ietf.iesg.models import TelechatDate
-from ietf.utils.test_utils import login_testing_unauthorized, unicontent
+from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import TestCase
 

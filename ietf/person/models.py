@@ -338,7 +338,7 @@ class PersonalApiKey(models.Model):
         import struct, hashlib, base64
         try:
             key = base64.urlsafe_b64decode(s)
-        except TypeError as e:
+        except TypeError:
             return None
 
         id, salt, hash = struct.unpack(KEY_STRUCT, key)

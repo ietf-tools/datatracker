@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
-# Copyright 2016 IETF Trust
 
 import os
 import copy
@@ -61,6 +60,8 @@ class Command(BaseCommand):
             self.note("Running %s %s ..." % (os.path.basename(cmd), " ".join(quoted_args)))
             command = [ cmd, ] + list(args)
             code, out, err = pipe(command)
+            out = out.decode()
+            err = err.decode()
             msg = None
             if code != 0:
                 msg = "Error %s: %s when executing '%s'" % (code, err, " ".join(command))
