@@ -108,9 +108,9 @@ class SubmissionBaseUploadForm(forms.Form):
         if not f:
             return f
 
-        parsed_info = parser_class(f).critical_parse()
-        if parsed_info.errors:
-            raise forms.ValidationError(parsed_info.errors)
+        self.parsed_info = parser_class(f).critical_parse()
+        if self.parsed_info.errors:
+            raise forms.ValidationError(self.parsed_info.errors)
 
         return f
 
@@ -215,7 +215,7 @@ class SubmissionBaseUploadForm(forms.Form):
             bytes = txt_file.read()
             txt_file.seek(0)
             try:
-                text = bytes.decode('utf8')
+                text = bytes.decode(self.parsed_info.charset)
             except UnicodeDecodeError as e:
                 raise forms.ValidationError('Failed decoding the uploaded file: "%s"' % str(e))
             #

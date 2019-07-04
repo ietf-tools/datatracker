@@ -1,5 +1,8 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
+
 import re
+
+import debug                            # pyflakes:ignore
 
 from ietf.submit.parsers.base import FileParser
 
@@ -15,58 +18,51 @@ class PlainParser(FileParser):
     # no other file parsing is recommended
     def critical_parse(self):
         super(PlainParser, self).critical_parse()
-        self.parse_file_charset()
+        self.check_file_charset()
         self.parse_name()
         return self.parsed_info
 
-    def parse_file_charset(self):
-        import magic
-        self.fd.file.seek(0)
-        content = self.fd.file.read()
-        if hasattr(magic, "open"):
-            m = magic.open(magic.MAGIC_MIME)
-            m.load()
-            filetype = m.buffer(content)
-        else:
-            m = magic.Magic()
-            m.cookie = magic.magic_open(magic.MAGIC_NONE | magic.MAGIC_MIME | magic.MAGIC_MIME_ENCODING)
-            magic.magic_load(m.cookie, None)
-            filetype = m.from_buffer(content)
-        if not 'ascii' in filetype and not 'utf-8' in filetype:
+    def check_file_charset(self):
+        charset = self.parsed_info.charset
+        if not charset in ['us-ascii', 'utf-8',]:
             self.parsed_info.add_error('A plain text ASCII document is required.  '
                 'Found an unexpected encoding: "%s".  '
-                'You probably have one or more non-ascii characters in your file.'  % filetype
+                'You probably have one or more non-ascii characters in your file.'  % charset
             )
+        if self.fd.charset and charset != self.fd.charset:
+            self.parsed_info.add_error("Unexpected charset mismatch: upload: %s, libmagic: %s" % (self.fd.charset, charset))
+
 
     def parse_name(self):
         self.fd.file.seek(0)
-        draftre = re.compile('(draft-\S+)')
-        revisionre = re.compile('.*-(\d+)$')
+        draftre = re.compile(r'(draft-\S+)')
+        revisionre = re.compile(r'.*-(\d+)$')
         limit = 80
-        while limit:
-            limit -= 1
-            line = self.fd.readline()
-            match = draftre.search(line)
-            if not match:
-                continue
-            name = match.group(1)
-            name = re.sub('^[^\w]+', '', name)
-            name = re.sub('[^\w]+$', '', name)
-            name = re.sub('\.txt$', '', name)
-            extra_chars = re.sub('[0-9a-z\-]', '', name)
-            if extra_chars:
-                if len(extra_chars) == 1:
-                    self.parsed_info.add_error(('The document name on the first page, "%s", contains a disallowed character with byte code: %s ' % (name.decode('utf-8','replace'), ord(extra_chars[0]))) +
-                                                '(see https://www.ietf.org/id-info/guidelines.html#naming for details).')
+        if self.parsed_info.charset in ['us-ascii', 'utf-8']:
+            while limit:
+                limit -= 1
+                line = self.fd.readline().decode(self.parsed_info.charset)
+                match = draftre.search(line)
+                if not match:
+                    continue
+                name = match.group(1)
+                name = re.sub(r'^[^\w]+', '', name)
+                name = re.sub(r'[^\w]+$', '', name)
+                name = re.sub(r'\.txt$', '', name)
+                extra_chars = re.sub(r'[0-9a-z\-]', '', name)
+                if extra_chars:
+                    if len(extra_chars) == 1:
+                        self.parsed_info.add_error(('The document name on the first page, "%s", contains a disallowed character with byte code: %s ' % (name.decode('utf-8','replace'), ord(extra_chars[0]))) +
+                                                    '(see https://www.ietf.org/id-info/guidelines.html#naming for details).')
+                    else:
+                        self.parsed_info.add_error(('The document name on the first page, "%s", contains disallowed characters with byte codes: %s ' % (name.decode('utf-8','replace'), (', '.join([ str(ord(c)) for c in extra_chars] )))) +
+                                                    '(see https://www.ietf.org/id-info/guidelines.html#naming for details).')
+                match_revision = revisionre.match(name)
+                if match_revision:
+                    self.parsed_info.metadata.rev = match_revision.group(1)
                 else:
-                    self.parsed_info.add_error(('The document name on the first page, "%s", contains disallowed characters with byte codes: %s ' % (name.decode('utf-8','replace'), (', '.join([ str(ord(c)) for c in extra_chars] )))) +
-                                                '(see https://www.ietf.org/id-info/guidelines.html#naming for details).')
-            match_revision = revisionre.match(name)
-            if match_revision:
-                self.parsed_info.metadata.rev = match_revision.group(1)
-            else:
-                self.parsed_info.add_error('The name found on the first page of the document does not contain a revision: "%s"' % (name.decode('utf-8','replace'),))
-            name = re.sub('-\d+$', '', name)
-            self.parsed_info.metadata.name = name
-            return
-        self.parsed_info.add_error('The first page of the document does not contain a legitimate name that start with draft-*')
+                    self.parsed_info.add_error('The name found on the first page of the document does not contain a revision: "%s"' % (name.decode('utf-8','replace'),))
+                name = re.sub(r'-\d+$', '', name)
+                self.parsed_info.metadata.name = name
+                return
+        self.parsed_info.add_error('The first page of the document does not contain a legitimate name that starts with draft-*')

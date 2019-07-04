@@ -458,7 +458,7 @@ def ensure_person_email_info_exists(name, email, docname):
         person.name = name
         person.name_from_draft = name
         log.assertion('isinstance(person.name, six.text_type)')
-        person.ascii = unidecode_name(person.name).decode('ascii')
+        person.ascii = unidecode_name(person.name)
         person.save()
     else:
         person.name_from_draft = name
@@ -595,11 +595,8 @@ def expire_submission(submission, by):
 
     SubmissionEvent.objects.create(submission=submission, by=by, desc="Cancelled expired submission")
 
-def get_draft_meta(form):
-    authors = []
+def save_files(form):
     file_name = {}
-    abstract = None
-    file_size = None
     for ext in list(form.fields.keys()):
         if not ext in form.formats:
             continue
@@ -612,7 +609,13 @@ def get_draft_meta(form):
         with open(name, 'wb+') as destination:
             for chunk in f.chunks():
                 destination.write(chunk)
+    return file_name
 
+def get_draft_meta(form, saved_files):
+    authors = []
+    file_name = saved_files
+    abstract = None
+    file_size = None
     if form.cleaned_data['xml']:
         if not ('txt' in form.cleaned_data and form.cleaned_data['txt']):
             file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (form.filename, form.revision))
@@ -640,7 +643,7 @@ def get_draft_meta(form):
         # be retrieved from the generated text file.  Provide a
         # parsed draft object to get at that kind of information.
         with open(file_name['txt']) as txt_file:
-            form.parsed_draft = Draft(txt_file.read().decode('utf8'), txt_file.name)
+            form.parsed_draft = Draft(txt_file.read(), txt_file.name)
 
     else:
         file_size = form.cleaned_data['txt'].size

@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
 import datetime
 import email
 import os
@@ -35,7 +34,7 @@ from ietf.submit.models import Submission, Preapproval
 from ietf.submit.mail import add_submission_email, process_response_email
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.models import VersionInfo
-from ietf.utils.test_utils import login_testing_unauthorized, unicontent, TestCase
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.draft import Draft
 
 
@@ -185,17 +184,18 @@ class SubmitTests(TestCase):
 
         return r
 
-    def extract_confirm_url(self, confirm_email):
-        # dig out confirm_email link
-        msg = confirm_email.get_payload(decode=True)
+    def extract_confirmation_url(self, confirmation_email):
+        # dig out confirmation_email link
+        charset = confirmation_email.get_content_charset()
+        msg = confirmation_email.get_payload(decode=True).decode(charset)
         line_start = "http"
-        confirm_url = None
+        confirmation_url = None
         for line in msg.split("\n"):
             if line.strip().startswith(line_start):
-                confirm_url = line.strip()
-        self.assertTrue(confirm_url)
+                confirmation_url = line.strip()
+        self.assertTrue(confirmation_url)
 
-        return confirm_url
+        return confirmation_url
 
     def submit_new_wg(self, formats):
         # submit new -> supply submitter info -> approve
@@ -420,16 +420,16 @@ class SubmitTests(TestCase):
             self.assertNotIn("chairs have been copied", str(confirm_email))
             self.assertNotIn("mars-chairs@", confirm_email["To"].lower())
 
-        confirm_url = self.extract_confirm_url(confirm_email)
+        confirmation_url = self.extract_confirmation_url(confirm_email)
 
         # go to confirm page
-        r = self.client.get(confirm_url)
+        r = self.client.get(confirmation_url)
         q = PyQuery(r.content)
         self.assertEqual(len(q('[type=submit]:contains("Confirm")')), 1)
 
         # confirm
         mailbox_before = len(outbox)
-        r = self.client.post(confirm_url, {'action':'confirm'})
+        r = self.client.post(confirmation_url, {'action':'confirm'})
         self.assertEqual(r.status_code, 302)
 
         new_docevents = draft.docevent_set.exclude(pk__in=[event.pk for event in old_docevents])
@@ -558,16 +558,16 @@ class SubmitTests(TestCase):
         self.assertTrue("submitter@example.com" in confirm_email["To"])
         self.assertFalse("chairs have been copied" in str(confirm_email))
 
-        confirm_url = self.extract_confirm_url(outbox[-1])
+        confirmation_url = self.extract_confirmation_url(outbox[-1])
 
         # go to confirm page
-        r = self.client.get(confirm_url)
+        r = self.client.get(confirmation_url)
         q = PyQuery(r.content)
         self.assertEqual(len(q('[type=submit]:contains("Confirm")')), 1)
 
         # confirm
         mailbox_before = len(outbox)
-        r = self.client.post(confirm_url, {'action':'confirm'})
+        r = self.client.post(confirmation_url, {'action':'confirm'})
         self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(docalias__name=name)
@@ -613,10 +613,10 @@ class SubmitTests(TestCase):
         status_url = r["Location"]
         r = self.client.get(status_url)
         self.assertEqual(len(outbox), mailbox_before + 1)
-        confirm_url = self.extract_confirm_url(outbox[-1])
+        confirmation_url = self.extract_confirmation_url(outbox[-1])
         self.assertFalse("chairs have been copied" in str(outbox[-1]))
         mailbox_before = len(outbox)
-        r = self.client.post(confirm_url, {'action':'confirm'})
+        r = self.client.post(confirmation_url, {'action':'confirm'})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before+3)
         draft = Document.objects.get(docalias__name=name)
@@ -641,9 +641,9 @@ class SubmitTests(TestCase):
         status_url = r["Location"]
         r = self.client.get(status_url)
         self.assertEqual(len(outbox), mailbox_before + 1)
-        confirm_url = self.extract_confirm_url(outbox[-1])
+        confirmation_url = self.extract_confirmation_url(outbox[-1])
         mailbox_before = len(outbox)
-        r = self.client.post(confirm_url, {'action':'cancel'})
+        r = self.client.post(confirmation_url, {'action':'cancel'})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before)
         draft = Document.objects.get(docalias__name=name)
@@ -818,7 +818,8 @@ class SubmitTests(TestCase):
 
         # status page as unpriviliged => no edit button
         r = self.client.get(unprivileged_status_url)
-        self.assertContains(r, "submission status of %s" % name)
+        print(r.content)
+        self.assertContains(r, "Submission status of %s" % name)
         q = PyQuery(r.content)
         adjust_button = q('[type=submit]:contains("Adjust")')
         self.assertEqual(len(adjust_button), 0)
@@ -1688,7 +1689,7 @@ class RefsTests(TestCase):
 
         group = None
         file, __ = submission_file('draft-some-subject', '00', group, 'txt', "test_submission.txt", )
-        draft = Draft(file.read().decode('utf-8'), file.name)
+        draft = Draft(file.read(), file.name)
         refs = draft.get_refs()
         self.assertEqual(refs['rfc2119'], 'norm')
         self.assertEqual(refs['rfc8174'], 'norm')

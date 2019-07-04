@@ -31,18 +31,19 @@ from ietf.submit.models import (Submission, Preapproval,
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
     recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
     post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
-    get_submission, fill_in_submission, apply_checkers, send_confirmation_emails )
+    get_submission, fill_in_submission, apply_checkers, send_confirmation_emails, save_files )
 from ietf.stats.utils import clean_country_name
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.log import log
-from ietf.utils.mail import send_mail_message
+from ietf.utils.mail import parseaddr, send_mail_message
 
 def upload_submission(request):
     if request.method == 'POST':
         try:
             form = SubmissionManualUploadForm(request, data=request.POST, files=request.FILES)
             if form.is_valid():
-                authors, abstract, file_name, file_size = get_draft_meta(form)
+                saved_files = save_files(form)
+                authors, abstract, file_name, file_size = get_draft_meta(form, saved_files)
 
                 submission = get_submission(form)
                 try:
@@ -87,7 +88,7 @@ def api_submit(request):
     if request.method == 'GET':
         return render(request, 'submit/api_submit_info.html')
     elif request.method == 'POST':
-        e = None
+        exception = None
         try:
             form = SubmissionAutoUploadForm(request, data=request.POST, files=request.FILES)
             if form.is_valid():
@@ -101,7 +102,8 @@ def api_submit(request):
                 if not hasattr(user, 'person'):
                     return err(400, "No person with username %s" % username)
 
-                authors, abstract, file_name, file_size = get_draft_meta(form)
+                saved_files = save_files(form)
+                authors, abstract, file_name, file_size = get_draft_meta(form, saved_files)
                 for a in authors:
                     if not a['email']:
                         raise ValidationError("Missing email address for author %s" % a)
@@ -142,14 +144,17 @@ def api_submit(request):
             else:
                 raise ValidationError(form.errors)
         except IOError as e:
+            exception = e
             return err(500, "IO Error: %s" % str(e))
         except ValidationError as e:
+            exception = e
             return err(400, "Validation Error: %s" % str(e))
         except Exception as e:
+            exception = e
             raise
             return err(500, "Exception: %s" % str(e))            
         finally:
-            if e and submission:
+            if exception and submission:
                 remove_submission_files(submission)
                 submission.delete()
     else:
@@ -213,8 +218,10 @@ def submission_status(request, submission_id, access_token=None):
 
     # Begin common code chunk
     addrs = gather_address_lists('sub_confirmation_requested',submission=submission)
-    confirmation_list = addrs.to
-    confirmation_list.extend(addrs.cc)
+    addresses = addrs.to
+    addresses.extend(addrs.cc)
+    # Convert from RFC 2822 format if needed
+    confirmation_list = [ "%s <%s>" % parseaddr(a) for a in addresses ]
 
     requires_group_approval = (submission.rev == '00'
         and submission.group and submission.group.features.req_subm_approval

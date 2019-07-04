@@ -12,6 +12,7 @@ from django.urls import reverse as urlreverse
 from django.core.validators import ValidationError
 from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
+from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
 
@@ -31,13 +32,13 @@ def send_submission_confirmation(request, submission, chair_notice=False):
     from_email = settings.IDSUBMIT_FROM_EMAIL
     (to_email, cc) = gather_address_lists('sub_confirmation_requested',submission=submission)
 
-    confirm_url = settings.IDTRACKER_BASE_URL + urlreverse('ietf.submit.views.confirm_submission', kwargs=dict(submission_id=submission.pk, auth_token=generate_access_token(submission.auth_key)))
+    confirmation_url = settings.IDTRACKER_BASE_URL + urlreverse('ietf.submit.views.confirm_submission', kwargs=dict(submission_id=submission.pk, auth_token=generate_access_token(submission.auth_key)))
     status_url = settings.IDTRACKER_BASE_URL + urlreverse('ietf.submit.views.submission_status', kwargs=dict(submission_id=submission.pk, access_token=submission.access_token()))
         
     send_mail(request, to_email, from_email, subject, 'submit/confirm_submission.txt', 
               {
                 'submission': submission,
-                'confirm_url': confirm_url,
+                'confirmation_url': confirmation_url,
                 'status_url': status_url,
                 'chair_notice': chair_notice,
               },
@@ -172,7 +173,7 @@ def get_reply_to():
     address with "plus addressing" using a random string.  Guaranteed to be unique"""
     local,domain = get_base_submission_message_address().split('@')
     while True:
-        rand = base64.urlsafe_b64encode(os.urandom(12))
+        rand = force_text(base64.urlsafe_b64encode(os.urandom(12)))
         address = "{}+{}@{}".format(local,rand,domain)
         q = Message.objects.filter(reply_to=address)
         if not q:
