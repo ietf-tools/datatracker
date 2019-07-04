@@ -362,7 +362,7 @@ def document_stats(request, stats_type=None):
                 bins = defaultdict(set)
 
                 for name, canonical_name, formal_language_name in generate_canonical_names(docalias_qs.values_list("docs__name", "name", "docs__formal_languages__name")):
-                    bins[formal_language_name].add(canonical_name)
+                    bins[formal_language_name or ""].add(canonical_name)
 
                 series_data = []
                 for formal_language, names in sorted(bins.items(), key=lambda t: t[0]):
