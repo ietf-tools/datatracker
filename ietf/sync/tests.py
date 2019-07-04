@@ -5,6 +5,7 @@ import os
 import json
 import datetime
 import io
+import quopri
 import shutil
 
 from django.conf import settings
@@ -17,7 +18,7 @@ from ietf.group.factories import GroupFactory
 from ietf.person.models import Person
 from ietf.sync import iana, rfceditor
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_utils import login_testing_unauthorized, unicontent
+from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_utils import TestCase
 
 
@@ -137,8 +138,10 @@ class IANASyncTests(TestCase):
         draft = WgDraftFactory()
 
         subject_template = 'Subject: [IANA #12345] Last Call: <%(draft)s-%(rev)s.txt> (Long text) to Informational RFC'
-        msg_template = """From: "%(person)s via RT" <drafts-lastcall@iana.org>
+        msg_template = """From: %(fromaddr)s
 Date: Thu, 10 May 2012 12:00:0%(rtime)d +0000
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
 %(subject)s
 
 (BEGIN IANA %(tag)s%(embedded_name)s)
@@ -172,7 +175,10 @@ ICANN
                     if embedded_name or not 'Vacuous' in subject: 
                     
                         rtime = 7*subjects.index(subject) + 5*tags.index(tag) + embedded_names.index(embedded_name)
-                        msg = msg_template % dict(person=Person.objects.get(user__username="iana").name,
+                        person=Person.objects.get(user__username="iana")
+                        fromaddr = person.email().formatted_email()
+                        msg = msg_template % dict(person=quopri.encodestring(person.name.encode()),
+                                                  fromaddr=fromaddr,
                                                   draft=draft.name,
                                                   rev=draft.rev,
                                                   tag=tag,
@@ -185,7 +191,7 @@ ICANN
                         self.assertEqual(doc_name, draft.name)
                         self.assertEqual(review_time, datetime.datetime(2012, 5, 10, 5, 0, rtime))
                         self.assertEqual(by, Person.objects.get(user__username="iana"))
-                        self.assertTrue("there are no IANA Actions" in comment.replace("\n", ""))
+                        self.assertIn("there are no IANA Actions", comment.replace("\n", ""))
     
                         events_before = DocEvent.objects.filter(doc=draft, type="iana_review").count()
                         iana.add_review_comment(doc_name, review_time, by, comment)
