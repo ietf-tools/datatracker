@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 import datetime
 
 from django.utils.text import slugify
@@ -70,7 +71,7 @@ def make_meeting_test_data(meeting=None):
     #secretary = Person.objects.get(user__username="secretary") ## not used
 
     if not meeting:
-        meeting = Meeting.objects.get(number="42", type="ietf")
+        meeting = Meeting.objects.get(number="72", type="ietf")
     schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-agenda", visible=True, public=True)
     unofficial_schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-unofficial-agenda", visible=True, public=True)
 
@@ -157,24 +158,24 @@ def make_meeting_test_data(meeting=None):
     meeting.unofficial_schedule = unofficial_schedule
     
 
-    doc = DocumentFactory.create(name='agenda-42-mars', type_id='agenda', title="Agenda",
-        uploaded_filename="agenda-42-mars.txt", group=mars, rev='00', states=[('draft','active')])
+    doc = DocumentFactory.create(name='agenda-72-mars', type_id='agenda', title="Agenda",
+        uploaded_filename="agenda-72-mars.txt", group=mars, rev='00', states=[('draft','active')])
     pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
     mars_session.sessionpresentation_set.add(pres) # 
 
-    doc = DocumentFactory.create(name='minutes-42-mars', type_id='minutes', title="Minutes",
-        uploaded_filename="minutes-42-mars.txt", group=mars, rev='00', states=[('minutes','active')])
+    doc = DocumentFactory.create(name='minutes-72-mars', type_id='minutes', title="Minutes",
+        uploaded_filename="minutes-72-mars.txt", group=mars, rev='00', states=[('minutes','active')])
     pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
     mars_session.sessionpresentation_set.add(pres)
 
-    doc = DocumentFactory.create(name='slides-42-mars-1-active', type_id='slides', title="Slideshow",
-        uploaded_filename="slides-42-mars.txt", group=mars, rev='00',
+    doc = DocumentFactory.create(name='slides-72-mars-1-active', type_id='slides', title="Slideshow",
+        uploaded_filename="slides-72-mars.txt", group=mars, rev='00',
         states=[('slides','active'), ('reuse_policy', 'single')])
     pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
     mars_session.sessionpresentation_set.add(pres)
 
-    doc = DocumentFactory.create(name='slides-42-mars-2-deleted', type_id='slides',
-        title="Bad Slideshow", uploaded_filename="slides-42-mars-2-deleted.txt", group=mars, rev='00',
+    doc = DocumentFactory.create(name='slides-72-mars-2-deleted', type_id='slides',
+        title="Bad Slideshow", uploaded_filename="slides-72-mars-2-deleted.txt", group=mars, rev='00',
         states=[('slides','deleted'), ('reuse_policy', 'single')])
     pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
     mars_session.sessionpresentation_set.add(pres)

@@ -4,7 +4,6 @@
 import os
 import shutil
 import datetime
-import json
 import sys
 import urllib.parse
 import bibtexparser
@@ -129,9 +128,9 @@ class SearchTests(TestCase):
         CharterFactory(group=draft.group,name='charter-ietf-mars')
         DocumentFactory(type_id='conflrev',name='conflict-review-imaginary-irtf-submission')
         DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review')
-        DocumentFactory(type_id='agenda',name='agenda-42-mars')
-        DocumentFactory(type_id='minutes',name='minutes-42-mars')
-        DocumentFactory(type_id='slides',name='slides-42-mars')
+        DocumentFactory(type_id='agenda',name='agenda-72-mars')
+        DocumentFactory(type_id='minutes',name='minutes-72-mars')
+        DocumentFactory(type_id='slides',name='slides-72-mars')
 
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
@@ -629,9 +628,9 @@ Man                    Expires September 22, 2015               [Page 3]
         IndividualDraftFactory(name='draft-imaginary-independent-submission')
         ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission')
         CharterFactory(name='charter-ietf-mars')
-        DocumentFactory(type_id='agenda',name='agenda-42-mars')
-        DocumentFactory(type_id='minutes',name='minutes-42-mars')
-        DocumentFactory(type_id='slides',name='slides-42-mars-1-active')
+        DocumentFactory(type_id='agenda',name='agenda-72-mars')
+        DocumentFactory(type_id='minutes',name='minutes-72-mars')
+        DocumentFactory(type_id='slides',name='slides-72-mars-1-active')
         statchg = DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review')
         statchg.set_state(State.objects.get(type_id='statchg',slug='adrev'))
 
@@ -640,12 +639,12 @@ Man                    Expires September 22, 2015               [Page 3]
                         "conflict-review-imaginary-irtf-submission",
                         "status-change-imaginary-mid-review",
                         "charter-ietf-mars",
-                        "agenda-42-mars",
-                        "minutes-42-mars",
-                        "slides-42-mars-1-active",
+                        "agenda-72-mars",
+                        "minutes-72-mars",
+                        "slides-72-mars-1-active",
                         # TODO: add
-                        #"bluesheets-42-mars-1",
-                        #"recording-42-mars-1-00",
+                        #"bluesheets-72-mars-1",
+                        #"recording-72-mars-1-00",
                        ]:
             doc = Document.objects.get(name=docname)
             # give it some history
@@ -678,7 +677,7 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_document_material(self):
-        MeetingFactory(type_id='ietf',number='42')
+        MeetingFactory(type_id='ietf',number='72')
         mars = GroupFactory(type_id='wg',acronym='mars')
         marschairman = PersonFactory(user__username='marschairman')
         mars.role_set.create(name_id='chair',person=marschairman,email=marschairman.email())
@@ -692,8 +691,8 @@ class DocTestCase(TestCase):
         doc.set_state(State.objects.get(type="slides", slug="active"))
 
         session = Session.objects.create(
-            name = "session-42-mars-1",
-            meeting = Meeting.objects.get(number='42'),
+            name = "session-72-mars-1",
+            meeting = Meeting.objects.get(number='72'),
             group = Group.objects.get(acronym='mars'),
             status = SessionStatusName.objects.create(slug='scheduled', name='Scheduled'),
             modified = datetime.datetime.now(),

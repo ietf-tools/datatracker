@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import datetime
-import json
 from urllib.parse import urlsplit
 
 from django.urls import reverse as urlreverse
@@ -18,7 +19,7 @@ from ietf.utils.mail import outbox
 class ApiTests(TestCase):
     def test_update_agenda(self):
         meeting = make_meeting_test_data()
-        schedule = Schedule.objects.get(meeting__number=42,name="test-agenda")
+        schedule = Schedule.objects.get(meeting__number=72,name="test-agenda")
         mars_session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         ames_session = Session.objects.filter(meeting=meeting, group__acronym="ames").first()
     

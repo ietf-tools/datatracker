@@ -1,24 +1,24 @@
 # Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import json
 import os
 import shutil
 import datetime
 import urllib.parse
+import six
 import random
-from unittest import skipIf
 
-import debug           # pyflakes:ignore
+from unittest import skipIf
+from mock import patch
+from pyquery import PyQuery
+from io import StringIO, BytesIO
+from bs4 import BeautifulSoup
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.contrib.auth.models import User
 
-from mock import patch
-from pyquery import PyQuery
-from io import StringIO
-from bs4 import BeautifulSoup
+import debug           # pyflakes:ignore
 
 from ietf.doc.models import Document
 from ietf.group.models import Group, Role
@@ -393,9 +393,9 @@ class MeetingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('test acknowledgements', response.content)
 
-    @patch('urllib2.urlopen')
+    @patch('six.moves.urllib.request.urlopen')
     def test_proceedings_attendees(self, mock_urlopen):
-        mock_urlopen.return_value = StringIO('[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
+        mock_urlopen.return_value = BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
         finalize(meeting)
@@ -406,12 +406,12 @@ class MeetingTests(TestCase):
         q = PyQuery(response.content)
         self.assertEqual(1,len(q("#id_attendees tbody tr")))
 
-    @patch('urllib2.urlopen')
+    @patch('six.moves.urllib.request.urlopen')
     def test_proceedings_overview(self, mock_urlopen):
         '''Test proceedings IETF Overview page.
         Note: old meetings aren't supported so need to add a new meeting then test.
         '''
-        mock_urlopen.return_value = StringIO('[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
+        mock_urlopen.return_value = BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
         finalize(meeting)
@@ -952,7 +952,7 @@ class InterimTests(TestCase):
         ames_interim = Meeting.objects.filter(date__gt=today, type='interim', session__group__acronym='ames', session__status='canceled').first()
         self.assertContains(r, mars_interim.number)
         self.assertContains(r, ames_interim.number)
-        self.assertContains(r, 'IETF - 42')
+        self.assertContains(r, 'IETF - 72')
         # cancelled session
         q = PyQuery(r.content)
         self.assertIn('CANCELLED', q('[id*="-ames"]').text())
@@ -1642,7 +1642,7 @@ class AjaxTests(TestCase):
         self.assertIn('timezone', data)
         self.assertIn('time', data)
         self.assertIn('utc', data)
-        self.assertIn('error' not, data)
+        self.assertNotIn('error', data)
         self.assertEqual(data['utc'], '20:00')
 
 class FloorPlanTests(TestCase):
@@ -1688,9 +1688,9 @@ class IphoneAppJsonTests(TestCase):
         self.assertEqual(r.status_code,200)
 
 class FinalizeProceedingsTests(TestCase):
-    @patch('urllib2.urlopen')
+    @patch('six.moves.urllib.request.urlopen')
     def test_finalize_proceedings(self, mock_urlopen):
-        mock_urlopen.return_value = StringIO('[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
+        mock_urlopen.return_value = BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
         meeting = Meeting.objects.filter(type_id='ietf').order_by('id').last()
         meeting.session_set.filter(group__acronym='mars').first().sessionpresentation_set.create(document=Document.objects.filter(type='draft').first(),rev=None)
@@ -1731,8 +1731,6 @@ class MaterialsTests(TestCase):
         def follow(url):
             seen.add(url)
             r = self.client.get(url)
-            if r.status_code != 200:
-                debug.show('url')
             self.assertEqual(r.status_code, 200)
             if not ('.' in url and url.rsplit('.', 1)[1] in ['tgz', 'pdf', ]):
                 if r.content:
@@ -1754,7 +1752,7 @@ class MaterialsTests(TestCase):
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
-        test_file = StringIO(b'%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
+        test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
         self.assertEqual(r.status_code, 302)
@@ -1789,7 +1787,7 @@ class MaterialsTests(TestCase):
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
-        test_file = StringIO(b'%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
+        test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
         self.assertEqual(r.status_code, 302)

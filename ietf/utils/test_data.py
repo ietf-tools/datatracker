@@ -338,7 +338,7 @@ def make_test_data():
     
     # meeting
     Meeting.objects.create(
-        number="42",
+        number="72",
         type_id="ietf",
         date=datetime.date.today() + datetime.timedelta(days=180),
         city="New York",

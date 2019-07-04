@@ -80,10 +80,10 @@ class ScheduleEditTests(StaticLiveServerTestCase):
     
     def testUnschedule(self):
         
-        self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting__number=42,session__group__acronym='mars',schedule__name='test-agenda').count(),1)
+        self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting__number=72,session__group__acronym='mars',schedule__name='test-agenda').count(),1)
 
         self.login()
-        url = self.absreverse('ietf.meeting.views.edit_agenda',kwargs=dict(num='42',name='test-agenda',owner='plain@example.com'))
+        url = self.absreverse('ietf.meeting.views.edit_agenda',kwargs=dict(num='72',name='test-agenda',owner='plain@example.com'))
         self.driver.get(url)
 
         q = PyQuery(self.driver.page_source)
@@ -97,7 +97,7 @@ class ScheduleEditTests(StaticLiveServerTestCase):
         self.assertTrue(len(q('#sortable-list #session_1'))>0)
 
         time.sleep(0.1) # The API that modifies the database runs async
-        self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting__number=42,session__group__acronym='mars',schedule__name='test-agenda').count(),0)
+        self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting__number=72,session__group__acronym='mars',schedule__name='test-agenda').count(),0)
 
 @skipIf(skip_selenium, skip_message)
 class SlideReorderTests(StaticLiveServerTestCase):
@@ -169,5 +169,5 @@ class SlideReorderTests(StaticLiveServerTestCase):
 #        condition_data()
 #
 #    def testOpenSchedule(self):
-#        url = urlreverse('ietf.meeting.views.edit_agenda', kwargs=dict(num='42',name='test-agenda'))
+#        url = urlreverse('ietf.meeting.views.edit_agenda', kwargs=dict(num='72',name='test-agenda'))
 #        r = self.client.get(url)

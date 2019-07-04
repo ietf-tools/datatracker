@@ -154,7 +154,7 @@ class SecrMeetingTestCase(TestCase):
     def test_notifications(self):
         "Test Notifications"
         meeting = make_meeting_test_data()
-        url = reverse('ietf.secr.meetings.views.notifications',kwargs={'meeting_id':42})
+        url = reverse('ietf.secr.meetings.views.notifications',kwargs={'meeting_id':72})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -187,7 +187,7 @@ class SecrMeetingTestCase(TestCase):
         
     def test_meetings_rooms(self):
         meeting = make_meeting_test_data()
-        url = reverse('ietf.secr.meetings.views.rooms',kwargs={'meeting_id':42,'schedule_name':'test-agenda'})
+        url = reverse('ietf.secr.meetings.views.rooms',kwargs={'meeting_id':72,'schedule_name':'test-agenda'})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -213,7 +213,7 @@ class SecrMeetingTestCase(TestCase):
         
     def test_meetings_times(self):
         make_meeting_test_data()
-        url = reverse('ietf.secr.meetings.views.times',kwargs={'meeting_id':42,'schedule_name':'test-agenda'})
+        url = reverse('ietf.secr.meetings.views.times',kwargs={'meeting_id':72,'schedule_name':'test-agenda'})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -252,7 +252,7 @@ class SecrMeetingTestCase(TestCase):
         meeting = make_meeting_test_data()
         timeslot = TimeSlot.objects.filter(meeting=meeting,type='session').first()
         url = reverse('ietf.secr.meetings.views.times_edit',kwargs={
-            'meeting_id':42,
+            'meeting_id':72,
             'schedule_name':'test-agenda',
             'time':timeslot.time.strftime("%Y:%m:%d:%H:%M")
         })
@@ -268,7 +268,7 @@ class SecrMeetingTestCase(TestCase):
         
     def test_meetings_nonsession(self):
         make_meeting_test_data()
-        url = reverse('ietf.secr.meetings.views.non_session',kwargs={'meeting_id':42,'schedule_name':'test-agenda'})
+        url = reverse('ietf.secr.meetings.views.non_session',kwargs={'meeting_id':72,'schedule_name':'test-agenda'})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -277,7 +277,7 @@ class SecrMeetingTestCase(TestCase):
         meeting = make_meeting_test_data()
         room = meeting.room_set.first()
         group = Group.objects.get(acronym='secretariat')
-        url = reverse('ietf.secr.meetings.views.non_session',kwargs={'meeting_id':42,'schedule_name':'test-agenda'})
+        url = reverse('ietf.secr.meetings.views.non_session',kwargs={'meeting_id':72,'schedule_name':'test-agenda'})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url, {
             'day':'1',
@@ -298,7 +298,7 @@ class SecrMeetingTestCase(TestCase):
     def test_meetings_nonsession_add_invalid(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='secretariat')
-        url = reverse('ietf.secr.meetings.views.non_session',kwargs={'meeting_id':42,'schedule_name':'test-agenda'})
+        url = reverse('ietf.secr.meetings.views.non_session',kwargs={'meeting_id':72,'schedule_name':'test-agenda'})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url, {
             'day':'1',
@@ -316,8 +316,8 @@ class SecrMeetingTestCase(TestCase):
         meeting = make_meeting_test_data()
         session = meeting.session_set.exclude(name='').first()   # get first non-session session
         timeslot = session.official_timeslotassignment().timeslot
-        url = reverse('ietf.secr.meetings.views.non_session_edit',kwargs={'meeting_id':42,'schedule_name':meeting.agenda.name,'slot_id':timeslot.pk})
-        redirect_url = reverse('ietf.secr.meetings.views.non_session',kwargs={'meeting_id':42,'schedule_name':'test-agenda'})
+        url = reverse('ietf.secr.meetings.views.non_session_edit',kwargs={'meeting_id':72,'schedule_name':meeting.agenda.name,'slot_id':timeslot.pk})
+        redirect_url = reverse('ietf.secr.meetings.views.non_session',kwargs={'meeting_id':72,'schedule_name':'test-agenda'})
         new_time = timeslot.time + datetime.timedelta(days=1)
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
