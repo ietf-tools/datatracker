@@ -2179,7 +2179,7 @@ def finalize_proceedings(request, num=None):
 
     meeting = get_meeting(num)
 
-    if meeting.number <= 64 or not meeting.agenda or not meeting.agenda.assignments.exists() or meeting.proceedings_final:
+    if (meeting.number.isdigit() and int(meeting.number) <= 64) or not meeting.agenda or not meeting.agenda.assignments.exists() or meeting.proceedings_final:
         raise Http404
 
     if request.method=='POST':
