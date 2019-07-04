@@ -20,7 +20,7 @@ from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_status_change import default_approval_text
 from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
-from ietf.utils.test_utils import TestCase, unicontent
+from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
 from ietf.utils.test_utils import login_testing_unauthorized
 
@@ -288,7 +288,7 @@ class StatusChangeTests(TestCase):
         self.assertContains(r,  'Last call requested')
         self.assertEqual(len(outbox), messages_before + 1)
         self.assertTrue('Last Call:' in outbox[-1]['Subject'])
-        self.assertTrue('Last Call Request has been submitted' in ''.join(wrap(outbox[-1].as_string()),2**16)))
+        self.assertTrue('Last Call Request has been submitted' in ''.join(wrap(outbox[-1].as_string(), width=2**16)))
 
 
     def test_approve(self):
