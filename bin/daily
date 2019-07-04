@@ -23,13 +23,13 @@ $DTDIR/ietf/manage.py update_external_command_info
 
 # Get IANA-registered yang models
 YANG_IANA_DIR=$(python -c 'import ietf.settings; print ietf.settings.SUBMIT_YANG_IANA_MODEL_DIR')
-rsync -avz --delete rsync.ietf.org::iana/yang-parameters/ ${YANG_IANA_DIR%/}/
+rsync -avzq --delete rsync.ietf.org::iana/yang-parameters/ ${YANG_IANA_DIR%/}/
 
 # Populate the yang repositories
-$DTDIR/ietf/manage.py populate_yang_model_dirs
+$DTDIR/ietf/manage.py populate_yang_model_dirs -v0
 
 # Re-run yang checks on active documents
-$DTDIR/ietf/manage.py run_yang_model_checks
+$DTDIR/ietf/manage.py run_yang_model_checks -v0
 
 # Expire internet drafts
 # Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner:
