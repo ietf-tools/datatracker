@@ -18,7 +18,7 @@ from ietf.doc.views_conflict_review import default_approval_text
 from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
 from ietf.name.models import StreamName
-from ietf.utils.test_utils import TestCase, unicontent
+from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized
 
@@ -265,7 +265,7 @@ class ConflictReviewTests(TestCase):
     def approve_test_helper(self,approve_type):
 
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
-        url = urlreverse('ietf.doc.views_conflict_review.approve',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_conflict_review.approve_conflict_review',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "secretary", url)
         
@@ -297,12 +297,13 @@ class ConflictReviewTests(TestCase):
         self.assertIn('irtf-chair', outbox[0]['To'])
         self.assertIn('ietf-announce@', outbox[0]['Cc'])
         self.assertIn('iana@', outbox[0]['Cc'])
+
         if approve_type == 'appr-noprob':
-            self.assertContains(r, 'IESG has no problem')
+            self.assertIn( 'IESG has no problem', ''.join(wrap(outbox[0].get_payload(), 2**16)))
         else:
-            self.assertContains(r, 'NOT be published')
-        
-       
+            self.assertIn( 'NOT be published', ''.join(wrap(outbox[0].get_payload(), 2**16)))
+
+
     def test_approve_reqnopub(self):
         self.approve_test_helper('appr-reqnopub')
 

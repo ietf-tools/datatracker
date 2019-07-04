@@ -301,7 +301,7 @@ class AnnouncementForm(forms.Form):
     announcement_text = forms.CharField(widget=forms.Textarea, label="IETF Conflict Review Announcement", help_text="Edit the announcement message.", required=True, strip=False)
 
 @role_required("Secretariat")
-def approve(request, name):
+def approve_conflict_review(request, name):
     """Approve this conflict review, setting the appropriate state and send the announcement to the right parties."""
     review = get_object_or_404(Document, type="conflrev", name=name)
 
