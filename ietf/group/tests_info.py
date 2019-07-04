@@ -5,7 +5,6 @@ import os
 import shutil
 import calendar
 import datetime
-import json
 import io
 import bleach
 import six
@@ -344,7 +343,7 @@ class GroupPagesTests(TestCase):
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, doc.title not)
+        self.assertNotContains(r, doc.title)
 
     def test_history(self):
         group = GroupFactory()
@@ -791,7 +790,7 @@ class MilestoneTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, m1.desc)
-            self.assertContains(r, m2.desc not)
+            self.assertNotContains(r, m2.desc)
             self.client.logout()
 
         login_testing_unauthorized(self, "secretary", url)
@@ -799,7 +798,7 @@ class MilestoneTests(TestCase):
         for url in group_urlreverse_list(group, 'ietf.group.milestones.edit_milestones;charter'):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            self.assertContains(r, m1.desc not)
+            self.assertNotContains(r, m1.desc)
             self.assertContains(r, m2.desc)
 
     def test_add_milestone(self):
