@@ -66,7 +66,7 @@ class ModelResource(tastypie.resources.ModelResource):
         return "%s:%s:%s:%s" % (self._meta.api_name, self._meta.resource_name, ':'.join(args), smooshed)
 
 
-TIMEDELTA_REGEX = re.compile('^(?P<days>\d+d)?\s?(?P<hours>\d+h)?\s?(?P<minutes>\d+m)?\s?(?P<seconds>\d+s?)$')
+TIMEDELTA_REGEX = re.compile(r'^(?P<days>\d+d)?\s?(?P<hours>\d+h)?\s?(?P<minutes>\d+m)?\s?(?P<seconds>\d+s?)$')
 
 class TimedeltaField(ApiField):
     dehydrated_type = 'timedelta'

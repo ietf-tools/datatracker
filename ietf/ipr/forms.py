@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
 import datetime
 import email
 
@@ -107,12 +108,12 @@ class DraftForm(forms.ModelForm):
         help_texts = { 'sections': 'Sections' }
 
 validate_patent_number = RegexValidator(
-                                    regex=("^("
-                                             "([A-Z][A-Z]\d\d/\d{6}"
-                                             "|[A-Z][A-Z]\d{6,12}([A-Z]\d?)?"
-                                             "|[A-Z][A-Z]\d{4}(\w{1,2}\d{5,7})?"
-                                             "|[A-Z][A-Z]\d{15}"
-                                             ")[, ]*)+$"),
+                                    regex=(r"^("
+                                             r"([A-Z][A-Z]\d\d/\d{6}"
+                                             r"|[A-Z][A-Z]\d{6,12}([A-Z]\d?)?"
+                                             r"|[A-Z][A-Z]\d{4}(\w{1,2}\d{5,7})?"
+                                             r"|[A-Z][A-Z]\d{15}"
+                                             r")[, ]*)+$"),
                                     message="Please enter one or more patent publication or application numbers as country code and serial number, e.g.: US62/123456 or WO2017123456." )
 
 def validate_string(s, letter_min, digit_min, space_min, message):
