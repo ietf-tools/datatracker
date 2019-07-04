@@ -623,7 +623,7 @@ def document_main(request, name, rev=None):
 def document_html(request, name, rev=None):
     if name.startswith('rfc0'):
         name = "rfc" + name[3:].lstrip('0')
-    if name.startswith('review-') and re.search('-\d\d\d\d-\d\d$', name):
+    if name.startswith('review-') and re.search(r'-\d\d\d\d-\d\d$', name):
         name = "%s-%s" % (name, rev)
     if rev and not name.startswith('charter-') and re.search('[0-9]{1,2}-[0-9]{2}', rev):
         name = "%s-%s" % (name, rev[:-3])
@@ -658,7 +658,7 @@ def document_html(request, name, rev=None):
     return render(request, "doc/document_html.html", {"doc":doc, "top":top, "navbar_mode":"navbar-static-top",  })
 
 def check_doc_email_aliases():
-    pattern = re.compile('^expand-(.*?)(\..*?)?@.*? +(.*)$')
+    pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
     good_count = 0
     tot_count = 0
     with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
@@ -673,9 +673,9 @@ def check_doc_email_aliases():
 
 def get_doc_email_aliases(name):
     if name:
-        pattern = re.compile('^expand-(%s)(\..*?)?@.*? +(.*)$'%name)
+        pattern = re.compile(r'^expand-(%s)(\..*?)?@.*? +(.*)$'%name)
     else:
-        pattern = re.compile('^expand-(.*?)(\..*?)?@.*? +(.*)$')
+        pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
     aliases = []
     with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
         for line in virtual_file.readlines():

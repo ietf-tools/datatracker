@@ -829,7 +829,7 @@ def build_doc_meta_block(doc, path):
                 line = re.sub(r'Errata exist', r'<a class="text-warning" href="%s">Errata exist</a>'%(errata_url, ), line)
             if is_hst or not rfcnum:
                 # make current draft rev bold
-                line = re.sub(r'>(%s)<'%rev, '><b>\g<1></b><', line)
+                line = re.sub(r'>(%s)<'%rev, r'><b>\g<1></b><', line)
             line = re.sub(r'IPR declarations', r'<a class="text-warning" href="%s">IPR declarations</a>'%(ipr_url, ), line)
             line = line.replace(r'[txt]', r'[<a href="%s">txt</a>]' % doc.href())
             lines[i] = line

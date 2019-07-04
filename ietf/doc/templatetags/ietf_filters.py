@@ -4,8 +4,6 @@ import bleach
 import datetime
 import re
 
-import types
-
 from email.utils import parseaddr
 
 from django import template
@@ -47,8 +45,8 @@ def parse_email_list(value):
 
     Splitting a string of email addresses should return a list:
 
-    >>> unicode(parse_email_list('joe@example.org, fred@example.com'))
-    u'<a href="mailto:joe@example.org">joe@example.org</a>, <a href="mailto:fred@example.com">fred@example.com</a>'
+    >>> parse_email_list('joe@example.org, fred@example.com')
+    '<a href="mailto:joe@example.org">joe@example.org</a>, <a href="mailto:fred@example.com">fred@example.com</a>'
 
     Parsing a non-string should return the input value, rather than fail:
 
@@ -88,7 +86,7 @@ def strip_email(value):
 @register.filter(name='fix_angle_quotes')
 def fix_angle_quotes(value):
     if "<" in value:
-        value = re.sub("<([\w\-\.]+@[\w\-\.]+)>", "&lt;\1&gt;", value)
+        value = re.sub(r"<([\w\-\.]+@[\w\-\.]+)>", "&lt;\1&gt;", value)
     return value
 
 # there's an "ahref -> a href" in GEN_UTIL
@@ -213,13 +211,13 @@ def urlize_ietf_docs(string, autoescape=None):
     """
     if autoescape and not isinstance(string, SafeData):
         string = escape(string)
-    string = re.sub("(?<!>)(RFC ?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string)
-    string = re.sub("(?<!>)(BCP ?)0{0,3}(\d+)", "<a href=\"/doc/bcp\\2/\">\\1\\2</a>", string)
-    string = re.sub("(?<!>)(STD ?)0{0,3}(\d+)", "<a href=\"/doc/std\\2/\">\\1\\2</a>", string)
-    string = re.sub("(?<!>)(FYI ?)0{0,3}(\d+)", "<a href=\"/doc/fyi\\2/\">\\1\\2</a>", string)
-    string = re.sub("(?<!>)(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
-    string = re.sub("(?<!>)(conflict-review-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
-    string = re.sub("(?<!>)(status-change-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
+    string = re.sub(r"(?<!>)(RFC ?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string)
+    string = re.sub(r"(?<!>)(BCP ?)0{0,3}(\d+)", "<a href=\"/doc/bcp\\2/\">\\1\\2</a>", string)
+    string = re.sub(r"(?<!>)(STD ?)0{0,3}(\d+)", "<a href=\"/doc/std\\2/\">\\1\\2</a>", string)
+    string = re.sub(r"(?<!>)(FYI ?)0{0,3}(\d+)", "<a href=\"/doc/fyi\\2/\">\\1\\2</a>", string)
+    string = re.sub(r"(?<!>)(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
+    string = re.sub(r"(?<!>)(conflict-review-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
+    string = re.sub(r"(?<!>)(status-change-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
     return mark_safe(string)
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
@@ -461,8 +459,8 @@ def capfirst_allcaps(text):
     """Like capfirst, except it doesn't lowercase words in ALL CAPS."""
     result = text
     i = False
-    for token in re.split("(\W+)", striptags(text)):
-        if not re.match("^[A-Z]+$", token):
+    for token in re.split(r"(\W+)", striptags(text)):
+        if not re.match(r"^[A-Z]+$", token):
             if not i:
                 result = result.replace(token, token.capitalize())
                 i = True
@@ -474,8 +472,8 @@ def capfirst_allcaps(text):
 def lower_allcaps(text):
     """Like lower, except it doesn't lowercase words in ALL CAPS."""
     result = text
-    for token in re.split("(\W+)", striptags(text)):
-        if not re.match("^[A-Z]+$", token):
+    for token in re.split(r"(\W+)", striptags(text)):
+        if not re.match(r"^[A-Z]+$", token):
             result = result.replace(token, token.lower())
     return result
 
@@ -515,7 +513,7 @@ def zaptmp(s):
 
 @register.filter()
 def rfcbis(s):
-    m = re.search('^.*-rfc(\d+)-?bis(-.*)?$', s)
+    m = re.search(r'^.*-rfc(\d+)-?bis(-.*)?$', s)
     return None if m is None else 'rfc' + m.group(1) 
 
 @register.filter

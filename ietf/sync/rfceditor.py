@@ -56,7 +56,7 @@ def parse_queue(response):
                 events.expandNode(node)
                 node.normalize()
                 draft_name = get_child_text(node, "draft").strip()
-                draft_name = re.sub("(-\d\d)?(.txt){1,2}$", "", draft_name)
+                draft_name = re.sub(r"(-\d\d)?(.txt){1,2}$", "", draft_name)
                 date_received = get_child_text(node, "date-received")
 
                 state = ""
@@ -306,7 +306,7 @@ def parse_index(response):
                     abstract = get_child_text(abstract, "p")
 
                 draft = get_child_text(node, "draft")
-                if draft and re.search("-\d\d$", draft):
+                if draft and re.search(r"-\d\d$", draft):
                     draft = draft[0:-3]
 
                 if len(node.getElementsByTagName("errata-url")) > 0:

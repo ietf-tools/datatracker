@@ -30,7 +30,7 @@ def redirect(request, path="", script=""):
                 continue
         if fc[0] in rparam:
             remove_args.append(fc[0])
-            num = re.match('(\d+)', rparam[fc[0]])
+            num = re.match(r'(\d+)', rparam[fc[0]])
             if (num and int(num.group(1))) or (num is None):
                 cmd = flag
             break
@@ -64,8 +64,8 @@ def redirect(request, path="", script=""):
         # contains non-ASCII characters. The old scripts didn't support 
         # non-ASCII characters anyway, so there's no need to handle 
         # them fully correctly in these redirects.
-        url += str(rest % rparam)
-        url += "/"
+        (rest % rparam).encode('ascii')
+        url += (rest % rparam) + "/"
     except:
         # rest had something in it that request didn't have, so just
         # redirect to the root of the tool.

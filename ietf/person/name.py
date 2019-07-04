@@ -67,7 +67,7 @@ def initials(name):
         given += " "+middle
     # Don't use non-word characters as initials.
     # Example: The Bulgarian transcribed name "'Rnest Balkanska" should not have an initial of "'".
-    given = re.sub('[^ .\w]', '', given)
+    given = re.sub(r'[^ .\w]', '', given)
     initials = " ".join([ n[0].upper()+'.' for n in given.split() ])
     return initials
 
