@@ -12,7 +12,7 @@ import debug    # pyflakes:ignore
 from django.urls import reverse as urlreverse
 from django.contrib.auth.models import User
 
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 import ietf.stats.views
 
 from ietf.submit.models import Submission
@@ -214,7 +214,7 @@ class StatisticsTests(TestCase):
         '''Test function to get reg data.  Confirm leading/trailing spaces stripped'''
         response = Response()
         response.status_code = 200
-        response._content = '[{"LastName":"Smith ","FirstName":" John","Company":"ABC","Country":"US","Email":"john.doe@example.us"}]'
+        response._content = b'[{"LastName":"Smith ","FirstName":" John","Company":"ABC","Country":"US","Email":"john.doe@example.us"}]'
         mock_get.return_value = response
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
         get_meeting_registration_data(meeting)
@@ -226,7 +226,7 @@ class StatisticsTests(TestCase):
     def test_get_meeting_registration_data_user_exists(self, mock_get):
         response = Response()
         response.status_code = 200
-        response._content = '[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US","Email":"john.doe@example.us"}]'
+        response._content = b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US","Email":"john.doe@example.us"}]'
         email = "john.doe@example.us"
         user = User.objects.create(username=email)
         user.save()
