@@ -116,7 +116,8 @@ class GroupForm(forms.Form):
         for r in role_fields_to_remove:
             del self.fields[r + "_roles"]
         if field:
-            for f in self.fields:
+            keys = list(self.fields.keys())
+            for f in keys:
                 if f != field:
                     del self.fields[f]
 
