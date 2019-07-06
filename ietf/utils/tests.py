@@ -283,6 +283,7 @@ class TestWikiGlueManagementCommand(TestCase):
         # command through command line switches.  We have to do it this way because the
         # management command reads in its own copy of settings.py in its own python
         # environment, so we can't modify it here.
+        set_coverage_checking(False)
         self.wiki_dir_pattern = os.path.abspath('tmp-wiki-dir-root/%s')
         if not os.path.exists(os.path.dirname(self.wiki_dir_pattern)):
             os.mkdir(os.path.dirname(self.wiki_dir_pattern))
@@ -293,6 +294,7 @@ class TestWikiGlueManagementCommand(TestCase):
     def tearDown(self):
         shutil.rmtree(os.path.dirname(self.wiki_dir_pattern))
         shutil.rmtree(os.path.dirname(self.svn_dir_pattern))
+        set_coverage_checking(True)
 
     def test_wiki_create_output(self):
         for type in ['wg','rg','ag','area']:

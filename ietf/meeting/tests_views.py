@@ -513,6 +513,7 @@ class MeetingTests(TestCase):
         os.unlink(filename)
 
     @skipIf(skip_pdf_tests, skip_message)
+    @skip_coverage
     def test_session_draft_pdf(self):
         session = SessionFactory(group__type_id='wg',meeting__type_id='ietf')
         doc = DocumentFactory(type_id='draft')
