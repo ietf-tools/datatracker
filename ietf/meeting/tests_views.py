@@ -30,8 +30,9 @@ from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignm
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.utils import finalize
 from ietf.name.models import SessionStatusName, ImportantDateName
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
+from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.text import xslugify
 
 from ietf.person.factories import PersonFactory
