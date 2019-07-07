@@ -133,7 +133,7 @@ def track_document(request, name, username=None, acronym=None):
         clist.added_docs.add(doc)
 
         if request.is_ajax():
-            return HttpResponse(json.dumps({ 'success': True }), content_type='text/plain')
+            return HttpResponse(json.dumps({ 'success': True }), content_type='application/json')
         else:
             return HttpResponseRedirect(clist.get_absolute_url())
 
@@ -153,7 +153,7 @@ def untrack_document(request, name, username=None, acronym=None):
             clist.added_docs.remove(doc)
 
         if request.is_ajax():
-            return HttpResponse(json.dumps({ 'success': True }), content_type='text/plain')
+            return HttpResponse(json.dumps({ 'success': True }), content_type='application/json')
         else:
             return HttpResponseRedirect(clist.get_absolute_url())
 
