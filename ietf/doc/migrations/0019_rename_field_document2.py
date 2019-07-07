@@ -63,7 +63,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='docevent',
-            index=models.Index(fields=[b'type', b'doc'], name='doc_doceven_type_43e53e_idx'),
+            index=models.Index(fields=['type', 'doc'], name='doc_doceven_type_43e53e_idx'),
         ),
         # Add back the m2m field we removed in 0018_...
         migrations.AddField(

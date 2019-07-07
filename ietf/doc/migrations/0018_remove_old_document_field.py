@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='docevent',
-            index=models.Index(fields=[b'type', b'doc2'], name='doc_doceven_type_ac7748_idx'),
+            index=models.Index(fields=['type', 'doc2'], name='doc_doceven_type_ac7748_idx'),
         ),
         # The following 9 migrations are related to the m2m fields on Document
         # Remove the intermediary model field pointing to Document.name

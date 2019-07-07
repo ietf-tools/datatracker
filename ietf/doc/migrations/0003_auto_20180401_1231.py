@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddIndex(
             model_name='docevent',
-            index=models.Index(fields=[b'type', b'doc'], name='doc_doceven_type_43e53e_idx'),
+            index=models.Index(fields=['type', 'doc'], name='doc_doceven_type_43e53e_idx'),
         ),
     ]
