@@ -818,7 +818,6 @@ class SubmitTests(TestCase):
 
         # status page as unpriviliged => no edit button
         r = self.client.get(unprivileged_status_url)
-        print(r.content)
         self.assertContains(r, "Submission status of %s" % name)
         q = PyQuery(r.content)
         adjust_button = q('[type=submit]:contains("Adjust")')
