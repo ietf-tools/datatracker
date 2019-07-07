@@ -730,7 +730,7 @@ def session_draft_pdf(request, num, acronym):
     code, out, err = pipe(gs + " -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=" + pdfn + " " + pdf_list + " " + pmn)
     assertion('code == 0')
 
-    pdf = open(pdfn,"r")
+    pdf = open(pdfn,"rb")
     pdf_contents = pdf.read()
     pdf.close()
 
@@ -2148,7 +2148,7 @@ def proceedings(request, num=None):
 
     meeting = get_meeting(num)
 
-    if meeting.number <= 64 or not meeting.agenda or not meeting.agenda.assignments.exists():
+    if (meeting.number.isdigit() and int(meeting.number) <= 64) or not meeting.agenda or not meeting.agenda.assignments.exists():
             return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
 
     begin_date = meeting.get_submission_start_date()
