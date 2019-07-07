@@ -26,6 +26,7 @@ warnings.filterwarnings("ignore", message="Duplicate index '.*' defined on the t
 # Warnings found under Python 3.7:
 warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="docutils.io")
 warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="xml2rfc")
+warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="site")
 warnings.filterwarnings("ignore", message="Flags not at the start of the expression", module="genshi")
 
 
