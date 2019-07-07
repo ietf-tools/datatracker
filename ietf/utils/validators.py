@@ -78,11 +78,8 @@ def validate_mime_type(file, valid):
     # work around mis-identification of text where a line has 'virtual' as
     # the first word:
     if mime_type == 'text/x-c++' and re.search(rb'(?m)^virtual\s', raw):
-        mod = raw.replace(b'virtual', b' virtual'))
+        mod = raw.replace(b'virtual', b' virtual')
         mime_type, encoding = get_mime_type(mod)
-    debug.show('mime_type')
-    debug.show('encoding')
-    debug.show('valid')
     if valid and not mime_type in valid:
         raise ValidationError('Found content with unexpected mime type: %s.  Expected one of %s.' %
                                     (mime_type, ', '.join(valid) ))
