@@ -9,6 +9,7 @@ import pytz
 import re
 
 from django.template.loader import render_to_string
+from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
 
@@ -96,7 +97,7 @@ def get_reply_to():
     address with "plus addressing" using a random string.  Guaranteed to be unique"""
     local,domain = get_base_ipr_request_address().split('@')
     while True:
-        rand = base64.urlsafe_b64encode(os.urandom(12))
+        rand = force_text(base64.urlsafe_b64encode(os.urandom(12)))
         address = "{}+{}@{}".format(local,rand,domain)
         q = Message.objects.filter(reply_to=address)
         if not q:
