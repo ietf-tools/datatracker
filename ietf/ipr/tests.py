@@ -72,13 +72,11 @@ class IprTests(TestCase):
     def test_showlist(self):
         ipr = HolderIprDisclosureFactory()
         r = self.client.get(urlreverse("ietf.ipr.views.showlist"))
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, ipr.title)
 
     def test_show_posted(self):
         ipr = HolderIprDisclosureFactory()
         r = self.client.get(urlreverse("ietf.ipr.views.show", kwargs=dict(id=ipr.pk)))
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, ipr.title)
         
     def test_show_parked(self):
@@ -99,20 +97,17 @@ class IprTests(TestCase):
     def test_show_removed(self):
         ipr = HolderIprDisclosureFactory(state_id='removed')
         r = self.client.get(urlreverse("ietf.ipr.views.show", kwargs=dict(id=ipr.pk)))
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'This IPR disclosure was removed')
         
     def test_ipr_history(self):
         ipr = HolderIprDisclosureFactory()
         r = self.client.get(urlreverse("ietf.ipr.views.history", kwargs=dict(id=ipr.pk)))
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, ipr.title)
 
     def test_iprs_for_drafts(self):
         draft=WgDraftFactory()
         ipr = HolderIprDisclosureFactory(docs=[draft,])
         r = self.client.get(urlreverse("ietf.ipr.views.by_draft_txt"))
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
         self.assertContains(r, str(ipr.pk))
 
@@ -121,7 +116,6 @@ class IprTests(TestCase):
         ipr = HolderIprDisclosureFactory(docs=[draft,])
         replaced = draft.all_related_that_doc('replaces')
         r = self.client.get(urlreverse("ietf.ipr.views.by_draft_recursive_txt"))
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
         for alias in replaced:
             self.assertContains(r, alias.name)
@@ -129,7 +123,6 @@ class IprTests(TestCase):
 
     def test_about(self):
         r = self.client.get(urlreverse("ietf.ipr.views.about"))
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "File a disclosure")
 
     def test_search(self):
@@ -146,66 +139,54 @@ class IprTests(TestCase):
 
         # find by id
         r = self.client.get(url + "?submit=draft&id=%s" % draft.name)
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, ipr.title)
 
         # find draft
         r = self.client.get(url + "?submit=draft&draft=%s" % draft.name)
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, ipr.title)
 
         # search + select document
         r = self.client.get(url + "?submit=draft&draft=draft")
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
-        self.assertContains(r, ipr.title)
+        self.assertNotContains(r, ipr.title)
 
         DocAlias.objects.create(name="rfc321").docs.add(draft)
 
         # find RFC
         r = self.client.get(url + "?submit=rfc&rfc=321")
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, ipr.title)
 
         # find by patent owner
         r = self.client.get(url + "?submit=holder&holder=%s" % ipr.holder_legal_name)
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, ipr.title)
         
         # find by patent info
         r = self.client.get(url + "?submit=patent&patent=%s" % ipr.patent_info)
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, ipr.title)
 
         r = self.client.get(url + "?submit=patent&patent=US12345")
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, ipr.title)
 
         # find by group acronym
         r = self.client.get(url + "?submit=group&group=%s" % draft.group.pk)
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, ipr.title)
 
         # find by doc title
         r = self.client.get(url + "?submit=doctitle&doctitle=%s" % urllib.parse.quote(draft.title))
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, ipr.title)
 
         # find by ipr title
         r = self.client.get(url + "?submit=iprtitle&iprtitle=%s" % urllib.parse.quote(ipr.title))
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, ipr.title)
 
     def test_feed(self):
         ipr = HolderIprDisclosureFactory()
         r = self.client.get("/feed/ipr/")
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, ipr.title)
 
     def test_sitemap(self):
         ipr = HolderIprDisclosureFactory()
         r = self.client.get("/sitemap-ipr.xml")
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "/ipr/%s/" % ipr.pk)
 
     def test_new_generic(self):
@@ -232,7 +213,6 @@ class IprTests(TestCase):
             "submitter_email": "test@holder.com",
             "notes": "some notes"
             })
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Your IPR disclosure has been submitted")
         self.assertEqual(len(outbox),1)
         self.assertTrue('New IPR Submission' in outbox[0]['Subject'])
@@ -275,7 +255,6 @@ class IprTests(TestCase):
             "submitter_name": "Test Holder",
             "submitter_email": "test@holder.com",
             })
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Your IPR disclosure has been submitted")
 
         iprs = IprDisclosureBase.objects.filter(title__icontains=draft.name)
@@ -318,7 +297,6 @@ class IprTests(TestCase):
             "submitter_name": "Test Holder",
             "submitter_email": "test@holder.com",
             })
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Your IPR disclosure has been submitted")
 
         iprs = IprDisclosureBase.objects.filter(title__icontains="belonging to Test Legal")
@@ -415,7 +393,6 @@ class IprTests(TestCase):
             "submitter_name": "Test Holder",
             "submitter_email": "test@holder.com",
             })
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Your IPR disclosure has been submitted")
 
         iprs = IprDisclosureBase.objects.filter(title__icontains=draft.name)
@@ -472,10 +449,9 @@ class IprTests(TestCase):
         
         # private comment
         r = self.client.post(url, dict(comment='Private comment',private=True),follow=True)
-        self.assertEqual(r.status_code,200)
         self.assertContains(r, 'Private comment')
         self.client.logout()
-        r = self.client.get(url)
+        r = self.client.get(url, follow=True)
         self.assertNotContains(r, 'Private comment')
         
     def test_addemail(self):
@@ -610,6 +586,7 @@ Date: {}
 Subject: test
 """.format(data['reply_to'],datetime.datetime.now().ctime())
         result = process_response_email(message_string)
+
         self.assertIsInstance(result,Message)
         self.assertFalse(event.response_past_due())
 
