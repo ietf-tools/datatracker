@@ -36,7 +36,6 @@ def import_mailman_listinfo(verbosity=0):
     names = list(Utils.list_names())
     names.sort()
     addr_max_length = Subscribed._meta.get_field('email').max_length
-    debug.show('addr_max_length')
     for name in names:
         mlist = MailList.MailList(name, lock=False)
         note("List: %s" % mlist.internal_name())
