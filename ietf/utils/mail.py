@@ -227,8 +227,8 @@ def parseaddr(addr):
     which case a 2-tuple of ('', '') is returned.
 
     """
-    if not isinstance(addr, str):
-        addr = ''.join( [ s.decode(m) if m else s.decode() for (s,m) in decode_header(addr) ] )
+
+    addr = ''.join( [ ( s.decode(m) if m else s.decode()) if isinstance(s, bytes) else s for (s,m) in decode_header(addr) ] )
     name, addr = simple_parseaddr(addr)
     return name, addr
 
