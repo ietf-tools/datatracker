@@ -999,7 +999,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                 return redirect('ietf.doc.views_charter.submit', name=charter_name_for_group(group), option="initcharter")
 
             return HttpResponseRedirect(group.about_url())
-    else: # form.is_valid()
+    else: # Not POST:
         if not new_group:
             ad_role = group.ad_role()
             init = dict(name=group.name,
