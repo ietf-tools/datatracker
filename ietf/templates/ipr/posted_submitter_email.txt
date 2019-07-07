@@ -1,4 +1,4 @@
-To: {{ to_email }}
+{% autoescape off %}To: {{ to_email }}
 From: IETF Secretariat <ietf-ipr@ietf.org>
 Subject: Posting of IPR {% if ipr.updates %}Updated {% endif %}Disclosure
 Cc: {{ cc_email }}
@@ -18,3 +18,4 @@ IPR disclosure ID #{{ rel.target.pk }}, "{{ rel.target.title }}", which was post
 Thank you
 
 IETF Secretariat
+{% endautoescape %}

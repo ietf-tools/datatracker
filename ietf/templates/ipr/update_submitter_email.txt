@@ -1,4 +1,4 @@
-To: {{ to_email }}
+{% autoescape off %}To: {{ to_email }}
 From: IETF Secretariat <ietf-ipr@ietf.org>
 Subject: IPR update notification
 Reply-To: {{ reply_to }}
@@ -25,3 +25,4 @@ the update until we can be assured it is authorized.
 Thank you
 
 IETF Secretariat
+{% endautoescape %}
