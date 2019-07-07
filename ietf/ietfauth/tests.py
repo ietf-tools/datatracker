@@ -589,28 +589,24 @@ class IetfAuthTests(TestCase):
 
             # missing apikey
             r = self.client.post(url, {'dummy':'dummy',})
-            self.assertEqual(r.status_code, 400)
-            self.assertContains(r, 'Missing apikey parameter')
+            self.assertContains(r, 'Missing apikey parameter', status_code=400)
 
             # invalid apikey
             r = self.client.post(url, {'apikey':BAD_KEY, 'dummy':'dummy',})
-            self.assertEqual(r.status_code, 400)
-            self.assertContains(r, 'Invalid apikey')
+            self.assertContains(r, 'Invalid apikey', status_code=400)
 
             # too long since regular login
             person.user.last_login = datetime.datetime.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS+1)
             person.user.save()
             r = self.client.post(url, {'apikey':key.hash(), 'dummy':'dummy',})
-            self.assertEqual(r.status_code, 400)
-            self.assertContains(r, 'Too long since last regular login')
+            self.assertContains(r, 'Too long since last regular login', status_code=400)
             person.user.last_login = datetime.datetime.now()
             person.user.save()
 
             # endpoint mismatch
             key2 = PersonalApiKey.objects.create(person=person, endpoint='/')
             r = self.client.post(url, {'apikey':key2.hash(), 'dummy':'dummy',})
-            self.assertEqual(r.status_code, 400)
-            self.assertContains(r, 'Apikey endpoint mismatch')
+            self.assertContains(r, 'Apikey endpoint mismatch', status_code=400)
             key2.delete()
 
     def test_send_apikey_report(self):

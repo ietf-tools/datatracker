@@ -659,8 +659,8 @@ class ReviewTests(TestCase):
         # check the review document page
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ "name": assignment.review.name })
         r = self.client.get(url)
-        self.assertContains("{} Review".format(assignment.review_request.type.name))
-        self.assertContains("This is a review")
+        self.assertContains(r, "{} Review".format(assignment.review_request.type.name))
+        self.assertContains(r, "This is a review")
 
 
     def test_complete_review_enter_content(self):
@@ -763,7 +763,7 @@ class ReviewTests(TestCase):
             "state": ReviewAssignmentStateName.objects.get(slug="completed").pk,
             "reviewed_rev": assignment.review_request.doc.rev,
             "review_submission": "link",
-            "review_content": response.content,
+            "review_content": response.content.decode(),
             "review_url": "http://example.com/testreview/",
             "review_file": "",
         })

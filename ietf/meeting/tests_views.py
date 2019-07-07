@@ -5,7 +5,6 @@ import os
 import shutil
 import datetime
 import urllib.parse
-import six
 import random
 
 from unittest import skipIf
@@ -141,14 +140,12 @@ class MeetingTests(TestCase):
         time_interval = time_interval.replace(":", "")
 
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number, ext=".txt")))
-        self.assertEqual(r.status_code, 200)
-        agenda_content = r.content
-        self.assertIn(session.group.acronym, agenda_content)
-        self.assertIn(session.group.name, agenda_content)
-        self.assertIn(session.group.parent.acronym.upper(), agenda_content)
-        self.assertIn(slot.location.name, agenda_content)
+        self.assertContains(r, session.group.acronym)
+        self.assertContains(r, session.group.name)
+        self.assertContains(r, session.group.parent.acronym.upper())
+        self.assertContains(r, slot.location.name)
 
-        self.assertIn(time_interval, agenda_content)
+        self.assertContains(r, time_interval)
 
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number,name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email())))
         self.assertContains(r, 'not the official schedule')
@@ -160,12 +157,10 @@ class MeetingTests(TestCase):
 
         # CSV
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number, ext=".csv")))
-        self.assertEqual(r.status_code, 200)
-        agenda_content = r.content
-        self.assertIn(session.group.acronym, agenda_content)
-        self.assertIn(session.group.name, agenda_content)
-        self.assertIn(session.group.parent.acronym.upper(), agenda_content)
-        self.assertIn(slot.location.name, agenda_content)
+        self.assertContains(r, session.group.acronym)
+        self.assertContains(r, session.group.name)
+        self.assertContains(r, session.group.parent.acronym.upper())
+        self.assertContains(r, slot.location.name)
 
         self.assertContains(r, session.materials.get(type='agenda').uploaded_filename)
         self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
@@ -255,7 +250,6 @@ class MeetingTests(TestCase):
         self.assertTrue(all([x in unicontent(r) for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
         url = urlreverse("ietf.meeting.views.room_view",kwargs=dict(num=meeting.number,name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email()))
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
         self.assertTrue(all([x in unicontent(r) for x in ['mars','Test Room','Breakfast Room']]))
         self.assertNotContains(r, 'IESG Breakfast')
 
@@ -293,14 +287,12 @@ class MeetingTests(TestCase):
         if r.status_code != 200:
             q = PyQuery(r.content)
             debug.show('q(".alert").text()')
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "1. WG status")
 
         # session minutes
         url = urlreverse("ietf.meeting.views.materials_document",
                          kwargs=dict(num=meeting.number, document=session.minutes()))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "1. More work items underway")
 
         # test with explicit meeting number in url
@@ -352,21 +344,18 @@ class MeetingTests(TestCase):
         
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(urlreverse("ietf.meeting.views.materials_editable_groups", kwargs={'num':meeting.number}))
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, meeting.number)
         self.assertContains(r, "mars")
         self.assertNotContains(r, "No session requested")
 
         self.client.login(username="ad", password="ad+password")
         r = self.client.get(urlreverse("ietf.meeting.views.materials_editable_groups", kwargs={'num':meeting.number}))
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, meeting.number)
         self.assertContains(r, "frfarea")
         self.assertContains(r, "No session requested")
 
         self.client.login(username="plain",password="plain+password")
         r = self.client.get(urlreverse("ietf.meeting.views.materials_editable_groups", kwargs={'num':meeting.number}))
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, meeting.number)
         self.assertContains(r, "You cannot manage the meeting materials for any groups")
 
@@ -390,10 +379,10 @@ class MeetingTests(TestCase):
         meeting.save()
         url = urlreverse('ietf.meeting.views.proceedings_acknowledgements',kwargs={'num':meeting.number})
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('test acknowledgements', response.content)
+        self.assertContains(response, 'test acknowledgements')
 
-    @patch('six.moves.urllib.request.urlopen')
+
+    @patch('urllib.request.urlopen')
     def test_proceedings_attendees(self, mock_urlopen):
         mock_urlopen.return_value = BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
@@ -401,12 +390,11 @@ class MeetingTests(TestCase):
         finalize(meeting)
         url = urlreverse('ietf.meeting.views.proceedings_attendees',kwargs={'num':96})
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('Attendee List', response.content)
+        self.assertContains(response, 'Attendee List')
         q = PyQuery(response.content)
         self.assertEqual(1,len(q("#id_attendees tbody tr")))
 
-    @patch('six.moves.urllib.request.urlopen')
+    @patch('urllib.request.urlopen')
     def test_proceedings_overview(self, mock_urlopen):
         '''Test proceedings IETF Overview page.
         Note: old meetings aren't supported so need to add a new meeting then test.
@@ -417,8 +405,7 @@ class MeetingTests(TestCase):
         finalize(meeting)
         url = urlreverse('ietf.meeting.views.proceedings_overview',kwargs={'num':96})
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('The Internet Engineering Task Force', response.content)
+        self.assertContains(response, 'The Internet Engineering Task Force')
 
     def test_proceedings_progress_report(self):
         make_meeting_test_data()
@@ -427,15 +414,13 @@ class MeetingTests(TestCase):
 
         url = urlreverse('ietf.meeting.views.proceedings_progress_report',kwargs={'num':96})
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('Progress Report', response.content)
+        self.assertContains(response, 'Progress Report')
 
     def test_feed(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
 
         r = self.client.get("/feed/wg-proceedings/")
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "agenda")
         self.assertContains(r, session.group.acronym)
 
@@ -446,7 +431,6 @@ class MeetingTests(TestCase):
         populate_important_dates(meeting)
         url = urlreverse('ietf.meeting.views.important_dates',kwargs={'num':meeting.number})
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, str(meeting.importantdate_set.first().date))
         idn = ImportantDateName.objects.filter(used=True).first()
         pre_date = meeting.importantdate_set.get(name=idn).date
@@ -468,7 +452,6 @@ class MeetingTests(TestCase):
         #
         url = urlreverse('ietf.meeting.views.ical_agenda', kwargs={'num':meeting.number, 'acronym':s1.group.acronym, })
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
         self.assertEqual(r.get('Content-Type'), "text/calendar")
         self.assertContains(r, 'BEGIN:VEVENT')
         self.assertEqual(r.content.count(b'UID'), 2)
@@ -479,7 +462,6 @@ class MeetingTests(TestCase):
         #
         url = urlreverse('ietf.meeting.views.ical_agenda', kwargs={'num':meeting.number, 'session_id':s1.id, })
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
         self.assertEqual(r.get('Content-Type'), "text/calendar")
         self.assertContains(r, 'BEGIN:VEVENT')
         self.assertEqual(r.content.count(b'UID'), 1)
@@ -585,7 +567,6 @@ class EditTests(TestCase):
 
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number)))
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "load_assignments")
 
     def test_save_agenda_as_and_read_permissions(self):
@@ -681,7 +662,6 @@ class EditTests(TestCase):
 
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(urlreverse("ietf.meeting.views.edit_timeslots", kwargs=dict(num=meeting.number)))
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, meeting.room_set.all().first().name)
 
     def test_edit_timeslot_type(self):
@@ -749,7 +729,6 @@ class SessionDetailsTests(TestCase):
 
         self.client.login(username=group_chair.user.username, password='%s+password'%group_chair.user.username)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, old_draft.name)
 
         r = self.client.post(url,dict(drafts=[new_draft.pk, old_draft.pk]))
@@ -871,7 +850,6 @@ class InterimTests(TestCase):
         session.save()
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, meeting.number)
 
     def test_interim_skip_announcement(self):
@@ -936,7 +914,6 @@ class InterimTests(TestCase):
         interim = SessionFactory(meeting__type_id='interim',meeting__date=last_week,status_id='canceled',group__state_id='active',group__parent=GroupFactory(state_id='active'))
         url = urlreverse('ietf.meeting.views.past')
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'IETF - %02d'%int(ietf.meeting.number))
         q = PyQuery(r.content)
         id="-%s" % interim.group.acronym
@@ -945,11 +922,10 @@ class InterimTests(TestCase):
     def test_upcoming(self):
         make_meeting_test_data()
         url = urlreverse("ietf.meeting.views.upcoming")
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
         today = datetime.date.today()
         mars_interim = Meeting.objects.filter(date__gt=today, type='interim', session__group__acronym='mars', session__status='sched').first()
         ames_interim = Meeting.objects.filter(date__gt=today, type='interim', session__group__acronym='ames', session__status='canceled').first()
+        r = self.client.get(url)
         self.assertContains(r, mars_interim.number)
         self.assertContains(r, ames_interim.number)
         self.assertContains(r, 'IETF - 72')
@@ -1232,7 +1208,6 @@ class InterimTests(TestCase):
                 'session_set-INITIAL_FORMS':0}
 
         r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
-        self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'days must be consecutive')
 
     def test_interim_request_series(self):
@@ -1595,7 +1570,6 @@ class InterimTests(TestCase):
         #
         url = urlreverse('ietf.meeting.views.ical_agenda', kwargs={'num':meeting.number, 'acronym':s1.group.acronym, })
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
         self.assertEqual(r.get('Content-Type'), "text/calendar")
         self.assertContains(r, 'BEGIN:VEVENT')
         self.assertEqual(r.content.count(b'UID'), 2)
@@ -1606,7 +1580,6 @@ class InterimTests(TestCase):
         #
         url = urlreverse('ietf.meeting.views.ical_agenda', kwargs={'num':meeting.number, 'session_id':s1.id, })
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
         self.assertEqual(r.get('Content-Type'), "text/calendar")
         self.assertContains(r, 'BEGIN:VEVENT')
         self.assertEqual(r.content.count(b'UID'), 1)
@@ -1688,7 +1661,7 @@ class IphoneAppJsonTests(TestCase):
         self.assertEqual(r.status_code,200)
 
 class FinalizeProceedingsTests(TestCase):
-    @patch('six.moves.urllib.request.urlopen')
+    @patch('urllib.request.urlopen')
     def test_finalize_proceedings(self, mock_urlopen):
         mock_urlopen.return_value = BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
@@ -1828,21 +1801,21 @@ class MaterialsTests(TestCase):
             q = PyQuery(r.content)
             self.assertTrue(q('form input[type="checkbox"]'))
     
-            test_file = StringIO('this is some text for a test')
+            test_file = BytesIO(b'this is some text for a test')
             test_file.name = "not_really.json"
             r = self.client.post(url,dict(file=test_file))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertTrue(q('form .has-error'))
     
-            test_file = StringIO('this is some text for a test'*1510000)
+            test_file = BytesIO(b'this is some text for a test'*1510000)
             test_file.name = "not_really.pdf"
             r = self.client.post(url,dict(file=test_file))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertTrue(q('form .has-error'))
     
-            test_file = StringIO('<html><frameset><frame src="foo.html"></frame><frame src="bar.html"></frame></frameset></html>')
+            test_file = BytesIO(b'<html><frameset><frame src="foo.html"></frame><frame src="bar.html"></frame></frameset></html>')
             test_file.name = "not_really.html"
             r = self.client.post(url,dict(file=test_file))
             self.assertEqual(r.status_code, 200)
@@ -1850,7 +1823,7 @@ class MaterialsTests(TestCase):
             self.assertTrue(q('form .has-error'))
 
             # Test html sanitization
-            test_file = StringIO('<html><head><title>Title</title></head><body><h1>Title</h1><section>Some text</section></body></html>')
+            test_file = BytesIO(b'<html><head><title>Title</title></head><body><h1>Title</h1><section>Some text</section></body></html>')
             test_file.name = "some.html"
             r = self.client.post(url,dict(file=test_file))
             self.assertEqual(r.status_code, 302)
@@ -1861,7 +1834,7 @@ class MaterialsTests(TestCase):
             self.assertNotIn('<section>', text)
             self.assertIn('charset="utf-8"', text)
 
-            test_file = StringIO('This is some text for a test, with the word\nvirtual at the beginning of a line.')
+            test_file = BytesIO(b'This is some text for a test, with the word\nvirtual at the beginning of a line.')
             test_file.name = "not_really.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=False))
             self.assertEqual(r.status_code, 302)
@@ -1873,7 +1846,7 @@ class MaterialsTests(TestCase):
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertIn('Revise', str(q("Title")))
-            test_file = StringIO('this is some different text for a test')
+            test_file = BytesIO(b'this is some different text for a test')
             test_file.name = "also_not_really.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=True))
             self.assertEqual(r.status_code, 302)
@@ -1882,7 +1855,7 @@ class MaterialsTests(TestCase):
             self.assertTrue(session2.sessionpresentation_set.filter(document__type_id=doctype))
 
             # Test bad encoding
-            test_file = StringIO('<html><h1>Title</h1><section>Some\x93text</section></html>'.encode('latin1'))
+            test_file = BytesIO('<html><h1>Title</h1><section>Some\x93text</section></html>'.encode('latin1'))
             test_file.name = "some.html"
             r = self.client.post(url,dict(file=test_file))
             self.assertContains(r, 'Could not identify the file encoding')
@@ -1910,7 +1883,7 @@ class MaterialsTests(TestCase):
             self.assertFalse(session.sessionpresentation_set.exists())
             self.assertFalse(q('form input[type="checkbox"]'))
 
-            test_file = StringIO('this is some text for a test')
+            test_file = BytesIO(b'this is some text for a test')
             test_file.name = "not_really.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=False))
             self.assertEqual(r.status_code, 410)
@@ -1929,7 +1902,7 @@ class MaterialsTests(TestCase):
             q = PyQuery(r.content)
             self.assertIn('Upload', str(q("title")))
             self.assertFalse(session.sessionpresentation_set.filter(document__type_id=doctype))
-            test_file = StringIO('this is some text for a test')
+            test_file = BytesIO(b'this is some text for a test')
             test_file.name = "not_really.txt"
             r = self.client.post(url,dict(file=test_file))
             self.assertEqual(r.status_code, 302)
@@ -1952,7 +1925,7 @@ class MaterialsTests(TestCase):
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
         self.assertFalse(session1.sessionpresentation_set.filter(document__type_id='slides'))
-        test_file = StringIO('this is not really a slide')
+        test_file = BytesIO(b'this is not really a slide')
         test_file.name = 'not_really.txt'
         r = self.client.post(url,dict(file=test_file,title='a test slide file',apply_to_all=True))
         self.assertEqual(r.status_code, 302)
@@ -1963,7 +1936,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(sp.order,1)
 
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session2.meeting.number,'session_id':session2.id})
-        test_file = StringIO('some other thing still not slidelike')
+        test_file = BytesIO(b'some other thing still not slidelike')
         test_file.name = 'also_not_really.txt'
         r = self.client.post(url,dict(file=test_file,title='a different slide file',apply_to_all=False))
         self.assertEqual(r.status_code, 302)
@@ -1979,7 +1952,7 @@ class MaterialsTests(TestCase):
         self.assertTrue(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertIn('Revise', str(q("title")))
-        test_file = StringIO('new content for the second slide deck')
+        test_file = BytesIO(b'new content for the second slide deck')
         test_file.name = 'doesnotmatter.txt'
         r = self.client.post(url,dict(file=test_file,title='rename the presentation',apply_to_all=False))
         self.assertEqual(r.status_code, 302)
@@ -2039,7 +2012,7 @@ class MaterialsTests(TestCase):
             login_testing_unauthorized(self,newperson.user.username,propose_url)
             r = self.client.get(propose_url)
             self.assertEqual(r.status_code,200)
-            test_file = StringIO('this is not really a slide')
+            test_file = BytesIO(b'this is not really a slide')
             test_file.name = 'not_really.txt'
             empty_outbox()
             r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
@@ -2132,7 +2105,6 @@ class SessionTests(TestCase):
         not_meeting = SessionFactory(meeting=meeting,group__parent=area,status_id='notmeet',add_to_schedule=False)
         url = urlreverse('ietf.meeting.views.meeting_requests',kwargs={'num':meeting.number})
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
         self.assertContains(r, requested_session.group.acronym)
         self.assertContains(r, not_meeting.group.acronym)
 
@@ -2147,8 +2119,8 @@ class SessionTests(TestCase):
         url = urlreverse('ietf.meeting.views.request_minutes',kwargs={'num':meeting.number})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
-        self.assertNotContains(r, has_minutes.group.acronym)
-        self.assertContains(r, has_no_minutes.group.acronym)
+        self.assertNotContains(r, has_minutes.group.acronym.upper())
+        self.assertContains(r, has_no_minutes.group.acronym.upper())
         r = self.client.post(url,{'to':'wgchairs@ietf.org',
                                   'cc': 'irsg@irtf.org',
                                   'subject': 'I changed the subject',
