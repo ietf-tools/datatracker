@@ -96,7 +96,7 @@ for opt, value in opts:
     elif opt in ["-V", "--version"]: # Output version information, then exit
         print( program, version )
         sys.exit(0)
-    elif opt in ["-v", "--verbose"]: # Output version information, then exit
+    elif opt in ["-v", "--verbose"]: # Be more verbose
         opt_verbose += 1
 
 # ----------------------------------------------------------------------
