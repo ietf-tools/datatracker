@@ -3,7 +3,6 @@
 import datetime
 import email.utils
 import email.header
-import six
 import uuid
 
 from hashids import Hashids
@@ -360,7 +359,7 @@ class PersonalApiKey(models.Model):
             for v in (str(self.id), str(self.person.id), self.created.isoformat(), self.endpoint, str(self.valid), self.salt, settings.SECRET_KEY):
                 v = smart_bytes(v)
                 hash.update(v)
-            key = struct.pack(KEY_STRUCT, self.id, six.binary_type(self.salt), hash.digest())
+            key = struct.pack(KEY_STRUCT, self.id, bytes(self.salt), hash.digest())
             self._cached_hash =  base64.urlsafe_b64encode(key).decode('ascii')
         return self._cached_hash
 

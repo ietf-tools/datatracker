@@ -1,9 +1,10 @@
+# Copyright The IETF Trust 2015-2019, All Rights Reserved
 import os
 import tempfile
 
 from django.core.management import call_command
 from django.test import TestCase
-from django.utils.six import StringIO
+from io import StringIO
 
 import debug                            # pyflakes:ignore
 

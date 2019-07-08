@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
 import re
-import six
 import datetime
 from urllib.parse import urlencode
 
@@ -76,7 +75,7 @@ class TimedeltaField(ApiField):
         if value is None:
             return None
 
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             match = TIMEDELTA_REGEX.search(value)
 
             if match:
@@ -91,7 +90,7 @@ class TimedeltaField(ApiField):
         value = super(TimedeltaField, self).hydrate(bundle)
 
         if value and not hasattr(value, 'seconds'):
-            if isinstance(value, six.string_types):
+            if isinstance(value, str):
                 try:
                     match = TIMEDELTA_REGEX.search(value)
 
@@ -117,7 +116,7 @@ class ToOneField(tastypie.fields.ToOneField):
         if callable(self.attribute):
             previous_obj = bundle.obj
             foreign_obj = self.attribute(bundle)
-        elif isinstance(self.attribute, six.string_types):
+        elif isinstance(self.attribute, str):
             foreign_obj = bundle.obj
 
             for attr in self._attrs:

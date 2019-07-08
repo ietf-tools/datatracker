@@ -11,7 +11,6 @@ import lxml.html.clean
 import debug                            # pyflakes:ignore
 
 from django.utils.functional import keep_lazy
-from django.utils import six
 
 acceptable_tags = ('a', 'abbr', 'acronym', 'address', 'b', 'big',
     'blockquote', 'body', 'br', 'caption', 'center', 'cite', 'code', 'col',
@@ -32,7 +31,7 @@ def unescape(text):
     """
     return text.replace('&#39;', "'").replace('&quot;', '"').replace('&gt;', '>').replace('&lt;', '<' ).replace('&amp;', '&')
 
-@keep_lazy(six.text_type)
+@keep_lazy(str)
 def remove_tags(html, tags):
     """Returns the given HTML sanitized, and with the given tags removed."""
     allowed = set(acceptable_tags) - set([ t.lower() for t in tags ])

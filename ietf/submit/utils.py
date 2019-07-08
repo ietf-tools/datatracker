@@ -4,7 +4,6 @@
 import datetime
 import os
 import re
-import six                              # pyflakes:ignore
 import xml2rfc
 
 from django.conf import settings
@@ -457,7 +456,7 @@ def ensure_person_email_info_exists(name, email, docname):
         person = Person()
         person.name = name
         person.name_from_draft = name
-        log.assertion('isinstance(person.name, six.text_type)')
+        log.assertion('isinstance(person.name, str)')
         person.ascii = unidecode_name(person.name)
         person.save()
     else:

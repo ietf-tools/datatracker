@@ -6,14 +6,13 @@ import textwrap
 import unicodedata
 
 from django.utils.functional import keep_lazy
-from django.utils import six
 from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
 from .texescape import init as texescape_init, tex_escape_map
 
-@keep_lazy(six.text_type)
+@keep_lazy(str)
 def xslugify(value):
     """
     Converts to ASCII. Converts spaces to hyphens. Removes characters that
@@ -134,7 +133,7 @@ def maybe_split(text, split=True, pos=5000):
     return text
 
 def decode(raw):
-    assert isinstance(raw, six.binary_type)
+    assert isinstance(raw, bytes)
     try:
         text = raw.decode('utf-8')
     except UnicodeDecodeError:
@@ -146,7 +145,7 @@ def decode(raw):
 def text_to_dict(t):
     "Converts text with RFC2822-formatted header fields into a dictionary-like object."
     # ensure we're handed a unicode parameter
-    assert isinstance(t, six.text_type)
+    assert isinstance(t, str)
     d = {}
     # Return {} for malformed input
     if not len(t.lstrip()) == len(t):

@@ -9,7 +9,6 @@ from difflib import ndiff
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from django.utils.six import string_types
 
 import debug                            # pyflakes:ignore
 
@@ -57,7 +56,7 @@ class Command(BaseCommand):
     valid_sections = ['template', 'url', 'code']
 
     def read_coverage(self, filename, version=None):
-        if isinstance(filename, string_types):
+        if isinstance(filename, str):
             try:
                 if filename.endswith(".gz"):
                     file = gzip.open(filename, "rb")

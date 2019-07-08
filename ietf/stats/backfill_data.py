@@ -7,7 +7,6 @@ import sys
 import os
 import os.path
 import argparse
-import six
 import time
 
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -129,10 +128,10 @@ for doc in docs_qs.prefetch_related("docalias", "formal_languages", "documentaut
             # it's an extra author - skip those extra authors
             seen = set()
             for full, _, _, _, _, email, country, company in d.get_author_list():
-                assert full is None or    isinstance(full,    six.text_type)
-                assert email is None or   isinstance(email,   six.text_type)
-                assert country is None or isinstance(country, six.text_type)
-                assert company is None or isinstance(company, six.text_type)
+                assert full is None or    isinstance(full,    str)
+                assert email is None or   isinstance(email,   str)
+                assert country is None or isinstance(country, str)
+                assert company is None or isinstance(company, str)
                 #full, email, country, company = [ unicode(s) for s in [full, email, country, company, ] ]
                 if email in seen:
                     continue

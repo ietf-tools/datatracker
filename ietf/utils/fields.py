@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
 
 import re
-import six
 import datetime
 
 import debug                            # pyflakes:ignore
@@ -104,7 +103,7 @@ def parse_duration_ext(value):
             return parse_duration(value)
         else:
             kw = match.groupdict()
-            kw = {k: float(v) for k, v in six.iteritems(kw) if v is not None}
+            kw = {k: float(v) for k, v in kw.items() if v is not None}
             return datetime.timedelta(**kw)
 
 class DurationField(forms.DurationField):

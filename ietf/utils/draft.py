@@ -40,7 +40,6 @@ import os
 import os.path
 import re
 import stat
-import six
 import sys
 import time
 
@@ -129,7 +128,7 @@ def acronym_match(s, l):
 class Draft():
 
     def __init__(self, text, source, name_from_source=False):
-        assert isinstance(text, six.text_type)
+        assert isinstance(text, str)
         self.source = source
         self.rawtext = text
         self.name_from_source = name_from_source

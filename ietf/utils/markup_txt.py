@@ -32,32 +32,14 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import re
-import six
-import string
 
 from django.utils.html import escape
 
 from ietf.utils import log
 from ietf.utils.text import wordwrap
 
-def markup_ascii(content, width=None):
-    log.unreachable('2017-12-08')
-    if six.PY2:
-        assert isinstance(content, str)
-        # at this point, "content" is normal string
-        # fix most common non-ASCII characters
-        t1 = string.maketrans("\x91\x92\x93\x94\x95\x96\x97\xc6\xe8\xe9", "\'\'\"\"o--\'ee")
-        # map everything except printable ASCII, TAB, LF, FF to "?"
-        t2 = string.maketrans('','')
-        t3 = "?"*9 + "\t\n?\f" + "?"*19 + t2[32:127] + "?"*129
-        t4 = t1.translate(t3)
-        content = content.translate(t4)
-    else:
-        log.assertion('six.PY2')
-    return markup(content.decode('ascii'), width)
-
 def markup(content, width=None):
-    log.assertion('isinstance(content, six.text_type)')
+    log.assertion('isinstance(content, str)')
     # normalize line endings to LF only
     content = content.replace("\r\n", "\n")
     content = content.replace("\r", "\n")

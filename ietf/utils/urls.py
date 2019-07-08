@@ -1,6 +1,5 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 
-import six
 import debug                            # pyflakes:ignore
 from inspect import isclass
 
@@ -17,7 +16,7 @@ def url(regex, view, kwargs=None, name=None):
         branch = 'name'
     elif isinstance(view, (list, tuple)):
         branch = 'list'
-    elif isinstance(view, six.string_types):
+    elif isinstance(view, str):
         branch = 'string'
         name = view
     elif callable(view) and hasattr(view, '__name__'):

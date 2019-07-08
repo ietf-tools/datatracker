@@ -3,7 +3,6 @@
 
 import datetime, os
 import operator
-import six
 from email.utils import parseaddr
 from form_utils.forms import BetterModelForm
 
@@ -199,7 +198,7 @@ class CustomModelMultipleChoiceField(forms.ModelMultipleChoiceField):
         if isinstance(value, QuerySet):
             return value
         if (hasattr(value, '__iter__') and
-                not isinstance(value, six.text_type) and
+                not isinstance(value, str) and
                 not hasattr(value, '_meta')):
             return [super(CustomModelMultipleChoiceField, self).prepare_value(v) for v in value]
         return super(CustomModelMultipleChoiceField, self).prepare_value(value)

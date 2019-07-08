@@ -7,7 +7,6 @@ import calendar
 import datetime
 import io
 import bleach
-import six
 
 from pyquery import PyQuery
 from tempfile import NamedTemporaryFile
