@@ -71,7 +71,7 @@ if len(sys.argv) < 1:
     sys.exit(1)
 
 try:
-    opts, files = getopt.gnu_getopt(sys.argv[1:], "hpvV", ["help", "patch", "version", "verbose",])
+    opts, files = getopt.gnu_getopt(sys.argv[1:], "hC:pvV", ["help", "copyright=", "patch", "version", "verbose",])
 except Exception as e:
     print( "%s: %s" % (program, e))
     sys.exit(1)
@@ -82,6 +82,7 @@ except Exception as e:
 # set default values, if any
 opt_verbose = 0
 opt_patch = False
+opt_copyright = "Copyright The IETF Trust {years}, All Rights Reserved"
 
 # handle individual options
 for opt, value in opts:
@@ -90,6 +91,8 @@ for opt, value in opts:
         sys.exit(1)
     elif opt in ["-p", "--patch"]: # Generate patch output rather than error messages
         opt_patch = True
+    elif opt in ["-C", "--copyright"]: # Copyright line pattern using {years} for years
+        opt_copyright = value
     elif opt in ["-V", "--version"]: # Output version information, then exit
         print( program, version )
         sys.exit(0)
@@ -197,8 +200,8 @@ for path in files:
         date = initinfo[path]['date']
         init = date[:4]
         
-        copyright_re = r"(?i)Copyright The IETF Trust (\d+-)?\d+, All Rights Reserved"
-        copyright_year_re = r"(?i)Copyright The IETF Trust (%s-)?%s, All Rights Reserved" % (init, year)
+        copyright_re = "(?i)"+opt_copyright.format(years=r"(\d+-)?\d+")
+        copyright_year_re = "(?i)"+opt_copyright.format(years=r"({init})?{year}")
         with open(path) as file:
             try:
                 chunk = file.read(4000)
@@ -209,9 +212,9 @@ for path in files:
                 continue
             if not re.search(copyright_year_re, chunk):
                 if year == init:
-                    copyright = f"Copyright The IETF Trust {year}, All Rights Reserved"
+                    copyright = opt_copyright.format(years=year)
                 else:
-                    copyright = f"Copyright The IETF Trust {init}-{year}, All Rights Reserved"
+                    copyright = opt_copyright.format(years=f"{init}-{year}")
                 if opt_patch:
                     print(f"--- {file.name}\t(original)")
                     print(f"+++ {file.name}\t(modified)")
