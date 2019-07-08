@@ -619,7 +619,7 @@ class IetfTestRunner(DiscoverRunner):
                 self.coverage_master["version"] = self.save_version_coverage
                 self.coverage_master[self.save_version_coverage] = self.coverage_data
                 if self.coverage_file.endswith('.gz'):
-                    with gzip.open(self.coverage_file, "wb") as file:
+                    with gzip.open(self.coverage_file, "wt", encoding='ascii') as file:
                         json.dump(self.coverage_master, file, sort_keys=True)
                 else:
                     with codecs.open(self.coverage_file, "w", encoding="utf-8") as file:
