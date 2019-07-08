@@ -49,7 +49,7 @@ import pytz
 import tzparse
 import debug
 
-version = "0.10"
+version = "1.0.0"
 program = os.path.basename(sys.argv[0])
 progdir = os.path.dirname(sys.argv[0])
 
