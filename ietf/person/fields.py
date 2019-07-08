@@ -1,12 +1,16 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import json
 import six
 
 from collections import Counter
 from urllib import urlencode
 
-from django.utils.html import escape
 from django import forms
+from django.core.validators import validate_email
 from django.urls import reverse as urlreverse
+from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 
@@ -70,6 +74,16 @@ class SearchablePersonsField(forms.CharField):
     def parse_select2_value(self, value):
         return [x.strip() for x in value.split(",") if x.strip()]
 
+    def check_pks(self, pks):
+        if self.model == Person:
+            for pk in pks:
+                if not pk.isdigit():
+                    raise forms.ValidationError("Unexpected value: %s" % pk)
+        elif self.model == Email:
+            for pk in pks:
+                validate_email(pk)
+        return pks
+
     def prepare_value(self, value):
         if not value:
             value = ""
@@ -99,7 +113,7 @@ class SearchablePersonsField(forms.CharField):
 
     def clean(self, value):
         value = super(SearchablePersonsField, self).clean(value)
-        pks = self.parse_select2_value(value)
+        pks = self.check_pks(self.parse_select2_value(value))
 
         objs = self.model.objects.filter(pk__in=pks)
         if self.model == Email:
