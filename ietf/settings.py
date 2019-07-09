@@ -890,8 +890,7 @@ BADNESS_TOOBIG     = 100
 BADNESS_MUCHTOOBIG = 500
 
 # do not run SELENIUM tests by default
-SELENIUM_TESTS = False
-SELENIUM_TESTS_ONLY = False
+SKIP_SELENIUM = True
 
 # Set debug apps in settings_local.DEV_APPS
 
