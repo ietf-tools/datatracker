@@ -2,6 +2,8 @@
 
 import copy
 import datetime
+import logging
+import re
 import smtplib
 import sys
 import textwrap
@@ -520,6 +522,7 @@ def is_valid_email(address):
     except ValidationError:
         return False
 
+logger = logging.getLogger('django')
 def get_email_addresses_from_text(text):
     """
 
@@ -531,5 +534,15 @@ def get_email_addresses_from_text(text):
     Returns a list of properly formatted email address strings.
 
     """
-    return [ formataddr(e) for e in getaddresses([text, ]) ]
+    def valid(email):
+        name, addr = email
+        try:
+            validate_email(addr)
+            return True
+        except ValidationError:
+            logger.error(f'Bad data: get_email_addresses_from_text() got an invalid email address tuple: {email}, in "{text}".')
+            return False
+    # whitespace normalization -- getaddresses doesn't do this
+    text = re.sub(r'(?u)\s+', ' ', text)
+    return [ formataddr(e) for e in getaddresses([text, ]) if valid(e) ]
     
