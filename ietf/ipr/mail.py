@@ -1,4 +1,8 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import base64
 import email
@@ -9,7 +13,7 @@ import pytz
 import re
 
 from django.template.loader import render_to_string
-from django.utils.encoding import force_text
+from django.utils.encoding import force_text, force_str
 
 import debug                            # pyflakes:ignore
 
@@ -171,7 +175,7 @@ def process_response_email(msg):
     a matching value in the reply_to field, associated to an IPR disclosure through
     IprEvent.  Create a Message object for the incoming message and associate it to
     the original message via new IprEvent"""
-    message = email.message_from_string(msg)
+    message = email.message_from_string(force_str(msg))
     to = message.get('To')
     
     # exit if this isn't a response we're interested in (with plus addressing)

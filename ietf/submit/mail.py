@@ -1,4 +1,8 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import re
 import email
@@ -12,7 +16,7 @@ from django.urls import reverse as urlreverse
 from django.core.validators import ValidationError
 from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
-from django.utils.encoding import force_text
+from django.utils.encoding import force_text, force_str
 
 import debug                            # pyflakes:ignore
 
@@ -186,7 +190,7 @@ def process_response_email(msg):
     a matching value in the reply_to field, associated to a submission.
     Create a Message object for the incoming message and associate it to
     the original message via new SubmissionEvent"""
-    message = email.message_from_string(msg)
+    message = email.message_from_string(force_str(msg))
     to = message.get('To')
 
     # exit if this isn't a response we're interested in (with plus addressing)
