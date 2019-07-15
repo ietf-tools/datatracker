@@ -166,13 +166,12 @@ def dir(name):
 
 def type(name):
     if debug:
+        name = "type(%s)" % name
         frame = inspect.stack()[1][0]
         value = eval(name, frame.f_globals, frame.f_locals)
-        name = "type(%s)" % name
-        tvalue = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
-        sys.stderr.write("%s%s: %s %s\n" % (indent, name, tvalue, value))
-
+        sys.stderr.write("%s%s: %s\n" % (indent, name, value))
+            
 def say(s):
     if debug:
         indent = ' ' * (_report_indent[0])
