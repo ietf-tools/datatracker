@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 # Django settings for ietf project.
 # BASE_DIR and "settings_local" are from
 # http://code.djangoproject.com/wiki/SplitSettings
@@ -24,6 +27,7 @@ warnings.filterwarnings("ignore", message="django.forms.extras is deprecated.", 
 warnings.filterwarnings("ignore", message="defusedxml.lxml is no longer supported and will be removed in a future release.", module="tastypie")
 warnings.filterwarnings("ignore", message="Duplicate index '.*' defined on the table")
 # Warnings found under Python 3.7:
+warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated")
 warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="docutils.io")
 warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="xml2rfc")
 warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="site")
@@ -32,7 +36,7 @@ warnings.filterwarnings("ignore", message="Flags not at the start of the express
 
 try:
     import syslog
-    syslog.openlog("datatracker", syslog.LOG_PID, syslog.LOG_USER)
+    syslog.openlog(str("datatracker"), syslog.LOG_PID, syslog.LOG_USER)
 except ImportError:
     pass
 
