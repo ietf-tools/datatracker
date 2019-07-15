@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
-
+# -*- coding: utf-8 -*-
+#
 # Portion Copyright (C) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -32,16 +33,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
-import tarfile
 import io
-import time
 import itertools
 import json
-
-import debug               # pyflakes:ignore
-
+import os
+import six
+import tarfile
+import time
 
 from django import forms
 from django.conf import settings
@@ -52,6 +54,8 @@ from django.contrib.sites.models import Site
 from django.utils.encoding import force_bytes
 #from django.views.decorators.cache import cache_page
 #from django.views.decorators.vary import vary_on_cookie
+
+import debug               # pyflakes:ignore
 
 from ietf.doc.models import Document, State, LastCallDocEvent, ConsensusDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
 from ietf.doc.utils import update_telechat, augment_events_with_revision
@@ -312,9 +316,9 @@ def agenda_documents_txt(request):
         row = (
             d.computed_telechat_date.isoformat(),
             d.name,
-            str(d.intended_std_level),
+            six.ensure_text(d.intended_std_level),
             "1" if d.stream_id in ("ise", "irtf") else "0",
-            str(d.area_acronym()).lower(),
+            six.ensure_text(d.area_acronym()).lower(),
             d.ad.plain_name() if d.ad else "None Assigned",
             d.rev,
             )

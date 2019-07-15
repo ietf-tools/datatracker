@@ -1,4 +1,11 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import six
+
 from django.contrib import admin
 from ietf.utils.models import VersionInfo
 
@@ -9,10 +16,10 @@ def name(obj):
         if callable(obj.name):
             name = obj.name()
         else:
-            name = str(obj.name)
+            name = six.ensure_text(obj.name)
         if name:
             return name
-    return str(obj)
+    return six.ensure_text(obj)
     
 def admin_link(field, label=None, ordering="", display=name, suffix=""):
     if not label:

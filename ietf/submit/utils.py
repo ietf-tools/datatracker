@@ -1,9 +1,14 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
+import io
 import os
 import re
+import six                              # pyflakes:ignore
 import xml2rfc
 
 from django.conf import settings
@@ -456,7 +461,7 @@ def ensure_person_email_info_exists(name, email, docname):
         person = Person()
         person.name = name
         person.name_from_draft = name
-        log.assertion('isinstance(person.name, str)')
+        log.assertion('isinstance(person.name, six.text_type)')
         person.ascii = unidecode_name(person.name)
         person.save()
     else:
@@ -605,7 +610,7 @@ def save_files(form):
 
         name = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (form.filename, form.revision, ext))
         file_name[ext] = name
-        with open(name, 'wb+') as destination:
+        with io.open(name, 'wb+') as destination:
             for chunk in f.chunks():
                 destination.write(chunk)
     return file_name
@@ -641,7 +646,7 @@ def get_draft_meta(form, saved_files):
         # Some meta-information, such as the page-count, can only
         # be retrieved from the generated text file.  Provide a
         # parsed draft object to get at that kind of information.
-        with open(file_name['txt']) as txt_file:
+        with io.open(file_name['txt']) as txt_file:
             form.parsed_draft = Draft(txt_file.read(), txt_file.name)
 
     else:
@@ -667,7 +672,7 @@ def get_draft_meta(form, saved_files):
                 if s is None:
                     return ""
 
-                if isinstance(s, str):
+                if isinstance(s, six.text_type):
                     return s
                 else:
                     try:

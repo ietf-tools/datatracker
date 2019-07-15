@@ -1,9 +1,14 @@
-# -*- coding: utf-8 -*-
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
 
+from __future__ import absolute_import, print_function, unicode_literals
 
-import datetime, re, itertools
+import datetime
+import itertools
+import re
+import six
+
 from collections import defaultdict, namedtuple
 
 from django.db.models import Q, Max, F
@@ -959,7 +964,7 @@ def make_assignment_choices(email_queryset, review_req):
         if stats:
             explanations.append(", ".join(stats))
 
-        label = str(e.person)
+        label = six.ensure_text(e.person)
         if explanations:
             label = "{}: {}".format(label, "; ".join(explanations))
 

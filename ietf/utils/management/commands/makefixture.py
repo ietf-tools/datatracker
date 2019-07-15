@@ -1,5 +1,10 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 # From https://github.com/ericholscher/django-test-utils/blob/master/test_utils/management/commands/makefixture.py
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 """
 "Make fixture" command.
 
@@ -39,6 +44,9 @@ python manage.py makefixture --format=xml --indent=4 YourModel[3] AnotherModel a
 #known issues:
 #no support for generic relations
 #no support for one-to-one relations
+
+import six
+
 from django.core import serializers
 from django.core.management.base import CommandError
 from django.core.management.base import LabelCommand
@@ -102,7 +110,7 @@ class Command(LabelCommand):
 
         objects = []
         for model, slice in models:
-            if isinstance(slice, str) and slice:
+            if isinstance(slice, six.string_types) and slice:
                 objects.extend(model._default_manager.filter(pk__exact=slice))
             elif not slice or type(slice) is list:
                 items = model._default_manager.all()

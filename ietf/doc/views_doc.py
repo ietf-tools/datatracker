@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-
+#
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -33,7 +33,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os, datetime, urllib.request, urllib.parse, urllib.error, json, glob, re
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import glob
+import io
+import json
+import os
+import re
+import six
+
+from six.moves.urllib.parse import quote
 
 from django.http import HttpResponse, Http404 , HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
@@ -312,7 +323,7 @@ def document_main(request, name, rev=None):
         if doc.stream_id == "ietf" and group.type_id == "wg" and group.list_archive:
             search_archive = group.list_archive
 
-        search_archive = urllib.parse.quote(search_archive, safe="~")
+        search_archive = quote(search_archive, safe="~")
 
         # conflict reviews
         conflict_reviews = [d.document.name for d in doc.related_that("conflrev")]
@@ -661,7 +672,7 @@ def check_doc_email_aliases():
     pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
     good_count = 0
     tot_count = 0
-    with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
+    with io.open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             tot_count += 1
@@ -677,7 +688,7 @@ def get_doc_email_aliases(name):
     else:
         pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
     aliases = []
-    with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
+    with io.open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             if m:
@@ -1263,7 +1274,7 @@ def add_sessionpresentation(request,name):
     if doc.group:
         sessions = sorted(sessions,key=lambda x:0 if x.group==doc.group else 1)
 
-    session_choices = [(s.pk,str(s)) for s in sessions]
+    session_choices = [(s.pk, six.ensure_text(s)) for s in sessions]
 
     if request.method == 'POST':
         version_form = VersionForm(request.POST,choices=version_choices)

@@ -1,5 +1,10 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import subprocess, hashlib
 from django.utils.encoding import force_bytes
 
@@ -11,7 +16,7 @@ def update_htpasswd_file(username, password):
         realm = settings.HTDIGEST_REALM
         prefix = force_bytes('%s:%s:' % (username, realm))
         key = force_bytes(hashlib.md5(prefix + force_bytes(password)).hexdigest())
-        f = open(pass_file, 'r+b')
+        f = io.open(pass_file, 'r+b')
         pos = f.tell()
         line = f.readline()
         while line:

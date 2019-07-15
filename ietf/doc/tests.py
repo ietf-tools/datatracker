@@ -1,19 +1,25 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import shutil
 import datetime
+import io
 import sys
-import urllib.parse
 import bibtexparser
+
 if sys.version_info[0] == 2 and sys.version_info[1] < 7:
     import unittest2 as unittest
 else:
     import unittest
+
+from six.moves.http_cookies import SimpleCookie
 from pyquery import PyQuery
+from six.moves.urllib.parse import urlparse, parse_qs
 from tempfile import NamedTemporaryFile
-from http.cookies import SimpleCookie
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -141,71 +147,71 @@ class SearchTests(TestCase):
         # exact match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # prefix match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(draft.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # non-prefix match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(draft.name.split("-")[1:]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # other doctypes than drafts
         doc = Document.objects.get(name='charter-ietf-mars')
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name='charter-ietf-ma')))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='conflict-review-').first()
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='status-change-').first()
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='agenda-').first()
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='minutes-').first()
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='slides-').first()
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         # match with revision
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name + "-" + prev_rev)))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=prev_rev)))
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=prev_rev)))
 
         # match with non-existing revision
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name + "-09")))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # match with revision and extension
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name + "-" + prev_rev + ".txt")))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urllib.parse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=prev_rev)))
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=prev_rev)))
         
         # no match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="draft-ietf-doesnotexist-42")))
         self.assertEqual(r.status_code, 302)
 
-        parsed = urllib.parse.urlparse(r["Location"])
+        parsed = urlparse(r["Location"])
         self.assertEqual(parsed.path, urlreverse('ietf.doc.views_search.search'))
-        self.assertEqual(urllib.parse.parse_qs(parsed.query)["name"][0], "draft-ietf-doesnotexist-42")
+        self.assertEqual(parse_qs(parsed.query)["name"][0], "draft-ietf-doesnotexist-42")
 
     def test_frontpage(self):
         r = self.client.get("/")
@@ -486,7 +492,7 @@ Man                    Expires September 22, 2015               [Page 3]
         settings.INTERNET_DRAFT_PATH = self.id_dir
         self.saved_internet_all_drafts_archive_dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
         settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR = self.id_dir
-        f = open(os.path.join(self.id_dir, 'draft-ietf-mars-test-01.txt'), 'w')
+        f = io.open(os.path.join(self.id_dir, 'draft-ietf-mars-test-01.txt'), 'w')
         f.write(self.draft_text)
         f.close()
 
@@ -528,21 +534,21 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertNotContains(r, "Show full document text")
         self.assertContains(r, "Deimos street")
 
-        self.client.cookies = SimpleCookie({'full_draft': 'on'})
+        self.client.cookies = SimpleCookie({str('full_draft'): str('on')})
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
         self.assertNotContains(r, "Show full document text")
         self.assertContains(r, "Deimos street")
 
-        self.client.cookies = SimpleCookie({'full_draft': 'off'})
+        self.client.cookies = SimpleCookie({str('full_draft'): str('off')})
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
         self.assertContains(r, "Show full document text")
         self.assertNotContains(r, "Deimos street")
 
-        self.client.cookies = SimpleCookie({'full_draft': 'foo'})
+        self.client.cookies = SimpleCookie({str('full_draft'): str('foo')})
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
@@ -1021,7 +1027,7 @@ class EmailAliasesTests(TestCase):
     def setUp(self):
         WgDraftFactory(name='draft-ietf-mars-test',group__acronym='mars')
         WgDraftFactory(name='draft-ietf-ames-test',group__acronym='ames')
-        self.doc_alias_file = NamedTemporaryFile(delete=False, encoding='utf-8', mode='w+')
+        self.doc_alias_file = NamedTemporaryFile(delete=False, mode='w+')
         self.doc_alias_file.write("""# Generated by hand at 2015-02-12_16:26:45
 virtual.ietf.org anything
 draft-ietf-mars-test@ietf.org              xfilter-draft-ietf-mars-test

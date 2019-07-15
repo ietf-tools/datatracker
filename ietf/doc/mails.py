@@ -1,16 +1,23 @@
 # Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 # generation of mails 
 
-import textwrap, datetime
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import six
+import textwrap
 
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
 from django.urls import reverse as urlreverse
+from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.mail import send_mail, send_mail_text
+from ietf.utils.mail import send_mail, send_mail_text, get_payload
 from ietf.ipr.utils import iprs_from_docs, related_docs
 from ietf.doc.models import WriteupDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
 from ietf.doc.utils import needed_ballot_positions
@@ -121,7 +128,7 @@ def generate_ballot_writeup(request, doc):
     e.doc = doc
     e.rev = doc.rev
     e.desc = "Ballot writeup was generated"
-    e.text = str(render_to_string("doc/mail/ballot_writeup.txt", {'iana': iana}))
+    e.text = six.ensure_text(render_to_string("doc/mail/ballot_writeup.txt", {'iana': iana}))
 
     # caller is responsible for saving, if necessary
     return e
@@ -133,7 +140,7 @@ def generate_ballot_rfceditornote(request, doc):
     e.doc = doc
     e.rev = doc.rev
     e.desc = "RFC Editor Note for ballot was generated"
-    e.text = str(render_to_string("doc/mail/ballot_rfceditornote.txt"))
+    e.text = six.ensure_text(render_to_string("doc/mail/ballot_rfceditornote.txt"))
     e.save()
     
     return e
@@ -178,7 +185,7 @@ def generate_last_call_announcement(request, doc):
     e.doc = doc
     e.rev = doc.rev
     e.desc = "Last call announcement was generated"
-    e.text = str(mail)
+    e.text = six.ensure_text(mail)
 
     # caller is responsible for saving, if necessary
     return e
@@ -198,7 +205,7 @@ def generate_approval_mail(request, doc):
     e.doc = doc
     e.rev = doc.rev
     e.desc = "Ballot approval text was generated"
-    e.text = str(mail)
+    e.text = six.ensure_text(mail)
 
     # caller is responsible for saving, if necessary
     return e
@@ -281,7 +288,7 @@ def generate_publication_request(request, doc):
         approving_body = "IRSG"
         consensus_body = doc.group.acronym.upper()
     else:
-        approving_body = str(doc.stream)
+        approving_body = six.ensure_text(doc.stream)
         consensus_body = approving_body
 
     e = doc.latest_event(WriteupDocEvent, type="changed_rfc_editor_note_text")
@@ -383,7 +390,7 @@ def generate_issue_ballot_mail(request, doc, ballot):
 def email_iana(request, doc, to, msg, cc=None):
     # fix up message and send it with extra info on doc in headers
     import email
-    parsed_msg = email.message_from_string(msg)
+    parsed_msg = email.message_from_string(force_str(msg))
     parsed_msg.set_charset('UTF-8')
 
     extra = extra_automation_headers(doc)
@@ -391,7 +398,7 @@ def email_iana(request, doc, to, msg, cc=None):
     
     send_mail_text(request, to,
                    parsed_msg["From"], parsed_msg["Subject"],
-                   parsed_msg.get_payload(),
+                   get_payload(parsed_msg),
                    extra=extra,
                    cc=cc)
 

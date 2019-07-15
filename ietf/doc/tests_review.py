@@ -1,11 +1,14 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime, os, shutil
+import io
 import tarfile, tempfile, mailbox
 import email.mime.multipart, email.mime.text, email.utils
 
-from io import StringIO
 from mock import patch
 from requests import Response
 
@@ -98,8 +101,10 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox),2)
         self.assertTrue('reviewteam Early' in outbox[0]['Subject'])
+#        debug.show("outbox[0]['To']")
         self.assertTrue('reviewsecretary@' in outbox[0]['To'])
         self.assertTrue('reviewteam3 Early' in outbox[1]['Subject'])
+#        debug.show("outbox[1]['To']")
         self.assertTrue('reviewsecretary3@' in outbox[1]['To'])
 
         # set the reviewteamsetting for the secretary email alias, then do the post again
@@ -557,7 +562,7 @@ class ReviewTests(TestCase):
 
             # Test failure to return mailarch results
             no_result_path = os.path.join(self.review_dir, "mailarch_no_result.html")
-            with open(no_result_path, "w") as f:
+            with io.open(no_result_path, "w") as f:
                 f.write('Content-Type: text/html\n\n<html><body><div class="xtr"><div class="xtd no-results">No results found</div></div>')
             ietf.review.mailarch.construct_query_urls = lambda review_req, query=None: { "query_data_url": "file://" + os.path.abspath(no_result_path) }
 
@@ -614,7 +619,7 @@ class ReviewTests(TestCase):
         # complete by uploading file
         empty_outbox()
 
-        test_file = StringIO("This is a review\nwith two lines")
+        test_file = io.StringIO("This is a review\nwith two lines")
         test_file.name = "unnamed"
 
         r = self.client.post(url, data={
@@ -635,7 +640,7 @@ class ReviewTests(TestCase):
         self.assertTrue(assignment.review_request.team.acronym.lower() in assignment.review.name)
         self.assertTrue(assignment.review_request.doc.rev in assignment.review.name)
 
-        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 1)
@@ -685,7 +690,7 @@ class ReviewTests(TestCase):
         self.assertEqual(assignment.state_id, "completed")
         self.assertNotEqual(assignment.completed_on, None)
 
-        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 1)
@@ -772,7 +777,7 @@ class ReviewTests(TestCase):
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, "completed")
 
-        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 0)
@@ -872,7 +877,7 @@ class ReviewTests(TestCase):
         event = ReviewAssignmentDocEvent.objects.get(type="closed_review_assignment", review_assignment=assignment)
         self.assertEqual(event.time, datetime.datetime(2012, 12, 24, 12, 13, 14))
 
-        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 0)

@@ -1,17 +1,22 @@
 # Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import os
-import shutil
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
-import urllib.parse
+import io
+import os
 import random
+import shutil
+import six
 
 from unittest import skipIf
 from mock import patch
 from pyquery import PyQuery
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
+from six.moves.urllib.parse import urlparse
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -68,7 +73,7 @@ class MeetingTests(TestCase):
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
-        with open(path, "w") as f:
+        with io.open(path, "w") as f:
             f.write(content)
 
     def write_materials_files(self, meeting, session):
@@ -381,10 +386,9 @@ class MeetingTests(TestCase):
         response = self.client.get(url)
         self.assertContains(response, 'test acknowledgements')
 
-
-    @patch('urllib.request.urlopen')
+    @patch('six.moves.urllib.request.urlopen')
     def test_proceedings_attendees(self, mock_urlopen):
-        mock_urlopen.return_value = BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
+        mock_urlopen.return_value = six.BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
         finalize(meeting)
@@ -394,12 +398,12 @@ class MeetingTests(TestCase):
         q = PyQuery(response.content)
         self.assertEqual(1,len(q("#id_attendees tbody tr")))
 
-    @patch('urllib.request.urlopen')
+    @patch('six.moves.urllib.request.urlopen')
     def test_proceedings_overview(self, mock_urlopen):
         '''Test proceedings IETF Overview page.
         Note: old meetings aren't supported so need to add a new meeting then test.
         '''
-        mock_urlopen.return_value = BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
+        mock_urlopen.return_value = six.BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
         finalize(meeting)
@@ -476,7 +480,7 @@ class MeetingTests(TestCase):
         session.sessionpresentation_set.create(document=doc)
         file,_ = submission_file(name=doc.name,format='txt',templatename='test_submission.txt',group=session.group,rev="00")
         filename = os.path.join(doc.get_file_path(),file.name)
-        with open(filename,'w') as draftbits:
+        with io.open(filename,'w') as draftbits:
             draftbits.write(file.getvalue())
         
         url = urlreverse('ietf.meeting.views.session_draft_tarfile', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
@@ -492,7 +496,7 @@ class MeetingTests(TestCase):
         session.sessionpresentation_set.create(document=doc)
         file,_ = submission_file(name=doc.name,format='txt',templatename='test_submission.txt',group=session.group,rev="00")
         filename = os.path.join(doc.get_file_path(),file.name)
-        with open(filename,'w') as draftbits:
+        with io.open(filename,'w') as draftbits:
             draftbits.write(file.getvalue())
         
         url = urlreverse('ietf.meeting.views.session_draft_pdf', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
@@ -590,7 +594,7 @@ class EditTests(TestCase):
             })
         self.assertEqual(r.status_code, 302)
         # Verify that we actually got redirected to a new place.
-        self.assertNotEqual(urllib.parse.urlparse(r.url).path, url)
+        self.assertNotEqual(urlparse(r.url).path, url)
 
         # get
         schedule = meeting.get_schedule_by_name("foo")
@@ -636,7 +640,7 @@ class EditTests(TestCase):
             'saveas': "saveas",
             })
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urllib.parse.urlparse(r.url).path, url)
+        self.assertEqual(urlparse(r.url).path, url)
         # TODO: Verify that an error message was in fact returned.
 
         r = self.client.post(url, {
@@ -645,7 +649,7 @@ class EditTests(TestCase):
             })
         # TODO: Verify that an error message was in fact returned.
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urllib.parse.urlparse(r.url).path, url)
+        self.assertEqual(urlparse(r.url).path, url)
 
         # Non-ASCII alphanumeric characters
         r = self.client.post(url, {
@@ -654,7 +658,7 @@ class EditTests(TestCase):
             })
         # TODO: Verify that an error message was in fact returned.
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urllib.parse.urlparse(r.url).path, url)
+        self.assertEqual(urlparse(r.url).path, url)
         
 
     def test_edit_timeslots(self):
@@ -1661,7 +1665,7 @@ class IphoneAppJsonTests(TestCase):
         self.assertEqual(r.status_code,200)
 
 class FinalizeProceedingsTests(TestCase):
-    @patch('urllib.request.urlopen')
+    @patch('six.moves.urllib.request.urlopen')
     def test_finalize_proceedings(self, mock_urlopen):
         mock_urlopen.return_value = BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
@@ -1711,7 +1715,7 @@ class MaterialsTests(TestCase):
                     soup = BeautifulSoup(page, 'html.parser')
                     for a in soup('a'):
                         href = a.get('href')
-                        path = urllib.parse.urlparse(href).path
+                        path = urlparse(href).path
                         if (path and path not in seen and path.startswith(top)):
                             follow(path)
         follow(url)
@@ -1723,7 +1727,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Upload', str(q("title")))
+        self.assertIn('Upload', six.ensure_text(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
@@ -1734,7 +1738,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Revise', str(q("title")))
+        self.assertIn('Revise', six.ensure_text(q("title")))
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some different text for a test')
         test_file.name = "also_not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
@@ -1758,7 +1762,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Upload', str(q("title")))
+        self.assertIn('Upload', six.ensure_text(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
@@ -1776,7 +1780,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Upload', str(q("title")))
+        self.assertIn('Upload', six.ensure_text(q("title")))
         
 
     def test_upload_minutes_agenda(self):
@@ -1791,7 +1795,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertIn('Upload', str(q("Title")))
+            self.assertIn('Upload', six.ensure_text(q("Title")))
             self.assertFalse(session.sessionpresentation_set.exists())
             self.assertFalse(q('form input[type="checkbox"]'))
     
@@ -1845,7 +1849,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertIn('Revise', str(q("Title")))
+            self.assertIn('Revise', six.ensure_text(q("Title")))
             test_file = BytesIO(b'this is some different text for a test')
             test_file.name = "also_not_really.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=True))
@@ -1879,7 +1883,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertIn('Upload', str(q("Title")))
+            self.assertIn('Upload', six.ensure_text(q("Title")))
             self.assertFalse(session.sessionpresentation_set.exists())
             self.assertFalse(q('form input[type="checkbox"]'))
 
@@ -1900,7 +1904,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertIn('Upload', str(q("title")))
+            self.assertIn('Upload', six.ensure_text(q("title")))
             self.assertFalse(session.sessionpresentation_set.filter(document__type_id=doctype))
             test_file = BytesIO(b'this is some text for a test')
             test_file.name = "not_really.txt"
@@ -1923,7 +1927,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Upload', str(q("title")))
+        self.assertIn('Upload', six.ensure_text(q("title")))
         self.assertFalse(session1.sessionpresentation_set.filter(document__type_id='slides'))
         test_file = BytesIO(b'this is not really a slide')
         test_file.name = 'not_really.txt'
@@ -1951,7 +1955,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertTrue(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Revise', str(q("title")))
+        self.assertIn('Revise', six.ensure_text(q("title")))
         test_file = BytesIO(b'new content for the second slide deck')
         test_file.name = 'doesnotmatter.txt'
         r = self.client.post(url,dict(file=test_file,title='rename the presentation',apply_to_all=False))

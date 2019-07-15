@@ -1,7 +1,11 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import debug                            # pyflakes:ignore
+import io
 import json
 import os
 import shutil
@@ -54,7 +58,7 @@ class VideoRecordingTestCase(TestCase):
 
     def test_get_urls_from_json(self):
         path = os.path.join(settings.BASE_DIR, "../test/data/youtube-playlistitems.json")
-        with open(path) as f:
+        with io.open(path) as f:
             doc = json.load(f)
         urls = _get_urls_from_json(doc)
         self.assertEqual(len(urls),2)
@@ -110,7 +114,7 @@ class RecordingTestCase(TestCase):
         path = os.path.join(settings.MEETING_RECORDINGS_DIR,'ietf' + timeslot.meeting.number,filename)
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
-        with open(path, "w") as f:
+        with io.open(path, "w") as f:
             f.write('dummy')
 
     def get_filename_for_timeslot(self, timeslot):

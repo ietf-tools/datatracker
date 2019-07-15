@@ -1,22 +1,27 @@
 # Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 import email.utils
 import email.header
+import six
 import uuid
 
 from hashids import Hashids
-from urllib.parse import urljoin
+from six.moves.urllib.parse import urljoin
 
 from django.conf import settings
-
-from django.core.validators import validate_email
-from django.core.exceptions import ObjectDoesNotExist
-from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.validators import validate_email
+from django.db import models
 from django.template.loader import render_to_string
-from django.utils.encoding import smart_bytes
+from django.utils.encoding import python_2_unicode_compatible, smart_bytes
 from django.utils.text import slugify
+
 from simple_history.models import HistoricalRecords
 
 import debug                            # pyflakes:ignore
@@ -30,6 +35,7 @@ from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
 
 
+@python_2_unicode_compatible
 class Person(models.Model):
     history = HistoricalRecords()
     user = OneToOneField(User, blank=True, null=True, on_delete=models.SET_NULL)
@@ -79,7 +85,11 @@ class Person(models.Model):
     def plain_ascii(self):
         if not hasattr(self, '_cached_plain_ascii'):
             if self.ascii:
-                ascii = unidecode_name(self.ascii)
+                if isinstance(self.ascii, six.binary_type):
+                    uname = six.ensure_text(self.ascii)
+                    ascii = unidecode_name(uname)
+                else:
+                    ascii = unidecode_name(self.ascii)
             else:
                 ascii = unidecode_name(self.name)
             prefix, first, middle, last, suffix = name_parts(ascii)
@@ -96,7 +106,7 @@ class Person(models.Model):
         may be an object or the group acronym."""
         if group:
             from ietf.group.models import Group
-            if isinstance(group, str) or isinstance(group, str):
+            if isinstance(group, six.string_types):
                 group = Group.objects.get(acronym=group)
             e = Email.objects.filter(person=self, role__group=group, role__name=role_name)
         else:
@@ -225,6 +235,7 @@ class Person(models.Model):
         ct1['ascii']     = self.ascii
         return ct1
 
+@python_2_unicode_compatible
 class Alias(models.Model):
     """This is used for alternative forms of a name.  This is the
     primary lookup point for names, and should always contain the
@@ -252,6 +263,7 @@ class Alias(models.Model):
     class Meta:
         verbose_name_plural = "Aliases"
 
+@python_2_unicode_compatible
 class Email(models.Model):
     history = HistoricalRecords()
     address = models.CharField(max_length=64, primary_key=True, validators=[validate_email])
@@ -323,6 +335,7 @@ PERSON_API_KEY_ENDPOINTS = [
     ("/api/meeting/session/video/url", "/api/meeting/session/video/url"),
 ]
 
+@python_2_unicode_compatible
 class PersonalApiKey(models.Model):
     person   = ForeignKey(Person, related_name='apikeys')
     endpoint = models.CharField(max_length=128, null=False, blank=False, choices=PERSON_API_KEY_ENDPOINTS)
@@ -335,11 +348,8 @@ class PersonalApiKey(models.Model):
     @classmethod
     def validate_key(cls, s):
         import struct, hashlib, base64
-        try:
-            key = base64.urlsafe_b64decode(s)
-        except TypeError:
-            return None
-
+        assert isinstance(s, six.binary_type)
+        key = base64.urlsafe_b64decode(s)
         id, salt, hash = struct.unpack(KEY_STRUCT, key)
         k = cls.objects.filter(id=id)
         if not k.exists():
@@ -372,6 +382,7 @@ PERSON_EVENT_CHOICES = [
     ("email_address_deactivated", "Email address deactivated"),
     ]
 
+@python_2_unicode_compatible
 class PersonEvent(models.Model):
     person = ForeignKey(Person)
     time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")

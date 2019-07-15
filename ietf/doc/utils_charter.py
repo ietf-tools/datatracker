@@ -1,5 +1,15 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
-import re, datetime, os, shutil
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import io
+import os
+import re
+import shutil
+import six
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -53,7 +63,7 @@ def next_approved_revision(rev):
 def read_charter_text(doc):
     filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
     try:
-        with open(filename, 'r') as f:
+        with io.open(filename, 'r') as f:
             return f.read()
     except IOError:
         return "Error: couldn't read charter text"
@@ -142,7 +152,7 @@ def generate_ballot_writeup(request, doc):
     e.doc = doc
     e.rev = doc.rev,
     e.desc = "Ballot writeup was generated"
-    e.text = str(render_to_string("doc/charter/ballot_writeup.txt"))
+    e.text = six.ensure_text(render_to_string("doc/charter/ballot_writeup.txt"))
 
     # caller is responsible for saving, if necessary
     return e

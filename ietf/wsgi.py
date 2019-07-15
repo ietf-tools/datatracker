@@ -1,4 +1,9 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 """
 WSGI configuration for the datatracker.
 
@@ -39,19 +44,20 @@ WSGIPythonEggs /var/www/.python-eggs/
 """
 
 
+import io
 import os
 import sys
 import syslog
 
 path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-syslog.openlog("datatracker", syslog.LOG_PID, syslog.LOG_USER)
+syslog.openlog(str("datatracker"), syslog.LOG_PID, syslog.LOG_USER)
 
 # Virtualenv support
 virtualenv_activation = os.path.join(path, "env", "bin", "activate_this.py")
 if os.path.exists(virtualenv_activation):
     syslog.syslog("Starting datatracker wsgi with virtualenv %s" % os.path.dirname(os.path.dirname(virtualenv_activation)))
-    exec(compile(open(virtualenv_activation, "rb").read(), virtualenv_activation, 'exec'), dict(__file__=virtualenv_activation))
+    exec(compile(io.open(virtualenv_activation, "rb").read(), virtualenv_activation, 'exec'), dict(__file__=virtualenv_activation))
 else:
     syslog.syslog("Starting datatracker wsgi without virtualenv")
 

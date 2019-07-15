@@ -1,12 +1,16 @@
 # Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import shutil
 import calendar
 import datetime
 import io
 import bleach
+import six
 
 from pyquery import PyQuery
 from tempfile import NamedTemporaryFile
@@ -115,7 +119,7 @@ class GroupPagesTests(TestCase):
 
         chair = Email.objects.filter(role__group=group, role__name="chair")[0]
 
-        with open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
+        with io.open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
             f.write("This is a charter.")
 
         url = urlreverse('ietf.group.views.wg_summary_area', kwargs=dict(group_type="wg"))
@@ -229,7 +233,7 @@ class GroupPagesTests(TestCase):
         group = CharterFactory().group
         draft = WgDraftFactory(group=group)
 
-        with open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
+        with io.open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
             f.write("This is a charter.")
 
         milestone = GroupMilestone.objects.create(
@@ -582,7 +586,7 @@ class GroupEditTests(TestCase):
         self.assertTrue(len(q('form .has-error')) > 0)
         
         # edit info
-        with open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
+        with io.open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
             f.write("This is a charter.")
         area = group.parent
         ad = Person.objects.get(name="Areað Irector")
@@ -1264,7 +1268,7 @@ class StatusUpdateTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code,200)
             q=PyQuery(response.content)
-            self.assertTrue(bleach.linkify(escape(event.desc)) in str(q('pre')))
+            self.assertTrue(bleach.linkify(escape(event.desc)) in six.ensure_text(q('pre')))
             self.assertFalse(q('a#edit_button'))
             self.client.login(username=chair.person.user.username,password='%s+password'%chair.person.user.username)
             response = self.client.get(url)

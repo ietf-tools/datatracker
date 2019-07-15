@@ -1,4 +1,10 @@
 # Copyright The IETF Trust 2018-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import warnings
 from collections import OrderedDict
 
@@ -187,7 +193,7 @@ class Command(BaseCommand):
             if (output and self.stdout.isatty() and options['verbosity'] > 0):
                 progress_output = self.stdout
                 object_count = sum(get_objects(count_only=True))
-            stream = open(output, 'w') if output else None
+            stream = io.open(output, 'w') if output else None
             try:
                 serializers.serialize(
                     format, get_objects(), indent=indent,

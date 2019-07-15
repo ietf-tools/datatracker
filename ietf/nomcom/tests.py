@@ -1,11 +1,17 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-#import tempfile
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
+import io
 import random
+import six
 import shutil
-import urllib.parse
+
 from pyquery import PyQuery
+from six.moves.urllib.parse import urlparse
 
 from django.db import IntegrityError
 from django.db.models import Max
@@ -35,7 +41,7 @@ from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, get_hash
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Email, Person
 from ietf.stats.models import MeetingRegistration
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import outbox, empty_outbox, get_payload
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 
 client_test_cert_files = None
@@ -334,7 +340,7 @@ class NomcomViewsTest(TestCase):
         response = self.client.post(self.private_merge_nominee_url, test_data)
         self.assertEqual(response.status_code, 302)
         redirect_url = response["Location"]
-        redirect_path = urllib.parse.urlparse(redirect_url).path
+        redirect_path = urlparse(redirect_url).path
         self.assertEqual(redirect_path, reverse('ietf.nomcom.views.private_index', kwargs={"year": NOMCOM_YEAR}))
 
         response = self.client.get(redirect_url)
@@ -407,7 +413,7 @@ class NomcomViewsTest(TestCase):
         q = PyQuery(r.content)
         reminder_date = '%s-09-30' % self.year
 
-        f = open(self.cert_file.name)
+        f = io.open(self.cert_file.name)
         response = self.client.post(self.edit_nomcom_url, {
             'public_key': f,
             'reminderdates_set-TOTAL_FORMS': q('input[name="reminderdates_set-TOTAL_FORMS"]').val(),
@@ -520,7 +526,7 @@ class NomcomViewsTest(TestCase):
         self.assertEqual('Nomination receipt', outbox[-1]['Subject'])
         self.assertEqual(self.email_from, outbox[-1]['From'])
         self.assertIn('plain', outbox[-1]['To'])
-        self.assertIn('Comments with accents äöå', str(outbox[-1].get_payload(decode=True),"utf-8","replace"))
+        self.assertIn('Comments with accents äöå', six.ensure_text(outbox[-1].get_payload(decode=True),"utf-8","replace"))
 
         # Nominate the same person for the same position again without asking for confirmation 
 
@@ -561,7 +567,7 @@ class NomcomViewsTest(TestCase):
         self.assertEqual('Nomination receipt', outbox[-1]['Subject'])
         self.assertEqual(self.email_from, outbox[-1]['From'])
         self.assertIn('plain', outbox[-1]['To'])
-        self.assertIn('Comments with accents äöå', str(outbox[-1].get_payload(decode=True),"utf-8","replace"))
+        self.assertIn('Comments with accents äöå', six.ensure_text(outbox[-1].get_payload(decode=True),"utf-8","replace"))
 
         # Nominate the same person for the same position again without asking for confirmation 
 
@@ -621,7 +627,7 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
 
         response = self.client.get(nominate_url)
         self.assertEqual(response.status_code, 200)
@@ -687,7 +693,7 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
 
         response = self.client.get(nominate_url)
         self.assertEqual(response.status_code, 200)
@@ -763,7 +769,7 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
 
         response = self.client.get(self.add_questionnaire_url)
         self.assertEqual(response.status_code, 200)
@@ -801,12 +807,12 @@ class NomcomViewsTest(TestCase):
         # We're interested in the confirmation receipt here
         self.assertEqual(len(outbox),3)
         self.assertEqual('NomCom comment confirmation', outbox[2]['Subject'])
-        email_body = outbox[2].get_payload()
+        email_body = get_payload(outbox[2])
         self.assertIn(position, email_body)
         self.assertNotIn('$', email_body)
         self.assertEqual(self.email_from, outbox[-2]['From'])
         self.assertIn('plain', outbox[2]['To'])
-        self.assertIn('Comments with accents äöå', str(outbox[2].get_payload(decode=True),"utf-8","replace"))
+        self.assertIn('Comments with accents äöå', six.ensure_text(outbox[2].get_payload(decode=True),"utf-8","replace"))
 
         empty_outbox()
         self.feedback_view(public=True)
@@ -842,7 +848,7 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
 
         response = self.client.get(feedback_url)
         self.assertEqual(response.status_code, 200)
@@ -957,7 +963,7 @@ class FeedbackTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
 
         comment_text = 'Plain text. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
         comments = nomcom.encrypt(comment_text)
@@ -979,7 +985,7 @@ class ReminderTest(TestCase):
         self.nomcom = get_nomcom_by_year(NOMCOM_YEAR)
         self.cert_file, self.privatekey_file = get_cert_files()
         #self.nomcom.public_key.storage.location = tempfile.gettempdir()
-        self.nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+        self.nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
 
         gen = Position.objects.get(nomcom=self.nomcom,name='GEN')
         rai = Position.objects.get(nomcom=self.nomcom,name='RAI')

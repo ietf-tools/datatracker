@@ -1,5 +1,11 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import six
+import sys
 
 import debug
 debug.debug = True
@@ -20,12 +26,16 @@ class RestApi(ResourceTestCaseMixin, TestCase):
         """
         # print('  fetching %s' % resource)
         r = self.api_client.get(resource, format=format)
-        if format == 'json':
-            self.assertValidJSONResponse(r)
-        elif format == 'xml':
-            self.assertValidXMLResponse(r)
-        else:
-            raise Exception("Unknown format found when testing the RestApi: %s" % (format, ))
+        try:
+            if format == 'json':
+                self.assertValidJSONResponse(r)
+            elif format == 'xml':
+                self.assertValidXMLResponse(r)
+            else:
+                raise Exception("Unknown format found when testing the RestApi: %s" % (format, ))
+        except Exception:
+            sys.stderr.write(" * Exception for resource: %s, format: %s\n" % (resource, format))
+            raise
         data = self.deserialize(r)
         for name in data:
             if 'list_endpoint' in data[name]:
@@ -74,6 +84,6 @@ class RestApi(ResourceTestCaseMixin, TestCase):
         for doc in doclist:
             for key in doc:
                 value = doc[key]
-                if isinstance(value, str) and value.startswith('%s/'%apitop):
+                if isinstance(value, six.string_types) and value.startswith('%s/'%apitop):
                     self.api_client.get(value, format='json')
                     

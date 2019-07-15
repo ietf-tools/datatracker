@@ -1,22 +1,26 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 # code to generate plain-text index files that are placed on
 # www.ietf.org in the same directory as the I-Ds
 
-import datetime, os
-
-import debug    # pyflakes:ignore
-
+import datetime
+import os
 import pytz
+import six
 
 from django.conf import settings
 from django.template.loader import render_to_string
 
-from ietf.doc.templatetags.ietf_filters import clean_whitespace
+import debug    # pyflakes:ignore
+
 from ietf.doc.models import Document, DocEvent, DocumentAuthor, RelatedDocument, DocAlias, State
 from ietf.doc.models import LastCallDocEvent, NewRevisionDocEvent
 from ietf.doc.models import IESG_SUBSTATE_TAGS
+from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
 from ietf.utils import log
@@ -191,7 +195,7 @@ def all_id2_txt():
                 area = d.group.parent.acronym
         fields.append(area)
         # 9 responsible AD name
-        fields.append(str(d.ad) if d.ad else "")
+        fields.append(six.ensure_text(d.ad) if d.ad else "")
         # 10
         fields.append(d.intended_std_level.name if d.intended_std_level else "")
         # 11

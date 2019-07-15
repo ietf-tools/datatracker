@@ -1,15 +1,20 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
+import io
 import json
 import datetime
-import io
 import quopri
 import shutil
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
+
+import debug                            # pyflakes:ignore
 
 from ietf.doc.factories import WgDraftFactory
 from ietf.doc.models import Document, DocAlias, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
@@ -177,7 +182,7 @@ ICANN
                         rtime = 7*subjects.index(subject) + 5*tags.index(tag) + embedded_names.index(embedded_name)
                         person=Person.objects.get(user__username="iana")
                         fromaddr = person.email().formatted_email()
-                        msg = msg_template % dict(person=quopri.encodestring(person.name.encode()),
+                        msg = msg_template % dict(person=quopri.encodestring(person.name.encode('utf-8')),
                                                   fromaddr=fromaddr,
                                                   draft=draft.name,
                                                   rev=draft.rev,
@@ -185,7 +190,6 @@ ICANN
                                                   rtime=rtime,
                                                   subject=subject,
                                                   embedded_name=embedded_name,)
-    
                         doc_name, review_time, by, comment = iana.parse_review_email(msg.encode('utf-8'))
     
                         self.assertEqual(doc_name, draft.name)
@@ -232,7 +236,7 @@ class RFCSyncTests(TestCase):
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.save_archive_dir
 
     def write_draft_file(self, name, size):
-        with open(os.path.join(self.id_dir, name), 'w') as f:
+        with io.open(os.path.join(self.id_dir, name), 'w') as f:
             f.write("a" * size)
 
     def test_rfc_index(self):

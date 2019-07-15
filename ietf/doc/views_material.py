@@ -1,7 +1,11 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 # views for managing group materials (slides, ...)
+import io
 import os
 import re
 
@@ -140,7 +144,7 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                 f = form.cleaned_data["material"]
                 file_ext = os.path.splitext(f.name)[1]
 
-                with open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + file_ext), 'wb+') as dest:
+                with io.open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + file_ext), 'wb+') as dest:
                     for chunk in f.chunks():
                         dest.write(chunk)
 

@@ -1,7 +1,14 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import datetime, os, re
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import io
+import os
+import re
+import six
 
 from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
@@ -124,7 +131,7 @@ class UploadForm(forms.Form):
 
     def save(self, doc):
        filename = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
-       with open(filename, 'w', encoding='utf-8') as destination:
+       with io.open(filename, 'w', encoding='utf-8') as destination:
            if self.cleaned_data['txt']:
                destination.write(self.cleaned_data['txt'])
            else:
@@ -188,7 +195,7 @@ def submit(request, name):
         else:
             filename = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
             try:
-                with open(filename, 'r') as f:
+                with io.open(filename, 'r') as f:
                     init["content"] = f.read()
             except IOError:
                 pass
@@ -634,7 +641,7 @@ def generate_last_call_text(request, doc):
     e.doc = doc
     e.rev = doc.rev
     e.desc = 'Last call announcement was generated'
-    e.text = str(new_text)
+    e.text = six.ensure_text(new_text)
     e.save()
 
     return e 

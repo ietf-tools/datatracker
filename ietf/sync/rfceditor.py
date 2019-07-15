@@ -1,12 +1,17 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import re
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import base64
 import datetime
-import urllib.request, urllib.parse, urllib.error
-import urllib.request, urllib.error, urllib.parse
+import re
 import socket
+import six
+
+from six.moves.urllib.request import Request, urlopen
+from six.moves.urllib.parse import urlencode
 from xml.dom import pulldom, Node
 
 from django.conf import settings
@@ -40,7 +45,7 @@ def get_child_text(parent_node, tag_name):
 
 def fetch_queue_xml(url):
     socket.setdefaulttimeout(30)
-    return urllib.request.urlopen(url)
+    return urlopen(url)
 
 def parse_queue(response):
     """Parse RFC Editor queue XML into a bunch of tuples + warnings."""
@@ -228,7 +233,7 @@ def update_drafts_from_queue(drafts):
 
 def fetch_index_xml(url):
     socket.setdefaulttimeout(30)
-    return urllib.request.urlopen(url)
+    return urlopen(url)
 
 def parse_index(response):
     """Parse RFC Editor index XML into a bunch of tuples."""
@@ -517,7 +522,7 @@ def post_approved_draft(url, name):
     the data from the Datatracker and start processing it. Returns
     response and error (empty string if no error)."""
 
-    request = urllib.request.Request(url)
+    request = Request(url)
     request.add_header("Content-type", "application/x-www-form-urlencoded")
     request.add_header("Accept", "text/plain")
     # HTTP basic auth
@@ -531,7 +536,7 @@ def post_approved_draft(url, name):
     log("Posting RFC-Editor notifcation of approved draft '%s' to '%s'" % (name, url))
     text = error = ""
     try:
-        f = urllib.request.urlopen(request, data=urllib.parse.urlencode({ 'draft': name }), timeout=20)
+        f = urlopen(request, data=urlencode({ 'draft': name }), timeout=20)
         text = f.read()
         status_code = f.getcode()
         f.close()
@@ -547,6 +552,6 @@ def post_approved_draft(url, name):
         # catch everything so we don't leak exceptions, convert them
         # into string instead
         log("Exception on RFC-Editor notification for draft '%s': '%s'" % (name, e))
-        error = str(e)
+        error = six.ensure_text(e)
 
     return text, error

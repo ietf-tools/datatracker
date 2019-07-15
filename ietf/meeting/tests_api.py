@@ -1,8 +1,12 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
-from urllib.parse import urlsplit
+
+from six.moves.urllib.parse import urlsplit
 
 from django.urls import reverse as urlreverse
 

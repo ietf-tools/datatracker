@@ -1,7 +1,11 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import json
+import six
 
 from django.utils.html import escape
 from django import forms
@@ -47,9 +51,9 @@ class SearchableLiaisonStatementsField(forms.CharField):
     def prepare_value(self, value):
         if not value:
             value = ""
-        if isinstance(value, int):
+        if isinstance(value, six.integer_types):
             value = str(value)
-        if isinstance(value, str):
+        if isinstance(value, six.string_types):
             pks = self.parse_select2_value(value)
             value = self.model.objects.filter(pk__in=pks)
         if isinstance(value, LiaisonStatement):
@@ -61,7 +65,7 @@ class SearchableLiaisonStatementsField(forms.CharField):
         # patterns may not have been fully constructed there yet
         self.widget.attrs["data-ajax-url"] = urlreverse("ietf.liaisons.views.ajax_select2_search_liaison_statements")
 
-        return ",".join(str(o.pk) for o in value)
+        return ",".join(six.ensure_text(o.pk) for o in value)
 
     def clean(self, value):
         value = super(SearchableLiaisonStatementsField, self).clean(value)

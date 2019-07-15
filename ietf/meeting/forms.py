@@ -1,8 +1,11 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os
-import codecs
 import datetime
 
 from django import forms
@@ -287,7 +290,7 @@ class InterimSessionModelForm(forms.ModelForm):
         directory = os.path.dirname(path)
         if not os.path.exists(directory):
             os.makedirs(directory)
-        with codecs.open(path, "w", encoding='utf-8') as file:
+        with io.open(path, "w", encoding='utf-8') as file:
             file.write(self.cleaned_data['agenda'])
 
 

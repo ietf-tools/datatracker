@@ -1,15 +1,20 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-import debug    # pyflakes:ignore
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os
 import shutil
 
 from pyquery import PyQuery
-from io import StringIO
 from textwrap import wrap
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
+
+import debug    # pyflakes:ignore
 
 from ietf.doc.factories import IndividualDraftFactory, ConflictReviewFactory
 from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, BallotPositionDocEvent, TelechatDocEvent, State
@@ -19,7 +24,7 @@ from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
 from ietf.name.models import StreamName
 from ietf.utils.test_utils import TestCase
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import outbox, empty_outbox, get_payload
 from ietf.utils.test_utils import login_testing_unauthorized
 
 
@@ -299,9 +304,9 @@ class ConflictReviewTests(TestCase):
         self.assertIn('iana@', outbox[0]['Cc'])
 
         if approve_type == 'appr-noprob':
-            self.assertIn( 'IESG has no problem', ''.join(wrap(outbox[0].get_payload(), 2**16)))
+            self.assertIn( 'IESG has no problem', ''.join(wrap(get_payload(outbox[0]), 2**16)))
         else:
-            self.assertIn( 'NOT be published', ''.join(wrap(outbox[0].get_payload(), 2**16)))
+            self.assertIn( 'NOT be published', ''.join(wrap(get_payload(outbox[0]), 2**16)))
 
 
     def test_approve_reqnopub(self):
@@ -338,7 +343,7 @@ class ConflictReviewSubmitTests(TestCase):
         self.assertEqual(r.status_code,302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEqual(doc.rev,'00')
-        with open(path) as f:
+        with io.open(path) as f:
             self.assertEqual(f.read(),"Some initial review text\n")
             f.close()
         self.assertTrue( "submission-00" in doc.latest_event(NewRevisionDocEvent).desc)
@@ -352,7 +357,7 @@ class ConflictReviewSubmitTests(TestCase):
         # doc.rev is u'00' per the test setup - double-checking that here - if it fails, the breakage is in setUp
         self.assertEqual(doc.rev,'00')
         path = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
-        with open(path,'w') as f:
+        with io.open(path,'w') as f:
             f.write('This is the old proposal.')
             f.close()
 
@@ -365,21 +370,21 @@ class ConflictReviewSubmitTests(TestCase):
         # faulty posts trying to use file upload
         # Copied from wgtracker tests - is this really testing the server code, or is it testing
         #  how client.post populates Content-Type?
-        test_file = StringIO("\x10\x11\x12") # post binary file
+        test_file = io.StringIO("\x10\x11\x12") # post binary file
         test_file.name = "unnamed"
         r = self.client.post(url, dict(txt=test_file,submit_response="1"))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "does not appear to be a text file")
 
         # sane post uploading a file
-        test_file = StringIO("This is a new proposal.")
+        test_file = io.StringIO("This is a new proposal.")
         test_file.name = "unnamed"
         r = self.client.post(url,dict(txt=test_file,submit_response="1"))
         self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEqual(doc.rev,'01')
         path = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
-        with open(path) as f:
+        with io.open(path) as f:
             self.assertEqual(f.read(),"This is a new proposal.")
             f.close()
         self.assertTrue( "submission-01" in doc.latest_event(NewRevisionDocEvent).desc)

@@ -1,9 +1,14 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import copy
 import datetime
 import logging
 import re
+import six
 import smtplib
 import sys
 import textwrap
@@ -25,6 +30,7 @@ from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.core.validators import validate_email
 from django.template.loader import render_to_string
 from django.template import Context,RequestContext
+from django.utils.encoding import force_text, force_str, force_bytes
 
 import debug                            # pyflakes:ignore
 
@@ -115,12 +121,12 @@ def send_smtp(msg, bcc=None):
                 # advertise the AUTH capability.
                 server.ehlo()
                 server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
-            unhandled = server.sendmail(frm, to, msg.as_bytes())
+            unhandled = server.sendmail(frm, to, force_bytes(msg.as_string()))
             if unhandled != {}:
                 raise SMTPSomeRefusedRecipients(message="%d addresses were refused"%len(unhandled),original_msg=msg,refusals=unhandled)
         except Exception as e:
             # need to improve log message
-            log("Exception while trying to send email from '%s' to %s subject '%s'" % (frm, to, msg.get('Subject', '[no subject]')))
+            log("Exception while trying to send email from '%s' to %s subject '%s'" % (frm, to, msg.get('Subject', '[no subject]')), e=e)
             if isinstance(e, smtplib.SMTPException):
                 e.original_msg=msg
                 raise 
@@ -131,7 +137,7 @@ def send_smtp(msg, bcc=None):
                 server.quit()
             except smtplib.SMTPServerDisconnected:
                 pass
-        subj = msg.get('Subject', '[no subject]')
+        subj = force_text(msg.get('Subject', '[no subject]'))
         log("sent email from '%s' to %s id %s subject '%s'" % (frm, to, msg.get('Message-ID', ''), subj))
     
 def copy_email(msg, to, toUser=False, originalBcc=None):
@@ -180,7 +186,7 @@ def send_mail(request, to, frm, subject, template, context, *args, **kwargs):
     return send_mail_text(request, to, frm, subject, txt, *args, **kwargs)
 
 def encode_message(txt):
-    assert isinstance(txt, str)
+    assert isinstance(txt, six.text_type)
     return MIMEText(txt.encode('utf-8'), 'plain', 'UTF-8')
 
 def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=False, bcc=None, copy=True):
@@ -219,7 +225,13 @@ def formataddr(addrtuple):
     address field.  Does what's needed, and returns a string value suitable for
     use in a To: or Cc: email header field.
     """
-    return simple_formataddr(addrtuple, charset='utf-8')
+    if six.PY2:
+        name, addr = addrtuple
+        if name and not isascii(name):
+            name = str(Header(name, 'utf-8'))
+        return simple_formataddr((name, addr))
+    else:
+        return simple_formataddr(addrtuple)
 
 def parseaddr(addr):
     """
@@ -230,7 +242,7 @@ def parseaddr(addr):
 
     """
 
-    addr = ''.join( [ ( s.decode(m) if m else s.decode()) if isinstance(s, bytes) else s for (s,m) in decode_header(addr) ] )
+    addr = ''.join( [ ( s.decode(m) if m else s.decode()) if isinstance(s, six.binary_type) else s for (s,m) in decode_header(addr) ] )
     name, addr = simple_parseaddr(addr)
     return name, addr
 
@@ -269,7 +281,7 @@ def condition_message(to, frm, subject, msg, cc, extra):
             if name:
                 to_hdr.append('"%s"' % name)
             to_hdr.append("<%s>," % addr)
-    to_str = to_hdr.encode()
+    to_str = to_hdr.encode('utf-8')
     if to_str and to_str[-1] == ',':
         to_str=to_str[:-1]
     # It's important to use this string, and not assign the Header object.
@@ -352,7 +364,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
 
 def parse_preformatted(preformatted, extra={}, override={}):
     """Parse preformatted string containing mail with From:, To:, ...,"""
-    msg = message_from_string(preformatted)
+    msg = message_from_string(force_str(preformatted))
     msg.set_charset('UTF-8')
 
     for k, v in override.items():
@@ -408,7 +420,7 @@ def send_mail_preformatted(request, preformatted, extra={}, override={}):
     extra headers as needed)."""
 
     (msg, extra, bcc) = parse_preformatted(preformatted, extra, override)
-    txt = msg.get_payload()
+    txt = get_payload(msg)
     send_mail_text(request, msg['To'], msg["From"], msg["Subject"], txt, extra=extra, bcc=bcc)
     return msg
 
@@ -440,10 +452,10 @@ def exception_components(e):
         
 def log_smtp_exception(e):
     (extype, value, tb) = exception_components(e)
-    log("SMTP Exception: %s : %s" % (extype,value))
+    log("SMTP Exception: %s : %s" % (extype,value), e)
     if isinstance(e,SMTPSomeRefusedRecipients):
-        log("     SomeRefused: %s"%(e.summary_refusals()))
-    log("     Traceback: %s" % tb) 
+        log("     SomeRefused: %s"%(e.summary_refusals()), e)
+    log("     Traceback: %s" % tb, e) 
     return (extype, value, tb)
 
 def build_warning_message(request, e):
@@ -540,9 +552,17 @@ def get_email_addresses_from_text(text):
             validate_email(addr)
             return True
         except ValidationError:
-            logger.error(f'Bad data: get_email_addresses_from_text() got an invalid email address tuple: {email}, in "{text}".')
+            logger.error('Bad data: get_email_addresses_from_text() got an '
+                'invalid email address tuple: {email}, in "{text}".'.format(email=email, text=text))
             return False
     # whitespace normalization -- getaddresses doesn't do this
     text = re.sub(r'(?u)\s+', ' ', text)
     return [ formataddr(e) for e in getaddresses([text, ]) if valid(e) ]
     
+
+def get_payload(msg, decode=False):
+    if six.PY2:
+        return msg.get_payload(decode=decode).decode(msg.get_content_charset('utf-8'))
+    else:
+        return msg.get_payload(decode=decode)
+        

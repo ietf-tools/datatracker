@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os
 import datetime
 import requests
@@ -625,7 +628,7 @@ def complete_review(request, name, assignment_id):
                 content = form.cleaned_data['review_content']
 
             filename = os.path.join(review.get_file_path(), '{}.txt'.format(review.name, review.rev))
-            with open(filename, 'w', encoding='utf-8') as destination:
+            with io.open(filename, 'w', encoding='utf-8') as destination:
                 destination.write(content)
 
             completion_datetime = datetime.datetime.now()

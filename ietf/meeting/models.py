@@ -1,11 +1,13 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function, unicode_literals
 
 # old meeting models can be found in ../proceedings/models.py
 
 import pytz
 import datetime
-from urllib.parse import urljoin
+import io
+from six.moves.urllib.parse import urljoin
 import os
 import re
 import string
@@ -19,6 +21,7 @@ from django.conf import settings
 # mostly used by json_dict()
 #from django.template.defaultfilters import slugify, date as date_format, time as time_format
 from django.template.defaultfilters import date as date_format
+from django.utils.encoding import python_2_unicode_compatible
 from django.utils.text import slugify
 
 from ietf.dbtemplate.models import DBTemplate
@@ -54,6 +57,7 @@ def fmt_date(o):
     d = datetime_safe.new_date(o)
     return d.strftime(DATE_FORMAT)
 
+@python_2_unicode_compatible
 class Meeting(models.Model):
     # number is either the number for IETF meetings, or some other
     # identifier for interim meetings/IESG retreats/liaison summits/...
@@ -109,7 +113,7 @@ class Meeting(models.Model):
 
     def __str__(self):
         if self.type_id == "ietf":
-            return "IETF-%s" % (self.number)
+            return u"IETF-%s" % (self.number)
         else:
             return self.number
 
@@ -276,7 +280,7 @@ class Meeting(models.Model):
             try:
                 tzfn = os.path.join(settings.TZDATA_ICS_PATH, self.time_zone + ".ics")
                 if os.path.exists(tzfn):
-                    with open(tzfn) as tzf:
+                    with io.open(tzfn) as tzf:
                         icstext = tzf.read()
                     vtimezone = re.search("(?sm)(\nBEGIN:VTIMEZONE.*\nEND:VTIMEZONE\n)", icstext).group(1).strip()
                     if vtimezone:
@@ -310,6 +314,7 @@ class Meeting(models.Model):
 
 # === Rooms, Resources, Floorplans =============================================
 
+@python_2_unicode_compatible
 class ResourceAssociation(models.Model):
     name = ForeignKey(RoomResourceName)
     icon = models.CharField(max_length=64)       # icon to be found in /static/img
@@ -326,6 +331,7 @@ class ResourceAssociation(models.Model):
         res1['resource_id'] = self.pk
         return res1
 
+@python_2_unicode_compatible
 class Room(models.Model):
     meeting = ForeignKey(Meeting)
     modified = models.DateTimeField(auto_now=True)
@@ -345,7 +351,7 @@ class Room(models.Model):
     # end floorplan-related stuff
 
     def __str__(self):
-        return "%s size: %s" % (self.name, self.capacity)
+        return u"%s size: %s" % (self.name, self.capacity)
 
     def delete_timeslots(self):
         for ts in self.timeslot_set.all():
@@ -415,6 +421,7 @@ def floorplan_path(instance, filename):
     root, ext = os.path.splitext(filename)
     return "%s/floorplan-%s-%s%s" % (settings.FLOORPLAN_MEDIA_DIR, instance.meeting.number, xslugify(instance.name), ext)
 
+@python_2_unicode_compatible
 class FloorPlan(models.Model):
     name    = models.CharField(max_length=255)
     short   = models.CharField(max_length=3, default='')
@@ -427,10 +434,11 @@ class FloorPlan(models.Model):
         ordering = ['-id',]
     #
     def __str__(self):
-        return 'floorplan-%s-%s' % (self.meeting.number, xslugify(self.name))
+        return u'floorplan-%s-%s' % (self.meeting.number, xslugify(self.name))
 
 # === Schedules, Sessions, Timeslots and Assignments ===========================
 
+@python_2_unicode_compatible
 class TimeSlot(models.Model):
     """
     Everything that would appear on the meeting agenda of a meeting is
@@ -475,9 +483,9 @@ class TimeSlot(models.Model):
     def __str__(self):
         location = self.get_location()
         if not location:
-            location = "(no location)"
+            location = u"(no location)"
 
-        return "%s: %s-%s %s, %s" % (self.meeting.number, self.time.strftime("%m-%d %H:%M"), (self.time + self.duration).strftime("%H:%M"), self.name, location)
+        return u"%s: %s-%s %s, %s" % (self.meeting.number, self.time.strftime("%m-%d %H:%M"), (self.time + self.duration).strftime("%H:%M"), self.name, location)
 
     def end_time(self):
         return self.time + self.duration
@@ -598,6 +606,7 @@ class TimeSlot(models.Model):
 
 # end of TimeSlot
 
+@python_2_unicode_compatible
 class Schedule(models.Model):
     """
     Each person may have multiple agendas saved.
@@ -617,7 +626,7 @@ class Schedule(models.Model):
     # considering copiedFrom = ForeignKey('Schedule', blank=True, null=True)
 
     def __str__(self):
-        return "%s:%s(%s)" % (self.meeting, self.name, self.owner)
+        return u"%s:%s(%s)" % (self.meeting, self.name, self.owner)
 
     def base_url(self):
         return "/meeting/%s/agenda/%s/%s" % (self.meeting.number, self.owner_email(), self.name)
@@ -707,6 +716,7 @@ class Schedule(models.Model):
         self.delete()
 
 # to be renamed SchedTimeSessAssignments (stsa)
+@python_2_unicode_compatible
 class SchedTimeSessAssignment(models.Model):
     """
     This model provides an N:M relationship between Session and TimeSlot.
@@ -726,7 +736,7 @@ class SchedTimeSessAssignment(models.Model):
         ordering = ["timeslot__time", "timeslot__type__slug", "session__group__parent__name", "session__group__acronym", "session__name", ]
 
     def __str__(self):
-        return "%s [%s<->%s]" % (self.schedule, self.session, self.timeslot)
+        return u"%s [%s<->%s]" % (self.schedule, self.session, self.timeslot)
 
     @property
     def room_name(self):
@@ -809,6 +819,7 @@ class SchedTimeSessAssignment(models.Model):
 
         return "-".join(components).lower()
 
+@python_2_unicode_compatible
 class Constraint(models.Model):
     """
     Specifies a constraint on the scheduling.
@@ -829,7 +840,7 @@ class Constraint(models.Model):
     active_status = None
 
     def __str__(self):
-        return "%s %s target=%s person=%s" % (self.source, self.name.name.lower(), self.target, self.person)
+        return u"%s %s target=%s person=%s" % (self.source, self.name.name.lower(), self.target, self.person)
 
     def brief_display(self):
         if self.target and self.person:
@@ -857,6 +868,7 @@ class Constraint(models.Model):
         return ct1
 
 
+@python_2_unicode_compatible
 class SessionPresentation(models.Model):
     session = ForeignKey('Session')
     document = ForeignKey(Document)
@@ -869,11 +881,12 @@ class SessionPresentation(models.Model):
         unique_together = (('session', 'document'),)
 
     def __str__(self):
-        return "%s -> %s-%s" % (self.session, self.document.name, self.rev)
+        return u"%s -> %s-%s" % (self.session, self.document.name, self.rev)
 
 constraint_cache_uses = 0
 constraint_cache_initials = 0
 
+@python_2_unicode_compatible
 class Session(models.Model):
     """Session records that a group should have a session on the
     meeting (time and location is stored in a TimeSlot) - if multiple
@@ -1113,7 +1126,7 @@ class Session(models.Model):
         if doc:
             path = os.path.join(settings.AGENDA_PATH, self.meeting.number, "agenda", doc.uploaded_filename)
             if os.path.exists(path):
-                with open(path) as f:
+                with io.open(path) as f:
                     return f.read()
             else:
                 return "No agenda file found"
@@ -1147,6 +1160,7 @@ class Session(models.Model):
         else:
             return self.group.acronym
 
+@python_2_unicode_compatible
 class ImportantDate(models.Model):
     meeting = ForeignKey(Meeting)
     date = models.DateField()
@@ -1155,7 +1169,7 @@ class ImportantDate(models.Model):
         ordering = ["-meeting_id","date", ]
 
     def __str__(self):
-        return '%s : %s : %s' % ( self.meeting, self.name, self.date )
+        return u'%s : %s : %s' % ( self.meeting, self.name, self.date )
 
 class SlideSubmission(models.Model):
     session = ForeignKey(Session)

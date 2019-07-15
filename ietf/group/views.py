@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright The IETF Trust 2009-2019, All Rights Reserved
-
-
+#
 # Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 # 
@@ -34,12 +33,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os
-import re
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import itertools
+import io
 import json
 import math
-import itertools
-import datetime
+import os
+import re
+import six
+
 from tempfile import mkstemp
 from collections import OrderedDict, defaultdict
 from simple_history.utils import update_change_reason
@@ -109,7 +114,7 @@ from ietf.doc.models import LastCallDocEvent
 
 
 from ietf.name.models import ReviewAssignmentStateName
-from ietf.utils.mail import send_mail_text, parse_preformatted
+from ietf.utils.mail import send_mail_text, parse_preformatted, get_payload
 
 from ietf.ietfauth.utils import user_is_person
 from ietf.dbtemplate.models import DBTemplate
@@ -204,7 +209,7 @@ def check_group_email_aliases():
     pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
     tot_count = 0
     good_count = 0
-    with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
+    with io.open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             tot_count += 1
@@ -630,7 +635,7 @@ def get_group_email_aliases(acronym, group_type):
         pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
 
     aliases = []
-    with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
+    with io.open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             if m:
@@ -691,7 +696,7 @@ def dependencies(request, acronym, group_type=None, output_type="pdf"):
 
     dothandle, dotname = mkstemp()
     os.close(dothandle)
-    dotfile = open(dotname, "w")
+    dotfile = io.open(dotname, "w")
     dotfile.write(make_dot(group))
     dotfile.close()
 
@@ -708,7 +713,7 @@ def dependencies(request, acronym, group_type=None, output_type="pdf"):
     pipe("%s -f -l 10 -o %s %s" % (settings.UNFLATTEN_BINARY, unflatname, dotname))
     pipe("%s -T%s -o %s %s" % (settings.DOT_BINARY, output_type, outname, unflatname))
 
-    outhandle = open(outname, "rb")
+    outhandle = io.open(outname, "rb")
     out = outhandle.read()
     outhandle.close()
 
@@ -1443,7 +1448,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
         saving = form_action.startswith("save")
 
         # check for conflicts
-        review_requests_dict = { str(r.pk): r for r in review_requests }
+        review_requests_dict = { six.ensure_text(r.pk): r for r in review_requests }
         posted_reqs = set(request.POST.getlist("reviewrequest", []))
         current_reqs = set(review_requests_dict.keys())
 
@@ -1599,7 +1604,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
         
         (msg,_,_) = parse_preformatted(partial_msg)
 
-        body = msg.get_payload()
+        body = get_payload(msg)
         subject = msg['Subject']
 
         form = EmailOpenAssignmentsForm(initial={

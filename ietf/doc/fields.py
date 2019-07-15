@@ -1,7 +1,11 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import json
+import six
 
 from django.utils.html import escape
 from django import forms
@@ -53,9 +57,9 @@ class SearchableDocumentsField(forms.CharField):
     def prepare_value(self, value):
         if not value:
             value = ""
-        if isinstance(value, int):
+        if isinstance(value, six.integer_types):
             value = str(value)
-        if isinstance(value, str):
+        if isinstance(value, six.string_types):
             items = self.parse_select2_value(value)
             # accept both names and pks here
             names = [ i for i in items if not i.isdigit() ]
@@ -79,7 +83,7 @@ class SearchableDocumentsField(forms.CharField):
             "model_name": self.model.__name__.lower()
         })
 
-        return ",".join(str(o.pk) for o in value)
+        return ",".join(six.ensure_text(o.pk) for o in value)
 
     def clean(self, value):
         value = super(SearchableDocumentsField, self).clean(value)

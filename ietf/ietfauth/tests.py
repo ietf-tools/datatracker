@@ -2,8 +2,11 @@
 # -*- coding: utf-8 -*-
 
 
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os, shutil, time, datetime
-from urllib.parse import urlsplit
+from six.moves.urllib.parse import urlsplit
 from pyquery import PyQuery
 from unittest import skipIf
 
@@ -46,7 +49,7 @@ class IetfAuthTests(TestCase):
         self.saved_htpasswd_file = settings.HTPASSWD_FILE
         self.htpasswd_dir = self.tempdir('htpasswd')
         settings.HTPASSWD_FILE = os.path.join(self.htpasswd_dir, "htpasswd")
-        open(settings.HTPASSWD_FILE, 'a').close() # create empty file
+        io.open(settings.HTPASSWD_FILE, 'a').close() # create empty file
 
         self.saved_htdigest_realm = getattr(settings, "HTDIGEST_REALM", None)
         settings.HTDIGEST_REALM = "test-realm"
@@ -109,11 +112,11 @@ class IetfAuthTests(TestCase):
         return confirm_url
 
     def username_in_htpasswd_file(self, username):
-        with open(settings.HTPASSWD_FILE) as f:
+        with io.open(settings.HTPASSWD_FILE) as f:
             for l in f:
                 if l.startswith(username + ":"):
                     return True
-        with open(settings.HTPASSWD_FILE) as f:
+        with io.open(settings.HTPASSWD_FILE) as f:
             print(f.read())
 
         return False
@@ -581,31 +584,30 @@ class IetfAuthTests(TestCase):
             self.assertRedirects(r, urlreverse('ietf.ietfauth.views.apikey_index'))
 
         for key in person.apikeys.all()[:3]:
-            url = key.endpoint
 
             # bad method
-            r = self.client.put(url, {'apikey':key.hash()})
+            r = self.client.put(key.endpoint, {'apikey':key.hash()})
             self.assertEqual(r.status_code, 405)
 
             # missing apikey
-            r = self.client.post(url, {'dummy':'dummy',})
+            r = self.client.post(key.endpoint, {'dummy':'dummy',})
             self.assertContains(r, 'Missing apikey parameter', status_code=400)
 
             # invalid apikey
-            r = self.client.post(url, {'apikey':BAD_KEY, 'dummy':'dummy',})
+            r = self.client.post(key.endpoint, {'apikey':BAD_KEY, 'dummy':'dummy',})
             self.assertContains(r, 'Invalid apikey', status_code=400)
 
             # too long since regular login
             person.user.last_login = datetime.datetime.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS+1)
             person.user.save()
-            r = self.client.post(url, {'apikey':key.hash(), 'dummy':'dummy',})
+            r = self.client.post(key.endpoint, {'apikey':key.hash(), 'dummy':'dummy',})
             self.assertContains(r, 'Too long since last regular login', status_code=400)
             person.user.last_login = datetime.datetime.now()
             person.user.save()
 
             # endpoint mismatch
             key2 = PersonalApiKey.objects.create(person=person, endpoint='/')
-            r = self.client.post(url, {'apikey':key2.hash(), 'dummy':'dummy',})
+            r = self.client.post(key.endpoint, {'apikey':key2.hash(), 'dummy':'dummy',})
             self.assertContains(r, 'Apikey endpoint mismatch', status_code=400)
             key2.delete()
 
@@ -632,8 +634,7 @@ class IetfAuthTests(TestCase):
             time.sleep(2)
         for i in range(count):
             for key in person.apikeys.all():
-                url = key.endpoint
-                self.client.post(url, {'apikey':key.hash(), 'dummy': 'dummy', })
+                self.client.post(key.endpoint, {'apikey':key.hash(), 'dummy': 'dummy', })
         date = str(datetime.date.today())
 
         empty_outbox()

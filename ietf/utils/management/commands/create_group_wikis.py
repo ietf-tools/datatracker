@@ -1,7 +1,12 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import copy
+import io
 import syslog
 import pkg_resources
 
@@ -132,7 +137,7 @@ class Command(BaseCommand):
                 name = unicode_unquote(name.encode('utf-8'))
                 if os.path.isfile(filename):
                     self.note("  Adding page %s" % name)
-                    with open(filename) as file:
+                    with io.open(filename) as file:
                         text = file.read().decode('utf-8')
                     self.add_wiki_page(env, name, text)
 

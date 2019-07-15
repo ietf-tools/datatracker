@@ -1,8 +1,14 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import datetime, os
 import operator
+import six
+
 from email.utils import parseaddr
 from form_utils.forms import BetterModelForm
 
@@ -198,7 +204,7 @@ class CustomModelMultipleChoiceField(forms.ModelMultipleChoiceField):
         if isinstance(value, QuerySet):
             return value
         if (hasattr(value, '__iter__') and
-                not isinstance(value, str) and
+                not isinstance(value, six.text_type) and
                 not hasattr(value, '_meta')):
             return [super(CustomModelMultipleChoiceField, self).prepare_value(v) for v in value]
         return super(CustomModelMultipleChoiceField, self).prepare_value(value)
@@ -375,7 +381,7 @@ class LiaisonModelForm(BetterModelForm):
             if created:
                 DocAlias.objects.create(name=attach.name).docs.add(attach)
             LiaisonStatementAttachment.objects.create(statement=self.instance,document=attach)
-            attach_file = open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'wb')
+            attach_file = io.open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'wb')
             attach_file.write(attached_file.read())
             attach_file.close()
 
@@ -446,7 +452,7 @@ class IncomingLiaisonForm(LiaisonModelForm):
             self.fields['from_contact'].initial = self.person.role_set.filter(group=queryset[0]).first().email.address
             self.fields['from_contact'].widget.attrs['readonly'] = True
         self.fields['from_groups'].queryset = queryset
-        self.fields['from_groups'].widget.submitter = str(self.person)
+        self.fields['from_groups'].widget.submitter = six.ensure_text(self.person)
 
         # if there's only one possibility make it the default
         if len(queryset) == 1:

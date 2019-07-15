@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 import flufl.bounce
+import io
 import mailbox
 import sys
 
@@ -67,7 +70,7 @@ class Command(BaseCommand):
                         self.stderr.write('No person is associated with <%s>\n' % (a, ))
                 else:
                     self.stderr.write('Address not found: <%s>\n' % (a, ))
-                    with open('./failed', 'a') as failed:
+                    with io.open('./failed', 'a') as failed:
                         failed.write(messages[a].as_string(unixfrom=True))
                         failed.write('\n')
 

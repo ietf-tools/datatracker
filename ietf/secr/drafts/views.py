@@ -1,8 +1,12 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 import glob
+import io
 import os
 import shutil
 from dateutil.parser import parse
@@ -53,7 +57,7 @@ def handle_uploaded_file(f):
     '''
     Save uploaded draft files to temporary directory
     '''
-    destination = open(os.path.join(settings.IDSUBMIT_MANUAL_STAGING_DIR, f.name), 'wb+')
+    destination = io.open(os.path.join(settings.IDSUBMIT_MANUAL_STAGING_DIR, f.name), 'wb+')
     for chunk in f.chunks():
         destination.write(chunk)
     destination.close()

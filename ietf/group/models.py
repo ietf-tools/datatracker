@@ -1,19 +1,22 @@
 # Copyright The IETF Trust 2010-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 import email.utils
 import jsonfield
 import os
 import re
+import six
 
-from urllib.parse import urljoin
+from six.moves.urllib.parse import urljoin
 
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.deletion import CASCADE
 from django.dispatch import receiver
+from django.utils.encoding import python_2_unicode_compatible
 
 from simple_history.models import HistoricalRecords
 
@@ -27,6 +30,7 @@ from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
 
 
+@python_2_unicode_compatible
 class GroupInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
     name = models.CharField(max_length=80)
@@ -91,7 +95,7 @@ class Group(GroupInfo):
         return e[0] if e else None
 
     def has_role(self, user, role_names):
-        if isinstance(role_names, str) or isinstance(role_names, str):
+        if isinstance(role_names, six.string_types):
             role_names = [role_names]
         return user.is_authenticated and self.role_set.filter(name__in=role_names, person__user=user).exists()
 
@@ -247,14 +251,16 @@ class GroupHistory(GroupInfo):
     class Meta:
         verbose_name_plural="group histories"
 
+@python_2_unicode_compatible
 class GroupURL(models.Model):
     group = ForeignKey(Group)
     name = models.CharField(max_length=255)
     url = models.URLField()
 
     def __str__(self):
-        return "%s (%s)" % (self.url, self.name)
+        return u"%s (%s)" % (self.url, self.name)
 
+@python_2_unicode_compatible
 class GroupMilestoneInfo(models.Model):
     group = ForeignKey(Group)
     # a group has two sets of milestones, current milestones
@@ -281,6 +287,7 @@ class GroupMilestoneHistory(GroupMilestoneInfo):
     time = models.DateTimeField()
     milestone = ForeignKey(GroupMilestone, related_name="history_set")
 
+@python_2_unicode_compatible
 class GroupStateTransitions(models.Model):
     """Captures that a group has overriden the default available
     document state transitions for a certain state."""
@@ -289,7 +296,7 @@ class GroupStateTransitions(models.Model):
     next_states = models.ManyToManyField('doc.State', related_name='previous_groupstatetransitions_states')
 
     def __str__(self):
-        return '%s "%s" -> %s' % (self.group.acronym, self.state.name, [s.name for s in self.next_states.all()])
+        return u'%s "%s" -> %s' % (self.group.acronym, self.state.name, [s.name for s in self.next_states.all()])
 
 GROUP_EVENT_CHOICES = [
     ("changed_state", "Changed state"),
@@ -301,6 +308,7 @@ GROUP_EVENT_CHOICES = [
     ("status_update", "Status update"),
     ]
 
+@python_2_unicode_compatible
 class GroupEvent(models.Model):
     """An occurrence for a group, used for tracking who, when and what."""
     group = ForeignKey(Group)
@@ -310,7 +318,7 @@ class GroupEvent(models.Model):
     desc = models.TextField()
 
     def __str__(self):
-        return "%s %s at %s" % (self.by.plain_name(), self.get_type_display().lower(), self.time)
+        return u"%s %s at %s" % (self.by.plain_name(), self.get_type_display().lower(), self.time)
 
     class Meta:
         ordering = ['-time', 'id']
@@ -321,13 +329,14 @@ class ChangeStateGroupEvent(GroupEvent):
 class MilestoneGroupEvent(GroupEvent):
     milestone = ForeignKey(GroupMilestone)
 
+@python_2_unicode_compatible
 class Role(models.Model):
     name = ForeignKey(RoleName)
     group = ForeignKey(Group)
     person = ForeignKey(Person)
     email = ForeignKey(Email, help_text="Email address used by person for this role.")
     def __str__(self):
-        return "%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym or self.group.name)
+        return u"%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym or self.group.name)
 
     def formatted_ascii_email(self):
         return email.utils.formataddr((self.person.plain_ascii(), self.email.address))
@@ -338,6 +347,7 @@ class Role(models.Model):
     class Meta:
         ordering = ['name_id', ]
 
+@python_2_unicode_compatible
 class RoleHistory(models.Model):
     # RoleHistory doesn't have a time field as it's not supposed to be
     # used on its own - there should always be a GroupHistory
@@ -348,7 +358,7 @@ class RoleHistory(models.Model):
     person = ForeignKey(Person)
     email = ForeignKey(Email, help_text="Email address used by person for this role.")
     def __str__(self):
-        return "%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym)
+        return u"%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym)
 
     class Meta:
         verbose_name_plural = "role histories"

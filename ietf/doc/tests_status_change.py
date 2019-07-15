@@ -1,6 +1,10 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os
 import shutil
 
@@ -421,7 +425,7 @@ class StatusChangeSubmitTests(TestCase):
         self.assertEqual(r.status_code,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.rev,'00')
-        with open(path) as f:
+        with io.open(path) as f:
             self.assertEqual(f.read(),"Some initial review text\n")
         self.assertTrue( "mid-review-00" in doc.latest_event(NewRevisionDocEvent).desc)
 
@@ -434,7 +438,7 @@ class StatusChangeSubmitTests(TestCase):
         # doc.rev is u'00' per the test setup - double-checking that here - if it fails, the breakage is in setUp
         self.assertEqual(doc.rev,'00')
         path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
-        with open(path,'w') as f:
+        with io.open(path,'w') as f:
             f.write('This is the old proposal.')
             f.close()
         # Put the old proposal into IESG review (exercises ballot tab when looking at an older revision below)
@@ -466,7 +470,7 @@ class StatusChangeSubmitTests(TestCase):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.rev,'01')
         path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
-        with open(path) as f:
+        with io.open(path) as f:
             self.assertEqual(f.read(),"This is a new proposal.")
             f.close()
         self.assertTrue( "mid-review-01" in doc.latest_event(NewRevisionDocEvent).desc)

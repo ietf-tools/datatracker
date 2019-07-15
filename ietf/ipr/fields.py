@@ -1,7 +1,11 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import json
+import six
 
 from django.utils.html import escape
 from django import forms
@@ -48,7 +52,7 @@ class SearchableIprDisclosuresField(forms.CharField):
     def prepare_value(self, value):
         if not value:
             value = ""
-        if isinstance(value, str):
+        if isinstance(value, six.string_types):
             pks = self.parse_select2_value(value)
             # if the user posted a non integer value we need to remove it
             for key in pks:
@@ -64,7 +68,7 @@ class SearchableIprDisclosuresField(forms.CharField):
         # patterns may not have been fully constructed there yet
         self.widget.attrs["data-ajax-url"] = urlreverse('ietf.ipr.views.ajax_search')
 
-        return ",".join(str(e.pk) for e in value)
+        return ",".join(six.ensure_text(e.pk) for e in value)
 
     def clean(self, value):
         value = super(SearchableIprDisclosuresField, self).clean(value)

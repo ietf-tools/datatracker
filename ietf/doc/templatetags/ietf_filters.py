@@ -1,8 +1,13 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import bleach
 import datetime
 import re
+import six
 
 from email.utils import parseaddr
 
@@ -45,24 +50,24 @@ def parse_email_list(value):
 
     Splitting a string of email addresses should return a list:
 
-    >>> parse_email_list('joe@example.org, fred@example.com')
+    >>> six.ensure_str(parse_email_list('joe@example.org, fred@example.com'))
     '<a href="mailto:joe@example.org">joe@example.org</a>, <a href="mailto:fred@example.com">fred@example.com</a>'
 
     Parsing a non-string should return the input value, rather than fail:
 
-    >>> parse_email_list(['joe@example.org', 'fred@example.com'])
+    >>> [ six.ensure_str(e) for e in parse_email_list(['joe@example.org', 'fred@example.com']) ]
     ['joe@example.org', 'fred@example.com']
 
     Null input values should pass through silently:
 
-    >>> parse_email_list('')
+    >>> six.ensure_str(parse_email_list(''))
     ''
 
     >>> parse_email_list(None)
 
 
     """
-    if value and isinstance(value, (bytes,str)): # testing for 'value' being true isn't necessary; it's a fast-out route
+    if value and isinstance(value, (six.binary_type, six.text_type)): # testing for 'value' being true isn't necessary; it's a fast-out route
         addrs = re.split(", ?", value)
         ret = []
         for addr in addrs:
@@ -96,7 +101,7 @@ def make_one_per_line(value):
     """
     Turn a comma-separated list into a carriage-return-seperated list.
 
-    >>> make_one_per_line("a, b, c")
+    >>> six.ensure_str(make_one_per_line("a, b, c"))
     'a\\nb\\nc'
 
     Pass through non-strings:
@@ -107,7 +112,7 @@ def make_one_per_line(value):
     >>> make_one_per_line(None)
 
     """
-    if value and isinstance(value, (bytes,str)):
+    if value and isinstance(value, (six.binary_type, six.text_type)):
         return re.sub(", ?", "\n", value)
     else:
         return value
@@ -143,7 +148,7 @@ def sanitize(value):
 @register.filter(name='bracket')
 def square_brackets(value):
     """Adds square brackets around text."""
-    if isinstance(value, (bytes,str)):
+    if isinstance(value, (six.binary_type, six.text_type)):
         if value == "":
              value = " "
         return "[ %s ]" % value
@@ -193,7 +198,7 @@ def rfcnospace(string):
 @register.filter
 def prettystdname(string):
     from ietf.doc.utils import prettify_std_name
-    return prettify_std_name(str(string or ""))
+    return prettify_std_name(six.ensure_text(string or ""))
 
 @register.filter(name='rfcurl')
 def rfclink(string):
@@ -336,7 +341,7 @@ def expires_soon(x,request):
 
 @register.filter(name='startswith')
 def startswith(x, y):
-    return str(x).startswith(y)
+    return six.ensure_text(x).startswith(y)
 
 @register.filter
 def has_role(user, role_names):

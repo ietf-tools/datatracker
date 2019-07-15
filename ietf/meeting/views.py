@@ -1,18 +1,24 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import csv
 import datetime
 import glob
+import io
 import json
 import os
 import pytz
 import re
+import six
 import tarfile
-import urllib.request, urllib.parse, urllib.error
+
 
 from calendar import timegm
 from collections import OrderedDict, Counter, deque
+from six.moves.urllib.parse import unquote
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
 
@@ -199,7 +205,7 @@ def materials_document(request, document, num=None, ext=None):
     _, basename = os.path.split(filename)
     if not os.path.exists(filename):
         raise Http404("File not found: %s" % filename)
-    with open(filename, 'rb') as file:
+    with io.open(filename, 'rb') as file:
         bytes = file.read()
     
     mtype, chset = get_mime_type(bytes)
@@ -518,12 +524,12 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
 
 def agenda_csv(schedule, filtered_assignments):
     response = HttpResponse(content_type="text/csv; charset=%s"%settings.DEFAULT_CHARSET)
-    writer = csv.writer(response, delimiter=',', quoting=csv.QUOTE_ALL)
+    writer = csv.writer(response, delimiter=str(','), quoting=csv.QUOTE_ALL)
 
     headings = ["Date", "Start", "End", "Session", "Room", "Area", "Acronym", "Type", "Description", "Session ID", "Agenda", "Slides"]
 
     def write_row(row):
-        encoded_row = [v.encode('utf-8') if isinstance(v, str) else v for v in row]
+        encoded_row = [v.encode('utf-8') if isinstance(v, six.text_type) else v for v in row]
 
         while len(encoded_row) < len(headings):
             encoded_row.append(None) # produce empty entries at the end as necessary
@@ -681,7 +687,7 @@ def session_draft_tarfile(request, num, acronym):
     tarstream = tarfile.open('','w:gz',response)
     mfh, mfn = mkstemp()
     os.close(mfh)
-    manifest = open(mfn, "w")
+    manifest = io.open(mfn, "w")
 
     for doc_name in drafts:
         pdf_path = os.path.join(settings.INTERNET_DRAFT_PDF_PATH, doc_name + ".pdf")
@@ -709,7 +715,7 @@ def session_draft_pdf(request, num, acronym):
     curr_page = 1
     pmh, pmn = mkstemp()
     os.close(pmh)
-    pdfmarks = open(pmn, "w")
+    pdfmarks = io.open(pmn, "w")
     pdf_list = ""
 
     for draft in drafts:
@@ -730,7 +736,7 @@ def session_draft_pdf(request, num, acronym):
     code, out, err = pipe(gs + " -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=" + pdfn + " " + pdf_list + " " + pmn)
     assertion('code == 0')
 
-    pdf = open(pdfn,"rb")
+    pdf = io.open(pdfn,"rb")
     pdf_contents = pdf.read()
     pdf.close()
 
@@ -873,7 +879,7 @@ def ical_agenda(request, num=None, name=None, acronym=None, session_id=None):
         raise Http404
 
     q = request.META.get('QUERY_STRING','') or ""
-    filter = set(urllib.parse.unquote(q).lower().split(','))
+    filter = set(unquote(q).lower().split(','))
     include = [ i for i in filter if not (i.startswith('-') or i.startswith('~')) ]
     include_types = set(["plenary","other"])
     exclude = []
@@ -1583,7 +1589,7 @@ def propose_session_slides(request, session_id, num):
                 name = 'slides-%s-%s' % (session.meeting.number, session.docname_token())
             name = name + '-' + slugify(title).replace('_', '-')[:128]
             filename = '%s-00%s'% (name, ext)
-            destination = open(os.path.join(settings.SLIDE_STAGING_PATH, filename),'wb+')
+            destination = io.open(os.path.join(settings.SLIDE_STAGING_PATH, filename),'wb+')
             for chunk in file.chunks():
                 destination.write(chunk)
             destination.close()

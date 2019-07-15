@@ -1,6 +1,11 @@
-# Copyright The IETF Trust 2009-2019, All Rights Reserved
 #!/usr/bin/python
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 # -*- python -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 """
 NAME
         %(program)s - Extract meta-information from an IETF draft.
@@ -36,9 +41,11 @@ COPYRIGHT
 
 import datetime
 import getopt
+import io
 import os
 import os.path
 import re
+import six
 import stat
 import sys
 import time
@@ -106,7 +113,7 @@ def _err(string):
 
 # ----------------------------------------------------------------------
 def _gettext(file):
-    file = open(file)
+    file = io.open(file)
     text = file.read()
     file.close()
 
@@ -128,7 +135,7 @@ def acronym_match(s, l):
 class Draft():
 
     def __init__(self, text, source, name_from_source=False):
-        assert isinstance(text, str)
+        assert isinstance(text, six.text_type)
         self.source = source
         self.rawtext = text
         self.name_from_source = name_from_source
@@ -1203,7 +1210,7 @@ def getmeta(fn):
         return
 
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(os.stat(filename)[stat.ST_MTIME]))
-    with open(filename, 'rb') as file:
+    with io.open(filename, 'rb') as file:
         try:
             draft = Draft(file.read().decode('utf8'), filename)
         except UnicodeDecodeError:
@@ -1311,7 +1318,7 @@ def _main(outfile=sys.stdout):
     # Option processing
     # ----------------------------------------------------------------------
     options = ""
-    for line in re.findall(r"\n +(if|elif) +opt in \[(.+)\]:\s+#(.+)\n", open(sys.argv[0]).read()):
+    for line in re.findall(r"\n +(if|elif) +opt in \[(.+)\]:\s+#(.+)\n", io.open(sys.argv[0]).read()):
         if not options:
             options += "OPTIONS\n"
         options += "        %-16s %s\n" % (line[1].replace('"', ''), line[2])
@@ -1357,7 +1364,7 @@ def _main(outfile=sys.stdout):
 
     company_domain = {}
     if opt_getauthors:
-        gadata = open("/www/tools.ietf.org/tools/getauthors/getauthors.data")
+        gadata = io.open("/www/tools.ietf.org/tools/getauthors/getauthors.data")
         for line in gadata:
             if line.startswith("company:"):
                 try:
@@ -1376,7 +1383,7 @@ def _main(outfile=sys.stdout):
             import gzip
             file = gzip.open(file)
         else:
-            file = open(file)
+            file = io.open(file)
 
         basename = os.path.basename(file.name)
         if basename.startswith("draft-"):

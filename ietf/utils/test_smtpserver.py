@@ -1,8 +1,13 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import smtpd
 import threading
 import asyncore
+import six
 
 import debug                            # pyflakes:ignore
 
@@ -34,20 +39,26 @@ class SMTPTestChannel(smtpd.SMTPChannel):
 #    mail_options = ['BODY=8BITMIME', 'SMTPUTF8']
 
     def smtp_RCPT(self, arg):
-        self.rcpt_options = []
-        if not self.mailfrom:
-            self.push('503 Error: need MAIL command')
+        if (six.PY2 and not self._SMTPChannel__mailfrom) or (six.PY3 and not self.mailfrom):
+            self.push(str('503 Error: need MAIL command'))
             return
-        arg = self._strip_command_keyword('TO:', arg)
-        address, params = self._getaddr(arg)
+        if six.PY2:
+            address = self._SMTPChannel__getaddr('TO:', arg) if arg else None
+        else:
+            arg = self._strip_command_keyword('TO:', arg)
+            address, __ = self._getaddr(arg)
         if not address:
-            self.push('501 Syntax: RCPT TO: <address>')
+            self.push(str('501 Syntax: RCPT TO: <address>'))
             return
         if "poison" in address:
-           self.push('550 Error: Not touching that')
-           return
-        self.rcpttos.append(address)
-        self.push('250 Ok')
+            self.push(str('550 Error: Not touching that'))
+            return
+        if six.PY2:
+            self._SMTPChannel__rcpttos.append(address)
+        else:
+            self.rcpt_options = []
+            self.rcpttos.append(address)
+        self.push(str('250 Ok'))
 
 class SMTPTestServer(smtpd.SMTPServer):
 

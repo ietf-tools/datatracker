@@ -1,6 +1,12 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import debug                            # pyflakes:ignore
+import six
+
 from inspect import isclass
 
 from django.conf.urls import url as django_url
@@ -16,7 +22,7 @@ def url(regex, view, kwargs=None, name=None):
         branch = 'name'
     elif isinstance(view, (list, tuple)):
         branch = 'list'
-    elif isinstance(view, str):
+    elif isinstance(view, six.string_types):
         branch = 'string'
         name = view
     elif callable(view) and hasattr(view, '__name__'):

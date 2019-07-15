@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os
 import re
 import json
@@ -43,7 +46,7 @@ def get_coverage_data():
                 with gzip.open(settings.TEST_COVERAGE_MASTER_FILE, "rb") as file:
                     coverage_data = json.load(file)
             else:
-                with open(settings.TEST_COVERAGE_MASTER_FILE) as file:
+                with io.open(settings.TEST_COVERAGE_MASTER_FILE) as file:
                     coverage_data = json.load(file)
         cache.set(cache_key, coverage_data, 60*60*24)
     return coverage_data

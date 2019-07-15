@@ -1,7 +1,14 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
-import re
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
-from urllib.parse import urlencode
+import re
+import six
+
+from six.moves.urllib.parse import urlencode
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
@@ -75,7 +82,7 @@ class TimedeltaField(ApiField):
         if value is None:
             return None
 
-        if isinstance(value, str):
+        if isinstance(value, six.string_types):
             match = TIMEDELTA_REGEX.search(value)
 
             if match:
@@ -90,7 +97,7 @@ class TimedeltaField(ApiField):
         value = super(TimedeltaField, self).hydrate(bundle)
 
         if value and not hasattr(value, 'seconds'):
-            if isinstance(value, str):
+            if isinstance(value, six.string_types):
                 try:
                     match = TIMEDELTA_REGEX.search(value)
 
@@ -112,14 +119,17 @@ class ToOneField(tastypie.fields.ToOneField):
 
     def dehydrate(self, bundle, for_list=True):
         foreign_obj = None
+        previous_obj = None
+        attrib = None
         
         if callable(self.attribute):
             previous_obj = bundle.obj
             foreign_obj = self.attribute(bundle)
-        elif isinstance(self.attribute, str):
+        elif isinstance(self.attribute, six.string_types):
             foreign_obj = bundle.obj
 
             for attr in self._attrs:
+                attrib = attr
                 previous_obj = foreign_obj
                 try:
                     foreign_obj = getattr(foreign_obj, attr, None)
@@ -131,7 +141,7 @@ class ToOneField(tastypie.fields.ToOneField):
                 if callable(self.attribute):
                     raise ApiFieldError("The related resource for resource %s could not be found." % (previous_obj))
                 else:
-                    raise ApiFieldError("The model '%r' has an empty attribute '%s' and doesn't allow a null value." % (previous_obj, attr))
+                    raise ApiFieldError("The model '%r' has an empty attribute '%s' and doesn't allow a null value." % (previous_obj, attrib))
             return None
 
         fk_resource = self.get_related_resource(foreign_obj)

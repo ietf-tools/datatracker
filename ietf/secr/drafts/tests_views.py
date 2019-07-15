@@ -1,5 +1,11 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
+import io
 import os
 import shutil
 from collections import OrderedDict
@@ -130,7 +136,7 @@ class SecrDraftsTestCase(TestCase):
     def test_resurrect(self):
         draft = WgDraftFactory()
         path = os.path.join(self.repository_dir, draft.filename_with_rev())
-        with open(path, 'w') as file:
+        with io.open(path, 'w') as file:
             file.write('test')
         expire_draft(draft)
         email_url = urlreverse('ietf.secr.drafts.views.email', kwargs={'id':draft.name}) + "?action=resurrect"

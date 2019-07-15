@@ -1,10 +1,17 @@
 # Copyright The IETF Trust 2015-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os
+import six
 import tempfile
 
 from django.core.management import call_command
 from django.test import TestCase
-from io import StringIO
+#from io import StringIO
 
 import debug                            # pyflakes:ignore
 
@@ -78,12 +85,12 @@ class CoverageChangeTestCase(TestCase):
             }
             """
         mfh, master = tempfile.mkstemp(suffix='.json')
-        with open(master, "w") as file:
+        with io.open(master, "w") as file:
             file.write(master_txt)
         lfh, latest = tempfile.mkstemp(suffix='.json')
-        with open(latest, "w") as file:
+        with io.open(latest, "w") as file:
             file.write(latest_txt)
-        output = StringIO()
+        output = six.StringIO()
         call_command('coverage_changes', master, latest, stdout=output)
         text = output.getvalue()
         os.unlink(master)

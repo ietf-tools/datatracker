@@ -1,9 +1,12 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 # utilities for constructing agendas for IESG telechats
 
-import codecs
+import io
 import datetime
 from collections import OrderedDict
 
@@ -146,7 +149,7 @@ def fill_in_agenda_administrivia(date, sections):
 
     for s, key, filename in extra_info_files:
         try:
-            with codecs.open(filename, 'r', 'utf-8', 'replace') as f:
+            with io.open(filename, 'r', encoding='utf-8', errors='replace') as f:
                 t = f.read().strip()
         except IOError:
             t = "(Error reading %s)" % filename

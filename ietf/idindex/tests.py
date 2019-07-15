@@ -1,13 +1,18 @@
 # Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import os
-import datetime
-import shutil
 
-import debug    # pyflakes:ignore
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import io
+import os
+import shutil
+import six
 
 from django.conf import settings
+
+import debug    # pyflakes:ignore
 
 from ietf.doc.factories import WgDraftFactory
 from ietf.doc.models import Document, DocAlias, RelatedDocument, State, LastCallDocEvent, NewRevisionDocEvent
@@ -28,7 +33,7 @@ class IndexTests(TestCase):
         shutil.rmtree(self.id_dir)
         
     def write_draft_file(self, name, size):
-        with open(os.path.join(self.id_dir, name), 'w') as f:
+        with io.open(os.path.join(self.id_dir, name), 'w') as f:
             f.write("a" * size)
 
     def test_all_id_txt(self):
@@ -97,7 +102,7 @@ class IndexTests(TestCase):
         self.assertEqual(t[6], draft.latest_event(type="new_revision").time.strftime("%Y-%m-%d"))
         self.assertEqual(t[7], draft.group.acronym)
         self.assertEqual(t[8], draft.group.parent.acronym)
-        self.assertEqual(t[9], str(draft.ad))
+        self.assertEqual(t[9], six.ensure_text(draft.ad))
         self.assertEqual(t[10], draft.intended_std_level.name)
         self.assertEqual(t[11], "")
         self.assertEqual(t[12], ".pdf,.txt")

@@ -1,8 +1,12 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 import debug      # pyflakes:ignore
+import six
 
 from pyquery import PyQuery
 
@@ -260,7 +264,7 @@ class ReviewTests(TestCase):
         q = PyQuery(r.content)
         generated_text = q("[name=body]").text()
         self.assertTrue(review_req1.doc.name in generated_text)
-        self.assertTrue(str(Person.objects.get(user__username="marschairman")) in generated_text)
+        self.assertTrue(six.ensure_text(Person.objects.get(user__username="marschairman")) in generated_text)
 
         empty_outbox()
         r = self.client.post(url, {

@@ -1,13 +1,20 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import base64
 import datetime
 import email
 import json
 import re
-import urllib.request, urllib.error, urllib.parse
 
-from django.utils.http import urlquote
+from six.moves.urllib.request import Request, urlopen
+
 from django.conf import settings
+from django.utils.encoding import force_str
+from django.utils.http import urlquote
 
 import debug                            # pyflakes:ignore
 
@@ -23,7 +30,7 @@ from ietf.utils.timezone import local_timezone_to_utc, email_time_to_local_timez
 #CHANGES_URL = "https://datatracker.dev.icann.org:8080/data-tracker/changes"
 
 def fetch_protocol_page(url):
-    f = urllib.request.urlopen(settings.IANA_SYNC_PROTOCOLS_URL)
+    f = urlopen(settings.IANA_SYNC_PROTOCOLS_URL)
     text = f.read()
     f.close()
     return text
@@ -67,12 +74,12 @@ def update_rfc_log_from_protocol_page(rfc_names, rfc_must_published_later_than):
 def fetch_changes_json(url, start, end):
     url += "?start=%s&end=%s" % (urlquote(local_timezone_to_utc(start).strftime("%Y-%m-%d %H:%M:%S")),
                                  urlquote(local_timezone_to_utc(end).strftime("%Y-%m-%d %H:%M:%S")))
-    request = urllib.request.Request(url)
+    request = Request(url)
     # HTTP basic auth
     username = "ietfsync"
     password = settings.IANA_SYNC_PASSWORD
     request.add_header("Authorization", "Basic %s" % base64.encodestring("%s:%s" % (username, password)).replace("\n", ""))
-    f = urllib.request.urlopen(request)
+    f = urlopen(request)
     text = f.read()
     f.close()
     return text
@@ -234,8 +241,8 @@ def strip_version_extension(text):
         text = text[:-3]
     return text
 
-def parse_review_email(bytes):
-    msg = email.message_from_bytes(bytes)
+def parse_review_email(text):
+    msg = email.message_from_string(force_str(text))
     # doc
     doc_name = find_document_name(msg["Subject"]) or ""
     doc_name = strip_version_extension(doc_name)

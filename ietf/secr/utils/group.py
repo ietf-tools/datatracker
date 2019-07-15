@@ -1,5 +1,11 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 # Python imports
+import io
 import os
 
 # Django imports
@@ -27,7 +33,7 @@ def get_charter_text(group):
     '''
     charter = group.charter
     path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-    f = open(path,'r')
+    f = io.open(path,'r')
     text = f.read()
     f.close()
 

@@ -1,7 +1,12 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
-import re
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
+import six
+import re
 
 import debug                            # pyflakes:ignore
 
@@ -18,7 +23,7 @@ class MultiEmailField(forms.Field):
         if not value:
             return []
 
-        if isinstance(value, str):
+        if isinstance(value, six.string_types):
             values = value.split(',')
             return [ x.strip() for x in values if x.strip() ]
         else:
@@ -26,7 +31,6 @@ class MultiEmailField(forms.Field):
 
     def validate(self, value):
         "Check if value consists only of valid emails."
-
         # Use the parent's handling of required fields, etc.
         super(MultiEmailField, self).validate(value)
 

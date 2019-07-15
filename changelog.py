@@ -1,5 +1,9 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+from __future__ import absolute_import, print_function, unicode_literals
 import re
+import six
 from tzparse import tzparse
 from datetime import datetime as Datetime
 
@@ -44,7 +48,7 @@ def parse(logfile):
     inf_line = r"^  \*\*(.*)\*\* *"
 
     entries = []
-    if type(logfile) == type(''):
+    if isinstance(logfile, six.string_types):
         logfile = open(logfile)
     entry = None
     for line in logfile:

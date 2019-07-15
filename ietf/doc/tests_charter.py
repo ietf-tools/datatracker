@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 
-import os, shutil, datetime
-from io import StringIO
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import io
+import os
+import shutil
+
 from pyquery import PyQuery
 
 from django.conf import settings
@@ -21,7 +27,7 @@ from ietf.group.models import Group, GroupMilestone
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import outbox, empty_outbox, get_payload
 from ietf.utils.test_utils import login_testing_unauthorized
 
 class EditCharterTests(TestCase):
@@ -35,7 +41,7 @@ class EditCharterTests(TestCase):
         shutil.rmtree(self.charter_dir)
 
     def write_charter_file(self, charter):
-        with open(os.path.join(self.charter_dir, "%s-%s.txt" % (charter.canonical_name(), charter.rev)), "w") as f:
+        with io.open(os.path.join(self.charter_dir, "%s-%s.txt" % (charter.canonical_name(), charter.rev)), "w") as f:
             f.write("This is a charter.")
 
     def test_startstop_process(self):
@@ -128,24 +134,24 @@ class EditCharterTests(TestCase):
                 self.assertIn("Internal WG Review", outbox[-3]['Subject'])
                 self.assertIn("iab@", outbox[-3]['To'])
                 self.assertIn("iesg@", outbox[-3]['To'])
-                self.assertIn("A new IETF WG", outbox[-3].get_payload())
-                body = outbox[-3].get_payload()
-                for word in ["Chairs", "Ames Man <ameschairman@example.org>",
+                body = get_payload(outbox[-3])
+                for word in ["A new IETF WG", "Chairs", "Ames Man <ameschairman@example.org>",
                     "Secretaries", "Secretary <amessecretary@example.org>",
                     "Assigned Area Director", "Areað Irector <aread@example.org>",
                     "Mailing list", "ames-wg@ietf.org",
                     "Charter", "Milestones"]:
+
                     self.assertIn(word, body)
 
             self.assertIn("state changed", outbox[-2]['Subject'].lower())
             self.assertIn("iesg-secretary@", outbox[-2]['To'])
-            body = outbox[-2].get_payload()
+            body = get_payload(outbox[-2])
             for word in ["WG", "Charter", ]:
                 self.assertIn(word, body)
 
             self.assertIn("State Update Notice", outbox[-1]['Subject'])
             self.assertIn("ames-chairs@", outbox[-1]['To'])
-            body = outbox[-1].get_payload()
+            body = get_payload(outbox[-1])
             for word in ["State changed", "Datatracker URL", ]:
                 self.assertIn(word, body)
 
@@ -165,7 +171,7 @@ class EditCharterTests(TestCase):
         empty_outbox()
         r = self.client.post(url, dict(charter_state=str(State.objects.get(used=True,type="charter",slug="intrev").pk), message="test"))
         self.assertEqual(r.status_code, 302)
-        self.assertTrue("A new charter" in outbox[-3].get_payload())
+        self.assertTrue("A new charter" in get_payload(outbox[-3]))
 
     def test_abandon_bof(self):
         charter = CharterFactory(group__state_id='bof',group__type_id='wg')
@@ -389,7 +395,7 @@ class EditCharterTests(TestCase):
         self.assertEqual(len(q('form input[name=txt]')), 1)
 
         # faulty post
-        test_file = StringIO("\x10\x11\x12") # post binary file
+        test_file = io.StringIO("\x10\x11\x12") # post binary file
         test_file.name = "unnamed"
 
         r = self.client.post(url, dict(txt=test_file))
@@ -401,7 +407,7 @@ class EditCharterTests(TestCase):
 
         latin_1_snippet = b'\xe5' * 10
         utf_8_snippet = b'\xc3\xa5' * 10
-        test_file = StringIO("Windows line\r\nMac line\rUnix line\n" + latin_1_snippet.decode('latin-1'))
+        test_file = io.StringIO("Windows line\r\nMac line\rUnix line\n" + latin_1_snippet.decode('latin-1'))
         test_file.name = "unnamed"
 
         r = self.client.post(url, dict(txt=test_file))
@@ -411,9 +417,8 @@ class EditCharterTests(TestCase):
         self.assertEqual(charter.rev, next_revision(prev_rev))
         self.assertTrue("new_revision" in charter.latest_event().type)
 
-        with open(os.path.join(self.charter_dir, charter.canonical_name() + "-" + charter.rev + ".txt")) as f:
-            self.assertEqual(f.read(),
-                              "Windows line\nMac line\nUnix line\n" + utf_8_snippet.decode('utf_8'))
+        with io.open(os.path.join(self.charter_dir, charter.canonical_name() + "-" + charter.rev + ".txt")) as f:
+            self.assertEqual(f.read(), "Windows line\nMac line\nUnix line\n" + utf_8_snippet.decode('utf_8'))
 
     def test_submit_initial_charter(self):
         group = GroupFactory(type_id='wg',acronym='mars',list_email='mars-wg@ietf.org')
@@ -428,7 +433,7 @@ class EditCharterTests(TestCase):
         self.assertEqual(len(q('form input[name=txt]')), 1)
 
         # create charter
-        test_file = StringIO("Simple test")
+        test_file = io.StringIO("Simple test")
         test_file.name = "unnamed"
 
         r = self.client.post(url, dict(txt=test_file))
@@ -658,7 +663,7 @@ class EditCharterTests(TestCase):
         #
         self.assertTrue("approved" in outbox[0]['Subject'].lower())
         self.assertTrue("iesg-secretary" in outbox[0]['To'])
-        body = outbox[0].get_payload()
+        body = get_payload(outbox[0])
         for word in ["WG",   "/wg/ames/about/",
             "Charter", "/doc/charter-ietf-ames/", ]:
             self.assertIn(word, body)
@@ -666,7 +671,7 @@ class EditCharterTests(TestCase):
         self.assertTrue("WG Action" in outbox[1]['Subject'])
         self.assertTrue("ietf-announce" in outbox[1]['To'])
         self.assertTrue("ames-wg@ietf.org" in outbox[1]['Cc'])
-        body = outbox[1].get_payload()
+        body = get_payload(outbox[1])
         for word in ["Chairs", "Ames Man <ameschairman@example.org>",
             "Secretaries", "Secretary <amessecretary@example.org>",
             "Assigned Area Director", "Areað Irector <aread@example.org>",

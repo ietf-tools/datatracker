@@ -1,6 +1,10 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os
 
 from django.db.models import Q
@@ -53,7 +57,7 @@ def get_charter_text(group):
 
     filename = os.path.join(c.get_file_path(), "%s-%s.txt" % (c.canonical_name(), c.rev))
     try:
-        with open(filename) as f:
+        with io.open(filename) as f:
             return f.read()
     except IOError:
         return 'Error Loading Group Charter'

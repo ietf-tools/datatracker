@@ -1,10 +1,14 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import shutil
 import datetime
-from io import StringIO
+import io
+
 from pyquery import PyQuery
 
 import debug              # pyflakes:ignore
@@ -85,7 +89,7 @@ class GroupMaterialTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         content = "%PDF-1.5\n..."
-        test_file = StringIO(content)
+        test_file = io.StringIO(content)
         test_file.name = "unnamed.pdf"
 
         # faulty post
@@ -110,7 +114,7 @@ class GroupMaterialTests(TestCase):
         self.assertEqual(doc.title, "Test File - with fancy title")
         self.assertEqual(doc.get_state_slug(), "active")
 
-        with open(os.path.join(self.materials_dir, "slides", doc.name + "-" + doc.rev + ".pdf")) as f:
+        with io.open(os.path.join(self.materials_dir, "slides", doc.name + "-" + doc.rev + ".pdf")) as f:
             self.assertEqual(f.read(), content)
 
         # check that posting same name is prevented
@@ -165,7 +169,7 @@ class GroupMaterialTests(TestCase):
         login_testing_unauthorized(self, "secretary", url)
 
         content = "some text"
-        test_file = StringIO(content)
+        test_file = io.StringIO(content)
         test_file.name = "unnamed.txt"
 
         # post
@@ -179,6 +183,6 @@ class GroupMaterialTests(TestCase):
         self.assertEqual(doc.title, "New title")
         self.assertEqual(doc.get_state_slug(), "active")
 
-        with open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + ".txt")) as f:
+        with io.open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + ".txt")) as f:
             self.assertEqual(f.read(), content)
 

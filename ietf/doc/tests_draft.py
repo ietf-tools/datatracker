@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import shutil
 import datetime
@@ -26,7 +29,7 @@ from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting, MeetingTypeName
 from ietf.iesg.models import TelechatDate
 from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import outbox, empty_outbox, get_payload
 from ietf.utils.test_utils import TestCase
 
 
@@ -372,7 +375,7 @@ class EditInfoTests(TestCase):
         data["telechat_date"] = next_week.isoformat()
         r = self.client.post(url,data)
         self.assertEqual(r.status_code, 302)
-        self.assertTrue("may not leave enough time" in outbox[-1].get_payload())
+        self.assertIn("may not leave enough time", get_payload(outbox[-1]))
 
     def test_start_iesg_process_on_draft(self):
 
@@ -563,7 +566,7 @@ class ExpireIDsTests(TestCase):
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
 
     def write_draft_file(self, name, size):
-        f = open(os.path.join(self.id_dir, name), 'w')
+        f = io.open(os.path.join(self.id_dir, name), 'w')
         f.write("a" * size)
         f.close()
         
@@ -1399,9 +1402,9 @@ class ChangeStreamStateTests(TestCase):
         self.assertEqual(draft.docevent_set.count() - events_before, 2)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("tags changed" in outbox[-1]["Subject"].lower())
-        self.assertTrue("mars-chairs@ietf.org" in str(outbox[-1]))
-        self.assertTrue("marsdelegate@example.org" in str(outbox[-1]))
-        self.assertTrue("plain@example.com" in str(outbox[-1]))
+        self.assertTrue("mars-chairs@ietf.org" in outbox[-1].as_string())
+        self.assertTrue("marsdelegate@example.org" in outbox[-1].as_string())
+        self.assertTrue("plain@example.com" in outbox[-1].as_string())
 
     def test_set_initial_state(self):
         role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name='WG Cháir Man')
@@ -1436,8 +1439,8 @@ class ChangeStreamStateTests(TestCase):
         self.assertTrue(due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1))
         self.assertEqual(len(outbox), 1)
         self.assertTrue("state changed" in outbox[0]["Subject"].lower())
-        self.assertTrue("mars-chairs@ietf.org" in str(outbox[0]))
-        self.assertTrue("marsdelegate@ietf.org" in str(outbox[0]))
+        self.assertTrue("mars-chairs@ietf.org" in outbox[0].as_string())
+        self.assertTrue("marsdelegate@ietf.org" in outbox[0].as_string())
 
     def test_set_state(self):
         role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name='WG Cháir Man')
@@ -1481,8 +1484,8 @@ class ChangeStreamStateTests(TestCase):
         self.assertTrue(due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1))
         self.assertEqual(len(outbox), 1)
         self.assertTrue("state changed" in outbox[0]["Subject"].lower())
-        self.assertTrue("mars-chairs@ietf.org" in str(outbox[0]))
-        self.assertTrue("marsdelegate@ietf.org" in str(outbox[0]))
+        self.assertTrue("mars-chairs@ietf.org" in outbox[0].as_string())
+        self.assertTrue("marsdelegate@ietf.org" in outbox[0].as_string())
 
     def test_pubreq_validation(self):
         role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name='WG Cháir Man')

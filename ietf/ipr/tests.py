@@ -1,10 +1,14 @@
 # Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
-import urllib.request, urllib.parse, urllib.error
+
 
 from pyquery import PyQuery
+from six.moves.urllib.parse import quote
 
 from django.urls import reverse as urlreverse
 
@@ -172,11 +176,11 @@ class IprTests(TestCase):
         self.assertContains(r, ipr.title)
 
         # find by doc title
-        r = self.client.get(url + "?submit=doctitle&doctitle=%s" % urllib.parse.quote(draft.title))
+        r = self.client.get(url + "?submit=doctitle&doctitle=%s" % quote(draft.title))
         self.assertContains(r, ipr.title)
 
         # find by ipr title
-        r = self.client.get(url + "?submit=iprtitle&iprtitle=%s" % urllib.parse.quote(ipr.title))
+        r = self.client.get(url + "?submit=iprtitle&iprtitle=%s" % quote(ipr.title))
         self.assertContains(r, ipr.title)
 
     def test_feed(self):

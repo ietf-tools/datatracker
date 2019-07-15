@@ -1,14 +1,18 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
 
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os
 import re
-import sys
-from xym import xym
 import shutil
+import six
+import sys
 import tempfile
-import io
 
+from xym import xym
 from django.conf import settings
 
 import debug                            # pyflakes:ignore
@@ -144,19 +148,23 @@ class DraftYangChecker(object):
                 # This places the yang models as files in workdir
                 saved_stdout = sys.stdout
                 saved_stderr = sys.stderr
-                sys.stdout = io.StringIO()
-                sys.stderr = io.StringIO()
+                sys.stdout = six.StringIO()
+                sys.stderr = six.StringIO()
                 extractor.extract_yang_model(file.readlines())
                 model_list = extractor.get_extracted_models(False, True)
                 out = sys.stdout.getvalue()
                 err = sys.stderr.getvalue()
-                sys.stdout = saved_stdout
-                sys.stderr = saved_stderr
                 # signature change in xym:
             except Exception as exc:
+                sys.stdout = saved_stdout
+                sys.stderr = saved_stderr
                 msg = "Exception when running xym on %s: %s" % (name, exc)
                 log(msg)
+                raise
                 return None, msg, 0, 0, info
+            finally:
+                sys.stdout = saved_stdout
+                sys.stderr = saved_stderr
         if not model_list:
             # Found no yang models, don't deliver any YangChecker result
             return None, "", 0, 0, info
@@ -198,7 +206,7 @@ class DraftYangChecker(object):
                                 settings.SUBMIT_YANG_IANA_MODEL_DIR,
                             ])
             if os.path.exists(path):
-                with open(path) as file:
+                with io.open(path) as file:
                     text = file.readlines()
                 # pyang
                 cmd_template = settings.SUBMIT_PYANG_COMMAND

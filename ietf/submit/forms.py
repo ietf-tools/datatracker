@@ -1,11 +1,19 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os
 import re
 import datetime
 import email
 import pytz
-import xml2rfc
+import six
 import tempfile
+import xml2rfc
+
 from email.utils import formataddr
 from unidecode import unidecode
 
@@ -13,6 +21,7 @@ from django import forms
 from django.conf import settings
 from django.utils.html import mark_safe
 from django.urls import reverse as urlreverse
+from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
@@ -140,7 +149,7 @@ class SubmissionBaseUploadForm(forms.Form):
                 # over to the xml parser.  XXX FIXME: investigate updating
                 # xml2rfc to be able to work with file handles to in-memory
                 # files.
-                with open(tfn, 'wb+') as tf:
+                with io.open(tfn, 'wb+') as tf:
                     for chunk in xml_file.chunks():
                         tf.write(chunk)
                 os.environ["XML_LIBRARY"] = settings.XML_LIBRARY
@@ -185,10 +194,10 @@ class SubmissionBaseUploadForm(forms.Form):
                     self.revision = None
                     self.filename = draftname
                 self.title = self.xmlroot.findtext('front/title').strip()
-                if type(self.title) is str:
+                if type(self.title) is six.text_type:
                     self.title = unidecode(self.title)
                 self.abstract = (self.xmlroot.findtext('front/abstract') or '').strip()
-                if type(self.abstract) is str:
+                if type(self.abstract) is six.text_type:
                     self.abstract = unidecode(self.abstract)
                 author_info = self.xmlroot.findall('front/author')
                 for author in author_info:
@@ -508,7 +517,7 @@ class SubmissionEmailForm(forms.Form):
         '''Returns a ietf.message.models.Message object'''
         self.message_text = self.cleaned_data['message']
         try:
-            message = email.message_from_string(self.message_text)
+            message = email.message_from_string(force_str(self.message_text))
         except Exception as e:
             self.add_error('message', e)
             return None

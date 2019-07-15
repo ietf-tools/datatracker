@@ -1,5 +1,14 @@
 # Copyright The IETF Trust 2009-2019, All Rights Reserved
-import datetime, os, shutil
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import io
+import os
+import shutil
+import six
 
 import debug    # pyflakes:ignore
 
@@ -232,7 +241,7 @@ class ManagementCommandTests(TestCase):
 
         LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
 
-        out = StringIO()
+        out = six.StringIO()
         mailbox_before = len(outbox)
         call_command('check_liaison_deadlines',stdout=out)
         self.assertEqual(len(outbox), mailbox_before + 1)
@@ -242,7 +251,7 @@ class ManagementCommandTests(TestCase):
 
         RoleFactory(name_id='liaiman',group__type_id='sdo')
 
-        out = StringIO()
+        out = six.StringIO()
         mailbox_before = len(outbox)
         call_command('remind_update_sdo_list',stdout=out)
         self.assertTrue(len(outbox) > mailbox_before)
@@ -432,7 +441,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(new_liaison.attachments.count(), attachments_before + 1)
         attachment = new_liaison.attachments.order_by("-name")[0]
         self.assertEqual(attachment.title, "attachment")
-        with open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
+        with io.open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
             written_content = f.read()
 
         test_file.seek(0)
@@ -736,7 +745,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(l.attachments.count(), 1)
         attachment = l.attachments.all()[0]
         self.assertEqual(attachment.title, "attachment")
-        with open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
+        with io.open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
             written_content = f.read()
 
         test_file.seek(0)
@@ -815,7 +824,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(l.attachments.count(), 1)
         attachment = l.attachments.all()[0]
         self.assertEqual(attachment.title, "attachment")
-        with open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
+        with io.open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
             written_content = f.read()
 
         test_file.seek(0)

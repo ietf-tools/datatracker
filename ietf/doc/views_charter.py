@@ -1,7 +1,15 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import os, datetime, textwrap, json
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import io
+import json
+import os
+import six
+import textwrap
 
 from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden, Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -413,7 +421,7 @@ def submit(request, name, option=None):
 
             # Save file on disk
             filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-            with open(filename, 'w', encoding='utf-8') as destination:
+            with io.open(filename, 'w', encoding='utf-8') as destination:
                 if form.cleaned_data['txt']:
                     destination.write(form.cleaned_data['txt'])
                 else:
@@ -442,7 +450,7 @@ def submit(request, name, option=None):
         filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter_canonical_name, charter_rev))
 
         try:
-            with open(filename, 'r') as f:
+            with io.open(filename, 'r') as f:
                 init["content"] = f.read()
         except IOError:
             pass
@@ -807,8 +815,8 @@ def charter_with_milestones_txt(request, name, rev):
     charter_text = ""
 
     try:
-        with open(os.path.join(settings.CHARTER_PATH, filename), 'r') as f:
-            charter_text = str(f.read(), errors='ignore')
+        with io.open(os.path.join(settings.CHARTER_PATH, filename), 'r') as f:
+            charter_text = six.ensure_text(f.read(), errors='ignore')
     except IOError:
         charter_text = "Error reading charter text %s" % filename
 

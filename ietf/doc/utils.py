@@ -1,14 +1,20 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import os
-import re
-import urllib.request, urllib.parse, urllib.error
-import math
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 import hashlib
+import io
 import json
+import math
+import os
+import re
+import six
+
 from collections import defaultdict
+from six.moves.urllib.parse import quote
 
 from django.conf import settings
 from django.contrib import messages
@@ -313,7 +319,7 @@ def add_links_in_new_revision_events(doc, events, diff_revisions):
             links += ""
 
         if prev != None:
-            links += ' (<a href="%s?url1=%s&url2=%s">diff from previous</a>)' % (settings.RFCDIFF_BASE_URL, urllib.parse.quote(prev, safe="~"), urllib.parse.quote(diff_url, safe="~"))
+            links += ' (<a href="%s?url1=%s&url2=%s">diff from previous</a>)' % (settings.RFCDIFF_BASE_URL, quote(prev, safe="~"), quote(diff_url, safe="~"))
 
         # replace the bold filename part
         e.desc = re.sub(r"<b>(.+-[0-9][0-9].txt)</b>", links, e.desc)
@@ -333,7 +339,7 @@ def add_events_message_info(events):
 
 def get_unicode_document_content(key, filename, codec='utf-8', errors='ignore'):
     try:
-        with open(filename, 'rb') as f:
+        with io.open(filename, 'rb') as f:
             raw_content = f.read().decode(codec,errors)
     except IOError:
         if settings.DEBUG:
@@ -347,7 +353,7 @@ def get_unicode_document_content(key, filename, codec='utf-8', errors='ignore'):
 def get_document_content(key, filename, split=True, markup=True):
     log.unreachable("2017-12-05")
     try:
-        with open(filename, 'rb') as f:
+        with io.open(filename, 'rb') as f:
             raw_content = f.read()
     except IOError:
         if settings.DEBUG:
@@ -541,7 +547,7 @@ def rebuild_reference_relations(doc,filename=None):
             filename=os.path.join(settings.INTERNET_DRAFT_PATH,doc.filename_with_rev())
 
     try:
-        with open(filename, 'rb') as file:
+        with io.open(filename, 'rb') as file:
             refs = draft.Draft(file.read().decode('utf8'), filename).get_refs()
     except IOError as e:
         return { 'errors': ["%s :%s" %  (e.strerror, filename)] }
@@ -661,7 +667,7 @@ def get_initial_notify(doc,extra=None):
     receivers = []
 
     if extra:
-        if isinstance(extra,str):
+        if isinstance(extra, six.string_types):
             extra = extra.split(', ')
         receivers.extend(extra)
 
@@ -767,7 +773,7 @@ def get_search_cache_key(params):
     from ietf.doc.views_search import SearchForm
     fields = set(SearchForm.base_fields) - set(['sort',])
     kwargs = dict([ (k,v) for (k,v) in list(params.items()) if k in fields ])
-    key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode()).hexdigest()
+    key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
     return key
     
 def label_wrap(label, items, joiner=',', max=50):

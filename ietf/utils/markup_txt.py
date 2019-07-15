@@ -1,4 +1,6 @@
 # Copyright The IETF Trust 2009-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+#
 # Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -31,7 +33,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import re
+import six                              # pyflakes:ignore
 
 from django.utils.html import escape
 
@@ -39,7 +45,7 @@ from ietf.utils import log
 from ietf.utils.text import wordwrap
 
 def markup(content, width=None):
-    log.assertion('isinstance(content, str)')
+    log.assertion('isinstance(content, six.text_type)')
     # normalize line endings to LF only
     content = content.replace("\r\n", "\n")
     content = content.replace("\r", "\n")

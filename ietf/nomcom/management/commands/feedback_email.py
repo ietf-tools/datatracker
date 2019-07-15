@@ -1,4 +1,10 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import sys
 
 from django.core.management.base import BaseCommand, CommandError
@@ -31,7 +37,7 @@ class Command(BaseCommand):
         if not email:
             msg = sys.stdin.read()
         else:
-            msg = open(email, "r").read()
+            msg = io.open(email, "r").read()
 
         try:
             nomcom = NomCom.objects.get(group__acronym__icontains=year,

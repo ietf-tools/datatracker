@@ -2,17 +2,20 @@
 # -*- coding: utf-8 -*-
 
 
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os.path
-import types
 import shutil
+import six
+import types
 
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from fnmatch import fnmatch
 from importlib import import_module
-#from .pipe import pipe
-#from io import StringIO
+from .pipe import pipe
 from textwrap import dedent
 from unittest import skipIf
 from tempfile import mkdtemp
@@ -20,7 +23,7 @@ from tempfile import mkdtemp
 from django.apps import apps
 from django.contrib.auth.models import User
 from django.conf import settings
-#from django.core.management import call_command
+from django.core.management import call_command
 from django.template import Context
 from django.template.defaulttags import URLNode
 from django.template.loader import get_template
@@ -29,14 +32,14 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-#from ietf.group.factories import GroupFactory
-#from ietf.group.models import Group
+from ietf.group.factories import GroupFactory
+from ietf.group.models import Group
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.bower_storage import BowerStorageFinder
 from ietf.utils.draft import Draft, getmeta
 from ietf.utils.log import unreachable, assertion
-from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox 
+from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox, get_payload
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase
 
@@ -68,7 +71,7 @@ body
         self.assertSameEmail(recv['Cc'], 'cc1@example.com, cc2@example.com')
         self.assertSameEmail(recv['Bcc'], None)
         self.assertEqual(recv['Subject'], 'subject')
-        self.assertEqual(recv.get_payload(), 'body\n')
+        self.assertEqual(get_payload(recv), 'body\n')
 
         override = {
             'To': 'oto1@example.net, oto2@example.net',
@@ -98,7 +101,7 @@ body
         self.assertSameEmail(recv['Cc'], '<occ1@example.net>, occ2@example.net')
         self.assertSameEmail(recv['Bcc'], None)
         self.assertEqual(recv['Subject'], 'osubject')
-        self.assertEqual(recv.get_payload(), 'body\n')
+        self.assertEqual(get_payload(recv), 'body\n')
 
         extra = {'Fuzz': [ 'bucket' ]}
         send_mail_preformatted(request=None, preformatted=msg, extra=extra, override={})
@@ -157,12 +160,12 @@ def get_callbacks(urllist):
             callbacks.update(get_callbacks(entry.url_patterns))
         else:
             if hasattr(entry, '_callback_str'):
-                callbacks.add(str(entry._callback_str))
+                callbacks.add(six.ensure_text(entry._callback_str))
             if (hasattr(entry, 'callback') and entry.callback
                 and type(entry.callback) in [types.FunctionType, types.MethodType ]):
                 callbacks.add("%s.%s" % (entry.callback.__module__, entry.callback.__name__))
             if hasattr(entry, 'name') and entry.name:
-                callbacks.add(str(entry.name))
+                callbacks.add(six.ensure_text(entry.name))
             # There are some entries we don't handle here, mostly clases
             # (such as Feed subclasses)
 
@@ -275,6 +278,7 @@ class TemplateChecksTestCase(TestCase):
         r = self.client.get(url)        
         self.assertTemplateUsed(r, '500.html')
 
+@skipIf(six.PY3, "Trac not available for Python3 as of 14 Jul 2019")
 @skipIf(skip_wiki_glue_testing, skip_message)
 class TestWikiGlueManagementCommand(TestCase):
 
@@ -283,6 +287,7 @@ class TestWikiGlueManagementCommand(TestCase):
         # command through command line switches.  We have to do it this way because the
         # management command reads in its own copy of settings.py in its own python
         # environment, so we can't modify it here.
+        set_coverage_checking(False)
         self.wiki_dir_pattern = os.path.abspath('tmp-wiki-dir-root/%s')
         if not os.path.exists(os.path.dirname(self.wiki_dir_pattern)):
             os.mkdir(os.path.dirname(self.wiki_dir_pattern))
@@ -293,44 +298,45 @@ class TestWikiGlueManagementCommand(TestCase):
     def tearDown(self):
         shutil.rmtree(os.path.dirname(self.wiki_dir_pattern))
         shutil.rmtree(os.path.dirname(self.svn_dir_pattern))
+        set_coverage_checking(True)
 
-#     def test_wiki_create_output(self):
-#         for type in ['wg','rg','ag','area']:
-#             GroupFactory(type_id=type)
-#         groups = Group.objects.filter(
-#                         type__slug__in=['wg','rg','ag','area'],
-#                         state__slug='active'
-#                     ).order_by('acronym')
-#         out = StringIO()
-#         err = StringIO()
-#         call_command('create_group_wikis', stdout=out, stderr=err, verbosity=2,
-#             wiki_dir_pattern=self.wiki_dir_pattern,
-#             svn_dir_pattern=self.svn_dir_pattern,
-#         )
-#         command_output = out.getvalue()
-#         command_errors = err.getvalue()
-#         self.assertEqual("", command_errors)
-#         for group in groups:
-#             self.assertIn("Processing group '%s'" % group.acronym, command_output)
-#             # Do a bit of verification using trac-admin, too
-#             admin_code, admin_output, admin_error = pipe(
-#                 'trac-admin %s permission list' % (self.wiki_dir_pattern % group.acronym))
-#             self.assertEqual(admin_code, 0)
-#             roles = group.role_set.filter(name_id__in=['chair', 'secr', 'ad'])
-#             for role in roles:
-#                 user = role.email.address.lower()
-#                 self.assertIn("Granting admin permission for %s" % user, command_output)
-#                 self.assertIn(user, admin_output)
-#             docs = group.document_set.filter(states__slug='active', type_id='draft')
-#             for doc in docs:
-#                 name = doc.name
-#                 name = name.replace('draft-','')
-#                 name = name.replace(doc.stream_id+'-', '')
-#                 name = name.replace(group.acronym+'-', '')
-#                 self.assertIn("Adding component %s"%name, command_output)
-#         for page in settings.TRAC_WIKI_PAGES_TEMPLATES:
-#             self.assertIn("Adding page %s" % os.path.basename(page), command_output)
-#         self.assertIn("Indexing default repository", command_output)
+    def test_wiki_create_output(self):
+        for type in ['wg','rg','ag','area']:
+            GroupFactory(type_id=type)
+        groups = Group.objects.filter(
+                        type__slug__in=['wg','rg','ag','area'],
+                        state__slug='active'
+                    ).order_by('acronym')
+        out = six.StringIO()
+        err = six.StringIO()
+        call_command('create_group_wikis', stdout=out, stderr=err, verbosity=2,
+            wiki_dir_pattern=self.wiki_dir_pattern,
+            svn_dir_pattern=self.svn_dir_pattern,
+        )
+        command_output = out.getvalue()
+        command_errors = err.getvalue()
+        self.assertEqual("", command_errors)
+        for group in groups:
+            self.assertIn("Processing group '%s'" % group.acronym, command_output)
+            # Do a bit of verification using trac-admin, too
+            admin_code, admin_output, admin_error = pipe(
+                'trac-admin %s permission list' % (self.wiki_dir_pattern % group.acronym))
+            self.assertEqual(admin_code, 0)
+            roles = group.role_set.filter(name_id__in=['chair', 'secr', 'ad'])
+            for role in roles:
+                user = role.email.address.lower()
+                self.assertIn("Granting admin permission for %s" % user, command_output)
+                self.assertIn(user, admin_output)
+            docs = group.document_set.filter(states__slug='active', type_id='draft')
+            for doc in docs:
+                name = doc.name
+                name = name.replace('draft-','')
+                name = name.replace(doc.stream_id+'-', '')
+                name = name.replace(group.acronym+'-', '')
+                self.assertIn("Adding component %s"%name, command_output)
+        for page in settings.TRAC_WIKI_PAGES_TEMPLATES:
+            self.assertIn("Adding page %s" % os.path.basename(page), command_output)
+        self.assertIn("Indexing default repository", command_output)
 
 OMITTED_APPS = [
     'ietf.secr.meetings',
@@ -424,7 +430,7 @@ class DraftTests(TestCase):
     def test_get_meta(self):
         tempdir = mkdtemp()
         filename = os.path.join(tempdir,self.draft.source)
-        with open(filename,'w') as file:
+        with io.open(filename,'w') as file:
             file.write(self.draft.text)
         self.assertEqual(getmeta(filename)['docdeststatus'],'Informational')
         shutil.rmtree(tempdir)

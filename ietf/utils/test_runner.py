@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-
-
+#
 # Portion Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -35,6 +34,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import re
 import os
 import sys
@@ -44,7 +46,6 @@ import pytz
 import importlib
 import socket
 import datetime
-import codecs
 import gzip
 import unittest
 import factory.random
@@ -228,7 +229,7 @@ def save_test_results(failures, test_labels):
     # results and avoid re-running tests if we've alread run them with OK
     # result after the latest code changes:
     topdir = os.path.dirname(os.path.dirname(settings.BASE_DIR))
-    tfile = codecs.open(os.path.join(topdir,".testresult"), "a", encoding='utf-8')
+    tfile = io.open(os.path.join(topdir,".testresult"), "a", encoding='utf-8')
     timestr = time.strftime("%Y-%m-%d %H:%M:%S")
     if failures:
         tfile.write("%s FAILED (failures=%s)\n" % (timestr, failures))
@@ -266,7 +267,7 @@ class CoverageReporter(Reporter):
                 analysis = self.coverage._analyze(fr)
                 nums = analysis.numbers
                 missing_nums = sorted(analysis.missing)
-                with open(analysis.filename) as file:
+                with io.open(analysis.filename) as file:
                     lines = file.read().splitlines()
                 missing_lines = [ lines[l-1] for l in missing_nums ]
                 result["covered"][fr.relative_filename()] = (nums.n_statements, nums.pc_covered/100.0, missing_nums, missing_lines)
@@ -526,7 +527,7 @@ class IetfTestRunner(DiscoverRunner):
                 with gzip.open(self.coverage_file, "rb") as file:
                     self.coverage_master = json.load(file)
             else:
-                with codecs.open(self.coverage_file, encoding='utf-8') as file:
+                with io.open(self.coverage_file, encoding='utf-8') as file:
                     self.coverage_master = json.load(file)
             self.coverage_data = {
                 "time": datetime.datetime.now(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -613,7 +614,7 @@ class IetfTestRunner(DiscoverRunner):
             coverage_latest = {}
             coverage_latest["version"] = "latest"
             coverage_latest["latest"] = self.coverage_data
-            with codecs.open(latest_coverage_file, "w", encoding='utf-8') as file:
+            with open(latest_coverage_file, "w") as file:
                 json.dump(coverage_latest, file, indent=2, sort_keys=True)
             if self.save_version_coverage:
                 self.coverage_master["version"] = self.save_version_coverage
@@ -622,7 +623,7 @@ class IetfTestRunner(DiscoverRunner):
                     with gzip.open(self.coverage_file, "wt", encoding='ascii') as file:
                         json.dump(self.coverage_master, file, sort_keys=True)
                 else:
-                    with codecs.open(self.coverage_file, "w", encoding="utf-8") as file:
+                    with open(self.coverage_file, "w") as file:
                         json.dump(self.coverage_master, file, indent=2, sort_keys=True)
         super(IetfTestRunner, self).teardown_test_environment(**kwargs)
 

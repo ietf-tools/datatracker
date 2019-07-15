@@ -1,9 +1,15 @@
 # Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import io
 import os
 import shutil
-import datetime
+import tarfile
+
 from pyquery import PyQuery
 
 from django.conf import settings
@@ -448,14 +454,12 @@ class IESGAgendaTests(TestCase):
         d1_filename = "%s-%s.txt" % (d1.name, d1.rev)
         d2_filename = "%s-%s.txt" % (d2.name, d2.rev)
 
-        with open(os.path.join(self.draft_dir, d1_filename), "w") as f:
+        with io.open(os.path.join(self.draft_dir, d1_filename), "w") as f:
             f.write("test content")
 
         url = urlreverse("ietf.iesg.views.telechat_docs_tarfile", kwargs=dict(date=get_agenda_date().isoformat()))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-
-        import tarfile, io
 
         tar = tarfile.open(None, fileobj=io.BytesIO(r.content))
         names = tar.getnames()
