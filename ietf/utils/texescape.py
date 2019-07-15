@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 # Copied from https://github.com/sphinx-doc/sphinx/blob/master/sphinx/util/texescape.py
 # Copyright and license as indicated in the original and below
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 """
     sphinx.util.texescape
     ~~~~~~~~~~~~~~~~~~~~~

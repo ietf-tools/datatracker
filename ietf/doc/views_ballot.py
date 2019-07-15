@@ -1,6 +1,10 @@
 # Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 # ballot management (voting, commenting, writeups, ...) for Area
 # Directors and Secretariat
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime, json
 

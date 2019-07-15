@@ -1,5 +1,5 @@
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
 #!/usr/bin/env python
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 # -*- Python -*-
 #
@@ -7,11 +7,16 @@
 #
 # Author: Markus Stenberg <mstenber@cisco.com>
 #
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 """
 
 Mailing list alias dumping utilities
 
 """
+
 
 from django.conf import settings
 

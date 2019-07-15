@@ -1,4 +1,8 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import
 
 import ast
 import os

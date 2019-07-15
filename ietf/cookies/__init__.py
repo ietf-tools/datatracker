@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2010-2019, All Rights Reserved
 # coding: latin-1
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 from types import ModuleType
 
 # These people will be sent a stack trace if there's an uncaught exception in

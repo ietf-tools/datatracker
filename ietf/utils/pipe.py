@@ -1,7 +1,12 @@
 # Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 # Simplified interface to os.popen3()
 
-def pipe(cmd:bytes, str:bytes=None) -> (int, bytes, bytes):
+def pipe(cmd, str=None):
     from subprocess import Popen, PIPE
     bufsize = 4096
     MAX = 65536*16

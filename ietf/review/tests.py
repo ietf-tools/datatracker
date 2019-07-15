@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 from ietf.utils.test_utils import TestCase
 from .mailarch import hash_list_message_id
 

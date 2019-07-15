@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import debug                            # pyflakes:ignore
 
 def find_history_active_at(obj, time):

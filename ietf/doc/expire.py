@@ -1,5 +1,9 @@
 # Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 # expiry of Internet Drafts
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 from django.conf import settings
 

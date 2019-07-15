@@ -1,5 +1,8 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
-# coding: latin-1
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 from types import ModuleType
 
