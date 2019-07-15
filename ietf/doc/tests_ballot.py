@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
 import datetime
 from pyquery import PyQuery
 
@@ -20,7 +21,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person, PersonalApiKey
 from ietf.person.factories import PersonFactory
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import outbox, empty_outbox, get_payload
 from ietf.utils.text import unwrap
 
 
@@ -171,7 +172,7 @@ class EditPositionTests(TestCase):
         self.assertEqual(len(outbox), mailbox_before + 1)
         m = outbox[-1]
         self.assertIn('COMMENT', m['Subject'])
-        self.assertIn('New comment', m.get_payload())
+        self.assertIn('New comment', get_payload(m))
 
 
     def test_edit_position_as_secretary(self):
@@ -790,7 +791,7 @@ class MakeLastCallTests(TestCase):
         self.assertTrue("ietf-announce@" in outbox[-2]['To'])
         for prefix in ['draft-ietf-mars-test','mars-chairs','aread']:
             self.assertTrue(prefix+"@" in outbox[-2]['Cc'])
-        self.assertIn("The following IPR Declarations",outbox[-2].get_payload())
+        self.assertIn("The following IPR Declarations", get_payload(outbox[-2]))
 
         self.assertTrue("Last Call" in outbox[-1]['Subject'])
         self.assertTrue("drafts-lastcall@icann.org" in outbox[-1]['To'])
