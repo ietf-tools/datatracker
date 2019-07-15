@@ -1,4 +1,9 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 from django.conf import settings
 from django.db import models
 from django.utils.encoding import smart_str
@@ -20,7 +25,7 @@ class EncryptedTextField(models.TextField):
                 raise ValueError("Trying to read the NomCom public key: " + str(e))
 
             command = "%s smime -encrypt -in /dev/stdin %s" % (settings.OPENSSL_COMMAND, cert_file)
-            code, out, error = pipe(command, comments.encode())
+            code, out, error = pipe(command, comments.encode('utf-8'))
             if code != 0:
                 log("openssl error: %s:\n  Error %s: %s" %(command, code, error))
             if not error:
