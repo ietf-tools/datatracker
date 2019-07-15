@@ -1,8 +1,14 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 import email.utils
 
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 
 import debug                            # pyflakes:ignore
 
@@ -13,6 +19,7 @@ from ietf.name.models import RoleName
 from ietf.utils.models import ForeignKey
 from ietf.utils.mail import get_email_addresses_from_text
 
+@python_2_unicode_compatible
 class Message(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
     by = ForeignKey(Person)
@@ -41,6 +48,7 @@ class Message(models.Model):
         return r if isinstance(r, list) else get_email_addresses_from_text(r)
             
 
+@python_2_unicode_compatible
 class MessageAttachment(models.Model):
     message = ForeignKey(Message)
     filename = models.CharField(max_length=255, db_index=True, blank=True)
@@ -53,6 +61,7 @@ class MessageAttachment(models.Model):
         return self.filename
 
 
+@python_2_unicode_compatible
 class SendQueue(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
     by = ForeignKey(Person)
@@ -71,6 +80,7 @@ class SendQueue(models.Model):
         return "'%s' %s -> %s (sent at %s)" % (self.message.subject, self.message.frm, self.message.to, self.sent_at or "<not yet>")
 
 
+@python_2_unicode_compatible
 class AnnouncementFrom(models.Model):
     name = ForeignKey(RoleName)
     group = ForeignKey(Group)

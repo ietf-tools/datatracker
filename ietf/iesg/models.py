@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
-
+# -*- coding: utf-8 -*-
+#
 # Portion Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 # 
@@ -32,11 +33,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 
-
+@python_2_unicode_compatible
 class TelechatAgendaItem(models.Model):
     TYPE_CHOICES = (
         (1, "Any Other Business (WG News, New Proposals, etc.)"),
@@ -51,7 +56,7 @@ class TelechatAgendaItem(models.Model):
 
     def __str__(self):
         type_name = self.TYPE_CHOICES_DICT.get(self.type, str(self.type))
-        return '%s: %s' % (type_name, self.title or "")
+        return "%s: %s" % (type_name, self.title or "")
 
 class Telechat(models.Model):
     telechat_id = models.IntegerField(primary_key=True)
@@ -77,6 +82,7 @@ class TelechatDateManager(models.Manager):
     def active(self):
         return self.get_queryset().filter(date__gte=datetime.date.today())
 
+@python_2_unicode_compatible
 class TelechatDate(models.Model):
     objects = TelechatDateManager()
 

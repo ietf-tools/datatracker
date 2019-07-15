@@ -1,10 +1,15 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 
 from simple_history.models import HistoricalRecords
 
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 
 from ietf.doc.models import Document
 from ietf.group.models import Group
@@ -13,6 +18,7 @@ from ietf.name.models import ReviewTypeName, ReviewRequestStateName, ReviewResul
 from ietf.utils.validators import validate_regular_expression_string
 from ietf.utils.models import ForeignKey, OneToOneField
 
+@python_2_unicode_compatible
 class ReviewerSettings(models.Model):
     """Keeps track of admin data associated with a reviewer in a team."""
     history     = HistoricalRecords()
@@ -39,6 +45,7 @@ class ReviewerSettings(models.Model):
     class Meta:
         verbose_name_plural = "reviewer settings"
 
+@python_2_unicode_compatible
 class ReviewSecretarySettings(models.Model):
     """Keeps track of admin data associated with a secretary in a team."""
     team        = ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
@@ -51,6 +58,7 @@ class ReviewSecretarySettings(models.Model):
     class Meta:
         verbose_name_plural = "review secretary settings"
 
+@python_2_unicode_compatible
 class UnavailablePeriod(models.Model):
     team         = ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     person       = ForeignKey(Person)
@@ -81,6 +89,7 @@ class UnavailablePeriod(models.Model):
     def __str__(self):
         return "{} is unavailable in {} {} - {}".format(self.person, self.team.acronym, self.start_date or "", self.end_date or "")
 
+@python_2_unicode_compatible
 class ReviewWish(models.Model):
     """Reviewer wishes to review a document when it becomes available for review."""
     time        = models.DateTimeField(default=datetime.datetime.now)
@@ -95,6 +104,7 @@ class ReviewWish(models.Model):
         verbose_name_plural = "review wishes"
     
 
+@python_2_unicode_compatible
 class NextReviewerInTeam(models.Model):
     team        = ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     next_reviewer = ForeignKey(Person)
@@ -106,6 +116,7 @@ class NextReviewerInTeam(models.Model):
         verbose_name = "next reviewer in team setting"
         verbose_name_plural = "next reviewer in team settings"
 
+@python_2_unicode_compatible
 class ReviewRequest(models.Model):
     """Represents a request for a review and the process it goes through."""
     state         = ForeignKey(ReviewRequestStateName)
@@ -130,6 +141,7 @@ class ReviewRequest(models.Model):
     def request_closed_time(self):
         return self.doc.request_closed_time(self) or self.time
 
+@python_2_unicode_compatible
 class ReviewAssignment(models.Model):
     """ One of possibly many reviews assigned in response to a ReviewRequest """
     review_request = ForeignKey(ReviewRequest)
@@ -152,6 +164,7 @@ def get_default_review_types():
 def get_default_review_results():
     return ReviewResultName.objects.filter(slug__in=['not-ready', 'right-track', 'almost-ready', 'ready-issues', 'ready-nits', 'ready'])
 
+@python_2_unicode_compatible
 class ReviewTeamSettings(models.Model):
     """Holds configuration specific to groups that are review teams"""
     group = OneToOneField(Group)

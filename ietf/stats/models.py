@@ -1,6 +1,11 @@
 # Copyright The IETF Trust 2017-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 
 import debug                            # pyflakes:ignore
 
@@ -10,6 +15,7 @@ from ietf.person.models import Person
 from ietf.utils.models import ForeignKey
 
 
+@python_2_unicode_compatible
 class AffiliationAlias(models.Model):
     """Records that alias should be treated as name for statistical
     purposes."""
@@ -27,6 +33,7 @@ class AffiliationAlias(models.Model):
     class Meta:
         verbose_name_plural = "affiliation aliases"
 
+@python_2_unicode_compatible
 class AffiliationIgnoredEnding(models.Model):
     """Records that ending should be stripped from the affiliation for statistical purposes."""
 
@@ -35,6 +42,7 @@ class AffiliationIgnoredEnding(models.Model):
     def __str__(self):
         return self.ending
 
+@python_2_unicode_compatible
 class CountryAlias(models.Model):
     """Records that alias should be treated as country for statistical
     purposes."""
@@ -48,6 +56,7 @@ class CountryAlias(models.Model):
     class Meta:
         verbose_name_plural = "country aliases"
     
+@python_2_unicode_compatible
 class MeetingRegistration(models.Model):
     """Registration attendee records from the IETF registration system"""
     meeting = ForeignKey(Meeting)

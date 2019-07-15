@@ -831,6 +831,7 @@ MEETING_VALID_MIME_TYPE_EXTENSIONS = {
 INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 
 FLOORPLAN_MEDIA_DIR = 'floor'
+FLOORPLAN_DIR = os.path.join(MEDIA_ROOT, FLOORPLAN_MEDIA_DIR)
 
 # ==============================================================================
 

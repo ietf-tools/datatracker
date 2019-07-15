@@ -1,5 +1,7 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 
 from django.db import models
@@ -8,6 +10,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 from django.template.defaultfilters import linebreaks
+from django.utils.encoding import python_2_unicode_compatible
 
 import debug                            # pyflakes:ignore
 
@@ -40,6 +43,7 @@ class ReminderDates(models.Model):
     nomcom = ForeignKey('NomCom')
 
 
+@python_2_unicode_compatible
 class NomCom(models.Model):
     public_key = models.FileField(storage=NoLocationMigrationFileSystemStorage(location=settings.NOMCOM_PUBLIC_KEYS_DIR),
                                   upload_to=upload_path_handler, blank=True, null=True)
@@ -82,14 +86,14 @@ class NomCom(models.Model):
     def pending_email_count(self):
         return self.feedback_set.filter(type__isnull=True).count()
 
-    def encrypt(self, cleartext:str) -> bytes:
+    def encrypt(self, cleartext):
         try:
             cert_file = self.public_key.path
         except ValueError as e:
             raise ValueError("Trying to read the NomCom public key: " + str(e))
 
         command = "%s smime -encrypt -in /dev/stdin %s" % (settings.OPENSSL_COMMAND, cert_file)
-        code, out, error = pipe(command, cleartext.encode())
+        code, out, error = pipe(command, cleartext.encode('utf-8'))
         if code != 0:
             log("openssl error: %s:\n  Error %s: %s" %(command, code, error))
         if not error:
@@ -106,6 +110,7 @@ def delete_nomcom(sender, **kwargs):
 post_delete.connect(delete_nomcom, sender=NomCom)
 
 
+@python_2_unicode_compatible
 class Nomination(models.Model):
     position = ForeignKey('Position')
     candidate_name = models.CharField(verbose_name='Candidate name', max_length=255)
@@ -130,6 +135,7 @@ class Nomination(models.Model):
         return "%s (%s)" % (self.candidate_name, self.candidate_email)
 
 
+@python_2_unicode_compatible
 class Nominee(models.Model):
 
     email = ForeignKey(Email)
@@ -147,9 +153,9 @@ class Nominee(models.Model):
 
     def __str__(self):
         if self.email.person and self.email.person.name:
-            return '%s <%s> %s' % (self.email.person.plain_name(), self.email.address, self.nomcom.year())
+            return "%s <%s> %s" % (self.email.person.plain_name(), self.email.address, self.nomcom.year())
         else:
-            return '%s %s' % (self.email.address, self.nomcom.year())
+            return "%s %s" % (self.email.address, self.nomcom.year())
 
     def name(self):
         if self.email.person and self.email.person.name:
@@ -157,6 +163,7 @@ class Nominee(models.Model):
         else:
             return self.email.address
 
+@python_2_unicode_compatible
 class NomineePosition(models.Model):
 
     position = ForeignKey('Position')
@@ -186,6 +193,7 @@ class NomineePosition(models.Model):
                                                         nominees__in=[self.nominee])
 
 
+@python_2_unicode_compatible
 class Position(models.Model):
     nomcom = ForeignKey('NomCom')
     name = models.CharField(verbose_name='Name', max_length=255, help_text='This short description will appear on the Nomination and Feedback pages. Be as descriptive as necessary. Past examples: "Transport AD", "IAB Member"')
@@ -232,6 +240,7 @@ class Position(models.Model):
             rendered = linebreaks(rendered)
         return rendered
 
+@python_2_unicode_compatible
 class Topic(models.Model):
     nomcom = ForeignKey('NomCom')
     subject = models.CharField(verbose_name='Name', max_length=255, help_text='This short description will appear on the Feedback pages.')
@@ -261,6 +270,7 @@ class Topic(models.Model):
             rendered = linebreaks(rendered)
         return rendered
 
+@python_2_unicode_compatible
 class Feedback(models.Model):
     nomcom = ForeignKey('NomCom')
     author = models.EmailField(verbose_name='Author', blank=True)
