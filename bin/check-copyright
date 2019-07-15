@@ -188,6 +188,7 @@ write_cache = False
 loginfo_format = r'^r[0-9]+ \| [^@]+@[^@]+ \| \d\d\d\d-\d\d-\d\d '
 
 year = time.strftime('%Y')
+copyright_re = "(?i)"+opt_copyright.format(years=r"(\d+-)?\d+")
 for path in files:
     try:
         if not os.path.exists(path):
@@ -200,8 +201,7 @@ for path in files:
         date = initinfo[path]['date']
         init = date[:4]
         
-        copyright_re = "(?i)"+opt_copyright.format(years=r"(\d+-)?\d+")
-        copyright_year_re = "(?i)"+opt_copyright.format(years=r"({init})?{year}")
+        copyright_year_re = "(?i)"+opt_copyright.format(years=r"({init}-)?{year}".format(init=init, year=year))
         with open(path) as file:
             try:
                 chunk = file.read(4000)
