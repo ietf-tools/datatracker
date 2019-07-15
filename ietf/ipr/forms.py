@@ -1,4 +1,9 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 import email
 
@@ -6,6 +11,7 @@ import email
 from django import forms
 from django.core.validators import RegexValidator
 from django.utils.safestring import mark_safe
+from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
@@ -71,7 +77,7 @@ class AddEmailForm(forms.Form):
     def clean_message(self):
         '''Returns a ietf.message.models.Message object'''
         text = self.cleaned_data['message']
-        message = email.message_from_string(text)
+        message = email.message_from_string(force_str(text))
         for field in ('to','from','subject','date'):
             if not message[field]:
                 raise forms.ValidationError('Error parsing email: {} field not found.'.format(field))
