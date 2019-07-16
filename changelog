@@ -1,3 +1,31 @@
+ietfdb (6.98.4) ietf; urgency=medium
+
+  This is a small bugfix release, to clear the slate before merging
+  in the Python 2/3 conversion.  From the commit log:
+
+  * Added a validation step for SearchablePersonField, to avoid later 
+    server 500 errors on bad input.
+
+  * Merged in [16404] from rjsparks@nostrum.com:
+    Only look for ietf/datatracker-env images when extracting the most 
+    recent build to tag as latest.  
+
+  * Merged in [16359] from rcross@amsl.com:
+    Fix registration import, use user.person if it exists.   
+
+  * Merged in [16096] from rcross@amsl.com:
+    Update admin permissions. Grant secretariat change permissions on 
+    dbtemplate so they can update proceedings pages.  
+
+  * Turned off html autoescape in IPR email templates.  This fixes
+    inappropriate html escapes that occurred in various IPR-related
+    emails.
+
+  * Added missing code to skip coverage measurement for skippable tests.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jul 2019 14:14:12 +0000
+  
+
 ietfdb (6.98.3) ietf; urgency=medium
 
   * Increased the length of the list Subscribed email field from 64 to 128, 
