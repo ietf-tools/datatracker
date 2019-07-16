@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2010-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 # changing state and metadata on Internet Drafts
 
 import datetime
@@ -65,10 +68,10 @@ class ChangeStateForm(forms.Form):
         prev_tag = prev_tag[0] if prev_tag else None
 
         if state == prev and tag == prev_tag:
-            self._errors['comment'] = ErrorList([u'State not changed. Comments entered will be lost with no state change. Please go back and use the Add Comment feature on the history tab to add comments without changing state.'])
+            self._errors['comment'] = ErrorList(['State not changed. Comments entered will be lost with no state change. Please go back and use the Add Comment feature on the history tab to add comments without changing state.'])
 
         if state != '(None)' and state.slug == 'idexists' and tag:
-            self._errors['substate'] = ErrorList([u'Clear substate before setting the document to the idexists state.'])
+            self._errors['substate'] = ErrorList(['Clear substate before setting the document to the idexists state.'])
 
         return retclean
 
@@ -134,7 +137,7 @@ def change_state(request, name):
                 email_state_changed(request, doc, msg,'doc_state_edited')
                 
                 if new_state.slug == "approved" and new_tags == [] and has_role(request.user, "Area Director"):
-					email_ad_approved_doc(request, doc, comment)
+                                        email_ad_approved_doc(request, doc, comment)
 
                 if prev_state and prev_state.slug in ("ann", "rfcqueue") and new_state.slug not in ("rfcqueue", "pub"):
                     email_pulled_from_rfc_queue(request, doc, comment, prev_state, new_state)
@@ -268,7 +271,7 @@ def change_stream(request, name):
                 events = []
 
                 e = DocEvent(doc=doc, rev=doc.rev, by=login, type='changed_document')
-                e.desc = u"Stream changed to <b>%s</b> from %s"% (new_stream, old_stream or "None")
+                e.desc = "Stream changed to <b>%s</b> from %s"% (new_stream, old_stream or "None")
                 e.save()
 
                 events.append(e)
@@ -281,7 +284,7 @@ def change_stream(request, name):
 
                 doc.save_with_history(events)
 
-                msg = u"\n".join(e.desc for e in events)
+                msg = "\n".join(e.desc for e in events)
 
                 email_stream_changed(request, doc, old_stream, new_stream, msg)
 
@@ -437,7 +440,7 @@ def change_intention(request, name):
 
                 events = []
                 e = DocEvent(doc=doc, rev=doc.rev, by=login, type='changed_document')
-                e.desc = u"Intended Status changed to <b>%s</b> from %s"% (new_level,old_level) 
+                e.desc = "Intended Status changed to <b>%s</b> from %s"% (new_level,old_level) 
                 e.save()
                 events.append(e)
 
@@ -459,7 +462,7 @@ def change_intention(request, name):
 
                 doc.save_with_history(events)
 
-                msg = u"\n".join(e.desc for e in events)
+                msg = "\n".join(e.desc for e in events)
 
                 email_intended_status_changed(request, doc, msg)
 
@@ -578,7 +581,7 @@ def to_iesg(request,name):
                 doc.notify = notify
                 changes.append("State Change Notice email list changed to %s" % doc.notify)
 
-	    # Get the last available writeup
+            # Get the last available writeup
             previous_writeup = doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup")
             if previous_writeup != None:
                 changes.append(previous_writeup.text)
@@ -719,9 +722,9 @@ def edit_info(request, name):
 
                 if r["area"] != doc.group:
                     if r["area"].type_id == "area":
-                        changes.append(u"Assigned to <b>%s</b>" % r["area"].name)
+                        changes.append("Assigned to <b>%s</b>" % r["area"].name)
                     else:
-                        changes.append(u"No longer assigned to any area")
+                        changes.append("No longer assigned to any area")
                     doc.group = r["area"]
 
             for c in changes:
@@ -904,7 +907,7 @@ def edit_shepherd_writeup(request, name):
                      writeup = form.cleaned_data['content']
                 e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login, type="changed_protocol_writeup")
 
-		# Add the shepherd writeup to description if the document is in submitted for publication state
+                # Add the shepherd writeup to description if the document is in submitted for publication state
                 stream_state = doc.get_state("draft-stream-%s" % doc.stream_id)
                 iesg_state   = doc.get_state("draft-iesg")
                 if (iesg_state or (stream_state and stream_state.slug=='sub-pub')):
@@ -1160,9 +1163,9 @@ def edit_document_urls(request, name):
         res = []
         for u in urls:
             if u.desc:
-                res.append(u"%s %s (%s)" % (u.tag.slug, u.url, u.desc.strip('()')))
+                res.append("%s %s (%s)" % (u.tag.slug, u.url, u.desc.strip('()')))
             else:
-                res.append(u"%s %s" % (u.tag.slug, u.url))
+                res.append("%s %s" % (u.tag.slug, u.url))
         return fs.join(res)
 
     doc = get_object_or_404(Document, name=name)
@@ -1376,9 +1379,9 @@ def adopt_draft(request, name):
             # stream
             if doc.stream != new_stream:
                 e = DocEvent(type="changed_stream", doc=doc, rev=doc.rev, by=by)
-                e.desc = u"Changed stream to <b>%s</b>" % new_stream.name
+                e.desc = "Changed stream to <b>%s</b>" % new_stream.name
                 if doc.stream:
-                    e.desc += u" from %s" % doc.stream.name
+                    e.desc += " from %s" % doc.stream.name
                 e.save()
                 events.append(e)
                 old_stream = doc.stream
@@ -1389,7 +1392,7 @@ def adopt_draft(request, name):
             # group
             if group != doc.group:
                 e = DocEvent(type="changed_group", doc=doc, rev=doc.rev, by=by)
-                e.desc = u"Changed group to <b>%s (%s)</b>" % (group.name, group.acronym.upper())
+                e.desc = "Changed group to <b>%s (%s)</b>" % (group.name, group.acronym.upper())
                 if doc.group.type_id != "individ":
                     e.desc += " from %s (%s)" % (doc.group.name, doc.group.acronym.upper())
                 e.save()
@@ -1456,12 +1459,12 @@ def release_draft(request, name):
             events = []
 
             if doc.stream.slug == 'ise' or doc.group.type_id != 'individ':
-                existing_tags = set(doc.tags.all())
+                existing_tags = list(doc.tags.all())
                 if existing_tags:
                     doc.tags.clear()
                     e = DocEvent(type="changed_document", doc=doc, rev=doc.rev, by=by)
                     l = []
-                    l.append(u"Tag%s %s cleared." % (pluralize(existing_tags), ", ".join(t.name for t in existing_tags)))
+                    l.append("Tag%s %s cleared." % (pluralize(existing_tags), ", ".join(t.name for t in existing_tags)))
                     e.desc = " ".join(l)
                     e.save()
                     events.append(e)
@@ -1487,7 +1490,7 @@ def release_draft(request, name):
 
             if doc.stream:
                 e = DocEvent(type="changed_stream", doc=doc, rev=doc.rev, by=by)
-                e.desc = u"Changed stream to <b>None</b> from %s" % doc.stream.name
+                e.desc = "Changed stream to <b>None</b> from %s" % doc.stream.name
                 e.save()
                 events.append(e)
                 old_stream = doc.stream
@@ -1529,9 +1532,9 @@ class ChangeStreamStateForm(forms.Form):
         f.label = state_type.label
         if self.stream.slug == 'ietf':
             if self.can_set_sub_pub:
-                f.help_text = u"Only select 'Submitted to IESG for Publication' to correct errors. Use the document's main page to request publication."
+                f.help_text = "Only select 'Submitted to IESG for Publication' to correct errors. Use the document's main page to request publication."
             else:
-                f.help_text = u"You may not set the 'Submitted to IESG for Publication' using this form - Use the document's main page to request publication."
+                f.help_text = "You may not set the 'Submitted to IESG for Publication' using this form - Use the document's main page to request publication."
 
         f = self.fields['tags']
         f.queryset = f.queryset.filter(slug__in=get_tags_for_stream_id(doc.stream_id))
@@ -1620,9 +1623,9 @@ def change_stream_state(request, name, state_type):
                 removed_tags = existing_tags - new_tags
                 l = []
                 if added_tags:
-                    l.append(u"Tag%s %s set." % (pluralize(added_tags), ", ".join(t.name for t in added_tags)))
+                    l.append("Tag%s %s set." % (pluralize(added_tags), ", ".join(t.name for t in added_tags)))
                 if removed_tags:
-                    l.append(u"Tag%s %s cleared." % (pluralize(removed_tags), ", ".join(t.name for t in removed_tags)))
+                    l.append("Tag%s %s cleared." % (pluralize(removed_tags), ", ".join(t.name for t in removed_tags)))
                 e.desc = " ".join(l)
                 e.save()
                 events.append(e)

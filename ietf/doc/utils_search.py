@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 import debug                            # pyflakes:ignore
 
@@ -16,9 +19,9 @@ def wrap_value(v):
 def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
     if doc_dict is None:
         doc_dict = dict((d.pk, d) for d in docs)
-        doc_ids = doc_dict.keys()
+        doc_ids = list(doc_dict.keys())
     if doc_ids is None:
-        doc_ids = doc_dict.keys()        
+        doc_ids = list(doc_dict.keys())        
 
     seen = set()
     for e in TelechatDocEvent.objects.filter(doc__id__in=doc_ids, type="scheduled_for_telechat").order_by('-time'):
@@ -36,7 +39,7 @@ def fill_in_document_sessions(docs, doc_dict, doc_ids):
     # get presentations
     presentations = SessionPresentation.objects.filter(session_id__in=[ s.id for s in sessions ])
     session_list = [ (p.document_id, p.session) for p in presentations ]
-    for d in doc_dict.values():
+    for d in list(doc_dict.values()):
         d.sessions = []
     for (i, s) in session_list:
         if i in doc_ids:
@@ -48,7 +51,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     # TODO - this function evolved from something that assumed it was handling only drafts. It still has places where it assumes all docs are drafts where that is not a correct assumption
 
     doc_dict = dict((d.pk, d) for d in docs)
-    doc_ids = doc_dict.keys()
+    doc_ids = list(doc_dict.keys())
 
     rfc_aliases = dict([ (a.document.id, a.name) for a in DocAlias.objects.filter(name__startswith="rfc", docs__id__in=doc_ids) ])
 
@@ -103,7 +106,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         d.expirable = expirable_draft(d)
 
         if d.get_state_slug() != "rfc":
-            d.milestones = [ m for (t, m) in sorted(((m.time, m) for m in d.groupmilestone_set.all() if m.state_id == "active")) ]
+            d.milestones = [ m for (t, s, v, m) in sorted(((m.time, m.state.slug, m.desc, m) for m in d.groupmilestone_set.all() if m.state_id == "active")) ]
             d.reviewed_by_teams = sorted(set(r.team.acronym for r in d.reviewrequest_set.filter(state__in=["assigned","accepted","part-completed","completed"]).distinct().select_related('team')))
 
         e = d.latest_event_cache.get('started_iesg_process', None)
@@ -112,7 +115,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     # RFCs
 
     # errata
-    erratas = set(Document.objects.filter(tags="errata", name__in=rfc_aliases.keys()).distinct().values_list("name", flat=True))
+    erratas = set(Document.objects.filter(tags="errata", name__in=list(rfc_aliases.keys())).distinct().values_list("name", flat=True))
     for d in docs:
         d.has_errata = d.name in erratas
 
@@ -122,7 +125,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         d.obsoleted_by_list = []
         d.updated_by_list = []
 
-    xed_by = RelatedDocument.objects.filter(target__name__in=rfc_aliases.values(),
+    xed_by = RelatedDocument.objects.filter(target__name__in=list(rfc_aliases.values()),
                                             relationship__in=("obs", "updates")).select_related('target')
     rel_rfc_aliases = dict([ (a.document.id, a.name) for a in DocAlias.objects.filter(name__startswith="rfc", docs__id__in=[rel.source_id for rel in xed_by]) ])
     for rel in xed_by:
@@ -163,13 +166,16 @@ def prepare_document_table(request, docs, query=None, max_results=200):
 
     # sort
     def generate_sort_key(d):
+        def num(i):
+            # sortable representation of number as string
+            return ('%09d' % int(i))
+
         res = []
 
         rfc_num = d.rfc_number()
 
-
         if d.type_id == "draft":
-            res.append(["Active", "Expired", "Replaced", "Withdrawn", "RFC"].index(d.search_heading.split()[0]))
+            res.append(num(["Active", "Expired", "Replaced", "Withdrawn", "RFC"].index(d.search_heading.split()[0])))
         else:
             res.append(d.type_id);
             res.append("-");
@@ -182,14 +188,14 @@ def prepare_document_table(request, docs, query=None, max_results=200):
             res.append(str(d.latest_revision_date))
         elif sort_key == "status":
             if rfc_num != None:
-                res.append(int(rfc_num))
+                res.append(num(rfc_num))
             else:
-                res.append(d.get_state().order if d.get_state() else None)
+                res.append(num(d.get_state().order) if d.get_state() else None)
         elif sort_key == "ipr":
             res.append(len(d.ipr()))
         elif sort_key == "ad":
             if rfc_num != None:
-                res.append(int(rfc_num))
+                res.append(num(rfc_num))
             elif d.get_state_slug() == "active":
                 if d.get_state("draft-iesg"):
                     res.append(d.get_state("draft-iesg").order)
@@ -197,7 +203,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
                     res.append(0)
         else:
             if rfc_num != None:
-                res.append(int(rfc_num))
+                res.append(num(rfc_num))
             else:
                 res.append(d.canonical_name())
 

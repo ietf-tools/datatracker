@@ -1,6 +1,8 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2017-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 # Stdlib imports
 import re
@@ -19,7 +21,7 @@ from ietf.review.models import ReviewerSettings, UnavailablePeriod, ReviewSecret
 from ietf.review.utils import close_review_request_states, setup_reviewer_field
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.text import strip_suffix
-from ietf.utils.ordereddict import insert_after_in_ordered_dict
+#from ietf.utils.ordereddict import insert_after_in_ordered_dict
 from ietf.utils.fields import DatepickerDateField, MultiEmailField
 
 # --- Constants --------------------------------------------------------
@@ -48,11 +50,11 @@ class StatusUpdateForm(forms.Form):
 
     def clean(self):
         if (self.cleaned_data['content'] and self.cleaned_data['content'].strip() and self.cleaned_data['txt']):
-	    raise forms.ValidationError("Cannot enter both text box and TXT file")
-	elif (self.cleaned_data['content'] and not self.cleaned_data['content'].strip() and not self.cleaned_data['txt']):
+            raise forms.ValidationError("Cannot enter both text box and TXT file")
+        elif (self.cleaned_data['content'] and not self.cleaned_data['content'].strip() and not self.cleaned_data['txt']):
             raise forms.ValidationError("NULL input is not a valid option")
         elif (self.cleaned_data['txt'] and not self.cleaned_data['txt'].strip()) :
-	    raise forms.ValidationError("NULL TXT file input is not a valid option")
+            raise forms.ValidationError("NULL TXT file input is not a valid option")
 
 class ConcludeGroupForm(forms.Form):
     instructions = forms.CharField(widget=forms.Textarea(attrs={'rows': 30}), required=True, strip=False)
@@ -116,11 +118,13 @@ class GroupForm(forms.Form):
         for r in role_fields_to_remove:
             del self.fields[r + "_roles"]
         if field:
-            for f in self.fields:
+            keys = list(self.fields.keys())
+            for f in keys:
                 if f != field:
                     del self.fields[f]
 
     def clean_acronym(self):
+      try:
         # Changing the acronym of an already existing group will cause 404s all
         # over the place, loose history, and generally muck up a lot of
         # things, so we don't permit it
@@ -139,42 +143,45 @@ class GroupForm(forms.Form):
 
         confirmed = self.data.get("confirm_acronym", False)
 
-        def insert_confirm_field(label, initial):
-            # set required to false, we don't need it since we do the
-            # validation of the field in here, and otherwise the
-            # browser and Django may barf
-            insert_after_in_ordered_dict(self.fields, "confirm_acronym", forms.BooleanField(label=label, required=False), after="acronym")
-            # we can't set initial, it's ignored since the form is bound, instead mutate the data
-            self.data = self.data.copy()
-            self.data["confirm_acronym"] = initial
+#         def insert_confirm_field(label, initial):
+#             # set required to false, we don't need it since we do the
+#             # validation of the field in here, and otherwise the
+#             # browser and Django may barf
+#             insert_after_in_ordered_dict(self.fields, "confirm_acronym", forms.BooleanField(label=label, required=False), after="acronym")
+#             # we can't set initial, it's ignored since the form is bound, instead mutate the data
+#             self.data = self.data.copy()
+#             self.data["confirm_acronym"] = initial
 
         if existing and existing.type_id == self.group_type:
             if existing.state_id == "bof":
-                insert_confirm_field(label="Turn BoF %s into proposed %s and start chartering it" % (existing.acronym, existing.type.name), initial=True)
+                #insert_confirm_field(label="Turn BoF %s into proposed %s and start chartering it" % (existing.acronym, existing.type.name), initial=True)
                 if confirmed:
                     return acronym
                 else:
-                    raise forms.ValidationError("Warning: Acronym used for an existing BoF (%s)." % existing.name)
+                    raise forms.ValidationError("Warning: Acronym used for an existing BoF (%s)." % existing.acronym)
             else:
-                insert_confirm_field(label="Set state of %s %s to proposed and start chartering it" % (existing.acronym, existing.type.name), initial=False)
+                #insert_confirm_field(label="Set state of %s %s to proposed and start chartering it" % (existing.acronym, existing.type.name), initial=False)
                 if confirmed:
                     return acronym
                 else:
-                    raise forms.ValidationError("Warning: Acronym used for an existing %s (%s, %s)." % (existing.type.name, existing.name, existing.state.name if existing.state else "unknown state"))
+                    raise forms.ValidationError("Warning: Acronym used for an existing %s (%s, %s)." % (existing.type.name, existing.acronym, existing.state.name if existing.state else "unknown state"))
 
         if existing:
-            raise forms.ValidationError("Acronym used for an existing group (%s)." % existing.name)
+            raise forms.ValidationError("Acronym used for an existing group (%s)." % existing.acronym)
 
-        # TODO: Why is this limited to types wg and rg? We would want to be warned about _any_ old collision I think?
-        old = GroupHistory.objects.filter(acronym__iexact=acronym, type__in=("wg", "rg"))
+        old = GroupHistory.objects.filter(acronym__iexact=acronym)
         if old:
-            insert_confirm_field(label="Confirm reusing acronym %s" % old[0].acronym, initial=False)
+            #insert_confirm_field(label="Confirm reusing acronym %s" % old[0].acronym, initial=False)
             if confirmed:
                 return acronym
             else:
                 raise forms.ValidationError("Warning: Acronym used for a historic group.")
-
         return acronym
+      except forms.ValidationError:
+          pass
+      except Exception:
+          import traceback
+          traceback.print_exc()
 
     def clean_urls(self):
         return [x.strip() for x in self.cleaned_data["urls"].splitlines() if x.strip()]
@@ -198,7 +205,7 @@ class GroupForm(forms.Form):
         else:
             raise forms.ValidationError("A group cannot be its own ancestor.  "
                 "Found that the group '%s' would end up being the ancestor of (%s)" % (p.acronym, ', '.join([g.acronym for g in seen])))
-        
+
     def clean(self):
         cleaned_data = super(GroupForm, self).clean()
         state = cleaned_data.get('state', None)

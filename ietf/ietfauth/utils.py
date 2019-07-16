@@ -1,4 +1,8 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 # various authentication and authorization utilities
 
@@ -30,7 +34,7 @@ def has_role(user, role_names, *args, **kwargs):
     """Determines whether user has any of the given standard roles
     given. Role names must be a list or, in case of a single value, a
     string."""
-    if isinstance(role_names, str) or isinstance(role_names, unicode):
+    if not isinstance(role_names, (list, tuple)):
         role_names = [ role_names ]
     
     if not user or not user.is_authenticated:
@@ -48,24 +52,24 @@ def has_role(user, role_names, *args, **kwargs):
             return False
 
         role_qs = {
-	    "Area Director": Q(person=person, name__in=("pre-ad", "ad"), group__type="area", group__state="active"),
-	    "Secretariat": Q(person=person, name="secr", group__acronym="secretariat"),
+            "Area Director": Q(person=person, name__in=("pre-ad", "ad"), group__type="area", group__state="active"),
+            "Secretariat": Q(person=person, name="secr", group__acronym="secretariat"),
             "IAB" : Q(person=person, name="member", group__acronym="iab"),
-	    "IANA": Q(person=person, name="auth", group__acronym="iana"),
+            "IANA": Q(person=person, name="auth", group__acronym="iana"),
             "RFC Editor": Q(person=person, name="auth", group__acronym="rfceditor"),
             "ISE" : Q(person=person, name="chair", group__acronym="ise"),
-	    "IAD": Q(person=person, name="admdir", group__acronym="ietf"),
-	    "IETF Chair": Q(person=person, name="chair", group__acronym="ietf"),
-	    "IETF Trust Chair": Q(person=person, name="chair", group__acronym="ietf-trust"),
-	    "IRTF Chair": Q(person=person, name="chair", group__acronym="irtf"),
-	    "IAB Chair": Q(person=person, name="chair", group__acronym="iab"),
-	    "IAB Executive Director": Q(person=person, name="execdir", group__acronym="iab"),
+            "IAD": Q(person=person, name="admdir", group__acronym="ietf"),
+            "IETF Chair": Q(person=person, name="chair", group__acronym="ietf"),
+            "IETF Trust Chair": Q(person=person, name="chair", group__acronym="ietf-trust"),
+            "IRTF Chair": Q(person=person, name="chair", group__acronym="irtf"),
+            "IAB Chair": Q(person=person, name="chair", group__acronym="iab"),
+            "IAB Executive Director": Q(person=person, name="execdir", group__acronym="iab"),
             "IAB Group Chair": Q(person=person, name="chair", group__type="iab", group__state="active"),
             "IAOC Chair": Q(person=person, name="chair", group__acronym="iaoc"),
-	    "WG Chair": Q(person=person,name="chair", group__type="wg", group__state__in=["active","bof", "proposed"]),
-	    "WG Secretary": Q(person=person,name="secr", group__type="wg", group__state__in=["active","bof", "proposed"]),
-	    "RG Chair": Q(person=person,name="chair", group__type="rg", group__state__in=["active","proposed"]),
-	    "RG Secretary": Q(person=person,name="secr", group__type="rg", group__state__in=["active","proposed"]),
+            "WG Chair": Q(person=person,name="chair", group__type="wg", group__state__in=["active","bof", "proposed"]),
+            "WG Secretary": Q(person=person,name="secr", group__type="wg", group__state__in=["active","bof", "proposed"]),
+            "RG Chair": Q(person=person,name="chair", group__type="rg", group__state__in=["active","proposed"]),
+            "RG Secretary": Q(person=person,name="secr", group__type="rg", group__state__in=["active","proposed"]),
             "AG Secretary": Q(person=person,name="secr", group__type="ag", group__state__in=["active"]),
             "Team Chair": Q(person=person,name="chair", group__type="team", group__state="active"),
             "Nomcom Chair": Q(person=person, name="chair", group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),

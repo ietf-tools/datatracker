@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2017-2019, All Rights Reserved
 # Copyright 2016 IETF Trust
 
 import datetime
@@ -12,7 +13,7 @@ from ietf.stats.utils import get_meeting_registration_data
 
 logtag = __name__.split('.')[-1]
 logname = "user.log"
-syslog.openlog(logtag, syslog.LOG_PID, syslog.LOG_USER)
+syslog.openlog(str(logtag), syslog.LOG_PID, syslog.LOG_USER)
 
 class Command(BaseCommand):
     help = "Fetch meeting attendee figures from ietf.org/registration/attendees."

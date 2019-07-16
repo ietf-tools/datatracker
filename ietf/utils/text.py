@@ -1,19 +1,22 @@
-from __future__ import unicode_literals
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import re
+import six
 import textwrap
-import types
 import unicodedata
 
 from django.utils.functional import keep_lazy
-from django.utils import six
 from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
-from texescape import init as texescape_init, tex_escape_map
+from .texescape import init as texescape_init, tex_escape_map
 
-@keep_lazy(six.text_type)
+@keep_lazy(str)
 def xslugify(value):
     """
     Converts to ASCII. Converts spaces to hyphens. Removes characters that
@@ -22,8 +25,8 @@ def xslugify(value):
     (I.e., does the same as slugify, but also converts slashes to dashes.)
     """
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
-    value = re.sub('[^\w\s/-]', '', value).strip().lower()
-    return mark_safe(re.sub('[-\s/]+', '-', value))
+    value = re.sub(r'[^\w\s/-]', '', value).strip().lower()
+    return mark_safe(re.sub(r'[-\s/]+', '-', value))
 
 def strip_prefix(text, prefix):
     if text.startswith(prefix):
@@ -57,7 +60,7 @@ def fill(text, width):
 def wordwrap(text, width=80):
     """Wraps long lines without loosing the formatting and indentation
        of short lines"""
-    if not isinstance(text, (types.StringType,types.UnicodeType)):
+    if not isinstance(text, six.string_types):
         return text
     width = int(width)                  # ensure we have an int, if this is used as a template filter
     text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings

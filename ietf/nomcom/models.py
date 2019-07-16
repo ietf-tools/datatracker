@@ -1,4 +1,7 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 
 from django.db import models
@@ -7,23 +10,27 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 from django.template.defaultfilters import linebreaks
+from django.utils.encoding import python_2_unicode_compatible
 
 import debug                            # pyflakes:ignore
 
-from ietf.nomcom.fields import EncryptedTextField
 from ietf.person.models import Person,Email
 from ietf.group.models import Group
 from ietf.name.models import NomineePositionStateName, FeedbackTypeName, TopicAudienceName
 from ietf.dbtemplate.models import DBTemplate
 
-from ietf.nomcom.managers import NomineePositionManager, NomineeManager, \
-                                 PositionManager, FeedbackManager
+from ietf.nomcom.managers import (NomineePositionManager, NomineeManager, 
+                                  PositionManager, FeedbackManager, )
 from ietf.nomcom.utils import (initialize_templates_for_group,
                                initialize_questionnaire_for_position,
                                initialize_requirements_for_position,
                                initialize_description_for_topic,
-                               delete_nomcom_templates)
+                               delete_nomcom_templates,
+                               EncryptedException,
+                              )
+from ietf.utils.log import log
 from ietf.utils.models import ForeignKey
+from ietf.utils.pipe import pipe
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 
 
@@ -36,6 +43,7 @@ class ReminderDates(models.Model):
     nomcom = ForeignKey('NomCom')
 
 
+@python_2_unicode_compatible
 class NomCom(models.Model):
     public_key = models.FileField(storage=NoLocationMigrationFileSystemStorage(location=settings.NOMCOM_PUBLIC_KEYS_DIR),
                                   upload_to=upload_path_handler, blank=True, null=True)
@@ -58,7 +66,7 @@ class NomCom(models.Model):
         verbose_name_plural = 'NomComs'
         verbose_name = 'NomCom'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.group.acronym
 
     def save(self, *args, **kwargs):
@@ -78,6 +86,21 @@ class NomCom(models.Model):
     def pending_email_count(self):
         return self.feedback_set.filter(type__isnull=True).count()
 
+    def encrypt(self, cleartext):
+        try:
+            cert_file = self.public_key.path
+        except ValueError as e:
+            raise ValueError("Trying to read the NomCom public key: " + str(e))
+
+        command = "%s smime -encrypt -in /dev/stdin %s" % (settings.OPENSSL_COMMAND, cert_file)
+        code, out, error = pipe(command, cleartext.encode('utf-8'))
+        if code != 0:
+            log("openssl error: %s:\n  Error %s: %s" %(command, code, error))
+        if not error:
+            return out
+        else:
+            raise EncryptedException(error)
+
 
 def delete_nomcom(sender, **kwargs):
     nomcom = kwargs.get('instance', None)
@@ -87,6 +110,7 @@ def delete_nomcom(sender, **kwargs):
 post_delete.connect(delete_nomcom, sender=NomCom)
 
 
+@python_2_unicode_compatible
 class Nomination(models.Model):
     position = ForeignKey('Position')
     candidate_name = models.CharField(verbose_name='Candidate name', max_length=255)
@@ -107,10 +131,11 @@ class Nomination(models.Model):
     class Meta:
         verbose_name_plural = 'Nominations'
 
-    def __unicode__(self):
-        return u"%s (%s)" % (self.candidate_name, self.candidate_email)
+    def __str__(self):
+        return "%s (%s)" % (self.candidate_name, self.candidate_email)
 
 
+@python_2_unicode_compatible
 class Nominee(models.Model):
 
     email = ForeignKey(Email)
@@ -126,18 +151,19 @@ class Nominee(models.Model):
         unique_together = ('email', 'nomcom')
         ordering = ['-nomcom__group__acronym', 'person__name', ]
 
-    def __unicode__(self):
+    def __str__(self):
         if self.email.person and self.email.person.name:
-            return u'%s <%s> %s' % (self.email.person.plain_name(), self.email.address, self.nomcom.year())
+            return "%s <%s> %s" % (self.email.person.plain_name(), self.email.address, self.nomcom.year())
         else:
-            return u'%s %s' % (self.email.address, self.nomcom.year())
+            return "%s %s" % (self.email.address, self.nomcom.year())
 
     def name(self):
         if self.email.person and self.email.person.name:
-            return u'%s' % (self.email.person.plain_name(),)
+            return '%s' % (self.email.person.plain_name(),)
         else:
             return self.email.address
 
+@python_2_unicode_compatible
 class NomineePosition(models.Model):
 
     position = ForeignKey('Position')
@@ -158,8 +184,8 @@ class NomineePosition(models.Model):
             self.state = NomineePositionStateName.objects.get(slug='pending')
         super(NomineePosition, self).save(**kwargs)
 
-    def __unicode__(self):
-        return u"%s - %s - %s" % (self.nominee, self.state, self.position)
+    def __str__(self):
+        return "%s - %s - %s" % (self.nominee, self.state, self.position)
 
     @property
     def questionnaires(self):
@@ -167,6 +193,7 @@ class NomineePosition(models.Model):
                                                         nominees__in=[self.nominee])
 
 
+@python_2_unicode_compatible
 class Position(models.Model):
     nomcom = ForeignKey('NomCom')
     name = models.CharField(verbose_name='Name', max_length=255, help_text='This short description will appear on the Nomination and Feedback pages. Be as descriptive as necessary. Past examples: "Transport AD", "IAB Member"')
@@ -181,7 +208,7 @@ class Position(models.Model):
     class Meta:
         verbose_name_plural = 'Positions'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def save(self, *args, **kwargs):
@@ -213,6 +240,7 @@ class Position(models.Model):
             rendered = linebreaks(rendered)
         return rendered
 
+@python_2_unicode_compatible
 class Topic(models.Model):
     nomcom = ForeignKey('NomCom')
     subject = models.CharField(verbose_name='Name', max_length=255, help_text='This short description will appear on the Feedback pages.')
@@ -223,7 +251,7 @@ class Topic(models.Model):
     class Meta:
         verbose_name_plural = 'Topics'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.subject
 
     def save(self, *args, **kwargs):
@@ -242,6 +270,7 @@ class Topic(models.Model):
             rendered = linebreaks(rendered)
         return rendered
 
+@python_2_unicode_compatible
 class Feedback(models.Model):
     nomcom = ForeignKey('NomCom')
     author = models.EmailField(verbose_name='Author', blank=True)
@@ -249,15 +278,15 @@ class Feedback(models.Model):
     nominees = models.ManyToManyField('Nominee', blank=True)
     topics = models.ManyToManyField('Topic', blank=True)
     subject = models.TextField(verbose_name='Subject', blank=True)
-    comments = EncryptedTextField(verbose_name='Comments')
+    comments = models.BinaryField(verbose_name='Comments')
     type = ForeignKey(FeedbackTypeName, blank=True, null=True)
     user = ForeignKey(User, editable=False, blank=True, null=True, on_delete=models.SET_NULL)
     time = models.DateTimeField(auto_now_add=True)
 
     objects = FeedbackManager()
 
-    def __unicode__(self):
-        return u"from %s" % self.author
+    def __str__(self):
+        return "from %s" % self.author
 
     class Meta:
         ordering = ['time']

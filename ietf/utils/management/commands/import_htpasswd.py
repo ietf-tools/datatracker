@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
+import io
 import sys
 
 from textwrap import dedent
@@ -6,7 +8,7 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 def import_htpasswd_file(filename, verbosity=1, overwrite=False):
-    with open(filename) as file:
+    with io.open(filename) as file:
         for line in file:
             if not ':' in line:
                 raise ValueError('Found a line without colon separator in the htpassword file %s:'+

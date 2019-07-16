@@ -1,6 +1,12 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
-import json
-from urlparse import urlsplit
+
+from six.moves.urllib.parse import urlsplit
 
 from django.urls import reverse as urlreverse
 
@@ -17,7 +23,7 @@ from ietf.utils.mail import outbox
 class ApiTests(TestCase):
     def test_update_agenda(self):
         meeting = make_meeting_test_data()
-        schedule = Schedule.objects.get(meeting__number=42,name="test-agenda")
+        schedule = Schedule.objects.get(meeting__number=72,name="test-agenda")
         mars_session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         ames_session = Session.objects.filter(meeting=meeting, group__acronym="ames").first()
     
@@ -68,7 +74,7 @@ class ApiTests(TestCase):
         self.client.login(username="ad", password="ad+password")
         r = do_unschedule(mars_scheduled)
         self.assertEqual(r.status_code, 403)
-        self.assertTrue("error" in json.loads(r.content))
+        self.assertTrue("error" in r.json())
         # faulty post
         r = do_schedule(schedule,ames_session,mars_slot)
         self.assertEqual(r.status_code, 403)
@@ -77,7 +83,7 @@ class ApiTests(TestCase):
         self.client.login(username="plain", password='plain+password')
         r = do_unschedule(ames_scheduled)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("error" not in json.loads(r.content))
+        self.assertNotIn("error", r.json())
 
         r = do_schedule(schedule,ames_session,mars_slot)
         self.assertEqual(r.status_code, 201)
@@ -89,13 +95,13 @@ class ApiTests(TestCase):
         # Extend the mars session
         r = do_extend(schedule,mars_scheduled)
         self.assertEqual(r.status_code, 201)
-        self.assertTrue("error" not in json.loads(r.content))
+        self.assertTrue("error" not in r.json())
         self.assertEqual(mars_session.timeslotassignments.filter(schedule__name='test-agenda').count(),2)
 
         # Unschedule mars 
         r = do_unschedule(mars_scheduled)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("error" not in json.loads(r.content))
+        self.assertNotIn("error", r.json())
         # Make sure it got both the original and extended session
         self.assertEqual(mars_session.timeslotassignments.filter(schedule__name='test-agenda').count(),0)
 
@@ -115,7 +121,7 @@ class ApiTests(TestCase):
 
         r = self.client.get(urlreverse("ietf.meeting.ajax.session_constraints", kwargs=dict(num=meeting.number, sessionid=session.pk)))
         self.assertEqual(r.status_code, 200)
-        constraints = json.loads(r.content)
+        constraints = r.json()
         self.assertEqual(set([c_ames.pk, c_person.pk]), set(c["constraint_id"] for c in constraints))
 
     def test_meeting_json(self):
@@ -123,7 +129,7 @@ class ApiTests(TestCase):
 
         r = self.client.get(urlreverse("ietf.meeting.ajax.meeting_json", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
-        info = json.loads(r.content)
+        info = r.json()
         self.assertEqual(info["name"], meeting.number)
 
     def test_get_room_json(self):
@@ -132,7 +138,7 @@ class ApiTests(TestCase):
 
         r = self.client.get(urlreverse("ietf.meeting.ajax.timeslot_roomurl", kwargs=dict(num=meeting.number, roomid=room.pk)))
         self.assertEqual(r.status_code, 200)
-        info = json.loads(r.content)
+        info = r.json()
         self.assertEqual(info["name"], room.name)
 
     def test_create_new_room(self):
@@ -185,7 +191,7 @@ class ApiTests(TestCase):
         url = urlreverse("ietf.group.views.group_json", kwargs=dict(acronym=group.acronym))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        info = json.loads(r.content)
+        info = r.json()
         self.assertEqual(info["name"], group.name)
 
     # This really belongs in person tests
@@ -196,7 +202,7 @@ class ApiTests(TestCase):
         url = urlreverse("ietf.person.ajax.person_json", kwargs=dict(personid=person.pk))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        info = json.loads(r.content)
+        info = r.json()
         self.assertEqual(info["name"], person.name)
 
     def test_sessions_json(self):
@@ -205,7 +211,7 @@ class ApiTests(TestCase):
         url = urlreverse("ietf.meeting.ajax.sessions_json",kwargs=dict(num=meeting.number))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        info = json.loads(r.content)
+        info = r.json()
         self.assertEqual(set([x['short_name'] for x in info]),set([s.session.short_name for s in meeting.agenda.assignments.filter(session__type_id='session')]))
 
         schedule = meeting.agenda
@@ -213,7 +219,7 @@ class ApiTests(TestCase):
                          kwargs=dict(num=meeting.number,owner=schedule.owner_email(),name=schedule.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        info = json.loads(r.content)
+        info = r.json()
         self.assertEqual(len(info),schedule.assignments.count())
 
 
@@ -225,7 +231,7 @@ class ApiTests(TestCase):
                          kwargs=dict(num=meeting.number, slotid=slot.pk))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        info = json.loads(r.content)
+        info = r.json()
         self.assertEqual(info["timeslot_id"], slot.pk)
 
     def test_create_new_slot(self):
@@ -281,7 +287,7 @@ class ApiTests(TestCase):
                                      name=meeting.agenda.name))
 
         r = self.client.get(url)
-        info = json.loads(r.content)
+        info = r.json()
         self.assertEqual(info["schedule_id"], meeting.agenda.pk)
 
     def test_create_new_schedule(self):
@@ -405,7 +411,7 @@ class ApiTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        info = json.loads(r.content)
+        info = r.json()
         self.assertEqual(info['secretariat'], True)
         self.assertEqual(urlsplit(info['owner_href'])[2], "/person/%s.json" % meeting.agenda.owner_id)
         self.assertEqual(info['read_only'], True)
@@ -418,7 +424,7 @@ class ApiTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        info = json.loads(r.content)
+        info = r.json()
         self.assertEqual(info['secretariat'], False)
         self.assertEqual(info['read_only'], False)
         self.assertEqual(info['save_perm'], False)

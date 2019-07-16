@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import re
 import os
 
@@ -45,11 +51,11 @@ class DocumentField(forms.FileField):
             if self.filename:
                 # validate filename
                 if base[:-3] != self.filename:
-                    raise forms.ValidationError, "Filename: %s doesn't match Draft filename." % base[:-3]
+                    raise forms.ValidationError("Filename: %s doesn't match Draft filename." % base[:-3])
                 # validate revision
                 next_revision = str(int(self.rev)+1).zfill(2)
                 if base[-2:] != next_revision:
-                    raise forms.ValidationError, "Expected revision # %s" % (next_revision)
+                    raise forms.ValidationError("Expected revision # %s" % (next_revision))
 
         return file
 
@@ -217,7 +223,7 @@ class EmailForm(forms.Form):
         super(EmailForm, self).__init__(*args, **kwargs)
 
         if self.hidden:
-            for key in self.fields.keys():
+            for key in list(self.fields.keys()):
                 self.fields[key].widget = forms.HiddenInput()
 
 class ExtendForm(forms.Form):

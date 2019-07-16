@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 import re
 from collections import OrderedDict, Counter
@@ -179,7 +185,7 @@ def private_index(request, year):
                 'position__id':p.pk,
                 'position': p,
               } for p in positions]
-    states = list(NomineePositionStateName.objects.values('slug', 'name')) + [{'slug': questionnaire_state, 'name': u'Questionnaire'}]
+    states = list(NomineePositionStateName.objects.values('slug', 'name')) + [{'slug': questionnaire_state, 'name': 'Questionnaire'}]
     positions = set([ n.position for n in all_nominee_positions.order_by('position__name') ])
     for s in stats:
         for state in states:
@@ -639,7 +645,7 @@ def private_questionnaire(request, year):
         if form.is_valid():
             form.save()
             messages.success(request, 'The questionnaire response has been registered.')
-            questionnaire_response = form.cleaned_data['comments']
+            questionnaire_response = form.cleaned_data['comment_text']
             form = QuestionnaireForm(nomcom=nomcom, user=request.user)
     else:
         form = QuestionnaireForm(nomcom=nomcom, user=request.user)
@@ -687,7 +693,7 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
                 f = Feedback.objects.create(nomcom = nomcom,
                                             author = nominee_position.nominee.email,
                                             subject = '%s nomination %s'%(nominee_position.nominee.name(),state),
-                                            comments = form.cleaned_data['comments'],
+                                            comments = nomcom.encrypt(form.cleaned_data['comments']),
                                             type_id = 'comment', 
                                             user = who,
                                            )

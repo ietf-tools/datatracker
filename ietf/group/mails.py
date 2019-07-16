@@ -1,4 +1,9 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 # generation of mails 
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import re
 
@@ -13,7 +18,7 @@ from ietf.mailtrigger.utils import gather_address_lists
 
 def email_admin_re_charter(request, group, subject, text, mailtrigger):
     (to,cc) = gather_address_lists(mailtrigger,group=group)
-    full_subject = u"Regarding %s %s: %s" % (group.type.name, group.acronym, subject)
+    full_subject = "Regarding %s %s: %s" % (group.type.name, group.acronym, subject)
     text = strip_tags(text)
 
     send_mail(request, to, None, full_subject,
@@ -28,32 +33,32 @@ def email_admin_re_charter(request, group, subject, text, mailtrigger):
 
 def email_personnel_change(request, group, text, changed_personnel):
     (to, cc) = gather_address_lists('group_personnel_change',group=group,changed_personnel=changed_personnel)
-    full_subject = u"Personnel change for %s %s" % (group.acronym,group.type.name)
+    full_subject = "Personnel change for %s %s" % (group.acronym,group.type.name)
     send_mail_text(request, to, None, full_subject, text, cc=cc)
 
 
 def email_milestones_changed(request, group, changes, states):
     def wrap_up_email(addrs, text):
 
-        subject = u"Milestones changed for %s %s" % (group.acronym, group.type.name)
+        subject = "Milestones changed for %s %s" % (group.acronym, group.type.name)
         if re.search("Added .* for review, due",text):
-            subject = u"Review Required - " + subject
+            subject = "Review Required - " + subject
 
         text = wordwrap(strip_tags(text), 78)
         text += "\n\n"
-        text += u"URL: %s" % (settings.IDTRACKER_BASE_URL + group.about_url())
+        text += "URL: %s" % (settings.IDTRACKER_BASE_URL + group.about_url())
 
         send_mail_text(request, addrs.to, None, subject, text, cc=addrs.cc)
 
     # first send to those who should see any edits (such as management and chairs)
     addrs = gather_address_lists('group_milestones_edited',group=group)
     if addrs.to or addrs.cc:
-        wrap_up_email(addrs, u"\n\n".join(c + "." for c in changes))
+        wrap_up_email(addrs, "\n\n".join(c + "." for c in changes))
 
     # then send only the approved milestones to those who shouldn't be 
     # bothered with milestones pending approval 
     addrs = gather_address_lists('group_approved_milestones_edited',group=group)
-    msg = u"\n\n".join(c + "." for c,s in zip(changes,states) if not s == "review")
+    msg = "\n\n".join(c + "." for c,s in zip(changes,states) if not s == "review")
     if (addrs.to or addrs.cc) and msg:
         wrap_up_email(addrs, msg)
 

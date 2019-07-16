@@ -1,3 +1,8 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import re
 import magic
@@ -62,21 +67,37 @@ class FileParser(object):
         regexp = re.compile(r'&|\|\/|;|\*|\s|\$')
         chars = regexp.findall(name)
         if chars:
-            self.parsed_info.add_error(u'Invalid characters were found in the name of the file which was just submitted: %s' % ', '.join(set(chars)))
+            self.parsed_info.add_error('Invalid characters were found in the name of the file which was just submitted: %s' % ', '.join(set(chars)))
 
     def parse_max_size(self):
         max_size = settings.IDSUBMIT_MAX_DRAFT_SIZE[self.ext]
         if self.fd.size > max_size:
-            self.parsed_info.add_error(u'File size is larger than the permitted maximum of %s' % filesizeformat(max_size))
+            self.parsed_info.add_error('File size is larger than the permitted maximum of %s' % filesizeformat(max_size))
         self.parsed_info.metadata.file_size = self.fd.size
 
     def parse_filename_extension(self):
         if not self.fd.name.lower().endswith('.'+self.ext):
-            self.parsed_info.add_error(u'Expected the %s file to have extension ".%s", found the name "%s"' % (self.ext.upper(), self.ext, self.fd.name))
+            self.parsed_info.add_error('Expected the %s file to have extension ".%s", found the name "%s"' % (self.ext.upper(), self.ext, self.fd.name))
 
     def parse_file_type(self):
         self.fd.file.seek(0)
-        content = self.fd.file.read()
-        mimetype = magic.from_buffer(content, mime=True)
+        content = self.fd.file.read(64*1024)
+        if hasattr(magic, "open"):
+            m = magic.open(magic.MAGIC_MIME)
+            m.load()
+            filetype = m.buffer(content)
+        else:
+            m = magic.Magic()
+            m.cookie = magic.magic_open(magic.MAGIC_NONE | magic.MAGIC_MIME | magic.MAGIC_MIME_ENCODING)
+            magic.magic_load(m.cookie, None)
+            filetype = m.from_buffer(content)
+        if ';' in filetype and 'charset=' in filetype:
+            mimetype, charset = re.split('; *charset=', filetype)
+        else:
+            mimetype = re.split(';', filetype)[0]
+            charset = 'utf-8'
         if not mimetype in self.mimetypes:
-            self.parsed_info.add_error(u'Expected an %s file of type "%s", found one of type "%s"' % (self.ext.upper(), '" or "'.join(self.mimetypes), mimetype))
+            self.parsed_info.add_error('Expected an %s file of type "%s", found one of type "%s"' % (self.ext.upper(), '" or "'.join(self.mimetypes), mimetype))
+        self.parsed_info.mimetype = mimetype
+        self.parsed_info.charset = charset
+        

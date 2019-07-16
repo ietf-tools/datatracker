@@ -1,7 +1,12 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import datetime, os
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import io
+import os
 
 from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
@@ -159,7 +164,7 @@ class UploadForm(forms.Form):
 
     def save(self, review):
         filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.canonical_name(), review.rev))
-        with open(filename, 'wb') as destination:
+        with io.open(filename, 'w', encoding='utf-8') as destination:
             if self.cleaned_data['txt']:
                 destination.write(self.cleaned_data['txt'])
             else:
@@ -223,7 +228,7 @@ def submit(request, name):
         else:
             filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.canonical_name(), review.rev))
             try:
-                with open(filename, 'r') as f:
+                with io.open(filename, 'r') as f:
                     init["content"] = f.read()
             except IOError:
                 pass
@@ -301,7 +306,7 @@ class AnnouncementForm(forms.Form):
     announcement_text = forms.CharField(widget=forms.Textarea, label="IETF Conflict Review Announcement", help_text="Edit the announcement message.", required=True, strip=False)
 
 @role_required("Secretariat")
-def approve(request, name):
+def approve_conflict_review(request, name):
     """Approve this conflict review, setting the appropriate state and send the announcement to the right parties."""
     review = get_object_or_404(Document, type="conflrev", name=name)
 
@@ -468,7 +473,7 @@ def start_review_as_secretariat(request, name):
         notify_addresses = build_notify_addresses(doc_to_review)
         init = { 
                 "ad" : Role.objects.filter(group__acronym='ietf',name='chair')[0].person.id,
-                "notify" : u', '.join(notify_addresses),
+                "notify" : ', '.join(notify_addresses),
                }
         form = StartReviewForm(initial=init)
 
@@ -502,7 +507,7 @@ def start_review_as_stream_owner(request, name):
         notify_addresses = build_notify_addresses(doc_to_review)
         
         init = { 
-                "notify" : u', '.join(notify_addresses),
+                "notify" : ', '.join(notify_addresses),
                }
         form = SimpleStartReviewForm(initial=init)
 

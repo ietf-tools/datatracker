@@ -1,5 +1,10 @@
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 # ballot management (voting, commenting, writeups, ...) for Area
 # Directors and Secretariat
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime, json
 
@@ -162,17 +167,17 @@ def save_position(form, doc, ballot, ad, login=None, send_email=False):
 
     # figure out a description
     if not old_pos and pos.pos.slug != "norecord":
-        pos.desc = u"[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
+        pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
     elif old_pos and pos.pos != old_pos.pos:
         pos.desc = "[Ballot Position Update] Position for %s has been changed to %s from %s" % (pos.ad.plain_name(), pos.pos.name, old_pos.pos.name)
 
     if not pos.desc and changes:
-        pos.desc = u"Ballot %s text updated for %s" % (u" and ".join(changes), ad.plain_name())
+        pos.desc = "Ballot %s text updated for %s" % (" and ".join(changes), ad.plain_name())
 
     # only add new event if we actually got a change
     if pos.desc:
         if login != ad:
-            pos.desc += u" by %s" % login.plain_name()
+            pos.desc += " by %s" % login.plain_name()
 
         pos.save()
 
@@ -362,7 +367,7 @@ def send_ballot_comment(request, name, ballot_id):
         if extra_cc:
             cc.extend(extra_cc)
 
-        send_mail_text(request, addrs.to, frm, subject, body, cc=u", ".join(cc))
+        send_mail_text(request, addrs.to, frm, subject, body, cc=", ".join(cc))
             
         return HttpResponseRedirect(return_to_url)
 

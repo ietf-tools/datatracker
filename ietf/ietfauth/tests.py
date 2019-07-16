@@ -1,9 +1,12 @@
-# Copyright The IETF Trust 2017-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os, shutil, time, datetime
-from urlparse import urlsplit
+from six.moves.urllib.parse import urlsplit
 from pyquery import PyQuery
 from unittest import skipIf
 
@@ -14,7 +17,7 @@ from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.group.models import Group, Role, RoleName
 from ietf.group.factories import GroupFactory, RoleFactory
@@ -46,7 +49,7 @@ class IetfAuthTests(TestCase):
         self.saved_htpasswd_file = settings.HTPASSWD_FILE
         self.htpasswd_dir = self.tempdir('htpasswd')
         settings.HTPASSWD_FILE = os.path.join(self.htpasswd_dir, "htpasswd")
-        open(settings.HTPASSWD_FILE, 'a').close() # create empty file
+        io.open(settings.HTPASSWD_FILE, 'a').close() # create empty file
 
         self.saved_htdigest_realm = getattr(settings, "HTDIGEST_REALM", None)
         settings.HTDIGEST_REALM = "test-realm"
@@ -98,7 +101,7 @@ class IetfAuthTests(TestCase):
 
     def extract_confirm_url(self, confirm_email):
         # dig out confirm_email link
-        msg = confirm_email.get_payload(decode=True)
+        msg = confirm_email.get_payload(decode=True).decode(confirm_email.get_content_charset())
         line_start = "http"
         confirm_url = None
         for line in msg.split("\n"):
@@ -109,11 +112,11 @@ class IetfAuthTests(TestCase):
         return confirm_url
 
     def username_in_htpasswd_file(self, username):
-        with open(settings.HTPASSWD_FILE) as f:
+        with io.open(settings.HTPASSWD_FILE) as f:
             for l in f:
                 if l.startswith(username + ":"):
                     return True
-        with open(settings.HTPASSWD_FILE) as f:
+        with io.open(settings.HTPASSWD_FILE) as f:
             print(f.read())
 
         return False
@@ -131,7 +134,7 @@ class IetfAuthTests(TestCase):
         empty_outbox()
         r = self.client.post(url, { 'email': email })
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Account creation failed", unicontent(r))
+        self.assertContains(r, "Account creation failed")
 
     def register_and_verify(self, email):
         url = urlreverse(ietf.ietfauth.views.create_account)
@@ -140,7 +143,7 @@ class IetfAuthTests(TestCase):
         empty_outbox()
         r = self.client.post(url, { 'email': email })
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Account request received", unicontent(r))
+        self.assertContains(r, "Account request received")
         self.assertEqual(len(outbox), 1)
 
         # go to confirm page
@@ -172,11 +175,11 @@ class IetfAuthTests(TestCase):
 
         r = self.client.get(urlreverse(ietf.ietfauth.views.add_account_whitelist))
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Add a whitelist entry", unicontent(r))
+        self.assertContains(r, "Add a whitelist entry")
 
         r = self.client.post(urlreverse(ietf.ietfauth.views.add_account_whitelist), {"email": email})
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Whitelist entry creation successful", unicontent(r))
+        self.assertContains(r, "Whitelist entry creation successful")
 
         # log out
         r = self.client.get(urlreverse(django.contrib.auth.views.logout))
@@ -216,9 +219,9 @@ class IetfAuthTests(TestCase):
         self.assertEqual(len(q('[name="active_emails"][value="%s"][checked]' % email_address)), 1)
 
         base_data = {
-            "name": u"Test Nãme",
-            "ascii": u"Test Name",
-            "ascii_short": u"T. Name",
+            "name": "Test Nãme",
+            "ascii": "Test Name",
+            "ascii_short": "T. Name",
             "affiliation": "Test Org",
             "active_emails": email_address,
             "consent": True,
@@ -226,7 +229,7 @@ class IetfAuthTests(TestCase):
 
         # edit details - faulty ASCII
         faulty_ascii = base_data.copy()
-        faulty_ascii["ascii"] = u"Test Nãme"
+        faulty_ascii["ascii"] = "Test Nãme"
         r = self.client.post(url, faulty_ascii)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -234,7 +237,7 @@ class IetfAuthTests(TestCase):
 
         # edit details - blank ASCII
         blank_ascii = base_data.copy()
-        blank_ascii["ascii"] = u""
+        blank_ascii["ascii"] = ""
         r = self.client.post(url, blank_ascii)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -245,14 +248,14 @@ class IetfAuthTests(TestCase):
         r = self.client.post(url, base_data)
         self.assertEqual(r.status_code, 200)
         person = Person.objects.get(user__username=username)
-        self.assertEqual(person.name, u"Test Nãme")
-        self.assertEqual(person.ascii, u"Test Name")
-        self.assertEqual(Person.objects.filter(alias__name=u"Test Name", user__username=username).count(), 1)
-        self.assertEqual(Person.objects.filter(alias__name=u"Test Nãme", user__username=username).count(), 1)
+        self.assertEqual(person.name, "Test Nãme")
+        self.assertEqual(person.ascii, "Test Name")
+        self.assertEqual(Person.objects.filter(alias__name="Test Name", user__username=username).count(), 1)
+        self.assertEqual(Person.objects.filter(alias__name="Test Nãme", user__username=username).count(), 1)
         self.assertEqual(Email.objects.filter(address=email_address, person__user__username=username, active=True).count(), 1)
 
         # deactivate address
-        without_email_address = { k: v for k, v in base_data.iteritems() if k != "active_emails" }
+        without_email_address = { k: v for k, v in base_data.items() if k != "active_emails" }
 
         r = self.client.post(url, without_email_address)
         self.assertEqual(r.status_code, 200)
@@ -379,7 +382,7 @@ class IetfAuthTests(TestCase):
         # get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(review_req.doc.name in unicontent(r))
+        self.assertContains(r, review_req.doc.name)
 
         # wish to review
         r = self.client.post(url, {
@@ -460,7 +463,7 @@ class IetfAuthTests(TestCase):
         self.assertRedirects(r, prof_url)
         # refresh user object
         user = User.objects.get(username="someone@example.com")
-        self.assertTrue(user.check_password(u'foobar'))
+        self.assertTrue(user.check_password('foobar'))
 
     def test_change_username(self):
 
@@ -508,7 +511,7 @@ class IetfAuthTests(TestCase):
         prev = user
         user = User.objects.get(username="othername@example.org")
         self.assertEqual(prev, user)
-        self.assertTrue(user.check_password(u'password'))
+        self.assertTrue(user.check_password('password'))
 
     def test_apikey_management(self):
         person = PersonFactory()
@@ -581,36 +584,31 @@ class IetfAuthTests(TestCase):
             self.assertRedirects(r, urlreverse('ietf.ietfauth.views.apikey_index'))
 
         for key in person.apikeys.all()[:3]:
-            url = key.endpoint
 
             # bad method
-            r = self.client.put(url, {'apikey':key.hash()})
+            r = self.client.put(key.endpoint, {'apikey':key.hash()})
             self.assertEqual(r.status_code, 405)
 
             # missing apikey
-            r = self.client.post(url, {'dummy':'dummy',})
-            self.assertEqual(r.status_code, 400)
-            self.assertIn('Missing apikey parameter', unicontent(r))
+            r = self.client.post(key.endpoint, {'dummy':'dummy',})
+            self.assertContains(r, 'Missing apikey parameter', status_code=400)
 
             # invalid apikey
-            r = self.client.post(url, {'apikey':BAD_KEY, 'dummy':'dummy',})
-            self.assertEqual(r.status_code, 400)
-            self.assertIn('Invalid apikey', unicontent(r))
+            r = self.client.post(key.endpoint, {'apikey':BAD_KEY, 'dummy':'dummy',})
+            self.assertContains(r, 'Invalid apikey', status_code=400)
 
             # too long since regular login
             person.user.last_login = datetime.datetime.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS+1)
             person.user.save()
-            r = self.client.post(url, {'apikey':key.hash(), 'dummy':'dummy',})
-            self.assertEqual(r.status_code, 400)
-            self.assertIn('Too long since last regular login', unicontent(r))
+            r = self.client.post(key.endpoint, {'apikey':key.hash(), 'dummy':'dummy',})
+            self.assertContains(r, 'Too long since last regular login', status_code=400)
             person.user.last_login = datetime.datetime.now()
             person.user.save()
 
             # endpoint mismatch
             key2 = PersonalApiKey.objects.create(person=person, endpoint='/')
-            r = self.client.post(url, {'apikey':key2.hash(), 'dummy':'dummy',})
-            self.assertEqual(r.status_code, 400)
-            self.assertIn('Apikey endpoint mismatch', unicontent(r))
+            r = self.client.post(key.endpoint, {'apikey':key2.hash(), 'dummy':'dummy',})
+            self.assertContains(r, 'Apikey endpoint mismatch', status_code=400)
             key2.delete()
 
     def test_send_apikey_report(self):
@@ -636,8 +634,7 @@ class IetfAuthTests(TestCase):
             time.sleep(2)
         for i in range(count):
             for key in person.apikeys.all():
-                url = key.endpoint
-                self.client.post(url, {'apikey':key.hash(), 'dummy': 'dummy', })
+                self.client.post(key.endpoint, {'apikey':key.hash(), 'dummy': 'dummy', })
         date = str(datetime.date.today())
 
         empty_outbox()

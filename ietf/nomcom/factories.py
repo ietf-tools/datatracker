@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2015-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import factory
 import random
 
@@ -164,8 +170,12 @@ class FeedbackFactory(factory.DjangoModelFactory):
 
     nomcom = factory.SubFactory(NomComFactory)
     subject = factory.Faker('sentence')
-    comments = factory.Faker('paragraph')
     type_id = 'comment'
+
+    @factory.post_generation
+    def comments(obj, create, extracted, **kwargs):
+        comment_text = factory.Faker('paragraph').generate()
+        obj.comments = obj.nomcom.encrypt(comment_text)
 
 class TopicFactory(factory.DjangoModelFactory):
     class Meta:

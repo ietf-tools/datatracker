@@ -1,7 +1,11 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 # Python imports
+import io
 import os
 
 # Django imports
@@ -29,7 +33,7 @@ def get_charter_text(group):
     '''
     charter = group.charter
     path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-    f = file(path,'r')
+    f = io.open(path,'r')
     text = f.read()
     f.close()
 
@@ -99,7 +103,7 @@ def groups_by_session(user, meeting, types=None):
     if not types:
         types = GroupFeatures.objects.filter(has_meetings=True).values_list('type', flat=True)
 
-    groups_session = filter(lambda g: g.type_id in types, groups_session)
-    groups_no_session = filter(lambda g: g.type_id in types, groups_no_session)
+    groups_session = [x for x in groups_session if x.type_id in types]
+    groups_no_session = [x for x in groups_no_session if x.type_id in types]
         
     return groups_session, groups_no_session

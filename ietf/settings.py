@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 # Django settings for ietf project.
 # BASE_DIR and "settings_local" are from
 # http://code.djangoproject.com/wiki/SplitSettings
@@ -23,11 +26,17 @@ warnings.filterwarnings("ignore", message="You passed a bytestring as `filenames
 warnings.filterwarnings("ignore", message="django.forms.extras is deprecated.", module="bootstrap3")
 warnings.filterwarnings("ignore", message="defusedxml.lxml is no longer supported and will be removed in a future release.", module="tastypie")
 warnings.filterwarnings("ignore", message="Duplicate index '.*' defined on the table")
+# Warnings found under Python 3.7:
+warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated")
+warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="docutils.io")
+warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="xml2rfc")
+warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="site")
+warnings.filterwarnings("ignore", message="Flags not at the start of the expression", module="genshi")
 
 
 try:
     import syslog
-    syslog.openlog("datatracker", syslog.LOG_PID, syslog.LOG_USER)
+    syslog.openlog(str("datatracker"), syslog.LOG_PID, syslog.LOG_USER)
 except ImportError:
     pass
 
@@ -388,7 +397,6 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.staticfiles',
     # External apps 
-    'anora',
     'bootstrap3',
     'corsheaders',
     'django_markup',
@@ -822,6 +830,7 @@ MEETING_VALID_MIME_TYPE_EXTENSIONS = {
 INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 
 FLOORPLAN_MEDIA_DIR = 'floor'
+FLOORPLAN_DIR = os.path.join(MEDIA_ROOT, FLOORPLAN_MEDIA_DIR)
 
 # ==============================================================================
 
@@ -885,8 +894,7 @@ BADNESS_TOOBIG     = 100
 BADNESS_MUCHTOOBIG = 500
 
 # do not run SELENIUM tests by default
-SELENIUM_TESTS = False
-SELENIUM_TESTS_ONLY = False
+SKIP_SELENIUM = True
 
 # Set debug apps in settings_local.DEV_APPS
 
@@ -1034,13 +1042,13 @@ UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS = 30
 
 
 API_KEY_TYPE="ES256"                    # EC / P=256
-API_PUBLIC_KEY_PEM = """
+API_PUBLIC_KEY_PEM = b"""
 -----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqVojsaofDJScuMJN+tshumyNM5ME
 garzVPqkVovmF6yE7IJ/dv4FcV+QKCtJ/rOS8e36Y8ZAEVYuukhes0yZ1w==
 -----END PUBLIC KEY-----
 """
-API_PRIVATE_KEY_PEM = """
+API_PRIVATE_KEY_PEM = b"""
 -----BEGIN PRIVATE KEY-----
 MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgoI6LJkopKq8XrHi9
 QqGQvE4A83TFYjqLz+8gULYecsqhRANCAASpWiOxqh8MlJy4wk362yG6bI0zkwSB
@@ -1057,7 +1065,7 @@ for app in INSTALLED_APPS:
     if app.startswith('ietf'):
         app_settings_file = os.path.join(BASE_DIR, '../', app.replace('.', os.sep), "settings.py")
         if os.path.exists(app_settings_file):
-            exec "from %s import *" % (app+".settings")
+            exec("from %s import *" % (app+".settings"))
 
 # Add DEV_APPS to INSTALLED_APPS
 INSTALLED_APPS += DEV_APPS

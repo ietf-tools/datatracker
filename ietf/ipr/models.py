@@ -1,10 +1,15 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 
 from django.conf import settings
-from django.urls import reverse
 from django.db import models
+from django.urls import reverse
+from django.utils.encoding import python_2_unicode_compatible
 
 from ietf.doc.models import DocAlias
 from ietf.name.models import DocRelationshipName,IprDisclosureStateName,IprLicenseTypeName,IprEventTypeName
@@ -12,6 +17,7 @@ from ietf.person.models import Person
 from ietf.message.models import Message
 from ietf.utils.models import ForeignKey
 
+@python_2_unicode_compatible
 class IprDisclosureBase(models.Model):
     by                  = ForeignKey(Person) # who was logged in, or System if nobody was logged in
     compliant           = models.BooleanField("Complies to RFC3979", default=True)
@@ -29,7 +35,7 @@ class IprDisclosureBase(models.Model):
     class Meta:
         ordering = ['-time', '-id']
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     def get_absolute_url(self):
@@ -148,6 +154,7 @@ class GenericIprDisclosure(IprDisclosureBase):
     holder_contact_info      = models.TextField(blank=True, help_text="Address, phone, etc.")
     statement                = models.TextField() # includes licensing info
 
+@python_2_unicode_compatible
 class IprDocRel(models.Model):
     disclosure = ForeignKey(IprDisclosureBase)
     document   = ForeignKey(DocAlias)
@@ -172,20 +179,22 @@ class IprDocRel(models.Model):
         else:
             return name
 
-    def __unicode__(self):
+    def __str__(self):
         if self.revisions:
-            return u"%s which applies to %s-%s" % (self.disclosure, self.document.name, self.revisions)
+            return "%s which applies to %s-%s" % (self.disclosure, self.document.name, self.revisions)
         else:
-            return u"%s which applies to %s" % (self.disclosure, self.document.name)
+            return "%s which applies to %s" % (self.disclosure, self.document.name)
 
+@python_2_unicode_compatible
 class RelatedIpr(models.Model):
     source       = ForeignKey(IprDisclosureBase,related_name='relatedipr_source_set')
     target       = ForeignKey(IprDisclosureBase,related_name='relatedipr_target_set')
     relationship = ForeignKey(DocRelationshipName) # Re-use; change to a dedicated RelName if needed
 
-    def __unicode__(self):
-        return u"%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
+    def __str__(self):
+        return "%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
 
+@python_2_unicode_compatible
 class IprEvent(models.Model):
     time        = models.DateTimeField(auto_now_add=True)
     type        = ForeignKey(IprEventTypeName)
@@ -196,8 +205,8 @@ class IprEvent(models.Model):
     in_reply_to = ForeignKey(Message, null=True, blank=True,related_name='irtoevents')
     response_due= models.DateTimeField(blank=True,null=True)
 
-    def __unicode__(self):
-        return u"%s %s by %s at %s" % (self.disclosure.title, self.type.name.lower(), self.by.plain_name(), self.time)
+    def __str__(self):
+        return "%s %s by %s at %s" % (self.disclosure.title, self.type.name.lower(), self.by.plain_name(), self.time)
 
     def response_past_due(self):
         """Returns true if it's beyond the response_due date and no response has been

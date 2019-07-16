@@ -1,14 +1,18 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
-from __future__ import unicode_literals, print_function
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os
 import re
-import sys
-from xym import xym
 import shutil
+import six
+import sys
 import tempfile
-import StringIO
 
+from xym import xym
 from django.conf import settings
 
 import debug                            # pyflakes:ignore
@@ -80,6 +84,8 @@ class DraftIdnitsChecker(object):
 
         cmd = "%s %s %s" % (settings.IDSUBMIT_IDNITS_BINARY, self.options, path)
         code, out, err = pipe(cmd)
+        out = out.decode()
+        err = err.decode()
         if code != 0 or out == "":
             message = "idnits error: %s:\n  Error %s: %s" %( cmd, code, err)
             log(message)
@@ -87,7 +93,7 @@ class DraftIdnitsChecker(object):
             
         else:
             message = out
-            if re.search("\s+Summary:\s+0\s+|No nits found", out):
+            if re.search(r"\s+Summary:\s+0\s+|No nits found", out):
                 passed  = True
             else:
                 passed  = False
@@ -142,19 +148,23 @@ class DraftYangChecker(object):
                 # This places the yang models as files in workdir
                 saved_stdout = sys.stdout
                 saved_stderr = sys.stderr
-                sys.stdout = StringIO.StringIO()
-                sys.stderr = StringIO.StringIO()
+                sys.stdout = six.StringIO()
+                sys.stderr = six.StringIO()
                 extractor.extract_yang_model(file.readlines())
                 model_list = extractor.get_extracted_models(False, True)
                 out = sys.stdout.getvalue()
                 err = sys.stderr.getvalue()
-                sys.stdout = saved_stdout
-                sys.stderr = saved_stderr
                 # signature change in xym:
             except Exception as exc:
+                sys.stdout = saved_stdout
+                sys.stderr = saved_stderr
                 msg = "Exception when running xym on %s: %s" % (name, exc)
                 log(msg)
+                raise
                 return None, msg, 0, 0, info
+            finally:
+                sys.stdout = saved_stdout
+                sys.stderr = saved_stderr
         if not model_list:
             # Found no yang models, don't deliver any YangChecker result
             return None, "", 0, 0, info
@@ -196,7 +206,7 @@ class DraftYangChecker(object):
                                 settings.SUBMIT_YANG_IANA_MODEL_DIR,
                             ])
             if os.path.exists(path):
-                with open(path) as file:
+                with io.open(path) as file:
                     text = file.readlines()
                 # pyang
                 cmd_template = settings.SUBMIT_PYANG_COMMAND
@@ -204,6 +214,8 @@ class DraftYangChecker(object):
                 cmd_version = VersionInfo.objects.get(command=command).version
                 cmd = cmd_template.format(libs=modpath, model=path)
                 code, out, err = pipe(cmd)
+                out = out.decode()
+                err = err.decode()
                 if code > 0 or len(err.strip()) > 0 :
                     error_lines = err.splitlines()
                     assertion('len(error_lines) > 0')
@@ -235,6 +247,8 @@ class DraftYangChecker(object):
                     cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, tmplib=workdir,
                         draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, ianalib=settings.SUBMIT_YANG_IANA_MODEL_DIR, )
                     code, out, err = pipe(cmd)
+                    out = out.decode()
+                    err = err.decode()
                     if code > 0 or len(err.strip()) > 0:
                         err_lines = err.splitlines()
                         for line in err_lines:

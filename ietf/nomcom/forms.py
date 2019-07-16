@@ -1,3 +1,11 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import six
+
 from django.conf import settings
 from django import forms
 from django.urls import reverse
@@ -32,12 +40,12 @@ class PositionNomineeField(forms.ChoiceField):
         results = []
         for position in positions:
             accepted_nominees = [np.nominee for np in NomineePosition.objects.filter(position=position,state='accepted').exclude(nominee__duplicated__isnull=False)]
-            nominees = [('%s_%s' % (position.id, i.id), unicode(i)) for i in accepted_nominees]
+            nominees = [('%s_%s' % (position.id, i.id), six.text_type(i)) for i in accepted_nominees]
             if nominees:
                 results.append((position.name+" (Accepted)", nominees))
         for position in positions:
             other_nominees = [np.nominee for np in NomineePosition.objects.filter(position=position).exclude(state='accepted').exclude(nominee__duplicated__isnull=False)]
-            nominees = [('%s_%s' % (position.id, i.id), unicode(i)) for i in other_nominees]
+            nominees = [('%s_%s' % (position.id, i.id), six.text_type(i)) for i in other_nominees]
             if nominees:
                 results.append((position.name+" (Declined or Pending)", nominees))
         kwargs['choices'] = results
@@ -292,7 +300,7 @@ class NominateForm(forms.ModelForm):
 
         # Complete nomination data
         feedback = Feedback.objects.create(nomcom=self.nomcom,
-                                           comments=qualifications,
+                                           comments=self.nomcom.encrypt(qualifications),
                                            type=FeedbackTypeName.objects.get(slug='nomina'),
                                            user=self.user)
         feedback.positions.add(position)
@@ -407,7 +415,7 @@ class NominateNewPersonForm(forms.ModelForm):
 
         # Complete nomination data
         feedback = Feedback.objects.create(nomcom=self.nomcom,
-                                           comments=qualifications,
+                                           comments=self.nomcom.encrypt(qualifications),
                                            type=FeedbackTypeName.objects.get(slug='nomina'),
                                            user=self.user)
         feedback.positions.add(position)
@@ -450,7 +458,7 @@ class NominateNewPersonForm(forms.ModelForm):
 
 class FeedbackForm(forms.ModelForm):
     nominator_email = forms.CharField(label='Commenter email',required=False)
-    comments = forms.CharField(label='Comments', widget=forms.Textarea(), strip=False)
+    comment_text = forms.CharField(label='Comments', widget=forms.Textarea(), strip=False)
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation (if selected, your comments will be emailed to you in cleartext when you press Save).',
                                       required=False)
 
@@ -483,13 +491,13 @@ class FeedbackForm(forms.ModelForm):
             if not NomineePosition.objects.accepted().filter(nominee=self.nominee,
                                                         position=self.position):
                 msg = "There isn't a accepted nomination for %s on the %s position" % (self.nominee, self.position)
-                self._errors["comments"] = self.error_class([msg])
+                self._errors["comment_text"] = self.error_class([msg])
         return self.cleaned_data
 
     def save(self, commit=True):
         feedback = super(FeedbackForm, self).save(commit=False)
         confirmation = self.cleaned_data['confirmation']
-        comments = self.cleaned_data['comments']
+        comment_text = self.cleaned_data['comment_text']
         nomcom_template_path = '/nomcom/%s/' % self.nomcom.group.acronym
 
         author = None
@@ -507,6 +515,7 @@ class FeedbackForm(forms.ModelForm):
         feedback.nomcom = self.nomcom
         feedback.user = self.user
         feedback.type = FeedbackTypeName.objects.get(slug='comment')
+        feedback.comments = self.nomcom.encrypt(comment_text)
         feedback.save()
         if self.nominee and self.position:
             feedback.positions.add(self.position)
@@ -525,7 +534,7 @@ class FeedbackForm(forms.ModelForm):
                 elif self.topic:
                     about = self.topic.subject
                 context = {'about': about,
-                           'comments': comments,
+                           'comments': comment_text,
                            'year': self.nomcom.year(),
                        }
                 path = nomcom_template_path + FEEDBACK_RECEIPT_TEMPLATE
@@ -536,7 +545,6 @@ class FeedbackForm(forms.ModelForm):
         model = Feedback
         fields = (
                   'nominator_email',
-                  'comments',
                   'confirmation',
                  )
 
@@ -553,8 +561,9 @@ class FeedbackEmailForm(forms.Form):
 
 class QuestionnaireForm(forms.ModelForm):
 
-    comments = forms.CharField(label='Questionnaire response from this candidate',
+    comment_text = forms.CharField(label='Questionnaire response from this candidate',
                                widget=forms.Textarea(), strip=False)
+
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
         self.user = kwargs.pop('user', None)
@@ -564,6 +573,7 @@ class QuestionnaireForm(forms.ModelForm):
 
     def save(self, commit=True):
         feedback = super(QuestionnaireForm, self).save(commit=False)
+        comment_text = self.cleaned_data['comment_text']
         (position, nominee) = self.cleaned_data['nominee']
 
         author = get_user_email(self.user)
@@ -574,6 +584,7 @@ class QuestionnaireForm(forms.ModelForm):
         feedback.nomcom = self.nomcom
         feedback.user = self.user
         feedback.type = FeedbackTypeName.objects.get(slug='questio')
+        feedback.comments = self.nomcom.encrypt(comment_text)
         feedback.save()
         self.save_m2m()
         feedback.nominees.add(nominee)
@@ -581,7 +592,7 @@ class QuestionnaireForm(forms.ModelForm):
 
     class Meta:
         model = Feedback
-        fields = ( 'comments', )
+        fields = []
 
 class NomComTemplateForm(DBTemplateForm):
     content = forms.CharField(label="Text", widget=forms.Textarea(attrs={'cols': '120', 'rows':'40', }), strip=False)

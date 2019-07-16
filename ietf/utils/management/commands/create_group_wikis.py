@@ -1,9 +1,15 @@
-# Copyright 2016 IETF Trust
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import copy
-import syslog
+import io
 import pkg_resources
+import six
+import syslog
 
 from trac.core import TracError
 from trac.env import Environment
@@ -24,7 +30,7 @@ from ietf.utils.pipe import pipe
 
 logtag = __name__.split('.')[-1]
 logname = "user.log"
-syslog.openlog(logtag, syslog.LOG_PID, syslog.LOG_USER)
+syslog.openlog(str(logtag), syslog.LOG_PID, syslog.LOG_USER)
 
 class Command(BaseCommand):
     help = "Create group wikis for WGs, RGs and Areas which don't have one."
@@ -59,7 +65,10 @@ class Command(BaseCommand):
         else:
             self.note("Running %s %s ..." % (os.path.basename(cmd), " ".join(quoted_args)))
             command = [ cmd, ] + list(args)
+            command = ' '.join(command).encode('utf-8')
             code, out, err = pipe(command)
+            out = out.decode('utf-8')
+            err = err.decode('utf-8')
             msg = None
             if code != 0:
                 msg = "Error %s: %s when executing '%s'" % (code, err, " ".join(command))
@@ -81,9 +90,8 @@ class Command(BaseCommand):
                 return msg
             err, out= self.svn_admin_cmd("create", svn )
             if err:
-                msg = "Error %s creating svn repository %s:\n   %s" % (err, svn, out)
-                self.log(msg)
-                return msg
+                self.log(err)
+                return err
         return ""
 
     # --- trac ---
@@ -130,8 +138,8 @@ class Command(BaseCommand):
                 name = unicode_unquote(name.encode('utf-8'))
                 if os.path.isfile(filename):
                     self.note("  Adding page %s" % name)
-                    with open(filename) as file:
-                        text = file.read().decode('utf-8')
+                    with io.open(filename, encoding='utf-8') as file:
+                        text = file.read()
                     self.add_wiki_page(env, name, text)
 
     def add_custom_wiki_pages(self, group, env):
@@ -201,7 +209,7 @@ class Command(BaseCommand):
             sect, key, val = options[i]
             val = val.format(**group.__dict__)
             options[i] = sect, key, val
-        # Try to creat ethe environment, remove unwanted defaults, and add
+        # Try to create the environment, remove unwanted defaults, and add
         # custom pages and settings.
         if self.dummy_run:
             self.note("Would create Trac for group '%s' at %s" % (group.acronym, group.trac_dir))
@@ -320,13 +328,13 @@ class Command(BaseCommand):
         self.svn_dir_pattern = options.get('svn_dir_pattern', settings.TRAC_SVN_DIR_PATTERN)
         self.group_list = options.get('group_list', None)
         self.dummy_run = options.get('dummy_run', False)
-        self.wiki_dir_pattern = os.path.join(settings.BASE_DIR, '..', self.wiki_dir_pattern)
+        self.wiki_dir_pattern = os.path.join(str(settings.BASE_DIR), str('..'), self.wiki_dir_pattern)
         self.svn_dir_pattern = os.path.join(settings.BASE_DIR, '..', self.svn_dir_pattern)
 
         if not self.group_list is None:
             self.group_list = self.group_list.split('.')
 
-        if isinstance(self.verbosity, (type(""), type(u""))) and self.verbosity.isdigit():
+        if isinstance(self.verbosity, six.string_types) and self.verbosity.isdigit():
             self.verbosity = int(self.verbosity)
 
         if self.dummy_run and self.verbosity < 2:

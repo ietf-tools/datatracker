@@ -1,9 +1,14 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
 import logging
 import inspect
 import os.path
+import six
 import traceback
 
 try:
@@ -28,23 +33,27 @@ def getclass(frame):
 
 def getcaller():
     parent, pfile, pline, pfunction, lines, index = inspect.stack()[2]
-    moduleinfo = inspect.getmoduleinfo(pfile)
-    pmodule = moduleinfo[0] if moduleinfo else None
+    pmodule = inspect.getmodulename(pfile)
     pclass = getclass(parent)
     return (pmodule, pclass, pfunction, pfile, pline)
 
-def log(msg):
+def log(msg, e=None):
     "Uses syslog by preference.  Logs the given calling point and message."
     global logfunc
     def _flushfunc():
         pass
     _logfunc = logfunc
     if settings.SERVER_MODE == 'test':
-        return
+## Comment in when debugging for instance test smtp server failures:
+#        if e:
+#            _logfunc = debug.say
+#            _flushfunc = sys.stdout.flush   # pyflakes:ignore (intentional redefinition)
+#        else:
+            return
     elif settings.DEBUG == True:
         _logfunc = debug.say
         _flushfunc = sys.stdout.flush   # pyflakes:ignore (intentional redefinition)
-    if isinstance(msg, unicode):
+    if isinstance(msg, six.text_type):
         msg = msg.encode('unicode_escape')
     try:
         mod, cls, func, file, line = getcaller()

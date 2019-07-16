@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 # Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -30,6 +32,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 from django.conf.urls import include
 from django.views.generic import RedirectView
 from django.conf import settings
@@ -47,8 +52,8 @@ urlpatterns = [
     url(r'^$', views_search.search),
     url(r'^search/?$', views_search.search),
     url(r'^in-last-call/?$', views_search.drafts_in_last_call),
-    url(r'^ad/(?P<name>[^/]+)/?$(?u)', views_search.docs_for_ad),
-    url(r'^ad2/(?P<name>[\w.-]+)/$(?u)', RedirectView.as_view(url='/doc/ad/%(name)s/', permanent=True)),
+    url(r'^ad/(?P<name>[^/]+)/?$', views_search.docs_for_ad),
+    url(r'^ad2/(?P<name>[\w.-]+)/$', RedirectView.as_view(url='/doc/ad/%(name)s/', permanent=True)),
     url(r'^rfc-status-changes/?$', views_status_change.rfc_status_changes),
     url(r'^start-rfc-status-change/(?:%(name)s/)?$' % settings.URL_REGEXPS, views_status_change.start_rfc_status_change),
     url(r'^iesg/?$', views_search.drafts_in_iesg_process),

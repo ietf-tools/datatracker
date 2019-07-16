@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 from django import forms
 
 from ietf.group.models import Group, Role
@@ -37,7 +43,7 @@ def get_from_choices(user):
     if nomcom_choices:
         addresses = list(addresses) + nomcom_choices
     
-    return zip(addresses, addresses)
+    return list(zip(addresses, addresses))
 
 
 def get_nomcom_choices(user):
@@ -58,7 +64,7 @@ def get_nomcom_choices(user):
         
 
 def get_to_choices():
-    return zip(TO_LIST,TO_LIST)
+    return list(zip(TO_LIST,TO_LIST))
 
 
 # ---------------------------------------------
@@ -96,7 +102,7 @@ class AnnounceForm(forms.ModelForm):
         self.initial['reply_to'] = 'ietf@ietf.org'
         
         if self.hidden:
-            for key in self.fields.keys():
+            for key in list(self.fields.keys()):
                 self.fields[key].widget = forms.HiddenInput()
 
     def clean(self):

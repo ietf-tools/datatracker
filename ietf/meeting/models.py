@@ -1,11 +1,13 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function, unicode_literals
 
 # old meeting models can be found in ../proceedings/models.py
 
 import pytz
 import datetime
-from urlparse import urljoin
+import io
+from six.moves.urllib.parse import urljoin
 import os
 import re
 import string
@@ -19,6 +21,7 @@ from django.conf import settings
 # mostly used by json_dict()
 #from django.template.defaultfilters import slugify, date as date_format, time as time_format
 from django.template.defaultfilters import date as date_format
+from django.utils.encoding import python_2_unicode_compatible
 from django.utils.text import slugify
 
 from ietf.dbtemplate.models import DBTemplate
@@ -33,8 +36,8 @@ from ietf.utils.text import xslugify
 from ietf.utils.timezone import date2datetime
 from ietf.utils.models import ForeignKey
 
-countries = pytz.country_names.items()
-countries.sort(lambda x,y: cmp(x[1], y[1]))
+countries = list(pytz.country_names.items())
+countries.sort(key=lambda x: x[1])
 
 timezones = []
 for name in pytz.common_timezones:
@@ -54,6 +57,7 @@ def fmt_date(o):
     d = datetime_safe.new_date(o)
     return d.strftime(DATE_FORMAT)
 
+@python_2_unicode_compatible
 class Meeting(models.Model):
     # number is either the number for IETF meetings, or some other
     # identifier for interim meetings/IESG retreats/liaison summits/...
@@ -100,16 +104,16 @@ class Meeting(models.Model):
     agenda_warning_note = models.TextField(blank=True, help_text="Text in this field will be placed more prominently at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.")
     agenda     = ForeignKey('Schedule',null=True,blank=True, related_name='+')
     session_request_lock_message = models.CharField(blank=True,max_length=255) # locked if not empty
-    proceedings_final = models.BooleanField(default=False, help_text=u"Are the proceedings for this meeting complete?")
+    proceedings_final = models.BooleanField(default=False, help_text="Are the proceedings for this meeting complete?")
     acknowledgements = models.TextField(blank=True, help_text="Acknowledgements for use in meeting proceedings.  Use ReStructuredText markup.")
     overview = ForeignKey(DBTemplate, related_name='overview', null=True, editable=False)
     show_important_dates = models.BooleanField(default=False)
     attendees = models.IntegerField(blank=True, null=True, default=None,
-                                    help_text=u"Number of Attendees for backfilled meetings, leave it blank for new meetings, and then it is calculated from the registrations")
+                                    help_text="Number of Attendees for backfilled meetings, leave it blank for new meetings, and then it is calculated from the registrations")
 
-    def __unicode__(self):
+    def __str__(self):
         if self.type_id == "ietf":
-            return "IETF-%s" % (self.number)
+            return u"IETF-%s" % (self.number)
         else:
             return self.number
 
@@ -255,7 +259,7 @@ class Meeting(models.Model):
         days.sort()
         for ymd in time_slices:
             time_slices[ymd].sort()
-            slots[ymd].sort(lambda x,y: cmp(x.time, y.time))
+            slots[ymd].sort(key=lambda x: x.time)
         return days,time_slices,slots
 
     # this functions makes a list of timeslices and rooms, and
@@ -276,7 +280,7 @@ class Meeting(models.Model):
             try:
                 tzfn = os.path.join(settings.TZDATA_ICS_PATH, self.time_zone + ".ics")
                 if os.path.exists(tzfn):
-                    with open(tzfn) as tzf:
+                    with io.open(tzfn) as tzf:
                         icstext = tzf.read()
                     vtimezone = re.search("(?sm)(\nBEGIN:VTIMEZONE.*\nEND:VTIMEZONE\n)", icstext).group(1).strip()
                     if vtimezone:
@@ -310,12 +314,13 @@ class Meeting(models.Model):
 
 # === Rooms, Resources, Floorplans =============================================
 
+@python_2_unicode_compatible
 class ResourceAssociation(models.Model):
     name = ForeignKey(RoomResourceName)
     icon = models.CharField(max_length=64)       # icon to be found in /static/img
     desc = models.CharField(max_length=256)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.desc
 
     def json_dict(self, host_scheme):
@@ -326,6 +331,7 @@ class ResourceAssociation(models.Model):
         res1['resource_id'] = self.pk
         return res1
 
+@python_2_unicode_compatible
 class Room(models.Model):
     meeting = ForeignKey(Meeting)
     modified = models.DateTimeField(auto_now=True)
@@ -344,8 +350,8 @@ class Room(models.Model):
     y2 = models.SmallIntegerField(null=True, blank=True, default=None)
     # end floorplan-related stuff
 
-    def __unicode__(self):
-        return "%s size: %s" % (self.name, self.capacity)
+    def __str__(self):
+        return u"%s size: %s" % (self.name, self.capacity)
 
     def delete_timeslots(self):
         for ts in self.timeslot_set.all():
@@ -413,8 +419,9 @@ class UrlResource(models.Model):
 
 def floorplan_path(instance, filename):
     root, ext = os.path.splitext(filename)
-    return u"%s/floorplan-%s-%s%s" % (settings.FLOORPLAN_MEDIA_DIR, instance.meeting.number, xslugify(instance.name), ext)
+    return "%s/floorplan-%s-%s%s" % (settings.FLOORPLAN_MEDIA_DIR, instance.meeting.number, xslugify(instance.name), ext)
 
+@python_2_unicode_compatible
 class FloorPlan(models.Model):
     name    = models.CharField(max_length=255)
     short   = models.CharField(max_length=3, default='')
@@ -426,11 +433,12 @@ class FloorPlan(models.Model):
     class Meta:
         ordering = ['-id',]
     #
-    def __unicode__(self):
-        return 'floorplan-%s-%s' % (self.meeting.number, xslugify(self.name))
+    def __str__(self):
+        return u'floorplan-%s-%s' % (self.meeting.number, xslugify(self.name))
 
 # === Schedules, Sessions, Timeslots and Assignments ===========================
 
+@python_2_unicode_compatible
 class TimeSlot(models.Model):
     """
     Everything that would appear on the meeting agenda of a meeting is
@@ -444,7 +452,7 @@ class TimeSlot(models.Model):
     duration = models.DurationField(default=datetime.timedelta(0))
     location = ForeignKey(Room, blank=True, null=True)
     show_location = models.BooleanField(default=True, help_text="Show location in agenda.")
-    sessions = models.ManyToManyField('Session', related_name='slots', through='SchedTimeSessAssignment', blank=True, help_text=u"Scheduled session, if any.")
+    sessions = models.ManyToManyField('Session', related_name='slots', through='SchedTimeSessAssignment', blank=True, help_text="Scheduled session, if any.")
     modified = models.DateTimeField(auto_now=True)
     #
 
@@ -456,7 +464,7 @@ class TimeSlot(models.Model):
 
     @property
     def time_desc(self):
-        return u"%s-%s" % (self.time.strftime("%H%M"), (self.time + self.duration).strftime("%H%M"))
+        return "%s-%s" % (self.time.strftime("%H%M"), (self.time + self.duration).strftime("%H%M"))
 
     def meeting_date(self):
         return self.time.date()
@@ -472,10 +480,10 @@ class TimeSlot(models.Model):
                 self._reg_info = None
         return self._reg_info
 
-    def __unicode__(self):
+    def __str__(self):
         location = self.get_location()
         if not location:
-            location = "(no location)"
+            location = u"(no location)"
 
         return u"%s: %s-%s %s, %s" % (self.meeting.number, self.time.strftime("%m-%d %H:%M"), (self.time + self.duration).strftime("%H:%M"), self.name, location)
 
@@ -598,6 +606,7 @@ class TimeSlot(models.Model):
 
 # end of TimeSlot
 
+@python_2_unicode_compatible
 class Schedule(models.Model):
     """
     Each person may have multiple agendas saved.
@@ -611,12 +620,12 @@ class Schedule(models.Model):
     meeting  = ForeignKey(Meeting, null=True)
     name     = models.CharField(max_length=16, blank=False)
     owner    = ForeignKey(Person)
-    visible  = models.BooleanField(default=True, help_text=u"Make this agenda available to those who know about it.")
-    public   = models.BooleanField(default=True, help_text=u"Make this agenda publically available.")
+    visible  = models.BooleanField(default=True, help_text="Make this agenda available to those who know about it.")
+    public   = models.BooleanField(default=True, help_text="Make this agenda publically available.")
     badness  = models.IntegerField(null=True, blank=True)
     # considering copiedFrom = ForeignKey('Schedule', blank=True, null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return u"%s:%s(%s)" % (self.meeting, self.name, self.owner)
 
     def base_url(self):
@@ -707,6 +716,7 @@ class Schedule(models.Model):
         self.delete()
 
 # to be renamed SchedTimeSessAssignments (stsa)
+@python_2_unicode_compatible
 class SchedTimeSessAssignment(models.Model):
     """
     This model provides an N:M relationship between Session and TimeSlot.
@@ -714,9 +724,9 @@ class SchedTimeSessAssignment(models.Model):
     a specific person/user.
     """
     timeslot = ForeignKey('TimeSlot', null=False, blank=False, related_name='sessionassignments')
-    session  = ForeignKey('Session', null=True, default=None, related_name='timeslotassignments', help_text=u"Scheduled session.")
+    session  = ForeignKey('Session', null=True, default=None, related_name='timeslotassignments', help_text="Scheduled session.")
     schedule = ForeignKey('Schedule', null=False, blank=False, related_name='assignments')
-    extendedfrom = ForeignKey('self', null=True, default=None, help_text=u"Timeslot this session is an extension of.")
+    extendedfrom = ForeignKey('self', null=True, default=None, help_text="Timeslot this session is an extension of.")
     modified = models.DateTimeField(auto_now=True)
     notes    = models.TextField(blank=True)
     badness  = models.IntegerField(default=0, blank=True, null=True)
@@ -725,7 +735,7 @@ class SchedTimeSessAssignment(models.Model):
     class Meta:
         ordering = ["timeslot__time", "timeslot__type__slug", "session__group__parent__name", "session__group__acronym", "session__name", ]
 
-    def __unicode__(self):
+    def __str__(self):
         return u"%s [%s<->%s]" % (self.schedule, self.session, self.timeslot)
 
     @property
@@ -807,8 +817,9 @@ class SchedTimeSessAssignment(models.Model):
 
                 components.append(g.acronym)
 
-        return u"-".join(components).lower()
+        return "-".join(components).lower()
 
+@python_2_unicode_compatible
 class Constraint(models.Model):
     """
     Specifies a constraint on the scheduling.
@@ -828,16 +839,16 @@ class Constraint(models.Model):
 
     active_status = None
 
-    def __unicode__(self):
+    def __str__(self):
         return u"%s %s target=%s person=%s" % (self.source, self.name.name.lower(), self.target, self.person)
 
     def brief_display(self):
         if self.target and self.person:
-            return u"%s ; %s" % (self.target.acronym, self.person)
+            return "%s ; %s" % (self.target.acronym, self.person)
         elif self.target and not self.person:
-            return u"%s " % (self.target.acronym)
+            return "%s " % (self.target.acronym)
         elif not self.target and self.person:
-            return u"%s " % (self.person)
+            return "%s " % (self.person)
 
     def json_url(self):
         return "/meeting/%s/constraint/%s.json" % (self.meeting.number, self.id)
@@ -857,6 +868,7 @@ class Constraint(models.Model):
         return ct1
 
 
+@python_2_unicode_compatible
 class SessionPresentation(models.Model):
     session = ForeignKey('Session')
     document = ForeignKey(Document)
@@ -868,12 +880,13 @@ class SessionPresentation(models.Model):
         ordering = ('order',)
         unique_together = (('session', 'document'),)
 
-    def __unicode__(self):
+    def __str__(self):
         return u"%s -> %s-%s" % (self.session, self.document.name, self.rev)
 
 constraint_cache_uses = 0
 constraint_cache_initials = 0
 
+@python_2_unicode_compatible
 class Session(models.Model):
     """Session records that a group should have a session on the
     meeting (time and location is stored in a TimeSlot) - if multiple
@@ -1007,7 +1020,7 @@ class Session(models.Model):
     def is_material_submission_cutoff(self):
         return datetime.date.today() > self.meeting.get_submission_correction_date()
 
-    def __unicode__(self):
+    def __str__(self):
         if self.meeting.type_id == "interim":
             return self.meeting.number
 
@@ -1018,7 +1031,7 @@ class Session(models.Model):
             ss = self.timeslotassignments.filter(schedule=self.meeting.agenda).order_by('timeslot__time')
             if ss:
                 ss0name = ','.join([x.timeslot.time.strftime("%a-%H%M") for x in ss])
-        return u"%s: %s %s %s" % (self.meeting, self.group.acronym, self.name, ss0name)
+        return "%s: %s %s %s" % (self.meeting, self.group.acronym, self.name, ss0name)
 
     @property
     def short_name(self):
@@ -1028,7 +1041,7 @@ class Session(models.Model):
             return self.short
         if self.group:
             return self.group.acronym
-        return u"req#%u" % (id)
+        return "req#%u" % (id)
 
     @property
     def special_request_token(self):
@@ -1080,22 +1093,22 @@ class Session(models.Model):
             sess1['group_href']     = urljoin(host_scheme, self.group.json_url())
             if self.group.parent is not None:
                 sess1['area']           = self.group.parent.acronym.upper()
-            sess1['description']    = self.group.name.encode('utf-8')
+            sess1['description']    = self.group.name
             sess1['group_id']       = str(self.group.pk)
         reslist = []
         for r in self.resources.all():
             reslist.append(r.json_dict(host_scheme))
         sess1['resources']      = reslist
         sess1['session_id']     = str(self.pk)
-        sess1['name']           = self.name.encode('utf-8')
-        sess1['title']          = self.short_name.encode('utf-8')
-        sess1['short_name']     = self.short_name.encode('utf-8')
+        sess1['name']           = self.name
+        sess1['title']          = self.short_name
+        sess1['short_name']     = self.short_name
         sess1['bof']            = str(self.group.is_bof())
-        sess1['agenda_note']    = self.agenda_note.encode('utf-8')
+        sess1['agenda_note']    = self.agenda_note
         sess1['attendees']      = str(self.attendees)
-        sess1['status']         = self.status.name.encode('utf-8')
+        sess1['status']         = self.status.name
         if self.comments is not None:
-            sess1['comments']       = self.comments.encode('utf-8')
+            sess1['comments']       = self.comments
         sess1['requested_time'] = self.requested.strftime("%Y-%m-%d")
         # the related person object sometimes does not exist in the dataset.
         try:
@@ -1113,7 +1126,7 @@ class Session(models.Model):
         if doc:
             path = os.path.join(settings.AGENDA_PATH, self.meeting.number, "agenda", doc.uploaded_filename)
             if os.path.exists(path):
-                with open(path) as f:
+                with io.open(path) as f:
                     return f.read()
             else:
                 return "No agenda file found"
@@ -1147,6 +1160,7 @@ class Session(models.Model):
         else:
             return self.group.acronym
 
+@python_2_unicode_compatible
 class ImportantDate(models.Model):
     meeting = ForeignKey(Meeting)
     date = models.DateField()
@@ -1154,7 +1168,7 @@ class ImportantDate(models.Model):
     class Meta:
         ordering = ["-meeting_id","date", ]
 
-    def __unicode__(self):
+    def __str__(self):
         return u'%s : %s : %s' % ( self.meeting, self.name, self.date )
 
 class SlideSubmission(models.Model):

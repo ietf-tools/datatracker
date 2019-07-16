@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import base64
 import email
 import datetime
@@ -5,7 +11,11 @@ from dateutil.tz import tzoffset
 import os
 import pytz
 import re
+
 from django.template.loader import render_to_string
+from django.utils.encoding import force_text, force_str
+
+import debug                            # pyflakes:ignore
 
 from ietf.ipr.models import IprEvent
 from ietf.message.models import Message
@@ -91,7 +101,7 @@ def get_reply_to():
     address with "plus addressing" using a random string.  Guaranteed to be unique"""
     local,domain = get_base_ipr_request_address().split('@')
     while True:
-        rand = base64.urlsafe_b64encode(os.urandom(12))
+        rand = force_text(base64.urlsafe_b64encode(os.urandom(12)))
         address = "{}+{}@{}".format(local,rand,domain)
         q = Message.objects.filter(reply_to=address)
         if not q:
@@ -165,7 +175,7 @@ def process_response_email(msg):
     a matching value in the reply_to field, associated to an IPR disclosure through
     IprEvent.  Create a Message object for the incoming message and associate it to
     the original message via new IprEvent"""
-    message = email.message_from_string(msg)
+    message = email.message_from_string(force_str(msg))
     to = message.get('To')
     
     # exit if this isn't a response we're interested in (with plus addressing)
@@ -194,5 +204,5 @@ def process_response_email(msg):
         in_reply_to = to_message
     )
     
-    log(u"Received IPR email from %s" % ietf_message.frm)
+    log("Received IPR email from %s" % ietf_message.frm)
     return ietf_message

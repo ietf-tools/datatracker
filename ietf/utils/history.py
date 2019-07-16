@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import debug                            # pyflakes:ignore
 
 def find_history_active_at(obj, time):
@@ -39,7 +42,7 @@ def find_history_replacements_active_at(objects, time):
     # automatically figure out how to query history model
     history_model = objects[0].history_set.model
     # core_filters contains something like "group__exact": obj
-    relation_name = objects[0].history_set.core_filters.keys()[0].replace("__exact", "")
+    relation_name = list(objects[0].history_set.core_filters.keys())[0].replace("__exact", "")
 
     # now the querying is a bit tricky - we are only interested in the
     # history version just before time, or if we can't get that, the

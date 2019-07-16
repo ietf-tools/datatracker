@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 
 from django.conf import settings
@@ -545,7 +548,7 @@ def new(request, acronym):
 
     # the "previous" querystring causes the form to be returned
     # pre-populated with data from last meeeting's session request
-    elif request.method == 'GET' and request.GET.has_key('previous'):
+    elif request.method == 'GET' and 'previous' in request.GET:
         previous_meeting = Meeting.objects.get(number=str(int(meeting.number) - 1))
         previous_sessions = Session.objects.filter(meeting=previous_meeting,group=group).exclude(status__in=('notmeet','deleted')).order_by('id')
         if not previous_sessions:

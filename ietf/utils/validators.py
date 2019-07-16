@@ -1,6 +1,8 @@
-# -*- python -*-
-# Copyright The IETF Trust 2007, All Rights Reserved
-from __future__ import unicode_literals
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import re
@@ -77,8 +79,8 @@ def validate_mime_type(file, valid):
     mime_type, encoding = get_mime_type(raw)
     # work around mis-identification of text where a line has 'virtual' as
     # the first word:
-    if mime_type == 'text/x-c++' and re.search('(?m)^virtual\s', raw):
-        mod = raw.replace(str('virtual'), str(' virtual'))
+    if mime_type == 'text/x-c++' and re.search(br'(?m)^virtual\s', raw):
+        mod = raw.replace(b'virtual', b' virtual')
         mime_type, encoding = get_mime_type(mod)
     if valid and not mime_type in valid:
         raise ValidationError('Found content with unexpected mime type: %s.  Expected one of %s.' %

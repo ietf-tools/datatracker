@@ -1,9 +1,15 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 
 from ietf.utils.models import ForeignKey
 
+@python_2_unicode_compatible
 class Redirect(models.Model):
     """Mapping of CGI script to url.  The "rest" is a
     sprintf-style string with %(param)s entries to insert
@@ -22,8 +28,9 @@ class Redirect(models.Model):
     rest = models.CharField(max_length=100, blank=True)
     remove = models.CharField(max_length=50, blank=True)
     def __str__(self):
-	return "%s -> %s/%s" % (self.cgi, self.url, self.rest)
+        return "%s -> %s/%s" % (self.cgi, self.url, self.rest)
 
+@python_2_unicode_compatible
 class Suffix(models.Model):
     """This is a "rest" and "remove" (see Redirect class)
     for requests with command=.
@@ -31,10 +38,11 @@ class Suffix(models.Model):
     rest = models.CharField(max_length=100, blank=True)
     remove = models.CharField(max_length=50, blank=True)
     def __str__(self):
-	return "-> %s - %s" % (self.rest, self.remove)
+        return "-> %s - %s" % (self.rest, self.remove)
     class Meta:
         verbose_name_plural="Suffixes"
 
+@python_2_unicode_compatible
 class Command(models.Model):
     """When a request comes in with a command= argument,
     the command is looked up in this table to see if there
@@ -47,12 +55,12 @@ class Command(models.Model):
     script = ForeignKey(Redirect, related_name='commands', editable=False)
     suffix = ForeignKey(Suffix, null=True, blank=True)
     def __str__(self):
-	ret = "%s?command=%s" % (self.script.cgi, self.command)
-	if self.suffix_id:
-	    ret += " %s" % (self.suffix)
-	return ret
+        ret = "%s?command=%s" % (self.script.cgi, self.command)
+        if self.suffix_id:
+            ret += " %s" % (self.suffix)
+        return ret
     class Meta:
-	unique_together = (("script", "command"), )
+        unique_together = (("script", "command"), )
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core

@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 
 from django.contrib.syndication.views import Feed
@@ -26,7 +32,7 @@ class IESGAgendaFeed(Feed):
         return doc.latest_telechat_event.time
         
     def item_author_name(self, doc):
-	return doc.ad.plain_name() if doc.ad else "None"
+        return doc.ad.plain_name() if doc.ad else "None"
 
     def item_author_email(self, doc):
         if not doc.ad:

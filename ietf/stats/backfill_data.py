@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # Copyright The IETF Trust 2017-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
-from __future__ import print_function, unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
+import io
 import sys
 import os
 import os.path
@@ -16,7 +18,7 @@ os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
 
 virtualenv_activation = os.path.join(basedir, "env", "bin", "activate_this.py")
 if os.path.exists(virtualenv_activation):
-    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
+    exec(compile(io.open(virtualenv_activation, "rb").read(), virtualenv_activation, 'exec'), dict(__file__=virtualenv_activation))
 
 import django
 django.setup()
@@ -44,7 +46,7 @@ if args.document:
     docs_qs = docs_qs.filter(docalias__name=args.document)
 
 ts = time.strftime("%Y-%m-%d_%H:%M%z")
-logfile = open('backfill-authorstats-%s.log'%ts, 'w')
+logfile = io.open('backfill-authorstats-%s.log'%ts, 'w')
 print("Writing log to %s" % os.path.abspath(logfile.name))
 
 def say(msg):
@@ -84,7 +86,7 @@ for doc in docs_qs.prefetch_related("docalias", "formal_languages", "documentaut
         say("Skipping %s, no txt file found at %s" % (doc.name, path))
         continue
 
-    with open(path, 'rb') as f:
+    with io.open(path, 'rb') as f:
         say("\nProcessing %s" % doc.name)
         sys.stdout.flush()
         d = Draft(unicode(f.read()), path)

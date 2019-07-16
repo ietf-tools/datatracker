@@ -1,9 +1,14 @@
-# -*- coding: utf-8 -*-
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
-from __future__ import unicode_literals, print_function
+# -*- coding: utf-8 -*-
 
 
-import datetime, re, itertools
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import itertools
+import re
+import six
+
 from collections import defaultdict, namedtuple
 
 from django.db.models import Q, Max, F
@@ -128,12 +133,12 @@ def reviewer_rotation_list(team, skip_unavailable=False, dont_skip=[]):
         reviewers_to_skip = set()
 
         unavailable_periods = current_unavailable_periods_for_reviewers(team)
-        for person_id, periods in unavailable_periods.iteritems():
+        for person_id, periods in unavailable_periods.items():
             if periods and person_id not in dont_skip:
                 reviewers_to_skip.add(person_id)
 
         days_needed_for_reviewers = days_needed_to_fulfill_min_interval_for_reviewers(team)
-        for person_id, days_needed in days_needed_for_reviewers.iteritems():
+        for person_id, days_needed in days_needed_for_reviewers.items():
             if person_id not in dont_skip:
                 reviewers_to_skip.add(person_id)
 
@@ -154,7 +159,7 @@ def days_needed_to_fulfill_min_interval_for_reviewers(team):
     now = datetime.datetime.now()
 
     res = {}
-    for person_id, latest_assignment_time in latest_assignments.iteritems():
+    for person_id, latest_assignment_time in latest_assignments.items():
         if latest_assignment_time is not None:
             min_interval = min_intervals.get(person_id)
             if min_interval is None:
@@ -294,11 +299,11 @@ def sum_raw_review_assignment_aggregations(raw_aggregations):
 
     for raw_aggr in raw_aggregations:
         i_state_dict, i_late_state_dict, i_result_dict, i_assignment_to_closure_days_list, i_assignment_to_closure_days_count = raw_aggr
-        for s, v in i_state_dict.iteritems():
+        for s, v in i_state_dict.items():
             state_dict[s] += v
-        for s, v in i_late_state_dict.iteritems():
+        for s, v in i_late_state_dict.items():
             late_state_dict[s] += v
-        for r, v in i_result_dict.iteritems():
+        for r, v in i_result_dict.items():
             result_dict[r] += v
 
         assignment_to_closure_days_list.extend(i_assignment_to_closure_days_list)
@@ -501,7 +506,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
     if prev_team_reviews.exists():
         msg = msg + '\n\nThis team has completed other reviews of this document:\n'
         for assignment in prev_team_reviews:
-            msg += u'%s %s -%s %s\n'% (
+            msg += '%s %s -%s %s\n'% (
                      assignment.completed_on.strftime('%d %b %Y'), 
                      assignment.reviewer.person.ascii,
                      assignment.reviewed_rev or assignment.review_request.requested_rev,
@@ -688,7 +693,7 @@ def suggested_review_requests_for_team(team):
 
     # filter those with existing explicit requests 
     existing_requests = defaultdict(list)
-    for r in ReviewRequest.objects.filter(doc__id__in=requests.iterkeys(), team=team):
+    for r in ReviewRequest.objects.filter(doc__id__in=iter(requests.keys()), team=team):
         existing_requests[r.doc_id].append(r)
 
     def blocks(existing, request):
@@ -706,7 +711,7 @@ def suggested_review_requests_for_team(team):
 
         return any([no_review_document, no_review_rev, pending, request_closed, some_assignment_completed])
 
-    res = [r for r in requests.itervalues()
+    res = [r for r in requests.values()
            if not any(blocks(e, r) for e in existing_requests[r.doc_id])]
     res.sort(key=lambda r: (r.deadline, r.doc_id), reverse=True)
     return res
@@ -719,7 +724,7 @@ def extract_revision_ordered_review_assignments_for_documents_and_replaced(revie
     replaces = extract_complete_replaces_ancestor_mapping_for_docs(names)
 
     assignments_for_each_doc = defaultdict(list)
-    replacement_name_set = set(e for l in replaces.itervalues() for e in l) | names
+    replacement_name_set = set(e for l in replaces.values() for e in l) | names
     for r in ( review_assignment_queryset.filter(review_request__doc__name__in=replacement_name_set)
                                         .order_by("-reviewed_rev","-assigned_on", "-id").iterator()):
         assignments_for_each_doc[r.review_request.doc.name].append(r)
@@ -767,7 +772,7 @@ def extract_revision_ordered_review_requests_for_documents_and_replaced(review_r
     replaces = extract_complete_replaces_ancestor_mapping_for_docs(names)
 
     requests_for_each_doc = defaultdict(list)
-    for r in review_request_queryset.filter(doc__name__in=set(e for l in replaces.itervalues() for e in l) | names).order_by("-time", "-id").iterator():
+    for r in review_request_queryset.filter(doc__name__in=set(e for l in replaces.values() for e in l) | names).order_by("-time", "-id").iterator():
         requests_for_each_doc[r.doc.name].append(r)
 
     # now collect in breadth-first order to keep the revision order intact
@@ -959,9 +964,9 @@ def make_assignment_choices(email_queryset, review_req):
         if stats:
             explanations.append(", ".join(stats))
 
-        label = unicode(e.person)
+        label = six.text_type(e.person)
         if explanations:
-            label = u"{}: {}".format(label, u"; ".join(explanations))
+            label = "{}: {}".format(label, "; ".join(explanations))
 
         ranking.append({
             "email": e,
@@ -1026,10 +1031,10 @@ def review_assignments_needing_secretary_reminder(remind_date):
         if (deadline - remind_date).days == remind_days:
             assignment_pks[a_pk] = secretary_role_pk
 
-    review_assignments = { a.pk: a for a in ReviewAssignment.objects.filter(pk__in=assignment_pks.keys()).select_related("reviewer", "reviewer__person", "state", "review_request__team") }
-    secretary_roles = { r.pk: r for r in Role.objects.filter(pk__in=assignment_pks.values()).select_related("email", "person") }
+    review_assignments = { a.pk: a for a in ReviewAssignment.objects.filter(pk__in=list(assignment_pks.keys())).select_related("reviewer", "reviewer__person", "state", "review_request__team") }
+    secretary_roles = { r.pk: r for r in Role.objects.filter(pk__in=list(assignment_pks.values())).select_related("email", "person") }
 
-    return [ (review_assignments[a_pk], secretary_roles[secretary_role_pk]) for a_pk, secretary_role_pk in assignment_pks.iteritems() ]
+    return [ (review_assignments[a_pk], secretary_roles[secretary_role_pk]) for a_pk, secretary_role_pk in assignment_pks.items() ]
 
 def email_secretary_reminder(review_request, secretary_role):
     team = review_request.team

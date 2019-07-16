@@ -1,9 +1,12 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 # utilities for constructing agendas for IESG telechats
 
-import codecs
+import io
 import datetime
 from collections import OrderedDict
 
@@ -146,10 +149,10 @@ def fill_in_agenda_administrivia(date, sections):
 
     for s, key, filename in extra_info_files:
         try:
-            with codecs.open(filename, 'r', 'utf-8', 'replace') as f:
+            with io.open(filename, 'r', encoding='utf-8', errors='replace') as f:
                 t = f.read().strip()
         except IOError:
-            t = u"(Error reading %s)" % filename
+            t = "(Error reading %s)" % filename
 
         sections[s]["text"] = t
 
@@ -196,13 +199,13 @@ def fill_in_agenda_docs(date, sections, docs=None):
             sections[number]["docs"].append(doc)
 
     # prune empty "For action" sections
-    empty_for_action = [n for n, section in sections.iteritems()
+    empty_for_action = [n for n, section in sections.items()
                         if section["title"] == "For action" and not section["docs"]]
     for num in empty_for_action:
         del sections[num]
 
     # Be careful to keep this the same as what's used in agenda_documents
-    for s in sections.itervalues():
+    for s in sections.values():
         if "docs" in s:
             s["docs"].sort(key=lambda d: d.balloting_started)
 

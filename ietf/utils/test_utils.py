@@ -1,5 +1,6 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
-
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+#
 # Portion Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -32,28 +33,36 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import re
 import email
 import html5lib
+import six
 import sys
-import urllib2
+
+from six.moves.urllib.parse import unquote
 
 from unittest.util import strclass
 from bs4 import BeautifulSoup
 
 import django.test
 from django.conf import settings
+from django.utils.encoding import python_2_unicode_compatible
 from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
+
+from ietf.utils.mail import get_payload
 
 real_database_name = settings.DATABASES["default"]["NAME"]
 
 def split_url(url):
     if "?" in url:
         url, args = url.split("?", 1)
-        args = dict([ map(urllib2.unquote,arg.split("=", 1)) for arg in args.split("&") if "=" in arg ])
+        args = dict([ list(map(unquote,arg.split("=", 1))) for arg in args.split("&") if "=" in arg ])
     else:
         args = {}
     return url, args
@@ -73,7 +82,7 @@ def unicontent(r):
 
 def textcontent(r):
     text = BeautifulSoup(r.content, 'lxml').get_text()
-    text = re.sub('(\n\s+){2,}', '\n\n', text)
+    text = re.sub(r'(\n\s+){2,}', '\n\n', text)
     return text
 
 def reload_db_objects(*objects):
@@ -92,6 +101,7 @@ class ReverseLazyTest(django.test.TestCase):
         response = self.client.get('/ipr/update/')
         self.assertRedirects(response, "/ipr/", status_code=301)
 
+@python_2_unicode_compatible
 class TestCase(django.test.TestCase):
     """
     Does basically the same as django.test.TestCase, but adds asserts for html5 validation.
@@ -123,6 +133,8 @@ class TestCase(django.test.TestCase):
     def tempdir(self, label):
         slug = slugify(self.__class__.__name__.replace('.','-'))
         dirname = "tmp-{label}-{slug}-dir".format(**locals())
+        if 'VIRTUAL_ENV' in os.environ:
+            dirname = os.path.join(os.environ['VIRTUAL_ENV'], dirname)
         path = os.path.abspath(dirname)
         if not os.path.exists(path):
             os.mkdir(path)
@@ -145,7 +157,7 @@ class TestCase(django.test.TestCase):
 
             errors = [html.tostring(n).decode() for n in PyQuery(response.content)(error_css_selector)]
             if errors:
-                explanation = u"{} != {}\nGot form back with errors:\n----\n".format(response.status_code, 302) + u"----\n".join(errors)
+                explanation = "{} != {}\nGot form back with errors:\n----\n".format(response.status_code, 302) + "----\n".join(errors)
                 self.assertEqual(response.status_code, 302, explanation)
 
         self.assertEqual(response.status_code, 302)
@@ -163,7 +175,8 @@ class TestCase(django.test.TestCase):
         if subject:
             mlist = [ m for m in mlist if subject in m["Subject"] ]
         if text:
-            mlist = [ m for m in mlist if text in m.get_payload(decode=True) ]
+            assert isinstance(text, six.text_type)
+            mlist = [ m for m in mlist if text in get_payload(m) ]
         if count and len(mlist) != count:
             sys.stderr.write("Wrong count in assertMailboxContains().  The complete mailbox contains %s emails:\n\n" % len(mailbox))
             for m in mailbox:
@@ -175,6 +188,6 @@ class TestCase(django.test.TestCase):
             self.assertGreater(len(mlist), 0)
 
     def __str__(self):
-        return "%s (%s.%s)" % (self._testMethodName, strclass(self.__class__),self._testMethodName)
+        return u"%s (%s.%s)" % (self._testMethodName, strclass(self.__class__),self._testMethodName)
 
         

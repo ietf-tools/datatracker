@@ -1,5 +1,14 @@
-import datetime, os, shutil
-import json
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import io
+import os
+import shutil
+import six
 
 import debug    # pyflakes:ignore
 
@@ -7,10 +16,10 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.urls import reverse as urlreverse
 from django.db.models import Q
-from StringIO import StringIO
+from io import StringIO
 from pyquery import PyQuery
 
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox
 
 from ietf.group.factories import GroupFactory, RoleFactory
@@ -57,40 +66,40 @@ class LiaisonTests(TestCase):
 
         r = self.client.get(urlreverse('ietf.liaisons.views.liaison_list'))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in unicontent(r))
+        self.assertContains(r, liaison.title)
 
     def test_details(self):
         liaison = LiaisonStatementFactory()
 
         r = self.client.get(urlreverse("ietf.liaisons.views.liaison_detail", kwargs={ 'object_id': liaison.pk }))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in unicontent(r))
+        self.assertContains(r, liaison.title)
 
     def test_feeds(self):
         liaison = LiaisonStatementFactory(title="Comment from United League of Marsmen")
 
         r = self.client.get('/feed/liaison/recent/')
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in unicontent(r))
+        self.assertContains(r, liaison.title)
 
         r = self.client.get('/feed/liaison/from/%s/' % liaison.from_groups.first().acronym)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in unicontent(r))
+        self.assertContains(r, liaison.title)
 
         r = self.client.get('/feed/liaison/to/%s/' % liaison.to_groups.first().acronym)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in unicontent(r))
+        self.assertContains(r, liaison.title)
 
         r = self.client.get('/feed/liaison/subject/marsmen/')
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in unicontent(r))
+        self.assertContains(r, liaison.title)
 
     def test_sitemap(self):
         liaison = LiaisonStatementFactory()
 
         r = self.client.get('/sitemap-liaison.xml')
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(urlreverse("ietf.liaisons.views.liaison_detail", kwargs={ 'object_id': liaison.pk }) in unicontent(r))
+        self.assertContains(r, urlreverse("ietf.liaisons.views.liaison_detail", kwargs={ 'object_id': liaison.pk }))
 
     def test_help_pages(self):
         self.assertEqual(self.client.get('/liaison/help/').status_code, 200)
@@ -186,7 +195,7 @@ class AjaxTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        data = json.loads(r.content)
+        data = r.json()
         self.assertEqual(data["error"], False)
         self.assertEqual(data["post_only"], False)
         self.assertTrue('cc' in data)
@@ -204,8 +213,8 @@ class AjaxTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        data = json.loads(r.content)
-        self.assertEqual(data["to_contacts"],[u'test@example.com'])
+        data = r.json()
+        self.assertEqual(data["to_contacts"],['test@example.com'])
 
     def test_ajax_select2_search_liaison_statements(self):
         liaison = LiaisonStatementFactory()
@@ -215,14 +224,14 @@ class AjaxTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        data = json.loads(r.content)
+        data = r.json()
         self.assertTrue(liaison.pk in [ x['id'] for x in data ])
 
         # test id search
         url = urlreverse('ietf.liaisons.views.ajax_select2_search_liaison_statements') + "?q=%s" % liaison.pk
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        data = json.loads(r.content)
+        data = r.json()
         self.assertTrue(liaison.pk in [ x['id'] for x in data ])
 
 
@@ -232,7 +241,7 @@ class ManagementCommandTests(TestCase):
 
         LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
 
-        out = StringIO()
+        out = six.StringIO()
         mailbox_before = len(outbox)
         call_command('check_liaison_deadlines',stdout=out)
         self.assertEqual(len(outbox), mailbox_before + 1)
@@ -242,7 +251,7 @@ class ManagementCommandTests(TestCase):
 
         RoleFactory(name_id='liaiman',group__type_id='sdo')
 
-        out = StringIO()
+        out = six.StringIO()
         mailbox_before = len(outbox)
         call_command('remind_update_sdo_list',stdout=out)
         self.assertTrue(len(outbox) > mailbox_before)
@@ -299,10 +308,10 @@ class LiaisonManagementTests(TestCase):
         # private comment
         r = self.client.post(addurl, dict(comment='Private comment',private=True),follow=True)
         self.assertEqual(r.status_code,200)
-        self.assertTrue('Private comment' in r.content)
+        self.assertContains(r, 'Private comment')
         self.client.logout()
         r = self.client.get(url)
-        self.assertFalse('Private comment' in r.content)
+        self.assertNotContains(r, 'Private comment')
 
     def test_taken_care_of(self):
         liaison = LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
@@ -343,14 +352,14 @@ class LiaisonManagementTests(TestCase):
         login_testing_unauthorized(self, "ad", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in unicontent(r))
+        self.assertContains(r, liaison.title)
 
         # check the detail page / unauthorized
         url = urlreverse('ietf.liaisons.views.liaison_detail', kwargs=dict(object_id=liaison.pk))
         self.client.logout()
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in unicontent(r))
+        self.assertContains(r, liaison.title)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form input[name=approved]')), 0)
 
@@ -358,7 +367,7 @@ class LiaisonManagementTests(TestCase):
         self.client.login(username="ulm-liaiman", password="ulm-liaiman+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(liaison.title in unicontent(r))
+        self.assertContains(r, liaison.title)
         q = PyQuery(r.content)
         from ietf.liaisons.utils import can_edit_liaison
         user = User.objects.get(username='ulm-liaiman')
@@ -432,7 +441,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(new_liaison.attachments.count(), attachments_before + 1)
         attachment = new_liaison.attachments.order_by("-name")[0]
         self.assertEqual(attachment.title, "attachment")
-        with open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
+        with io.open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
             written_content = f.read()
 
         test_file.seek(0)
@@ -736,7 +745,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(l.attachments.count(), 1)
         attachment = l.attachments.all()[0]
         self.assertEqual(attachment.title, "attachment")
-        with open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
+        with io.open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
             written_content = f.read()
 
         test_file.seek(0)
@@ -815,7 +824,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(l.attachments.count(), 1)
         attachment = l.attachments.all()[0]
         self.assertEqual(attachment.title, "attachment")
-        with open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
+        with io.open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
             written_content = f.read()
 
         test_file.seek(0)
@@ -1090,7 +1099,7 @@ class LiaisonManagementTests(TestCase):
         r = self.client.post(url,get_liaison_post_data(),follow=True)
 
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('As an IETF Liaison Manager you can not send incoming liaison statements' in unicontent(r))
+        self.assertContains(r, 'As an IETF Liaison Manager you can not send incoming liaison statements')
 
     def test_deadline_field(self):
         '''Required for action, comment, not info, response'''
@@ -1130,7 +1139,7 @@ class LiaisonManagementTests(TestCase):
         r = self.client.post(url,post_data,follow=True)
 
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('You must provide a body or attachment files' in unicontent(r))
+        self.assertContains(r, 'You must provide a body or attachment files')
 
     def test_send_sdo_reminder(self):
         RoleFactory(name_id='liaiman',person__user__username='ulm-liaiman',person__user__email='ulm-liaiman@somewhere.example',group__type_id='sdo',group__acronym='ulm')

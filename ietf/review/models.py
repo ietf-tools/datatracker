@@ -1,10 +1,15 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 
 from simple_history.models import HistoricalRecords
 
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 
 from ietf.doc.models import Document
 from ietf.group.models import Group
@@ -13,6 +18,7 @@ from ietf.name.models import ReviewTypeName, ReviewRequestStateName, ReviewResul
 from ietf.utils.validators import validate_regular_expression_string
 from ietf.utils.models import ForeignKey, OneToOneField
 
+@python_2_unicode_compatible
 class ReviewerSettings(models.Model):
     """Keeps track of admin data associated with a reviewer in a team."""
     history     = HistoricalRecords()
@@ -33,24 +39,26 @@ class ReviewerSettings(models.Model):
     remind_days_before_deadline = models.IntegerField(null=True, blank=True, help_text="To get an email reminder in case you forget to do an assigned review, enter the number of days before review deadline you want to receive it. Clear the field if you don't want a reminder.")
     expertise = models.TextField(verbose_name="Reviewer's expertise in this team's area", max_length=2048, blank=True, help_text="Describe the reviewer's expertise in this team's area", default='')
 
-    def __unicode__(self):
-        return u"{} in {}".format(self.person, self.team)
+    def __str__(self):
+        return "{} in {}".format(self.person, self.team)
 
     class Meta:
         verbose_name_plural = "reviewer settings"
 
+@python_2_unicode_compatible
 class ReviewSecretarySettings(models.Model):
     """Keeps track of admin data associated with a secretary in a team."""
     team        = ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     person      = ForeignKey(Person)
     remind_days_before_deadline = models.IntegerField(null=True, blank=True, help_text="To get an email reminder in case a reviewer forgets to do an assigned review, enter the number of days before review deadline you want to receive it. Clear the field if you don't want a reminder.")
 
-    def __unicode__(self):
-        return u"{} in {}".format(self.person, self.team)
+    def __str__(self):
+        return "{} in {}".format(self.person, self.team)
 
     class Meta:
         verbose_name_plural = "review secretary settings"
 
+@python_2_unicode_compatible
 class UnavailablePeriod(models.Model):
     team         = ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     person       = ForeignKey(Person)
@@ -78,9 +86,10 @@ class UnavailablePeriod(models.Model):
         else:
             return "future"
 
-    def __unicode__(self):
-        return u"{} is unavailable in {} {} - {}".format(self.person, self.team.acronym, self.start_date or "", self.end_date or "")
+    def __str__(self):
+        return "{} is unavailable in {} {} - {}".format(self.person, self.team.acronym, self.start_date or "", self.end_date or "")
 
+@python_2_unicode_compatible
 class ReviewWish(models.Model):
     """Reviewer wishes to review a document when it becomes available for review."""
     time        = models.DateTimeField(default=datetime.datetime.now)
@@ -88,24 +97,26 @@ class ReviewWish(models.Model):
     person      = ForeignKey(Person)
     doc         = ForeignKey(Document)
 
-    def __unicode__(self):
-        return u"{} wishes to review {} in {}".format(self.person, self.doc.name, self.team.acronym)
+    def __str__(self):
+        return "{} wishes to review {} in {}".format(self.person, self.doc.name, self.team.acronym)
 
     class Meta:
         verbose_name_plural = "review wishes"
     
 
+@python_2_unicode_compatible
 class NextReviewerInTeam(models.Model):
     team        = ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     next_reviewer = ForeignKey(Person)
 
-    def __unicode__(self):
-        return u"{} next in {}".format(self.next_reviewer, self.team)
+    def __str__(self):
+        return "{} next in {}".format(self.next_reviewer, self.team)
 
     class Meta:
         verbose_name = "next reviewer in team setting"
         verbose_name_plural = "next reviewer in team settings"
 
+@python_2_unicode_compatible
 class ReviewRequest(models.Model):
     """Represents a request for a review and the process it goes through."""
     state         = ForeignKey(ReviewRequestStateName)
@@ -121,8 +132,8 @@ class ReviewRequest(models.Model):
     requested_rev = models.CharField(verbose_name="requested revision", max_length=16, blank=True, help_text="Fill in if a specific revision is to be reviewed, e.g. 02")
     comment       = models.TextField(verbose_name="Requester's comments and instructions", max_length=2048, blank=True, help_text="Provide any additional information to show to the review team secretary and reviewer", default='')
 
-    def __unicode__(self):
-        return u"%s review on %s by %s %s" % (self.type, self.doc, self.team, self.state)
+    def __str__(self):
+        return "%s review on %s by %s %s" % (self.type, self.doc, self.team, self.state)
 
     def all_completed_assignments_for_doc(self):
         return ReviewAssignment.objects.filter(review_request__doc=self.doc, state__in=['completed','part-completed'])
@@ -130,6 +141,7 @@ class ReviewRequest(models.Model):
     def request_closed_time(self):
         return self.doc.request_closed_time(self) or self.time
 
+@python_2_unicode_compatible
 class ReviewAssignment(models.Model):
     """ One of possibly many reviews assigned in response to a ReviewRequest """
     review_request = ForeignKey(ReviewRequest)
@@ -142,8 +154,8 @@ class ReviewAssignment(models.Model):
     result         = ForeignKey(ReviewResultName, blank=True, null=True)
     mailarch_url   = models.URLField(blank=True, null = True)
 
-    def __unicode__(self):
-        return u"Assignment for %s (%s) : %s %s of %s" % (self.reviewer.person, self.state, self.review_request.team.acronym, self.review_request.type, self.review_request.doc)
+    def __str__(self):
+        return "Assignment for %s (%s) : %s %s of %s" % (self.reviewer.person, self.state, self.review_request.team.acronym, self.review_request.type, self.review_request.doc)
 
 
 def get_default_review_types():
@@ -152,6 +164,7 @@ def get_default_review_types():
 def get_default_review_results():
     return ReviewResultName.objects.filter(slug__in=['not-ready', 'right-track', 'almost-ready', 'ready-issues', 'ready-nits', 'ready'])
 
+@python_2_unicode_compatible
 class ReviewTeamSettings(models.Model):
     """Holds configuration specific to groups that are review teams"""
     group = OneToOneField(Group)
@@ -161,8 +174,8 @@ class ReviewTeamSettings(models.Model):
     notify_ad_when = models.ManyToManyField(ReviewResultName, related_name='reviewteamsettings_notify_ad_set', blank=True)
     secr_mail_alias = models.CharField(verbose_name="Email alias for all of the review team secretaries", max_length=255, blank=True, help_text="Email alias for all of the review team secretaries")
 
-    def __unicode__(self):
-        return u"%s" % (self.group.acronym,)
+    def __str__(self):
+        return "%s" % (self.group.acronym,)
 
     class Meta:
         verbose_name = "Review team settings"

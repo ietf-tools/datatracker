@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 
 import os, sys, re, datetime, argparse, traceback, json, subprocess
 import html5lib
@@ -62,6 +63,7 @@ import debug    # pyflakes:ignore
 
 from ietf.name.models import DocTypeName
 from ietf.utils.html import unescape
+from ietf.utils.test_utils import unicontent
 
 # --- Constants ---
 
@@ -387,7 +389,7 @@ if __name__ == "__main__":
                 if ctype == "text/html":
                     try:
                         if args.follow and not skip_extract_from(url):
-                            for u in extract_html_urls(r.content):
+                            for u in extract_html_urls(unicontent(r)):
                                 if u not in visited and u not in urls:
                                     urls[u] = url
                                     referrers[u] = url
@@ -403,7 +405,7 @@ if __name__ == "__main__":
                 elif ctype == "application/json":
                     try:
                         if args.follow:
-                            for u in extract_tastypie_urls(r.content):
+                            for u in extract_tastypie_urls(unicontent(r)):
                                 if u not in visited and u not in urls:
                                     urls[u] = url
                                     referrers[u] = url

@@ -1,6 +1,6 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-
+#
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -33,7 +33,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os, datetime, urllib, json, glob, re
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import glob
+import io
+import json
+import os
+import re
+import six
+
+from six.moves.urllib.parse import quote
 
 from django.http import HttpResponse, Http404 , HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
@@ -251,7 +262,7 @@ def document_main(request, name, rev=None):
         if iesg_state and iesg_state.slug in IESG_BALLOT_ACTIVE_STATES:
             active_ballot = doc.active_ballot()
             if active_ballot:
-                ballot_summary = needed_ballot_positions(doc, active_ballot.active_ad_positions().values())
+                ballot_summary = needed_ballot_positions(doc, list(active_ballot.active_ad_positions().values()))
 
         # submission
         submission = ""
@@ -312,7 +323,7 @@ def document_main(request, name, rev=None):
         if doc.stream_id == "ietf" and group.type_id == "wg" and group.list_archive:
             search_archive = group.list_archive
 
-        search_archive = urllib.quote(search_archive, safe="~")
+        search_archive = quote(search_archive, safe="~")
 
         # conflict reviews
         conflict_reviews = [d.document.name for d in doc.related_that("conflrev")]
@@ -458,7 +469,7 @@ def document_main(request, name, rev=None):
         if doc.get_state_slug() in ("intrev", "iesgrev"):
             active_ballot = doc.active_ballot()
             if active_ballot:
-                ballot_summary = needed_ballot_positions(doc, active_ballot.active_ad_positions().values())
+                ballot_summary = needed_ballot_positions(doc, list(active_ballot.active_ad_positions().values()))
             else:
                 ballot_summary = "No active ballot found."
 
@@ -493,14 +504,14 @@ def document_main(request, name, rev=None):
 
         if doc.rev == "00" and not os.path.isfile(pathname):
             # This could move to a template
-            content = u"A conflict review response has not yet been proposed."
+            content = "A conflict review response has not yet been proposed."
         else:     
             content = doc.text_or_error() # pyflakes:ignore
             content = markup_txt.markup(content)
 
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval") and doc.active_ballot():
-            ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
+            ballot_summary = needed_ballot_positions(doc, list(doc.active_ballot().active_ad_positions().values()))
 
         return render(request, "doc/document_conflict_review.html",
                                   dict(doc=doc,
@@ -521,13 +532,13 @@ def document_main(request, name, rev=None):
 
         if doc.rev == "00" and not os.path.isfile(pathname):
             # This could move to a template
-            content = u"Status change text has not yet been proposed."
+            content = "Status change text has not yet been proposed."
         else:     
             content = doc.text_or_error() # pyflakes:ignore
 
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval"):
-            ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
+            ballot_summary = needed_ballot_positions(doc, list(doc.active_ballot().active_ad_positions().values()))
      
         if isinstance(doc,Document):
             sorted_relations=doc.relateddocument_set.all().order_by('relationship__name')
@@ -623,7 +634,7 @@ def document_main(request, name, rev=None):
 def document_html(request, name, rev=None):
     if name.startswith('rfc0'):
         name = "rfc" + name[3:].lstrip('0')
-    if name.startswith('review-') and re.search('-\d\d\d\d-\d\d$', name):
+    if name.startswith('review-') and re.search(r'-\d\d\d\d-\d\d$', name):
         name = "%s-%s" % (name, rev)
     if rev and not name.startswith('charter-') and re.search('[0-9]{1,2}-[0-9]{2}', rev):
         name = "%s-%s" % (name, rev[:-3])
@@ -658,10 +669,10 @@ def document_html(request, name, rev=None):
     return render(request, "doc/document_html.html", {"doc":doc, "top":top, "navbar_mode":"navbar-static-top",  })
 
 def check_doc_email_aliases():
-    pattern = re.compile('^expand-(.*?)(\..*?)?@.*? +(.*)$')
+    pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
     good_count = 0
     tot_count = 0
-    with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
+    with io.open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             tot_count += 1
@@ -673,11 +684,11 @@ def check_doc_email_aliases():
 
 def get_doc_email_aliases(name):
     if name:
-        pattern = re.compile('^expand-(%s)(\..*?)?@.*? +(.*)$'%name)
+        pattern = re.compile(r'^expand-(%s)(\..*?)?@.*? +(.*)$'%name)
     else:
-        pattern = re.compile('^expand-(.*?)(\..*?)?@.*? +(.*)$')
+        pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
     aliases = []
-    with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
+    with io.open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             if m:
@@ -1263,7 +1274,7 @@ def add_sessionpresentation(request,name):
     if doc.group:
         sessions = sorted(sessions,key=lambda x:0 if x.group==doc.group else 1)
 
-    session_choices = [(s.pk,unicode(s)) for s in sessions]
+    session_choices = [(s.pk, six.text_type(s)) for s in sessions]
 
     if request.method == 'POST':
         version_form = VersionForm(request.POST,choices=version_choices)

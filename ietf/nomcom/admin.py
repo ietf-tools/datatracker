@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 from django.contrib import admin
 
 from ietf.nomcom.models import ( ReminderDates, NomCom, Nomination, Nominee, NomineePosition, 
@@ -43,7 +49,7 @@ admin.site.register(Position, PositionAdmin)
 
 class FeedbackAdmin(admin.ModelAdmin):
     def nominee(self, obj):
-        return u", ".join(n.person.ascii for n in obj.nominees.all())
+        return ", ".join(n.person.ascii for n in obj.nominees.all())
     nominee.admin_order_field = 'nominees__person__ascii'
 
     list_display = ['id', 'nomcom', 'author', 'nominee', 'subject', 'type', 'user', 'time']

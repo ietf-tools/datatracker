@@ -1,5 +1,8 @@
 # Copyright The IETF Trust 2017-2019, All Rights Reserved
-from __future__ import print_function, unicode_literals
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import json
 

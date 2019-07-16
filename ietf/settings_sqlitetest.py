@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 # Standard settings except we use SQLite and skip migrations, this is
 # useful for speeding up tests that depend on the test database, try
 # for instance:
@@ -6,7 +12,7 @@
 #
 
 import os 
-from settings import *                                          # pyflakes:ignore
+from ietf.settings import *                                          # pyflakes:ignore
 import debug                            # pyflakes:ignore
 debug.debug = True
 

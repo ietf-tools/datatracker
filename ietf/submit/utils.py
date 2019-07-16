@@ -1,7 +1,11 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
+import io
 import os
 import re
 import six                              # pyflakes:ignore
@@ -202,7 +206,7 @@ def post_submission(request, submission, approvedDesc):
     submitter_parsed = submission.submitter_parsed()
     if submitter_parsed["name"] and submitter_parsed["email"]:
         submitter, _ = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"], submission.name)
-        submitter_info = u'%s <%s>' % (submitter_parsed["name"], submitter_parsed["email"])
+        submitter_info = '%s <%s>' % (submitter_parsed["name"], submitter_parsed["email"])
     else:
         submitter = system
         submitter_info = system.name
@@ -460,7 +464,7 @@ def ensure_person_email_info_exists(name, email, docname):
         person.name = name
         person.name_from_draft = name
         log.assertion('isinstance(person.name, six.text_type)')
-        person.ascii = unidecode_name(person.name).decode('ascii')
+        person.ascii = unidecode_name(person.name)
         person.save()
     else:
         person.name_from_draft = name
@@ -472,7 +476,7 @@ def ensure_person_email_info_exists(name, email, docname):
     else:
         # we're in trouble, use a fake one
         active = False
-        addr = u"unknown-email-%s" % person.plain_ascii().replace(" ", "-")
+        addr = "unknown-email-%s" % person.plain_ascii().replace(" ", "-")
 
     try:
         email = person.email_set.get(address=addr)
@@ -525,7 +529,7 @@ def cancel_submission(submission):
 
 def rename_submission_files(submission, prev_rev, new_rev):
     from ietf.submit.forms import SubmissionManualUploadForm
-    for ext in SubmissionManualUploadForm.base_fields.keys():
+    for ext in list(SubmissionManualUploadForm.base_fields.keys()):
         source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, prev_rev, ext))
         dest = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, new_rev, ext))
         if os.path.exists(source):
@@ -533,7 +537,7 @@ def rename_submission_files(submission, prev_rev, new_rev):
 
 def move_files_to_repository(submission):
     from ietf.submit.forms import SubmissionManualUploadForm
-    for ext in SubmissionManualUploadForm.base_fields.keys():
+    for ext in list(SubmissionManualUploadForm.base_fields.keys()):
         source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, submission.rev, ext))
         dest = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, '%s-%s.%s' % (submission.name, submission.rev, ext))
         if os.path.exists(source):
@@ -597,12 +601,9 @@ def expire_submission(submission, by):
 
     SubmissionEvent.objects.create(submission=submission, by=by, desc="Cancelled expired submission")
 
-def get_draft_meta(form):
-    authors = []
+def save_files(form):
     file_name = {}
-    abstract = None
-    file_size = None
-    for ext in form.fields.keys():
+    for ext in list(form.fields.keys()):
         if not ext in form.formats:
             continue
         f = form.cleaned_data[ext]
@@ -611,10 +612,16 @@ def get_draft_meta(form):
 
         name = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (form.filename, form.revision, ext))
         file_name[ext] = name
-        with open(name, 'wb+') as destination:
+        with io.open(name, 'wb+') as destination:
             for chunk in f.chunks():
                 destination.write(chunk)
+    return file_name
 
+def get_draft_meta(form, saved_files):
+    authors = []
+    file_name = saved_files
+    abstract = None
+    file_size = None
     if form.cleaned_data['xml']:
         if not ('txt' in form.cleaned_data and form.cleaned_data['txt']):
             file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (form.filename, form.revision))
@@ -641,8 +648,8 @@ def get_draft_meta(form):
         # Some meta-information, such as the page-count, can only
         # be retrieved from the generated text file.  Provide a
         # parsed draft object to get at that kind of information.
-        with open(file_name['txt']) as txt_file:
-            form.parsed_draft = Draft(txt_file.read().decode('utf8'), txt_file.name)
+        with io.open(file_name['txt']) as txt_file:
+            form.parsed_draft = Draft(txt_file.read(), txt_file.name)
 
     else:
         file_size = form.cleaned_data['txt'].size
@@ -665,9 +672,9 @@ def get_draft_meta(form):
 
             def turn_into_unicode(s):
                 if s is None:
-                    return u""
+                    return ""
 
-                if isinstance(s, unicode):
+                if isinstance(s, six.text_type):
                     return s
                 else:
                     try:
@@ -762,8 +769,8 @@ def send_confirmation_emails(request, submission, requires_group_approval, requi
 
         sent_to = send_approval_request_to_group(request, submission)
 
-        desc = "sent approval email to group chairs: %s" % u", ".join(sent_to)
-        docDesc = u"Request for posting approval emailed to group chairs: %s" % u", ".join(sent_to)
+        desc = "sent approval email to group chairs: %s" % ", ".join(sent_to)
+        docDesc = "Request for posting approval emailed to group chairs: %s" % ", ".join(sent_to)
 
     else:
         group_authors_changed = False
@@ -783,11 +790,11 @@ def send_confirmation_emails(request, submission, requires_group_approval, requi
         sent_to = send_submission_confirmation(request, submission, chair_notice=group_authors_changed)
 
         if submission.state_id == "aut-appr":
-            desc = u"sent confirmation email to previous authors: %s" % u", ".join(sent_to)
-            docDesc = "Request for posting confirmation emailed to previous authors: %s" % u", ".join(sent_to)
+            desc = "sent confirmation email to previous authors: %s" % ", ".join(sent_to)
+            docDesc = "Request for posting confirmation emailed to previous authors: %s" % ", ".join(sent_to)
         else:
-            desc = u"sent confirmation email to submitter and authors: %s" % u", ".join(sent_to)
-            docDesc = "Request for posting confirmation emailed to submitter and authors: %s" % u", ".join(sent_to)
+            desc = "sent confirmation email to submitter and authors: %s" % ", ".join(sent_to)
+            docDesc = "Request for posting confirmation emailed to submitter and authors: %s" % ", ".join(sent_to)
     return sent_to, desc, docDesc
 
     

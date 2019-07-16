@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 '''
 Functions to aid unit testing
 '''
@@ -9,7 +15,7 @@ def reset():
     me = Person.objects.get(name='Ryan Cross')
     me.role_set.all().delete()
     Role.objects.create(person=me,email_id='rcross@amsl.com',name_id='secr',group_id=4)
-    print me.role_set.all()
+    print(me.role_set.all())
     
 def copy_roles(person):
     '''Copy the roles of person'''
@@ -17,4 +23,4 @@ def copy_roles(person):
     me.role_set.all().delete()
     for role in person.role_set.all():
         Role.objects.create(person=me,email_id='rcross@amsl.com',name=role.name,group=role.group)
-    print me.role_set.all()
+    print(me.role_set.all())

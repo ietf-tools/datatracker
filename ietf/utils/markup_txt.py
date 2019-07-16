@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+#
 # Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -30,30 +33,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import re
-import six
-import string
+import six                              # pyflakes:ignore
 
 from django.utils.html import escape
 
 from ietf.utils import log
 from ietf.utils.text import wordwrap
-
-def markup_ascii(content, width=None):
-    log.unreachable('2017-12-08')
-    if six.PY2:
-        assert isinstance(content, basestring)
-        # at this point, "content" is normal string
-        # fix most common non-ASCII characters
-        t1 = string.maketrans("\x91\x92\x93\x94\x95\x96\x97\xc6\xe8\xe9", "\'\'\"\"o--\'ee")
-        # map everything except printable ASCII, TAB, LF, FF to "?"
-        t2 = string.maketrans('','')
-        t3 = "?"*9 + "\t\n?\f" + "?"*19 + t2[32:127] + "?"*129
-        t4 = t1.translate(t3)
-        content = content.translate(t4)
-    else:
-        log.assertion('six.PY2')
-    return markup(content.decode('ascii'), width)
 
 def markup(content, width=None):
     log.assertion('isinstance(content, six.text_type)')
@@ -73,11 +62,11 @@ def markup(content, width=None):
     # expand tabs + escape 
     content = escape(content.expandtabs())
 
-    content = re.sub("\n(.+\[Page \d+\])\n\f\n(.+)\n", """\n<span class="m_ftr">\g<1></span>\n<span class="m_hdr">\g<2></span>\n""", content)
-    content = re.sub("\n(.+\[Page \d+\])\n\s*$", """\n<span class="m_ftr">\g<1></span>\n""", content)
+    content = re.sub(r"\n(.+\[Page \d+\])\n\f\n(.+)\n", r"""\n<span class="m_ftr">\g<1></span>\n<span class="m_hdr">\g<2></span>\n""", content)
+    content = re.sub(r"\n(.+\[Page \d+\])\n\s*$", r"""\n<span class="m_ftr">\g<1></span>\n""", content)
     # remove remaining FFs (to be valid XHTML)
     content = content.replace("\f","\n")
 
-    content = re.sub("\n\n([0-9]+\\.|[A-Z]\\.[0-9]|Appendix|Status of|Abstract|Table of|Full Copyright|Copyright|Intellectual Property|Acknowled|Author|Index)(.*)(?=\n\n)", """\n\n<span class="m_h">\g<1>\g<2></span>""", content)
+    content = re.sub(r"\n\n([0-9]+\\.|[A-Z]\\.[0-9]|Appendix|Status of|Abstract|Table of|Full Copyright|Copyright|Intellectual Property|Acknowled|Author|Index)(.*)(?=\n\n)", r"""\n\n<span class="m_h">\g<1>\g<2></span>""", content)
 
     return "<pre>" + content + "</pre>\n"

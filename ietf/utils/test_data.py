@@ -1,7 +1,9 @@
-# Copyright The IETF Trust 2017-2019, All Rights Reserved
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 
 import datetime
 
@@ -98,7 +100,7 @@ def make_immutable_base_data():
 
     # one area
     area = create_group(name="Far Future", acronym="farfut", type_id="area", parent=ietf)
-    create_person(area, "ad", name=u"Areað Irector", username="ad", email_address="aread@example.org")
+    create_person(area, "ad", name="Areað Irector", username="ad", email_address="aread@example.org")
 
     # second area
     opsarea = create_group(name="Operations", acronym="ops", type_id="area", parent=ietf)
@@ -338,7 +340,7 @@ def make_test_data():
     
     # meeting
     Meeting.objects.create(
-        number="42",
+        number="72",
         type_id="ietf",
         date=datetime.date.today() + datetime.timedelta(days=180),
         city="New York",
@@ -421,7 +423,7 @@ def make_review_data(doc):
     u = User.objects.create(username="reviewer")
     u.set_password("reviewer+password")
     u.save()
-    reviewer = Person.objects.create(name=u"Some Réviewer", ascii="Some Reviewer", user=u)
+    reviewer = Person.objects.create(name="Some Réviewer", ascii="Some Reviewer", user=u)
     email = Email.objects.create(address="reviewer@example.com", person=reviewer, origin=u.username)
 
     for team in (team1, team2, team3):
@@ -444,14 +446,14 @@ def make_review_data(doc):
     u = User.objects.create(username="reviewsecretary")
     u.set_password("reviewsecretary+password")
     u.save()
-    reviewsecretary = Person.objects.create(name=u"Réview Secretary", ascii="Review Secretary", user=u)
+    reviewsecretary = Person.objects.create(name="Réview Secretary", ascii="Review Secretary", user=u)
     reviewsecretary_email = Email.objects.create(address="reviewsecretary@example.com", person=reviewsecretary, origin=u.username)
     Role.objects.create(name_id="secr", person=reviewsecretary, email=reviewsecretary_email, group=team1)
 
     u = User.objects.create(username="reviewsecretary3")
     u.set_password("reviewsecretary3+password")
     u.save()
-    reviewsecretary3 = Person.objects.create(name=u"Réview Secretary3", ascii="Review Secretary3", user=u)
+    reviewsecretary3 = Person.objects.create(name="Réview Secretary3", ascii="Review Secretary3", user=u)
     reviewsecretary3_email = Email.objects.create(address="reviewsecretary3@example.com", person=reviewsecretary, origin=u.username)
     Role.objects.create(name_id="secr", person=reviewsecretary3, email=reviewsecretary3_email, group=team3)
     

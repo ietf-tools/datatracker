@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 from django.contrib import admin
 
 from ietf.meeting.models import (Meeting, Room, Session, TimeSlot, Constraint, Schedule,
@@ -37,7 +43,7 @@ class MeetingAdmin(admin.ModelAdmin):
         if instance.country:
             loc.append(instance.get_country_display())
 
-        return u", ".join(loc)
+        return ", ".join(loc)
 
 admin.site.register(Meeting, MeetingAdmin)
 
@@ -53,7 +59,7 @@ class TimeSlotAdmin(admin.ModelAdmin):
             if instance.session.name:
                 return instance.session.name
             elif instance.session.group:
-                return u"%s (%s)" % (instance.session.group.name, instance.session.group.acronym)
+                return "%s (%s)" % (instance.session.group.name, instance.session.group.acronym)
 
         return ""
     session_desc.short_description = "session"

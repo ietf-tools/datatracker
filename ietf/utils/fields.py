@@ -1,8 +1,12 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
-import re
-import six
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
+import six
+import re
 
 import debug                            # pyflakes:ignore
 
@@ -19,7 +23,7 @@ class MultiEmailField(forms.Field):
         if not value:
             return []
 
-        if isinstance(value, basestring):
+        if isinstance(value, six.string_types):
             values = value.split(',')
             return [ x.strip() for x in values if x.strip() ]
         else:
@@ -27,7 +31,6 @@ class MultiEmailField(forms.Field):
 
     def validate(self, value):
         "Check if value consists only of valid emails."
-
         # Use the parent's handling of required fields, etc.
         super(MultiEmailField, self).validate(value)
 
@@ -72,7 +75,7 @@ class DatepickerDateField(forms.DateField):
         self.widget.attrs["data-date-format"] = date_format
         if "placeholder" not in self.widget.attrs:
             self.widget.attrs["placeholder"] = date_format
-        for k, v in picker_settings.iteritems():
+        for k, v in picker_settings.items():
             self.widget.attrs["data-date-%s" % k] = v
 
 
@@ -104,7 +107,7 @@ def parse_duration_ext(value):
             return parse_duration(value)
         else:
             kw = match.groupdict()
-            kw = {k: float(v) for k, v in six.iteritems(kw) if v is not None}
+            kw = {k: float(v) for k, v in kw.items() if v is not None}
             return datetime.timedelta(**kw)
 
 class DurationField(forms.DurationField):

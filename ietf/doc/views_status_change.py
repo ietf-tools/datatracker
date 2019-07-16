@@ -1,7 +1,13 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import datetime, os, re
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import io
+import os
+import re
 
 from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
@@ -9,6 +15,7 @@ from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.conf import settings
+from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
 
@@ -124,7 +131,7 @@ class UploadForm(forms.Form):
 
     def save(self, doc):
        filename = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
-       with open(filename, 'wb') as destination:
+       with io.open(filename, 'w', encoding='utf-8') as destination:
            if self.cleaned_data['txt']:
                destination.write(self.cleaned_data['txt'])
            else:
@@ -188,7 +195,7 @@ def submit(request, name):
         else:
             filename = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
             try:
-                with open(filename, 'r') as f:
+                with io.open(filename, 'r') as f:
                     init["content"] = f.read()
             except IOError:
                 pass
@@ -392,10 +399,10 @@ def clean_helper(form, formtype):
         new_relations = {}
         rfc_fields = {}
         status_fields={}
-        for k in sorted(form.data.iterkeys()):
+        for k in sorted(form.data.keys()):
             v = form.data[k]
             if k.startswith('new_relation_row'):
-                if re.match('\d{1,4}',v):
+                if re.match(r'\d{1,4}',v):
                     v = 'rfc'+v
                 rfc_fields[k[17:]]=v
             elif k.startswith('statchg_relation_row'):
@@ -412,7 +419,7 @@ def clean_helper(form, formtype):
         errors=[]
         for key in new_relations:
 
-           if not re.match('(?i)rfc\d{1,4}',key):
+           if not re.match(r'(?i)rfc\d{1,4}',key):
               errors.append(key+" is not a valid RFC - please use the form RFCn\n")
            elif not DocAlias.objects.filter(name=key):
               errors.append(key+" does not exist\n")
@@ -634,7 +641,7 @@ def generate_last_call_text(request, doc):
     e.doc = doc
     e.rev = doc.rev
     e.desc = 'Last call announcement was generated'
-    e.text = unicode(new_text)
+    e.text = force_text(new_text)
     e.save()
 
     return e 

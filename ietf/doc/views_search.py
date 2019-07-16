@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-
+#
 # Some parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -32,6 +32,9 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import re
 import datetime
@@ -265,7 +268,7 @@ def search_for_name(request, name):
             return HttpResponseRedirect(url)
 
     # chop away extension
-    extension_split = re.search("^(.+)\.(txt|ps|pdf)$", n)
+    extension_split = re.search(r"^(.+)\.(txt|ps|pdf)$", n)
     if extension_split:
         n = extension_split.group(1)
 
@@ -494,7 +497,7 @@ def index_all_drafts(request):
 
             if name.startswith("rfc"):
                 name = name.upper()
-                sort_key = -int(name[3:])
+                sort_key = '%09d' % (100000000-int(name[3:]))
 
             names.append((name, sort_key))
 

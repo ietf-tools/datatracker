@@ -1,6 +1,9 @@
-# Copyright The IETF Trust 2017, All Rights Reserved
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 
 import datetime
 import debug #pyflakes:ignore

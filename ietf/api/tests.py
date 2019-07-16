@@ -1,6 +1,9 @@
-# Copyright The IETF Trust 2015-2018, All Rights Reserved
+# Copyright The IETF Trust 2015-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
-import json
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import sys
 
@@ -194,7 +197,7 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
         client = Client(Accept='application/json')
         r = client.get("/api/v1/")
         self.assertValidJSONResponse(r)        
-        resource_list = json.loads(r.content)
+        resource_list = r.json()
 
         for name in self.apps:
             if not name in self.apps:
@@ -207,19 +210,19 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
     def test_all_model_resources_exist(self):
         client = Client(Accept='application/json')
         r = client.get("/api/v1")
-        top = json.loads(r.content)
+        top = r.json()
         for name in self.apps:
             app_name = self.apps[name]
             app = import_module(app_name)
             self.assertEqual("/api/v1/%s/"%name, top[name]["list_endpoint"])
             r = client.get(top[name]["list_endpoint"])
             self.assertValidJSONResponse(r)
-            app_resources = json.loads(r.content)
+            app_resources = r.json()
             #
             model_list = apps.get_app_config(name).get_models()
             for model in model_list:
-                if not model._meta.model_name in app_resources.keys():
+                if not model._meta.model_name in list(app_resources.keys()):
                     #print("There doesn't seem to be any resource for model %s.models.%s"%(app.__name__,model.__name__,))
-                    self.assertIn(model._meta.model_name, app_resources.keys(),
+                    self.assertIn(model._meta.model_name, list(app_resources.keys()),
                         "There doesn't seem to be any API resource for model %s.models.%s"%(app.__name__,model.__name__,))
 

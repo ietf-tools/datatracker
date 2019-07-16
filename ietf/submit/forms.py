@@ -1,10 +1,19 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os
 import re
 import datetime
 import email
 import pytz
-import xml2rfc
+import six
 import tempfile
+import xml2rfc
+
 from email.utils import formataddr
 from unidecode import unidecode
 
@@ -12,6 +21,7 @@ from django import forms
 from django.conf import settings
 from django.utils.html import mark_safe
 from django.urls import reverse as urlreverse
+from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
@@ -32,7 +42,7 @@ from ietf.submit.parsers.xml_parser import XMLParser
 from ietf.utils.draft import Draft
 
 class SubmissionBaseUploadForm(forms.Form):
-    xml = forms.FileField(label=u'.xml format', required=True)
+    xml = forms.FileField(label='.xml format', required=True)
 
     def __init__(self, request, *args, **kwargs):
         super(SubmissionBaseUploadForm, self).__init__(*args, **kwargs)
@@ -107,9 +117,9 @@ class SubmissionBaseUploadForm(forms.Form):
         if not f:
             return f
 
-        parsed_info = parser_class(f).critical_parse()
-        if parsed_info.errors:
-            raise forms.ValidationError(parsed_info.errors)
+        self.parsed_info = parser_class(f).critical_parse()
+        if self.parsed_info.errors:
+            raise forms.ValidationError(self.parsed_info.errors)
 
         return f
 
@@ -139,7 +149,7 @@ class SubmissionBaseUploadForm(forms.Form):
                 # over to the xml parser.  XXX FIXME: investigate updating
                 # xml2rfc to be able to work with file handles to in-memory
                 # files.
-                with open(tfn, 'wb+') as tf:
+                with io.open(tfn, 'wb+') as tf:
                     for chunk in xml_file.chunks():
                         tf.write(chunk)
                 os.environ["XML_LIBRARY"] = settings.XML_LIBRARY
@@ -184,10 +194,10 @@ class SubmissionBaseUploadForm(forms.Form):
                     self.revision = None
                     self.filename = draftname
                 self.title = self.xmlroot.findtext('front/title').strip()
-                if type(self.title) is unicode:
+                if type(self.title) is six.text_type:
                     self.title = unidecode(self.title)
                 self.abstract = (self.xmlroot.findtext('front/abstract') or '').strip()
-                if type(self.abstract) is unicode:
+                if type(self.abstract) is six.text_type:
                     self.abstract = unidecode(self.abstract)
                 author_info = self.xmlroot.findall('front/author')
                 for author in author_info:
@@ -214,7 +224,7 @@ class SubmissionBaseUploadForm(forms.Form):
             bytes = txt_file.read()
             txt_file.seek(0)
             try:
-                text = bytes.decode('utf8')
+                text = bytes.decode(self.parsed_info.charset)
             except UnicodeDecodeError as e:
                 raise forms.ValidationError('Failed decoding the uploaded file: "%s"' % str(e))
             #
@@ -304,7 +314,7 @@ class SubmissionBaseUploadForm(forms.Form):
         else:
             name_parts = name.split("-")
             if len(name_parts) < 3:
-                raise forms.ValidationError(u"The draft name \"%s\" is missing a third part, please rename it" % name)
+                raise forms.ValidationError("The draft name \"%s\" is missing a third part, please rename it" % name)
 
             if name.startswith('draft-ietf-') or name.startswith("draft-irtf-"):
 
@@ -339,10 +349,10 @@ class SubmissionBaseUploadForm(forms.Form):
             return None
 
 class SubmissionManualUploadForm(SubmissionBaseUploadForm):
-    xml = forms.FileField(label=u'.xml format', required=False) # xml field with required=False instead of True
-    txt = forms.FileField(label=u'.txt format', required=False)
-    pdf = forms.FileField(label=u'.pdf format', required=False)
-    ps  = forms.FileField(label=u'.ps format', required=False)
+    xml = forms.FileField(label='.xml format', required=False) # xml field with required=False instead of True
+    txt = forms.FileField(label='.txt format', required=False)
+    pdf = forms.FileField(label='.pdf format', required=False)
+    ps  = forms.FileField(label='.ps format', required=False)
 
     def __init__(self, request, *args, **kwargs):
         super(SubmissionManualUploadForm, self).__init__(request, *args, **kwargs)
@@ -368,7 +378,7 @@ class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
 
 class NameEmailForm(forms.Form):
     name = forms.CharField(required=True)
-    email = forms.EmailField(label=u'Email address', required=True)
+    email = forms.EmailField(label='Email address', required=True)
 
     def __init__(self, *args, **kwargs):
         super(NameEmailForm, self).__init__(*args, **kwargs)
@@ -392,7 +402,7 @@ class AuthorForm(NameEmailForm):
 
 class SubmitterForm(NameEmailForm):
     #Fields for secretariat only
-    approvals_received = forms.BooleanField(label=u'Approvals received', required=False, initial=False)
+    approvals_received = forms.BooleanField(label='Approvals received', required=False, initial=False)
 
     def cleaned_line(self):
         line = self.cleaned_data["name"]
@@ -422,13 +432,13 @@ class ReplacesForm(forms.Form):
 
 class EditSubmissionForm(forms.ModelForm):
     title = forms.CharField(required=True, max_length=255)
-    rev = forms.CharField(label=u'Revision', max_length=2, required=True)
+    rev = forms.CharField(label='Revision', max_length=2, required=True)
     document_date = forms.DateField(required=True)
     pages = forms.IntegerField(required=True)
     formal_languages = forms.ModelMultipleChoiceField(queryset=FormalLanguageName.objects.filter(used=True), widget=forms.CheckboxSelectMultiple, required=False)
     abstract = forms.CharField(widget=forms.Textarea, required=True, strip=False)
 
-    note = forms.CharField(label=mark_safe(u'Comment to the Secretariat'), widget=forms.Textarea, required=False, strip=False)
+    note = forms.CharField(label=mark_safe('Comment to the Secretariat'), widget=forms.Textarea, required=False, strip=False)
 
     class Meta:
         model = Submission
@@ -507,7 +517,7 @@ class SubmissionEmailForm(forms.Form):
         '''Returns a ietf.message.models.Message object'''
         self.message_text = self.cleaned_data['message']
         try:
-            message = email.message_from_string(self.message_text)
+            message = email.message_from_string(force_str(self.message_text))
         except Exception as e:
             self.add_error('message', e)
             return None

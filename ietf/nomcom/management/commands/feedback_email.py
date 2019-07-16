@@ -1,3 +1,10 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import sys
 
 from django.core.management.base import BaseCommand, CommandError
@@ -10,7 +17,7 @@ from ietf.nomcom.fields import EncryptedException
 import debug                            # pyflakes:ignore
 
 class Command(BaseCommand):
-    help = (u"Receive nomcom email, encrypt and save it.")
+    help = ("Receive nomcom email, encrypt and save it.")
 
     def add_arguments(self, parser):
          parser.add_argument('--nomcom-year', dest='year', help='NomCom year')
@@ -30,7 +37,7 @@ class Command(BaseCommand):
         if not email:
             msg = sys.stdin.read()
         else:
-            msg = open(email, "r").read()
+            msg = io.open(email, "r").read()
 
         try:
             nomcom = NomCom.objects.get(group__acronym__icontains=year,
@@ -40,6 +47,6 @@ class Command(BaseCommand):
 
         try:
             feedback = create_feedback_email(nomcom, msg)
-            log(u"Received nomcom email from %s" % feedback.author)
+            log("Received nomcom email from %s" % feedback.author)
         except (EncryptedException, ValueError) as e:
             raise CommandError(e)

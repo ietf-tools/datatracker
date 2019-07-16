@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 
 from django import template
@@ -19,14 +25,14 @@ def show_submission_files(context, submission):
             continue
         result.append({'ext': '%s' % ext[1:],
                        'exists': exists,
-		       'url': '%s%s-%s%s' % (settings.IDSUBMIT_STAGING_URL, submission.name, submission.rev, ext)})
+                       'url': '%s%s-%s%s' % (settings.IDSUBMIT_STAGING_URL, submission.name, submission.rev, ext)})
     return {'files': result}
 
 
 @register.filter
 def two_pages_decorated_with_errors(submission, errors):
     pages = submission.first_two_pages or ''
-    if 'rev' not in errors.keys():
+    if 'rev' not in list(errors.keys()):
         return mark_safe('<pre>%s</pre>' % escape(pages))
     result = '<pre>\n'
     for line in pages.split('\n'):

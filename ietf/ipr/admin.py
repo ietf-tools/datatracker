@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2010-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 from django import forms
 from django.contrib import admin
 from ietf.name.models import DocRelationshipName
@@ -43,7 +46,7 @@ class IprDisclosureBaseAdmin(admin.ModelAdmin):
     inlines = [IprDocRelInline,RelatedIprInline]
     
     def related_docs(self, obj):
-        return u", ".join(a.formatted_name() for a in IprDocRel.objects.filter(disclosure=obj).order_by("id").select_related("document"))
+        return ", ".join(a.formatted_name() for a in IprDocRel.objects.filter(disclosure=obj).order_by("id").select_related("document"))
 
 admin.site.register(IprDisclosureBase, IprDisclosureBaseAdmin)
 
@@ -53,7 +56,7 @@ class HolderIprDisclosureAdmin(admin.ModelAdmin):
     inlines = [IprDocRelInline,RelatedIprInline]
     
     def related_docs(self, obj):
-        return u", ".join(a.formatted_name() for a in IprDocRel.objects.filter(disclosure=obj).order_by("id").select_related("document"))
+        return ", ".join(a.formatted_name() for a in IprDocRel.objects.filter(disclosure=obj).order_by("id").select_related("document"))
 
 admin.site.register(HolderIprDisclosure, HolderIprDisclosureAdmin)
 
@@ -63,7 +66,7 @@ class ThirdPartyIprDisclosureAdmin(admin.ModelAdmin):
     inlines = [IprDocRelInline,RelatedIprInline]
     
     def related_docs(self, obj):
-        return u", ".join(a.formatted_name() for a in IprDocRel.objects.filter(disclosure=obj).order_by("id").select_related("document"))
+        return ", ".join(a.formatted_name() for a in IprDocRel.objects.filter(disclosure=obj).order_by("id").select_related("document"))
 
 admin.site.register(ThirdPartyIprDisclosure, ThirdPartyIprDisclosureAdmin)
 
@@ -73,7 +76,7 @@ class GenericIprDisclosureAdmin(admin.ModelAdmin):
     inlines = [RelatedIprInline]
     
     def related_docs(self, obj):
-        return u", ".join(a.formatted_name() for a in IprDocRel.objects.filter(disclosure=obj).order_by("id").select_related("document"))
+        return ", ".join(a.formatted_name() for a in IprDocRel.objects.filter(disclosure=obj).order_by("id").select_related("document"))
 
 admin.site.register(GenericIprDisclosure, GenericIprDisclosureAdmin)
 
@@ -83,7 +86,7 @@ class NonDocSpecificIprDisclosureAdmin(admin.ModelAdmin):
     inlines = [RelatedIprInline]
     
     def related_docs(self, obj):
-        return u", ".join(a.formatted_name() for a in IprDocRel.objects.filter(disclosure=obj).order_by("id").select_related("document"))
+        return ", ".join(a.formatted_name() for a in IprDocRel.objects.filter(disclosure=obj).order_by("id").select_related("document"))
 
 admin.site.register(NonDocSpecificIprDisclosure, NonDocSpecificIprDisclosureAdmin)
 
@@ -105,7 +108,7 @@ class IprEventAdmin(admin.ModelAdmin):
 admin.site.register(IprEvent, IprEventAdmin)
 
 class LegacyMigrationIprEventAdmin(admin.ModelAdmin):
-    list_display = [u'id', 'time', 'type', 'by', 'disclosure', 'desc', 'message', 'in_reply_to', 'response_due']
+    list_display = ['id', 'time', 'type', 'by', 'disclosure', 'desc', 'message', 'in_reply_to', 'response_due']
     list_filter = ['time', 'type', 'response_due']
     raw_id_fields = ['by', 'disclosure', 'message', 'in_reply_to']
 admin.site.register(LegacyMigrationIprEvent, LegacyMigrationIprEventAdmin)

@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 from django.conf import settings
 
 from ietf.person.models import Person
@@ -32,8 +38,8 @@ def get_last_revision(filename):
     """
     files = glob.glob(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR,filename) + '-??.txt')
     if files:
-	sorted_files = sorted(files)
-	return get_revision(sorted_files[-1])
+        sorted_files = sorted(files)
+        return get_revision(sorted_files[-1])
     else:
         raise Exception('last revision not found in archive')
 

@@ -1,5 +1,11 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
-from StringIO import StringIO
+from io import StringIO
 
 from django.contrib import messages
 from django.db.models import Q
@@ -109,7 +115,7 @@ def merge(request):
             output = StringIO()
             success, changes = merge_persons(source, target, file=output)
             if success:
-                messages.success(request, u'Merged {} ({}) to {} ({}). {})'.format(
+                messages.success(request, 'Merged {} ({}) to {} ({}). {})'.format(
                     source.name, source_id, target.name, target.id, changes))
             else:
                 messages.error(request, output)

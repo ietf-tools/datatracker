@@ -1,18 +1,21 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os.path
-import types
 import shutil
+import six
+import types
 
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from fnmatch import fnmatch
 from importlib import import_module
-from pipe import pipe
-from StringIO import StringIO
+from .pipe import pipe
 from textwrap import dedent
 from unittest import skipIf
 from tempfile import mkdtemp
@@ -26,6 +29,7 @@ from django.template.defaulttags import URLNode
 from django.template.loader import get_template
 from django.templatetags.static import StaticNode
 from django.urls import reverse as urlreverse
+from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
 
@@ -36,7 +40,7 @@ from ietf.submit.tests import submission_file
 from ietf.utils.bower_storage import BowerStorageFinder
 from ietf.utils.draft import Draft, getmeta
 from ietf.utils.log import unreachable, assertion
-from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox 
+from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox, get_payload
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase
 
@@ -68,7 +72,7 @@ body
         self.assertSameEmail(recv['Cc'], 'cc1@example.com, cc2@example.com')
         self.assertSameEmail(recv['Bcc'], None)
         self.assertEqual(recv['Subject'], 'subject')
-        self.assertEqual(recv.get_payload(), 'body\n')
+        self.assertEqual(get_payload(recv), 'body\n')
 
         override = {
             'To': 'oto1@example.net, oto2@example.net',
@@ -98,7 +102,7 @@ body
         self.assertSameEmail(recv['Cc'], '<occ1@example.net>, occ2@example.net')
         self.assertSameEmail(recv['Bcc'], None)
         self.assertEqual(recv['Subject'], 'osubject')
-        self.assertEqual(recv.get_payload(), 'body\n')
+        self.assertEqual(get_payload(recv), 'body\n')
 
         extra = {'Fuzz': [ 'bucket' ]}
         send_mail_preformatted(request=None, preformatted=msg, extra=extra, override={})
@@ -115,7 +119,7 @@ class TestSMTPServer(TestCase):
     def test_address_rejected(self):
 
         def send_simple_mail(to):
-            send_mail_text(None, to=to, frm=None, subject="Test for rejection", txt=u"dummy body")
+            send_mail_text(None, to=to, frm=None, subject="Test for rejection", txt="dummy body")
 
         len_before = len(outbox)
         send_simple_mail('good@example.com,poison@example.com')
@@ -131,7 +135,7 @@ class TestSMTPServer(TestCase):
 
         def send_complex_mail(to):
             msg = MIMEMultipart()
-            textpart= MIMEText(dedent(u"""\
+            textpart= MIMEText(dedent("""\
                              Sometimes people send mail with things like “smart quotes” in them.
                              Sometimes they have attachments with pictures.
                               """),_charset='utf-8')
@@ -139,7 +143,7 @@ class TestSMTPServer(TestCase):
             img = MIMEImage(b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x06\x00\x00\x00\x1f\xf3\xffa\x00\x00\x02\x88IDATx\xda\xa5\x93\xcbO\x13Q\x14\xc6\xbf\xb9\xd32}L\x9fZ\x06\x10Q\x90\x10\x85b\x89\xfe\x01\x06BXK"\xd4hB\xdc\xa0\x06q\xe1c% H1l\xd0\x8dbT6\x1a5\x91\x12#K\x891\xf2\x07\x98\xc8[L\x1ay\xa8@\xdb\xd0\xd2\xe9\x83N;\xbdc\x1f\x11\x03\x04\x17zW\'_\xce\xf9\xdd\xef\x9c\x9c\xc3\xe0?\x1f\xb3S\xf8\xfe\xba\xc2Be\xa9]m\xd6\x9e\xe6x\xde\x9e\xd1\xa4HdF\x0e\xc5G\x89\x8a{X\xec\xfc\x1a\xdc\x1307X\xd4$T\nC\xc6\xfc|\x13\x8d\xa6\x00\xe5O\x16\xd1\xb3\x10}\xbe\x90w\xce\xdbZyeed\x17\xc03(4\x15\x9d(s\x13\xca!\x10\xa6\xb0\x1a\xb6\x9b\x0b\x84\x95\xb4F@\x89\x84\xe5O\x0b\xcdG\xaf\xae\x8dl\x01V\x9f\x1d\xb4q\x16\xde\xa33[\x8d\xe3\x93)\xdc\x7f\x9b\xc4\xf3\x1b\x1c,|\xaex#\n\xb4\x0cH\xb8\xd6\xa8F\xad\x83El# \xc6\x83\xb1\xf2\xa2\x0bK\xfe,`y\xd0\xe6*<V\xda\x99\x92\x15\xb8\xdc\x14\xef>\x03\xaes\x0c\xea\xaas.\xc6g\x14t\xbcR\xd0P\x03t;\tX\x15\x83\xd5\xf9\xc5\xbe\x926_W6\xe3\xe7ca\xc2Z,82\xb1\xeb\r\x8b\xb1)\x82\xde\xa6\x14\xea\xec4\x0b\xf88K\xd0\xe5fQ_M\xd1s&\x95k\xe9\x87w\xf2\xc0eoM\x16\xe0\x1b*\xdc4XM\x9aL\xfca\x8e\xc5\xbd1\x0e//\xc6`\xd5\xe7Z\x08\xa6[8\xffT\x87\xeb\r\x12\xea\xabr\x80p \x14\xcfo]\xd5f\x01k\x8fl\x9bF3\xaf\xf9=\xb0X\x82\x81.O\xd96\xc4\x9d\x9a\xb8\x11\x89\x17\xb4\xf9s\x80\xe5\x01\xc3\xc4\xfe}FG\\\x064\xaa\xbf/\x0eM3\x92i\x13\xe1\x908Yr3\x9ck\xe1[\xbf\xd6%X\xf4\x9d\xef=z$(\xc1\xa9\xc3Q\xf0\x1c\xddV(\xa7\x18Ly9L\xafq8{\\D0\x14\xbd{\xe4V\xac3\x0bX\xe8\xd7\xdb\xb4,\xf5\x18\xb4j\xe3\xf8\xa2\x1e/\xa6\xac`\x18\x06\x02\x9f\x84\x8a\xa4\x07\x16c\xb1\xbe\xc9\xa2\xf6P\x04-\x8e\x00\x12\xc9\x84(&\xd9\xf2\x8a\x8e\x88\x7fk[\xbet\xe75\x0bzf\x98cI\xd6\xe6\xfc\xba\x06\xd3~\x1d\x12\xe9\x9fK\xcd\x12N\x16\xc4\xa0UQH)\x8a\x95\x08\x9c\xf6^\xc9\xbdk\x95\xe7o\xab\x9c&\xb5\xf2\x84W3\xa6\x9dG\x92\x19_$\xa9\x84\xd6%r\xc9\xde\x97\x1c\xde\xf3\x98\x96\xee\xb0\x16\x99\xd2v\x15\x94\xc6<\xc2Te\xb4\x04Ufe\x85\x8c2\x84<(\xeb\x91\xf7>\xa6\x7fy\xbf\x00\x96T\xff\x11\xf7\xd8R\xb9\x00\x00\x00\x00IEND\xaeB`\x82')
 
             msg.attach(img)
-            send_mail_mime(request=None, to=to, frm=settings.DEFAULT_FROM_EMAIL, subject=u'это сложно', msg=msg, cc=None, extra=None)
+            send_mail_mime(request=None, to=to, frm=settings.DEFAULT_FROM_EMAIL, subject='это сложно', msg=msg, cc=None, extra=None)
 
         len_before = len(outbox)
         send_complex_mail('good@example.com')
@@ -157,12 +161,12 @@ def get_callbacks(urllist):
             callbacks.update(get_callbacks(entry.url_patterns))
         else:
             if hasattr(entry, '_callback_str'):
-                callbacks.add(unicode(entry._callback_str))
+                callbacks.add(force_text(entry._callback_str))
             if (hasattr(entry, 'callback') and entry.callback
                 and type(entry.callback) in [types.FunctionType, types.MethodType ]):
                 callbacks.add("%s.%s" % (entry.callback.__module__, entry.callback.__name__))
             if hasattr(entry, 'name') and entry.name:
-                callbacks.add(unicode(entry.name))
+                callbacks.add(force_text(entry.name))
             # There are some entries we don't handle here, mostly clases
             # (such as Feed subclasses)
 
@@ -275,6 +279,7 @@ class TemplateChecksTestCase(TestCase):
         r = self.client.get(url)        
         self.assertTemplateUsed(r, '500.html')
 
+@skipIf(True, "Trac not available for Python3 as of 14 Jul 2019")
 @skipIf(skip_wiki_glue_testing, skip_message)
 class TestWikiGlueManagementCommand(TestCase):
 
@@ -297,14 +302,18 @@ class TestWikiGlueManagementCommand(TestCase):
         set_coverage_checking(True)
 
     def test_wiki_create_output(self):
-        for type in ['wg','rg','ag','area']:
-            GroupFactory(type_id=type)
+        for group_type in ['wg','rg','ag','area']:
+            GroupFactory(type_id=group_type)
         groups = Group.objects.filter(
                         type__slug__in=['wg','rg','ag','area'],
                         state__slug='active'
                     ).order_by('acronym')
-        out = StringIO()
-        err = StringIO()
+        out = six.StringIO()
+        err = six.StringIO()
+        debug.type('self.wiki_dir_pattern')
+        debug.show('self.wiki_dir_pattern')
+        debug.type('self.svn_dir_pattern')
+        debug.show('self.svn_dir_pattern')
         call_command('create_group_wikis', stdout=out, stderr=err, verbosity=2,
             wiki_dir_pattern=self.wiki_dir_pattern,
             svn_dir_pattern=self.svn_dir_pattern,
@@ -426,7 +435,7 @@ class DraftTests(TestCase):
     def test_get_meta(self):
         tempdir = mkdtemp()
         filename = os.path.join(tempdir,self.draft.source)
-        with open(filename,'w') as file:
+        with io.open(filename,'w') as file:
             file.write(self.draft.text)
         self.assertEqual(getmeta(filename)['docdeststatus'],'Informational')
         shutil.rmtree(tempdir)

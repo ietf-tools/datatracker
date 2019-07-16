@@ -1,8 +1,12 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 import glob
+import io
 import os
 import shutil
 from dateutil.parser import parse
@@ -53,7 +57,7 @@ def handle_uploaded_file(f):
     '''
     Save uploaded draft files to temporary directory
     '''
-    destination = open(os.path.join(settings.IDSUBMIT_MANUAL_STAGING_DIR, f.name), 'wb+')
+    destination = io.open(os.path.join(settings.IDSUBMIT_MANUAL_STAGING_DIR, f.name), 'wb+')
     for chunk in f.chunks():
         destination.write(chunk)
     destination.close()
@@ -259,7 +263,7 @@ def authors(request, id):
 
             authors = draft.documentauthor_set.all()
             if authors:
-                order = authors.aggregate(Max('order')).values()[0] + 1
+                order = list(authors.aggregate(Max('order')).values())[0] + 1
             else:
                 order = 1
             DocumentAuthor.objects.create(document=draft, person=person, email=email, affiliation=affiliation, country=country, order=order)
@@ -418,7 +422,7 @@ def email(request, id):
     # other problems with get_email_initial
     try:
         form = EmailForm(initial=get_email_initial(draft,action=action,input=data))
-    except Exception, e:
+    except Exception as e:
         return render(request, 'drafts/error.html', { 'error': e},)
 
     return render(request, 'drafts/email.html', {

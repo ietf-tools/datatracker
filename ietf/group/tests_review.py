@@ -1,14 +1,18 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 import debug      # pyflakes:ignore
+import six
 
 from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
 
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase, reload_db_objects
 from ietf.doc.models import TelechatDocEvent
 from ietf.group.models import Role
 from ietf.iesg.models import TelechatDate
@@ -39,8 +43,8 @@ class ReviewTests(TestCase):
                     urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym , 'group_type': group.type_id})]:
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            self.assertIn(review_req.doc.name, unicontent(r))
-            self.assertIn(assignment.reviewer.person.__unicode__(), unicontent(r))
+            self.assertContains(r, review_req.doc.name)
+            self.assertContains(r, str(assignment.reviewer.person))
 
         url = urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym })
 
@@ -51,7 +55,7 @@ class ReviewTests(TestCase):
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(review_req.doc.name in unicontent(r))
+        self.assertContains(r, review_req.doc.name)
 
     def test_suggested_review_requests(self):
         review_req = ReviewRequestFactory(state_id='assigned')
@@ -151,34 +155,34 @@ class ReviewTests(TestCase):
                     urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })]:
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            self.assertIn(unicode(reviewer), unicontent(r))
-            self.assertIn(review_req1.doc.name, unicontent(r))
+            self.assertContains(r, str(reviewer))
+            self.assertContains(r, review_req1.doc.name)
             # without a login, reason for being unavailable should not be seen
-            self.assertNotIn("Availability", unicontent(r))
+            self.assertNotContains(r, "Availability")
 
         url = urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym })
         self.client.login(username="plain", password="plain+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         # not on review team, should not see reason for being unavailable
-        self.assertNotIn("Availability", unicontent(r))
+        self.assertNotContains(r, "Availability")
 
         self.client.login(username="reviewer", password="reviewer+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         # review team members can see reason for being unavailable
-        self.assertIn("Availability", unicontent(r))
+        self.assertContains(r, "Availability")
 
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         # secretariat can see reason for being unavailable
-        self.assertIn("Availability", unicontent(r))
+        self.assertContains(r, "Availability")
 
     def test_manage_review_requests(self):
         group = ReviewTeamFactory()
         RoleFactory(name_id='reviewer',group=group,person__user__username='reviewer').person
-        marsperson = RoleFactory(name_id='reviewer',group=group,person=PersonFactory(name=u"Mars Anders Chairman",user__username='marschairman')).person
+        marsperson = RoleFactory(name_id='reviewer',group=group,person=PersonFactory(name="Mars Anders Chairman",user__username='marschairman')).person
         review_req1 = ReviewRequestFactory(doc__pages=2,doc__shepherd=marsperson.email(),team=group)
         review_req2 = ReviewRequestFactory(team=group)
         review_req3 = ReviewRequestFactory(team=group)
@@ -188,17 +192,17 @@ class ReviewTests(TestCase):
         login_testing_unauthorized(self, "secretary", unassigned_url)
 
         # Need one more person in review team one so we can test incrementing skip_count without immediately decrementing it
-        another_reviewer = PersonFactory.create(name = u"Extra TestReviewer") # needs to be lexically greater than the exsting one
+        another_reviewer = PersonFactory.create(name = "Extra TestReviewer") # needs to be lexically greater than the exsting one
         another_reviewer.role_set.create(name_id='reviewer', email=another_reviewer.email(), group=review_req1.team)
         ReviewerSettingsFactory(team=review_req3.team, person = another_reviewer)
-        yet_another_reviewer = PersonFactory.create(name = u"YetAnotherExtra TestReviewer") # needs to be lexically greater than the exsting one
+        yet_another_reviewer = PersonFactory.create(name = "YetAnotherExtra TestReviewer") # needs to be lexically greater than the exsting one
         yet_another_reviewer.role_set.create(name_id='reviewer', email=yet_another_reviewer.email(), group=review_req1.team)
         ReviewerSettingsFactory(team=review_req3.team, person = yet_another_reviewer)
 
         # get
         r = self.client.get(unassigned_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(review_req1.doc.name in unicontent(r))
+        self.assertContains(r, review_req1.doc.name)
 
         # Test that conflicts are detected
         r = self.client.post(unassigned_url, {
@@ -211,9 +215,7 @@ class ReviewTests(TestCase):
             
             "action": "save",
         })
-        self.assertEqual(r.status_code, 200)
-        content = unicontent(r).lower()
-        self.assertTrue("2 requests opened" in content)
+        self.assertContains(r, "2 requests opened")
 
         r = self.client.post(unassigned_url, {
             "reviewrequest": [str(review_req1.pk),str(review_req2.pk),str(review_req3.pk)],
@@ -262,7 +264,7 @@ class ReviewTests(TestCase):
         q = PyQuery(r.content)
         generated_text = q("[name=body]").text()
         self.assertTrue(review_req1.doc.name in generated_text)
-        self.assertTrue(unicode(Person.objects.get(user__username="marschairman")) in generated_text)
+        self.assertTrue(six.text_type(Person.objects.get(user__username="marschairman")) in generated_text)
 
         empty_outbox()
         r = self.client.post(url, {
@@ -349,7 +351,7 @@ class ReviewTests(TestCase):
             'start_date': start_date.isoformat(),
             'end_date': "",
             'availability': "unavailable",
-	    'reason': "Whimsy",
+            'reason': "Whimsy",
         })
         self.assertEqual(r.status_code, 302)
         period = UnavailablePeriod.objects.get(person=reviewer, team=review_req.team, start_date=start_date)
@@ -359,7 +361,7 @@ class ReviewTests(TestCase):
         msg_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
         self.assertTrue(start_date.isoformat(), msg_content)
         self.assertTrue("indefinite", msg_content)
-    	self.assertEqual(period.reason, "Whimsy")
+        self.assertEqual(period.reason, "Whimsy")
 
         # end unavailable period
         empty_outbox()

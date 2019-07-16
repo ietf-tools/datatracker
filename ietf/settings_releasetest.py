@@ -1,10 +1,17 @@
+# Copyright The IETF Trust 2015-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+
 # Standard settings except we use SQLite, this is useful for speeding
 # up tests that depend on the test database, try for instance:
 #
 #   ./manage.py test --settings=settings_sqlitetest doc.ChangeStateTestCase
 #
 
-from settings import *                  # pyflakes:ignore
+from .settings import *                  # pyflakes:ignore
 
 # Workaround to avoid spending minutes stepping through the migrations in
 # every test run.  The result of this is to use the 'syncdb' way of creating

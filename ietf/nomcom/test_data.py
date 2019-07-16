@@ -1,3 +1,10 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import tempfile
 import os
 
@@ -38,7 +45,7 @@ POSITIONS = [
 
 def generate_cert():
     """Function to generate cert"""
-    config = """
+    config = b"""
             [ req ]
             distinguished_name = req_distinguished_name
             string_mask        = utf8only
@@ -89,7 +96,7 @@ def check_comments(encryped, plain, privatekey_file):
 
     decrypted_file.close()
     encrypted_file.close()
-    decrypted_comments = open(decrypted_file.name, 'r').read().decode('utf8')
+    decrypted_comments = io.open(decrypted_file.name, 'rb').read().decode('utf-8')
     os.unlink(encrypted_file.name)
     os.unlink(decrypted_file.name)
 
@@ -111,7 +118,7 @@ def nomcom_test_data():
         nomcom_test_cert_file, privatekey_file = generate_cert()
 
     nomcom.public_key.storage = FileSystemStorage(location=settings.NOMCOM_PUBLIC_KEYS_DIR)
-    nomcom.public_key.save('cert', File(open(nomcom_test_cert_file.name, 'r')))
+    nomcom.public_key.save('cert', File(io.open(nomcom_test_cert_file.name, 'r')))
 
     # chair and member
     create_person(group, "chair", username=CHAIR_USER, email_address='%s%s'%(CHAIR_USER,EMAIL_DOMAIN))

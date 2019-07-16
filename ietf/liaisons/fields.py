@@ -1,7 +1,11 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import json
+import six
 
 from django.utils.html import escape
 from django import forms
@@ -10,7 +14,7 @@ from django.urls import reverse as urlreverse
 from ietf.liaisons.models import LiaisonStatement
 
 def select2_id_liaison_json(objs):
-    return json.dumps([{ "id": o.pk, "text":u"[{}] {}".format(o.pk, escape(o.title)) } for o in objs])
+    return json.dumps([{ "id": o.pk, "text":"[{}] {}".format(o.pk, escape(o.title)) } for o in objs])
 
 def select2_id_group_json(objs):
     return json.dumps([{ "id": o.pk, "text": escape(o.acronym) } for o in objs])
@@ -47,9 +51,9 @@ class SearchableLiaisonStatementsField(forms.CharField):
     def prepare_value(self, value):
         if not value:
             value = ""
-        if isinstance(value, (int, long)):
+        if isinstance(value, six.integer_types):
             value = str(value)
-        if isinstance(value, basestring):
+        if isinstance(value, six.string_types):
             pks = self.parse_select2_value(value)
             value = self.model.objects.filter(pk__in=pks)
         if isinstance(value, LiaisonStatement):
@@ -61,7 +65,7 @@ class SearchableLiaisonStatementsField(forms.CharField):
         # patterns may not have been fully constructed there yet
         self.widget.attrs["data-ajax-url"] = urlreverse("ietf.liaisons.views.ajax_select2_search_liaison_statements")
 
-        return u",".join(unicode(o.pk) for o in value)
+        return ",".join(six.text_type(o.pk) for o in value)
 
     def clean(self, value):
         value = super(SearchableLiaisonStatementsField, self).clean(value)
@@ -72,9 +76,9 @@ class SearchableLiaisonStatementsField(forms.CharField):
         found_pks = [str(o.pk) for o in objs]
         failed_pks = [x for x in pks if x not in found_pks]
         if failed_pks:
-            raise forms.ValidationError(u"Could not recognize the following groups: {pks}.".format(pks=", ".join(failed_pks)))
+            raise forms.ValidationError("Could not recognize the following groups: {pks}.".format(pks=", ".join(failed_pks)))
 
         if self.max_entries != None and len(objs) > self.max_entries:
-            raise forms.ValidationError(u"You can select at most %s entries only." % self.max_entries)
+            raise forms.ValidationError("You can select at most %s entries only." % self.max_entries)
 
         return objs

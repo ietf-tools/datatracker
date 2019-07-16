@@ -1,6 +1,11 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
+import six
 
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed, Rss201rev2Feed
@@ -22,8 +27,8 @@ class DocumentChangesFeed(Feed):
         return "Changes for %s" % obj.display_name()
 
     def link(self, obj):
-	if obj is None:
-	    raise FeedDoesNotExist
+        if obj is None:
+            raise FeedDoesNotExist
         return urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=obj.canonical_name()))
 
     def subtitle(self, obj):
@@ -32,19 +37,19 @@ class DocumentChangesFeed(Feed):
     def items(self, obj):
         events = obj.docevent_set.all().order_by("-time","-id")
         augment_events_with_revision(obj, events)
-	return events
+        return events
 
     def item_title(self, item):
-        return u"[%s] %s [rev. %s]" % (item.by, truncatewords(strip_tags(item.desc), 15), item.rev)
+        return "[%s] %s [rev. %s]" % (item.by, truncatewords(strip_tags(item.desc), 15), item.rev)
 
     def item_description(self, item):
         return truncatewords_html(format_textarea(item.desc), 20)
 
     def item_pubdate(self, item):
-	return item.time
+        return item.time
 
     def item_author_name(self, item):
-	return unicode(item.by)
+        return six.text_type(item.by)
 
     def item_link(self, item):
         return urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=item.doc.canonical_name())) + "#history-%s" % item.pk
@@ -62,12 +67,12 @@ class InLastCallFeed(Feed):
             d.lc_event = d.latest_event(LastCallDocEvent, type="sent_last_call")
 
         docs = [d for d in docs if d.lc_event]
-	docs.sort(key=lambda d: d.lc_event.expires)
+        docs.sort(key=lambda d: d.lc_event.expires)
 
-	return docs
+        return docs
 
     def item_title(self, item):
-        return u"%s (%s - %s)" % (item.name,
+        return "%s (%s - %s)" % (item.name,
                                 datefilter(item.lc_event.time, "F j"),
                                 datefilter(item.lc_event.expires, "F j, Y"))
 

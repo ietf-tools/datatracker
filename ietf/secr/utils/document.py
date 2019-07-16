@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 def get_full_path(doc):
     '''
     Returns for name of file on disk with full path.  This should really be a method on doc

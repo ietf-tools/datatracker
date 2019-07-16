@@ -1,14 +1,20 @@
 # Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import io
 import os
 import shutil
-import json
-import datetime
+import tarfile
+
 from pyquery import PyQuery
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
+from django.utils.encoding import force_bytes
 
 import debug                            # pyflakes:ignore
 
@@ -42,8 +48,8 @@ class IESGTests(TestCase):
         r = self.client.get(urlreverse("ietf.iesg.views.discusses"))
         self.assertEqual(r.status_code, 200)
 
-        self.assertTrue(draft.name in unicontent(r))
-        self.assertTrue(pos.ad.plain_name() in unicontent(r))
+        self.assertContains(r, draft.name)
+        self.assertContains(r, pos.ad.plain_name())
 
     def test_milestones_needing_review(self):
         draft = WgDraftFactory()
@@ -58,12 +64,12 @@ class IESGTests(TestCase):
         login_testing_unauthorized(self, "ad", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(m.desc in unicontent(r))
+        self.assertContains(r, m.desc)
         draft.group.state_id = 'conclude'
         draft.group.save()
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertFalse(m.desc in unicontent(r))
+        self.assertNotContains(r, m.desc)
         
 
     def test_review_decisions(self):
@@ -79,7 +85,7 @@ class IESGTests(TestCase):
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.name in unicontent(r))
+        self.assertContains(r, draft.name)
 
     def test_photos(self):
         url = urlreverse("ietf.iesg.views.photos")
@@ -119,7 +125,7 @@ class IESGAgendaTests(TestCase):
         self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
         settings.INTERNET_DRAFT_PATH = self.draft_dir
 
-        for d in self.telechat_docs.values():
+        for d in list(self.telechat_docs.values()):
             TelechatDocEvent.objects.create(type="scheduled_for_telechat",
                                             doc=d,
                                             rev=d.rev,
@@ -304,58 +310,58 @@ class IESGAgendaTests(TestCase):
         r = self.client.get("/feed/iesg-agenda/")
         self.assertEqual(r.status_code, 200)
 
-        for d in self.telechat_docs.values():
-            self.assertTrue(d.name in unicontent(r))
-            self.assertTrue(d.title in unicontent(r))
+        for d in list(self.telechat_docs.values()):
+            self.assertContains(r, d.name)
+            self.assertContains(r, d.title)
 
     def test_agenda_json(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_json"))
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
-                self.assertTrue(d.group.name in unicontent(r), "%s '%s' not in response" % (k, d.group.name))
-                self.assertTrue(d.group.acronym in unicontent(r), "%s '%s' acronym not in response" % (k, d.group.acronym))
+                self.assertContains(r, d.group.name, msg_prefix="%s '%s' not in response" % (k, d.group.name))
+                self.assertContains(r, d.group.acronym, msg_prefix="%s '%s' acronym not in response" % (k, d.group.acronym))
             else:
-                self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name))
-                self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title))
+                self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
+                self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))
 
-        self.assertTrue(json.loads(r.content))
+        self.assertTrue(r.json())
 
     def test_agenda(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda"))
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
-                self.assertTrue(d.group.name in unicontent(r), "%s '%s' not in response" % (k, d.group.name))
-                self.assertTrue(d.group.acronym in unicontent(r), "%s '%s' acronym not in response" % (k, d.group.acronym))
+                self.assertContains(r, d.group.name, msg_prefix="%s '%s' not in response" % (k, d.group.name))
+                self.assertContains(r, d.group.acronym, msg_prefix="%s '%s' acronym not in response" % (k, d.group.acronym))
             else:
-                self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name))
-                self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title))
+                self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
+                self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))
 
     def test_agenda_txt(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_txt"))
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
-                self.assertTrue(d.group.name in unicontent(r), "%s '%s' not in response" % (k, d.group.name))
-                self.assertTrue(d.group.acronym in unicontent(r), "%s '%s' acronym not in response" % (k, d.group.acronym))
+                self.assertContains(r, d.group.name, msg_prefix="%s '%s' not in response" % (k, d.group.name))
+                self.assertContains(r, d.group.acronym, msg_prefix="%s '%s' acronym not in response" % (k, d.group.acronym))
             else:
-                self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name))
-                self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title))
+                self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
+                self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))
 
     def test_agenda_scribe_template(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_scribe_template"))
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
                 continue # scribe template doesn't contain chartering info
 
-            self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name))
-            self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title))
+            self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
+            self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))
 
     def test_agenda_moderator_package(self):
         url = urlreverse("ietf.iesg.views.agenda_moderator_package")
@@ -363,19 +369,19 @@ class IESGAgendaTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
-                self.assertTrue(d.group.name in unicontent(r), "%s '%s' not in response" % (k, d.group.name))
-                self.assertTrue(d.group.acronym in unicontent(r), "%s '%s' acronym not in response" % (k, d.group.acronym))
+                self.assertContains(r, d.group.name, msg_prefix="%s '%s' not in response" % (k, d.group.name))
+                self.assertContains(r, d.group.acronym, msg_prefix="%s '%s' acronym not in response" % (k, d.group.acronym))
             else:
                 if d.type_id == "draft" and d.name == "draft-ietf-mars-test":
-                    self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name))
-                    self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title))
-                    self.assertTrue("Has downref: Yes" in unicontent(r), "%s downref not in response" % (k, ))
-                    self.assertTrue("Add rfc6666" in unicontent(r), "%s downref not in response" % (k, ))
+                    self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
+                    self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))
+                    self.assertContains(r, "Has downref: Yes", msg_prefix="%s downref not in response" % (k, ))
+                    self.assertContains(r, "Add rfc6666", msg_prefix="%s downref not in response" % (k, ))
                 else:
-                    self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name))
-                    self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title))        
+                    self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
+                    self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))        
 
     def test_agenda_package(self):
         url = urlreverse("ietf.iesg.views.agenda_package")
@@ -383,37 +389,37 @@ class IESGAgendaTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
-                self.assertTrue(d.group.name in unicontent(r), "%s '%s' not in response" % (k, d.group.name, ))
-                self.assertTrue(d.group.acronym in unicontent(r), "%s '%s' acronym not in response" % (k, d.group.acronym, ))
+                self.assertContains(r, d.group.name, msg_prefix="%s '%s' not in response" % (k, d.group.name, ))
+                self.assertContains(r, d.group.acronym, msg_prefix="%s '%s' acronym not in response" % (k, d.group.acronym, ))
             else:
-                self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name, ))
-                self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title, ))
+                self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name, ))
+                self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title, ))
 
     def test_agenda_documents_txt(self):
         url = urlreverse("ietf.iesg.views.agenda_documents_txt")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
-            self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name, ))
+        for k, d in self.telechat_docs.items():
+            self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name, ))
 
     def test_agenda_documents(self):
         url = urlreverse("ietf.iesg.views.agenda_documents")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        for k, d in self.telechat_docs.iteritems():
-            self.assertTrue(d.name in unicontent(r), "%s '%s' not in response" % (k, d.name, ))
-            self.assertTrue(d.title in unicontent(r), "%s '%s' title not in response" % (k, d.title, ))
+        for k, d in self.telechat_docs.items():
+            self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name, ))
+            self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title, ))
 
     def test_past_documents(self):
         url = urlreverse("ietf.iesg.views.past_documents")
         # We haven't put any documents on past telechats, so this should be empty
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             self.assertNotIn(d.name, unicontent(r))
             self.assertNotIn(d.title, unicontent(r))
         # Add the documents to a past telechat
@@ -421,7 +427,7 @@ class IESGAgendaTests(TestCase):
         date = datetime.date.today() - datetime.timedelta(days=14)
         approved = State.objects.get(type='draft-iesg', slug='approved')
         iesg_eval = State.objects.get(type='draft-iesg', slug='iesg-eva')
-        for d in self.telechat_docs.values():
+        for d in list(self.telechat_docs.values()):
             if d.type_id in ['draft', 'charter']:
                 create_ballot_if_not_open(None, d, by, 'approve')
             TelechatDocEvent.objects.create(type="scheduled_for_telechat",
@@ -435,7 +441,7 @@ class IESGAgendaTests(TestCase):
         # Now check that they are present on the past documents page
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        for k, d in self.telechat_docs.iteritems():
+        for k, d in self.telechat_docs.items():
             if d.states.get(type='draft-iesg').slug in ['approved', 'iesg-eva', ]:
                 self.assertIn(d.name, unicontent(r))
             else:
@@ -448,28 +454,28 @@ class IESGAgendaTests(TestCase):
         d1_filename = "%s-%s.txt" % (d1.name, d1.rev)
         d2_filename = "%s-%s.txt" % (d2.name, d2.rev)
 
-        with open(os.path.join(self.draft_dir, d1_filename), "w") as f:
+        with io.open(os.path.join(self.draft_dir, d1_filename), "w") as f:
             f.write("test content")
 
         url = urlreverse("ietf.iesg.views.telechat_docs_tarfile", kwargs=dict(date=get_agenda_date().isoformat()))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        import tarfile, StringIO
-
-        tar = tarfile.open(None, fileobj=StringIO.StringIO(r.content))
+        tar = tarfile.open(None, fileobj=io.BytesIO(r.content))
         names = tar.getnames()
         self.assertIn(d1_filename, names)
         self.assertNotIn(d2_filename, names)
         self.assertIn("manifest.txt", names)
 
         f = tar.extractfile(d1_filename)
-        self.assertEqual(f.read(), "test content")
+        self.assertEqual(f.read(), b"test content")
 
         f = tar.extractfile("manifest.txt")
         lines = list(f.readlines())
-        self.assertTrue("Included" in [l for l in lines if d1_filename in l][0])
-        self.assertTrue("Not found" in [l for l in lines if d2_filename in l][0])
+        d1fn = force_bytes(d1_filename)
+        d2fn = force_bytes(d2_filename)
+        self.assertTrue(b"Included" in [l for l in lines if d1fn in l][0])
+        self.assertTrue(b"Not found" in [l for l in lines if d2fn in l][0])
 
     def test_admin_change(self):
         draft = Document.objects.get(name="draft-ietf-mars-test")
@@ -522,8 +528,9 @@ class RescheduleOnAgendaTests(TestCase):
         # agenda docs page
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        d_header_pos = r.content.find("IESG telechat %s" % d.isoformat())
-        draft_pos = unicontent(r)[d_header_pos:].find(draft.name)
+        content = unicontent(r)
+        d_header_pos = content.find("IESG telechat %s" % d.isoformat())
+        draft_pos = content[d_header_pos:].find(draft.name)
         self.assertTrue(draft_pos>0)
 
         self.assertTrue(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat"))

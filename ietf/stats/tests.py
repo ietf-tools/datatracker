@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 
 from mock import patch
@@ -12,7 +15,7 @@ import debug    # pyflakes:ignore
 from django.urls import reverse as urlreverse
 from django.contrib.auth.models import User
 
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 import ietf.stats.views
 
 from ietf.submit.models import Submission
@@ -158,7 +161,7 @@ class StatisticsTests(TestCase):
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("United States" in unicontent(r))
+        self.assertContains(r, "United States")
 
     def test_review_stats(self):
         reviewer = PersonFactory()
@@ -214,7 +217,7 @@ class StatisticsTests(TestCase):
         '''Test function to get reg data.  Confirm leading/trailing spaces stripped'''
         response = Response()
         response.status_code = 200
-        response._content = '[{"LastName":"Smith ","FirstName":" John","Company":"ABC","Country":"US","Email":"john.doe@example.us"}]'
+        response._content = b'[{"LastName":"Smith ","FirstName":" John","Company":"ABC","Country":"US","Email":"john.doe@example.us"}]'
         mock_get.return_value = response
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
         get_meeting_registration_data(meeting)
@@ -226,7 +229,7 @@ class StatisticsTests(TestCase):
     def test_get_meeting_registration_data_user_exists(self, mock_get):
         response = Response()
         response.status_code = 200
-        response._content = '[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US","Email":"john.doe@example.us"}]'
+        response._content = b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US","Email":"john.doe@example.us"}]'
         email = "john.doe@example.us"
         user = User.objects.create(username=email)
         user.save()

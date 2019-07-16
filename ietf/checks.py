@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2015-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import patch
 import sys
@@ -367,7 +373,7 @@ def maybe_patch_library(app_configs, **kwargs):
             patch_path = os.path.join(cwd, patch_file)
             patch_set = patch.fromfile(patch_path)
             if patch_set:
-                if not patch_set.apply(root=library_path):
+                if not patch_set.apply(root=library_path.encode('utf-8')):
                     errors.append(checks.Warning(
                         "Could not apply patch from file '%s'"%patch_file,
                         hint=("Make sure that the patch file contains a unified diff and has valid file paths\n\n"

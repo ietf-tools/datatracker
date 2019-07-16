@@ -1,4 +1,8 @@
-# Copyright The IETF Trust 2014, All Rights Reserved
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 from django import template
 from django.utils.html import format_html
@@ -11,10 +15,10 @@ def render_message_for_history(msg):
     """Format message for display in history.  Suppress the 'To' line for incoming responses
     """
     if msg.to.startswith('ietf-ipr+'):
-        return format_html(u'Date: {}<br>From: {}<br>Subject: {}<br>Cc: {}<br><br>{}',
+        return format_html('Date: {}<br>From: {}<br>Subject: {}<br>Cc: {}<br><br>{}',
             msg.time,msg.frm,msg.subject,msg.cc,msg.body)
     else:
-        return format_html(u'Date: {}<br>From: {}<br>To: {}<br>Subject: {}<br>Cc: {}<br><br>{}',
+        return format_html('Date: {}<br>From: {}<br>To: {}<br>Subject: {}<br>Cc: {}<br><br>{}',
             msg.time,msg.frm,msg.to,msg.subject,msg.cc,msg.body)
 
 

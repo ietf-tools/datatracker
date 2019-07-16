@@ -1,6 +1,15 @@
-from django.conf import settings
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
-'''
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
+
+from django.conf import settings
+from django.utils.encoding import force_bytes
+
+r'''
 RTF quick reference (from Word2007RTFSpec9.doc):
 \fs24       : sets the font size to 24 half points
 \header     : header on all pages
@@ -16,9 +25,9 @@ RTF quick reference (from Word2007RTFSpec9.doc):
 '''
 
 def create_blue_sheets(meeting, groups):
-    file = open(settings.SECR_BLUE_SHEET_PATH, 'w')
+    file = io.open(settings.SECR_BLUE_SHEET_PATH, 'wb')
     
-    header = '''{\\rtf1\\ansi\\ansicpg1252\\uc1 \\deff0\\deflang1033\\deflangfe1033
+    header = b'''{\\rtf1\\ansi\\ansicpg1252\\uc1 \\deff0\\deflang1033\\deflangfe1033
  {\\fonttbl{\\f0\\froman\\fcharset0\\fprq2{\\*\\panose 02020603050405020304}Times New Roman;}}
  {\\colortbl;\\red0\\green0\\blue0;\\red0\\green0\\blue255;\\red0\\green255\\blue255;\\red0\\green255\\blue0;
 \\red255\\green0\\blue255;\\red255\\green0\\blue0;\\red255\\green255\\blue0;\\red255\\green255\\blue255;
@@ -31,7 +40,7 @@ def create_blue_sheets(meeting, groups):
     file.write(header)
     
     for group in groups:
-        group_header = ''' {\\header \\pard\\plain \\s15\\nowidctlpar\\widctlpar\\tqc\\tx4320\\tqr\\tx8640\\adjustright \\fs20\\cgrid
+        group_header = b''' {\\header \\pard\\plain \\s15\\nowidctlpar\\widctlpar\\tqc\\tx4320\\tqr\\tx8640\\adjustright \\fs20\\cgrid
  { Mailing List: %s \\tab\\tab Meeting # %s  %s (%s) \\par }
  \\pard \\s15\\nowidctlpar\\widctlpar\\tqc\\tx4320\\tqr\\tx8640\\adjustright
  {\\b\\fs24
@@ -59,30 +68,31 @@ def create_blue_sheets(meeting, groups):
 \\par }
   \\pard \\fi-90\\li90\\nowidctlpar\\widctlpar\\adjustright
  {\\fs16
-''' % (group.list_email,
-       meeting.number,
-       group.acronym,
-       group.type,
-       meeting.number,
-       group.acronym,
-       group.type,
-       meeting.number,
-       group.name,
-       group.list_email)
+''' % (force_bytes(group.list_email),
+       force_bytes(meeting.number),
+       force_bytes(group.acronym),
+       force_bytes(group.type),
+       force_bytes(meeting.number),
+       force_bytes(group.acronym),
+       force_bytes(group.type),
+       force_bytes(meeting.number),
+       force_bytes(group.name),
+       force_bytes(group.list_email),
+       )
        
         file.write(group_header)
         for x in range(1,117):
-            line = '''\\par %s._________________________________________________ \\tab _____________________________________________________
+            line = b'''\\par %s._________________________________________________ \\tab _____________________________________________________
  \\par
- ''' % x
+ ''' % force_bytes(x)
             file.write(line)
             
-        footer = '''}
+        footer = b'''}
 \\pard \\nowidctlpar\\widctlpar\\adjustright
 {\\fs16 \\sect }
 \\sectd \\pgnrestart\\linex0\\endnhere\\titlepg\\sectdefaultcl
 '''
         file.write(footer)
 
-    file.write('\n}')
+    file.write(b'\n}')
     file.close()

@@ -1,6 +1,10 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import os
 
 from django.db.models import Q
@@ -20,6 +24,7 @@ from ietf.person.models import Email
 from ietf.review.utils import can_manage_review_requests_for_team
 from ietf.utils import log
 from ietf.utils.history import get_history_object_for, copy_many_to_many_for_history
+from functools import reduce
 
 def save_group_in_history(group):
     """This should be called before saving changes to a Group instance,
@@ -52,7 +57,7 @@ def get_charter_text(group):
 
     filename = os.path.join(c.get_file_path(), "%s-%s.txt" % (c.canonical_name(), c.rev))
     try:
-        with open(filename) as f:
+        with io.open(filename) as f:
             return f.read()
     except IOError:
         return 'Error Loading Group Charter'
@@ -62,7 +67,7 @@ def get_group_role_emails(group, roles):
     if not group or not group.acronym or group.acronym == 'none':
         return set()
     emails = Email.objects.filter(role__group=group, role__name__in=roles)
-    return set(filter(None, [e.email_address() for e in emails]))
+    return set([_f for _f in [e.email_address() for e in emails] if _f])
 
 def get_child_group_role_emails(parent, roles, group_type='wg'):
     """Get a list of email addresses for a given set of
@@ -207,35 +212,35 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
     if group.features.has_milestones:
         if group.state_id != "proposed" and can_manage:
-            actions.append((u"Edit milestones", urlreverse('ietf.group.milestones.edit_milestones;current', kwargs=kwargs)))
+            actions.append(("Edit milestones", urlreverse('ietf.group.milestones.edit_milestones;current', kwargs=kwargs)))
 
     if group.features.has_documents:
         clist = CommunityList.objects.filter(group=group).first()
         if clist and can_manage_community_list(request.user, clist):
             import ietf.community.views
-            actions.append((u'Manage document list', urlreverse(ietf.community.views.manage_list, kwargs=kwargs)))
+            actions.append(('Manage document list', urlreverse(ietf.community.views.manage_list, kwargs=kwargs)))
 
     if group.features.has_nonsession_materials and can_manage_materials(request.user, group):
-        actions.append((u"Upload material", urlreverse("ietf.doc.views_material.choose_material_type", kwargs=kwargs)))
+        actions.append(("Upload material", urlreverse("ietf.doc.views_material.choose_material_type", kwargs=kwargs)))
 
     if group.features.has_reviews and can_manage_review_requests_for_team(request.user, group):
         import ietf.group.views
-        actions.append((u"Manage unassigned reviews", urlreverse(ietf.group.views.manage_review_requests, kwargs=dict(assignment_status="unassigned", **kwargs))))
+        actions.append(("Manage unassigned reviews", urlreverse(ietf.group.views.manage_review_requests, kwargs=dict(assignment_status="unassigned", **kwargs))))
         #actions.append((u"Manage assigned reviews", urlreverse(ietf.group.views.manage_review_requests, kwargs=dict(assignment_status="assigned", **kwargs))))
 
         if Role.objects.filter(name="secr", group=group, person__user=request.user).exists():
-            actions.append((u"Secretary settings", urlreverse(ietf.group.views.change_review_secretary_settings, kwargs=kwargs)))
-            actions.append((u"Email open assignments summary", urlreverse(ietf.group.views.email_open_review_assignments, kwargs=dict(acronym=group.acronym, group_type=group.type_id))))
+            actions.append(("Secretary settings", urlreverse(ietf.group.views.change_review_secretary_settings, kwargs=kwargs)))
+            actions.append(("Email open assignments summary", urlreverse(ietf.group.views.email_open_review_assignments, kwargs=dict(acronym=group.acronym, group_type=group.type_id))))
 
     if group.state_id != "conclude" and can_manage:
         can_edit_group = True
-        actions.append((u"Edit group", urlreverse("ietf.group.views.edit", kwargs=dict(kwargs, action="edit"))))
+        actions.append(("Edit group", urlreverse("ietf.group.views.edit", kwargs=dict(kwargs, action="edit"))))
 
     if group.features.customize_workflow and can_manage:
-        actions.append((u"Customize workflow", urlreverse("ietf.group.views.customize_workflow", kwargs=kwargs)))
+        actions.append(("Customize workflow", urlreverse("ietf.group.views.customize_workflow", kwargs=kwargs)))
 
     if group.state_id in ("active", "dormant") and not group.type_id in ["sdo", "rfcedtyp", "isoc", ] and can_manage_group_type(request.user, group):
-        actions.append((u"Request closing group", urlreverse("ietf.group.views.conclude", kwargs=kwargs)))
+        actions.append(("Request closing group", urlreverse("ietf.group.views.conclude", kwargs=kwargs)))
 
     d = {
         "group": group,

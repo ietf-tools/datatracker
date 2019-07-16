@@ -1,7 +1,8 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import json
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 from pyquery import PyQuery
 
@@ -19,7 +20,7 @@ from ietf.group.utils import setup_default_community_list_for_group
 from ietf.doc.models import State
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person, Email
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.mail import outbox
 from ietf.doc.factories import WgDraftFactory
 from ietf.group.factories import GroupFactory, RoleFactory
@@ -97,7 +98,7 @@ class CommunityListTests(TestCase):
         )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.name in unicontent(r))
+        self.assertContains(r, draft.name)
 
     def test_manage_personal_list(self):
         PersonFactory(user__username='plain')
@@ -119,7 +120,7 @@ class CommunityListTests(TestCase):
         # document shows up on GET
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.name in unicontent(r))
+        self.assertContains(r, draft.name)
 
         # remove document
         r = self.client.post(url, { "action": "remove_document", "document": draft.name })
@@ -226,7 +227,7 @@ class CommunityListTests(TestCase):
         # track
         r = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(json.loads(r.content)["success"], True)
+        self.assertEqual(r.json()["success"], True)
         clist = CommunityList.objects.get(user__username="plain")
         self.assertEqual(list(clist.added_docs.all()), [draft])
 
@@ -234,7 +235,7 @@ class CommunityListTests(TestCase):
         url = urlreverse(ietf.community.views.untrack_document, kwargs={ "username": "plain", "name": draft.name })
         r = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(json.loads(r.content)["success"], True)
+        self.assertEqual(r.json()["success"], True)
         clist = CommunityList.objects.get(user__username="plain")
         self.assertEqual(list(clist.added_docs.all()), [])
 
@@ -261,7 +262,7 @@ class CommunityListTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         # this is a simple-minded test, we don't actually check the fields
-        self.assertTrue(draft.name in unicontent(r))
+        self.assertContains(r, draft.name)
 
     def test_csv_for_group(self):
         draft = WgDraftFactory()
@@ -296,12 +297,12 @@ class CommunityListTests(TestCase):
         )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.name in unicontent(r))
+        self.assertContains(r, draft.name)
 
         # only significant
         r = self.client.get(url + "?significant=1")
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('<entry>' not in unicontent(r))
+        self.assertNotContains(r, '<entry>')
 
     def test_feed_for_group(self):
         draft = WgDraftFactory()

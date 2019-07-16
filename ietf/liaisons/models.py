@@ -1,8 +1,13 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 from django.utils.text import slugify
 
 from ietf.person.models import Email, Person
@@ -15,15 +20,16 @@ from ietf.utils.models import ForeignKey
 
 # maps (previous state id, new state id) to event type id
 STATE_EVENT_MAPPING = {
-    (u'pending','approved'):'approved',
-    (u'pending','dead'):'killed',
-    (u'pending','posted'):'posted',
-    (u'approved','posted'):'posted',
-    (u'dead','pending'):'resurrected',
-    (u'pending','pending'):'submitted'
+    ('pending','approved'):'approved',
+    ('pending','dead'):'killed',
+    ('pending','posted'):'posted',
+    ('approved','posted'):'posted',
+    ('dead','pending'):'resurrected',
+    ('pending','pending'):'submitted'
 }
 
 
+@python_2_unicode_compatible
 class LiaisonStatement(models.Model):
     title = models.CharField(max_length=255)
     from_groups = models.ManyToManyField(Group, blank=True, related_name='liaisonstatement_from_set')
@@ -47,10 +53,9 @@ class LiaisonStatement(models.Model):
 
     class Meta:
         ordering = ['id']
-        
 
-    def __unicode__(self):
-        return self.title or u"<no title>"
+    def __str__(self):
+        return self.title or "<no title>"
 
     def change_state(self,state_id=None,person=None):
         '''Helper function to change state of liaison statement and create appropriate
@@ -198,33 +203,37 @@ class LiaisonStatement(models.Model):
                 approval_set.intersection_update(group.liaison_approvers())
         return list(set([ r.email.address for r in approval_set ]))
 
+@python_2_unicode_compatible
 class LiaisonStatementAttachment(models.Model):
     statement = ForeignKey(LiaisonStatement)
     document = ForeignKey(Document)
     removed = models.BooleanField(default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.document.name
 
 
+@python_2_unicode_compatible
 class RelatedLiaisonStatement(models.Model):
     source = ForeignKey(LiaisonStatement, related_name='source_of_set')
     target = ForeignKey(LiaisonStatement, related_name='target_of_set')
     relationship = ForeignKey(DocRelationshipName)
 
-    def __unicode__(self):
-        return u"%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
+    def __str__(self):
+        return "%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
 
 
+@python_2_unicode_compatible
 class LiaisonStatementGroupContacts(models.Model):
     group = ForeignKey(Group, unique=True, null=True)
     contacts = models.CharField(max_length=255,blank=True)
     cc_contacts = models.CharField(max_length=255,blank=True)
 
-    def __unicode__(self):
-        return u"%s" % self.group.name
+    def __str__(self):
+        return "%s" % self.group.name
 
 
+@python_2_unicode_compatible
 class LiaisonStatementEvent(models.Model):
     time = models.DateTimeField(auto_now_add=True)
     type = ForeignKey(LiaisonStatementEventTypeName)
@@ -232,8 +241,8 @@ class LiaisonStatementEvent(models.Model):
     statement = ForeignKey(LiaisonStatement)
     desc = models.TextField()
 
-    def __unicode__(self):
-        return u"%s %s by %s at %s" % (self.statement.title, self.type.slug, self.by.plain_name(), self.time)
+    def __str__(self):
+        return "%s %s by %s at %s" % (self.statement.title, self.type.slug, self.by.plain_name(), self.time)
 
     class Meta:
         ordering = ['-time', '-id']

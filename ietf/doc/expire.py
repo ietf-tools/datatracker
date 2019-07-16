@@ -1,4 +1,9 @@
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 # expiry of Internet Drafts
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 from django.conf import settings
 
@@ -92,7 +97,7 @@ def send_expire_warning_for_draft(doc):
     request = None
     if to or cc:
         send_mail(request, to, frm,
-                  u"Expiration impending: %s" % doc.file_tag(),
+                  "Expiration impending: %s" % doc.file_tag(),
                   "doc/draft/expire_warning_email.txt",
                   dict(doc=doc,
                        state=state,
@@ -112,7 +117,7 @@ def send_expire_notice_for_draft(doc):
     (to,cc) = gather_address_lists('doc_expired',doc=doc)
     send_mail(request, to,
               "I-D Expiring System <ietf-secretariat-reply@ietf.org>",
-              u"I-D was expired %s" % doc.file_tag(),
+              "I-D was expired %s" % doc.file_tag(),
               "doc/draft/id_expired_email.txt",
               dict(doc=doc,
                    state=state,
@@ -167,7 +172,7 @@ def clean_up_draft_files():
     cut_off = datetime.date.today()
 
     pattern = os.path.join(settings.INTERNET_DRAFT_PATH, "draft-*.*")
-    filename_re = re.compile('^(.*)-(\d\d)$')
+    filename_re = re.compile(r'^(.*)-(\d\d)$')
 
     def splitext(fn):
         """

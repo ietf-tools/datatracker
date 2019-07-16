@@ -1,9 +1,15 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 
 from ietf.utils.models import ForeignKey
 
+@python_2_unicode_compatible
 class NameModel(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     name = models.CharField(max_length=255)
@@ -11,7 +17,7 @@ class NameModel(models.Model):
     used = models.BooleanField(default=True)
     order = models.IntegerField(default=0)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     class Meta:

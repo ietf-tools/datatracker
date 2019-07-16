@@ -1,21 +1,29 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import re, datetime, email
 
-from ietf.utils.mail import send_mail_text, send_mail_mime
+from django.utils.encoding import force_str
+
+from ietf.utils.mail import send_mail_text, send_mail_mime, get_payload
 from ietf.message.models import Message
 
 first_dot_on_line_re = re.compile(r'^\.', re.MULTILINE)
 
 def infer_message(s):
-    parsed = email.message_from_string(s.encode("utf-8"))
+    parsed = email.message_from_string(force_str(s))
 
     m = Message()
-    m.subject = parsed.get("Subject", "").decode("utf-8")
-    m.frm = parsed.get("From", "").decode("utf-8")
-    m.to = parsed.get("To", "").decode("utf-8")
-    m.cc = parsed.get("Cc", "").decode("utf-8")
-    m.bcc = parsed.get("Bcc", "").decode("utf-8")
-    m.reply_to = parsed.get("Reply-To", "").decode("utf-8")
-    m.body = parsed.get_payload().decode("utf-8")
+    m.subject = parsed.get("Subject", "")
+    m.frm = parsed.get("From", "")
+    m.to = parsed.get("To", "")
+    m.cc = parsed.get("Cc", "")
+    m.bcc = parsed.get("Bcc", "")
+    m.reply_to = parsed.get("Reply-To", "")
+    m.body = get_payload(parsed)
 
     return m
 
@@ -40,7 +48,7 @@ def send_scheduled_message_from_send_queue(send_queue):
         # make body a real message so we can parse it
         body = ("MIME-Version: 1.0\r\nContent-Type: %s\r\n" % message.content_type) + body
         
-        msg = email.message_from_string(body.encode("utf-8"))
+        msg = email.message_from_string(force_str(body))
         send_mail_mime(None, message.to, message.frm, message.subject,
                        msg, cc=message.cc, bcc=message.bcc)
 

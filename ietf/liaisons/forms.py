@@ -1,9 +1,14 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import datetime, os
 import operator
 import six
+
 from email.utils import parseaddr
 from form_utils.forms import BetterModelForm
 
@@ -30,6 +35,7 @@ from ietf.person.models import Email
 from ietf.person.fields import SearchableEmailField
 from ietf.doc.models import Document, DocAlias
 from ietf.utils.fields import DatepickerDateField
+from functools import reduce
 
 '''
 NOTES:
@@ -209,12 +215,12 @@ class LiaisonModelForm(BetterModelForm):
     NOTE: from_groups and to_groups are marked as not required because select2 has
     a problem with validating
     '''
-    from_groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(),label=u'Groups',required=False)
+    from_groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(),label='Groups',required=False)
     from_contact = forms.EmailField()
     to_contacts = forms.CharField(label="Contacts", widget=forms.Textarea(attrs={'rows':'3', }), strip=False)
-    to_groups = forms.ModelMultipleChoiceField(queryset=Group.objects,label=u'Groups',required=False)
+    to_groups = forms.ModelMultipleChoiceField(queryset=Group.objects,label='Groups',required=False)
     deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Deadline', required=True)
-    related_to = SearchableLiaisonStatementsField(label=u'Related Liaison Statement', required=False)
+    related_to = SearchableLiaisonStatementsField(label='Related Liaison Statement', required=False)
     submitted_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Submission date', required=True, initial=datetime.date.today())
     attachments = CustomModelMultipleChoiceField(queryset=Document.objects,label='Attachments', widget=ShowAttachmentsWidget, required=False)
     attach_title = forms.CharField(label='Title', required=False)
@@ -298,13 +304,13 @@ class LiaisonModelForm(BetterModelForm):
 
     def clean(self):
         if not self.cleaned_data.get('body', None) and not self.has_attachments():
-            self._errors['body'] = ErrorList([u'You must provide a body or attachment files'])
-            self._errors['attachments'] = ErrorList([u'You must provide a body or attachment files'])
+            self._errors['body'] = ErrorList(['You must provide a body or attachment files'])
+            self._errors['attachments'] = ErrorList(['You must provide a body or attachment files'])
 
         # if purpose=response there must be a related statement
         purpose = LiaisonStatementPurposeName.objects.get(slug='response')
         if self.cleaned_data.get('purpose') == purpose and not self.cleaned_data.get('related_to'):
-            self._errors['related_to'] = ErrorList([u'You must provide a related statement when purpose is In Response'])
+            self._errors['related_to'] = ErrorList(['You must provide a related statement when purpose is In Response'])
         return self.cleaned_data
 
     def full_clean(self):
@@ -313,8 +319,8 @@ class LiaisonModelForm(BetterModelForm):
         self.reset_required_fields()
 
     def has_attachments(self):
-        for key in self.files.keys():
-            if key.startswith('attach_file_') and key.replace('file', 'title') in self.data.keys():
+        for key in list(self.files.keys()):
+            if key.startswith('attach_file_') and key.replace('file', 'title') in list(self.data.keys()):
                 return True
         return False
 
@@ -351,10 +357,10 @@ class LiaisonModelForm(BetterModelForm):
         request.POST[attach_title_N]
         '''
         written = self.instance.attachments.all().count()
-        for key in self.files.keys():
+        for key in list(self.files.keys()):
             title_key = key.replace('file', 'title')
             attachment_title = self.data.get(title_key)
-            if not key.startswith('attach_file_') or not title_key in self.data.keys():
+            if not key.startswith('attach_file_') or not title_key in list(self.data.keys()):
                 continue
             attached_file = self.files.get(key)
             extension=attached_file.name.rsplit('.', 1)
@@ -375,7 +381,7 @@ class LiaisonModelForm(BetterModelForm):
             if created:
                 DocAlias.objects.create(name=attach.name).docs.add(attach)
             LiaisonStatementAttachment.objects.create(statement=self.instance,document=attach)
-            attach_file = open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'w')
+            attach_file = io.open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'wb')
             attach_file.write(attached_file.read())
             attach_file.close()
 
@@ -422,7 +428,7 @@ class LiaisonModelForm(BetterModelForm):
 
 class IncomingLiaisonForm(LiaisonModelForm):
     def clean(self):
-        if 'send' in self.data.keys() and self.get_post_only():
+        if 'send' in list(self.data.keys()) and self.get_post_only():
             raise forms.ValidationError('As an IETF Liaison Manager you can not send incoming liaison statements, you only can post them')
         return super(IncomingLiaisonForm, self).clean()
 
@@ -446,7 +452,7 @@ class IncomingLiaisonForm(LiaisonModelForm):
             self.fields['from_contact'].initial = self.person.role_set.filter(group=queryset[0]).first().email.address
             self.fields['from_contact'].widget.attrs['readonly'] = True
         self.fields['from_groups'].queryset = queryset
-        self.fields['from_groups'].widget.submitter = unicode(self.person)
+        self.fields['from_groups'].widget.submitter = six.text_type(self.person)
 
         # if there's only one possibility make it the default
         if len(queryset) == 1:

@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from django.urls import reverse as urlreverse
@@ -18,15 +21,15 @@ class GroupChangesFeed(Feed):
         return Group.objects.get(acronym=acronym)
 
     def title(self, obj):
-        return u"Changes for %s %s" % (obj.acronym, obj.type)
+        return "Changes for %s %s" % (obj.acronym, obj.type)
 
     def link(self, obj):
-	if not obj:
-	    raise FeedDoesNotExist
+        if not obj:
+            raise FeedDoesNotExist
         return obj.about_url()
 
     def description(self, obj):
-	return self.title(obj)
+        return self.title(obj)
 
     def items(self, obj):
         events = list(obj.groupevent_set.all().select_related("group"))
@@ -44,11 +47,11 @@ class GroupChangesFeed(Feed):
             return obj.group.about_url()
 
     def item_pubdate(self, obj):
-	return obj.time
+        return obj.time
 
     def item_title(self, obj):
-        title = u"%s - %s" % (truncatewords(strip_tags(obj.desc), 10), obj.by)
+        title = "%s - %s" % (truncatewords(strip_tags(obj.desc), 10), obj.by)
         if isinstance(obj, DocEvent):
-            title = u"Chartering: %s" % title
+            title = "Chartering: %s" % title
 
         return title

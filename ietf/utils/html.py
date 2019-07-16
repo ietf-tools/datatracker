@@ -1,16 +1,21 @@
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 # Taken from http://code.google.com/p/soclone/source/browse/trunk/soclone/utils/html.py
-
 """Utilities for working with HTML."""
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import bleach
 import copy
 import lxml.etree
 import lxml.html
 import lxml.html.clean
+import six
 
 import debug                            # pyflakes:ignore
 
 from django.utils.functional import keep_lazy
-from django.utils import six
 
 acceptable_tags = ('a', 'abbr', 'acronym', 'address', 'b', 'big',
     'blockquote', 'body', 'br', 'caption', 'center', 'cite', 'code', 'col',
@@ -31,7 +36,7 @@ def unescape(text):
     """
     return text.replace('&#39;', "'").replace('&quot;', '"').replace('&gt;', '>').replace('&lt;', '<' ).replace('&amp;', '&')
 
-@keep_lazy(six.text_type)
+@keep_lazy(str)
 def remove_tags(html, tags):
     """Returns the given HTML sanitized, and with the given tags removed."""
     allowed = set(acceptable_tags) - set([ t.lower() for t in tags ])
@@ -54,7 +59,7 @@ class Cleaner(lxml.html.clean.Cleaner):
     # Copied from lxml 4.2.0 and modified to insert charset meta:
     def clean_html(self, html):
         result_type = type(html)
-        if isinstance(html, basestring):
+        if isinstance(html, six.string_types):
             doc = lxml.html.fromstring(html)
         else:
             doc = copy.deepcopy(html)

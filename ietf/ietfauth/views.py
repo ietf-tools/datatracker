@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+#
 # Portions Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -30,7 +33,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Copyright The IETF Trust 2007, All Rights Reserved
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import importlib
 
@@ -54,6 +58,7 @@ from django.urls import reverse as urlreverse
 from django.utils.safestring import mark_safe
 from django.http import Http404, HttpResponseRedirect  #, HttpResponse, 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.encoding import force_bytes
 
 import debug                            # pyflakes:ignore
 
@@ -228,7 +233,7 @@ def profile(request):
                 auth = django.core.signing.dumps([person.user.username, to_email], salt="add_email")
 
                 domain = Site.objects.get_current().domain
-                subject = u'Confirm email address for %s' % person.name
+                subject = 'Confirm email address for %s' % person.name
                 from_email = settings.DEFAULT_FROM_EMAIL
 
                 send_mail(request, to_email, from_email, subject, 'registration/add_email_email.txt', {
@@ -674,7 +679,7 @@ def apikey_disable(request):
     class KeyDeleteForm(forms.Form):
         hash = forms.ChoiceField(label='Key', choices=choices)
         def clean_key(self):
-            hash = self.cleaned_data['hash']
+            hash = force_bytes(self.cleaned_data['hash'])
             key = PersonalApiKey.validate_key(hash)
             if key and key.person == request.user.person:
                 return hash
@@ -684,7 +689,7 @@ def apikey_disable(request):
     if request.method == 'POST':
         form = KeyDeleteForm(request.POST)
         if form.is_valid():
-            hash = form.data['hash']
+            hash = force_bytes(form.data['hash'])
             key = PersonalApiKey.validate_key(hash)
             key.valid = False
             key.save()

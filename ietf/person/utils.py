@@ -1,7 +1,13 @@
-from __future__ import unicode_literals, print_function
+# Copyright The IETF Trust 2015-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 import os
 import pprint 
+import six
 import sys
 import syslog
 
@@ -19,7 +25,7 @@ def merge_persons(source, target, file=sys.stdout, verbose=False):
     changes = []
 
     # write log
-    syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
+    syslog.openlog(str(os.path.basename(__file__)), syslog.LOG_PID, syslog.LOG_USER)
     syslog.syslog("Merging person records {} => {}".format(source.pk,target.pk))
     
     # handle primary emails
@@ -49,13 +55,13 @@ def merge_persons(source, target, file=sys.stdout, verbose=False):
         objs, opts, user, admin_site, using)
     deletable_objects_summary = deletable_objects[1]
     if len(deletable_objects_summary) > 1:    # should only inlcude one object (Person)
-        print("Not Deleting Person: {}({})".format(source.ascii,source.pk), file=file)
-        print("Related objects remain:", file=file)
+        six.print_("Not Deleting Person: {}({})".format(source.ascii,source.pk), file=file)
+        six.print_("Related objects remain:", file=file)
         pprint.pprint(deletable_objects[1], stream=file)
         success = False
     else:
         success = True
-        print("Deleting Person: {}({})".format(source.ascii,source.pk), file=file)
+        six.print_("Deleting Person: {}({})".format(source.ascii,source.pk), file=file)
         source.delete()
     
     return success, changes
@@ -108,7 +114,7 @@ def move_related_objects(source, target, file, verbose=False):
         field_name = related_object.field.name
         queryset = getattr(source, accessor).all()
         if verbose:
-            print("Merging {}:{}".format(accessor,queryset.count()),file=file)
+            six.print_("Merging {}:{}".format(accessor,queryset.count()), file=file)
         kwargs = { field_name:target }
         queryset.update(**kwargs)
 

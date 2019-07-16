@@ -1,8 +1,12 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 import itertools
+import six
 
 from django.conf import settings
 from django.contrib import messages
@@ -342,11 +346,11 @@ def edit(request, id, updates=None):
 
     else:
         initial = model_to_dict(ipr)
-        patent_info = text_to_dict(initial.get('patent_info', u''))
-        if patent_info.keys():
-            patent_dict = dict([ ('patent_'+k.lower(), v) for k,v in patent_info.items() ])
+        patent_info = text_to_dict(initial.get('patent_info', ''))
+        if list(patent_info.keys()):
+            patent_dict = dict([ ('patent_'+k.lower(), v) for k,v in list(patent_info.items()) ])
         else:
-            patent_dict = {'patent_notes': initial.get('patent_info', u'')}
+            patent_dict = {'patent_notes': initial.get('patent_info', '')}
         initial.update(patent_dict)
         if ipr.updates:
             initial.update({'updates':[ x.target for x in ipr.updates ]})
@@ -408,7 +412,7 @@ def email(request, id):
             'to': addrs.to,
             'cc': addrs.cc,
             'frm': settings.IPR_EMAIL_FROM,
-            'subject': u'Regarding {}'.format(ipr.title),
+            'subject': 'Regarding {}'.format(ipr.title),
             'reply_to': reply_to,
         }
         form = MessageModelForm(initial=initial)
@@ -450,9 +454,9 @@ def by_draft_txt(request):
 
         docipr[name].append(o.disclosure_id)
 
-    lines = [ u"# Machine-readable list of IPR disclosures by draft name" ]
-    for name, iprs in docipr.iteritems():
-        lines.append(name + "\t" + "\t".join(unicode(ipr_id) for ipr_id in sorted(iprs)))
+    lines = [ "# Machine-readable list of IPR disclosures by draft name" ]
+    for name, iprs in docipr.items():
+        lines.append(name + "\t" + "\t".join(six.text_type(ipr_id) for ipr_id in sorted(iprs)))
 
     return HttpResponse("\n".join(lines), content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
@@ -472,9 +476,9 @@ def by_draft_recursive_txt(request):
                     docipr[name] = []
                 docipr[name].append(o.disclosure_id)
 
-    lines = [ u"# Machine-readable list of IPR disclosures by draft name" ]
-    for name, iprs in docipr.iteritems():
-        lines.append(name + "\t" + "\t".join(unicode(ipr_id) for ipr_id in sorted(iprs)))
+    lines = [ "# Machine-readable list of IPR disclosures by draft name" ]
+    for name, iprs in docipr.items():
+        lines.append(name + "\t" + "\t".join(six.text_type(ipr_id) for ipr_id in sorted(iprs)))
 
     return HttpResponse("\n".join(lines), content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
@@ -546,11 +550,11 @@ def new(request, type, updates=None):
             original = IprDisclosureBase(id=updates).get_child()
             initial = model_to_dict(original)
             initial.update({'updates':str(updates), })
-            patent_info = text_to_dict(initial.get('patent_info', u''))
-            if patent_info.keys():
-                patent_dict = dict([ ('patent_'+k.lower(), v) for k,v in patent_info.items() ])
+            patent_info = text_to_dict(initial.get('patent_info', ''))
+            if list(patent_info.keys()):
+                patent_dict = dict([ ('patent_'+k.lower(), v) for k,v in list(patent_info.items()) ])
             else:
-                patent_dict = {'patent_notes': initial.get('patent_info', u'')}
+                patent_dict = {'patent_notes': initial.get('patent_info', '')}
             initial.update(patent_dict)
             form = ipr_form_mapping[type](initial=initial)
         else:

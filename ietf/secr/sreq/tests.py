@@ -1,12 +1,17 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-from django.urls import reverse
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
+import six
+
+from django.urls import reverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.test_utils import TestCase, unicontent
+from ietf.utils.test_utils import TestCase
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.meeting.models import Session, ResourceAssociation
 from ietf.meeting.factories import MeetingFactory, SessionFactory
@@ -149,7 +154,7 @@ class SubmitRequestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('#session-request-form')),1)
-        self.assertTrue('You must enter a length for all sessions' in unicontent(r))
+        self.assertContains(r, 'You must enter a length for all sessions')
 
     def test_request_notification(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
@@ -179,14 +184,14 @@ class SubmitRequestCase(TestCase):
         r = self.client.post(url,post_data)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue('Confirm' in unicode(q("title")))
+        self.assertTrue('Confirm' in six.text_type(q("title")))
         # confirm
         post_data['submit'] = 'Submit'
         r = self.client.post(confirm_url,post_data)
         self.assertRedirects(r, reverse('ietf.secr.sreq.views.main'))
         self.assertEqual(len(outbox),len_before+1)
         notification = outbox[-1]
-        notification_payload = unicode(notification.get_payload(decode=True),"utf-8","replace")
+        notification_payload = six.text_type(notification.get_payload(decode=True),"utf-8","replace")
         session = Session.objects.get(meeting=meeting,group=group)
         self.assertEqual(session.resources.count(),1)
         self.assertEqual(session.people_constraints.count(),1)
@@ -250,11 +255,11 @@ class NotMeetingCase(TestCase):
 
         # This is a sign of a problem - a get shouldn't have a side-effect like this one does
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('A message was sent to notify not having a session' in unicontent(r))
+        self.assertContains(r, 'A message was sent to notify not having a session')
 
         r = self.client.get(url,follow=True)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('is already marked as not meeting' in unicontent(r))
+        self.assertContains(r, 'is already marked as not meeting')
 
         self.assertEqual(len(outbox),1)
         self.assertTrue('Not having a session' in outbox[0]['Subject'])

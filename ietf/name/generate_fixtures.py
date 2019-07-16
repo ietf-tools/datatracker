@@ -1,8 +1,10 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
 #!/usr/bin/python
 
 # simple script for exporting name related base data for the tests
 
 # boiler plate
+import io
 import os, sys
 import django
 
@@ -17,7 +19,7 @@ from django.core.serializers import serialize
 
 def output(name, seq):
     try:
-        f = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures/%s.json" % name), 'w')
+        f = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures/%s.json" % name), 'w')
         f.write(serialize("json", seq, indent=1))
         f.close()
     except:

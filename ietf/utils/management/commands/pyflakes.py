@@ -1,4 +1,9 @@
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
 from __future__ import absolute_import
+
 import ast
 import os
 from pyflakes import checker, messages
@@ -6,6 +11,8 @@ import sys
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+
+import debug                            # pyflakes:ignore
 
 # BlackHole, PySyntaxError and checking based on 
 # https://github.com/patrys/gedit-pyflakes-plugin.git
@@ -50,7 +57,7 @@ def check(codeString, filename, verbosity=1):
     try:
         with BlackHole():
             tree = ast.parse(codeString, filename)
-    except SyntaxError, e:
+    except SyntaxError as e:
         return [PySyntaxError(filename, e.lineno, e.offset, e.text)]
     else:
         # Okay, it's syntactically valid.  Now parse it into an ast and check
@@ -63,12 +70,13 @@ def check(codeString, filename, verbosity=1):
                     if lines[message.lineno-1].find('pyflakes:ignore') < 0]
         # honour pyflakes:
 
-        messages.sort(lambda a, b: cmp(a.lineno, b.lineno))
+        messages.sort(key=lambda x: x.lineno)
         if verbosity > 0:
             if len(messages):
                 sys.stderr.write('F')
             else:
                 sys.stderr.write('.')
+            sys.stderr.flush()
         if verbosity > 1:
             sys.stderr.write("  %s\n" % filename)
         return messages
@@ -81,8 +89,8 @@ def checkPath(filename, verbosity):
     @return: the number of warnings printed
     """
     try:
-        return check(file(filename, 'U').read() + '\n', filename, verbosity)
-    except IOError, msg:
+        return check(open(filename).read() + '\n', filename, verbosity)
+    except IOError as msg:
         return ["%s: %s" % (filename, msg.args[1])]
     except TypeError:
         pass
@@ -97,7 +105,7 @@ def checkPaths(filenames, verbosity):
                         try:
                             warnings.extend(checkPath(os.path.join(dirpath, filename), verbosity))
                         except TypeError as e:
-                            print("Exception while processing dirpath=%s, filename=%s: %s" % (dirpath, filename,e ))
+                            print("Exception while processing dirpath=%s, filename=%s: %s" % (dirpath, filename, e ))
                             raise
         else:
             warnings.extend(checkPath(arg, verbosity))
@@ -114,11 +122,11 @@ class Command(BaseCommand):
             filenames = getattr(settings, 'PYFLAKES_DEFAULT_ARGS', ['.'])
         verbosity = int(options.get('verbosity'))
         warnings = checkPaths(filenames, verbosity=verbosity)
-        print ""
+        print("")
         for warning in warnings:
-            print warning
+            print(warning)
 
         if warnings:
-            print 'Total warnings: %d' % len(warnings)
+            print('Total warnings: %d' % len(warnings))
             raise SystemExit(1)
             

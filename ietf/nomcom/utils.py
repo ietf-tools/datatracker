@@ -1,7 +1,14 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 import hashlib
 import os
 import re
+import six
 import tempfile
 
 from email import message_from_string
@@ -15,7 +22,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
-from django.utils.encoding import smart_str
+from django.utils.encoding import force_str, force_text
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.person.models import Email, Person
@@ -60,7 +67,7 @@ def get_nomcom_by_year(year):
 
 def get_year_by_nomcom(nomcom):
     acronym = nomcom.group.acronym
-    m = re.search('(?P<year>\d\d\d\d)', acronym)
+    m = re.search(r'(?P<year>\d\d\d\d)', acronym)
     return m.group(0)
 
 
@@ -86,7 +93,7 @@ def get_user_email(user):
     return user._email_cache
 
 def get_hash_nominee_position(date, nominee_position_id):
-    return hashlib.md5('%s%s%s' % (settings.SECRET_KEY, date, nominee_position_id)).hexdigest()
+    return hashlib.md5(('%s%s%s' % (settings.SECRET_KEY, date, nominee_position_id)).encode('utf-8')).hexdigest()
 
 
 def initialize_templates_for_group(group):
@@ -159,7 +166,7 @@ def retrieve_nomcom_private_key(request, year):
 
     command = "%s bf -d -in /dev/stdin -k \"%s\" -a"
     code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
-                                       settings.SECRET_KEY), private_key)
+                                       settings.SECRET_KEY), private_key.encode('utf-8'))
     if code != 0:
         log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
     return out
@@ -171,7 +178,7 @@ def store_nomcom_private_key(request, year, private_key):
     else:
         command = "%s bf -e -in /dev/stdin -k \"%s\" -a"
         code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
-                                           settings.SECRET_KEY), private_key)
+                                           settings.SECRET_KEY), private_key.encode('utf-8'))
         if code != 0:
             log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
         if error:
@@ -181,7 +188,7 @@ def store_nomcom_private_key(request, year, private_key):
 
 def validate_private_key(key):
     key_file = tempfile.NamedTemporaryFile(delete=False)
-    key_file.write(key)
+    key_file.write(key.encode('utf-8'))
     key_file.close()
 
     command = "%s rsa -in %s -check -noout"
@@ -398,10 +405,9 @@ def make_nomineeposition_for_newperson(nomcom, candidate_name, candidate_email, 
 def getheader(header_text, default="ascii"):
     """Decode the specified header"""
 
-    headers = decode_header(header_text)
-    header_sections = [unicode(text, charset or default)
-                       for text, charset in headers]
-    return u"".join(header_sections)
+    tuples = decode_header(header_text)
+    header_sections = [ text.decode(charset or default) if isinstance(text, six.binary_type) else text for text, charset in tuples]
+    return "".join(header_sections)
 
 
 def get_charset(message, default="ascii"):
@@ -427,24 +433,22 @@ def get_body(message):
         body = []
         for part in text_parts:
             charset = get_charset(part, get_charset(message))
-            body.append(unicode(part.get_payload(decode=True),
+            body.append(force_text(part.get_payload(decode=True),
                                 charset,
                                 "replace"))
 
-        return u"\n".join(body).strip()
+        return "\n".join(body).strip()
 
     else:  # if it is not multipart, the payload will be a string
            # representing the message body
-        body = unicode(message.get_payload(decode=True),
+        body = force_text(message.get_payload(decode=True),
                        get_charset(message),
                        "replace")
         return body.strip()
 
 
 def parse_email(text):
-    if isinstance(text, unicode):
-        text = smart_str(text)
-    msg = message_from_string(text)
+    msg = message_from_string(force_str(text))
 
     body = get_body(msg)
     subject = getheader(msg['Subject'])
@@ -460,6 +464,10 @@ def create_feedback_email(nomcom, msg):
     feedback = Feedback(nomcom=nomcom,
                         author=by,
                         subject=subject or '',
-                        comments=body)
+                        comments=nomcom.encrypt(body))
     feedback.save()
     return feedback
+
+class EncryptedException(Exception):
+    pass
+    

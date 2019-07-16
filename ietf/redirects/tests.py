@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 # Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -31,6 +33,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 from ietf.utils.test_utils import split_url, TestCase
 
 import debug                            # pyflakes:ignore
@@ -45,46 +49,47 @@ REDIRECT_TESTS = {
     # idindex/idtracker
     
     '/public/pidtracker.cgi?command=view_id&dTag=11171&rfc_flag=0':
-        '/idtracker/11171/',
+        ('/idtracker/11171/', ),
     '/public/idindex.cgi?command=do_search_id&filename=draft-mills-sntp-v4-00.txt':
-        '/drafts/?filename=draft-mills-sntp-v4-00.txt',
+        ('/drafts/?filename=draft-mills-sntp-v4-00.txt', ),
     '/public/idindex.cgi?command=do_search_id&filename=draft-ietf-isis-interoperable&search_button=SEARCH':
-        '/drafts/?search_button=SEARCH&filename=draft-ietf-isis-interoperable',
+        ('/drafts/?filename=draft-ietf-isis-interoperable&search_button=SEARCH',
+         '/drafts/?search_button=SEARCH&filename=draft-ietf-isis-interoperable'),
     '/public/idindex.cgi?command=do_search_id&filename=rfc0038.txt':
-        '/drafts/?filename=rfc0038.txt',
+        ('/drafts/?filename=rfc0038.txt', ),
     '/public/idindex.cgi?command=id_detail&id=7096':
-        '/drafts/7096/',
+        ('/drafts/7096/', ),
     '/public/idindex.cgi?command=view_related_docs&id=10845':
-        '/drafts/10845/related/',
+        ('/drafts/10845/related/', ),
     '/public/idindex.cgi?command=id_detail&filename=draft-l3vpn-as4octet-ext-community':
-        '/drafts/draft-l3vpn-as4octet-ext-community/',
+        ('/drafts/draft-l3vpn-as4octet-ext-community/', ),
     # non-ASCII parameter
     '/public/pidtracker.cgi?command=view_id&dTag=11171%D182&rfc_flag=0':
-        '/idtracker/',
-    '/idtracker/': '/doc/',
+        ('/idtracker/', ),
+    '/idtracker/': ('/doc/', ),
 
     # ipr
 
     '/public/ipr_disclosure.cgi':
-        '/ipr/about/',
+        ('/ipr/about/', ), 
     '/public/ipr_detail_show.cgi?ipr_id=693':
-        '/ipr/693/',
+        ('/ipr/693/', ), 
     
     # liaisons
 
     '/public/liaison_detail.cgi?detail_id=340':
-        '/liaison/340/',
+        ('/liaison/340/', ),
 
     # meeting
 
     '/public/meeting_agenda_html.cgi?meeting_num=72':
-        '/meeting/72/agenda.html',
+        ('/meeting/72/agenda.html', ),
     '/public/meeting_materials.cgi?meeting_num=76':
-        '/meeting/76/materials.html',
+        ('/meeting/76/materials.html', ),
 
     # RedirectTrailingPeriod middleware
     '/sitemap.xml.':
-        '/sitemap.xml'
+        ('/sitemap.xml', ),
 
     }
 
@@ -99,7 +104,7 @@ class RedirectsTests(TestCase):
             location = response['Location']
             if location.startswith("http://testserver/"):
                 location = location[17:]
-            self.assertEqual(location, dst, (src, dst, location))
+            self.assertIn(location, dst, (src, dst, location))
 
 class MainUrlTests(TestCase):
     def test_urls(self):

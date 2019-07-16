@@ -10,7 +10,7 @@ The chairs have been copied since this is a group document whose author list has
 {%endif%}
 Please follow this link to the page where you can confirm the posting:
 
-{{ confirm_url }}
+{{ confirmation_url }}
 
 
 Best regards,

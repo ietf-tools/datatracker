@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 import email
 
@@ -8,6 +11,7 @@ import email
 from django import forms
 from django.core.validators import RegexValidator
 from django.utils.safestring import mark_safe
+from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
@@ -73,7 +77,7 @@ class AddEmailForm(forms.Form):
     def clean_message(self):
         '''Returns a ietf.message.models.Message object'''
         text = self.cleaned_data['message']
-        message = email.message_from_string(text)
+        message = email.message_from_string(force_str(text))
         for field in ('to','from','subject','date'):
             if not message[field]:
                 raise forms.ValidationError('Error parsing email: {} field not found.'.format(field))
@@ -110,12 +114,12 @@ class DraftForm(forms.ModelForm):
         help_texts = { 'sections': 'Sections' }
 
 validate_patent_number = RegexValidator(
-                                    regex=("^("
-                                             "([A-Z][A-Z]\d\d/\d{6}"
-                                             "|[A-Z][A-Z]\d{6,12}([A-Z]\d?)?"
-                                             "|[A-Z][A-Z]\d{4}(\w{1,2}\d{5,7})?"
-                                             "|[A-Z][A-Z]\d{15}"
-                                             ")[, ]*)+$"),
+                                    regex=(r"^("
+                                             r"([A-Z][A-Z]\d\d/\d{6}"
+                                             r"|[A-Z][A-Z]\d{6,12}([A-Z]\d?)?"
+                                             r"|[A-Z][A-Z]\d{4}(\w{1,2}\d{5,7})?"
+                                             r"|[A-Z][A-Z]\d{15}"
+                                             r")[, ]*)+$"),
                                     message="Please enter one or more patent publication or application numbers as country code and serial number, e.g.: US62/123456 or WO2017123456." )
 
 def validate_string(s, letter_min, digit_min, space_min, message):

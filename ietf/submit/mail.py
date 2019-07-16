@@ -1,4 +1,8 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import re
 import email
@@ -12,6 +16,7 @@ from django.urls import reverse as urlreverse
 from django.core.validators import ValidationError
 from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
+from django.utils.encoding import force_text, force_str
 
 import debug                            # pyflakes:ignore
 
@@ -31,13 +36,13 @@ def send_submission_confirmation(request, submission, chair_notice=False):
     from_email = settings.IDSUBMIT_FROM_EMAIL
     (to_email, cc) = gather_address_lists('sub_confirmation_requested',submission=submission)
 
-    confirm_url = settings.IDTRACKER_BASE_URL + urlreverse('ietf.submit.views.confirm_submission', kwargs=dict(submission_id=submission.pk, auth_token=generate_access_token(submission.auth_key)))
+    confirmation_url = settings.IDTRACKER_BASE_URL + urlreverse('ietf.submit.views.confirm_submission', kwargs=dict(submission_id=submission.pk, auth_token=generate_access_token(submission.auth_key)))
     status_url = settings.IDTRACKER_BASE_URL + urlreverse('ietf.submit.views.submission_status', kwargs=dict(submission_id=submission.pk, access_token=submission.access_token()))
         
     send_mail(request, to_email, from_email, subject, 'submit/confirm_submission.txt', 
               {
                 'submission': submission,
-                'confirm_url': confirm_url,
+                'confirmation_url': confirmation_url,
                 'status_url': status_url,
                 'chair_notice': chair_notice,
               },
@@ -82,7 +87,7 @@ def send_approval_request_to_group(request, submission):
     return all_addrs
 
 def send_manual_post_request(request, submission, errors):
-    subject = u'Manual Post Requested for %s' % submission.name
+    subject = 'Manual Post Requested for %s' % submission.name
     from_email = settings.IDSUBMIT_FROM_EMAIL
     (to_email,cc) = gather_address_lists('sub_manual_post_requested',submission=submission)
     checker = DraftIdnitsChecker(options=[]) # don't use the default --submitcheck limitation
@@ -172,7 +177,7 @@ def get_reply_to():
     address with "plus addressing" using a random string.  Guaranteed to be unique"""
     local,domain = get_base_submission_message_address().split('@')
     while True:
-        rand = base64.urlsafe_b64encode(os.urandom(12))
+        rand = force_text(base64.urlsafe_b64encode(os.urandom(12)))
         address = "{}+{}@{}".format(local,rand,domain)
         q = Message.objects.filter(reply_to=address)
         if not q:
@@ -185,7 +190,7 @@ def process_response_email(msg):
     a matching value in the reply_to field, associated to a submission.
     Create a Message object for the incoming message and associate it to
     the original message via new SubmissionEvent"""
-    message = email.message_from_string(msg)
+    message = email.message_from_string(force_str(msg))
     to = message.get('To')
 
     # exit if this isn't a response we're interested in (with plus addressing)
@@ -234,7 +239,7 @@ def process_response_email(msg):
 
     save_submission_email_attachments(submission_email_event, parts)
 
-    log(u"Received submission email from %s" % msg.frm)
+    log("Received submission email from %s" % msg.frm)
     return msg
 
 

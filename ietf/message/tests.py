@@ -1,8 +1,14 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 
 from django.urls import reverse as urlreverse
 
-from ietf.utils.test_utils import TestCase, unicontent
+from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
 
 from ietf.message.models import Message, SendQueue
@@ -25,10 +31,10 @@ class MessageTests(TestCase):
 
         r = self.client.get(urlreverse("ietf.message.views.message", kwargs=dict(message_id=msg.id)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(msg.subject in unicontent(r))
-        self.assertTrue(msg.to in unicontent(r))
-        self.assertTrue(msg.frm in unicontent(r))
-        self.assertTrue("Hello World!" in unicontent(r))
+        self.assertContains(r, msg.subject)
+        self.assertContains(r, msg.to)
+        self.assertContains(r, msg.frm)
+        self.assertContains(r, "Hello World!")
 
 
 class SendScheduledAnnouncementsTests(TestCase):
@@ -40,7 +46,7 @@ class SendScheduledAnnouncementsTests(TestCase):
             frm="testmonkey@example.com",
             cc="cc.a@example.com, cc.b@example.com",
             bcc="bcc@example.com",
-            body=u"Hello World!",
+            body="Hello World!",
             content_type="",
             )
 
@@ -66,7 +72,7 @@ class SendScheduledAnnouncementsTests(TestCase):
             frm="testmonkey@example.com",
             cc="cc.a@example.com, cc.b@example.com",
             bcc="bcc@example.com",
-            body=u'--NextPart\r\n\r\nA New Internet-Draft is available from the on-line Internet-Drafts directories.\r\n--NextPart\r\nContent-Type: Message/External-body;\r\n\tname="draft-huang-behave-bih-01.txt";\r\n\tsite="ftp.ietf.org";\r\n\taccess-type="anon-ftp";\r\n\tdirectory="internet-drafts"\r\n\r\nContent-Type: text/plain\r\nContent-ID:     <2010-07-30001541.I-D@ietf.org>\r\n\r\n--NextPart--',
+            body='--NextPart\r\n\r\nA New Internet-Draft is available from the on-line Internet-Drafts directories.\r\n--NextPart\r\nContent-Type: Message/External-body;\r\n\tname="draft-huang-behave-bih-01.txt";\r\n\tsite="ftp.ietf.org";\r\n\taccess-type="anon-ftp";\r\n\tdirectory="internet-drafts"\r\n\r\nContent-Type: text/plain\r\nContent-ID:     <2010-07-30001541.I-D@ietf.org>\r\n\r\n--NextPart--',
             content_type='Multipart/Mixed; Boundary="NextPart"',
             )
 

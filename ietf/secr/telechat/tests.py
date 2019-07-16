@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 from pyquery import PyQuery
 
@@ -76,9 +79,9 @@ class SecrTelechatTestCase(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertTrue("Has downref: Yes" in response.content)
-        self.assertTrue("Add rfc6666" in response.content)
-        self.assertTrue("to downref registry" in response.content)
+        self.assertContains(response, "Has downref: Yes")
+        self.assertContains(response, "Add rfc6666")
+        self.assertContains(response, "to downref registry")
 
     def test_doc_detail_draft_invalid(self):
         '''Test using a document not on telechat agenda'''
@@ -88,7 +91,7 @@ class SecrTelechatTestCase(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url, follow=True)
         self.assertRedirects(response, reverse('ietf.secr.telechat.views.doc', kwargs={'date':date}))
-        self.assertTrue('not on the Telechat agenda' in response.content)
+        self.assertContains(response, 'not on the Telechat agenda')
 
     def test_doc_detail_charter(self):
         by=Person.objects.get(name="(System)")

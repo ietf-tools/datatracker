@@ -1,8 +1,11 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2018-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import flufl.bounce
+import io
 import mailbox
 import sys
 
@@ -18,7 +21,7 @@ from ietf.person.models import Email, PersonEvent
 
 
 class Command(BaseCommand):
-    help = (u"""
+    help = ("""
         Deactivate bouncing email addresses.
 
         Take one or more email addresses to deactivate from the command line,
@@ -67,7 +70,7 @@ class Command(BaseCommand):
                         self.stderr.write('No person is associated with <%s>\n' % (a, ))
                 else:
                     self.stderr.write('Address not found: <%s>\n' % (a, ))
-                    with open('./failed', 'a') as failed:
+                    with io.open('./failed', 'a') as failed:
                         failed.write(messages[a].as_string(unixfrom=True))
                         failed.write('\n')
 

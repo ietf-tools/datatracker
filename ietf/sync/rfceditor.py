@@ -1,12 +1,17 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import re
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import base64
 import datetime
-import urllib
-import urllib2
+import re
 import socket
+import six
+
+from six.moves.urllib.request import Request, urlopen
+from six.moves.urllib.parse import urlencode
 from xml.dom import pulldom, Node
 
 from django.conf import settings
@@ -40,7 +45,7 @@ def get_child_text(parent_node, tag_name):
 
 def fetch_queue_xml(url):
     socket.setdefaulttimeout(30)
-    return urllib2.urlopen(url)
+    return urlopen(url)
 
 def parse_queue(response):
     """Parse RFC Editor queue XML into a bunch of tuples + warnings."""
@@ -56,7 +61,7 @@ def parse_queue(response):
                 events.expandNode(node)
                 node.normalize()
                 draft_name = get_child_text(node, "draft").strip()
-                draft_name = re.sub("(-\d\d)?(.txt){1,2}$", "", draft_name)
+                draft_name = re.sub(r"(-\d\d)?(.txt){1,2}$", "", draft_name)
                 date_received = get_child_text(node, "date-received")
 
                 state = ""
@@ -217,7 +222,7 @@ def update_drafts_from_queue(drafts):
 
     # remove tags and states for those not in the queue anymore
     for d in Document.objects.exclude(docalias__name__in=names).filter(states__type="draft-rfceditor").distinct():
-        d.tags.remove(*tag_mapping.values())
+        d.tags.remove(*list(tag_mapping.values()))
         d.unset_state("draft-rfceditor")
         # we do not add a history entry here - most likely we already
         # have something that explains what happened
@@ -228,7 +233,7 @@ def update_drafts_from_queue(drafts):
 
 def fetch_index_xml(url):
     socket.setdefaulttimeout(30)
-    return urllib2.urlopen(url)
+    return urlopen(url)
 
 def parse_index(response):
     """Parse RFC Editor index XML into a bunch of tuples."""
@@ -306,7 +311,7 @@ def parse_index(response):
                     abstract = get_child_text(abstract, "p")
 
                 draft = get_child_text(node, "draft")
-                if draft and re.search("-\d\d$", draft):
+                if draft and re.search(r"-\d\d$", draft):
                     draft = draft[0:-3]
 
                 if len(node.getElementsByTagName("errata-url")) > 0:
@@ -503,7 +508,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
                 rev=doc.rev,
                 by=system,
                 type="sync_from_rfc_editor",
-                desc=u"Received changes through RFC Editor sync (%s)" % u", ".join(changes),
+                desc="Received changes through RFC Editor sync (%s)" % ", ".join(changes),
             ))
 
             doc.save_with_history(events)
@@ -517,7 +522,7 @@ def post_approved_draft(url, name):
     the data from the Datatracker and start processing it. Returns
     response and error (empty string if no error)."""
 
-    request = urllib2.Request(url)
+    request = Request(url)
     request.add_header("Content-type", "application/x-www-form-urlencoded")
     request.add_header("Accept", "text/plain")
     # HTTP basic auth
@@ -531,7 +536,7 @@ def post_approved_draft(url, name):
     log("Posting RFC-Editor notifcation of approved draft '%s' to '%s'" % (name, url))
     text = error = ""
     try:
-        f = urllib2.urlopen(request, data=urllib.urlencode({ 'draft': name }), timeout=20)
+        f = urlopen(request, data=urlencode({ 'draft': name }), timeout=20)
         text = f.read()
         status_code = f.getcode()
         f.close()
@@ -547,6 +552,6 @@ def post_approved_draft(url, name):
         # catch everything so we don't leak exceptions, convert them
         # into string instead
         log("Exception on RFC-Editor notification for draft '%s': '%s'" % (name, e))
-        error = unicode(e)
+        error = six.text_type(e)
 
     return text, error

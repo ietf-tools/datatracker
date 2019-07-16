@@ -1,7 +1,11 @@
 # Copyright The IETF Trust 2014-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 # views for managing group materials (slides, ...)
+import io
 import os
 import re
 
@@ -51,7 +55,7 @@ class UploadMaterialForm(forms.Form):
             self.fields["state"].widget = forms.HiddenInput()
             self.fields["state"].queryset = self.fields["state"].queryset.filter(slug="active")
             self.fields["state"].initial = self.fields["state"].queryset[0].pk
-            self.fields["name"].initial = u"%s-%s-" % (doc_type.slug, group.acronym)
+            self.fields["name"].initial = "%s-%s-" % (doc_type.slug, group.acronym)
         else:
             del self.fields["name"]
 
@@ -140,7 +144,7 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                 f = form.cleaned_data["material"]
                 file_ext = os.path.splitext(f.name)[1]
 
-                with open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + file_ext), 'wb+') as dest:
+                with io.open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + file_ext), 'wb+') as dest:
                     for chunk in f.chunks():
                         dest.write(chunk)
 
@@ -157,17 +161,17 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
 
             if prev_title != doc.title:
                 e = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type='changed_document')
-                e.desc = u"Changed title to <b>%s</b>" % doc.title
+                e.desc = "Changed title to <b>%s</b>" % doc.title
                 if prev_title:
-                    e.desc += u" from %s" % prev_title
+                    e.desc += " from %s" % prev_title
                 e.save()
                 events.append(e)
 
             if prev_abstract != doc.abstract:
                 e = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type='changed_document')
-                e.desc = u"Changed abstract to <b>%s</b>" % doc.abstract
+                e.desc = "Changed abstract to <b>%s</b>" % doc.abstract
                 if prev_abstract:
-                    e.desc += u" from %s" % prev_abstract
+                    e.desc += " from %s" % prev_abstract
                 e.save()
                 events.append(e)
 

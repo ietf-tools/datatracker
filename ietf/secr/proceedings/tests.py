@@ -1,7 +1,11 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import debug                            # pyflakes:ignore
+import io
 import json
 import os
 import shutil
@@ -54,7 +58,7 @@ class VideoRecordingTestCase(TestCase):
 
     def test_get_urls_from_json(self):
         path = os.path.join(settings.BASE_DIR, "../test/data/youtube-playlistitems.json")
-        with open(path) as f:
+        with io.open(path) as f:
             doc = json.load(f)
         urls = _get_urls_from_json(doc)
         self.assertEqual(len(urls),2)
@@ -87,7 +91,7 @@ class RecordingTestCase(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,data,follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(group.acronym in response.content)
+        self.assertContains(response, group.acronym)
         
         # now test edit
         doc = session.materials.filter(type='recording').first()
@@ -95,7 +99,7 @@ class RecordingTestCase(TestCase):
         url = reverse('ietf.secr.proceedings.views.recording_edit', kwargs={'meeting_num':meeting.number,'name':doc.name})
         response = self.client.post(url,dict(external_url=external_url),follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(external_url in response.content)
+        self.assertContains(response, external_url)
             
     def test_import_audio_files(self):
         session = SessionFactory(status_id='sched',meeting__type_id='ietf')
@@ -110,7 +114,7 @@ class RecordingTestCase(TestCase):
         path = os.path.join(settings.MEETING_RECORDINGS_DIR,'ietf' + timeslot.meeting.number,filename)
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
-        with open(path, "w") as f:
+        with io.open(path, "w") as f:
             f.write('dummy')
 
     def get_filename_for_timeslot(self, timeslot):
@@ -121,7 +125,7 @@ class RecordingTestCase(TestCase):
             date=timeslot.time.strftime('%Y%m%d-%H%M'))
 
     def test_import_audio_files_shared_timeslot(self):
-        meeting = MeetingFactory(type_id='ietf',number='42')
+        meeting = MeetingFactory(type_id='ietf',number='72')
         mars_session = SessionFactory(meeting=meeting,status_id='sched',group__acronym='mars')
         ames_session = SessionFactory(meeting=meeting,status_id='sched',group__acronym='ames')
         scheduled = SessionStatusName.objects.get(slug='sched')
@@ -135,8 +139,8 @@ class RecordingTestCase(TestCase):
         import_audio_files(meeting)
         doc = mars_session.materials.filter(type='recording').first()
         self.assertTrue(doc in ames_session.materials.all())
-        self.assertTrue(doc.docalias.filter(name='recording-42-mars-1'))
-        self.assertTrue(doc.docalias.filter(name='recording-42-ames-1'))
+        self.assertTrue(doc.docalias.filter(name='recording-72-mars-1'))
+        self.assertTrue(doc.docalias.filter(name='recording-72-ames-1'))
 
     def test_normalize_room_name(self):
         self.assertEqual(normalize_room_name('Test Room'),'testroom')
@@ -149,7 +153,7 @@ class RecordingTestCase(TestCase):
         self.assertEqual(get_timeslot_for_filename(name),timeslot)
 
     def test_get_or_create_recording_document(self):
-        session = SessionFactory(meeting__type_id='ietf', meeting__number=42, group__acronym='mars')
+        session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
         
         # test create
         filename = 'ietf42-testroom-20000101-0800.mp3'
@@ -167,17 +171,17 @@ class RecordingTestCase(TestCase):
         self.assertEqual(doc,doc2)
 
     def test_create_recording(self):
-        session = SessionFactory(meeting__type_id='ietf', meeting__number=42, group__acronym='mars')
+        session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
         filename = 'ietf42-testroomt-20000101-0800.mp3'
         url = settings.IETF_AUDIO_URL + 'ietf{}/{}'.format(session.meeting.number, filename)
         doc = create_recording(session, url)
-        self.assertEqual(doc.name,'recording-42-mars-1')
+        self.assertEqual(doc.name,'recording-72-mars-1')
         self.assertEqual(doc.group,session.group)
         self.assertEqual(doc.external_url,url)
         self.assertTrue(doc in session.materials.all())
 
     def test_get_next_sequence(self):
-        session = SessionFactory(meeting__type_id='ietf', meeting__number=42, group__acronym='mars')
+        session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
         meeting = session.meeting
         group = session.group
         sequence = get_next_sequence(group,meeting,'recording')

@@ -1,15 +1,23 @@
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 # generation of mails 
 
-import textwrap, datetime
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import six
+import textwrap
 
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
 from django.urls import reverse as urlreverse
+from django.utils.encoding import force_str, force_text
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.mail import send_mail, send_mail_text
+from ietf.utils.mail import send_mail, send_mail_text, get_payload
 from ietf.ipr.utils import iprs_from_docs, related_docs
 from ietf.doc.models import WriteupDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
 from ietf.doc.utils import needed_ballot_positions
@@ -32,15 +40,15 @@ def email_state_changed(request, doc, text, mailtrigger_id=None):
               cc=cc)
     
 def email_ad_approved_doc(request, doc, text):
-	to = "iesg@iesg.org"
-	bcc = "iesg-secretary@ietf.org"
-	frm = request.user.person.formatted_email()
-	send_mail(request, to, frm,
-			  "Approved: %s" % doc.filename_with_rev(),
-			  "doc/mail/ad_approval_email.txt",
-			  dict(text=text,
-				   docname=doc.filename_with_rev()),
-			  bcc=bcc)
+        to = "iesg@iesg.org"
+        bcc = "iesg-secretary@ietf.org"
+        frm = request.user.person.formatted_email()
+        send_mail(request, to, frm,
+                          "Approved: %s" % doc.filename_with_rev(),
+                          "doc/mail/ad_approval_email.txt",
+                          dict(text=text,
+                                   docname=doc.filename_with_rev()),
+                          bcc=bcc)
     
 def email_stream_changed(request, doc, old_stream, new_stream, text=""):
     """Email the change text to the notify group and to the stream chairs"""
@@ -55,7 +63,7 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
         return
     
     if not text:
-        text = u"Stream changed to <b>%s</b> from %s" % (new_stream, old_stream)
+        text = "Stream changed to <b>%s</b> from %s" % (new_stream, old_stream)
     text = strip_tags(text)
 
     send_mail(request, to, None,
@@ -119,8 +127,8 @@ def generate_ballot_writeup(request, doc):
     e.by = request.user.person
     e.doc = doc
     e.rev = doc.rev
-    e.desc = u"Ballot writeup was generated"
-    e.text = unicode(render_to_string("doc/mail/ballot_writeup.txt", {'iana': iana}))
+    e.desc = "Ballot writeup was generated"
+    e.text = force_text(render_to_string("doc/mail/ballot_writeup.txt", {'iana': iana}))
 
     # caller is responsible for saving, if necessary
     return e
@@ -131,8 +139,8 @@ def generate_ballot_rfceditornote(request, doc):
     e.by = request.user.person
     e.doc = doc
     e.rev = doc.rev
-    e.desc = u"RFC Editor Note for ballot was generated"
-    e.text = unicode(render_to_string("doc/mail/ballot_rfceditornote.txt"))
+    e.desc = "RFC Editor Note for ballot was generated"
+    e.text = force_text(render_to_string("doc/mail/ballot_rfceditornote.txt"))
     e.save()
     
     return e
@@ -176,8 +184,8 @@ def generate_last_call_announcement(request, doc):
     e.by = request.user.person
     e.doc = doc
     e.rev = doc.rev
-    e.desc = u"Last call announcement was generated"
-    e.text = unicode(mail)
+    e.desc = "Last call announcement was generated"
+    e.text = force_text(mail)
 
     # caller is responsible for saving, if necessary
     return e
@@ -196,8 +204,8 @@ def generate_approval_mail(request, doc):
     e.by = request.user.person
     e.doc = doc
     e.rev = doc.rev
-    e.desc = u"Ballot approval text was generated"
-    e.text = unicode(mail)
+    e.desc = "Ballot approval text was generated"
+    e.text = force_text(mail)
 
     # caller is responsible for saving, if necessary
     return e
@@ -280,7 +288,7 @@ def generate_publication_request(request, doc):
         approving_body = "IRSG"
         consensus_body = doc.group.acronym.upper()
     else:
-        approving_body = str(doc.stream)
+        approving_body = six.text_type(doc.stream)
         consensus_body = approving_body
 
     e = doc.latest_event(WriteupDocEvent, type="changed_rfc_editor_note_text")
@@ -374,7 +382,7 @@ def generate_issue_ballot_mail(request, doc, ballot):
                                  last_call_has_expired=last_call_has_expired,
                                  needed_ballot_positions=
                                    needed_ballot_positions(doc,
-                                     doc.active_ballot().active_ad_positions().values()
+                                     list(doc.active_ballot().active_ad_positions().values())
                                    ),
                                  )
                             )
@@ -382,7 +390,7 @@ def generate_issue_ballot_mail(request, doc, ballot):
 def email_iana(request, doc, to, msg, cc=None):
     # fix up message and send it with extra info on doc in headers
     import email
-    parsed_msg = email.message_from_string(msg.encode("utf-8"))
+    parsed_msg = email.message_from_string(force_str(msg))
     parsed_msg.set_charset('UTF-8')
 
     extra = extra_automation_headers(doc)
@@ -390,7 +398,7 @@ def email_iana(request, doc, to, msg, cc=None):
     
     send_mail_text(request, to,
                    parsed_msg["From"], parsed_msg["Subject"],
-                   parsed_msg.get_payload().decode(str(parsed_msg.get_charset())),
+                   get_payload(parsed_msg),
                    extra=extra,
                    cc=cc)
 
@@ -451,7 +459,7 @@ def email_adopted(request, doc, prev_state, new_state, by, comment=""):
     state_type = (prev_state or new_state).type
 
     send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
-              u'The %s %s has placed %s in state "%s"' % 
+              'The %s %s has placed %s in state "%s"' % 
                   (doc.group.acronym.upper(),doc.group.type_id.upper(), doc.name, new_state or "None"),
               'doc/mail/doc_adopted_email.txt',
               dict(doc=doc,
@@ -469,7 +477,7 @@ def email_stream_state_changed(request, doc, prev_state, new_state, by, comment=
     state_type = (prev_state or new_state).type
 
     send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
-              u"%s changed for %s" % (state_type.label, doc.name),
+              "%s changed for %s" % (state_type.label, doc.name),
               'doc/mail/stream_state_changed_email.txt',
               dict(doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
@@ -485,7 +493,7 @@ def email_stream_tags_changed(request, doc, added_tags, removed_tags, by, commen
     (to, cc) = gather_address_lists('doc_stream_state_edited',doc=doc)
 
     send_mail(request, to, settings.DEFAULT_FROM_EMAIL,
-              u"Tags changed for %s" % doc.name,
+              "Tags changed for %s" % doc.name,
               'doc/mail/stream_tags_changed_email.txt',
               dict(doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),

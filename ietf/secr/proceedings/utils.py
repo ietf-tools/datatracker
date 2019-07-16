@@ -1,5 +1,7 @@
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 
 import glob
+import io
 import os
 
 from django.conf import settings
@@ -34,7 +36,7 @@ def handle_upload_file(file,filename,meeting,subdir, request=None, encoding=None
         for f in old_files:
             os.remove(f)
 
-    destination = open(os.path.join(path,filename), 'wb+')
+    destination = io.open(os.path.join(path,filename), 'wb+')
     if extension in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS['text/html']:
         file.open()
         text = file.read()

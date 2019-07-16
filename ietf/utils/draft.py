@@ -1,11 +1,17 @@
 #!/usr/bin/python
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 # -*- python -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 """
 NAME
-	%(program)s - Extract meta-information from an IETF draft.
+        %(program)s - Extract meta-information from an IETF draft.
 
 SYNOPSIS
-	%(program)s [OPTIONS] DRAFTLIST_FILE
+        %(program)s [OPTIONS] DRAFTLIST_FILE
 
 DESCRIPTION
         Extract information about authors' names and email addresses,
@@ -16,30 +22,31 @@ DESCRIPTION
 %(options)s
 
 AUTHOR
-	Written by Henrik Levkowetz, <henrik@levkowetz.com>
+        Written by Henrik Levkowetz, <henrik@levkowetz.com>
 
 COPYRIGHT
-	Copyright 2008 Henrik Levkowetz
+        Copyright 2008 Henrik Levkowetz
 
-	This program is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or (at
-	your option) any later version. There is NO WARRANTY; not even the
-	implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-	PURPOSE. See the GNU General Public License for more details.
+        This program is free software; you can redistribute it and/or modify
+        it under the terms of the GNU General Public License as published by
+        the Free Software Foundation; either version 2 of the License, or (at
+        your option) any later version. There is NO WARRANTY; not even the
+        implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+        PURPOSE. See the GNU General Public License for more details.
 
 """
 
-from __future__ import unicode_literals
-from __future__ import print_function
+
+
 
 import datetime
 import getopt
+import io
 import os
 import os.path
 import re
-import stat
 import six
+import stat
 import sys
 import time
 
@@ -106,7 +113,7 @@ def _err(string):
 
 # ----------------------------------------------------------------------
 def _gettext(file):
-    file = open(file)
+    file = io.open(file)
     text = file.read()
     file.close()
 
@@ -190,7 +197,7 @@ class Draft():
                     name, __ = base.split(".", 1)
                 else:
                     name = base
-                revmatch = re.search("\d\d$", name)
+                revmatch = re.search(r"\d\d$", name)
                 if revmatch:
                     filename = name[:-3]
                     revision = name[-2:]
@@ -242,36 +249,36 @@ class Draft():
         for line in self.rawlines:
             linecount += 1
             line = line.rstrip()
-            if re.search("\[?page [0-9ivx]+\]?[ \t\f]*$", line, re.I):
+            if re.search(r"\[?page [0-9ivx]+\]?[ \t\f]*$", line, re.I):
                 pages, page, newpage = endpage(pages, page, newpage, line)
                 continue
-            if re.search("\f", line, re.I):
+            if re.search(r"\f", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage)
                 continue
-            if re.search("^ *Internet.Draft.+  .+[12][0-9][0-9][0-9] *$", line, re.I):
+            if re.search(r"^ *Internet.Draft.+  .+[12][0-9][0-9][0-9] *$", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
     #        if re.search("^ *Internet.Draft  +", line, re.I):
     #            newpage = True
     #            continue
-            if re.search("^ *Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
+            if re.search(r"^ *Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
-            if re.search("^RFC[ -]?[0-9]+.*(  +)[12][0-9][0-9][0-9]$", line, re.I):
+            if re.search(r"^RFC[ -]?[0-9]+.*(  +)[12][0-9][0-9][0-9]$", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
-            if re.search("^draft-[-a-z0-9_.]+.*[0-9][0-9][0-9][0-9]$", line, re.I):
+            if re.search(r"^draft-[-a-z0-9_.]+.*[0-9][0-9][0-9][0-9]$", line, re.I):
                 pages, page, newpage = endpage(pages, page, newpage, line)
                 continue
-            if linecount > 15 and re.search(".{58,}(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec) (19[89][0-9]|20[0-9][0-9]) *$", line, re.I):
+            if linecount > 15 and re.search(r".{58,}(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec) (19[89][0-9]|20[0-9][0-9]) *$", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
-            if newpage and re.search("^ *draft-[-a-z0-9_.]+ *$", line, re.I):
+            if newpage and re.search(r"^ *draft-[-a-z0-9_.]+ *$", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
-            if re.search("^[^ \t]+", line):
+            if re.search(r"^[^ \t]+", line):
                 sentence = True
-            if re.search("[^ \t]", line):
+            if re.search(r"[^ \t]", line):
                 if newpage:
                     # 36 is a somewhat arbitrary count for a 'short' line
                     shortthis = len(line.strip()) < 36 # 36 is a somewhat arbitrary count for a 'short' line
@@ -299,7 +306,7 @@ class Draft():
     # ----------------------------------------------------------------------
     def get_pagecount(self):
         if self._pagecount == None:
-            label_pages = len(re.findall("\[page [0-9ixldv]+\]", self.text, re.I))
+            label_pages = len(re.findall(r"\[page [0-9ixldv]+\]", self.text, re.I))
             count_pages = len(self.pages)
             if label_pages > count_pages/2:
                 self._pagecount = label_pages
@@ -342,7 +349,7 @@ class Draft():
     def get_status(self):
         if self._status == None:
             for line in self.lines[:10]:
-                status_match = re.search("^\s*Intended [Ss]tatus:\s*(.*?)   ", line)
+                status_match = re.search(r"^\s*Intended [Ss]tatus:\s*(.*?)   ", line)
                 if status_match:
                     self._status = status_match.group(1)
                     break
@@ -415,8 +422,8 @@ class Draft():
     def get_abstract(self):
         if self._abstract:
             return self._abstract
-        abstract_re = re.compile('^(\s*)abstract', re.I)
-        header_re = re.compile("^(\s*)([0-9]+\.? |Appendix|Status of|Table of|Full Copyright|Copyright|Intellectual Property|Acknowled|Author|Index|Disclaimer).*", re.I)
+        abstract_re = re.compile(r'^(\s*)abstract', re.I)
+        header_re = re.compile(r"^(\s*)([0-9]+\.? |Appendix|Status of|Table of|Full Copyright|Copyright|Intellectual Property|Acknowled|Author|Index|Disclaimer).*", re.I)
         begin = False
         abstract = []
         abstract_indent = 0
@@ -445,7 +452,7 @@ class Draft():
 
 
     def _check_abstract_indent(self, abstract, indent):
-        indentation_re = re.compile('^(\s)*')
+        indentation_re = re.compile(r'^(\s)*')
         indent_lines = []
         for line in abstract.split('\n'):
             if line:
@@ -806,7 +813,7 @@ class Draft():
                                             _debug( "Cut:   '%s'" % form[beg:end])
                                             author_match = re.search(authpat, columns[col].strip()).group(1)
                                             _debug( "AuthMatch: '%s'" % (author_match,))
-                                            if re.search('\(.*\)$', author_match.strip()):
+                                            if re.search(r'\(.*\)$', author_match.strip()):
                                                 author_match = author_match.rsplit('(',1)[0].strip()
                                             if author_match in companies_seen:
                                                 companies[i] = authors[i]
@@ -886,7 +893,7 @@ class Draft():
     #                 for a in authors:
     #                     if a and a not in companies_seen:
     #                         _debug("Search for: %s"%(r"(^|\W)"+re.sub("\.? ", ".* ", a)+"(\W|$)"))
-                    authmatch = [ a for a in authors[i+1:] if a and not a.lower() in companies_seen and (re.search((r"(?i)(^|\W)"+re.sub("[. ]+", ".*", a)+"(\W|$)"), line.strip()) or acronym_match(a, line.strip()) )]
+                    authmatch = [ a for a in authors[i+1:] if a and not a.lower() in companies_seen and (re.search((r"(?i)(^|\W)"+re.sub(r"[. ]+", ".*", a)+r"(\W|$)"), line.strip()) or acronym_match(a, line.strip()) )]
 
                     if authmatch:
                         _debug("     ? Other author or company ?  : %s" % authmatch)
@@ -914,9 +921,9 @@ class Draft():
                             column = l.replace('\t', 8 * ' ')[max(0, beg - 1):end].strip()
                         except:
                             column = l
-                        column = re.sub(" *(?:\(at\)| <at> | at ) *", "@", column)
-                        column = re.sub(" *(?:\(dot\)| <dot> | dot ) *", ".", column)
-                        column = re.sub("&cisco.com", "@cisco.com", column)
+                        column = re.sub(r" *(?:\(at\)| <at> | at ) *", "@", column)
+                        column = re.sub(r" *(?:\(dot\)| <dot> | dot ) *", ".", column)
+                        column = re.sub(r"&cisco.com", "@cisco.com", column)
                         column = column.replace("\xa0", " ")
                         return column
 
@@ -1002,13 +1009,13 @@ class Draft():
     def get_title(self):
         if self._title:
             return self._title
-        match = re.search('(?:\n\s*\n\s*)((.+\n){0,2}(.+\n*))(\s+<?draft-\S+\s*\n)\s*\n', self.pages[0])
+        match = re.search(r'(?:\n\s*\n\s*)((.+\n){0,2}(.+\n*))(\s+<?draft-\S+\s*\n)\s*\n', self.pages[0])
         if not match:
-            match = re.search('(?:\n\s*\n\s*)<?draft-\S+\s*\n*((.+\n){1,3})\s*\n', self.pages[0])
+            match = re.search(r'(?:\n\s*\n\s*)<?draft-\S+\s*\n*((.+\n){1,3})\s*\n', self.pages[0])
         if not match:
-            match = re.search('(?:\n\s*\n\s*)((.+\n){0,2}(.+\n*))(\s*\n){2}', self.pages[0])
+            match = re.search(r'(?:\n\s*\n\s*)((.+\n){0,2}(.+\n*))(\s*\n){2}', self.pages[0])
         if not match:
-            match = re.search('(?i)(.+\n|.+\n.+\n)(\s*status of this memo\s*\n)', self.pages[0])
+            match = re.search(r'(?i)(.+\n|.+\n.+\n)(\s*status of this memo\s*\n)', self.pages[0])
         if match:
             title = match.group(1)
             title = title.strip()
@@ -1146,10 +1153,10 @@ class Draft():
                             para += " "
                         para += line
                     refs += [ para ]
-                    rfc_match = re.search("(?i)rfc ?\d+", para)
+                    rfc_match = re.search(r"(?i)rfc ?\d+", para)
                     if rfc_match:
                         rfcrefs += [ rfc_match.group(0).replace(" ","").lower() ]
-                    draft_match = re.search("draft-[a-z0-9-]+", para)
+                    draft_match = re.search(r"draft-[a-z0-9-]+", para)
                     if draft_match:
                         draft = draft_match.group(0).lower()
                         if not draft in draftrefs:
@@ -1184,7 +1191,7 @@ def getmeta(fn):
             if not os.path.exists(filename):
                 fn = filename
                 while not "-00." in fn:
-                    revmatch = re.search("-(\d\d)\.", fn)
+                    revmatch = re.search(r"-(\d\d)\.", fn)
                     if revmatch:
                         rev = revmatch.group(1)
                         prev = "%02d" % (int(rev)-1)
@@ -1203,7 +1210,7 @@ def getmeta(fn):
         return
 
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(os.stat(filename)[stat.ST_MTIME]))
-    with open(filename, 'rb') as file:
+    with io.open(filename, 'rb') as file:
         try:
             draft = Draft(file.read().decode('utf8'), filename)
         except UnicodeDecodeError:
@@ -1311,7 +1318,7 @@ def _main(outfile=sys.stdout):
     # Option processing
     # ----------------------------------------------------------------------
     options = ""
-    for line in re.findall("\n +(if|elif) +opt in \[(.+)\]:\s+#(.+)\n", open(sys.argv[0]).read()):
+    for line in re.findall(r"\n +(if|elif) +opt in \[(.+)\]:\s+#(.+)\n", io.open(sys.argv[0]).read()):
         if not options:
             options += "OPTIONS\n"
         options += "        %-16s %s\n" % (line[1].replace('"', ''), line[2])
@@ -1357,7 +1364,7 @@ def _main(outfile=sys.stdout):
 
     company_domain = {}
     if opt_getauthors:
-        gadata = open("/www/tools.ietf.org/tools/getauthors/getauthors.data")
+        gadata = io.open("/www/tools.ietf.org/tools/getauthors/getauthors.data")
         for line in gadata:
             if line.startswith("company:"):
                 try:
@@ -1376,7 +1383,7 @@ def _main(outfile=sys.stdout):
             import gzip
             file = gzip.open(file)
         else:
-            file = open(file)
+            file = io.open(file)
 
         basename = os.path.basename(file.name)
         if basename.startswith("draft-"):

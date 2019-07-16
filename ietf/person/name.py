@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import re
 import unidecode
 
@@ -8,7 +14,7 @@ def name_particle_match(name):
     return re.search(r" (af|al|Al|de|der|di|Di|du|el|El|Hadi|in 't|Le|st\.?|St\.?|ten|ter|van|van der|van 't|Van|von|von der|Von|zu) ", name)
 
 def name_parts(name):
-    prefix, first, middle, last, suffix = u"", u"", u"", u"", u""
+    prefix, first, middle, last, suffix = "", "", "", "", ""
 
     if not name.strip():
         return prefix, first, middle, last, suffix
@@ -36,7 +42,7 @@ def name_parts(name):
             parts = parts[:-1]
     if len(parts) > 2:
         # Check if we have a surname with nobiliary particle
-        full = u" ".join(parts)
+        full = " ".join(parts)
         if full.upper() == full:
             full = full.lower()         # adjust case for all-uppercase input
         # This is an incomplete list.  Adjust as needed to handle known ietf
@@ -48,7 +54,7 @@ def name_parts(name):
     if len(parts) > 2:
         first = parts[0]
         last = parts[-1]
-        middle = u" ".join(parts[1:-1])
+        middle = " ".join(parts[1:-1])
     elif len(parts) == 2:
         first, last = parts
     else:
@@ -63,16 +69,16 @@ def initials(name):
     prefix, first, middle, last, suffix = name_parts(name)
     given = first
     if middle:
-        given += u" "+middle
+        given += " "+middle
     # Don't use non-word characters as initials.
     # Example: The Bulgarian transcribed name "'Rnest Balkanska" should not have an initial of "'".
-    given = re.sub('[^ .\w]', '', given)
-    initials = u" ".join([ n[0].upper()+'.' for n in given.split() ])
+    given = re.sub(r'[^ .\w]', '', given)
+    initials = " ".join([ n[0].upper()+'.' for n in given.split() ])
     return initials
 
 def plain_name(name):
     prefix, first, middle, last, suffix = name_parts(name)
-    return u" ".join( n for n in (first, last) if n)
+    return " ".join( n for n in (first, last) if n)
 
 def capfirst(s):
     # Capitalize the first word character, skipping non-word characters and
@@ -127,7 +133,7 @@ def normalize_name(s):
 
 if __name__ == "__main__":
     import sys
-    name = u" ".join(sys.argv[1:])
-    print name_parts(name)
-    print initials(name)
+    name = " ".join(sys.argv[1:])
+    print(name_parts(name))
+    print(initials(name))
     

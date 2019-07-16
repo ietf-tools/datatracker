@@ -1,17 +1,28 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import base64
 import datetime
 import email
 import json
 import re
-import urllib2
 
-from django.utils.http import urlquote
+from six.moves.urllib.request import Request, urlopen
+
 from django.conf import settings
+from django.utils.encoding import force_str
+from django.utils.http import urlquote
+
+import debug                            # pyflakes:ignore
 
 from ietf.doc.mails import email_state_changed
 from ietf.doc.models import Document, DocEvent, State, StateDocEvent, StateType
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person
+from ietf.utils.mail import parseaddr
 from ietf.utils.timezone import local_timezone_to_utc, email_time_to_local_timezone, utc_to_local_timezone
 
 
@@ -19,7 +30,7 @@ from ietf.utils.timezone import local_timezone_to_utc, email_time_to_local_timez
 #CHANGES_URL = "https://datatracker.dev.icann.org:8080/data-tracker/changes"
 
 def fetch_protocol_page(url):
-    f = urllib2.urlopen(settings.IANA_SYNC_PROTOCOLS_URL)
+    f = urlopen(settings.IANA_SYNC_PROTOCOLS_URL)
     text = f.read()
     f.close()
     return text
@@ -63,12 +74,12 @@ def update_rfc_log_from_protocol_page(rfc_names, rfc_must_published_later_than):
 def fetch_changes_json(url, start, end):
     url += "?start=%s&end=%s" % (urlquote(local_timezone_to_utc(start).strftime("%Y-%m-%d %H:%M:%S")),
                                  urlquote(local_timezone_to_utc(end).strftime("%Y-%m-%d %H:%M:%S")))
-    request = urllib2.Request(url)
+    request = Request(url)
     # HTTP basic auth
     username = "ietfsync"
     password = settings.IANA_SYNC_PASSWORD
     request.add_header("Authorization", "Basic %s" % base64.encodestring("%s:%s" % (username, password)).replace("\n", ""))
-    f = urllib2.urlopen(request)
+    f = urlopen(request)
     text = f.read()
     f.close()
     return text
@@ -215,11 +226,11 @@ def update_history_with_changes(changes, send_email=True):
 
 def find_document_name(text):
     prefixes = ['draft','conflict-review','status-change','charter']
-    leading_delimiter_re = '(?<![-a-zA-Z0-9])'
-    prefix_re = '(%s)' % '|'.join(prefixes)
-    tail_re = '(-[a-z0-9]+)+?(-\d\d\.txt)?'
-    trailing_delimiter_re = '((?![-a-zA-Z0-9])|$)'
-    name_re = '%s(%s%s)%s' % (leading_delimiter_re, prefix_re, tail_re, trailing_delimiter_re)
+    leading_delimiter_re = r'(?<![-a-zA-Z0-9])'
+    prefix_re = r'(%s)' % '|'.join(prefixes)
+    tail_re = r'(-[a-z0-9]+)+?(-\d\d\.txt)?'
+    trailing_delimiter_re = r'((?![-a-zA-Z0-9])|$)'
+    name_re = r'%s(%s%s)%s' % (leading_delimiter_re, prefix_re, tail_re, trailing_delimiter_re)
     m = re.search(name_re,text)
     return m and m.group(0).lower()
 
@@ -231,8 +242,7 @@ def strip_version_extension(text):
     return text
 
 def parse_review_email(text):
-    msg = email.message_from_string(text)
-
+    msg = email.message_from_string(force_str(text))
     # doc
     doc_name = find_document_name(msg["Subject"]) or ""
     doc_name = strip_version_extension(doc_name)
@@ -244,25 +254,23 @@ def parse_review_email(text):
 
     # by
     by = None
-    m = re.search(r"\"(.*)\"", msg["From"])
-    if m:
-        name = m.group(1).strip()
-        if name.endswith(" via RT"):
-            name = name[:-len(" via RT")]
-
-        try:
-            by = Person.objects.get(alias__name=name, role__group__acronym="iana")
-        except Person.DoesNotExist:
-            pass
+    name, __ = parseaddr(msg["From"])
+    if name.endswith(" via RT"):
+        name = name[:-len(" via RT")]
+    try:
+        by = Person.objects.get(alias__name=name, role__group__acronym="iana")
+    except Person.DoesNotExist:
+        pass
 
     if not by:
         by = Person.objects.get(name="(System)")
 
     # comment
-    body = msg.get_payload().decode('quoted-printable').replace("\r", "")
+    charset = msg.get_content_charset()
+    body = msg.get_payload(decode=True).decode(charset or 'utf-8').replace("\r", "")
 
-    begin_search = re.search('\(BEGIN\s+IANA\s+(LAST\s+CALL\s+)?COMMENTS?(\s*:\s*[a-zA-Z0-9-\.]*)?\s*\)',body)
-    end_search = re.search('\(END\s+IANA\s+(LAST\s+CALL\s+)?COMMENTS?\)',body)
+    begin_search = re.search(r'\(BEGIN\s+IANA\s+(LAST\s+CALL\s+)?COMMENTS?(\s*:\s*[a-zA-Z0-9-\.]*)?\s*\)',body)
+    end_search = re.search(r'\(END\s+IANA\s+(LAST\s+CALL\s+)?COMMENTS?\)',body)
     if begin_search and end_search:
         begin_string = begin_search.group(0)
         end_string = end_search.group(0)

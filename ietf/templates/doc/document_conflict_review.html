@@ -135,7 +135,7 @@
   {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
     {% if request.user|has_role:"Secretariat" %}
       {% if doc.get_state_slug == 'appr-reqnopub-pend' or doc.get_state_slug == 'appr-noprob-pend' %}
-        <a class="btn btn-primary" href="{% url 'ietf.doc.views_conflict_review.approve' name=doc.name %}">Approve conflict review</a>
+        <a class="btn btn-primary" href="{% url 'ietf.doc.views_conflict_review.approve_conflict_review' name=doc.name %}">Approve conflict review</a>
       {% endif %}
     {% endif %}
   {% endif %}

@@ -1,4 +1,8 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import re
 
@@ -33,7 +37,7 @@ class LiaisonStatementsFeed(Feed):
             try:
                 group = Group.objects.get(acronym=search)
                 obj['filter'] = { 'from_groups': group }
-                obj['title'] = u'Liaison Statements from %s' % group.name
+                obj['title'] = 'Liaison Statements from %s' % group.name
                 return obj
             except Group.DoesNotExist:
                 # turn all-nonword characters into one-character
@@ -46,7 +50,7 @@ class LiaisonStatementsFeed(Feed):
 
                 name = statement.from_groups.first().name
                 obj['filter'] = { 'from_name': name }
-                obj['title'] = u'Liaison Statements from %s' % name
+                obj['title'] = 'Liaison Statements from %s' % name
                 return obj
 
         if kind == 'to':
@@ -55,7 +59,7 @@ class LiaisonStatementsFeed(Feed):
 
             group = Group.objects.get(acronym=search)
             obj['filter'] = { 'to_groups': group }
-            obj['title'] = u'Liaison Statements to %s' % group.name
+            obj['title'] = 'Liaison Statements to %s' % group.name
             return obj
 
         if kind == 'subject':
@@ -70,16 +74,16 @@ class LiaisonStatementsFeed(Feed):
 
     def items(self, obj):
         qs = LiaisonStatement.objects.all().order_by("-id")
-        if obj.has_key('q'):
+        if 'q' in obj:
             qs = qs.filter(*obj['q'])
-        if obj.has_key('filter'):
+        if 'filter' in obj:
             qs = qs.filter(**obj['filter'])
-        if obj.has_key('limit'):
+        if 'limit' in obj:
             qs = qs[:obj['limit']]
 
         qs = qs.prefetch_related("attachments")
 
-	return qs
+        return qs
 
     def title(self, obj):
         return obj['title']

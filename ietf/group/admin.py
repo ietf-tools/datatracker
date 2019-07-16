@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2010-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 from functools import update_wrapper
 
 from django.contrib import admin
@@ -9,7 +12,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.management import load_command_class
 from django.http import Http404
 from django.shortcuts import render
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text
 from django.utils.html import escape
 from django.utils.translation import ugettext as _
 
@@ -38,7 +41,7 @@ class GroupAdmin(admin.ModelAdmin):
         roles = Role.objects.filter(group=obj).order_by("name", "person__name").select_related('person')
         res = []
         for r in roles:
-            res.append(u'<a href="../../person/person/%s/">%s</a> (<a href="../../group/role/%s/">%s)' % (r.person.pk, escape(r.person.plain_name()), r.pk, r.name.name))
+            res.append('<a href="../../person/person/%s/">%s</a> (<a href="../../group/role/%s/">%s)' % (r.person.pk, escape(r.person.plain_name()), r.pk, r.name.name))
         return ", ".join(res)
     role_list.short_description = "Persons"
     role_list.allow_tags = True
@@ -96,7 +99,7 @@ class GroupAdmin(admin.ModelAdmin):
             raise PermissionDenied
 
         if obj is None:
-            raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {'name': force_unicode(opts.verbose_name), 'key': escape(object_id)})
+            raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {'name': force_text(opts.verbose_name), 'key': escape(object_id)})
 
         return self.send_reminder(request, sdo=obj)
     
@@ -144,7 +147,7 @@ class GroupHistoryAdmin(admin.ModelAdmin):
 admin.site.register(GroupHistory, GroupHistoryAdmin)
 
 class GroupURLAdmin(admin.ModelAdmin):
-    list_display = [u'id', 'group', 'name', 'url']
+    list_display = ['id', 'group', 'name', 'url']
     raw_id_fields = ['group']
     search_fields = ['name']
 admin.site.register(GroupURL, GroupURLAdmin)
@@ -157,7 +160,7 @@ admin.site.register(GroupMilestone, GroupMilestoneAdmin)
 admin.site.register(GroupMilestoneHistory, GroupMilestoneAdmin)
 
 class GroupStateTransitionsAdmin(admin.ModelAdmin):
-    list_display = [u'id', 'group', 'state']
+    list_display = ['id', 'group', 'state']
     raw_id_fields = ['group', 'state']
 admin.site.register(GroupStateTransitions, GroupStateTransitionsAdmin)
 
@@ -183,7 +186,7 @@ class ChangeStateGroupEventAdmin(admin.ModelAdmin):
 admin.site.register(ChangeStateGroupEvent, ChangeStateGroupEventAdmin)
 
 class MilestoneGroupEventAdmin(admin.ModelAdmin):
-    list_display = [u'id', 'group', 'time', 'type', 'by', 'desc', 'milestone']
+    list_display = ['id', 'group', 'time', 'type', 'by', 'desc', 'milestone']
     list_filter = ['time']
     raw_id_fields = ['group', 'by', 'milestone']
 admin.site.register(MilestoneGroupEvent, MilestoneGroupEventAdmin)

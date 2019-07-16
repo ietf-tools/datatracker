@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
-from __future__ import unicode_literals, print_function
-
+from __future__ import absolute_import, print_function, unicode_literals
 
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.template import Context
+from django.utils.encoding import python_2_unicode_compatible
 
 from ietf.group.models import Group
 from ietf.name.models import DBTemplateTypeName
@@ -19,6 +19,7 @@ TEMPLATE_TYPES = (
     )
 
 
+@python_2_unicode_compatible
 class DBTemplate(models.Model):
     path = models.CharField( max_length=255, unique=True, blank=False, null=False, )
     title = models.CharField( max_length=255, blank=False, null=False, )
@@ -27,7 +28,7 @@ class DBTemplate(models.Model):
     content = models.TextField( blank=False, null=False, )
     group = ForeignKey( Group, blank=True, null=True, )
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     def clean(self):
@@ -41,6 +42,6 @@ class DBTemplate(models.Model):
                 PlainTemplate(self.content).render(Context({}))
             else:
                 raise ValidationError("Unexpected DBTemplate.type.slug: %s" % self.type.slug)
-        except Exception, e:
+        except Exception as e:
             raise ValidationError(e)
 

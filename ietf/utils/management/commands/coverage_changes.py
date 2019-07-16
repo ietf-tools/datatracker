@@ -1,15 +1,19 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2015-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
-import os
-import json
-import codecs
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import gzip
+import io
+import json
+import os
+import six
 
 from difflib import ndiff
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from django.utils.six import string_types
 
 import debug                            # pyflakes:ignore
 
@@ -57,14 +61,14 @@ class Command(BaseCommand):
     valid_sections = ['template', 'url', 'code']
 
     def read_coverage(self, filename, version=None):
-        if isinstance(filename, string_types):
+        if isinstance(filename, six.string_types):
             try:
                 if filename.endswith(".gz"):
                     file = gzip.open(filename, "rb")
                 else:
-                    file = codecs.open(filename, "r", encoding="utf-8")
+                    file = io.open(filename, "r", encoding="utf-8")
             except IOError as e:
-                self.stderr.write(u"%s" % e)
+                self.stderr.write("%s" % e)
                 exit(1)
         else:
             file = filename
@@ -87,8 +91,8 @@ class Command(BaseCommand):
             lcoverage = latest_coverage[section]["covered"]
             lformat   = latest_coverage[section].get("format", 1)
             #
-            mkeys = mcoverage.keys()
-            lkeys = lcoverage.keys()
+            mkeys = list(mcoverage.keys())
+            lkeys = list(lcoverage.keys())
             #
             keys = list(lkeys)
             keys.sort()
@@ -181,7 +185,7 @@ class Command(BaseCommand):
             lcoverage = latest_coverage[section]["covered"]
             lformat   = latest_coverage[section].get("format", 1)
             #
-            lkeys = lcoverage.keys()
+            lkeys = list(lcoverage.keys())
             #
             keys = list(lkeys)
             keys.sort()

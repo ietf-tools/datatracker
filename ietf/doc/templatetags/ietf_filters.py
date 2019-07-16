@@ -1,10 +1,13 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import bleach
 import datetime
 import re
-
-import types
+import six
 
 from email.utils import parseaddr
 
@@ -14,6 +17,7 @@ from django.utils.html import escape
 from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags
 from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
+from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
 
@@ -47,24 +51,24 @@ def parse_email_list(value):
 
     Splitting a string of email addresses should return a list:
 
-    >>> unicode(parse_email_list('joe@example.org, fred@example.com'))
-    u'<a href="mailto:joe@example.org">joe@example.org</a>, <a href="mailto:fred@example.com">fred@example.com</a>'
+    >>> six.ensure_str(parse_email_list('joe@example.org, fred@example.com'))
+    '<a href="mailto:joe@example.org">joe@example.org</a>, <a href="mailto:fred@example.com">fred@example.com</a>'
 
     Parsing a non-string should return the input value, rather than fail:
 
-    >>> parse_email_list(['joe@example.org', 'fred@example.com'])
+    >>> [ six.ensure_str(e) for e in parse_email_list(['joe@example.org', 'fred@example.com']) ]
     ['joe@example.org', 'fred@example.com']
 
     Null input values should pass through silently:
 
-    >>> parse_email_list('')
+    >>> six.ensure_str(parse_email_list(''))
     ''
 
     >>> parse_email_list(None)
 
 
     """
-    if value and isinstance(value, (types.StringType,types.UnicodeType)): # testing for 'value' being true isn't necessary; it's a fast-out route
+    if value and isinstance(value, (six.binary_type, six.text_type)): # testing for 'value' being true isn't necessary; it's a fast-out route
         addrs = re.split(", ?", value)
         ret = []
         for addr in addrs:
@@ -88,7 +92,7 @@ def strip_email(value):
 @register.filter(name='fix_angle_quotes')
 def fix_angle_quotes(value):
     if "<" in value:
-        value = re.sub("<([\w\-\.]+@[\w\-\.]+)>", "&lt;\1&gt;", value)
+        value = re.sub(r"<([\w\-\.]+@[\w\-\.]+)>", "&lt;\1&gt;", value)
     return value
 
 # there's an "ahref -> a href" in GEN_UTIL
@@ -98,7 +102,7 @@ def make_one_per_line(value):
     """
     Turn a comma-separated list into a carriage-return-seperated list.
 
-    >>> make_one_per_line("a, b, c")
+    >>> six.ensure_str(make_one_per_line("a, b, c"))
     'a\\nb\\nc'
 
     Pass through non-strings:
@@ -109,7 +113,7 @@ def make_one_per_line(value):
     >>> make_one_per_line(None)
 
     """
-    if value and isinstance(value, (types.StringType,types.UnicodeType)):
+    if value and isinstance(value, (six.binary_type, six.text_type)):
         return re.sub(", ?", "\n", value)
     else:
         return value
@@ -145,9 +149,9 @@ def sanitize(value):
 @register.filter(name='bracket')
 def square_brackets(value):
     """Adds square brackets around text."""
-    if isinstance(value, (types.StringType,types.UnicodeType)):
-	if value == "":
-	     value = " "
+    if isinstance(value, (six.binary_type, six.text_type)):
+        if value == "":
+             value = " "
         return "[ %s ]" % value
     elif value > 0:
         return "[ X ]"
@@ -195,7 +199,7 @@ def rfcnospace(string):
 @register.filter
 def prettystdname(string):
     from ietf.doc.utils import prettify_std_name
-    return prettify_std_name(unicode(string or ""))
+    return prettify_std_name(force_text(string or ""))
 
 @register.filter(name='rfcurl')
 def rfclink(string):
@@ -213,13 +217,13 @@ def urlize_ietf_docs(string, autoescape=None):
     """
     if autoescape and not isinstance(string, SafeData):
         string = escape(string)
-    string = re.sub("(?<!>)(RFC ?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string)
-    string = re.sub("(?<!>)(BCP ?)0{0,3}(\d+)", "<a href=\"/doc/bcp\\2/\">\\1\\2</a>", string)
-    string = re.sub("(?<!>)(STD ?)0{0,3}(\d+)", "<a href=\"/doc/std\\2/\">\\1\\2</a>", string)
-    string = re.sub("(?<!>)(FYI ?)0{0,3}(\d+)", "<a href=\"/doc/fyi\\2/\">\\1\\2</a>", string)
-    string = re.sub("(?<!>)(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
-    string = re.sub("(?<!>)(conflict-review-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
-    string = re.sub("(?<!>)(status-change-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
+    string = re.sub(r"(?<!>)(RFC ?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string)
+    string = re.sub(r"(?<!>)(BCP ?)0{0,3}(\d+)", "<a href=\"/doc/bcp\\2/\">\\1\\2</a>", string)
+    string = re.sub(r"(?<!>)(STD ?)0{0,3}(\d+)", "<a href=\"/doc/std\\2/\">\\1\\2</a>", string)
+    string = re.sub(r"(?<!>)(FYI ?)0{0,3}(\d+)", "<a href=\"/doc/fyi\\2/\">\\1\\2</a>", string)
+    string = re.sub(r"(?<!>)(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
+    string = re.sub(r"(?<!>)(conflict-review-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
+    string = re.sub(r"(?<!>)(status-change-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
     return mark_safe(string)
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
@@ -338,7 +342,7 @@ def expires_soon(x,request):
 
 @register.filter(name='startswith')
 def startswith(x, y):
-    return unicode(x).startswith(y)
+    return six.text_type(x).startswith(y)
 
 @register.filter
 def has_role(user, role_names):
@@ -377,14 +381,14 @@ def format_snippet(text, trunc_words=25):
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_fragment(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
-        return mark_safe(u'<div class="snippet">%s<button class="btn btn-xs btn-default show-all"><span class="fa fa-caret-down"></span></button></div><div class="hidden full">%s</div>' % (snippet, full))
+        return mark_safe('<div class="snippet">%s<button class="btn btn-xs btn-default show-all"><span class="fa fa-caret-down"></span></button></div><div class="hidden full">%s</div>' % (snippet, full))
     return full
 
 @register.simple_tag
 def doc_edit_button(url_name, *args, **kwargs):
     """Given URL name/args/kwargs, looks up the URL just like "url" tag and returns a properly formatted button for the document material tables."""
     from django.urls import reverse as urlreverse
-    return mark_safe(u'<a class="btn btn-default btn-xs" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
+    return mark_safe('<a class="btn btn-default btn-xs" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
 
 @register.filter
 def textify(text):
@@ -419,7 +423,7 @@ if __name__ == "__main__":
     _test()
 
 @register.filter
-def plural(text, seq, arg=u's'):
+def plural(text, seq, arg='s'):
     "Similar to pluralize, but looks at the text, too"
     from django.template.defaultfilters import pluralize
     if text.endswith('s'):
@@ -461,8 +465,8 @@ def capfirst_allcaps(text):
     """Like capfirst, except it doesn't lowercase words in ALL CAPS."""
     result = text
     i = False
-    for token in re.split("(\W+)", striptags(text)):
-        if not re.match("^[A-Z]+$", token):
+    for token in re.split(r"(\W+)", striptags(text)):
+        if not re.match(r"^[A-Z]+$", token):
             if not i:
                 result = result.replace(token, token.capitalize())
                 i = True
@@ -474,8 +478,8 @@ def capfirst_allcaps(text):
 def lower_allcaps(text):
     """Like lower, except it doesn't lowercase words in ALL CAPS."""
     result = text
-    for token in re.split("(\W+)", striptags(text)):
-        if not re.match("^[A-Z]+$", token):
+    for token in re.split(r"(\W+)", striptags(text)):
+        if not re.match(r"^[A-Z]+$", token):
             result = result.replace(token, token.lower())
     return result
 
@@ -505,9 +509,9 @@ def nbsp(value):
 @register.filter()
 def comma_separated_list(seq, end_word="and"):
     if len(seq) < 2:
-        return u"".join(seq)
+        return "".join(seq)
     else:
-        return u", ".join(seq[:-1]) + u" %s %s"%(end_word, seq[-1])
+        return ", ".join(seq[:-1]) + " %s %s"%(end_word, seq[-1])
 
 @register.filter()
 def zaptmp(s):
@@ -515,7 +519,7 @@ def zaptmp(s):
 
 @register.filter()
 def rfcbis(s):
-    m = re.search('^.*-rfc(\d+)-?bis(-.*)?$', s)
+    m = re.search(r'^.*-rfc(\d+)-?bis(-.*)?$', s)
     return None if m is None else 'rfc' + m.group(1) 
 
 @register.filter

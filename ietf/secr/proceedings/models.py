@@ -1,7 +1,14 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 
 from django.conf import settings
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 
 from ietf.meeting.models import Meeting
 
@@ -56,6 +63,7 @@ class InterimMeeting(Meeting):
         else:
             return ''
 
+@python_2_unicode_compatible
 class Registration(models.Model):
     rsn = models.AutoField(primary_key=True)
     fname = models.CharField(max_length=255)
@@ -63,7 +71,7 @@ class Registration(models.Model):
     company = models.CharField(max_length=255)
     country = models.CharField(max_length=2)
     
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s" % (self.fname, self.lname)
     class Meta:
         db_table = 'registrations'

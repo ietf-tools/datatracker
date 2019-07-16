@@ -1,7 +1,12 @@
 # Copyright The IETF Trust 2015-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 from django.db import models
 from django.template import Template, Context
+from django.utils.encoding import python_2_unicode_compatible
 
 from email.utils import parseaddr
 from ietf.utils.mail import formataddr, get_email_addresses_from_text
@@ -28,6 +33,7 @@ def clean_duplicates(addrlist):
             addresses.append(addr)
     return addresses
 
+@python_2_unicode_compatible
 class MailTrigger(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     desc = models.TextField(blank=True)
@@ -37,9 +43,10 @@ class MailTrigger(models.Model):
     class Meta:
         ordering = ["slug"]
 
-    def __unicode__(self):
+    def __str__(self):
         return self.slug
 
+@python_2_unicode_compatible
 class Recipient(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     desc = models.TextField(blank=True)
@@ -48,7 +55,7 @@ class Recipient(models.Model):
     class Meta:
         ordering = ["slug"]
 
-    def __unicode__(self):
+    def __str__(self):
         return self.slug
 
     def gather(self, **kwargs):
@@ -265,7 +272,7 @@ class Recipient(models.Model):
             doc = kwargs['doc']
             active_ballot = doc.active_ballot()
             if active_ballot:
-                for ad, pos in active_ballot.active_ad_positions().iteritems():
+                for ad, pos in active_ballot.active_ad_positions().items():
                     if pos and pos.pos_id == "discuss":
                         addrs.append(ad.role_email("ad").address)
         return addrs

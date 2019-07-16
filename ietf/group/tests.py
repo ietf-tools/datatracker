@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 from unittest import skipIf
 
@@ -19,7 +22,7 @@ from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.utils.test_runner import set_coverage_checking
 from ietf.person.factories import EmailFactory
 from ietf.person.models import Person
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 
 if   getattr(settings,'SKIP_DOT_TO_PDF', False):
     skip_dot_to_pdf = True
@@ -39,7 +42,7 @@ class StreamTests(TestCase):
     def test_streams(self):
         r = self.client.get(urlreverse("ietf.group.views.streams"))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Independent Submission Editor" in unicontent(r))
+        self.assertContains(r, "Independent Submission Editor")
 
     def test_stream_documents(self):
         draft = DocumentFactory(type_id='draft',group__acronym='iab',states=[('draft','active')])
@@ -48,7 +51,7 @@ class StreamTests(TestCase):
 
         r = self.client.get(urlreverse("ietf.group.views.stream_documents", kwargs=dict(acronym="iab")))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.name in unicontent(r))
+        self.assertContains(r, draft.name)
 
     def test_stream_edit(self):
         EmailFactory(address="ad2@ietf.org")

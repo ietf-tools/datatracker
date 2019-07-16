@@ -1,6 +1,11 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
+import io
 import os
 import re
 from tempfile import mkstemp
@@ -211,7 +216,7 @@ def read_session_file(type, num, doc):
     # FIXME: uploaded_filename should be replaced with a function call that computes names that are fixed
     path = os.path.join(settings.AGENDA_PATH, "%s/%s/%s" % (num, type, doc.uploaded_filename))
     if os.path.exists(path):
-        with open(path) as f:
+        with io.open(path) as f:
             return f.read(), path
     else:
         return None, path
@@ -224,13 +229,13 @@ def convert_draft_to_pdf(doc_name):
     outpath = os.path.join(settings.INTERNET_DRAFT_PDF_PATH, doc_name + ".pdf")
 
     try:
-        infile = open(inpath, "r")
+        infile = io.open(inpath, "r")
     except IOError:
         return
 
     t,tempname = mkstemp()
     os.close(t)
-    tempfile = open(tempname, "w")
+    tempfile = io.open(tempname, "w")
 
     pageend = 0;
     newpage = 0;
@@ -238,7 +243,7 @@ def convert_draft_to_pdf(doc_name):
     for line in infile:
         line = re.sub("\r","",line)
         line = re.sub("[ \t]+$","",line)
-        if re.search("\[?[Pp]age [0-9ivx]+\]?[ \t]*$",line):
+        if re.search(r"\[?[Pp]age [0-9ivx]+\]?[ \t]*$",line):
             pageend=1
             tempfile.write(line)
             continue
@@ -288,13 +293,13 @@ def agenda_permissions(meeting, schedule, user):
     return cansee, canedit, secretariat
 
 def session_constraint_expire(request,session):
-    from ajax import session_constraints
+    from .ajax import session_constraints
     path = reverse(session_constraints, args=[session.meeting.number, session.pk])
     temp_request = HttpRequest()
     temp_request.path = path
     temp_request.META['HTTP_HOST'] = request.META['HTTP_HOST']
     key = get_cache_key(temp_request)
-    if key is not None and cache.has_key(key):
+    if key is not None and key in cache:
         cache.delete(key)
 
 # -------------------------------------------------

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
-from __future__ import unicode_literals, print_function
-
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
+#
 # Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 # 
@@ -34,12 +33,18 @@ from __future__ import unicode_literals, print_function
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os
-import re
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime
+import itertools
+import io
 import json
 import math
-import itertools
-import datetime
+import os
+import re
+import six
+
 from tempfile import mkstemp
 from collections import OrderedDict, defaultdict
 from simple_history.utils import update_change_reason
@@ -109,7 +114,7 @@ from ietf.doc.models import LastCallDocEvent
 
 
 from ietf.name.models import ReviewAssignmentStateName
-from ietf.utils.mail import send_mail_text, parse_preformatted
+from ietf.utils.mail import send_mail_text, parse_preformatted, get_payload
 
 from ietf.ietfauth.utils import user_is_person
 from ietf.dbtemplate.models import DBTemplate
@@ -150,7 +155,7 @@ def fill_in_charter_info(group, include_drafts=False):
             personnel["ad"] = ad_roles
 
     group.personnel = []
-    for role_name_slug, roles in personnel.iteritems():
+    for role_name_slug, roles in personnel.items():
         label = roles[0].name.name
         if len(roles) > 1:
             if label.endswith("y"):
@@ -168,7 +173,7 @@ def fill_in_charter_info(group, include_drafts=False):
     if group.charter:
         group.charter_text = get_charter_text(group)
     else:
-        group.charter_text = u"Not chartered yet."
+        group.charter_text = "Not chartered yet."
 
 def extract_last_name(role):
     return role.person.name_parts()[3]
@@ -201,10 +206,10 @@ def fill_in_wg_drafts(group):
 
 
 def check_group_email_aliases():
-    pattern = re.compile('expand-(.*?)(-\w+)@.*? +(.*)$')
+    pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
     tot_count = 0
     good_count = 0
-    with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
+    with io.open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             tot_count += 1
@@ -268,7 +273,7 @@ def wg_charters_by_acronym(request, group_type):
         raise Http404
     areas = dict((a.id, a) for a in Group.objects.filter(type="area", state="active").order_by("name"))
 
-    for area in areas.itervalues():
+    for area in areas.values():
         area.ads = sorted(roles(area, "ad"), key=extract_last_name)
 
     groups = Group.objects.filter(type="wg", state="active").exclude(parent=None).order_by("acronym")
@@ -337,8 +342,8 @@ def active_programs(request):
     return render(request, 'group/active_programs.html', {'programs' : programs })
 
 def active_areas(request):
-	areas = Group.objects.filter(type="area", state="active").order_by("name")  
-	return render(request, 'group/active_areas.html', {'areas': areas })
+        areas = Group.objects.filter(type="area", state="active").order_by("name")  
+        return render(request, 'group/active_areas.html', {'areas': areas })
 
 def active_wgs(request):
     areas = Group.objects.filter(type="area", state="active").order_by("name")
@@ -496,7 +501,7 @@ def group_documents_txt(request, acronym, group_type=None):
         d.prefix = d.get_state().name
 
     for d in docs_related:
-        d.prefix = u"Related %s" % d.get_state().name
+        d.prefix = "Related %s" % d.get_state().name
 
     rows = []
     for d in itertools.chain(docs, docs_related):
@@ -506,9 +511,9 @@ def group_documents_txt(request, acronym, group_type=None):
         else:
             name = "%s-%s" % (d.name, d.rev)
 
-        rows.append(u"\t".join((d.prefix, name, clean_whitespace(d.title))))
+        rows.append("\t".join((d.prefix, name, clean_whitespace(d.title))))
 
-    return HttpResponse(u"\n".join(rows), content_type='text/plain; charset=UTF-8')
+    return HttpResponse("\n".join(rows), content_type='text/plain; charset=UTF-8')
 
 def group_about(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
@@ -625,12 +630,12 @@ def group_about_status_edit(request, acronym, group_type=None):
 
 def get_group_email_aliases(acronym, group_type):
     if acronym:
-        pattern = re.compile('expand-(%s)(-\w+)@.*? +(.*)$'%acronym)
+        pattern = re.compile(r'expand-(%s)(-\w+)@.*? +(.*)$'%acronym)
     else:
-        pattern = re.compile('expand-(.*?)(-\w+)@.*? +(.*)$')
+        pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
 
     aliases = []
-    with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
+    with io.open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
         for line in virtual_file.readlines():
             m = pattern.match(line)
             if m:
@@ -679,7 +684,7 @@ def materials(request, acronym, group_type=None):
 
     return render(request, 'group/materials.html',
                   construct_group_menu_context(request, group, "materials", group_type, {
-                      "doc_types": doc_types.items(),
+                      "doc_types": list(doc_types.items()),
                       "can_manage_materials": can_manage_materials(request.user, group)
                   }))
 
@@ -691,7 +696,7 @@ def dependencies(request, acronym, group_type=None, output_type="pdf"):
 
     dothandle, dotname = mkstemp()
     os.close(dothandle)
-    dotfile = open(dotname, "w")
+    dotfile = io.open(dotname, "w")
     dotfile.write(make_dot(group))
     dotfile.close()
 
@@ -708,7 +713,7 @@ def dependencies(request, acronym, group_type=None, output_type="pdf"):
     pipe("%s -f -l 10 -o %s %s" % (settings.UNFLATTEN_BINARY, unflatname, dotname))
     pipe("%s -T%s -o %s %s" % (settings.DOT_BINARY, output_type, outname, unflatname))
 
-    outhandle = open(outname, "r")
+    outhandle = io.open(outname, "rb")
     out = outhandle.read()
     outhandle.close()
 
@@ -853,7 +858,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
         res = []
         for u in urls:
             if u.name:
-                res.append(u"%s (%s)" % (u.url, u.name))
+                res.append("%s (%s)" % (u.url, u.name))
             else:
                 res.append(u.url)
         return fs.join(res)
@@ -930,7 +935,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
             personnel_change_text=""
             changed_personnel = set()
             # update roles
-            for attr, f in form.fields.iteritems():
+            for attr, f in form.fields.items():
                 if not (attr.endswith("_roles") or attr == "ad"):
                     continue
 
@@ -976,7 +981,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                     group.groupurl_set.all().delete()
                     # Add new ones
                     for u in new_urls:
-                        m = re.search('(?P<url>[\w\d:#@%/;$()~_?\+-=\\\.&]+)( \((?P<name>.+)\))?', u)
+                        m = re.search(r'(?P<url>[\w\d:#@%/;$()~_?\+-=\\\.&]+)( \((?P<name>.+)\))?', u)
                         if m:
                             if m.group('name'):
                                 url = GroupURL(url=m.group('url'), name=m.group('name'), group=group)
@@ -999,7 +1004,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                 return redirect('ietf.doc.views_charter.submit', name=charter_name_for_group(group), option="initcharter")
 
             return HttpResponseRedirect(group.about_url())
-    else: # form.is_valid()
+    else: # Not POST:
         if not new_group:
             ad_role = group.ad_role()
             init = dict(name=group.name,
@@ -1443,9 +1448,9 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
         saving = form_action.startswith("save")
 
         # check for conflicts
-        review_requests_dict = { unicode(r.pk): r for r in review_requests }
+        review_requests_dict = { six.text_type(r.pk): r for r in review_requests }
         posted_reqs = set(request.POST.getlist("reviewrequest", []))
-        current_reqs = set(review_requests_dict.iterkeys())
+        current_reqs = set(review_requests_dict.keys())
 
         closed_reqs = posted_reqs - current_reqs
         newly_closed = len(closed_reqs)
@@ -1599,7 +1604,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
         
         (msg,_,_) = parse_preformatted(partial_msg)
 
-        body = msg.get_payload()
+        body = get_payload(msg)
         subject = msg['Subject']
 
         form = EmailOpenAssignmentsForm(initial={
@@ -1692,7 +1697,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
                     period.start_date.isoformat() if period.start_date else "indefinite",
                     period.end_date.isoformat() if period.end_date else "indefinite",
                     period.get_availability_display(),
-		    period.reason,
+                    period.reason,
                 )
 
                 if period.availability == "unavailable":

@@ -1,3 +1,10 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import io
 import sys
 import os
 
@@ -9,19 +16,19 @@ from ietf.doc.models import Document
 
 def write(fn, new):
     try:
-        f = open(fn)
+        f = io.open(fn)
         old = f.read().decode('utf-8')
         f.close
     except IOError:
         old = ""
     if old.strip() != new.strip():
         sys.stdout.write(os.path.basename(fn)+'\n')
-        f = open(fn, "wb")
+        f = io.open(fn, "wb")
         f.write(new.encode('utf-8'))
         f.close()
 
 class Command(BaseCommand):
-    help = (u'Generate draft bibxml files, for xml2rfc references')
+    help = ('Generate draft bibxml files, for xml2rfc references')
 
     def handle(self, *args, **options):
         documents = Document.objects.filter(type__slug='draft')

@@ -1,11 +1,14 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import datetime, os, shutil, json
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import datetime, os, shutil
+import io
 import tarfile, tempfile, mailbox
 import email.mime.multipart, email.mime.text, email.utils
 
-from StringIO import StringIO
 from mock import patch
 from requests import Response
 
@@ -33,7 +36,7 @@ from ietf.review.utils import reviewer_rotation_list, possibly_advance_next_revi
 
 from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import create_person
-from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
+from ietf.utils.test_utils import login_testing_unauthorized, reload_db_objects
 from ietf.utils.mail import outbox, empty_outbox, parseaddr, on_behalf_of
 from ietf.person.factories import PersonFactory
 
@@ -100,6 +103,8 @@ class ReviewTests(TestCase):
         self.assertTrue('reviewteam Early' in outbox[0]['Subject'])
         self.assertTrue('reviewsecretary@' in outbox[0]['To'])
         self.assertTrue('reviewteam3 Early' in outbox[1]['Subject'])
+        if not 'reviewsecretary3@' in outbox[1]['To']:
+            print(outbox[1].as_string())
         self.assertTrue('reviewsecretary3@' in outbox[1]['To'])
 
         # set the reviewteamsetting for the secretary email alias, then do the post again
@@ -152,9 +157,7 @@ class ReviewTests(TestCase):
 
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ "name": doc.name })
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        content = unicontent(r)
-        self.assertTrue("{} Review".format(review_req.type.name) in content)
+        self.assertContains(r, "{} Review".format(review_req.type.name))
 
     def test_review_request(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
@@ -166,9 +169,8 @@ class ReviewTests(TestCase):
         url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertIn(review_req.team.acronym, unicontent(r))
-        self.assertIn(review_req.team.name, unicontent(r))
+        self.assertContains(r, review_req.team.acronym)
+        self.assertContains(r, review_req.team.name)
 
         url = urlreverse('ietf.doc.views_review.review_request_forced_login', kwargs={ "name": doc.name, "request_id": review_req.pk })
         r = self.client.get(url)
@@ -193,7 +195,7 @@ class ReviewTests(TestCase):
         self.client.login(username="reviewsecretary", password="reviewsecretary+password")
         r = self.client.get(req_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(close_url in unicontent(r))
+        self.assertContains(r, close_url)
         self.client.logout()
 
         # get close page
@@ -311,8 +313,8 @@ class ReviewTests(TestCase):
     def test_assign_reviewer(self):
         doc = WgDraftFactory(pages=2)
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
-        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',person__name=u'Some Reviewer',name_id='reviewer')
-        RoleFactory(group=review_team,person__user__username='marschairman',person__name=u'WG Cháir Man',name_id='reviewer')
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',person__name='Some Reviewer',name_id='reviewer')
+        RoleFactory(group=review_team,person__user__username='marschairman',person__name='WG Cháir Man',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
         ReviewerSettings.objects.create(team=review_team, person=rev_role.person, min_interval=14, skip_next=0)
 
@@ -353,7 +355,7 @@ class ReviewTests(TestCase):
         reviewer_settings.save()
 
         # Need one more person in review team one so we can test incrementing skip_count without immediately decrementing it
-        another_reviewer = PersonFactory.create(name = u"Extra TestReviewer") # needs to be lexically greater than the existing one
+        another_reviewer = PersonFactory.create(name = "Extra TestReviewer") # needs to be lexically greater than the existing one
         another_reviewer.role_set.create(name_id='reviewer', email=another_reviewer.email(), group=review_req.team)
 
         UnavailablePeriod.objects.create(
@@ -381,7 +383,7 @@ class ReviewTests(TestCase):
         self.client.login(username="reviewsecretary", password="reviewsecretary+password")
         r = self.client.get(req_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(assign_url in unicontent(r))
+        self.assertContains(r, assign_url)
         self.client.logout()
 
         # get assign page
@@ -455,14 +457,14 @@ class ReviewTests(TestCase):
         self.client.login(username="reviewsecretary", password="reviewsecretary+password")
         r = self.client.get(req_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(reject_url in unicontent(r))
+        self.assertContains(r, reject_url)
         self.client.logout()
 
         # get reject page
         login_testing_unauthorized(self, "reviewsecretary", reject_url)
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(unicode(assignment.reviewer.person) in unicontent(r))
+        self.assertContains(r, str(assignment.reviewer.person))
 
         # reject
         empty_outbox()
@@ -539,7 +541,7 @@ class ReviewTests(TestCase):
 
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            messages = json.loads(r.content)["messages"]
+            messages = r.json()["messages"]
             self.assertEqual(len(messages), 2)
 
             today = datetime.date.today()
@@ -560,7 +562,7 @@ class ReviewTests(TestCase):
 
             # Test failure to return mailarch results
             no_result_path = os.path.join(self.review_dir, "mailarch_no_result.html")
-            with open(no_result_path, "w") as f:
+            with io.open(no_result_path, "w") as f:
                 f.write('Content-Type: text/html\n\n<html><body><div class="xtr"><div class="xtd no-results">No results found</div></div>')
             ietf.review.mailarch.construct_query_urls = lambda review_req, query=None: { "query_data_url": "file://" + os.path.abspath(no_result_path) }
 
@@ -568,7 +570,7 @@ class ReviewTests(TestCase):
 
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            result = json.loads(r.content)
+            result = r.json()
             self.assertNotIn('messages', result)
             self.assertIn('No results found', result['error'])
 
@@ -617,7 +619,7 @@ class ReviewTests(TestCase):
         # complete by uploading file
         empty_outbox()
 
-        test_file = StringIO("This is a review\nwith two lines")
+        test_file = io.StringIO("This is a review\nwith two lines")
         test_file.name = "unnamed"
 
         r = self.client.post(url, data={
@@ -638,7 +640,7 @@ class ReviewTests(TestCase):
         self.assertTrue(assignment.review_request.team.acronym.lower() in assignment.review.name)
         self.assertTrue(assignment.review_request.doc.rev in assignment.review.name)
 
-        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 1)
@@ -662,10 +664,8 @@ class ReviewTests(TestCase):
         # check the review document page
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ "name": assignment.review.name })
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        content = unicontent(r)
-        self.assertIn("{} Review".format(assignment.review_request.type.name), content)
-        self.assertIn("This is a review", content)
+        self.assertContains(r, "{} Review".format(assignment.review_request.type.name))
+        self.assertContains(r, "This is a review")
 
 
     def test_complete_review_enter_content(self):
@@ -690,7 +690,7 @@ class ReviewTests(TestCase):
         self.assertEqual(assignment.state_id, "completed")
         self.assertNotEqual(assignment.completed_on, None)
 
-        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 1)
@@ -753,7 +753,7 @@ class ReviewTests(TestCase):
         # Mock up the url response for the request.get() call to retrieve the mailing list url
         response = Response()
         response.status_code = 200
-        response._content = "This is a review\nwith two lines"
+        response._content = b"This is a review\nwith two lines"
         mock.return_value = response
 
         # Run the test
@@ -768,7 +768,7 @@ class ReviewTests(TestCase):
             "state": ReviewAssignmentStateName.objects.get(slug="completed").pk,
             "reviewed_rev": assignment.review_request.doc.rev,
             "review_submission": "link",
-            "review_content": response.content,
+            "review_content": response.content.decode(),
             "review_url": "http://example.com/testreview/",
             "review_file": "",
         })
@@ -777,7 +777,7 @@ class ReviewTests(TestCase):
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, "completed")
 
-        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 0)
@@ -877,7 +877,7 @@ class ReviewTests(TestCase):
         event = ReviewAssignmentDocEvent.objects.get(type="closed_review_assignment", review_assignment=assignment)
         self.assertEqual(event.time, datetime.datetime(2012, 12, 24, 12, 13, 14))
 
-        with open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 0)

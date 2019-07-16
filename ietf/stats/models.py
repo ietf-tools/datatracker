@@ -1,6 +1,11 @@
-# Copyright The IETF Trust 2017, All Rights Reserved
+# Copyright The IETF Trust 2017-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 
 import debug                            # pyflakes:ignore
 
@@ -10,6 +15,7 @@ from ietf.person.models import Person
 from ietf.utils.models import ForeignKey
 
 
+@python_2_unicode_compatible
 class AffiliationAlias(models.Model):
     """Records that alias should be treated as name for statistical
     purposes."""
@@ -17,8 +23,8 @@ class AffiliationAlias(models.Model):
     alias = models.CharField(max_length=255, help_text="Note that aliases will be matched case-insensitive and both before and after some clean-up.", unique=True)
     name = models.CharField(max_length=255)
 
-    def __unicode__(self):
-        return u"{} -> {}".format(self.alias, self.name)
+    def __str__(self):
+        return "{} -> {}".format(self.alias, self.name)
 
     def save(self, *args, **kwargs):
         self.alias = self.alias.lower()
@@ -27,14 +33,16 @@ class AffiliationAlias(models.Model):
     class Meta:
         verbose_name_plural = "affiliation aliases"
 
+@python_2_unicode_compatible
 class AffiliationIgnoredEnding(models.Model):
     """Records that ending should be stripped from the affiliation for statistical purposes."""
 
     ending = models.CharField(max_length=255, help_text="Regexp with ending, e.g. 'Inc\\.?' - remember to escape .!")
 
-    def __unicode__(self):
+    def __str__(self):
         return self.ending
 
+@python_2_unicode_compatible
 class CountryAlias(models.Model):
     """Records that alias should be treated as country for statistical
     purposes."""
@@ -42,12 +50,13 @@ class CountryAlias(models.Model):
     alias = models.CharField(max_length=255, help_text="Note that lower-case aliases are matched case-insensitive while aliases with at least one uppercase letter is matched case-sensitive. So 'United States' is best entered as 'united states' so it both matches 'United States' and 'United states' and 'UNITED STATES', whereas 'US' is best entered as 'US' so it doesn't accidentally match an ordinary word like 'us'.")
     country = ForeignKey(CountryName, max_length=255)
 
-    def __unicode__(self):
-        return u"{} -> {}".format(self.alias, self.country.name)
+    def __str__(self):
+        return "{} -> {}".format(self.alias, self.country.name)
 
     class Meta:
         verbose_name_plural = "country aliases"
     
+@python_2_unicode_compatible
 class MeetingRegistration(models.Model):
     """Registration attendee records from the IETF registration system"""
     meeting = ForeignKey(Meeting)
@@ -58,5 +67,5 @@ class MeetingRegistration(models.Model):
     person = ForeignKey(Person, blank=True, null=True)
     email =  models.EmailField(blank=True, null=True)
     
-    def __unicode__(self):
-        return u"{} {}".format(self.first_name, self.last_name)
+    def __str__(self):
+        return "{} {}".format(self.first_name, self.last_name)

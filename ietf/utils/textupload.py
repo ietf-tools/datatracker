@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import re
 
 from django.core.exceptions import ValidationError
@@ -11,12 +17,12 @@ def get_cleaned_text_file_content(uploaded_file):
     django.core.exceptions.ValidationError exceptions."""
 
     if not uploaded_file:
-        return u""
+        return ""
 
     if uploaded_file.size and uploaded_file.size > 10 * 1000 * 1000:
         raise ValidationError("Text file too large (size %s)." % uploaded_file.size)
 
-    content = "".join(uploaded_file.chunks())
+    content = b"".join(uploaded_file.chunks())
 
     # try to fixup encoding
     import magic
@@ -33,18 +39,17 @@ def get_cleaned_text_file_content(uploaded_file):
     if not filetype.startswith("text"):
         raise ValidationError("Uploaded file does not appear to be a text file.")
 
-    match = re.search("charset=([\w-]+)", filetype)
+    match = re.search(r"charset=([\w-]+)", filetype)
     if not match:
         raise ValidationError("File has unknown encoding.")
 
     encoding = match.group(1)
-    if "ascii" not in encoding:
-        try:
-            content = content.decode(encoding)
-        except Exception as e:
-            raise ValidationError("Error decoding file (%s). Try submitting with UTF-8 encoding or remove non-ASCII characters." % str(e))
+    try:
+        content = content.decode(encoding)
+    except Exception as e:
+        raise ValidationError("Error decoding file (%s). Try submitting with UTF-8 encoding or remove non-ASCII characters." % str(e))
 
     # turn line-endings into Unix style
     content = content.replace("\r\n", "\n").replace("\r", "\n")
 
-    return content.encode("utf-8")
+    return content

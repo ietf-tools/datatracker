@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 
 from django.contrib import messages
@@ -43,7 +49,7 @@ def get_doc_list(agenda):
     Document objects in the order they appear in the agenda sections 1-3.
     '''
     docs = []
-    for num, section in sorted(agenda['sections'].iteritems()):
+    for num, section in sorted(agenda['sections'].items()):
         if "docs" in section:
             docs.extend(section["docs"])
 
@@ -96,16 +102,16 @@ def get_section_header(doc, agenda):
 
     split = num.split(".")
 
-    for i in xrange(num.count(".")):
+    for i in range(num.count(".")):
         parent_num = ".".join(split[:i + 1])
         parent = agenda["sections"].get(parent_num)
         if parent:
             if "." not in parent_num:
                 parent_num += "."
-            header.append(u"%s %s" % (parent_num, parent["title"]))
+            header.append("%s %s" % (parent_num, parent["title"]))
 
     section = agenda["sections"][num]
-    header.append(u"%s %s" % (num, section["title"]))
+    header.append("%s %s" % (num, section["title"]))
 
     count = '%s of %s' % (section["docs"].index(doc) + 1, len(section["docs"]))
     header.append(count)
@@ -116,7 +122,7 @@ def get_first_doc(agenda):
     '''
     This function takes an agenda dictionary and returns the first document in the agenda
     '''
-    for num, section in sorted(agenda['sections'].iteritems()):
+    for num, section in sorted(agenda['sections'].items()):
         if "docs" in section and section["docs"]:
             return section["docs"][0]
 

@@ -1,8 +1,10 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 import logging
+import io
 import os
 import rfc2html
 import six
@@ -15,6 +17,7 @@ from django.core.validators import URLValidator, RegexValidator
 from django.urls import reverse as urlreverse
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
+from django.utils.encoding import python_2_unicode_compatible, force_text
 from django.utils.html import mark_safe
 
 import debug                            # pyflakes:ignore
@@ -34,11 +37,12 @@ from ietf.utils.models import ForeignKey
 
 logger = logging.getLogger('django')
 
+@python_2_unicode_compatible
 class StateType(models.Model):
     slug = models.CharField(primary_key=True, max_length=30) # draft, draft-iesg, charter, ...
     label = models.CharField(max_length=255, help_text="Label that should be used (e.g. in admin) for state drop-down for this type of state") # State, IESG state, WG state, ...
 
-    def __unicode__(self):
+    def __str__(self):
         return self.slug
 
 @checks.register('db-consistency')
@@ -55,6 +59,7 @@ def check_statetype_slugs(app_configs, **kwargs):
             ))
     return errors
 
+@python_2_unicode_compatible
 class State(models.Model):
     type = ForeignKey(StateType)
     slug = models.SlugField()
@@ -65,7 +70,7 @@ class State(models.Model):
 
     next_states = models.ManyToManyField('State', related_name="previous_states", blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
     
     class Meta:
@@ -372,7 +377,7 @@ class DocumentInfo(models.Model):
         return self.rfc_number()
 
     def author_list(self):
-        return u", ".join(author.email_id for author in self.documentauthor_set.all() if author.email_id)
+        return ", ".join(author.email_id for author in self.documentauthor_set.all() if author.email_id)
 
     def authors(self):
         return [ a.person for a in self.documentauthor_set.all() ]
@@ -407,7 +412,7 @@ class DocumentInfo(models.Model):
 
     def relations_that(self, relationship):
         """Return the related-document objects that describe a given relationship targeting self."""
-        if isinstance(relationship, str):
+        if isinstance(relationship, six.string_types):
             relationship = ( relationship, )
         if not isinstance(relationship, tuple):
             raise TypeError("Expected a string or tuple, received %s" % type(relationship))
@@ -482,7 +487,7 @@ class DocumentInfo(models.Model):
         if ext != '.txt' and os.path.exists(txtpath):
             path = txtpath
         try:
-            with open(path, 'rb') as file:
+            with io.open(path, 'rb') as file:
                 raw = file.read()
         except IOError:
             return None
@@ -524,13 +529,14 @@ class DocumentInfo(models.Model):
 
 STATUSCHANGE_RELATIONS = ('tops','tois','tohist','toinf','tobcp','toexp')
 
+@python_2_unicode_compatible
 class RelatedDocument(models.Model):
     source = ForeignKey('Document')
     target = ForeignKey('DocAlias')
     relationship = ForeignKey(DocRelationshipName)
     def action(self):
         return self.relationship.name
-    def __unicode__(self):
+    def __str__(self):
         return u"%s %s %s" % (self.source.name, self.relationship.name.lower(), self.target.name)
 
     def is_downref(self):
@@ -597,10 +603,11 @@ class DocumentAuthorInfo(models.Model):
         abstract = True
         ordering = ["document", "order"]
 
+@python_2_unicode_compatible
 class DocumentAuthor(DocumentAuthorInfo):
     document = ForeignKey('Document')
 
-    def __unicode__(self):
+    def __str__(self):
         return u"%s %s (%s)" % (self.document.name, self.person, self.order)
 
 
@@ -610,10 +617,11 @@ validate_docname = RegexValidator(
     'invalid'
 )
 
+@python_2_unicode_compatible
 class Document(DocumentInfo):
     name = models.CharField(max_length=255, validators=[validate_docname,], unique=True)           # immutable
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def get_absolute_url(self):
@@ -641,10 +649,10 @@ class Document(DocumentInfo):
         return self._cached_absolute_url
 
     def file_tag(self):
-        return u"<%s>" % self.filename_with_rev()
+        return "<%s>" % self.filename_with_rev()
 
     def filename_with_rev(self):
-        return u"%s-%s.txt" % (self.name, self.rev)
+        return "%s-%s.txt" % (self.name, self.rev)
     
     def latest_event(self, *args, **filter_args):
         """Get latest event of optional Python type and with filter
@@ -845,21 +853,24 @@ class DocumentURL(models.Model):
     desc = models.CharField(max_length=255, default='', blank=True)
     url  = models.URLField(max_length=2083) # 2083 is the legal max for URLs
 
+@python_2_unicode_compatible
 class RelatedDocHistory(models.Model):
     source = ForeignKey('DocHistory')
     target = ForeignKey('DocAlias', related_name="reversely_related_document_history_set")
     relationship = ForeignKey(DocRelationshipName)
-    def __unicode__(self):
+    def __str__(self):
         return u"%s %s %s" % (self.source.doc.name, self.relationship.name.lower(), self.target.name)
 
+@python_2_unicode_compatible
 class DocHistoryAuthor(DocumentAuthorInfo):
     # use same naming convention as non-history version to make it a bit
     # easier to write generic code
     document = ForeignKey('DocHistory', related_name="documentauthor_set")
 
-    def __unicode__(self):
+    def __str__(self):
         return u"%s %s (%s)" % (self.document.doc.name, self.person, self.order)
 
+@python_2_unicode_compatible
 class DocHistory(DocumentInfo):
     doc = ForeignKey(Document, related_name="history_set")
     # the name here is used to capture the canonical name at the time
@@ -868,8 +879,8 @@ class DocHistory(DocumentInfo):
     # property
     name = models.CharField(max_length=255)
 
-    def __unicode__(self):
-        return unicode(self.doc.name)
+    def __str__(self):
+        return force_text(self.doc.name)
 
     def canonical_name(self):
         if hasattr(self, '_canonical_name'):
@@ -904,6 +915,7 @@ class DocHistory(DocumentInfo):
         verbose_name = "document history"
         verbose_name_plural = "document histories"
 
+@python_2_unicode_compatible
 class DocAlias(models.Model):
     """This is used for documents that may appear under multiple names,
     and in particular for RFCs, which for continuity still keep the
@@ -917,8 +929,8 @@ class DocAlias(models.Model):
     def document(self):
         return self.docs.first()
 
-    def __unicode__(self):
-        return "%s-->%s" % (self.name, ','.join([unicode(d.name) for d in self.docs.all() if isinstance(d, Document) ]))
+    def __str__(self):
+        return u"%s-->%s" % (self.name, ','.join([force_text(d.name) for d in self.docs.all() if isinstance(d, Document) ]))
     document_link = admin_link("document")
     class Meta:
         verbose_name = "document alias"
@@ -1007,6 +1019,7 @@ EVENT_TYPES = [
     ("downref_approved", "Downref approved"),
     ]
 
+@python_2_unicode_compatible
 class DocEvent(models.Model):
     """An occurrence for a document, used for tracking who, when and what."""
     time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened", db_index=True)
@@ -1023,7 +1036,7 @@ class DocEvent(models.Model):
     def get_dochistory(self):
         return DocHistory.objects.filter(time__lte=self.time,doc__name=self.doc.name).order_by('-time', '-pk').first()
 
-    def __unicode__(self):
+    def __str__(self):
         return u"%s %s by %s at %s" % (self.doc.name, self.get_type_display().lower(), self.by.plain_name(), self.time)
 
     def save(self, *args, **kwargs):
@@ -1047,6 +1060,7 @@ class ConsensusDocEvent(DocEvent):
     consensus = models.NullBooleanField(default=None)
 
 # IESG events
+@python_2_unicode_compatible
 class BallotType(models.Model):
     doc_type = ForeignKey(DocTypeName, blank=True, null=True)
     slug = models.SlugField()
@@ -1056,7 +1070,7 @@ class BallotType(models.Model):
     order = models.IntegerField(default=0)
     positions = models.ManyToManyField(BallotPositionName, blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return u"%s: %s" % (self.name, self.doc_type.name)
     
     class Meta:
@@ -1177,13 +1191,14 @@ class SubmissionDocEvent(DocEvent):
     submission = ForeignKey(ietf.submit.models.Submission)
 
 # dumping store for removed events
+@python_2_unicode_compatible
 class DeletedEvent(models.Model):
     content_type = ForeignKey(ContentType)
     json = models.TextField(help_text="Deleted object in JSON format, with attribute names chosen to be suitable for passing into the relevant create method.")
     by = ForeignKey(Person)
     time = models.DateTimeField(default=datetime.datetime.now)
 
-    def __unicode__(self):
+    def __str__(self):
         return u"%s by %s %s" % (self.content_type, self.by, self.time)
 
 class EditedAuthorsDocEvent(DocEvent):

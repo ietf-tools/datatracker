@@ -1,3 +1,8 @@
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 from django.core.management.base import BaseCommand
 
@@ -6,7 +11,7 @@ from ietf.liaisons.mails import send_sdo_reminder
 
 
 class Command(BaseCommand):
-    help = (u"Send a remind to each SDO Liaison Manager to update the list of persons authorized to send liaison statements on behalf of his SDO")
+    help = ("Send a remind to each SDO Liaison Manager to update the list of persons authorized to send liaison statements on behalf of his SDO")
 
     def add_arguments(self, parser):
         parser.add_argument('-s', '--sdo-pk', dest='sdo_pk',
@@ -25,16 +30,16 @@ def send_reminders_to_sdos(sdo_pk=None):
         sdos = sdos.filter(pk=sdo_pk)
 
     if not sdos:
-        print "No SDOs found!"
+        print("No SDOs found!")
 
     msgs = []
     for sdo in sdos:
         body = send_sdo_reminder(sdo)
 
         if not body:
-            msg = u'%05s#: %s has no liaison manager' % (sdo.pk, sdo.name)
+            msg = '%05s#: %s has no liaison manager' % (sdo.pk, sdo.name)
         else:
-            msg = u'%05s#: %s mail sent!' % (sdo.pk, sdo.name)
+            msg = '%05s#: %s mail sent!' % (sdo.pk, sdo.name)
         msgs.append(msg)
 
     return msgs

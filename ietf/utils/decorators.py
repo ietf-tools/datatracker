@@ -1,4 +1,8 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 
@@ -8,6 +12,7 @@ from django.conf import settings
 from django.contrib.auth import login
 from django.http import HttpResponse
 from django.shortcuts import render
+from django.utils.encoding import force_bytes
 
 import debug                            # pyflakes:ignore
 
@@ -49,7 +54,7 @@ def require_api_key(f, request, *args, **kwargs):
     if not hash:
         return err(400, "Missing apikey parameter")
     # Check hash
-    key = PersonalApiKey.validate_key(hash)
+    key = PersonalApiKey.validate_key(force_bytes(hash))
     if not key:
         return err(400, "Invalid apikey")
     # Check endpoint
@@ -79,7 +84,7 @@ def require_api_key(f, request, *args, **kwargs):
 def _memoize(func, self, *args, **kwargs):
     ''''Memoize wrapper for instance methouds.  Use @lru_cache for functions.'''
     if kwargs:  # frozenset is used to ensure hashability
-        key = args, frozenset(kwargs.items())
+        key = args, frozenset(list(kwargs.items()))
     else:
         key = args
     # instance method, set up cache if needed

@@ -1,10 +1,13 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import shutil
 import datetime
-import StringIO
+import io
 from pyquery import PyQuery
 from collections import Counter
 
@@ -25,8 +28,8 @@ from ietf.person.factories import PersonFactory
 from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting, MeetingTypeName
 from ietf.iesg.models import TelechatDate
-from ietf.utils.test_utils import login_testing_unauthorized, unicontent
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.utils.mail import outbox, empty_outbox, get_payload
 from ietf.utils.test_utils import TestCase
 
 
@@ -40,7 +43,7 @@ class ChangeStateTests(TestCase):
 
         url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "ad", url)
-	
+        
         # normal get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -210,7 +213,7 @@ class ChangeStateTests(TestCase):
         self.assertTrue(not draft.latest_event(type="changed_ballot_writeup_text"))
         r = self.client.post(url, dict(state=State.objects.get(used=True, type="draft-iesg", slug="lc-req").pk))
         self.assertEqual(r.status_code,200)
-        self.assertTrue("Your request to issue" in unicontent(r))
+        self.assertContains(r, "Your request to issue")
 
         # last call text
         e = draft.latest_event(WriteupDocEvent, type="changed_last_call_text")
@@ -372,7 +375,7 @@ class EditInfoTests(TestCase):
         data["telechat_date"] = next_week.isoformat()
         r = self.client.post(url,data)
         self.assertEqual(r.status_code, 302)
-        self.assertTrue("may not leave enough time" in outbox[-1].get_payload())
+        self.assertIn("may not leave enough time", get_payload(outbox[-1]))
 
     def test_start_iesg_process_on_draft(self):
 
@@ -458,7 +461,7 @@ class EditInfoTests(TestCase):
 
         # reset
         e = DocEvent(doc=draft, rev=draft.rev, by=Person.objects.get(name="(System)"), type='changed_document')
-        e.desc = u"Intended Status changed to <b>%s</b> from %s"% (draft.intended_std_level_id, 'bcp')
+        e.desc = "Intended Status changed to <b>%s</b> from %s"% (draft.intended_std_level_id, 'bcp')
         e.save()
 
         draft.intended_std_level_id = 'bcp'
@@ -467,7 +470,7 @@ class EditInfoTests(TestCase):
         self.assertEqual(r.status_code, 403) # BCPs must have a consensus
 
         e = DocEvent(doc=draft, rev=draft.rev, by=Person.objects.get(name="(System)"), type='changed_document')
-        e.desc = u"Intended Status changed to <b>%s</b> from %s"% (draft.intended_std_level_id, 'inf')
+        e.desc = "Intended Status changed to <b>%s</b> from %s"% (draft.intended_std_level_id, 'inf')
         e.save()
 
         draft.intended_std_level_id = 'inf'
@@ -563,7 +566,7 @@ class ExpireIDsTests(TestCase):
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
 
     def write_draft_file(self, name, size):
-        f = open(os.path.join(self.id_dir, name), 'w')
+        f = io.open(os.path.join(self.id_dir, name), 'w')
         f.write("a" * size)
         f.close()
         
@@ -774,7 +777,7 @@ class ExpireLastCallTests(TestCase):
 class IndividualInfoFormsTests(TestCase):
 
     def setUp(self):
-        doc = WgDraftFactory(group__acronym='mars',shepherd=PersonFactory(user__username='plain',name=u'Plain Man').email_set.first())
+        doc = WgDraftFactory(group__acronym='mars',shepherd=PersonFactory(user__username='plain',name='Plain Man').email_set.first())
         self.docname = doc.name
 
     def test_doc_change_stream(self):
@@ -1056,7 +1059,7 @@ class IndividualInfoFormsTests(TestCase):
         self.assertTrue(doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup").text.startswith('here is a new writeup'))
 
         # file upload
-        test_file = StringIO.StringIO("This is a different writeup.")
+        test_file = io.StringIO("This is a different writeup.")
         test_file.name = "unnamed"
         r = self.client.post(url,dict(txt=test_file,submit_response="1"))
         self.assertEqual(r.status_code, 302)
@@ -1362,7 +1365,7 @@ class AdoptDraftTests(TestCase):
 
 class ChangeStreamStateTests(TestCase):
     def test_set_tags(self):
-        role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name=u'WG Cháir Man')
+        role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name='WG Cháir Man')
         RoleFactory(name_id='delegate',group=role.group,person__user__email='marsdelegate@example.org')
         draft = WgDraftFactory(group=role.group,shepherd=PersonFactory(user__username='plain',user__email='plain@example.com').email_set.first())
         draft.tags.set(DocTagName.objects.filter(slug="w-expert"))
@@ -1399,12 +1402,12 @@ class ChangeStreamStateTests(TestCase):
         self.assertEqual(draft.docevent_set.count() - events_before, 2)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("tags changed" in outbox[-1]["Subject"].lower())
-        self.assertTrue("mars-chairs@ietf.org" in unicode(outbox[-1]))
-        self.assertTrue("marsdelegate@example.org" in unicode(outbox[-1]))
-        self.assertTrue("plain@example.com" in unicode(outbox[-1]))
+        self.assertTrue("mars-chairs@ietf.org" in outbox[-1].as_string())
+        self.assertTrue("marsdelegate@example.org" in outbox[-1].as_string())
+        self.assertTrue("plain@example.com" in outbox[-1].as_string())
 
     def test_set_initial_state(self):
-        role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name=u'WG Cháir Man')
+        role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name='WG Cháir Man')
         RoleFactory(name_id='delegate',group=role.group,person__user__email='marsdelegate@ietf.org')
         draft = WgDraftFactory(group=role.group)
         draft.states.all().delete()
@@ -1436,11 +1439,11 @@ class ChangeStreamStateTests(TestCase):
         self.assertTrue(due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1))
         self.assertEqual(len(outbox), 1)
         self.assertTrue("state changed" in outbox[0]["Subject"].lower())
-        self.assertTrue("mars-chairs@ietf.org" in unicode(outbox[0]))
-        self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[0]))
+        self.assertTrue("mars-chairs@ietf.org" in outbox[0].as_string())
+        self.assertTrue("marsdelegate@ietf.org" in outbox[0].as_string())
 
     def test_set_state(self):
-        role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name=u'WG Cháir Man')
+        role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name='WG Cháir Man')
         RoleFactory(name_id='delegate',group=role.group,person__user__email='marsdelegate@ietf.org')
         draft = WgDraftFactory(group=role.group)
 
@@ -1481,11 +1484,11 @@ class ChangeStreamStateTests(TestCase):
         self.assertTrue(due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1))
         self.assertEqual(len(outbox), 1)
         self.assertTrue("state changed" in outbox[0]["Subject"].lower())
-        self.assertTrue("mars-chairs@ietf.org" in unicode(outbox[0]))
-        self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[0]))
+        self.assertTrue("mars-chairs@ietf.org" in outbox[0].as_string())
+        self.assertTrue("marsdelegate@ietf.org" in outbox[0].as_string())
 
     def test_pubreq_validation(self):
-        role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name=u'WG Cháir Man')
+        role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name='WG Cháir Man')
         RoleFactory(name_id='delegate',group=role.group,person__user__email='marsdelegate@ietf.org')
         draft = WgDraftFactory(group=role.group)
 
@@ -1509,7 +1512,7 @@ class ChangeStreamStateTests(TestCase):
 class ChangeReplacesTests(TestCase):
     def setUp(self):
 
-        role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name=u'WG Cháir Man')
+        role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name='WG Cháir Man')
         RoleFactory(name_id='delegate',group=role.group,person__user__email='marsdelegate@ietf.org')
         #draft = WgDraftFactory(group=role.group)
 
@@ -1520,7 +1523,7 @@ class ChangeReplacesTests(TestCase):
             title="Base A",
             group=mars_wg,
         )
-        p = PersonFactory(name=u"basea_author")
+        p = PersonFactory(name="basea_author")
         e = Email.objects.create(address="basea_author@example.com", person=p, origin=p.user.username)
         self.basea.documentauthor_set.create(person=p, email=e, order=1)
 
@@ -1530,7 +1533,7 @@ class ChangeReplacesTests(TestCase):
             group=mars_wg,
             expires = datetime.datetime.now() - datetime.timedelta(days = 365 - settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
         )
-        p = PersonFactory(name=u"baseb_author")
+        p = PersonFactory(name="baseb_author")
         e = Email.objects.create(address="baseb_author@example.com", person=p, origin=p.user.username)
         self.baseb.documentauthor_set.create(person=p, email=e, order=1)
 
@@ -1539,7 +1542,7 @@ class ChangeReplacesTests(TestCase):
             title="Replace Base A",
             group=mars_wg,
         )
-        p = PersonFactory(name=u"replacea_author")
+        p = PersonFactory(name="replacea_author")
         e = Email.objects.create(address="replacea_author@example.com", person=p, origin=p.user.username)
         self.replacea.documentauthor_set.create(person=p, email=e, order=1)
  
@@ -1548,7 +1551,7 @@ class ChangeReplacesTests(TestCase):
             title="Replace Base A and Base B",
             group=mars_wg,
         )
-        p = PersonFactory(name=u"replaceboth_author")
+        p = PersonFactory(name="replaceboth_author")
         e = Email.objects.create(address="replaceboth_author@example.com", person=p, origin=p.user.username)
         self.replaceboth.documentauthor_set.create(person=p, email=e, order=1)
  
@@ -1627,15 +1630,15 @@ class ChangeReplacesTests(TestCase):
         login_testing_unauthorized(self, "secretary", url)
 
         r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form[name=review-suggested-replaces]')), 1)
+        self.assertEqual(len(q('form[name=review-suggested-replaces]')), 1)
 
         r = self.client.post(url, dict(replaces=[replaced.pk]))
-        self.assertEquals(r.status_code, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertTrue(not self.replacea.related_that_doc("possibly-replaces"))
         self.assertEqual(len(self.replacea.related_that_doc("replaces")), 1)
-        self.assertEquals(Document.objects.get(pk=self.basea.pk).get_state().slug, 'repl')
+        self.assertEqual(Document.objects.get(pk=self.basea.pk).get_state().slug, 'repl')
 
 class MoreReplacesTests(TestCase):
 

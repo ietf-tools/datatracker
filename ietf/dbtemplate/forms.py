@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.template import Context
@@ -20,7 +26,7 @@ class DBTemplateForm(forms.ModelForm):
                 PlainTemplate(content).render(Context({}))
             else:
                 raise ValidationError("Unexpected DBTemplate.type.slug: %s" % self.type.slug)
-        except Exception, e:
+        except Exception as e:
             raise ValidationError(e)
         return content
                 

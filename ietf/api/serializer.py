@@ -1,5 +1,12 @@
+# Copyright The IETF Trust 2018-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import hashlib
 import json
+import six
 
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, FieldError
@@ -27,9 +34,9 @@ def filter_from_queryargs(request):
     def is_ascii(s):
         return all(ord(c) < 128 for c in s)
     # limit parameter keys to ascii.
-    params = dict( (k,v) for (k,v) in request.GET.items() if is_ascii(k) )
-    filter = fix_ranges(dict([(k,params[k]) for k in params.keys() if not k.startswith("not__")]))
-    exclude = fix_ranges(dict([(k[5:],params[k]) for k in params.keys() if k.startswith("not__")]))
+    params = dict( (k,v) for (k,v) in list(request.GET.items()) if is_ascii(k) )
+    filter = fix_ranges(dict([(k,params[k]) for k in list(params.keys()) if not k.startswith("not__")]))
+    exclude = fix_ranges(dict([(k[5:],params[k]) for k in list(params.keys()) if k.startswith("not__")]))
     return filter, exclude
 
 def unique_obj_name(obj):
@@ -89,7 +96,7 @@ class AdminJsonSerializer(Serializer):
     use_natural_keys = False
 
     def serialize(self, queryset, **options):
-        qi = options.get('query_info', '')
+        qi = options.get('query_info', '').encode('utf-8')
         if len(list(queryset)) == 1:
             obj = queryset[0]
             key = 'json:%s:%s' % (hashlib.md5(qi).hexdigest(), unique_obj_name(obj))
@@ -147,7 +154,7 @@ class AdminJsonSerializer(Serializer):
                             if hasattr(field_value, "_meta"):
                                 self._current[name] = self.expand_related(field_value, name)
                             else:
-                                self._current[name] = unicode(field_value)
+                                self._current[name] = six.text_type(field_value)
             except ObjectDoesNotExist:
                 pass
             except AttributeError:
@@ -224,7 +231,7 @@ class JsonExportMixin(object):
 
     def json_view(self, request, filter={}, expand=[]):
         qfilter, exclude = filter_from_queryargs(request)
-        for k in qfilter.keys():
+        for k in list(qfilter.keys()):
             if k.startswith("_"):
                 del qfilter[k]
         qfilter.update(filter)
@@ -244,7 +251,7 @@ class JsonExportMixin(object):
         try:
             qs = self.get_queryset().filter(**filter).exclude(**exclude)
         except (FieldError, ValueError) as e:
-            return HttpResponse(json.dumps({u"error": str(e)}, sort_keys=True, indent=3), content_type=content_type)
+            return HttpResponse(json.dumps({"error": str(e)}, sort_keys=True, indent=3), content_type=content_type)
         try:
             if expand:
                 qs = qs.select_related()
@@ -252,7 +259,7 @@ class JsonExportMixin(object):
             items = [(getattr(o, key), serializer.serialize([o], expand=expand, query_info=query_info) )  for o in qs ]
             qd = dict( ( k, json.loads(v)[0] )  for k,v in items )
         except (FieldError, ValueError) as e:
-            return HttpResponse(json.dumps({u"error": str(e)}, sort_keys=True, indent=3), content_type=content_type)
+            return HttpResponse(json.dumps({"error": str(e)}, sort_keys=True, indent=3), content_type=content_type)
         text = json.dumps({smart_text(self.model._meta): qd}, sort_keys=True, indent=3)
         return HttpResponse(text, content_type=content_type)
         

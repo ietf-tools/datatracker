@@ -1,3 +1,9 @@
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import simple_history
 
 from django.contrib import admin
@@ -17,7 +23,7 @@ class ReviewerSettingsAdmin(simple_history.admin.SimpleHistoryAdmin):
 admin.site.register(ReviewerSettings, ReviewerSettingsAdmin)
 
 class ReviewSecretarySettingsAdmin(admin.ModelAdmin):
-    list_display = [u'id', 'team', 'person', 'remind_days_before_deadline']
+    list_display = ['id', 'team', 'person', 'remind_days_before_deadline']
     raw_id_fields = ['team', 'person']
 admin.site.register(ReviewSecretarySettings, ReviewSecretarySettingsAdmin)
 

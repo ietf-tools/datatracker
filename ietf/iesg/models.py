@@ -1,5 +1,6 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
-
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+#
 # Portion Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 # 
@@ -32,11 +33,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 
-
+@python_2_unicode_compatible
 class TelechatAgendaItem(models.Model):
     TYPE_CHOICES = (
         (1, "Any Other Business (WG News, New Proposals, etc.)"),
@@ -49,9 +54,9 @@ class TelechatAgendaItem(models.Model):
     type = models.IntegerField(db_column='template_type', choices=TYPE_CHOICES, default=3)
     title = models.CharField(max_length=255, db_column='template_title')
 
-    def __unicode__(self):
+    def __str__(self):
         type_name = self.TYPE_CHOICES_DICT.get(self.type, str(self.type))
-        return u'%s: %s' % (type_name, self.title or "")
+        return "%s: %s" % (type_name, self.title or "")
 
 class Telechat(models.Model):
     telechat_id = models.IntegerField(primary_key=True)
@@ -64,7 +69,7 @@ class Telechat(models.Model):
     mi_frozen = models.IntegerField(null=True, blank=True)
 
     class Meta:
-        db_table = u'telechat'
+        db_table = 'telechat'
 
 
 def next_telechat_date():
@@ -77,12 +82,13 @@ class TelechatDateManager(models.Manager):
     def active(self):
         return self.get_queryset().filter(date__gte=datetime.date.today())
 
+@python_2_unicode_compatible
 class TelechatDate(models.Model):
     objects = TelechatDateManager()
 
     date = models.DateField(default=next_telechat_date)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.date.isoformat()
 
     class Meta:

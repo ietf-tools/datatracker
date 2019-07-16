@@ -1,14 +1,20 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
+import io
 import json
 import datetime
-import StringIO
+import quopri
 import shutil
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
+
+import debug                            # pyflakes:ignore
 
 from ietf.doc.factories import WgDraftFactory
 from ietf.doc.models import Document, DocAlias, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
@@ -17,7 +23,7 @@ from ietf.group.factories import GroupFactory
 from ietf.person.models import Person
 from ietf.sync import iana, rfceditor
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_utils import login_testing_unauthorized, unicontent
+from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_utils import TestCase
 
 
@@ -136,9 +142,11 @@ class IANASyncTests(TestCase):
     def test_iana_review_mail(self):
         draft = WgDraftFactory()
 
-        subject_template = u'Subject: [IANA #12345] Last Call: <%(draft)s-%(rev)s.txt> (Long text) to Informational RFC'
-        msg_template = u"""From: "%(person)s via RT" <drafts-lastcall@iana.org>
+        subject_template = 'Subject: [IANA #12345] Last Call: <%(draft)s-%(rev)s.txt> (Long text) to Informational RFC'
+        msg_template = """From: %(fromaddr)s
 Date: Thu, 10 May 2012 12:00:0%(rtime)d +0000
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
 %(subject)s
 
 (BEGIN IANA %(tag)s%(embedded_name)s)
@@ -172,20 +180,22 @@ ICANN
                     if embedded_name or not 'Vacuous' in subject: 
                     
                         rtime = 7*subjects.index(subject) + 5*tags.index(tag) + embedded_names.index(embedded_name)
-                        msg = msg_template % dict(person=Person.objects.get(user__username="iana").name,
+                        person=Person.objects.get(user__username="iana")
+                        fromaddr = person.email().formatted_email()
+                        msg = msg_template % dict(person=quopri.encodestring(person.name.encode('utf-8')),
+                                                  fromaddr=fromaddr,
                                                   draft=draft.name,
                                                   rev=draft.rev,
                                                   tag=tag,
                                                   rtime=rtime,
                                                   subject=subject,
                                                   embedded_name=embedded_name,)
-    
                         doc_name, review_time, by, comment = iana.parse_review_email(msg.encode('utf-8'))
     
                         self.assertEqual(doc_name, draft.name)
                         self.assertEqual(review_time, datetime.datetime(2012, 5, 10, 5, 0, rtime))
                         self.assertEqual(by, Person.objects.get(user__username="iana"))
-                        self.assertTrue("there are no IANA Actions" in comment.replace("\n", ""))
+                        self.assertIn("there are no IANA Actions", comment.replace("\n", ""))
     
                         events_before = DocEvent.objects.filter(doc=draft, type="iana_review").count()
                         iana.add_review_comment(doc_name, review_time, by, comment)
@@ -205,7 +215,7 @@ ICANN
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("new changes at" in unicontent(r))
+        self.assertContains(r, "new changes at")
 
         # we don't actually try posting as that would trigger a real run
         
@@ -226,7 +236,7 @@ class RFCSyncTests(TestCase):
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.save_archive_dir
 
     def write_draft_file(self, name, size):
-        with open(os.path.join(self.id_dir, name), 'w') as f:
+        with io.open(os.path.join(self.id_dir, name), 'w') as f:
             f.write("a" * size)
 
     def test_rfc_index(self):
@@ -306,7 +316,7 @@ class RFCSyncTests(TestCase):
                        area=doc.group.parent.acronym,
                        group=doc.group.acronym)
 
-        data = rfceditor.parse_index(StringIO.StringIO(t))
+        data = rfceditor.parse_index(io.StringIO(t))
         self.assertEqual(len(data), 1)
 
         rfc_number, title, authors, rfc_published_date, current_status, updates, updated_by, obsoletes, obsoleted_by, also, draft, has_errata, stream, wg, file_formats, pages, abstract = data[0]
@@ -387,7 +397,7 @@ class RFCSyncTests(TestCase):
                               group=draft.group.name,
                               ref="draft-ietf-test")
 
-        drafts, warnings = rfceditor.parse_queue(StringIO.StringIO(t))
+        drafts, warnings = rfceditor.parse_queue(io.StringIO(t))
         self.assertEqual(len(drafts), 1)
         self.assertEqual(len(warnings), 0)
 
@@ -430,7 +440,7 @@ class DiscrepanciesTests(TestCase):
         doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="ann"))
 
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
-        self.assertTrue(doc.name in unicontent(r))
+        self.assertContains(r, doc.name)
 
         # draft with IANA state "In Progress" but RFC Editor state not IANA
         doc = Document.objects.create(name="draft-ietf-test2", type_id="draft")
@@ -439,7 +449,7 @@ class DiscrepanciesTests(TestCase):
         doc.set_state(State.objects.get(used=True, type="draft-rfceditor", slug="auth"))
 
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
-        self.assertTrue(doc.name in unicontent(r))
+        self.assertContains(r, doc.name)
 
         # draft with IANA state "Waiting on RFC Editor" or "RFC-Ed-Ack"
         # but RFC Editor state is IANA
@@ -449,7 +459,7 @@ class DiscrepanciesTests(TestCase):
         doc.set_state(State.objects.get(used=True, type="draft-rfceditor", slug="iana"))
 
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
-        self.assertTrue(doc.name in unicontent(r))
+        self.assertContains(r, doc.name)
 
         # draft with state other than "RFC Ed Queue" or "RFC Published"
         # that are in RFC Editor or IANA queues
@@ -458,7 +468,7 @@ class DiscrepanciesTests(TestCase):
         doc.set_state(State.objects.get(used=True, type="draft-rfceditor", slug="auth"))
 
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
-        self.assertTrue(doc.name in unicontent(r))
+        self.assertContains(r, doc.name)
 
 class RFCEditorUndoTests(TestCase):
     def test_rfceditor_undo(self):
@@ -480,7 +490,7 @@ class RFCEditorUndoTests(TestCase):
         # get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(e2.doc.name in unicontent(r))
+        self.assertContains(r, e2.doc.name)
 
         # delete e2
         deleted_before = DeletedEvent.objects.count()

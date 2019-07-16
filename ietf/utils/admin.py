@@ -1,4 +1,14 @@
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import six
+
 from django.contrib import admin
+from django.utils.encoding import force_text
+
 from ietf.utils.models import VersionInfo
 
 def name(obj):
@@ -8,10 +18,10 @@ def name(obj):
         if callable(obj.name):
             name = obj.name()
         else:
-            name = unicode(obj.name)
+            name = force_text(obj.name)
         if name:
             return name
-    return unicode(obj)
+    return six.text_type(obj)
     
 def admin_link(field, label=None, ordering="", display=name, suffix=""):
     if not label:
@@ -39,15 +49,15 @@ def admin_link(field, label=None, ordering="", display=name, suffix=""):
             app = obj._meta.app_label
             model = obj.__class__.__name__.lower()
             id = obj.pk
-            chunks += [ u'<a href="/admin/%(app)s/%(model)s/%(id)s/%(suffix)s">%(display)s</a>' %
+            chunks += [ '<a href="/admin/%(app)s/%(model)s/%(id)s/%(suffix)s">%(display)s</a>' %
                 {'app':app, "model": model, "id":id, "display": display(obj), "suffix":suffix, } ]
-        return u", ".join(chunks)
+        return ", ".join(chunks)
     _link.allow_tags = True
     _link.short_description = label
     _link.admin_order_field = ordering
     return _link
 
-from models import DumpInfo
+from .models import DumpInfo
 class DumpInfoAdmin(admin.ModelAdmin):
     list_display = ['date', 'host', 'tz']
     list_filter = ['date']

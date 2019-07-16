@@ -1,5 +1,8 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import re
 import base64
@@ -31,18 +34,19 @@ from ietf.submit.models import (Submission, Preapproval,
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
     recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
     post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
-    get_submission, fill_in_submission, apply_checkers, send_confirmation_emails )
+    get_submission, fill_in_submission, apply_checkers, send_confirmation_emails, save_files )
 from ietf.stats.utils import clean_country_name
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.log import log
-from ietf.utils.mail import send_mail_message
+from ietf.utils.mail import parseaddr, send_mail_message
 
 def upload_submission(request):
     if request.method == 'POST':
         try:
             form = SubmissionManualUploadForm(request, data=request.POST, files=request.FILES)
             if form.is_valid():
-                authors, abstract, file_name, file_size = get_draft_meta(form)
+                saved_files = save_files(form)
+                authors, abstract, file_name, file_size = get_draft_meta(form, saved_files)
 
                 submission = get_submission(form)
                 try:
@@ -87,7 +91,7 @@ def api_submit(request):
     if request.method == 'GET':
         return render(request, 'submit/api_submit_info.html')
     elif request.method == 'POST':
-        e = None
+        exception = None
         try:
             form = SubmissionAutoUploadForm(request, data=request.POST, files=request.FILES)
             if form.is_valid():
@@ -101,7 +105,8 @@ def api_submit(request):
                 if not hasattr(user, 'person'):
                     return err(400, "No person with username %s" % username)
 
-                authors, abstract, file_name, file_size = get_draft_meta(form)
+                saved_files = save_files(form)
+                authors, abstract, file_name, file_size = get_draft_meta(form, saved_files)
                 for a in authors:
                     if not a['email']:
                         raise ValidationError("Missing email address for author %s" % a)
@@ -132,7 +137,7 @@ def api_submit(request):
                 requires_prev_authors_approval = Document.objects.filter(name=submission.name)
 
                 sent_to, desc, docDesc = send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval)
-                msg = u"Set submitter to \"%s\" and %s" % (submission.submitter, desc)
+                msg = "Set submitter to \"%s\" and %s" % (submission.submitter, desc)
                 create_submission_event(request, submission, msg)
                 docevent_from_submission(request, submission, docDesc, who="(System)")
 
@@ -142,14 +147,17 @@ def api_submit(request):
             else:
                 raise ValidationError(form.errors)
         except IOError as e:
+            exception = e
             return err(500, "IO Error: %s" % str(e))
         except ValidationError as e:
+            exception = e
             return err(400, "Validation Error: %s" % str(e))
         except Exception as e:
+            exception = e
             raise
             return err(500, "Exception: %s" % str(e))            
         finally:
-            if e and submission:
+            if exception and submission:
                 remove_submission_files(submission)
                 submission.delete()
     else:
@@ -213,8 +221,10 @@ def submission_status(request, submission_id, access_token=None):
 
     # Begin common code chunk
     addrs = gather_address_lists('sub_confirmation_requested',submission=submission)
-    confirmation_list = addrs.to
-    confirmation_list.extend(addrs.cc)
+    addresses = addrs.to
+    addresses.extend(addrs.cc)
+    # Convert from RFC 2822 format if needed
+    confirmation_list = [ "%s <%s>" % parseaddr(a) for a in addresses ]
 
     requires_group_approval = (submission.rev == '00'
         and submission.group and submission.group.features.req_subm_approval
@@ -229,7 +239,7 @@ def submission_status(request, submission_id, access_token=None):
     if submission.state_id == "cancel":
         message = ('error', 'This submission has been cancelled, modification is no longer possible.')
     elif submission.state_id == "auth":
-        message = ('success', u'The submission is pending email authentication. An email has been sent to: %s' % ", ".join(confirmation_list))
+        message = ('success', 'The submission is pending email authentication. An email has been sent to: %s' % ", ".join(confirmation_list))
     elif submission.state_id == "grp-appr":
         message = ('success', 'The submission is pending approval by the group chairs.')
     elif submission.state_id == "aut-appr":
@@ -262,12 +272,12 @@ def submission_status(request, submission_id, access_token=None):
                     # go directly to posting submission
                     docevent_from_submission(request, submission, desc="Uploaded new revision")
 
-                    desc = u"Secretariat manually posting. Approvals already received"
+                    desc = "Secretariat manually posting. Approvals already received"
                     post_submission(request, submission, desc)
                     create_submission_event(request, submission, desc)
                 else:
                     sent_to, desc, docDesc = send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval)
-                    msg = u"Set submitter to \"%s\", replaces to %s and %s" % (
+                    msg = "Set submitter to \"%s\", replaces to %s and %s" % (
                         submission.submitter,
                         ", ".join(prettify_std_name(r.name) for r in replaces) if replaces else "(none)",
                         desc)
@@ -288,9 +298,9 @@ def submission_status(request, submission_id, access_token=None):
         elif action == "sendfullurl" and submission.state_id not in ("cancel", "posted"):
             sent_to = send_full_url(request, submission)
 
-            message = ('success', u'An email has been sent with the full access URL to: %s' % u",".join(confirmation_list))
+            message = ('success', 'An email has been sent with the full access URL to: %s' % ",".join(confirmation_list))
 
-            create_submission_event(request, submission, u"Sent full access URL to: %s" % u", ".join(sent_to))
+            create_submission_event(request, submission, "Sent full access URL to: %s" % ", ".join(sent_to))
 
         elif action == "cancel" and submission.state.next_states.filter(slug="cancel"):
             if not can_cancel:
@@ -418,7 +428,7 @@ def edit_submission(request, submission_id, access_token=None):
             ]
 
             if changed_fields:
-                desc = u"Edited %s and sent request for manual post" % u", ".join(changed_fields)
+                desc = "Edited %s and sent request for manual post" % ", ".join(changed_fields)
             else:
                 desc = "Sent request for manual post"
 

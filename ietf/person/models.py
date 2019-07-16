@@ -1,4 +1,8 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 import email.utils
@@ -7,16 +11,17 @@ import six
 import uuid
 
 from hashids import Hashids
-from urlparse import urljoin
+from six.moves.urllib.parse import urljoin
 
 from django.conf import settings
-
-from django.core.validators import validate_email
-from django.core.exceptions import ObjectDoesNotExist
-from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.validators import validate_email
+from django.db import models
 from django.template.loader import render_to_string
+from django.utils.encoding import python_2_unicode_compatible, smart_bytes
 from django.utils.text import slugify
+
 from simple_history.models import HistoricalRecords
 
 import debug                            # pyflakes:ignore
@@ -30,6 +35,7 @@ from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
 
 
+@python_2_unicode_compatible
 class Person(models.Model):
     history = HistoricalRecords()
     user = OneToOneField(User, blank=True, null=True, on_delete=models.SET_NULL)
@@ -47,7 +53,7 @@ class Person(models.Model):
     name_from_draft = models.CharField("Full Name (from submission)", null=True, max_length=255, editable=False, help_text="Name as found in a draft submission.")
     consent = models.NullBooleanField("I hereby give my consent to the use of the personal details I have provided (photo, bio, name, email) within the IETF Datatracker", null=True, default=None)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.plain_name()
     def name_parts(self):
         return name_parts(self.name)
@@ -79,11 +85,15 @@ class Person(models.Model):
     def plain_ascii(self):
         if not hasattr(self, '_cached_plain_ascii'):
             if self.ascii:
-                ascii = unidecode_name(self.ascii)
+                if isinstance(self.ascii, six.binary_type):
+                    uname = six.text_type(self.ascii)
+                    ascii = unidecode_name(uname)
+                else:
+                    ascii = unidecode_name(self.ascii)
             else:
                 ascii = unidecode_name(self.name)
             prefix, first, middle, last, suffix = name_parts(ascii)
-            self._cached_plain_ascii = u" ".join([first, last])
+            self._cached_plain_ascii = " ".join([first, last])
         return self._cached_plain_ascii
     def initials(self):
         return initials(self.ascii or self.name)
@@ -96,7 +106,7 @@ class Person(models.Model):
         may be an object or the group acronym."""
         if group:
             from ietf.group.models import Group
-            if isinstance(group, str) or isinstance(group, unicode):
+            if isinstance(group, six.string_types):
                 group = Group.objects.get(acronym=group)
             e = Email.objects.filter(person=self, role__group=group, role__name=role_name)
         else:
@@ -144,7 +154,7 @@ class Person(models.Model):
     def photo_name(self,thumb=False):
         hasher = Hashids(salt='Person photo name salt',min_length=5)
         _, first, _, last, _ = name_parts(self.ascii)
-        return u'%s-%s%s' % ( slugify(u"%s %s" % (first, last)), hasher.encode(self.id), '-th' if thumb else '' )
+        return '%s-%s%s' % ( slugify("%s %s" % (first, last)), hasher.encode(self.id), '-th' if thumb else '' )
 
     def has_drafts(self):
         from ietf.doc.models import Document
@@ -225,6 +235,7 @@ class Person(models.Model):
         ct1['ascii']     = self.ascii
         return ct1
 
+@python_2_unicode_compatible
 class Alias(models.Model):
     """This is used for alternative forms of a name.  This is the
     primary lookup point for names, and should always contain the
@@ -247,11 +258,12 @@ class Alias(models.Model):
                 send_mail_preformatted(None, msg)
 
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
     class Meta:
         verbose_name_plural = "Aliases"
 
+@python_2_unicode_compatible
 class Email(models.Model):
     history = HistoricalRecords()
     address = models.CharField(max_length=64, primary_key=True, validators=[validate_email])
@@ -262,7 +274,7 @@ class Email(models.Model):
     active = models.BooleanField(default=True)      # Old email addresses are *not* purged, as history
                                                     # information points to persons through these
 
-    def __unicode__(self):
+    def __str__(self):
         return self.address or "Email object with id: %s"%self.pk
 
     def get_name(self):
@@ -281,9 +293,9 @@ class Email(models.Model):
         Use self.formatted_email() for that.
         """
         if self.person:
-            return u"%s <%s>" % (self.person.plain_name(), self.address)
+            return "%s <%s>" % (self.person.plain_name(), self.address)
         else:
-            return u"<%s>" % self.address
+            return "<%s>" % self.address
 
     def formatted_email(self):
         """
@@ -323,6 +335,7 @@ PERSON_API_KEY_ENDPOINTS = [
     ("/api/meeting/session/video/url", "/api/meeting/session/video/url"),
 ]
 
+@python_2_unicode_compatible
 class PersonalApiKey(models.Model):
     person   = ForeignKey(Person, related_name='apikeys')
     endpoint = models.CharField(max_length=128, null=False, blank=False, choices=PERSON_API_KEY_ENDPOINTS)
@@ -335,10 +348,8 @@ class PersonalApiKey(models.Model):
     @classmethod
     def validate_key(cls, s):
         import struct, hashlib, base64
-        try:
-            key = base64.urlsafe_b64decode(six.binary_type(s))
-        except TypeError:
-            return None
+        assert isinstance(s, six.binary_type)
+        key = base64.urlsafe_b64decode(s)
         id, salt, hash = struct.unpack(KEY_STRUCT, key)
         k = cls.objects.filter(id=id)
         if not k.exists():
@@ -346,6 +357,7 @@ class PersonalApiKey(models.Model):
         k = k.first()
         check = hashlib.sha256()
         for v in (str(id), str(k.person.id), k.created.isoformat(), k.endpoint, str(k.valid), salt, settings.SECRET_KEY):
+            v = smart_bytes(v)
             check.update(v)
         return k if check.digest() == hash else None
 
@@ -355,12 +367,13 @@ class PersonalApiKey(models.Model):
             hash = hashlib.sha256()
             # Hash over: ( id, person, created, endpoint, valid, salt, secret )
             for v in (str(self.id), str(self.person.id), self.created.isoformat(), self.endpoint, str(self.valid), self.salt, settings.SECRET_KEY):
+                v = smart_bytes(v)
                 hash.update(v)
-            key = struct.pack(KEY_STRUCT, self.id, six.binary_type(self.salt), hash.digest())
-            self._cached_hash =  base64.urlsafe_b64encode(key)
+            key = struct.pack(KEY_STRUCT, self.id, bytes(self.salt), hash.digest())
+            self._cached_hash =  base64.urlsafe_b64encode(key).decode('ascii')
         return self._cached_hash
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s (%s): %s ..." % (self.endpoint, self.created.strftime("%Y-%m-%d %H:%M"), self.hash()[:16])
 
 PERSON_EVENT_CHOICES = [
@@ -369,14 +382,15 @@ PERSON_EVENT_CHOICES = [
     ("email_address_deactivated", "Email address deactivated"),
     ]
 
+@python_2_unicode_compatible
 class PersonEvent(models.Model):
     person = ForeignKey(Person)
     time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
     type = models.CharField(max_length=50, choices=PERSON_EVENT_CHOICES)
     desc = models.TextField()
 
-    def __unicode__(self):
-        return u"%s %s at %s" % (self.person.plain_name(), self.get_type_display().lower(), self.time)
+    def __str__(self):
+        return "%s %s at %s" % (self.person.plain_name(), self.get_type_display().lower(), self.time)
 
     class Meta:
         ordering = ['-time', '-id']

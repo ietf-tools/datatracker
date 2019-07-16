@@ -1,15 +1,21 @@
 # Copyright The IETF Trust 2012-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import csv
-import uuid
 import datetime
 import json
+import six
+import uuid
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.decorators import login_required
 from django.utils.html import strip_tags
+
+import debug                            # pyflakes:ignore
 
 from ietf.community.models import SearchRule, EmailSubscription
 from ietf.community.forms import SearchRuleTypeForm, SearchRuleForm, AddDocumentsForm, SubscriptionForm
@@ -135,7 +141,7 @@ def track_document(request, name, username=None, acronym=None):
             clist.added_docs.add(doc)
 
         if request.is_ajax():
-            return HttpResponse(json.dumps({ 'success': True }), content_type='text/plain')
+            return HttpResponse(json.dumps({ 'success': True }), content_type='application/json')
         else:
             return HttpResponseRedirect(clist.get_absolute_url())
 
@@ -155,7 +161,7 @@ def untrack_document(request, name, username=None, acronym=None):
             clist.added_docs.remove(doc)
 
         if request.is_ajax():
-            return HttpResponse(json.dumps({ 'success': True }), content_type='text/plain')
+            return HttpResponse(json.dumps({ 'success': True }), content_type='application/json')
         else:
             return HttpResponseRedirect(clist.get_absolute_url())
 
@@ -176,7 +182,7 @@ def export_to_csv(request, username=None, acronym=None, group_type=None):
 
     response['Content-Disposition'] = 'attachment; filename=%s' % filename
 
-    writer = csv.writer(response, dialect=csv.excel, delimiter=',')
+    writer = csv.writer(response, dialect=csv.excel, delimiter=str(','))
 
     header = [
         "Name",
@@ -198,7 +204,7 @@ def export_to_csv(request, username=None, acronym=None, group_type=None):
         row.append(e.time.strftime("%Y-%m-%d") if e else "")
         row.append(strip_tags(doc.friendly_state()))
         row.append(doc.group.acronym if doc.group else "")
-        row.append(unicode(doc.ad) if doc.ad else "")
+        row.append(six.text_type(doc.ad) if doc.ad else "")
         e = doc.latest_event()
         row.append(e.time.strftime("%Y-%m-%d") if e else "")
         writer.writerow([v.encode("utf-8") for v in row])
@@ -223,8 +229,8 @@ def feed(request, username=None, acronym=None, group_type=None):
 
     host = request.get_host()
     feed_url = 'https://%s%s' % (host, request.get_full_path())
-    feed_id = uuid.uuid5(uuid.NAMESPACE_URL, feed_url.encode('utf-8'))
-    title = u'%s RSS Feed' % clist.long_name()
+    feed_id = uuid.uuid5(uuid.NAMESPACE_URL, str(feed_url))
+    title = '%s RSS Feed' % clist.long_name()
     if significant:
         subtitle = 'Significant document changes'
     else:
@@ -235,7 +241,7 @@ def feed(request, username=None, acronym=None, group_type=None):
         'entries': events[:50],
         'title': title,
         'subtitle': subtitle,
-        'id': feed_id.get_urn(),
+        'id': feed_id.urn,
         'updated': datetime.datetime.now(),
     }, content_type='text/xml')
 

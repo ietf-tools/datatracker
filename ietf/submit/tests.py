@@ -1,20 +1,25 @@
 # Copyright The IETF Trust 2011-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 import email
+import io
 import os
 import re
 import shutil
+import six
 import sys
 
 
-from StringIO import StringIO
+from io import StringIO
 from pyquery import PyQuery
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
+from django.utils.encoding import force_str, force_text
 
 import debug                            # pyflakes:ignore
 
@@ -33,15 +38,15 @@ from ietf.person.models import Person
 from ietf.person.factories import UserFactory, PersonFactory
 from ietf.submit.models import Submission, Preapproval
 from ietf.submit.mail import add_submission_email, process_response_email
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import outbox, empty_outbox, get_payload
 from ietf.utils.models import VersionInfo
-from ietf.utils.test_utils import login_testing_unauthorized, unicontent, TestCase
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.draft import Draft
 
 
 def submission_file(name, rev, group, format, templatename, author=None, email=None, title=None, year=None, ascii=True):
     # construct appropriate text draft
-    f = open(os.path.join(settings.BASE_DIR, "submit", templatename))
+    f = io.open(os.path.join(settings.BASE_DIR, "submit", templatename))
     template = f.read()
     f.close()
 
@@ -145,7 +150,7 @@ class SubmitTests(TestCase):
 
         status_url = r["Location"]
         for format in formats:
-            self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.%s" % (name, rev, format))))
+            self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, format))))
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
         submission = Submission.objects.get(name=name)
         if len(submission.authors) != 1:
@@ -185,17 +190,18 @@ class SubmitTests(TestCase):
 
         return r
 
-    def extract_confirm_url(self, confirm_email):
-        # dig out confirm_email link
-        msg = confirm_email.get_payload(decode=True)
+    def extract_confirmation_url(self, confirmation_email):
+        # dig out confirmation_email link
+        charset = confirmation_email.get_content_charset()
+        msg = confirmation_email.get_payload(decode=True).decode(charset)
         line_start = "http"
-        confirm_url = None
+        confirmation_url = None
         for line in msg.split("\n"):
             if line.strip().startswith(line_start):
-                confirm_url = line.strip()
-        self.assertTrue(confirm_url)
+                confirmation_url = line.strip()
+        self.assertTrue(confirmation_url)
 
-        return confirm_url
+        return confirmation_url
 
     def submit_new_wg(self, formats):
         # submit new -> supply submitter info -> approve
@@ -274,8 +280,8 @@ class SubmitTests(TestCase):
         self.assertEqual(new_revision.type, "new_revision")
         self.assertEqual(new_revision.by.name, author.name)
         self.assertTrue(draft.latest_event(type="added_suggested_replaces"))
-        self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
-        self.assertTrue(os.path.exists(os.path.join(self.repository_dir, u"%s-%s.txt" % (name, rev))))
+        self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))))
+        self.assertTrue(os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, rev))))
         self.assertEqual(draft.type_id, "draft")
         self.assertEqual(draft.stream_id, "ietf")
         self.assertTrue(draft.expires >= datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))
@@ -289,17 +295,17 @@ class SubmitTests(TestCase):
         self.assertEqual(draft.relations_that_doc("possibly-replaces").count(), 1)
         self.assertTrue(draft.relations_that_doc("possibly-replaces").first().target, sug_replaced_alias)
         self.assertEqual(len(outbox), mailbox_before + 5)
-        self.assertIn((u"I-D Action: %s" % name), outbox[-4]["Subject"])
-        self.assertIn(author.ascii, unicode(outbox[-4]))
-        self.assertIn((u"I-D Action: %s" % name), outbox[-3]["Subject"])
-        self.assertIn(author.ascii, unicode(outbox[-3]))
+        self.assertIn(("I-D Action: %s" % name), outbox[-4]["Subject"])
+        self.assertIn(author.ascii, get_payload(outbox[-4]))
+        self.assertIn(("I-D Action: %s" % name), outbox[-3]["Subject"])
+        self.assertIn(author.ascii, get_payload(outbox[-3]))
         self.assertIn("New Version Notification",outbox[-2]["Subject"])
-        self.assertIn(name, unicode(outbox[-2]))
-        self.assertIn("mars", unicode(outbox[-2]))
+        self.assertIn(name, get_payload(outbox[-2]))
+        self.assertIn("mars", get_payload(outbox[-2]))
         # Check "Review of suggested possible replacements for..." mail
         self.assertIn("review", outbox[-1]["Subject"].lower())
-        self.assertIn(name, unicode(outbox[-1]))
-        self.assertIn(sug_replaced_alias.name, unicode(outbox[-1]))
+        self.assertIn(name, get_payload(outbox[-1]))
+        self.assertIn(sug_replaced_alias.name, get_payload(outbox[-1]))
         self.assertIn("ames-chairs@", outbox[-1]["To"].lower())
         self.assertIn("mars-chairs@", outbox[-1]["To"].lower())
 
@@ -367,7 +373,7 @@ class SubmitTests(TestCase):
         prev_author = draft.documentauthor_set.all()[0]
         if change_authors:
             # Make it such that one of the previous authors has an invalid email address
-            bogus_person, bogus_email = ensure_person_email_info_exists(u'Bogus Person', None, draft.name)
+            bogus_person, bogus_email = ensure_person_email_info_exists('Bogus Person', None, draft.name)
             DocumentAuthor.objects.create(document=draft, person=bogus_person, email=bogus_email, order=draft.documentauthor_set.latest('order').order+1)
 
         # Set the revision needed tag
@@ -379,7 +385,7 @@ class SubmitTests(TestCase):
 
         # write the old draft in a file so we can check it's moved away
         old_rev = draft.rev
-        with open(os.path.join(self.repository_dir, "%s-%s.txt" % (name, old_rev)), 'w') as f:
+        with io.open(os.path.join(self.repository_dir, "%s-%s.txt" % (name, old_rev)), 'w') as f:
             f.write("a" * 2000)
 
         old_docevents = list(draft.docevent_set.all())
@@ -393,7 +399,7 @@ class SubmitTests(TestCase):
         status_url = r["Location"]
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("The submission is pending approval by the authors" in unicontent(r))
+        self.assertContains(r, "The submission is pending approval by the authors")
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         confirm_email = outbox[-1]
@@ -407,7 +413,7 @@ class SubmitTests(TestCase):
         self.assertTrue("unknown-email-" not in confirm_email["To"])
         if change_authors:
             # Since authors changed, ensure chairs are copied (and that the message says why)
-            self.assertTrue("chairs have been copied" in unicode(confirm_email))
+            self.assertTrue("chairs have been copied" in six.text_type(confirm_email))
             if group_type in ['wg','rg','ag']:
                 self.assertTrue("mars-chairs@" in confirm_email["To"].lower())
             elif group_type == 'area':
@@ -417,19 +423,19 @@ class SubmitTests(TestCase):
             if stream_type=='ise':
                self.assertTrue("rfc-ise@" in confirm_email["To"].lower())
         else:
-            self.assertNotIn("chairs have been copied", unicode(confirm_email))
+            self.assertNotIn("chairs have been copied", six.text_type(confirm_email))
             self.assertNotIn("mars-chairs@", confirm_email["To"].lower())
 
-        confirm_url = self.extract_confirm_url(confirm_email)
+        confirmation_url = self.extract_confirmation_url(confirm_email)
 
         # go to confirm page
-        r = self.client.get(confirm_url)
+        r = self.client.get(confirmation_url)
         q = PyQuery(r.content)
         self.assertEqual(len(q('[type=submit]:contains("Confirm")')), 1)
 
         # confirm
         mailbox_before = len(outbox)
-        r = self.client.post(confirm_url, {'action':'confirm'})
+        r = self.client.post(confirmation_url, {'action':'confirm'})
         self.assertEqual(r.status_code, 302)
 
         new_docevents = draft.docevent_set.exclude(pk__in=[event.pk for event in old_docevents])
@@ -473,8 +479,8 @@ class SubmitTests(TestCase):
 
         self.assertTrue(not os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, old_rev))))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "%s-%s.txt" % (name, old_rev))))
-        self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
-        self.assertTrue(os.path.exists(os.path.join(self.repository_dir, u"%s-%s.txt" % (name, rev))))
+        self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))))
+        self.assertTrue(os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, rev))))
         self.assertEqual(draft.type_id, "draft")
         if stream_type == 'ietf':
             self.assertEqual(draft.stream_id, "ietf")
@@ -484,23 +490,23 @@ class SubmitTests(TestCase):
         self.assertEqual(len(authors), 1)
         self.assertIn(author, [ a.person for a in authors ])
         self.assertEqual(len(outbox), mailbox_before + 3)
-        self.assertTrue((u"I-D Action: %s" % name) in outbox[-3]["Subject"])
-        self.assertTrue((u"I-D Action: %s" % name) in draft.message_set.order_by("-time")[0].subject)
-        self.assertTrue(author.ascii in unicode(outbox[-3]))
+        self.assertTrue(("I-D Action: %s" % name) in outbox[-3]["Subject"])
+        self.assertTrue(("I-D Action: %s" % name) in draft.message_set.order_by("-time")[0].subject)
+        self.assertTrue(author.ascii in get_payload(outbox[-3]))
         self.assertTrue("i-d-announce@" in outbox[-3]['To'])
         self.assertTrue("New Version Notification" in outbox[-2]["Subject"])
-        self.assertTrue(name in unicode(outbox[-2]))
+        self.assertTrue(name in get_payload(outbox[-2]))
         interesting_address = {'ietf':'mars', 'irtf':'irtf-chair', 'iab':'iab-chair', 'ise':'rfc-ise'}[draft.stream_id]
-        self.assertTrue(interesting_address in unicode(outbox[-2]))
+        self.assertTrue(interesting_address in force_text(outbox[-2].as_string()))
         if draft.stream_id == 'ietf':
-            self.assertTrue(draft.ad.role_email("ad").address in unicode(outbox[-2]))
-            self.assertTrue(ballot_position.ad.role_email("ad").address in unicode(outbox[-2]))
+            self.assertTrue(draft.ad.role_email("ad").address in force_text(outbox[-2].as_string()))
+            self.assertTrue(ballot_position.ad.role_email("ad").address in force_text(outbox[-2].as_string()))
         self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
-        self.assertTrue(name in unicode(outbox[-1]))
+        self.assertTrue(name in get_payload(outbox[-1]))
         r = self.client.get(urlreverse('ietf.doc.views_search.recent_drafts'))
         self.assertEqual(r.status_code, 200)
-        self.assertIn(draft.name,  unicontent(r))
-        self.assertIn(draft.title, unicontent(r))
+        self.assertContains(r, draft.name)
+        self.assertContains(r, draft.title)
 
 
     def test_submit_existing_txt(self):
@@ -547,7 +553,7 @@ class SubmitTests(TestCase):
         status_url = r["Location"]
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("The submission is pending email authentication" in unicontent(r))
+        self.assertContains(r, "The submission is pending email authentication")
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         confirm_email = outbox[-1]
@@ -556,18 +562,18 @@ class SubmitTests(TestCase):
         # both submitter and author get email
         self.assertTrue(author.email().address.lower() in confirm_email["To"])
         self.assertTrue("submitter@example.com" in confirm_email["To"])
-        self.assertFalse("chairs have been copied" in unicode(confirm_email))
+        self.assertFalse("chairs have been copied" in six.text_type(confirm_email))
 
-        confirm_url = self.extract_confirm_url(outbox[-1])
+        confirmation_url = self.extract_confirmation_url(outbox[-1])
 
         # go to confirm page
-        r = self.client.get(confirm_url)
+        r = self.client.get(confirmation_url)
         q = PyQuery(r.content)
         self.assertEqual(len(q('[type=submit]:contains("Confirm")')), 1)
 
         # confirm
         mailbox_before = len(outbox)
-        r = self.client.post(confirm_url, {'action':'confirm'})
+        r = self.client.post(confirmation_url, {'action':'confirm'})
         self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(docalias__name=name)
@@ -598,25 +604,25 @@ class SubmitTests(TestCase):
         replaced_alias = draft.docalias.first()
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('cannot replace itself' in unicontent(r))
+        self.assertContains(r, 'cannot replace itself')
         replaced_alias = DocAlias.objects.get(name='draft-ietf-random-thing')
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('cannot replace an RFC' in unicontent(r))
+        self.assertContains(r, 'cannot replace an RFC')
         replaced_alias.document.set_state(State.objects.get(type='draft-iesg',slug='approved'))
         replaced_alias.document.set_state(State.objects.get(type='draft',slug='active'))
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('approved by the IESG and cannot' in unicontent(r))
+        self.assertContains(r, 'approved by the IESG and cannot')
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces='')
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
         self.assertEqual(len(outbox), mailbox_before + 1)
-        confirm_url = self.extract_confirm_url(outbox[-1])
-        self.assertFalse("chairs have been copied" in unicode(outbox[-1]))
+        confirmation_url = self.extract_confirmation_url(outbox[-1])
+        self.assertFalse("chairs have been copied" in str(outbox[-1]))
         mailbox_before = len(outbox)
-        r = self.client.post(confirm_url, {'action':'confirm'})
+        r = self.client.post(confirmation_url, {'action':'confirm'})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before+3)
         draft = Document.objects.get(docalias__name=name)
@@ -624,9 +630,8 @@ class SubmitTests(TestCase):
         self.assertEqual(draft.relateddocument_set.filter(relationship_id='replaces').count(), replaces_count)
         #
         r = self.client.get(urlreverse('ietf.doc.views_search.recent_drafts'))
-        self.assertEqual(r.status_code, 200)
-        self.assertIn(draft.name,  unicontent(r))
-        self.assertIn(draft.title, unicontent(r))
+        self.assertContains(r, draft.name)
+        self.assertContains(r, draft.title)
 
     def test_submit_cancel_confirmation(self):
         ad=Person.objects.get(user__username='ad')
@@ -642,9 +647,9 @@ class SubmitTests(TestCase):
         status_url = r["Location"]
         r = self.client.get(status_url)
         self.assertEqual(len(outbox), mailbox_before + 1)
-        confirm_url = self.extract_confirm_url(outbox[-1])
+        confirmation_url = self.extract_confirmation_url(outbox[-1])
         mailbox_before = len(outbox)
-        r = self.client.post(confirm_url, {'action':'cancel'})
+        r = self.client.post(confirmation_url, {'action':'cancel'})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before)
         draft = Document.objects.get(docalias__name=name)
@@ -696,7 +701,7 @@ class SubmitTests(TestCase):
 
         # cancel
         r = self.client.post(status_url, dict(action=action))
-        self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
+        self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))))
 
     def test_edit_submission_and_force_post(self):
         # submit -> edit
@@ -805,7 +810,7 @@ class SubmitTests(TestCase):
         # search status page
         r = self.client.get(urlreverse("ietf.submit.views.search_submission"))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("submission status" in unicontent(r))
+        self.assertContains(r, "submission status")
 
         # search
         r = self.client.post(urlreverse("ietf.submit.views.search_submission"), dict(name=name))
@@ -819,8 +824,7 @@ class SubmitTests(TestCase):
 
         # status page as unpriviliged => no edit button
         r = self.client.get(unprivileged_status_url)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue(("submission status of %s" % name) in unicontent(r).lower())
+        self.assertContains(r, "Submission status of %s" % name)
         q = PyQuery(r.content)
         adjust_button = q('[type=submit]:contains("Adjust")')
         self.assertEqual(len(adjust_button), 0)
@@ -886,15 +890,15 @@ class SubmitTests(TestCase):
 
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
 
-        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
-        self.assertTrue(name in open(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))).read())
-        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.xml" % (name, rev))))
-        self.assertTrue(name in open(os.path.join(self.staging_dir, u"%s-%s.xml" % (name, rev))).read())
-        self.assertTrue('<?xml version="1.0" encoding="UTF-8"?>' in open(os.path.join(self.staging_dir, u"%s-%s.xml" % (name, rev))).read())
-        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.pdf" % (name, rev))))
-        self.assertTrue('This is PDF' in open(os.path.join(self.staging_dir, u"%s-%s.pdf" % (name, rev))).read())
-        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.ps" % (name, rev))))
-        self.assertTrue('This is PostScript' in open(os.path.join(self.staging_dir, u"%s-%s.ps" % (name, rev))).read())
+        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))))
+        self.assertTrue(name in io.open(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))).read())
+        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev))))
+        self.assertTrue(name in io.open(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev))).read())
+        self.assertTrue('<?xml version="1.0" encoding="UTF-8"?>' in io.open(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev))).read())
+        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.pdf" % (name, rev))))
+        self.assertTrue('This is PDF' in io.open(os.path.join(self.staging_dir, "%s-%s.pdf" % (name, rev))).read())
+        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.ps" % (name, rev))))
+        self.assertTrue('This is PostScript' in io.open(os.path.join(self.staging_dir, "%s-%s.ps" % (name, rev))).read())
 
     def test_expire_submissions(self):
         s = Submission.objects.create(name="draft-ietf-mars-foo",
@@ -925,10 +929,10 @@ class SubmitTests(TestCase):
 
     def test_help_pages(self):
         r = self.client.get(urlreverse("ietf.submit.views.note_well"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
 
         r = self.client.get(urlreverse("ietf.submit.views.tool_instructions"))
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         
     def test_blackout_access(self):
         # get
@@ -1016,7 +1020,7 @@ class SubmitTests(TestCase):
 
         # submit
         #author = PersonFactory(name=u"Jörgen Nilsson".encode('latin1'))
-        user = UserFactory(first_name=u"Jörgen", last_name=u"Nilsson")
+        user = UserFactory(first_name="Jörgen", last_name="Nilsson")
         author = PersonFactory(user=user)
 
         file, __ = submission_file(name, rev, group, "txt", "test_submission.nonascii", author=author, ascii=False)
@@ -1051,7 +1055,7 @@ class SubmitTests(TestCase):
         r = self.client.get(status_url)
         q = PyQuery(r.content)
         #
-        self.assertContains(r, u'The yang validation returned 1 error')
+        self.assertContains(r, 'The yang validation returned 1 error')
         #
         m = q('#yang-validation-message').text()
         for command in ['xym', 'pyang', 'yanglint']:
@@ -1176,7 +1180,7 @@ Please submit my draft at http://test.com/mydraft.txt
 
 Thank you
 """.format(datetime.datetime.now().ctime())
-        message = email.message_from_string(message_string)
+        message = email.message_from_string(force_str(message_string))
         submission, submission_email_event = (
             add_submission_email(request=None,
                                  remote_ip ="192.168.0.1",
@@ -1259,7 +1263,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
 --------------090908050800030909090207--
 """.format(frm, datetime.datetime.now().ctime())
 
-        message = email.message_from_string(message_string)
+        message = email.message_from_string(force_str(message_string))
         submission, submission_email_event = (
             add_submission_email(request=None,
                                  remote_ip ="192.168.0.1",
@@ -1553,7 +1557,7 @@ Subject: test
 
         status_url = r["Location"]
         for format in formats:
-            self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.%s" % (name, rev, format))))
+            self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, format))))
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
         submission = Submission.objects.get(name=name)
         self.assertTrue(all([ c.passed!=False for c in submission.checks.all() ]))
@@ -1690,7 +1694,7 @@ class RefsTests(TestCase):
 
         group = None
         file, __ = submission_file('draft-some-subject', '00', group, 'txt', "test_submission.txt", )
-        draft = Draft(file.read().decode('utf-8'), file.name)
+        draft = Draft(file.read(), file.name)
         refs = draft.get_refs()
         self.assertEqual(refs['rfc2119'], 'norm')
         self.assertEqual(refs['rfc8174'], 'norm')

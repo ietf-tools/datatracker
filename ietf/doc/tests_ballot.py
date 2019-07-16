@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
 import datetime
 from pyquery import PyQuery
 
@@ -19,8 +20,8 @@ from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person, PersonalApiKey
 from ietf.person.factories import PersonFactory
-from ietf.utils.test_utils import TestCase, unicontent, login_testing_unauthorized
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.utils.mail import outbox, empty_outbox, get_payload
 from ietf.utils.text import unwrap
 
 
@@ -112,8 +113,7 @@ class EditPositionTests(TestCase):
                                         discuss=" This is a discussion test. \n ",
                                         comment=" This is a test. \n ")
             )
-        self.assertEqual(r.content, "Done")
-        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Done")
 
         pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
         self.assertEqual(pos.pos.slug, "discuss")
@@ -172,7 +172,7 @@ class EditPositionTests(TestCase):
         self.assertEqual(len(outbox), mailbox_before + 1)
         m = outbox[-1]
         self.assertIn('COMMENT', m['Subject'])
-        self.assertIn('New comment', m.get_payload())
+        self.assertIn('New comment', get_payload(m))
 
 
     def test_edit_position_as_secretary(self):
@@ -363,7 +363,7 @@ class BallotWriteupsTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
         self.assertTrue(q('[type=submit]:contains("Save")'))
-        self.assertTrue("IANA does not" in unicontent(r))
+        self.assertContains(r, "IANA does not")
 
         # save
         r = self.client.post(url, dict(
@@ -393,8 +393,8 @@ class BallotWriteupsTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=rfc_editor_note]')), 1)
         self.assertTrue(q('[type=submit]:contains("Save")'))
-        self.assertTrue("<label class=\"control-label\">RFC Editor Note</label>" in r.content)
-        self.assertTrue("This is a note for the RFC Editor" in r.content)
+        self.assertContains(r, "<label class=\"control-label\">RFC Editor Note</label>")
+        self.assertContains(r, "This is a note for the RFC Editor")
 
         # save with a note
         empty_outbox()
@@ -540,8 +540,8 @@ class BallotWriteupsTests(TestCase):
         e.by = Person.objects.get(name="(System)")
         e.doc = draft
         e.rev = draft.rev
-        e.desc = u"Ballot approval text was generated"
-        e.text = u"Test approval text."
+        e.desc = "Ballot approval text was generated"
+        e.text = "Test approval text."
         e.save()
         events.append(e)
 
@@ -550,8 +550,8 @@ class BallotWriteupsTests(TestCase):
         e.by = Person.objects.get(name="(System)")
         e.doc = draft
         e.rev = draft.rev
-        e.desc = u"Ballot writeup was generated"
-        e.text = u"Test ballot writeup text."
+        e.desc = "Ballot writeup was generated"
+        e.text = "Test ballot writeup text."
         e.save()
         events.append(e)
 
@@ -560,8 +560,8 @@ class BallotWriteupsTests(TestCase):
         e.by = Person.objects.get(name="(System)")
         e.doc = draft
         e.rev = draft.rev
-        e.desc = u"RFC Editor Note for ballot was generated"
-        e.text = u"Test note to the RFC Editor text."
+        e.desc = "RFC Editor Note for ballot was generated"
+        e.text = "Test note to the RFC Editor text."
         e.save()
         events.append(e)
 
@@ -588,7 +588,7 @@ class BallotWriteupsTests(TestCase):
 
         # RFC Editor Notes for documents in the IRTF Stream
         e = DocEvent(doc=draft, rev=draft.rev, by=Person.objects.get(name="(System)"), type='changed_stream')
-        e.desc = u"Changed stream to <b>%s</b>" % 'irtf'
+        e.desc = "Changed stream to <b>%s</b>" % 'irtf'
         e.save()
 
         draft.stream_id = 'irtf'
@@ -603,7 +603,7 @@ class BallotWriteupsTests(TestCase):
 
         # RFC Editor Notes for documents in the IAB Stream
         e = DocEvent(doc=draft, rev=draft.rev, by=Person.objects.get(name="(System)"), type='changed_stream')
-        e.desc = u"Changed stream to <b>%s</b>" % 'ise'
+        e.desc = "Changed stream to <b>%s</b>" % 'ise'
         e.save()
 
         draft.stream_id = 'ise'
@@ -733,22 +733,19 @@ class ApproveBallotTests(TestCase):
         # Only Secretariat can use this URL
         login_testing_unauthorized(self, "ad", url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 403)
-        self.assertTrue("Restricted to role Secretariat" in r.content)
+        self.assertContains(r, "Restricted to role Secretariat", status_code=403)
 
         # There are no downrefs, the page should say so
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue("No downward references for" in r.content)
+        self.assertContains(r, "No downward references for")
 
         # Add a downref, the page should ask if it should be added to the registry
         rel = draft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'),relationship_id='refnorm')
         d = [rdoc for rdoc in draft.relateddocument_set.all() if rel.is_approved_downref()]
         original_len = len(d)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue("normatively references rfc6666" in r.content)
+        self.assertContains(r, "normatively references rfc6666")
 
         # POST with the downref checked
         r = self.client.post(url, dict(checkboxes=rel.pk))
@@ -794,7 +791,7 @@ class MakeLastCallTests(TestCase):
         self.assertTrue("ietf-announce@" in outbox[-2]['To'])
         for prefix in ['draft-ietf-mars-test','mars-chairs','aread']:
             self.assertTrue(prefix+"@" in outbox[-2]['Cc'])
-        self.assertIn("The following IPR Declarations",outbox[-2].get_payload())
+        self.assertIn("The following IPR Declarations", get_payload(outbox[-2]))
 
         self.assertTrue("Last Call" in outbox[-1]['Subject'])
         self.assertTrue("drafts-lastcall@icann.org" in outbox[-1]['To'])
