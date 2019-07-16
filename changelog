@@ -18,7 +18,7 @@ ietfdb (6.99.0) ietf; urgency=medium
   will still need to be done under both 2 and 3 to ensure we don't loose
   compatibility.)
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jul 2019 21:33:39 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jul 2019 22:21:56 +0000
 
 
 ietfdb (6.98.4) ietf; urgency=medium
