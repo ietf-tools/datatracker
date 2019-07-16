@@ -1,3 +1,26 @@
+ietfdb (6.99.0) ietf; urgency=medium
+
+  **Python 3 compatible code**
+
+  This is a major release which contains conversion of the datatracker
+  Python code to run under Python-3.7 where it previously was specific
+  to Python-2.7.  The code was first converted to Python-3.7, and then
+  additional work was done to make it compatible with both Python 2
+  and 3.  The changes updated 458 files, and touched close to 4000
+  lines.
+
+  Making the code compatible with both Python 2 and 3 lets us continue
+  to use the converted codebase until we're ready to move the primary
+  webserver's mod_wsgi completely to Python 3.  Otherwise, we would have
+  to merge all new bugfixes and sprint contributions to both trunk
+  (Python 2.7) and the new Python 3 branch, with doubled merge work
+  until we were ready to move the server to Python 3.  (Testing, though,
+  will still need to be done under both 2 and 3 to ensure we don't loose
+  compatibility.)
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jul 2019 16:14:12 +0000
+
+
 ietfdb (6.98.4) ietf; urgency=medium
 
   This is a small bugfix release, to clear the slate before merging
