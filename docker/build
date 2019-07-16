@@ -123,6 +123,6 @@ fi
 
 docker rmi -f ietf/datatracker-environment:trunk || true
 docker build -t ietf/datatracker-environment:$TAG docker/
-docker tag $(docker images -q | head -n 1) ietf/datatracker-environment:latest
+docker tag $(docker images -q ietf/datatracker-environment | head -n 1) ietf/datatracker-environment:latest
 docker push ietf/datatracker-environment:latest
 docker push ietf/datatracker-environment:$TAG

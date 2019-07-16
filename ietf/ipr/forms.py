@@ -160,7 +160,7 @@ class GenericDisclosureForm(forms.Form):
     patent_number = forms.CharField(max_length=127, required=False, validators=[ validate_patent_number ],
         help_text = "Patent publication or application number (2-letter country code followed by serial number)")
     patent_inventor =  forms.CharField(max_length=63, required=False, validators=[ validate_name ], help_text="Inventor name")
-    patent_title =  forms.CharField(max_length=127, required=False, validators=[ validate_title ], help_text="Title of invention")
+    patent_title =  forms.CharField(max_length=255, required=False, validators=[ validate_title ], help_text="Title of invention")
     patent_date =  forms.DateField(required=False, help_text="Date granted or applied for")
     patent_notes =  forms.CharField(max_length=1024, required=False, widget=forms.Textarea)
 
@@ -229,7 +229,7 @@ class IprDisclosureFormBase(forms.ModelForm):
     patent_number = forms.CharField(max_length=127, required=True, validators=[ validate_patent_number ],
         help_text = "Patent publication or application number (2-letter country code followed by serial number)")
     patent_inventor =  forms.CharField(max_length=63, required=True, validators=[ validate_name ], help_text="Inventor name")
-    patent_title =  forms.CharField(max_length=127, required=True, validators=[ validate_title ], help_text="Title of invention")
+    patent_title =  forms.CharField(max_length=255, required=True, validators=[ validate_title ], help_text="Title of invention")
     patent_date =  forms.DateField(required=True, help_text="Date granted or applied for")
     patent_notes =  forms.CharField(max_length=1024, required=False, widget=forms.Textarea)
     

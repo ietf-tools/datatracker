@@ -281,7 +281,8 @@ def condition_message(to, frm, subject, msg, cc, extra):
             if name:
                 to_hdr.append('"%s"' % name)
             to_hdr.append("<%s>," % addr)
-    to_str = to_hdr.encode('utf-8')
+    # Please note: The following .encode() does _not_ take a charset argument
+    to_str = to_hdr.encode()
     if to_str and to_str[-1] == ',':
         to_str=to_str[:-1]
     # It's important to use this string, and not assign the Header object.

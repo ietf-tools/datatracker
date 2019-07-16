@@ -13,7 +13,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
 # Datatracker imports
-from ietf.group.models import Group
+from ietf.group.models import Group, GroupFeatures
 from ietf.meeting.models import Session
 from ietf.ietfauth.utils import has_role
 
@@ -56,9 +56,8 @@ def get_my_groups(user,conclude=False):
     states = ['bof','proposed','active']
     if conclude:
         states.extend(['conclude','bof-conc'])
-    types = ['wg','rg','ag','team','iab']
-    
-    all_groups = Group.objects.filter(type__in=types,state__in=states).order_by('acronym')
+
+    all_groups = Group.objects.filter(type__features__has_meetings=True, state__in=states).order_by('acronym')
     if user == None or has_role(user,'Secretariat'):
         return all_groups
     
@@ -101,8 +100,10 @@ def groups_by_session(user, meeting, types=None):
             if group.state_id not in ('conclude','bof-conc'):
                 groups_no_session.append(group)
 
-    if types:
-        groups_session = [x for x in groups_session if x.type_id in types]
-        groups_no_session = [x for x in groups_no_session if x.type_id in types]
+    if not types:
+        types = GroupFeatures.objects.filter(has_meetings=True).values_list('type', flat=True)
+
+    groups_session = [x for x in groups_session if x.type_id in types]
+    groups_no_session = [x for x in groups_no_session if x.type_id in types]
         
     return groups_session, groups_no_session

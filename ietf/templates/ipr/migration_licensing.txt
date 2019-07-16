@@ -1,4 +1,4 @@
-{% load ietf_filters %}
+{% autoescape off %}{% load ietf_filters %}
 The Patent Holder states that its position with respect to licensing any patent claims
 contained in the patent(s) or patent application(s) disclosed above that would necessarily
 be infringed by implementation of the technology required by the relevant IETF
@@ -29,3 +29,4 @@ specification, is as follows(select one licensing declaration option only):
 {% endif %}Licensing information, comments, notes or URL for further information:
 
 {{ info|safe|wordwrap:76|indent }}
+{% endautoescape %}

@@ -15,6 +15,14 @@ Planned work in rough order
 * Transition to Python 3.  This will make it easier to add add support for
   internationalsed email, and also other i18n enhancements.
 
+* Change the draft submission form so that an email address is required for
+  each author in order to complete self-service draft submission.  Missing
+  email address(es) will lead to failure, and require submission via the
+  secretariat (where email addresses for all will also be required).
+
+* Simplify submission if submitter is logged into the datatracker, skipping the
+  email verification step.
+
 * Polish the htmlization pages, making the style identical with tools.ietf.org.
 
 * Revisit the review tool, work through the accumulated tickets.

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 
 import sys
 from textwrap import dedent
@@ -35,6 +35,7 @@ def import_mailman_listinfo(verbosity=0):
 
     names = list(Utils.list_names())
     names.sort()
+    addr_max_length = Subscribed._meta.get_field('email').max_length
     for name in names:
         mlist = MailList.MailList(name, lock=False)
         note("List: %s" % mlist.internal_name())
@@ -62,7 +63,7 @@ def import_mailman_listinfo(verbosity=0):
                         note("    Removing address with no subscriptions: %s" % (addr))
                         old.delete()
             for addr in members:
-                if len(addr) > 64:
+                if len(addr) > addr_max_length:
                     sys.stderr.write("    **  Email address subscribed to '%s' too long for table: <%s>\n" % (name, addr))
                     continue
                 if not addr in known:

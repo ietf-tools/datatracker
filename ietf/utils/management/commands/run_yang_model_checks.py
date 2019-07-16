@@ -4,7 +4,6 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import sys
 import json
 
 from textwrap import dedent
@@ -40,8 +39,8 @@ class Command(BaseCommand):
     def check_yang(self, checker, draft, force=False):
         if self.verbosity > 1:
             self.stdout.write("Checking %s-%s" % (draft.name, draft.rev))
-        else:
-            sys.stderr.write('.')
+        elif self.verbosity > 0:
+            self.stderr.write('.', ending='')
         submission = Submission.objects.filter(name=draft.name, rev=draft.rev).order_by('-id').first()
         if submission or force:
             check = submission.checks.filter(checker=checker.name).order_by('-id').first()
@@ -62,7 +61,7 @@ class Command(BaseCommand):
                                                 message=message, errors=errors, warnings=warnings, items=items,
                                                 symbol=checker.symbol)
         else:
-            self.stderr.write("Error: did not find any submission object for %s-%s\n" % (draft.name, draft.rev))
+            self.stderr.write("Error: did not find any submission object for %s-%s" % (draft.name, draft.rev))
 
     def handle(self, *filenames, **options):
         """

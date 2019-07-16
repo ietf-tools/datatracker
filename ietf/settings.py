@@ -63,7 +63,6 @@ ADMINS = (
 #    ('Ole Laursen', 'olau@iola.dk'),
     ('Ryan Cross', 'rcross@amsl.com'),
     ('Glen Barney', 'glen@amsl.com'),
-    ('Matt Larson', 'mlarson@amsl.com'),
 )
 
 BUG_REPORT_EMAIL = "datatracker-project@ietf.org"

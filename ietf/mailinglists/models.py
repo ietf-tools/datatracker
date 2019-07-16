@@ -26,7 +26,7 @@ class List(models.Model):
 @python_2_unicode_compatible
 class Subscribed(models.Model):
     time = models.DateTimeField(auto_now_add=True)
-    email = models.CharField(max_length=64, validators=[validate_email])
+    email = models.CharField(max_length=128, validators=[validate_email])
     lists = models.ManyToManyField(List)
     def __str__(self):
         return "<Subscribed: %s at %s>" % (self.email, self.time)

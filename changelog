@@ -1,3 +1,71 @@
+ietfdb (6.98.4) ietf; urgency=medium
+
+  This is a small bugfix release, to clear the slate before merging
+  in the Python 2/3 conversion.  From the commit log:
+
+  * Added a validation step for SearchablePersonField, to avoid later 
+    server 500 errors on bad input.
+
+  * Merged in [16404] from rjsparks@nostrum.com:
+    Only look for ietf/datatracker-env images when extracting the most 
+    recent build to tag as latest.  
+
+  * Merged in [16359] from rcross@amsl.com:
+    Fix registration import, use user.person if it exists.   
+
+  * Merged in [16096] from rcross@amsl.com:
+    Update admin permissions. Grant secretariat change permissions on 
+    dbtemplate so they can update proceedings pages.  
+
+  * Turned off html autoescape in IPR email templates.  This fixes
+    inappropriate html escapes that occurred in various IPR-related
+    emails.
+
+  * Added missing code to skip coverage measurement for skippable tests.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jul 2019 14:14:12 +0000
+  
+
+ietfdb (6.98.3) ietf; urgency=medium
+
+  * Increased the length of the list Subscribed email field from 64 to 128, 
+    updated the import_mailman_listinfo management command, and added a 
+    migration for the model change.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  04 Jul 2019 16:07:14 +0000
+
+
+ietfdb (6.98.2) ietf; urgency=medium
+
+  This is a minor release that fixes some bugs and tweaks some settings.
+  From the commit log:
+
+  * Changed some tests to match production group type changes for some special
+    groups.
+
+  * Made the bin/daily cron script quiteter.
+
+  * Various changes to make yang-related management commands quieter
+
+  * Added a fix for an issue in get_meeting_registration_data() which could
+    happen if we tried to create a Person record for with a user of an
+    existing Person.
+
+  * Changed the permitted length of patent_title from 127 to 255.
+
+  * Added additional guards against duplicate m2m entries.
+
+  * Added a utility to check copyright statements in specified files.
+
+  * Updated some functions and views in secr/srec/ to use GroupFeatures 
+    instead of hardcoded lists of group types.
+
+  * Made session requests also work for ad-hoc groups, which may not have a 
+    parent area.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Jul 2019 20:27:54 +0000
+
+
 ietfdb (6.98.1) ietf; urgency=medium
 
   This is a bugfix release that cleans up some remaining issues from the

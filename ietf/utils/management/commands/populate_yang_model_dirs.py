@@ -82,7 +82,7 @@ class Command(BaseCommand):
                         modfile.rename(str(moddir/name))
                 model_list = [ n.replace('"','') for n in model_list ]
             except Exception as e:
-                print("** Error when extracting from %s: %s" % (file, str(e)))
+                self.stderr.write("** Error when extracting from %s: %s" % (file, str(e)))
             sys.stdout = saved_stdout
             sys.stderr = saved_stderr
             #
@@ -107,7 +107,8 @@ class Command(BaseCommand):
             if item.stat().st_mtime > latest:
                 latest = item.stat().st_mtime
 
-        print("Extracting to %s ..." % moddir)
+        if verbosity > 0:
+            self.stdout.write("Extracting to %s ..." % moddir)
         for item in rfcdir.iterdir():
             if item.is_file() and item.name.startswith('rfc') and item.name.endswith('.txt') and  item.name[3:-4].isdigit():
                 if item.stat().st_mtime > latest:
@@ -115,16 +116,17 @@ class Command(BaseCommand):
                     for name in model_list:
                         if name.startswith('ietf') or name.startswith('iana'):
                             if verbosity > 1:
-                                print("  Extracted from %s: %s" % (item, name))
-                            else:
-                                sys.stdout.write('.')
-                                sys.stdout.flush()
+                                self.stdout.write("  Extracted from %s: %s" % (item, name))
+                            elif verbosity > 0:
+                                self.stdout.write('.', ending='')
+                                self.stdout.flush()
                         else:
                             modfile = moddir / name
                             modfile.unlink()
                             if verbosity > 1:
-                                print("  Skipped module from %s: %s" % (item, name))
-        print("")
+                                self.stdout.write("  Skipped module from %s: %s" % (item, name))
+        if verbosity > 0:
+            self.stdout.write("")
 
         # Extract valid modules from drafts
 
@@ -137,11 +139,13 @@ class Command(BaseCommand):
         moddir = Path(settings.SUBMIT_YANG_DRAFT_MODEL_DIR)
         if not moddir.exists():
             moddir.mkdir(parents=True)
-        print("Emptying %s ..." % moddir)
+        if verbosity > 0:
+            self.stdout.write("Emptying %s ..." % moddir)
         for item in moddir.iterdir():
             item.unlink()
 
-        print("Extracting to %s ..." % moddir)
+        if verbosity > 0:
+            self.stdout.write("Extracting to %s ..." % moddir)
         for item in draftdir.iterdir():
             try:
                 if item.is_file() and item.name.startswith('draft') and item.name.endswith('.txt') and active(item):
@@ -149,18 +153,19 @@ class Command(BaseCommand):
                     for name in model_list:
                         if not name.startswith('example'):
                             if verbosity > 1:
-                                print("  Extracted module from %s: %s" % (item, name))
-                            else:
-                                sys.stdout.write('.')
-                                sys.stdout.flush()
+                                self.stdout.write("  Extracted module from %s: %s" % (item, name))
+                            elif verbosity > 0:
+                                self.stdout.write('.', ending='')
+                                self.stdout.flush()
                         else:
                             modfile = moddir / name
                             modfile.unlink()
                             if verbosity > 1:
-                                print("  Skipped module from %s: %s" % (item, name))
+                                self.stdout.write("  Skipped module from %s: %s" % (item, name))
             except UnicodeDecodeError as e:
-                sys.stderr.write('\nError: %s\n' % (e, ))
-                sys.stderr.write(item.name)
-                sys.stderr.write('\n')
-        print("")
+                self.stderr.write('\nError: %s' % (e, ))
+                self.stderr.write(item.name)
+                self.stderr.write('')
+        if verbosity > 0:
+            self.stdout.write('')
 

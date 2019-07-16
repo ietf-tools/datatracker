@@ -101,8 +101,6 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox),2)
         self.assertTrue('reviewteam Early' in outbox[0]['Subject'])
-        if not 'reviewsecretary@' in outbox[0]['To']:
-            print(outbox[0].as_string())
         self.assertTrue('reviewsecretary@' in outbox[0]['To'])
         self.assertTrue('reviewteam3 Early' in outbox[1]['Subject'])
         if not 'reviewsecretary3@' in outbox[1]['To']:

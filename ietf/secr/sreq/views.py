@@ -91,7 +91,7 @@ def get_requester_text(person,group):
     roles = group.role_set.filter(name__in=('chair','secr'),person=person)
     if roles:
         return '%s, a %s of the %s working group' % (person.ascii, roles[0].name, group.acronym)
-    if group.parent.role_set.filter(name='ad',person=person):
+    if group.parent and group.parent.role_set.filter(name='ad',person=person):
         return '%s, a %s Area Director' % (person.ascii, group.parent.acronym.upper())
     if person.role_set.filter(name='secr',group__acronym='secretariat'):
         return '%s, on behalf of the %s working group' % (person.ascii, group.acronym)
@@ -494,7 +494,8 @@ def main(request):
     )
 
     meeting = get_meeting()
-    scheduled_groups,unscheduled_groups = groups_by_session(request.user, meeting, types=['wg','rg','ag'])
+
+    scheduled_groups, unscheduled_groups = groups_by_session(request.user, meeting)
 
     # warn if there are no associated groups
     if not scheduled_groups and not unscheduled_groups:

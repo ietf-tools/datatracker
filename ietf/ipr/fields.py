@@ -11,6 +11,8 @@ from django.utils.html import escape
 from django import forms
 from django.urls import reverse as urlreverse
 
+import debug                            # pyflakes:ignore
+
 from ietf.ipr.models import IprDisclosureBase
 
 def select2_id_ipr_title_json(value):

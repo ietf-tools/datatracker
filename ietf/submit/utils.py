@@ -84,7 +84,9 @@ def has_been_replaced_by(name):
     return None
 
 def validate_submission_name(name):
-    if not re.search(r'^draft-[a-z][-a-z0-9]{0,43}$', name):
+    if not re.search(r'^draft-[a-z][-a-z0-9]{0,43}(-\d\d)?$', name):
+        if re.search(r'-\d\d$', name):
+            name = name[:-3]
         if len(name) > 50:
             return "Expected the draft name to be at most 50 ascii characters long; found %d." % len(name)
         else:
