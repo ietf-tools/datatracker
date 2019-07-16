@@ -279,7 +279,7 @@ class TemplateChecksTestCase(TestCase):
         r = self.client.get(url)        
         self.assertTemplateUsed(r, '500.html')
 
-@skipIf(True, "Trac not available for Python3 as of 14 Jul 2019")
+@skipIf(six.PY3, "Trac not available for Python3 as of 14 Jul 2019")
 @skipIf(skip_wiki_glue_testing, skip_message)
 class TestWikiGlueManagementCommand(TestCase):
 
@@ -310,10 +310,6 @@ class TestWikiGlueManagementCommand(TestCase):
                     ).order_by('acronym')
         out = six.StringIO()
         err = six.StringIO()
-        debug.type('self.wiki_dir_pattern')
-        debug.show('self.wiki_dir_pattern')
-        debug.type('self.svn_dir_pattern')
-        debug.show('self.svn_dir_pattern')
         call_command('create_group_wikis', stdout=out, stderr=err, verbosity=2,
             wiki_dir_pattern=self.wiki_dir_pattern,
             svn_dir_pattern=self.svn_dir_pattern,
