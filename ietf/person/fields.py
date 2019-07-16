@@ -168,7 +168,7 @@ class PersonEmailChoiceField(forms.ModelChoiceField):
 
     def label_from_instance(self, email):
         if self.label_with == "person":
-            return six.ensure_text(email.person)
+            return six.text_type(email.person)
         elif self.label_with == "email":
             return email.address
         else:

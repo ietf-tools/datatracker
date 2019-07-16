@@ -17,6 +17,7 @@ from django.utils.html import escape
 from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags
 from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
+from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
 
@@ -198,7 +199,7 @@ def rfcnospace(string):
 @register.filter
 def prettystdname(string):
     from ietf.doc.utils import prettify_std_name
-    return prettify_std_name(six.ensure_text(string or ""))
+    return prettify_std_name(force_text(string or ""))
 
 @register.filter(name='rfcurl')
 def rfclink(string):
@@ -341,7 +342,7 @@ def expires_soon(x,request):
 
 @register.filter(name='startswith')
 def startswith(x, y):
-    return six.ensure_text(x).startswith(y)
+    return six.text_type(x).startswith(y)
 
 @register.filter
 def has_role(user, role_names):

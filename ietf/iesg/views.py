@@ -316,9 +316,9 @@ def agenda_documents_txt(request):
         row = (
             d.computed_telechat_date.isoformat(),
             d.name,
-            six.ensure_text(d.intended_std_level),
+            six.text_type(d.intended_std_level),
             "1" if d.stream_id in ("ise", "irtf") else "0",
-            six.ensure_text(d.area_acronym()).lower(),
+            six.text_type(d.area_acronym()).lower(),
             d.ad.plain_name() if d.ad else "None Assigned",
             d.rev,
             )

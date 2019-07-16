@@ -184,14 +184,14 @@ class SubmitRequestCase(TestCase):
         r = self.client.post(url,post_data)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue('Confirm' in six.ensure_text(q("title")))
+        self.assertTrue('Confirm' in six.text_type(q("title")))
         # confirm
         post_data['submit'] = 'Submit'
         r = self.client.post(confirm_url,post_data)
         self.assertRedirects(r, reverse('ietf.secr.sreq.views.main'))
         self.assertEqual(len(outbox),len_before+1)
         notification = outbox[-1]
-        notification_payload = six.ensure_text(notification.get_payload(decode=True),"utf-8","replace")
+        notification_payload = six.text_type(notification.get_payload(decode=True),"utf-8","replace")
         session = Session.objects.get(meeting=meeting,group=group)
         self.assertEqual(session.resources.count(),1)
         self.assertEqual(session.people_constraints.count(),1)

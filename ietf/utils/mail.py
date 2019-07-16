@@ -174,7 +174,7 @@ def mail_context(request):
         return RequestContext(request)
     else:
         return Context()
-  
+
 def send_mail(request, to, frm, subject, template, context, *args, **kwargs):
     '''
     Send an email to the destination [list], with the given return
@@ -321,7 +321,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     """Send MIME message with content already filled in."""
     
     condition_message(to, frm, subject, msg, cc, extra)
-
+    
     # start debug server with python -m smtpd -n -c DebuggingServer localhost:2025
     # then put USING_DEBUG_EMAIL_SERVER=True and EMAIL_HOST='localhost'
     # and EMAIL_PORT=2025 in settings_local.py

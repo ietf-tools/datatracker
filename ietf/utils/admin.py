@@ -7,6 +7,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 import six
 
 from django.contrib import admin
+from django.utils.encoding import force_text
+
 from ietf.utils.models import VersionInfo
 
 def name(obj):
@@ -16,10 +18,10 @@ def name(obj):
         if callable(obj.name):
             name = obj.name()
         else:
-            name = six.ensure_text(obj.name)
+            name = force_text(obj.name)
         if name:
             return name
-    return six.ensure_text(obj)
+    return six.text_type(obj)
     
 def admin_link(field, label=None, ordering="", display=name, suffix=""):
     if not label:

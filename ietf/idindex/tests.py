@@ -102,7 +102,7 @@ class IndexTests(TestCase):
         self.assertEqual(t[6], draft.latest_event(type="new_revision").time.strftime("%Y-%m-%d"))
         self.assertEqual(t[7], draft.group.acronym)
         self.assertEqual(t[8], draft.group.parent.acronym)
-        self.assertEqual(t[9], six.ensure_text(draft.ad))
+        self.assertEqual(t[9], six.text_type(draft.ad))
         self.assertEqual(t[10], draft.intended_std_level.name)
         self.assertEqual(t[11], "")
         self.assertEqual(t[12], ".pdf,.txt")

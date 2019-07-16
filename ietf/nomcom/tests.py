@@ -7,7 +7,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 import datetime
 import io
 import random
-import six
 import shutil
 
 from pyquery import PyQuery
@@ -16,9 +15,10 @@ from six.moves.urllib.parse import urlparse
 from django.db import IntegrityError
 from django.db.models import Max
 from django.conf import settings
-from django.urls import reverse
 from django.core.files import File
 from django.contrib.auth.models import User
+from django.urls import reverse
+from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
 
@@ -526,7 +526,7 @@ class NomcomViewsTest(TestCase):
         self.assertEqual('Nomination receipt', outbox[-1]['Subject'])
         self.assertEqual(self.email_from, outbox[-1]['From'])
         self.assertIn('plain', outbox[-1]['To'])
-        self.assertIn('Comments with accents äöå', six.ensure_text(outbox[-1].get_payload(decode=True),"utf-8","replace"))
+        self.assertIn('Comments with accents äöå', force_text(outbox[-1].get_payload(decode=True),"utf-8","replace"))
 
         # Nominate the same person for the same position again without asking for confirmation 
 
@@ -567,7 +567,7 @@ class NomcomViewsTest(TestCase):
         self.assertEqual('Nomination receipt', outbox[-1]['Subject'])
         self.assertEqual(self.email_from, outbox[-1]['From'])
         self.assertIn('plain', outbox[-1]['To'])
-        self.assertIn('Comments with accents äöå', six.ensure_text(outbox[-1].get_payload(decode=True),"utf-8","replace"))
+        self.assertIn('Comments with accents äöå', force_text(outbox[-1].get_payload(decode=True),"utf-8","replace"))
 
         # Nominate the same person for the same position again without asking for confirmation 
 
@@ -812,7 +812,7 @@ class NomcomViewsTest(TestCase):
         self.assertNotIn('$', email_body)
         self.assertEqual(self.email_from, outbox[-2]['From'])
         self.assertIn('plain', outbox[2]['To'])
-        self.assertIn('Comments with accents äöå', six.ensure_text(outbox[2].get_payload(decode=True),"utf-8","replace"))
+        self.assertIn('Comments with accents äöå', force_text(outbox[2].get_payload(decode=True),"utf-8","replace"))
 
         empty_outbox()
         self.feedback_view(public=True)

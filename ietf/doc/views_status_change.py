@@ -8,7 +8,6 @@ import datetime
 import io
 import os
 import re
-import six
 
 from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
@@ -16,6 +15,7 @@ from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.conf import settings
+from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
 
@@ -641,7 +641,7 @@ def generate_last_call_text(request, doc):
     e.doc = doc
     e.rev = doc.rev
     e.desc = 'Last call announcement was generated'
-    e.text = six.ensure_text(new_text)
+    e.text = force_text(new_text)
     e.save()
 
     return e 

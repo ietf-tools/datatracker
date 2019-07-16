@@ -17,7 +17,7 @@ from django.core.validators import URLValidator, RegexValidator
 from django.urls import reverse as urlreverse
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
-from django.utils.encoding import python_2_unicode_compatible
+from django.utils.encoding import python_2_unicode_compatible, force_text
 from django.utils.html import mark_safe
 
 import debug                            # pyflakes:ignore
@@ -880,7 +880,7 @@ class DocHistory(DocumentInfo):
     name = models.CharField(max_length=255)
 
     def __str__(self):
-        return six.ensure_text(self.doc.name)
+        return force_text(self.doc.name)
 
     def canonical_name(self):
         if hasattr(self, '_canonical_name'):
@@ -930,7 +930,7 @@ class DocAlias(models.Model):
         return self.docs.first()
 
     def __str__(self):
-        return u"%s-->%s" % (self.name, ','.join([six.ensure_text(d.name) for d in self.docs.all() if isinstance(d, Document) ]))
+        return u"%s-->%s" % (self.name, ','.join([force_text(d.name) for d in self.docs.all() if isinstance(d, Document) ]))
     document_link = admin_link("document")
     class Meta:
         verbose_name = "document alias"

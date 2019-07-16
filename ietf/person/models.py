@@ -86,7 +86,7 @@ class Person(models.Model):
         if not hasattr(self, '_cached_plain_ascii'):
             if self.ascii:
                 if isinstance(self.ascii, six.binary_type):
-                    uname = six.ensure_text(self.ascii)
+                    uname = six.text_type(self.ascii)
                     ascii = unidecode_name(uname)
                 else:
                     ascii = unidecode_name(self.ascii)

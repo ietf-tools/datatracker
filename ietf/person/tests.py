@@ -93,7 +93,7 @@ class PersonTests(TestCase):
         empty_outbox()
         p = PersonFactory(name="Föö Bär")
         PersonFactory(name=p.name)
-        self.assertTrue("possible duplicate" in six.ensure_text(outbox[0]["Subject"]).lower())
+        self.assertTrue("possible duplicate" in six.text_type(outbox[0]["Subject"]).lower())
 
     def test_merge(self):
         url = urlreverse("ietf.person.views.merge")

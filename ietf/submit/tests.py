@@ -19,7 +19,7 @@ from pyquery import PyQuery
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
-from django.utils.encoding import force_str
+from django.utils.encoding import force_str, force_text
 
 import debug                            # pyflakes:ignore
 
@@ -38,7 +38,7 @@ from ietf.person.models import Person
 from ietf.person.factories import UserFactory, PersonFactory
 from ietf.submit.models import Submission, Preapproval
 from ietf.submit.mail import add_submission_email, process_response_email
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import outbox, empty_outbox, get_payload
 from ietf.utils.models import VersionInfo
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.draft import Draft
@@ -296,16 +296,16 @@ class SubmitTests(TestCase):
         self.assertTrue(draft.relations_that_doc("possibly-replaces").first().target, sug_replaced_alias)
         self.assertEqual(len(outbox), mailbox_before + 5)
         self.assertIn(("I-D Action: %s" % name), outbox[-4]["Subject"])
-        self.assertIn(author.ascii, six.ensure_text(outbox[-4]))
+        self.assertIn(author.ascii, get_payload(outbox[-4]))
         self.assertIn(("I-D Action: %s" % name), outbox[-3]["Subject"])
-        self.assertIn(author.ascii, six.ensure_text(outbox[-3]))
+        self.assertIn(author.ascii, get_payload(outbox[-3]))
         self.assertIn("New Version Notification",outbox[-2]["Subject"])
-        self.assertIn(name, six.ensure_text(outbox[-2]))
-        self.assertIn("mars", six.ensure_text(outbox[-2]))
+        self.assertIn(name, get_payload(outbox[-2]))
+        self.assertIn("mars", get_payload(outbox[-2]))
         # Check "Review of suggested possible replacements for..." mail
         self.assertIn("review", outbox[-1]["Subject"].lower())
-        self.assertIn(name, six.ensure_text(outbox[-1]))
-        self.assertIn(sug_replaced_alias.name, six.ensure_text(outbox[-1]))
+        self.assertIn(name, get_payload(outbox[-1]))
+        self.assertIn(sug_replaced_alias.name, get_payload(outbox[-1]))
         self.assertIn("ames-chairs@", outbox[-1]["To"].lower())
         self.assertIn("mars-chairs@", outbox[-1]["To"].lower())
 
@@ -413,7 +413,7 @@ class SubmitTests(TestCase):
         self.assertTrue("unknown-email-" not in confirm_email["To"])
         if change_authors:
             # Since authors changed, ensure chairs are copied (and that the message says why)
-            self.assertTrue("chairs have been copied" in six.ensure_text(confirm_email))
+            self.assertTrue("chairs have been copied" in six.text_type(confirm_email))
             if group_type in ['wg','rg','ag']:
                 self.assertTrue("mars-chairs@" in confirm_email["To"].lower())
             elif group_type == 'area':
@@ -423,7 +423,7 @@ class SubmitTests(TestCase):
             if stream_type=='ise':
                self.assertTrue("rfc-ise@" in confirm_email["To"].lower())
         else:
-            self.assertNotIn("chairs have been copied", six.ensure_text(confirm_email))
+            self.assertNotIn("chairs have been copied", six.text_type(confirm_email))
             self.assertNotIn("mars-chairs@", confirm_email["To"].lower())
 
         confirmation_url = self.extract_confirmation_url(confirm_email)
@@ -492,17 +492,17 @@ class SubmitTests(TestCase):
         self.assertEqual(len(outbox), mailbox_before + 3)
         self.assertTrue(("I-D Action: %s" % name) in outbox[-3]["Subject"])
         self.assertTrue(("I-D Action: %s" % name) in draft.message_set.order_by("-time")[0].subject)
-        self.assertTrue(author.ascii in six.ensure_text(outbox[-3]))
+        self.assertTrue(author.ascii in get_payload(outbox[-3]))
         self.assertTrue("i-d-announce@" in outbox[-3]['To'])
         self.assertTrue("New Version Notification" in outbox[-2]["Subject"])
-        self.assertTrue(name in six.ensure_text(outbox[-2]))
+        self.assertTrue(name in get_payload(outbox[-2]))
         interesting_address = {'ietf':'mars', 'irtf':'irtf-chair', 'iab':'iab-chair', 'ise':'rfc-ise'}[draft.stream_id]
-        self.assertTrue(interesting_address in six.ensure_text(outbox[-2]))
+        self.assertTrue(interesting_address in force_text(outbox[-2].as_string()))
         if draft.stream_id == 'ietf':
-            self.assertTrue(draft.ad.role_email("ad").address in six.ensure_text(outbox[-2]))
-            self.assertTrue(ballot_position.ad.role_email("ad").address in six.ensure_text(outbox[-2]))
+            self.assertTrue(draft.ad.role_email("ad").address in force_text(outbox[-2].as_string()))
+            self.assertTrue(ballot_position.ad.role_email("ad").address in force_text(outbox[-2].as_string()))
         self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
-        self.assertTrue(name in six.ensure_text(outbox[-1]))
+        self.assertTrue(name in get_payload(outbox[-1]))
         r = self.client.get(urlreverse('ietf.doc.views_search.recent_drafts'))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
@@ -562,7 +562,7 @@ class SubmitTests(TestCase):
         # both submitter and author get email
         self.assertTrue(author.email().address.lower() in confirm_email["To"])
         self.assertTrue("submitter@example.com" in confirm_email["To"])
-        self.assertFalse("chairs have been copied" in six.ensure_text(confirm_email))
+        self.assertFalse("chairs have been copied" in six.text_type(confirm_email))
 
         confirmation_url = self.extract_confirmation_url(outbox[-1])
 

@@ -452,7 +452,7 @@ class IncomingLiaisonForm(LiaisonModelForm):
             self.fields['from_contact'].initial = self.person.role_set.filter(group=queryset[0]).first().email.address
             self.fields['from_contact'].widget.attrs['readonly'] = True
         self.fields['from_groups'].queryset = queryset
-        self.fields['from_groups'].widget.submitter = six.ensure_text(self.person)
+        self.fields['from_groups'].widget.submitter = six.text_type(self.person)
 
         # if there's only one possibility make it the default
         if len(queryset) == 1:

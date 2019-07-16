@@ -10,13 +10,13 @@ import faker.config
 import os
 import random
 import shutil
-import six
 
 from unidecode import unidecode
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.utils.text import slugify
+from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
 
@@ -58,7 +58,7 @@ class PersonFactory(factory.DjangoModelFactory):
 
     user = factory.SubFactory(UserFactory)
     name = factory.LazyAttribute(lambda p: normalize_name('%s %s'%(p.user.first_name, p.user.last_name)))
-    ascii = factory.LazyAttribute(lambda p: six.ensure_text(unidecode_name(p.name)))
+    ascii = factory.LazyAttribute(lambda p: force_text(unidecode_name(p.name)))
 
     class Params:
         with_bio = factory.Trait(biography = "\n\n".join(fake.paragraphs()))

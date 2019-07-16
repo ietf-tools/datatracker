@@ -264,7 +264,7 @@ class ReviewTests(TestCase):
         q = PyQuery(r.content)
         generated_text = q("[name=body]").text()
         self.assertTrue(review_req1.doc.name in generated_text)
-        self.assertTrue(six.ensure_text(Person.objects.get(user__username="marschairman")) in generated_text)
+        self.assertTrue(six.text_type(Person.objects.get(user__username="marschairman")) in generated_text)
 
         empty_outbox()
         r = self.client.post(url, {

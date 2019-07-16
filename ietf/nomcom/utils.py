@@ -22,7 +22,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
-from django.utils.encoding import force_str
+from django.utils.encoding import force_str, force_text
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.person.models import Email, Person
@@ -433,7 +433,7 @@ def get_body(message):
         body = []
         for part in text_parts:
             charset = get_charset(part, get_charset(message))
-            body.append(six.ensure_text(part.get_payload(decode=True),
+            body.append(force_text(part.get_payload(decode=True),
                                 charset,
                                 "replace"))
 
@@ -441,7 +441,7 @@ def get_body(message):
 
     else:  # if it is not multipart, the payload will be a string
            # representing the message body
-        body = six.ensure_text(message.get_payload(decode=True),
+        body = force_text(message.get_payload(decode=True),
                        get_charset(message),
                        "replace")
         return body.strip()

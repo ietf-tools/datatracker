@@ -65,7 +65,7 @@ class SearchableLiaisonStatementsField(forms.CharField):
         # patterns may not have been fully constructed there yet
         self.widget.attrs["data-ajax-url"] = urlreverse("ietf.liaisons.views.ajax_select2_search_liaison_statements")
 
-        return ",".join(six.ensure_text(o.pk) for o in value)
+        return ",".join(six.text_type(o.pk) for o in value)
 
     def clean(self, value):
         value = super(SearchableLiaisonStatementsField, self).clean(value)

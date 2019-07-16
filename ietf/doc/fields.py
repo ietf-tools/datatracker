@@ -83,7 +83,7 @@ class SearchableDocumentsField(forms.CharField):
             "model_name": self.model.__name__.lower()
         })
 
-        return ",".join(six.ensure_text(o.pk) for o in value)
+        return ",".join(six.text_type(o.pk) for o in value)
 
     def clean(self, value):
         value = super(SearchableDocumentsField, self).clean(value)

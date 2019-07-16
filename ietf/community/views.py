@@ -202,7 +202,7 @@ def export_to_csv(request, username=None, acronym=None, group_type=None):
         row.append(e.time.strftime("%Y-%m-%d") if e else "")
         row.append(strip_tags(doc.friendly_state()))
         row.append(doc.group.acronym if doc.group else "")
-        row.append(six.ensure_text(doc.ad) if doc.ad else "")
+        row.append(six.text_type(doc.ad) if doc.ad else "")
         e = doc.latest_event()
         row.append(e.time.strftime("%Y-%m-%d") if e else "")
         writer.writerow([v.encode("utf-8") for v in row])

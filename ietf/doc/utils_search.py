@@ -106,7 +106,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         d.expirable = expirable_draft(d)
 
         if d.get_state_slug() != "rfc":
-            d.milestones = [ m for (t, s, d, m) in sorted(((m.time, m.state.slug, m.desc, m) for m in d.groupmilestone_set.all() if m.state_id == "active")) ]
+            d.milestones = [ m for (t, s, v, m) in sorted(((m.time, m.state.slug, m.desc, m) for m in d.groupmilestone_set.all() if m.state_id == "active")) ]
             d.reviewed_by_teams = sorted(set(r.team.acronym for r in d.reviewrequest_set.filter(state__in=["assigned","accepted","part-completed","completed"]).distinct().select_related('team')))
 
         e = d.latest_event_cache.get('started_iesg_process', None)

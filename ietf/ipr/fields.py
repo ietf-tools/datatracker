@@ -68,7 +68,7 @@ class SearchableIprDisclosuresField(forms.CharField):
         # patterns may not have been fully constructed there yet
         self.widget.attrs["data-ajax-url"] = urlreverse('ietf.ipr.views.ajax_search')
 
-        return ",".join(six.ensure_text(e.pk) for e in value)
+        return ",".join(six.text_type(e.pk) for e in value)
 
     def clean(self, value):
         value = super(SearchableIprDisclosuresField, self).clean(value)

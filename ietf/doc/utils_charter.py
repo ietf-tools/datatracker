@@ -9,12 +9,11 @@ import io
 import os
 import re
 import shutil
-import six
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.template.loader import render_to_string
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_text, force_text
 
 import debug                            # pyflakes:ignore
 
@@ -152,7 +151,7 @@ def generate_ballot_writeup(request, doc):
     e.doc = doc
     e.rev = doc.rev,
     e.desc = "Ballot writeup was generated"
-    e.text = six.ensure_text(render_to_string("doc/charter/ballot_writeup.txt"))
+    e.text = force_text(render_to_string("doc/charter/ballot_writeup.txt"))
 
     # caller is responsible for saving, if necessary
     return e

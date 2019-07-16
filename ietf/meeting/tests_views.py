@@ -1727,7 +1727,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Upload', six.ensure_text(q("title")))
+        self.assertIn('Upload', six.text_type(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
@@ -1738,7 +1738,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Revise', six.ensure_text(q("title")))
+        self.assertIn('Revise', six.text_type(q("title")))
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some different text for a test')
         test_file.name = "also_not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
@@ -1762,7 +1762,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Upload', six.ensure_text(q("title")))
+        self.assertIn('Upload', six.text_type(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
@@ -1780,7 +1780,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Upload', six.ensure_text(q("title")))
+        self.assertIn('Upload', six.text_type(q("title")))
         
 
     def test_upload_minutes_agenda(self):
@@ -1795,7 +1795,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertIn('Upload', six.ensure_text(q("Title")))
+            self.assertIn('Upload', six.text_type(q("Title")))
             self.assertFalse(session.sessionpresentation_set.exists())
             self.assertFalse(q('form input[type="checkbox"]'))
     
@@ -1849,7 +1849,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertIn('Revise', six.ensure_text(q("Title")))
+            self.assertIn('Revise', six.text_type(q("Title")))
             test_file = BytesIO(b'this is some different text for a test')
             test_file.name = "also_not_really.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=True))
@@ -1883,7 +1883,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertIn('Upload', six.ensure_text(q("Title")))
+            self.assertIn('Upload', six.text_type(q("Title")))
             self.assertFalse(session.sessionpresentation_set.exists())
             self.assertFalse(q('form input[type="checkbox"]'))
 
@@ -1904,7 +1904,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertIn('Upload', six.ensure_text(q("title")))
+            self.assertIn('Upload', six.text_type(q("title")))
             self.assertFalse(session.sessionpresentation_set.filter(document__type_id=doctype))
             test_file = BytesIO(b'this is some text for a test')
             test_file.name = "not_really.txt"
@@ -1927,7 +1927,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Upload', six.ensure_text(q("title")))
+        self.assertIn('Upload', six.text_type(q("title")))
         self.assertFalse(session1.sessionpresentation_set.filter(document__type_id='slides'))
         test_file = BytesIO(b'this is not really a slide')
         test_file.name = 'not_really.txt'
@@ -1955,7 +1955,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertTrue(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Revise', six.ensure_text(q("title")))
+        self.assertIn('Revise', six.text_type(q("title")))
         test_file = BytesIO(b'new content for the second slide deck')
         test_file.name = 'doesnotmatter.txt'
         r = self.client.post(url,dict(file=test_file,title='rename the presentation',apply_to_all=False))

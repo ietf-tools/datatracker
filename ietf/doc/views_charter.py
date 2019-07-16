@@ -8,7 +8,6 @@ import datetime
 import io
 import json
 import os
-import six
 import textwrap
 
 from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden, Http404
@@ -19,6 +18,7 @@ from django.utils.safestring import mark_safe
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
 
@@ -816,7 +816,7 @@ def charter_with_milestones_txt(request, name, rev):
 
     try:
         with io.open(os.path.join(settings.CHARTER_PATH, filename), 'r') as f:
-            charter_text = six.ensure_text(f.read(), errors='ignore')
+            charter_text = force_text(f.read(), errors='ignore')
     except IOError:
         charter_text = "Error reading charter text %s" % filename
 

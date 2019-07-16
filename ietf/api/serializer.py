@@ -154,7 +154,7 @@ class AdminJsonSerializer(Serializer):
                             if hasattr(field_value, "_meta"):
                                 self._current[name] = self.expand_related(field_value, name)
                             else:
-                                self._current[name] = six.ensure_text(field_value)
+                                self._current[name] = six.text_type(field_value)
             except ObjectDoesNotExist:
                 pass
             except AttributeError:

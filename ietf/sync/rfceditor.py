@@ -552,6 +552,6 @@ def post_approved_draft(url, name):
         # catch everything so we don't leak exceptions, convert them
         # into string instead
         log("Exception on RFC-Editor notification for draft '%s': '%s'" % (name, e))
-        error = six.ensure_text(e)
+        error = six.text_type(e)
 
     return text, error

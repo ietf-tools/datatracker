@@ -964,7 +964,7 @@ def make_assignment_choices(email_queryset, review_req):
         if stats:
             explanations.append(", ".join(stats))
 
-        label = six.ensure_text(e.person)
+        label = six.text_type(e.person)
         if explanations:
             label = "{}: {}".format(label, "; ".join(explanations))
 

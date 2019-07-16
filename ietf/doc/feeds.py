@@ -49,7 +49,7 @@ class DocumentChangesFeed(Feed):
         return item.time
 
     def item_author_name(self, item):
-        return six.ensure_text(item.by)
+        return six.text_type(item.by)
 
     def item_link(self, item):
         return urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=item.doc.canonical_name())) + "#history-%s" % item.pk

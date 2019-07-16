@@ -1448,7 +1448,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
         saving = form_action.startswith("save")
 
         # check for conflicts
-        review_requests_dict = { six.ensure_text(r.pk): r for r in review_requests }
+        review_requests_dict = { six.text_type(r.pk): r for r in review_requests }
         posted_reqs = set(request.POST.getlist("reviewrequest", []))
         current_reqs = set(review_requests_dict.keys())
 

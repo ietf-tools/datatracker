@@ -43,8 +43,8 @@ class ChangeLogEntry:
     title = ""
 
 def parse(logfile):
-    ver_line = "^(\w+) \((\S+)\) (\S+;)? (?:urgency=(\S+))?$"
-    sig_line = "^ -- ([^<]+) <([^>]+)>  (.*?) *$"
+    ver_line = r"^(\w+) \((\S+)\) (\S+;)? (?:urgency=(\S+))?$"
+    sig_line = r"^ -- ([^<]+) <([^>]+)>  (.*?) *$"
     inf_line = r"^  \*\*(.*)\*\* *"
 
     entries = []

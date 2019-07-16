@@ -26,7 +26,7 @@ def pipe(cmd, str=None):
         if str:
             out += str
         code = pipe.poll()
-        if code > -1:
+        if code != None:
             err = pipe.stderr.read()
             break
         if len(out) >= MAX:
