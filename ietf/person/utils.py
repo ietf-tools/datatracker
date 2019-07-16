@@ -25,7 +25,7 @@ def merge_persons(source, target, file=sys.stdout, verbose=False):
     changes = []
 
     # write log
-    syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
+    syslog.openlog(str(os.path.basename(__file__)), syslog.LOG_PID, syslog.LOG_USER)
     syslog.syslog("Merging person records {} => {}".format(source.pk,target.pk))
     
     # handle primary emails
