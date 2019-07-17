@@ -216,7 +216,7 @@ def read_session_file(type, num, doc):
     # FIXME: uploaded_filename should be replaced with a function call that computes names that are fixed
     path = os.path.join(settings.AGENDA_PATH, "%s/%s/%s" % (num, type, doc.uploaded_filename))
     if os.path.exists(path):
-        with io.open(path) as f:
+        with io.open(path, 'rb') as f:
             return f.read(), path
     else:
         return None, path

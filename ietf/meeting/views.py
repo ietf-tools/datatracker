@@ -656,7 +656,7 @@ def session_draft_list(num, acronym):
     for agenda in agendas:
         content, _ = read_agenda_file(num, agenda)
         if content:
-            drafts.update(re.findall('(draft-[-a-z0-9]*)', content))
+            drafts.update(re.findall(b'(draft-[-a-z0-9]*)', content))
 
     result = []
     for draft in drafts:
