@@ -10,7 +10,7 @@ from django.utils.encoding import python_2_unicode_compatible
 
 from email.utils import parseaddr
 from ietf.utils.mail import formataddr, get_email_addresses_from_text
-from ietf.person.models import Email
+from ietf.person.models import Email, Alias
 from ietf.review.models import ReviewTeamSettings
 
 import debug                            # pyflakes:ignore
@@ -202,6 +202,23 @@ class Recipient(models.Model):
         if 'submission' in kwargs:
             submission = kwargs['submission']
             addrs.extend(["%s <%s>" % (author["name"], author["email"]) for author in submission.authors if author.get("email")])
+        return addrs
+
+    def gather_submission_submitter(self, **kwargs):
+        """
+        Returns a list of name and email, e.g.: [ 'Ano Nymous <ano@nymous.org>' ]
+        """
+        addrs = []
+        if 'submission' in kwargs:
+            submission = kwargs['submission']
+            if '@' in submission.submitter:
+                addrs.extend([ get_email_addresses_from_text(submission.submitter) ])
+            else:
+                try:
+                    submitter = Alias.objects.get(name=submission.submitter).person
+                    addrs.extend(["%s <%s>" % (submitter.name, submitter.email().address)])
+                except (Alias.DoesNotExist, Alias.MultipleObjectsReturned):
+                    pass
         return addrs
 
     def gather_submission_group_chairs(self, **kwargs):
