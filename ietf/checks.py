@@ -402,8 +402,8 @@ def check_api_key_in_local_settings(app_configs, **kwargs):
     errors = []
     import ietf.settings_local
     if settings.SERVER_MODE == 'production':
-        if not (    hasattr(settings_local, 'API_PUBLIC_KEY_PEM')
-                and hasattr(settings_local, 'API_PRIVATE_KEY_PEM')):
+        if not (    hasattr(ietf.settings_local, 'API_PUBLIC_KEY_PEM')
+                and hasattr(ietf.settings_local, 'API_PRIVATE_KEY_PEM')):
             errors.append(checks.Critical(
                 "There are no API key settings in your settings_local.py",
                 hint = dedent("""
@@ -417,8 +417,8 @@ def check_api_key_in_local_settings(app_configs, **kwargs):
                     """).replace('\n', '\n   ').rstrip(),
                 id = "datatracker.E0020",
             ))
-        elif not ( settings_local.API_PUBLIC_KEY_PEM == settings.API_PUBLIC_KEY_PEM
-                    and settings_local.API_PRIVATE_KEY_PEM == settings.API_PRIVATE_KEY_PEM ):
+        elif not ( ietf.settings_local.API_PUBLIC_KEY_PEM == settings.API_PUBLIC_KEY_PEM
+                    and ietf.settings_local.API_PRIVATE_KEY_PEM == settings.API_PRIVATE_KEY_PEM ):
             errors.append(checks.Critical(
                 "Your API key settings in your settings_local.py are not picked up in settings.",
                 hint = dedent("""
