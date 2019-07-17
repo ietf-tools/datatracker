@@ -6,7 +6,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import copy
 import datetime
-import logging
+#import logging
 import re
 import six
 import smtplib
@@ -535,7 +535,7 @@ def is_valid_email(address):
     except ValidationError:
         return False
 
-logger = logging.getLogger('django')
+#logger = logging.getLogger('django')
 def get_email_addresses_from_text(text):
     """
 
@@ -553,7 +553,9 @@ def get_email_addresses_from_text(text):
             validate_email(addr)
             return True
         except ValidationError:
-            logger.error('Bad data: get_email_addresses_from_text() got an '
+#             logger.error('Bad data: get_email_addresses_from_text() got an '
+#                 'invalid email address tuple: {email}, in "{text}".'.format(email=email, text=text))
+            log('Bad data: get_email_addresses_from_text() got an '
                 'invalid email address tuple: {email}, in "{text}".'.format(email=email, text=text))
             return False
     # whitespace normalization -- getaddresses doesn't do this
