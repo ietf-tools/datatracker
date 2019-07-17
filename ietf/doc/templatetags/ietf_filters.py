@@ -18,6 +18,7 @@ from django.template.defaultfilters import truncatewords_html, linebreaksbr, str
 from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
 from django.utils.encoding import force_text
+from django.utils.encoding import force_str # pyflakes:ignore force_str is used in the doctests
 
 import debug                            # pyflakes:ignore
 
@@ -51,17 +52,17 @@ def parse_email_list(value):
 
     Splitting a string of email addresses should return a list:
 
-    >>> six.ensure_str(parse_email_list('joe@example.org, fred@example.com'))
+    >>> force_str(parse_email_list('joe@example.org, fred@example.com'))
     '<a href="mailto:joe@example.org">joe@example.org</a>, <a href="mailto:fred@example.com">fred@example.com</a>'
 
     Parsing a non-string should return the input value, rather than fail:
 
-    >>> [ six.ensure_str(e) for e in parse_email_list(['joe@example.org', 'fred@example.com']) ]
+    >>> [ force_str(e) for e in parse_email_list(['joe@example.org', 'fred@example.com']) ]
     ['joe@example.org', 'fred@example.com']
 
     Null input values should pass through silently:
 
-    >>> six.ensure_str(parse_email_list(''))
+    >>> force_str(parse_email_list(''))
     ''
 
     >>> parse_email_list(None)
@@ -102,7 +103,7 @@ def make_one_per_line(value):
     """
     Turn a comma-separated list into a carriage-return-seperated list.
 
-    >>> six.ensure_str(make_one_per_line("a, b, c"))
+    >>> force_str(make_one_per_line("a, b, c"))
     'a\\nb\\nc'
 
     Pass through non-strings:
