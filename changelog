@@ -1,3 +1,32 @@
+ietfdb (6.99.1) ietf; urgency=medium
+
+  * Replaced six.ensure_str with django's force_str
+
+  * Fixed a typo.
+
+  * Changed PDF page-counting code to read PDF files as binary.
+
+  * Replaced the email-sending logger.error() on bad Submission.submitter
+    email address with syslog logging.
+
+  * Added a email gather handler for submission_submitter that tries an Alias
+    name lookuup if the submitter doesn't look as if it contains an email
+    address.  This deals better with submission records that only has a name
+    in the submitter field.
+
+  * Fixed some issues with the changed import path ietf.settings_local.
+
+  * Changed import path for settings_local.py to work with absolute_import 
+    under Py2, and also under Py3.
+
+  * Changed agenda file reading to read files as binary when looking for 
+    draft names listed in the agenda, in order to avoid issues with
+    older uploads using latin-1 or other encodings where the lower
+    127 character match ASCII.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  17 Jul 2019 18:47:17 +0000
+
+
 ietfdb (6.99.0) ietf; urgency=medium
 
   **Python 3 compatible code**
