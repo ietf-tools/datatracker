@@ -418,7 +418,7 @@ class EditCharterTests(TestCase):
         self.assertTrue("new_revision" in charter.latest_event().type)
 
         with io.open(os.path.join(self.charter_dir, charter.canonical_name() + "-" + charter.rev + ".txt")) as f:
-            self.assertEqual(f.read(), "Windows line\nMac line\nUnix line\n" + utf_8_snippet.decode('utf_8'))
+            self.assertEqual(f.read(), "Windows line\nMac line\nUnix line\n" + utf_8_snippet.decode('utf-8'))
 
     def test_submit_initial_charter(self):
         group = GroupFactory(type_id='wg',acronym='mars',list_email='mars-wg@ietf.org')
