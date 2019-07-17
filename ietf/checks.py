@@ -400,7 +400,7 @@ def maybe_patch_library(app_configs, **kwargs):
 @checks.register('security')
 def check_api_key_in_local_settings(app_configs, **kwargs):
     errors = []
-    import settings_local
+    import ietf.settings_local
     if settings.SERVER_MODE == 'production':
         if not (    hasattr(settings_local, 'API_PUBLIC_KEY_PEM')
                 and hasattr(settings_local, 'API_PRIVATE_KEY_PEM')):
