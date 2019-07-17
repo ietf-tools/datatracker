@@ -55,6 +55,7 @@ from coverage.report import Reporter
 from coverage.results import Numbers
 from coverage.misc import NotPython
 
+import django
 from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.db.migrations.loader import MigrationLoader
@@ -65,7 +66,6 @@ from django.template import TemplateDoesNotExist
 from django.template.loaders.base import Loader as BaseLoader
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
-
 from django.urls import RegexURLResolver
 
 import debug                            # pyflakes:ignore
@@ -522,6 +522,10 @@ class IetfTestRunner(DiscoverRunner):
         settings.PASSWORD_HASHERS = ( 'django.contrib.auth.hashers.MD5PasswordHasher', )
         settings.SERVER_MODE = 'test'
         #
+        print("     Datatracker %s test suite, %s:" % (ietf.__version__, time.strftime("%d %B %Y %H:%M:%S %Z")))
+        print("     Python %s." % sys.version.replace('\n', ' '))
+        print("     Django %s, settings '%s'" % (django.get_version(), settings.SETTINGS_MODULE))
+
         if self.check_coverage:
             if self.coverage_file.endswith('.gz'):
                 with gzip.open(self.coverage_file, "rb") as file:
