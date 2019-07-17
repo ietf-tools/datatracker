@@ -1588,7 +1588,10 @@ def propose_session_slides(request, session_id, num):
             else:
                 name = 'slides-%s-%s' % (session.meeting.number, session.docname_token())
             name = name + '-' + slugify(title).replace('_', '-')[:128]
-            filename = '%s-00%s'% (name, ext)
+            rev = '00'
+            if Document.objects.filter(name=name).exists():
+                rev ='%02s' % (int(Document.objects.get(name=name).rev) + 1)
+            filename = '%s-%s%s'% (name, rev, ext)
             destination = io.open(os.path.join(settings.SLIDE_STAGING_PATH, filename),'wb+')
             for chunk in file.chunks():
                 destination.write(chunk)
@@ -2476,7 +2479,9 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
                 if not os.path.exists(path):
                     os.makedirs(path)
-                os.rename(submission.staged_filepath(), os.path.join(path, submission.filename))
+                sub_name, sub_ext = os.path.splitext(submission.filename)
+                target_filename = '%s-%s%s' % (sub_name[:-3],doc.rev,sub_ext)
+                os.rename(submission.staged_filepath(), os.path.join(path, target_filename))
                 acronym = submission.session.group.acronym
                 submission.delete()
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=acronym)

@@ -2101,6 +2101,53 @@ class MaterialsTests(TestCase):
         self.assertEqual(session1.sessionpresentation_set.count(),1)
         self.assertEqual(session2.sessionpresentation_set.count(),1)
 
+    def test_submit_and_approve_multiple_versions(self):
+        session = SessionFactory(meeting__type_id='ietf')
+        chair = RoleFactory(group=session.group,name_id='chair').person
+        session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        newperson = PersonFactory()
+        
+        propose_url = urlreverse('ietf.meeting.views.propose_session_slides', kwargs={'session_id':session.pk, 'num': session.meeting.number})          
+        
+        login_testing_unauthorized(self,newperson.user.username,propose_url)
+        test_file = BytesIO(b'this is not really a slide')
+        test_file.name = 'not_really.txt'
+        r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
+        self.assertEqual(r.status_code, 302)
+        self.client.logout()
+
+        submission = SlideSubmission.objects.get(session = session)
+
+        approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
+        login_testing_unauthorized(self, chair.user.username, approve_url)
+        r = self.client.post(approve_url,dict(title=submission.title,approve='approve'))
+        self.assertEqual(r.status_code,302)
+        self.client.logout()
+
+        self.assertEqual(session.sessionpresentation_set.first().document.rev,'00')
+
+        login_testing_unauthorized(self,newperson.user.username,propose_url)
+        test_file = BytesIO(b'this is not really a slide, but it is another version of it')
+        test_file.name = 'not_really.txt'
+        r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
+        self.assertEqual(r.status_code, 302)
+        self.client.logout()
+
+        submission = SlideSubmission.objects.get(session = session)
+
+        approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
+        login_testing_unauthorized(self, chair.user.username, approve_url)
+        r = self.client.post(approve_url,dict(title=submission.title,approve='approve'))
+        self.assertEqual(r.status_code,302)
+        self.client.logout()
+
+        self.assertEqual(session.sessionpresentation_set.first().document.rev,'01')
+        path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
+        filename = os.path.join(path,session.sessionpresentation_set.first().document.name+'-01.txt')
+        self.assertTrue(os.path.exists(filename))
+        contents = open(filename,'r').read()
+        self.assertIn('another version', contents)
+
 
 class SessionTests(TestCase):
 
