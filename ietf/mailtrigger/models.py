@@ -216,7 +216,8 @@ class Recipient(models.Model):
             else:
                 try:
                     submitter = Alias.objects.get(name=submission.submitter).person
-                    addrs.extend(["%s <%s>" % (submitter.name, submitter.email().address)])
+                    if submitter:
+                        addrs.extend(["%s <%s>" % (submitter.name, submitter.email().address)])
                 except (Alias.DoesNotExist, Alias.MultipleObjectsReturned):
                     pass
         return addrs
