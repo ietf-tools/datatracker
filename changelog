@@ -1,20 +1,40 @@
 ietfdb (6.99.1) ietf; urgency=medium
 
-  * Replaced six.ensure_str with django's force_str
+  This bugfix release contains a number of fixes for issues with the big
+  Python 3 conversion release, many of which has already been patched in
+  production.  Additionally, there are some fixes related to new slide upload
+  functionality and the test suite.  From the commit log:
 
-  * Fixed a typo.
+  * Fixed some issues with the Py2/3 changes to the populate_yang_model_dirs
+    management command.
+
+  * Added a check for submitter found before trying to get submitter name and
+    email when generating email notification address lists.
+
+  * Shortened generated document titles a tad, to avoid line wrapping in 
+    the IESG agenda package (which sometimes breaks the relevant tests).
+
+  * Merged in [16515] from rjsparks@nostrum.com:
+    Save files correctly when updates to an existing set of slides are 
+    proposed. Fixes #2748.  
+
+  * Added information about versions (Datatracker, Python, and Django) at 
+    the beginning of test suite runs, to be able to clearly see which Python
+    and Django versions were used during a test run.
+
+  * Replaced six.ensure_str with django's force_str, in order to be able
+    to use earlier versions of six which more frequently are available on
+    the development and production target platforms.
 
   * Changed PDF page-counting code to read PDF files as binary.
 
   * Replaced the email-sending logger.error() on bad Submission.submitter
     email address with syslog logging.
 
-  * Added a email gather handler for submission_submitter that tries an Alias
+  * Added an email gather handler for submission_submitter that tries an Alias
     name lookuup if the submitter doesn't look as if it contains an email
     address.  This deals better with submission records that only has a name
     in the submitter field.
-
-  * Fixed some issues with the changed import path ietf.settings_local.
 
   * Changed import path for settings_local.py to work with absolute_import 
     under Py2, and also under Py3.
