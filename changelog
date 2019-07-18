@@ -44,7 +44,7 @@ ietfdb (6.99.1) ietf; urgency=medium
     older uploads using latin-1 or other encodings where the lower
     127 character match ASCII.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  17 Jul 2019 18:47:17 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 Jul 2019 20:34:35 +0000
 
 
 ietfdb (6.99.0) ietf; urgency=medium
