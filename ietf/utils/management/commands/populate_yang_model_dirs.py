@@ -9,7 +9,7 @@ import sys
 import time
 
 from pathlib2 import Path
-from io import StringIO
+from six import StringIO
 from textwrap import dedent
 from xym import xym
 
@@ -83,15 +83,18 @@ class Command(BaseCommand):
                 model_list = [ n.replace('"','') for n in model_list ]
             except Exception as e:
                 self.stderr.write("** Error when extracting from %s: %s" % (file, str(e)))
-            sys.stdout = saved_stdout
-            sys.stderr = saved_stderr
+            finally:
+                sys.stdout = saved_stdout
+                sys.stderr = saved_stderr
             #
             if verbosity > 1:
                 outmsg = xymout.getvalue()
-                self.stdout.write(outmsg)
+                if outmsg.strip():
+                    self.stdout.write(outmsg)
             if verbosity>2:            
                 errmsg = xymerr.getvalue()
-                self.stderr.write(errmsg)
+                if errmsg.strip():
+                    self.stderr.write(errmsg)
             return model_list
 
         # Extract from new RFCs
