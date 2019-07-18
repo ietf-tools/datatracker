@@ -26,7 +26,7 @@ class BaseDocumentFactory(factory.DjangoModelFactory):
     class Meta:
         model = Document
 
-    title = factory.Faker('sentence',nb_words=6)
+    title = factory.Faker('sentence',nb_words=5)
     rev = '00'
     std_level_id = None
     intended_std_level_id = None
