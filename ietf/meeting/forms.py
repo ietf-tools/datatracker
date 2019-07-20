@@ -342,7 +342,7 @@ class FileUploadForm(forms.Form):
             self.file_encoding = {}
         self.file_encoding[file.name] = encoding.replace('charset=','') if encoding else None
         if self.mime_types:
-            if mime_type != file.content_type:
+            if mime_type != file.content_type and not file.content_type in settings.MEETING_VALID_MAGIC_MIME_TYPES[mime_type]:
                 raise ValidationError('Upload Content-Type (%s) is different from the observed mime-type (%s)' % (file.content_type, mime_type))
             if mime_type in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS:
                 if not ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS[mime_type]:
