@@ -57,7 +57,8 @@ class StatusUpdateForm(forms.Form):
             raise forms.ValidationError("NULL TXT file input is not a valid option")
 
 class ConcludeGroupForm(forms.Form):
-    instructions = forms.CharField(widget=forms.Textarea(attrs={'rows': 30}), required=True, strip=False)
+    instructions = forms.CharField(widget=forms.Textarea(attrs={'rows': 15}), required=True, strip=False)
+    closing_note = forms.CharField(widget=forms.Textarea(attrs={'rows': 5}), label='Closing note, for WG history (optional)', required=False, strip=False)
 
 class GroupForm(forms.Form):
     name = forms.CharField(max_length=80, label="Name", required=True)
@@ -78,6 +79,7 @@ class GroupForm(forms.Form):
     list_subscribe = forms.CharField(max_length=255, required=False)
     list_archive = forms.CharField(max_length=255, required=False)
     urls = forms.CharField(widget=forms.Textarea, label="Additional URLs", help_text="Format: https://site/path (Optional description). Separate multiple entries with newline. Prefer HTTPS URLs where possible.", required=False)
+    closing_note = forms.CharField(widget=forms.Textarea, label="Closing note", required=False)
 
     def __init__(self, *args, **kwargs):
         self.group = kwargs.pop('group', None)

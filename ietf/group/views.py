@@ -523,6 +523,10 @@ def group_about(request, acronym, group_type=None):
     e = group.latest_event(type__in=("changed_state", "requested_close",))
     requested_close = group.state_id != "conclude" and e and e.type == "requested_close"
 
+    e = None
+    if group.state_id == "conclude":
+        e = group.latest_event(type='closing_note')
+
     can_manage = can_manage_group_type(request.user, group)
     charter_submit_url = "" 
     if group.features.has_chartering_process: 
@@ -542,6 +546,7 @@ def group_about(request, acronym, group_type=None):
                       "status_update": status_update,
                       "charter_submit_url": charter_submit_url,
                       "editable_roles": roles_for_group_type(group_type),
+                      "closing_note": e,
                   }))
 
 def all_status(request):
@@ -1000,6 +1005,22 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
 
             group.save()
 
+            #Handle changes to Closing Note, if any. It's an event, not a group attribute like the others
+            closing_note = ""
+            e = group.latest_event(type='closing_note')
+            if e:
+                closing_note = e.desc
+
+            if closing_note != clean["closing_note"]:
+                closing_note = clean["closing_note"]
+                e = GroupEvent(group=group, by=request.user.person)
+                e.type = "closing_note"
+                if closing_note == "":
+                    e.desc = "(Closing note deleted)" #Flag value so something shows up in history
+                else:
+                    e.desc = closing_note
+                e.save()
+ 
             if action=="charter":
                 return redirect('ietf.doc.views_charter.submit', name=charter_name_for_group(group), option="initcharter")
 
@@ -1007,6 +1028,13 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
     else: # Not POST:
         if not new_group:
             ad_role = group.ad_role()
+            closing_note = ""
+            e = group.latest_event(type='closing_note')
+            if e:
+                closing_note = e.desc
+                if closing_note == "(Closing note deleted)":
+                    closing_note = ""
+
             init = dict(name=group.name,
                         acronym=group.acronym,
                         state=group.state,
@@ -1016,6 +1044,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                         list_subscribe=group.list_subscribe if group.list_subscribe else None,
                         list_archive=group.list_archive if group.list_archive else None,
                         urls=format_urls(group.groupurl_set.all()),
+                        closing_note = closing_note,
                         )
 
             for slug in roles_for_group_type(group_type):
@@ -1042,13 +1071,22 @@ def conclude(request, acronym, group_type=None):
         form = ConcludeGroupForm(request.POST)
         if form.is_valid():
             instructions = form.cleaned_data['instructions']
+            closing_note = form.cleaned_data['closing_note']
 
+            if closing_note != "":
+                instructions = instructions+"\n\n=====\nClosing note:\n\n"+closing_note
             email_admin_re_charter(request, group, "Request closing of group", instructions, 'group_closure_requested')
 
             e = GroupEvent(group=group, by=request.user.person)
             e.type = "requested_close"
             e.desc = "Requested closing group"
             e.save()
+
+            if closing_note != "":
+                e = GroupEvent(group=group, by=request.user.person)
+                e.type = "closing_note"
+                e.desc = closing_note
+                e.save()
 
             kwargs = {'acronym':group.acronym}
             if group_type:

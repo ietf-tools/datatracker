@@ -221,6 +221,11 @@
     {% endif %}
   </table>
 
+  {% if closing_note and closing_note.desc != "(Closing note deleted)" %}
+   <h2>Closing note for {{ group.type.desc.title }}</h2>
+    {{ closing_note.desc }}
+  {% endif %}
+
   {% if group.features.has_chartering_process %}
     <h2>Charter for {% if group.state_id == "proposed" %}proposed{% endif %} {{ group.type.desc.title }}</h2>
     {# the linebreaks filter adds <p/>, no surrounding <p/> necessary: #}
