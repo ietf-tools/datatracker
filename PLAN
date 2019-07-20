@@ -7,11 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Fix the DocAlias model to be m2m with documents, in order to be able to
-  model BCPs that represent groups of RFCs properly, then fix the rfc sync
-  script to update BCP aliases when changes occur changes (a BCP points to new
-  RFC numbers)
-
 * Transition to Python 3.  This will make it easier to add add support for
   internationalsed email, and also other i18n enhancements.
 
@@ -24,6 +19,11 @@ Planned work in rough order
   email verification step.
 
 * Polish the htmlization pages, making the style identical with tools.ietf.org.
+
+* Investigate making RFCs first-class document objects to faciliate being
+  able to model BCPs that represent groups of RFCs properly. Then fix the rfc sync
+  script to update BCP aliases when changes occur changes (a BCP points to new
+  RFC numbers)
 
 * Revisit the review tool, work through the accumulated tickets.
 
