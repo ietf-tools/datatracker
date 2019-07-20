@@ -90,19 +90,27 @@
 	                {% ifchanged grouped_constraint.grouper %}<br>{% endifchanged %}
 	              {% endif %}
 	              {% for constraint in grouped_constraint.list %}
-	                {% if constraint.target.parent.id == constraint.source.parent.id and not constraint.person %}
-	                  <b>
-	                {% endif %}
-	                {% if constraint.name.slug == "bethere" %}
-	                  {{constraint.brief_display|clean_whitespace}}{% if not forloop.last %}, {% endif %}
-	                {% else %}
-	                  <span class="{% if constraint.name.slug == "conflict" %}text-danger{% elif constraint.name.slug == "conflic2" %}text-warning{% elif constraint.name.slug == "conflic3" %}text-success{% else %}{{constraint.name.slug}}{% endif %}">
-		            {{constraint.brief_display}}
-	                  </span>
-	                {% endif %}
-	                {% if constraint.target.parent.id == constraint.source.parent.id and not constraint.person %}
-	                  </b>
-	                {% endif %}
+	                {% with constraint.target.parent.id as constraint_target_parent_id %}
+	                {% with constraint.source.parent.id as constraint_source_parent_id %}
+	                {% with constraint.person as constraint_person %}
+                      {% if constraint_target_parent_id == constraint_source_parent_id and not constraint_person %}
+	                    <b>
+	                  {% endif %}
+	                  {% if constraint.name.slug == "bethere" %}
+	                    {{constraint.brief_display|clean_whitespace}}{% if not forloop.last %}, {% endif %}
+	                  {% else %}
+	                    {% with constraint.name.slug as constraint_name_slug %}
+	                      <span class="{% if constraint_name_slug == "conflict" %}text-danger{% elif constraint_name_slug == "conflic2" %}text-warning{% elif constraint_name_slug == "conflic3" %}text-success{% else %}{{constraint_name_slug}}{% endif %}">
+                        {% endwith %}
+		              {{constraint.brief_display}}
+	                    </span>
+	                  {% endif %}
+	                  {% if constraint_target_parent_id == constraint_source_parent_id and not constraint_person %}
+	                    </b>
+	                  {% endif %}
+                    {% endwith %}
+                    {% endwith %}
+                    {% endwith %}
 	              {% endfor %}
 	            {% endfor %}
 	          {% endif %}

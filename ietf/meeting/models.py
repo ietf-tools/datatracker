@@ -1056,7 +1056,7 @@ class Session(models.Model):
         return 'sess%s' % (string.ascii_lowercase[index])
         
     def constraints(self):
-        return Constraint.objects.filter(source=self.group, meeting=self.meeting).order_by('name__name')
+        return Constraint.objects.filter(source=self.group, meeting=self.meeting).order_by('name__name').prefetch_related("source","target","person")
 
     def reverse_constraints(self):
         return Constraint.objects.filter(target=self.group, meeting=self.meeting).order_by('name__name')
