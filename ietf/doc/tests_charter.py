@@ -417,7 +417,7 @@ class EditCharterTests(TestCase):
         self.assertEqual(charter.rev, next_revision(prev_rev))
         self.assertTrue("new_revision" in charter.latest_event().type)
 
-        with io.open(os.path.join(self.charter_dir, charter.canonical_name() + "-" + charter.rev + ".txt")) as f:
+        with io.open(os.path.join(self.charter_dir, charter.canonical_name() + "-" + charter.rev + ".txt"), encoding='utf-8') as f:
             self.assertEqual(f.read(), "Windows line\nMac line\nUnix line\n" + utf_8_snippet.decode('utf-8'))
 
     def test_submit_initial_charter(self):
