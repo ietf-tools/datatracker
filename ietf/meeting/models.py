@@ -1172,6 +1172,7 @@ class ImportantDate(models.Model):
         return u'%s : %s : %s' % ( self.meeting, self.name, self.date )
 
 class SlideSubmission(models.Model):
+    time = models.DateTimeField(auto_now=True)
     session = ForeignKey(Session)
     title = models.CharField(max_length=255)
     filename = models.CharField(max_length=255)

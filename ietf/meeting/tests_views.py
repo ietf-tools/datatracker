@@ -2131,22 +2131,32 @@ class MaterialsTests(TestCase):
         test_file.name = 'not_really.txt'
         r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
         self.assertEqual(r.status_code, 302)
-        self.client.logout()
 
-        submission = SlideSubmission.objects.get(session = session)
+        test_file = BytesIO(b'this is not really a slide, but it is third version of it')
+        test_file.name = 'not_really.txt'
+        r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
+        self.assertEqual(r.status_code, 302)
+        self.client.logout()       
 
-        approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
+        (first_submission, second_submission) = SlideSubmission.objects.filter(session=session).order_by('id')
+
+        approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':second_submission.pk,'num':second_submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, approve_url)
         r = self.client.post(approve_url,dict(title=submission.title,approve='approve'))
         self.assertEqual(r.status_code,302)
+
+        disapprove_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':first_submission.pk,'num':first_submission.session.meeting.number})
+        r = self.client.post(disapprove_url,dict(title='some title',disapprove="disapprove"))
+        self.assertEqual(r.status_code,302)
         self.client.logout()
 
+        self.assertEqual(SlideSubmission.objects.count(),0)
         self.assertEqual(session.sessionpresentation_set.first().document.rev,'01')
         path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
         filename = os.path.join(path,session.sessionpresentation_set.first().document.name+'-01.txt')
         self.assertTrue(os.path.exists(filename))
         contents = open(filename,'r').read()
-        self.assertIn('another version', contents)
+        self.assertIn('third version', contents)
 
 
 class SessionTests(TestCase):

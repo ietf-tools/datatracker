@@ -1580,6 +1580,9 @@ def propose_session_slides(request, session_id, num):
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
             title = form.cleaned_data['title']
+
+            submission = SlideSubmission.objects.create(session = session, title = title, filename = '', apply_to_all = apply_to_all, submitter=request.user.person)
+
             if session.meeting.type_id=='ietf':
                 name = 'slides-%s-%s' % (session.meeting.number, 
                                          session.group.acronym) 
@@ -1588,15 +1591,15 @@ def propose_session_slides(request, session_id, num):
             else:
                 name = 'slides-%s-%s' % (session.meeting.number, session.docname_token())
             name = name + '-' + slugify(title).replace('_', '-')[:128]
-            rev = '00'
-            if Document.objects.filter(name=name).exists():
-                rev ='%02s' % (int(Document.objects.get(name=name).rev) + 1)
-            filename = '%s-%s%s'% (name, rev, ext)
+            filename = '%s-ss%d%s'% (name, submission.id, ext)
             destination = io.open(os.path.join(settings.SLIDE_STAGING_PATH, filename),'wb+')
             for chunk in file.chunks():
                 destination.write(chunk)
             destination.close()
-            submission = SlideSubmission.objects.create(session = session, title = title, filename = filename, apply_to_all = apply_to_all, submitter=request.user.person)
+
+            submission.filename = filename
+            submission.save()
+
             (to, cc) = gather_address_lists('slides_proposed', group=session.group).as_strings() 
             msg_txt = render_to_string("meeting/slides_proposed.txt", {
                     "to": to,
@@ -2436,7 +2439,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
     if len(sessions) > 1:
        session_number = 1 + sessions.index(submission.session)
     name, _ = os.path.splitext(submission.filename)
-    name = name[:-3]
+    name = name[:name.rfind('-ss')]
     existing_doc = Document.objects.filter(name=name).first()
     if request.method == 'POST':
         form = ApproveSlidesForm(show_apply_to_all_checkbox, request.POST)
@@ -2480,7 +2483,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 if not os.path.exists(path):
                     os.makedirs(path)
                 sub_name, sub_ext = os.path.splitext(submission.filename)
-                target_filename = '%s-%s%s' % (sub_name[:-3],doc.rev,sub_ext)
+                target_filename = '%s-%s%s' % (sub_name[:sub_name.rfind('-ss')],doc.rev,sub_ext)
                 os.rename(submission.staged_filepath(), os.path.join(path, target_filename))
                 acronym = submission.session.group.acronym
                 submission.delete()
