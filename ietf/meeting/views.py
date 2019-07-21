@@ -14,6 +14,7 @@ import pytz
 import re
 import six
 import tarfile
+import markdown2
 
 
 from calendar import timegm
@@ -67,6 +68,7 @@ from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_announcement_request
 from ietf.meeting.utils import finalize
+from ietf.meeting.utils import sort_accept_tuple
 from ietf.message.utils import infer_message
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
@@ -210,6 +212,19 @@ def materials_document(request, document, num=None, ext=None):
     
     mtype, chset = get_mime_type(bytes)
     content_type = "%s; %s" % (mtype, chset)
+
+    file_ext = os.path.splitext(filename)
+    if len(file_ext) == 2 and file_ext[1] == '.md' and mtype == 'text/plain':
+        sorted_accept = sort_accept_tuple(request.META.get('HTTP_ACCEPT'))
+        for atype in sorted_accept:
+            if atype[0] == 'text/markdown':
+                content_type = content_type.replace('plain', 'markdown', 1)
+                break;
+            elif atype[0] == 'text/html':
+                bytes = "<html>\n<head></head>\n<body>\n%s\n</body>\n</html>\n" % markdown2.markdown(bytes)
+                content_type = content_type.replace('plain', 'html', 1)
+                break;
+
     response = HttpResponse(bytes, content_type=content_type)
     response['Content-Disposition'] = 'inline; filename="%s"' % basename
     return response

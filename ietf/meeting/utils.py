@@ -160,3 +160,21 @@ def is_nomcom_eligible(person, date=datetime.date.today()):
     is_iab = person.role_set.filter(group__acronym='iab',name_id__in=['member','chair']).exists()
     is_iaoc = person.role_set.filter(group__acronym='iaoc',name_id__in=['member','chair']).exists()
     return len(attended)>=3 and not (is_iesg or is_iab or is_iaoc)
+
+def sort_accept_tuple(accept):
+    tup = []
+    if accept:
+        accept_types = accept.split(',')
+        for at in accept_types:
+            keys = at.split(';', 1)
+            q = 1.0
+            if len(keys) != 1:
+                qlist = keys[1].split('=', 1)
+                if len(qlist) == 2:
+                    try:
+                        q = float(qlist[1])
+                    except ValueError:
+                        q = 0.0
+            tup.append((keys[0], q))
+        return sorted(tup, key = lambda x: float(x[1]), reverse = True)
+    return tup
