@@ -1840,8 +1840,9 @@ class MaterialsTests(TestCase):
             self.assertNotIn('<section>', text)
             self.assertIn('charset="utf-8"', text)
 
+            # txt upload
             test_file = BytesIO(b'This is some text for a test, with the word\nvirtual at the beginning of a line.')
-            test_file.name = "not_really.txt"
+            test_file.name = "some.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=False))
             self.assertEqual(r.status_code, 302)
             doc = session.sessionpresentation_set.filter(document__type_id=doctype).first().document
@@ -1853,7 +1854,7 @@ class MaterialsTests(TestCase):
             q = PyQuery(r.content)
             self.assertIn('Revise', six.text_type(q("Title")))
             test_file = BytesIO(b'this is some different text for a test')
-            test_file.name = "also_not_really.txt"
+            test_file.name = "also_some.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=True))
             self.assertEqual(r.status_code, 302)
             doc = Document.objects.get(pk=doc.pk)

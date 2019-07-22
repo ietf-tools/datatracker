@@ -584,8 +584,11 @@ def document_main(request, name, rev=None):
             if not url.endswith("/") and not url.endswith(extension): 
                 url = urlbase + extension 
             if extension == ".txt":
-                content = doc.text_or_error()      # pyflakes:ignore
+                content = doc.text_or_error()
                 t = "plain text"
+            elif extension == ".md":
+                content = doc.text_or_error()
+                t = "markdown"
             other_types.append((t, url))
 
         return render(request, "doc/document_material.html",

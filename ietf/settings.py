@@ -814,18 +814,24 @@ MEETING_VALID_UPLOAD_EXTENSIONS = {
 }
     
 MEETING_VALID_UPLOAD_MIME_TYPES = {
-    'agenda':       ['text/plain', 'text/html', ],
-    'minutes':      ['text/plain', 'text/html', 'application/pdf', ],
+    'agenda':       ['text/plain', 'text/html', 'text/markdown', ],
+    'minutes':      ['text/plain', 'text/html', 'application/pdf', 'text/markdown', ],
     'slides':       [],
     'bluesheets':   ['application/pdf', 'text/plain', ],
 }
 
 MEETING_VALID_MIME_TYPE_EXTENSIONS = {
     'text/plain':   ['.txt', '.md', ],
+    'text/markdown': ['.txt', '.md', ],
     'text/html':    ['.html', '.htm'],
     'application/pdf': ['.pdf'],
 }
 
+MEETING_VALID_UPLOAD_MIME_FOR_OBSERVED_MIME = {
+    'text/plain':   ['text/plain', 'text/markdown', ],
+    'text/html':    ['text/html', ],
+    'application/pdf': ['application/pdf', ],
+}
 
 INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 
