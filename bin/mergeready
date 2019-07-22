@@ -72,7 +72,7 @@ if len(sys.argv) < 1:
 
 try:
     opts, files = getopt.gnu_getopt(sys.argv[1:], "hvV", ["help", "version","verbose",])
-except Exception, e:
+except Exception as e:
     print( "%s: %s" % (program, e))
     sys.exit(1)
 
@@ -153,7 +153,7 @@ def split_loginfo(line):
 
 # Get repository information
 svn_info = {}
-for line in pipe('svn info .').splitlines():
+for line in pipe('svn info .').decode('utf-8').splitlines():
     if line:
         key, value = line.strip().split(':', 1)
         svn_info[key] = value.strip()
@@ -179,7 +179,7 @@ merged_revs = {}
 write_cache = False
 loginfo_format = r'^r[0-9]+ \| [^@]+@[^@]+ \| \d\d\d\d-\d\d-\d\d '
 note("Getting svn:mergeinfo for current branch")
-for line in pipe('svn propget svn:mergeinfo .').splitlines():
+for line in pipe('svn propget svn:mergeinfo .').decode('utf-8').splitlines():
     if opt_verbose:
         sys.stderr.write('.')
     if line in mergeinfo:
