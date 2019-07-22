@@ -225,7 +225,7 @@ class SubmissionBaseUploadForm(forms.Form):
             txt_file.seek(0)
             try:
                 text = bytes.decode(self.parsed_info.charset)
-            except UnicodeDecodeError as e:
+            except (UnicodeDecodeError, LookupError) as e:
                 raise forms.ValidationError('Failed decoding the uploaded file: "%s"' % str(e))
             #
             self.parsed_draft = Draft(text, txt_file.name)
