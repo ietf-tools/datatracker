@@ -46,7 +46,7 @@ quoted=r'"(?:\\[^\r\n]|[^\\"])*"'
 local="(?:"  +  dot_atom  +  "|"  +  quoted  +  ")"
 domain_lit=r"\[(?:\\\S|[\x21-\x5a\x5e-\x7e])*\]"
 domain="(?:"  +  dot_atom  +  "|"  +  domain_lit  +  ")"
-addr_spec=local  +  "\@"  +  domain
+addr_spec=local  +  "@"  +  domain
 # and the result
 email_address_re=re.compile('^'+addr_spec+'$')
 
