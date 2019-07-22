@@ -165,7 +165,7 @@ def copy_email(msg, to, toUser=False, originalBcc=None):
     # Overwrite the From: header, so that the copy from a development or
     # test server doesn't look like spam.
     new['From'] = settings.DEFAULT_FROM_EMAIL
-    new['Subject'] = '[Django %s] %s' % (settings.SERVER_MODE, msg.get('Subject', '[no subject]'))
+    new['Subject'] = '[Django %s] %s' % (settings.SERVER_MODE, force_text(msg.get('Subject', '[no subject]')))
     new['To'] = to
     send_smtp(new)
 
