@@ -267,7 +267,7 @@ class CoverageReporter(Reporter):
                 analysis = self.coverage._analyze(fr)
                 nums = analysis.numbers
                 missing_nums = sorted(analysis.missing)
-                with io.open(analysis.filename) as file:
+                with io.open(analysis.filename, encoding='utf-8') as file:
                     lines = file.read().splitlines()
                 missing_lines = [ lines[l-1] for l in missing_nums ]
                 result["covered"][fr.relative_filename()] = (nums.n_statements, nums.pc_covered/100.0, missing_nums, missing_lines)
