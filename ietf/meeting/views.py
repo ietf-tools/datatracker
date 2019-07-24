@@ -2425,7 +2425,8 @@ class ApproveSlidesForm(forms.Form):
         super(ApproveSlidesForm, self).__init__(*args, **kwargs )
         if not show_apply_to_all_checkbox:
             self.fields.pop('apply_to_all')
-
+            
+@login_required
 def approve_proposed_slides(request, slidesubmission_id, num):
     submission = get_object_or_404(SlideSubmission,pk=slidesubmission_id)
     if not submission.session.can_manage_materials(request.user):
