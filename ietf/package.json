@@ -1,0 +1,31 @@
+{
+  "name": "datatracker",
+  "version": "6.99.0",
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "svn",
+    "url": "https://svn.tools.ietf.org/svn/tools/ietfdb/"
+  },
+  "dependencies": {
+    "bootstrap-datepicker": "eternicode/bootstrap-datepicker#~1",
+    "d3": "d3/d3#~4",
+    "font-awesome": "FortAwesome/Font-Awesome#~4",
+    "fullcalendar": "fullcalendar/fullcalendar#~4",
+    "highcharts": "highcharts/highcharts-dist#~6",
+    "html5shiv": "aFarkas/html5shiv#~3",
+    "jquery": "jquery/jquery-dist#~1",
+    "jquery.cookie": "carhartl/jquery-cookie#~1",
+    "jquery.tablesorter": "Mottie/tablesorter#~2",
+    "respond": "scottjehl/Respond#~1",
+    "select2": "ivaynberg/select2#~3",
+    "select2-bootstrap-css": "t0m/select2-bootstrap-css#~1",
+    "spin.js": "fgnass/spin.js#~2",
+    "zxcvbn": "dropbox/zxcvbn/dist#~4"
+  },
+  "engines": {
+    "yarn": ">= 1.0.0"
+  },
+  "scripts": {
+    "postinstall": "node -e \"try { require('fs').symlinkSync(require('path').resolve('node_modules/@externals/static'), 'externals/static', 'junction') } catch (e) { }\""
+  }
+}
