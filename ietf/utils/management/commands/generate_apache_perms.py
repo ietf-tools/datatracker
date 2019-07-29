@@ -1,4 +1,4 @@
-# Copyright 2016 IETF Trust
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 
 import sys
 
@@ -54,6 +54,10 @@ class Command(BaseCommand):
                 for role in Role.objects.filter(**kwargs).distinct():
                     if role.group.state_id in ['active', 'bof'] and role.person.user:
                         login = role.person.user.username.lower()
+                        if not login in seen:
+                            seen.add(login)
+                            self.stdout.write("Require user %s\n" % login)
+                        login = role.person.user.username
                         if not login in seen:
                             seen.add(login)
                             self.stdout.write("Require user %s\n" % login)
