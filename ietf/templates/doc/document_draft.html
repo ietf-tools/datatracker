@@ -571,7 +571,7 @@
           <span class="fa fa-search"></span> Search lists <span class="caret"></span>
       </button>
       <ul class="dropdown-menu" role="menu">
-        <li role="presentation"><a role="menuitem" href="https://mailarchive.ietf.org/arch/search?q={{ doc.name }}" rel="nofollow" target="_blank">IETF Mail Archive</a></li>
+        <li role="presentation"><a role="menuitem" href="https://mailarchive.ietf.org/arch/search?q=%22{{ doc.name }}%22" rel="nofollow" target="_blank">IETF Mail Archive</a></li>
         <li role="presentation"><a role="menuitem" href="https://www.google.com/search?as_q={{ doc.name }}&amp;as_sitesearch={{ search_archive }}" rel="nofollow" target="_blank">Google</a></li>
         {% if user|has_role:"Area Director" %}
           <li role="presentation"><a role="menuitem" href="https://www.iesg.org/bin/c5i?mid=6&amp;rid=77&amp;target={{ doc.name }}" rel="nofollow" target="_blank">ARO</a> </li>
