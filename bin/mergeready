@@ -335,6 +335,11 @@ for entry in ready:
             ready_commits[when] = output_line
         else:
             not_passed[when] = output_line
+
+hold_revs = {}
+for rev, repo, branch in hold:
+    hold_revs[rev] = branch
+
 unmerged_branch_commits = {}
 for branch in branches:
     note("Fetching commit information for branch %s" % branch)
@@ -350,7 +355,7 @@ for branch in branches:
             if not ' (from ' in line and not mod:
                 mod = True
         elif re.search('^-{72}$', line) and rev and mod:
-            if not rev in merged_revs:
+            if not rev in merged_revs and not rev in hold_revs:
                 commits.append(rev)
             rev = None
             mod = False

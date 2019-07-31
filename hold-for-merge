@@ -1,8 +1,9 @@
 # -*- conf-mode -*-
 
 /personal/pusateri/6.99.2.dev0@16564	# Code review found an issue
-/personal/rjs/6.99.2.dev0@16583		# internal branch fixup
-/personal/rjs/6.99.2.dev0@16569		# internal branch fixup
+/personal/rjs/6.99.2.dev0@16581		# internal branch fixup
+/personal/rjs/6.99.2.dev0@16579		# internal branch fixup
+/personal/rjs/6.99.2.dev0@16568		# internal branch fixup
 /personal/rcross/6.81.3.dev0@15262	# Secretariat admin access to Document has drawbacks
 /personal/sbirkholz/mtgreg3@14074	# reviewed with issues; feedback sent
 /personal/sbirkholz/meeting_registration@13969 # manual branch merge
