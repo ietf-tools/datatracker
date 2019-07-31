@@ -960,3 +960,14 @@ blockquote {
   margin-bottom: 1.5em;
 }
 
+/* === Fullcalendar================================================ */
+
+a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
+	background-color: #9772ff;	/* light primary colour from the palette */
+	border-color: #9772ff;
+}
+
+.fc-button {
+  /* same as button-primary */
+  background-image: linear-gradient(rgb(107, 91, 173) 0px, rgb(80, 68, 135) 100%)    
+}

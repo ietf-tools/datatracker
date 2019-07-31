@@ -2085,6 +2085,10 @@ def upcoming(request):
 
         p.group_list.sort(key=lambda g: g.acronym)
 
+    meetings = list(meetings)
+    for m in meetings:
+        m.end = m.date+datetime.timedelta(days=m.days)
+
     # add menu entries
     menu_entries = get_menu_entries(request)
     selected_menu_entry = 'upcoming'

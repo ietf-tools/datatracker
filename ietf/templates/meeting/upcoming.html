@@ -6,6 +6,9 @@
 
 {% block pagehead %}
 <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+<link rel="stylesheet" href="{% static "fullcalendar/core/main.css" %}">
+<link rel="stylesheet" href="{% static "fullcalendar/daygrid/main.css" %}">
+
 {% endblock %}
 
 {% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
@@ -139,9 +142,55 @@
 
     </div>
   </div>
+  <div id="calendar" style="width:60%; margin:auto;"></div>
 {% endblock %}
 
 {% block js %}
 <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 <script src="{% static 'ietf/js/toggle-visibility.js' %}"></script>
+<script src="{% static 'fullcalendar/core/main.js' %}"></script>
+<script src="{% static 'fullcalendar/daygrid/main.js' %}"></script>
+    <script>
+
+      document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+          aspectRatio: 1.35,
+          plugins: [ 'dayGrid' ],
+          events: [
+          {% for meeting in meetings %}
+            {% if meeting.type_id == 'ietf' %}
+              {
+                title: 'IETF - {{ meeting.number }}',
+                start: '{{meeting.date}}',
+                end: '{{meeting.end}}',
+                url: '{% url 'ietf.meeting.views.agenda' num=meeting.number %}'
+              }{% if not forloop.last %}, {% endif %}
+            {% else %}
+              {% for session in meeting.session_set.all %}
+                {% for tsa in session.timeslotassignments.all %}
+                  {
+                    title: '{{session.group.acronym}} - {{tsa.timeslot.time|date:"H:i"}} {{meeting.time_zone}}',
+                    start: '{{meeting.date}}',
+                    end: '{{meeting.end}}',
+                    url: '{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=session.group.acronym %}'
+                  }{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+                {% if not forloop.last %}, {% endif %}
+              {% endfor %}
+              {% if not forloop.last %}, {% endif %}
+            {% endif %}
+          {% endfor %}
+          ],
+          eventRender: function(info) {
+            $(info.el).tooltip({title: info.event.title});             
+          },
+          timeFormat: 'H:mm',
+        });
+
+        calendar.render();
+      });
+
+    </script>
 {% endblock %}
