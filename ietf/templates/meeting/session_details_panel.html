@@ -27,14 +27,10 @@
         <table class="table table-condensed table-striped">
           {% for pres in session.filtered_artifacts %}
             <tr>
-              {% if pres.rev %}
-                {% url 'ietf.doc.views_doc.document_main' name=pres.document.name rev=pres.rev as url %}
-              {% else %}
-                {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
-              {% endif %}
+              {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
               <td>
                 <a href="{{pres.document.href}}">{{pres.document.title}}</a>
-                <a href="{{url}}">({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})</a>
+                <a href="{{url}}">({{ pres.document.name }})</a>
               </td>
               {% if user|has_role:"Secretariat" or can_manage_materials %}
                 <td class="col-md-2">
@@ -73,14 +69,10 @@
          <tbody>
           {% for pres in session.filtered_slides %}
             <tr data-order="{{pres.order}}" data-url="{% url 'ietf.meeting.views.set_slide_order' session_id=session.pk num=session.meeting.number name=pres.document.name %}">
-              {% if pres.rev %}
-                {% url 'ietf.doc.views_doc.document_main' name=pres.document.name rev=pres.rev as url %}
-              {% else %}
-                {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
-              {% endif %}
+              {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
               <td>
                 <a href="{{pres.document.href}}">{{pres.document.title}} </a>
-                <a href="{{url}}">({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %}) </a>
+                <a href="{{url}}">({{ pres.document.name }}) </a>
               </td>
               {% if can_manage_materials %}
                 <td class="col-md-2">
@@ -110,12 +102,8 @@
           {% for pres in session.filtered_drafts %}
             <tr>
               <td>
-                {% if pres.rev %}
-                  {% url 'ietf.doc.views_doc.document_main' name=pres.document.name rev=pres.rev as url %}
-                {% else %}
-                  {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
-                {% endif %}
-                <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})</a>
+                {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
+                <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}) {% if pres.rev %}Version {{pres.rev}}{% endif %}</a>
               </td>
               {% if can_manage_materials %}
                 <td class="col-md-2">
