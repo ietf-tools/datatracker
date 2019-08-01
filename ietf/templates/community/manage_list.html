@@ -33,7 +33,7 @@
           <tr>
             <td>{{ d.name }}</td>
             <td>
-              <form method="post">
+              <form method="post" id="remove_document_{{d.pk}}">
                 {% csrf_token %}
                 <input type="hidden" name="document" value="{{ d.pk }}">
                 <button class="btn btn-danger btn-xs" name="action" value="remove_document">Remove</button>
@@ -55,7 +55,7 @@
     <p>You can also add documents here:</p>
   {% endif %}
 
-  <form class="form add-document" method="post">
+  <form class="form add-document" method="post" id="add_document">
     {% csrf_token %}
     {% bootstrap_field add_doc_form.documents show_label=False %}
     <button class="btn btn-primary" name="action" value="add_documents">Add documents</button>

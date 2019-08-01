@@ -9,6 +9,8 @@ from pyquery import PyQuery
 from django.urls import reverse as urlreverse
 from django.contrib.auth.models import User
 
+from django_webtest import WebTest
+
 import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList, SearchRule, EmailSubscription
@@ -20,13 +22,13 @@ from ietf.group.utils import setup_default_community_list_for_group
 from ietf.doc.models import State
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person, Email
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase
+from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.mail import outbox
 from ietf.doc.factories import WgDraftFactory
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.person.factories import PersonFactory
 
-class CommunityListTests(TestCase):
+class CommunityListTests(WebTest):
     def test_rule_matching(self):
         plain = PersonFactory(user__username='plain')
         ad = Person.objects.get(user__username='ad')
@@ -108,25 +110,29 @@ class CommunityListTests(TestCase):
         url = urlreverse(ietf.community.views.manage_list, kwargs={ "username": "plain" })
         login_testing_unauthorized(self, "plain", url)
 
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        page = self.app.get(url, user='plain')
+        self.assertEqual(page.status_int, 200)
 
         # add document
-        r = self.client.post(url, { "action": "add_documents", "documents": draft.pk })
-        self.assertEqual(r.status_code, 302)
+        self.assertIn('add_document', page.forms)
+        form = page.forms['add_document']
+        form['documents']=draft.pk
+        page = form.submit('action',value='add_documents')
+        self.assertEqual(page.status_int, 302)
         clist = CommunityList.objects.get(user__username="plain")
-        self.assertTrue(clist.added_docs.filter(pk=draft.pk))
+        self.assertTrue(clist.added_docs.filter(pk=draft.pk))        
+        page = page.follow()
 
-        # document shows up on GET
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, draft.name)
+        self.assertContains(page, draft.name)
 
         # remove document
-        r = self.client.post(url, { "action": "remove_document", "document": draft.pk })
-        self.assertEqual(r.status_code, 302)
+        self.assertIn('remove_document_%s' % draft.pk, page.forms)
+        form = page.forms['remove_document_%s' % draft.pk]
+        page = form.submit('action',value='remove_document')
+        self.assertEqual(page.status_int, 302)
         clist = CommunityList.objects.get(user__username="plain")
         self.assertTrue(not clist.added_docs.filter(pk=draft.pk))
+        page = page.follow()
         
         # add rule
         r = self.client.post(url, {
