@@ -67,9 +67,9 @@ def manage_list(request, username=None, acronym=None, group_type=None):
         add_doc_form = AddDocumentsForm()
 
     if request.method == 'POST' and action == 'remove_document':
-        document_name = request.POST.get('document')
-        if clist.pk is not None and document_name:
-            document = get_object_or_404(clist.added_docs, name=document_name)
+        document_id = request.POST.get('document')
+        if clist.pk is not None and document_id:
+            document = get_object_or_404(clist.added_docs, id=document_id)
             clist.added_docs.remove(document)
 
             return HttpResponseRedirect("")

@@ -123,7 +123,7 @@ class CommunityListTests(TestCase):
         self.assertContains(r, draft.name)
 
         # remove document
-        r = self.client.post(url, { "action": "remove_document", "document": draft.name })
+        r = self.client.post(url, { "action": "remove_document", "document": draft.pk })
         self.assertEqual(r.status_code, 302)
         clist = CommunityList.objects.get(user__username="plain")
         self.assertTrue(not clist.added_docs.filter(pk=draft.pk))
