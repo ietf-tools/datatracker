@@ -33,7 +33,7 @@
                       {% for slide in item.session.slides %}
                         <li>
                           <span class="fa-li fa fa-file-{{slide.file_extension|lower}}-o"></span>
-                          <a href="{{ slide.href }}">{{ slide.title|clean_whitespace }}</a>
+                          <a href="{{ slide.gref }}">{{ slide.title|clean_whitespace }}</a>
                         </li>
                       {% endfor %}
                     </ul>
