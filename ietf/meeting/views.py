@@ -1089,7 +1089,8 @@ def session_details(request, num, acronym ):
         else:
             session.time = session.status.name
 
-        session.filtered_artifacts = session.sessionpresentation_set.filter(document__type__slug__in=['agenda','minutes','bluesheets'])
+        session.filtered_artifacts = list(session.sessionpresentation_set.filter(document__type__slug__in=['agenda','minutes','bluesheets']))
+        session.filtered_artifacts.sort(key=lambda d:['agenda','minutes','bluesheets'].index(d.document.type.slug))
         session.filtered_slides    = session.sessionpresentation_set.filter(document__type__slug='slides').order_by('order')
         session.filtered_drafts    = session.sessionpresentation_set.filter(document__type__slug='draft')
         # TODO FIXME Deleted materials shouldn't be in the sessionpresentation_set
