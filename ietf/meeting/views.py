@@ -1043,9 +1043,9 @@ def json_agenda(request, num=None ):
 
 def meeting_requests(request, num=None):
     meeting = get_meeting(num)
-    sessions = Session.objects.filter(meeting__number=meeting.number, type__slug='session', group__parent__isnull = False).exclude(requested_by=0).order_by("group__parent__acronym","status__slug","group__acronym")
+    sessions = Session.objects.filter(meeting__number=meeting.number, type__slug='session', group__parent__isnull = False).exclude(requested_by=0).order_by("group__parent__acronym","status__slug","group__acronym").prefetch_related("group","group__ad_role__person","requested_by")
 
-    groups_not_meeting = Group.objects.filter(state='Active',type__in=['wg','rg','ag','bof']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym")
+    groups_not_meeting = Group.objects.filter(state='Active',type__in=['wg','rg','ag','bof']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym").prefetch_related("parent")
 
     return render(request, "meeting/requests.html",
         {"meeting": meeting, "sessions":sessions,

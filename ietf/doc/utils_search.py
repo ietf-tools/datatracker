@@ -94,16 +94,22 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
             d.latest_revision_date = d.time
 
         if d.type_id == "draft":
-            if d.get_state_slug() == "rfc":
+            state_slug = d.get_state_slug()
+            if state_slug == "rfc":
                 d.search_heading = "RFC"
-            elif d.get_state_slug() in ("ietf-rm", "auth-rm"):
+                d.expirable = False
+            elif state_slug in ("ietf-rm", "auth-rm"):
                 d.search_heading = "Withdrawn Internet-Draft"
+                d.expirable = False
             else:
                 d.search_heading = "%s Internet-Draft" % d.get_state()
+                if state_slug == "active":
+                    d.expirable = expirable_draft(d)
+                else:
+                    d.expirable = False
         else:
-            d.search_heading = "%s" % (d.type,);
-
-        d.expirable = expirable_draft(d)
+            d.search_heading = "%s" % (d.type,)
+            d.expirable = False
 
         if d.get_state_slug() != "rfc":
             d.milestones = [ m for (t, s, v, m) in sorted(((m.time, m.state.slug, m.desc, m) for m in d.groupmilestone_set.all() if m.state_id == "active")) ]
@@ -144,16 +150,16 @@ def prepare_document_table(request, docs, query=None, max_results=200):
     displaying a full table of information about the documents, plus
     dict with information about the columns."""
 
+    if docs.count() > max_results:
+        docs = docs[:max_results]
+
     if not isinstance(docs, list):
         # evaluate and fill in attribute results immediately to decrease
         # the number of queries
         docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream", "shepherd", )
         docs = docs.prefetch_related("states__type", "tags", "groupmilestone_set__group", "reviewrequest_set__team",
                                      "submission_set__checks", "ad__email_set", "docalias__iprdocrel_set")
-
-    if docs.count() > max_results:
-        docs = docs[:max_results]
-    docs = list(docs)
+        docs = list(docs)
 
     fill_in_document_table_attributes(docs)
     augment_docs_with_tracking_info(docs, request.user)
