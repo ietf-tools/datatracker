@@ -1,3 +1,107 @@
+ietfdb (6.100.0) ietf; urgency=medium
+
+  **IETF 104 code sprint**
+
+  This release contains datatracker bug fixes and enhancements from the
+  IETF-105 Code Sprint.  This sprint saw several participants diving deeper
+  into the datatracker than before, accomplishing substantial tasks.  Thanks
+  to everyone who contributed!
+
+  Notable improvements: 
+
+  The document list pages produced by searches, group document pages, and
+  similar has been speeded up by a factor of more than 2 by doing detailed
+  timing measurements and one by one addressing the biggest time sinks.  A
+  number of places where links to session slides were versioned have been
+  changed so as to always point to the latest version.  A calendar display
+  component has been added, making it straightforward to display for instance
+  calendar pages for upcoming meetings.  Ability to handle markdown uploads
+  and on-the-fly conversion for agendas and minutes has been added, as well as
+  the ability to provide WG closing notes, sent out in announcement and saved
+  for posterity on the group history page.  The recently introduced Slide
+  proposal feature has been made more solid, as has the Python 2 / Python 3
+  compatibility.
+
+  Additional information, excerpted from the commit log:
+
+  * Merged in [16593] from rjsparks@nostrum.com:
+    Added sorting of the documents in the agenda, minutes, bluesheets section
+    of the session_details view. Fixes #2759.  
+
+  * Merged in [16592] from rjsparks@nostrum.com:
+    Changed how the session details page links to documents to not link to a
+    specific version. Fixes #2758. See also #2756.  
+
+  * Merged in [16590] from rjsparks@nostrum.com:
+    Example of using webtest. The full testcase was not converted because the
+    add_rule form is modified in-flight by javascript when a control value is
+    changed.  
+
+  * Merged in [16583] from rjsparks@nostrum.com:
+    Restored the ability to remove documents while managing a personal list.
+    Required updating code to match the recent change to Document's primary
+    key. Fixes #2757.  
+
+  * Merged in [16569] from rjsparks@nostrum.com:
+    Added quotes around document name in the mailarchive search link on a 
+    document's main page. Fixes #2659.  
+
+  * Merged in [16589] from rjsparks@nostrum.com:
+    Added a calendar to the upcoming meetings page. Fixes #2719.  
+
+  * Prevent login name case issues by generating apache permissions file
+    entries for both uppercase and lowercase logins.
+
+  * Added a Py3 version of requirements.txt, excluding Trac which is still
+    only available under Py2.7
+
+  * Did some preliminary work on converting bower management of web resources
+    to yarn.  New management command, replacing bower_install will be needed.
+
+  * Merged in [16562] from rcross@amsl.com:
+    Added encoding='utf-8' parameter to io.open operations in tests that 
+    starting failing since adding unicode_literals.   
+
+  * Merged in [16561] from rjsparks@nostrum.com:
+    Added a prompt for login for approving slide suggestions instead of just 
+    presenting an error. Fixes #2750.  
+
+  * Merged in [16559] from fenton@bluepopcorn.net:
+    Added Closing Notes to history and about pages for groups. Fixes issue
+    #2725.  
+
+  * Merged in [16558] from rjsparks@nostrum.com:
+    Made removed IPR disclosures visually distinctive on search results. 
+    Partially addresses #2687.  
+
+  * Merged in [16557] from pusateri@bangj.com:
+    Added the ability to upload agenda and minutes in markdown format.
+    Partially addresses issue #1926.  We're still displaying markdown as text.
+    Fixes #2704.
+
+  * Fixed a number of additional Py2/3 compatibility issues.
+
+  * Added LookupError to the exceptions caught during text upload decoding, 
+    leading to upload form validation error.
+
+  * Merged in [16554] from rjsparks@nostrum.com:
+    Rework how SlideSuggestion objects name their files. Improve the UI 
+    when there are multiple pending suggestions for updating the same 
+    presentation.  
+
+  * Moved djangobwr into the local repository, due to consistent 
+    difficulties pulling it from github as an svn:external
+
+  * Enabled display of group pages also for groups of type adhoc and ise.
+
+  * Updated the PLAN to adjust priority on modeling BCPs correctly
+
+  * Added another check before building submitter email for mailtrigger 
+    entries, to ensure valid email addresses.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Aug 2019 16:52:21 +0000
+
+
 ietfdb (6.99.1) ietf; urgency=medium
 
   This bugfix release contains a number of fixes for issues with the big
