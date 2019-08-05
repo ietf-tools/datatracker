@@ -1,4 +1,4 @@
-{% load humanize %}{% autoescape off %}{% load ietf_filters %}BEGIN:VCALENDAR
+{% load humanize %}{% autoescape off %}{% load ietf_filters %}{% load cache %}{% cache 1800 ietf_meeting_agenda_ics schedule.meeting.number request.path %}BEGIN:VCALENDAR
 VERSION:2.0
 METHOD:PUBLISH
 PRODID:-//IETF//datatracker.ietf.org ical agenda//EN
@@ -18,4 +18,4 @@ DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
   ({{material.title|ics_esc}}){% endif %}:
   {{material.gref}}\n{% endfor %}
 {% endif %}END:VEVENT
-{% endif %}{% endfor %}END:VCALENDAR{% endautoescape %}
+{% endif %}{% endfor %}END:VCALENDAR{% endcache %}{% endautoescape %}
