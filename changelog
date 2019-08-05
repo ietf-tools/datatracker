@@ -99,7 +99,7 @@ ietfdb (6.100.0) ietf; urgency=medium
   * Added another check before building submitter email for mailtrigger 
     entries, to ensure valid email addresses.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  03 Aug 2019 16:52:21 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Aug 2019 16:43:03 +0000
 
 
 ietfdb (6.99.1) ietf; urgency=medium
