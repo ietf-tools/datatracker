@@ -7,8 +7,10 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Transition to Python 3.  This will make it easier to add add support for
-  internationalsed email, and also other i18n enhancements.
+* Complete the transition to Python 3.  This will make it easier to add add
+  support for internationalsed email, and also other i18n enhancements.  The
+  code has now been made Python 2 / Python 3 compatible (as of release 6.99.0,
+  16 July 2019), but has not been deployed under Python 3 yet.
 
 * Change the draft submission form so that an email address is required for
   each author in order to complete self-service draft submission.  Missing
