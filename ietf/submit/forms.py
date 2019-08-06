@@ -63,6 +63,7 @@ class SubmissionBaseUploadForm(forms.Form):
         self.authors = []
         self.parsed_draft = None
         self.file_types = []
+        self.file_info = {}             # indexed by file field name, e.g., 'txt', 'xml', ...
         # No code currently (14 Sep 2017) uses this class directly; it is
         # only used through its subclasses.  The two assignments below are
         # set to trigger an exception if it is used directly only to make
@@ -117,9 +118,9 @@ class SubmissionBaseUploadForm(forms.Form):
         if not f:
             return f
 
-        self.parsed_info = parser_class(f).critical_parse()
-        if self.parsed_info.errors:
-            raise forms.ValidationError(self.parsed_info.errors)
+        self.file_info[field_name] = parser_class(f).critical_parse()
+        if self.file_info[field_name].errors:
+            raise forms.ValidationError(self.file_info[field_name].errors)
 
         return f
 
@@ -224,7 +225,7 @@ class SubmissionBaseUploadForm(forms.Form):
             bytes = txt_file.read()
             txt_file.seek(0)
             try:
-                text = bytes.decode(self.parsed_info.charset)
+                text = bytes.decode(self.file_info['txt'].charset)
             except (UnicodeDecodeError, LookupError) as e:
                 raise forms.ValidationError('Failed decoding the uploaded file: "%s"' % str(e))
             #
