@@ -51,36 +51,39 @@ function check_third_session () {
   }
   return false;
 }
-function handleconflictfield (val) {
-  if (val==1) {
-    if (document.form_post.conflict1.value.length > 0) {
-       document.form_post.conflict2.disabled=false;
-       if (document.form_post.conflict2.value.length > 0) {
-         document.form_post.conflict3.disabled=false;
-       }
-       return 1;
-    } else {
-       if (document.form_post.conflict2.value.length > 0 || document.form_post.conflict3.value.length > 0) {
-         alert("Second and Third Conflicts to Avoid fields are being disabled");
-         document.form_post.conflict2.disabled=true;   
-         document.form_post.conflict3.disabled=true;   
-         return 0;
-       }
-    }
-  } else {
-    if (document.form_post.conflict2.value.length > 0) {
-       document.form_post.conflict3.disabled=false;
-       return 1;
-    } else {
-       if (document.form_post.conflict3.value.length > 0) {
-         alert("Third Conflicts to Avoid field is being disabled");
-         document.form_post.conflict3.disabled=true;   
-         return 0;
-       }
-    }
-  }
-  return 1; 
-}
+
+// All calls to handleconflictfield are being disabled while we hack on the meaning of the three constraint fields
+// function handleconflictfield (val) {
+//   if (val==1) {
+//     if (document.form_post.conflict1.value.length > 0) {
+//        document.form_post.conflict2.disabled=false;
+//        if (document.form_post.conflict2.value.length > 0) {
+//          document.form_post.conflict3.disabled=false;
+//        }
+//        return 1;
+//     } else {
+//        if (document.form_post.conflict2.value.length > 0 || document.form_post.conflict3.value.length > 0) {
+//          alert("Second and Third Conflicts to Avoid fields are being disabled");
+//          document.form_post.conflict2.disabled=true;   
+//          document.form_post.conflict3.disabled=true;   
+//          return 0;
+//        }
+//     }
+//   } else {
+//     if (document.form_post.conflict2.value.length > 0) {
+//        document.form_post.conflict3.disabled=false;
+//        return 1;
+//     } else {
+//        if (document.form_post.conflict3.value.length > 0) {
+//          alert("Third Conflicts to Avoid field is being disabled");
+//          document.form_post.conflict3.disabled=true;   
+//          return 0;
+//        }
+//     }
+//   }
+//   return 1; 
+// }
+
 function delete_last1 () {
   var b = document.form_post.conflict1.value;
   var temp = new Array();
@@ -109,34 +112,38 @@ function delete_last3 () {
   document.form_post.wg_selector3.selectedIndex=0;
 }
 
-function check_prior_conflict(val) {
-  if (val == 2) {
-    if (document.form_post.conflict1.value=="") { 
-      alert("Please specify your First Priority prior to using this field");
-      document.form_post.conflict2.disabled=true;
-      document.form_post.conflict3.disabled=true;
-      document.form_post.wg_selector1.focus();
-      return 0;
-    }
-  }
-  else  {
-    if (document.form_post.conflict2.value=="" && document.form_post.conflict1.value=="") { 
-      alert("Please specify your First and Second Priority prior to using this field");
-      document.form_post.conflict3.disabled=true;
-      document.form_post.wg_selector1.focus();
-      return 0;
-    } else {
-       if (document.form_post.conflict2.value=="") {
-         alert("Please specify your Second Priority prior to using this field");
-         document.form_post.conflict3.disabled=true;
-         document.form_post.wg_selector2.focus();
-         return 0;
-       }
-    }
-  }
+// Not calling check_prior_confict (see ietf/secr/sreq/forms.py definition of SessionForm)
+// while we are hacking the use of the current three constraint types around. We could bring
+// this back in when we solve the general case of what constraints to use at what meeting.
+// When we do, the else should explicitly check for a value of 3.
+// function check_prior_conflict(val) {
+//   if (val == 2) {
+//     if (document.form_post.conflict1.value=="") { 
+//       alert("Please specify your First Priority prior to using this field");
+//       document.form_post.conflict2.disabled=true;
+//       document.form_post.conflict3.disabled=true;
+//       document.form_post.wg_selector1.focus();
+//       return 0;
+//     }
+//   }
+//   else  {
+//     if (document.form_post.conflict2.value=="" && document.form_post.conflict1.value=="") { 
+//       alert("Please specify your First and Second Priority prior to using this field");
+//       document.form_post.conflict3.disabled=true;
+//       document.form_post.wg_selector1.focus();
+//       return 0;
+//     } else {
+//        if (document.form_post.conflict2.value=="") {
+//          alert("Please specify your Second Priority prior to using this field");
+//          document.form_post.conflict3.disabled=true;
+//          document.form_post.wg_selector2.focus();
+//          return 0;
+//        }
+//     }
+//   }
 
-  return 1;
-}
+//   return 1;
+// }
 
 function retrieve_data () {
   document.form_post.num_session.selectedIndex = document.form_post.prev_num_session.value;

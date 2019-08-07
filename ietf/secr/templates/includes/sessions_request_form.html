@@ -24,23 +24,26 @@
                </tr>
                <tr class="bg1">
                  <td rowspan="3" valign="top" width="220">WG Sessions:<br>You may select multiple WGs within each priority</td>
-                 <td width="320">First Priority:</td>
+                 <td width="320">Chair Conflict:</td>
                  <td>{{ form.wg_selector1 }}
-                     <input type="button" value="Delete the last entry" onClick="delete_last1(); return handleconflictfield(1);"><br>
+                     {% comment %}<input type="button" value="Delete the last entry" onClick="delete_last1(); return handleconflictfield(1);"><br>{% endcomment %}
+                     <input type="button" value="Delete the last entry" onClick="delete_last1(); return 1;"><br>
                      {{ form.conflict1.errors }}{{ form.conflict1 }}
                  </td>
                </tr>
                <tr class="bg1">
-                 <td>Second Priority:</td>
+                 <td>Technology Overlap:</td>
                  <td>{{ form.wg_selector2 }}
-                     <input type="button" value="Delete the last entry" onClick="delete_last2(); return handleconflictfield(2);"><br>
+                     {% comment %}<input type="button" value="Delete the last entry" onClick="delete_last2(); return handleconflictfield(2);"><br>{% endcomment %}
+                     <input type="button" value="Delete the last entry" onClick="delete_last2(); return 1;"><br>
                      {{ form.conflict2.errors }}{{ form.conflict2 }}
                  </td>
                </tr>
                <tr class="bg1">
-                 <td>Third Priority:</td>
+                 <td>Key Participant Conflict:</td>
                  <td>{{ form.wg_selector3 }}
-                     <input type="button" value="Delete the last entry" onClick="delete_last3(); return handleconflictfield(3);"><br>
+                     {% comment %}<input type="button" value="Delete the last entry" onClick="delete_last3(); return handleconflictfield(3);"><br>{% endcomment %}
+                     <input type="button" value="Delete the last entry" onClick="delete_last3(); return 1;"><br>
                      {{ form.conflict3.errors }}{{ form.conflict3 }}
                  </td>
                </tr>

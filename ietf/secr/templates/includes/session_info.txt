@@ -8,9 +8,9 @@ Number of Sessions: {{ session.num_session }}
 Length of Session(s):  {{ session.length_session1|display_duration }}{% if session.length_session2 %}, {{ session.length_session2|display_duration }}{% endif %}{% if session.length_session3 %}, {{ session.length_session3|display_duration }}{% endif %}
 Number of Attendees: {{ session.attendees }}
 Conflicts to Avoid: 
-{% if session.conflict1 %} First Priority: {{ session.conflict1 }}{% endif %}
-{% if session.conflict2 %} Second Priority: {{ session.conflict2 }}{% endif %}
-{% if session.conflict3 %} Third Priority: {{ session.conflict3 }}{% endif %}
+{% if session.conflict1 %} Chair Conflict: {{ session.conflict1 }}{% endif %}
+{% if session.conflict2 %} Technology Overlap: {{ session.conflict2 }}{% endif %}
+{% if session.conflict3 %} Key Participant Conflict: {{ session.conflict3 }}{% endif %}
 
 
 People who must be present:
