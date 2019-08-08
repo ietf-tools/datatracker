@@ -18,6 +18,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='personalapikey',
             name='endpoint',
-            field=models.CharField(choices=[(b'/api/iesg/position', b'/api/iesg/position'), (b'/api/meeting/session/video/url', b'/api/meeting/session/video/url')], max_length=128),
+            field=models.CharField(choices=[('/api/iesg/position', '/api/iesg/position'), ('/api/meeting/session/video/url', '/api/meeting/session/video/url')], max_length=128),
         ),
     ]

@@ -19,6 +19,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='historicalgroupfeatures',
             name='agenda_type',
-            field=models.ForeignKey(blank=True, db_constraint=False, default=b'ietf', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='name.AgendaTypeName'),
+            field=models.ForeignKey(blank=True, db_constraint=False, default='ietf', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='name.AgendaTypeName'),
         ),
     ]

@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='document',
             name='intended_std_level',
-            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='name.IntendedStdLevelName', verbose_name=b'Intended standardization level'),
+            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='name.IntendedStdLevelName', verbose_name='Intended standardization level'),
         ),
         migrations.AddField(
             model_name='document',
@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='document',
             name='std_level',
-            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='name.StdLevelName', verbose_name=b'Standardization level'),
+            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='name.StdLevelName', verbose_name='Standardization level'),
         ),
         migrations.AddField(
             model_name='document',
@@ -84,7 +84,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='dochistoryauthor',
             name='email',
-            field=ietf.utils.models.ForeignKey(blank=True, help_text=b'Email address used by author for submission', null=True, on_delete=django.db.models.deletion.CASCADE, to='person.Email'),
+            field=ietf.utils.models.ForeignKey(blank=True, help_text='Email address used by author for submission', null=True, on_delete=django.db.models.deletion.CASCADE, to='person.Email'),
         ),
         migrations.AddField(
             model_name='dochistoryauthor',
@@ -94,7 +94,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='dochistory',
             name='ad',
-            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='ad_dochistory_set', to='person.Person', verbose_name=b'area director'),
+            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='ad_dochistory_set', to='person.Person', verbose_name='area director'),
         ),
         migrations.AddField(
             model_name='dochistory',
@@ -104,7 +104,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='dochistory',
             name='formal_languages',
-            field=models.ManyToManyField(blank=True, help_text=b'Formal languages used in document', to='name.FormalLanguageName'),
+            field=models.ManyToManyField(blank=True, help_text='Formal languages used in document', to='name.FormalLanguageName'),
         ),
         migrations.AddField(
             model_name='dochistory',
@@ -114,7 +114,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='dochistory',
             name='intended_std_level',
-            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='name.IntendedStdLevelName', verbose_name=b'Intended standardization level'),
+            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='name.IntendedStdLevelName', verbose_name='Intended standardization level'),
         ),
         migrations.AddField(
             model_name='dochistory',
@@ -129,7 +129,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='dochistory',
             name='std_level',
-            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='name.StdLevelName', verbose_name=b'Standardization level'),
+            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='name.StdLevelName', verbose_name='Standardization level'),
         ),
         migrations.AddField(
             model_name='dochistory',
@@ -219,7 +219,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='ballotpositiondocevent',
             name='pos',
-            field=ietf.utils.models.ForeignKey(default=b'norecord', on_delete=django.db.models.deletion.CASCADE, to='name.BallotPositionName', verbose_name=b'position'),
+            field=ietf.utils.models.ForeignKey(default='norecord', on_delete=django.db.models.deletion.CASCADE, to='name.BallotPositionName', verbose_name='position'),
         ),
         migrations.AddField(
             model_name='ballotdocevent',

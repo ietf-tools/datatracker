@@ -38,8 +38,8 @@ class Migration(migrations.Migration):
                 ('parent', ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='group.Group')),
                 ('state', ietf.utils.models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='name.GroupStateName')),
                 ('type', ietf.utils.models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='name.GroupTypeName')),
-                ('unused_states', models.ManyToManyField(blank=True, help_text=b'Document states that have been disabled for the group.', to='doc.State')),
-                ('unused_tags', models.ManyToManyField(blank=True, help_text=b'Document tags that have been disabled for the group.', to='name.DocTagName')),
+                ('unused_states', models.ManyToManyField(blank=True, help_text='Document states that have been disabled for the group.', to='doc.State')),
+                ('unused_tags', models.ManyToManyField(blank=True, help_text='Document tags that have been disabled for the group.', to='name.DocTagName')),
             ],
             options={
                 'abstract': False,
@@ -49,8 +49,8 @@ class Migration(migrations.Migration):
             name='GroupEvent',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('time', models.DateTimeField(default=datetime.datetime.now, help_text=b'When the event happened')),
-                ('type', models.CharField(choices=[(b'changed_state', b'Changed state'), (b'added_comment', b'Added comment'), (b'info_changed', b'Changed metadata'), (b'requested_close', b'Requested closing group'), (b'changed_milestone', b'Changed milestone'), (b'sent_notification', b'Sent notification'), (b'status_update', b'Status update')], max_length=50)),
+                ('time', models.DateTimeField(default=datetime.datetime.now, help_text='When the event happened')),
+                ('type', models.CharField(choices=[('changed_state', 'Changed state'), ('added_comment', 'Added comment'), ('info_changed', 'Changed metadata'), ('requested_close', 'Requested closing group'), ('changed_milestone', 'Changed milestone'), ('sent_notification', 'Sent notification'), ('status_update', 'Status update')], max_length=50)),
                 ('desc', models.TextField()),
             ],
             options={
@@ -73,8 +73,8 @@ class Migration(migrations.Migration):
                 ('parent', ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='group.Group')),
                 ('state', ietf.utils.models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='name.GroupStateName')),
                 ('type', ietf.utils.models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='name.GroupTypeName')),
-                ('unused_states', models.ManyToManyField(blank=True, help_text=b'Document states that have been disabled for the group.', to='doc.State')),
-                ('unused_tags', models.ManyToManyField(blank=True, help_text=b'Document tags that have been disabled for the group.', to='name.DocTagName')),
+                ('unused_states', models.ManyToManyField(blank=True, help_text='Document states that have been disabled for the group.', to='doc.State')),
+                ('unused_tags', models.ManyToManyField(blank=True, help_text='Document tags that have been disabled for the group.', to='name.DocTagName')),
             ],
             options={
                 'verbose_name_plural': 'group histories',
@@ -84,9 +84,9 @@ class Migration(migrations.Migration):
             name='GroupMilestone',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('desc', models.CharField(max_length=500, verbose_name=b'Description')),
+                ('desc', models.CharField(max_length=500, verbose_name='Description')),
                 ('due', models.DateField()),
-                ('resolved', models.CharField(blank=True, help_text=b'Explanation of why milestone is resolved (usually "Done"), or empty if still due.', max_length=50)),
+                ('resolved', models.CharField(blank=True, help_text='Explanation of why milestone is resolved (usually "Done"), or empty if still due.', max_length=50)),
                 ('time', models.DateTimeField(auto_now=True)),
                 ('docs', models.ManyToManyField(blank=True, to='doc.Document')),
                 ('group', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='group.Group')),
@@ -101,9 +101,9 @@ class Migration(migrations.Migration):
             name='GroupMilestoneHistory',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('desc', models.CharField(max_length=500, verbose_name=b'Description')),
+                ('desc', models.CharField(max_length=500, verbose_name='Description')),
                 ('due', models.DateField()),
-                ('resolved', models.CharField(blank=True, help_text=b'Explanation of why milestone is resolved (usually "Done"), or empty if still due.', max_length=50)),
+                ('resolved', models.CharField(blank=True, help_text='Explanation of why milestone is resolved (usually "Done"), or empty if still due.', max_length=50)),
                 ('time', models.DateTimeField()),
                 ('docs', models.ManyToManyField(blank=True, to='doc.Document')),
                 ('group', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='group.Group')),
@@ -121,7 +121,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('group', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='group.Group')),
                 ('next_states', models.ManyToManyField(related_name='previous_groupstatetransitions_states', to='doc.State')),
-                ('state', ietf.utils.models.ForeignKey(help_text=b'State for which the next states should be overridden', on_delete=django.db.models.deletion.CASCADE, to='doc.State')),
+                ('state', ietf.utils.models.ForeignKey(help_text='State for which the next states should be overridden', on_delete=django.db.models.deletion.CASCADE, to='doc.State')),
             ],
         ),
         migrations.CreateModel(
@@ -137,7 +137,7 @@ class Migration(migrations.Migration):
             name='Role',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('email', ietf.utils.models.ForeignKey(help_text=b'Email address used by person for this role.', on_delete=django.db.models.deletion.CASCADE, to='person.Email')),
+                ('email', ietf.utils.models.ForeignKey(help_text='Email address used by person for this role.', on_delete=django.db.models.deletion.CASCADE, to='person.Email')),
                 ('group', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='group.Group')),
                 ('name', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='name.RoleName')),
                 ('person', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='person.Person')),
@@ -150,7 +150,7 @@ class Migration(migrations.Migration):
             name='RoleHistory',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('email', ietf.utils.models.ForeignKey(help_text=b'Email address used by person for this role.', on_delete=django.db.models.deletion.CASCADE, to='person.Email')),
+                ('email', ietf.utils.models.ForeignKey(help_text='Email address used by person for this role.', on_delete=django.db.models.deletion.CASCADE, to='person.Email')),
                 ('group', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='group.GroupHistory')),
                 ('name', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='name.RoleName')),
                 ('person', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='person.Person')),

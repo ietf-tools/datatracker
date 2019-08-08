@@ -18,11 +18,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='meeting',
             name='agenda_info_note',
-            field=models.TextField(blank=True, help_text=b'Text in this field will be placed at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.'),
+            field=models.TextField(blank=True, help_text='Text in this field will be placed at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.'),
         ),
         migrations.AlterField(
             model_name='meeting',
             name='agenda_warning_note',
-            field=models.TextField(blank=True, help_text=b'Text in this field will be placed more prominently at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.'),
+            field=models.TextField(blank=True, help_text='Text in this field will be placed more prominently at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.'),
         ),
     ]

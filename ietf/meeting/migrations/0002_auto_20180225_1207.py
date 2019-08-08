@@ -38,6 +38,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='floorplan',
             name='short',
-            field=models.CharField(default=b'', max_length=3),
+            field=models.CharField(default='', max_length=3),
         ),
     ]

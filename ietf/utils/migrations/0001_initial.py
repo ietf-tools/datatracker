@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('date', models.DateTimeField()),
                 ('host', models.CharField(max_length=128)),
-                ('tz', models.CharField(default=b'UTC', max_length=32)),
+                ('tz', models.CharField(default='UTC', max_length=32)),
             ],
         ),
         migrations.CreateModel(

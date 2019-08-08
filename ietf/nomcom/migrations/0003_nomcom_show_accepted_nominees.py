@@ -18,6 +18,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='nomcom',
             name='show_accepted_nominees',
-            field=models.BooleanField(default=True, help_text=b'Show accepted nominees on the public nomination page', verbose_name=b'Show accepted nominees'),
+            field=models.BooleanField(default=True, help_text='Show accepted nominees on the public nomination page', verbose_name='Show accepted nominees'),
         ),
     ]

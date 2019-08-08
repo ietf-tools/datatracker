@@ -35,12 +35,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='group',
             name='charter2',
-            field=ietf.utils.models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='chartered_group', to='doc.Document', to_field=b'id'),
+            field=ietf.utils.models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='chartered_group', to='doc.Document', to_field='id'),
         ),
         migrations.AlterField(
             model_name='group',
             name='charter',
-            field=ietf.utils.models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='old_group', to='doc.Document', to_field=b'name'),
+            field=ietf.utils.models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='old_group', to='doc.Document', to_field='name'),
         ),
         migrations.AddField(
             model_name='groupmilestone',

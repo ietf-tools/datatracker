@@ -21,11 +21,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='submission',
             name='draft2',
-            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='doc.Document', to_field=b'id'),
+            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='doc.Document', to_field='id'),
         ),
         migrations.AlterField(
             model_name='submission',
             name='draft',
-            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='old_submission', to='doc.Document', to_field=b'name'),
+            field=ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='old_submission', to='doc.Document', to_field='name'),
         ),
     ]

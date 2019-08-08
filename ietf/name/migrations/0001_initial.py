@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                 ('desc', models.TextField(blank=True)),
                 ('used', models.BooleanField(default=True)),
                 ('order', models.IntegerField(default=0)),
-                ('penalty', models.IntegerField(default=0, help_text=b'The penalty for violating this kind of constraint; for instance 10 (small penalty) or 10000 (large penalty)')),
+                ('penalty', models.IntegerField(default=0, help_text='The penalty for violating this kind of constraint; for instance 10 (small penalty) or 10000 (large penalty)')),
             ],
             options={
                 'ordering': ['order', 'name'],
@@ -70,7 +70,7 @@ class Migration(migrations.Migration):
                 ('desc', models.TextField(blank=True)),
                 ('used', models.BooleanField(default=True)),
                 ('order', models.IntegerField(default=0)),
-                ('in_eu', models.BooleanField(default=False, verbose_name=b'In EU')),
+                ('in_eu', models.BooleanField(default=False, verbose_name='In EU')),
                 ('continent', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='name.ContinentName')),
             ],
             options={
@@ -143,7 +143,7 @@ class Migration(migrations.Migration):
                 ('desc', models.TextField(blank=True)),
                 ('used', models.BooleanField(default=True)),
                 ('order', models.IntegerField(default=0)),
-                ('prefix', models.CharField(default=b'', max_length=16)),
+                ('prefix', models.CharField(default='', max_length=16)),
             ],
             options={
                 'ordering': ['order', 'name'],
@@ -243,7 +243,7 @@ class Migration(migrations.Migration):
                 ('desc', models.TextField(blank=True)),
                 ('used', models.BooleanField(default=True)),
                 ('order', models.IntegerField(default=0)),
-                ('verbose_name', models.CharField(default=b'', max_length=255)),
+                ('verbose_name', models.CharField(default='', max_length=255)),
             ],
             options={
                 'ordering': ['order', 'name'],

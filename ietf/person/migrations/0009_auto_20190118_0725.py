@@ -18,11 +18,11 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='email',
             name='origin',
-            field=models.CharField(help_text=b"The origin of the address: the user's email address, or 'author: DRAFTNAME' if a draft, or 'role: GROUP/ROLE' if a role.", max_length=150),
+            field=models.CharField(help_text="The origin of the address: the user's email address, or 'author: DRAFTNAME' if a draft, or 'role: GROUP/ROLE' if a role.", max_length=150),
         ),
         migrations.AlterField(
             model_name='historicalemail',
             name='origin',
-            field=models.CharField(help_text=b"The origin of the address: the user's email address, or 'author: DRAFTNAME' if a draft, or 'role: GROUP/ROLE' if a role.", max_length=150),
+            field=models.CharField(help_text="The origin of the address: the user's email address, or 'author: DRAFTNAME' if a draft, or 'role: GROUP/ROLE' if a role.", max_length=150),
         ),
     ]

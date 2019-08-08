@@ -18,6 +18,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='unavailableperiod',
             name='reason',
-            field=models.TextField(blank=True, default=b'', help_text=b"Provide (for the secretary's benefit) the reason why the review is unavailable", max_length=2048, verbose_name=b'Reason why reviewer is unavailable (Optional)'),
+            field=models.TextField(blank=True, default='', help_text="Provide (for the secretary's benefit) the reason why the review is unavailable", max_length=2048, verbose_name='Reason why reviewer is unavailable (Optional)'),
         ),
     ]

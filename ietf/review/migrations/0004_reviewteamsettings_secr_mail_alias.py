@@ -18,6 +18,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='reviewteamsettings',
             name='secr_mail_alias',
-            field=models.CharField(blank=True, help_text=b'Email alias for all of the review team secretaries', max_length=255, verbose_name=b'Email alias for all of the review team secretaries'),
+            field=models.CharField(blank=True, help_text='Email alias for all of the review team secretaries', max_length=255, verbose_name='Email alias for all of the review team secretaries'),
         ),
     ]

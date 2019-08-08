@@ -18,6 +18,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='personevent',
             name='type',
-            field=models.CharField(choices=[(b'apikey_login', b'API key login'), (b'gdpr_notice_email', b'GDPR consent request email sent'), (b'email_address_deactivated', b'Email address deactivated')], max_length=50),
+            field=models.CharField(choices=[('apikey_login', 'API key login'), ('gdpr_notice_email', 'GDPR consent request email sent'), ('email_address_deactivated', 'Email address deactivated')], max_length=50),
         ),
     ]

@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('assigned_on', models.DateTimeField(blank=True, null=True)),
                 ('completed_on', models.DateTimeField(blank=True, null=True)),
-                ('reviewed_rev', models.CharField(blank=True, max_length=16, verbose_name=b'reviewed revision')),
+                ('reviewed_rev', models.CharField(blank=True, max_length=16, verbose_name='reviewed revision')),
                 ('mailarch_url', models.URLField(blank=True, null=True)),
                 ('result', ietf.utils.models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='name.ReviewResultName')),
                 ('review', ietf.utils.models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='doc.Document')),

@@ -26,15 +26,15 @@ class Migration(migrations.Migration):
             name='EmailSubscription',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('notify_on', models.CharField(choices=[(b'all', b'All changes'), (b'significant', b'Only significant state changes')], default=b'all', max_length=30)),
+                ('notify_on', models.CharField(choices=[('all', 'All changes'), ('significant', 'Only significant state changes')], default='all', max_length=30)),
             ],
         ),
         migrations.CreateModel(
             name='SearchRule',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('rule_type', models.CharField(choices=[(b'group', b'All I-Ds associated with a particular group'), (b'area', b'All I-Ds associated with all groups in a particular Area'), (b'group_rfc', b'All RFCs associated with a particular group'), (b'area_rfc', b'All RFCs associated with all groups in a particular Area'), (b'state_iab', b'All I-Ds that are in a particular IAB state'), (b'state_iana', b'All I-Ds that are in a particular IANA state'), (b'state_iesg', b'All I-Ds that are in a particular IESG state'), (b'state_irtf', b'All I-Ds that are in a particular IRTF state'), (b'state_ise', b'All I-Ds that are in a particular ISE state'), (b'state_rfceditor', b'All I-Ds that are in a particular RFC Editor state'), (b'state_ietf', b'All I-Ds that are in a particular Working Group state'), (b'author', b'All I-Ds with a particular author'), (b'author_rfc', b'All RFCs with a particular author'), (b'ad', b'All I-Ds with a particular responsible AD'), (b'shepherd', b'All I-Ds with a particular document shepherd'), (b'name_contains', b'All I-Ds with particular text/regular expression in the name')], max_length=30)),
-                ('text', models.CharField(blank=True, default=b'', max_length=255, verbose_name=b'Text/RegExp')),
+                ('rule_type', models.CharField(choices=[('group', 'All I-Ds associated with a particular group'), ('area', 'All I-Ds associated with all groups in a particular Area'), ('group_rfc', 'All RFCs associated with a particular group'), ('area_rfc', 'All RFCs associated with all groups in a particular Area'), ('state_iab', 'All I-Ds that are in a particular IAB state'), ('state_iana', 'All I-Ds that are in a particular IANA state'), ('state_iesg', 'All I-Ds that are in a particular IESG state'), ('state_irtf', 'All I-Ds that are in a particular IRTF state'), ('state_ise', 'All I-Ds that are in a particular ISE state'), ('state_rfceditor', 'All I-Ds that are in a particular RFC Editor state'), ('state_ietf', 'All I-Ds that are in a particular Working Group state'), ('author', 'All I-Ds with a particular author'), ('author_rfc', 'All RFCs with a particular author'), ('ad', 'All I-Ds with a particular responsible AD'), ('shepherd', 'All I-Ds with a particular document shepherd'), ('name_contains', 'All I-Ds with particular text/regular expression in the name')], max_length=30)),
+                ('text', models.CharField(blank=True, default='', max_length=255, verbose_name='Text/RegExp')),
                 ('community_list', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='community.CommunityList')),
             ],
         ),

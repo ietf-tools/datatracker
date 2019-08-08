@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
                 ('bcc', models.CharField(blank=True, max_length=255)),
                 ('reply_to', models.CharField(blank=True, max_length=255)),
                 ('body', models.TextField()),
-                ('content_type', models.CharField(blank=True, default=b'text/plain', max_length=255)),
+                ('content_type', models.CharField(blank=True, default='text/plain', max_length=255)),
                 ('msgid', models.CharField(blank=True, default=email.utils.make_msgid, max_length=255, null=True)),
                 ('by', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='person.Person')),
                 ('related_docs', models.ManyToManyField(blank=True, to='doc.Document')),

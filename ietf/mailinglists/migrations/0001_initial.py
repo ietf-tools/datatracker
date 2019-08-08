@@ -46,7 +46,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('time', models.DateTimeField(auto_now_add=True)),
-                ('email', models.CharField(max_length=64, validators=[django.core.validators.EmailValidator()], verbose_name=b'Email address')),
+                ('email', models.CharField(max_length=64, validators=[django.core.validators.EmailValidator()], verbose_name='Email address')),
                 ('by', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='person.Person')),
             ],
             options={

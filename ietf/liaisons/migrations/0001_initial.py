@@ -27,10 +27,10 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('title', models.CharField(max_length=255)),
-                ('to_contacts', models.CharField(help_text=b'Contacts at recipient group', max_length=2000)),
-                ('response_contacts', models.CharField(blank=True, help_text=b'Where to send a response', max_length=255)),
-                ('technical_contacts', models.CharField(blank=True, help_text=b'Who to contact for clarification', max_length=255)),
-                ('action_holder_contacts', models.CharField(blank=True, help_text=b'Who makes sure action is completed', max_length=255)),
+                ('to_contacts', models.CharField(help_text='Contacts at recipient group', max_length=2000)),
+                ('response_contacts', models.CharField(blank=True, help_text='Where to send a response', max_length=255)),
+                ('technical_contacts', models.CharField(blank=True, help_text='Who to contact for clarification', max_length=255)),
+                ('action_holder_contacts', models.CharField(blank=True, help_text='Who makes sure action is completed', max_length=255)),
                 ('cc_contacts', models.TextField(blank=True)),
                 ('deadline', models.DateField(blank=True, null=True)),
                 ('other_identifiers', models.TextField(blank=True, null=True)),
@@ -101,7 +101,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='liaisonstatement',
             name='state',
-            field=ietf.utils.models.ForeignKey(default=b'pending', on_delete=django.db.models.deletion.CASCADE, to='name.LiaisonStatementState'),
+            field=ietf.utils.models.ForeignKey(default='pending', on_delete=django.db.models.deletion.CASCADE, to='name.LiaisonStatementState'),
         ),
         migrations.AddField(
             model_name='liaisonstatement',

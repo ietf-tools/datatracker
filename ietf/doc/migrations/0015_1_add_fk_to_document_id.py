@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='document',
             name='name',
-            field=models.CharField(max_length=255, unique=True, validators=[django.core.validators.RegexValidator(b'^[-a-z0-9]+$', b'Provide a valid document name consisting of lowercase letters, numbers and hyphens.', b'invalid')]),
+            field=models.CharField(max_length=255, unique=True, validators=[django.core.validators.RegexValidator('^[-a-z0-9]+$', 'Provide a valid document name consisting of lowercase letters, numbers and hyphens.', 'invalid')]),
         ),
         migrations.AlterField(
             model_name='document',

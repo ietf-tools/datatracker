@@ -71,7 +71,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='document',
             name='formal_languages',
-            field=models.ManyToManyField(blank=True, help_text=b'Formal languages used in document', to='name.FormalLanguageName'),
+            field=models.ManyToManyField(blank=True, help_text='Formal languages used in document', to='name.FormalLanguageName'),
         ),
         migrations.AddField(
             model_name='document',

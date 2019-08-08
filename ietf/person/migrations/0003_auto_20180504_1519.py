@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 ('address', models.CharField(db_index=True, max_length=64, validators=[django.core.validators.EmailValidator()])),
                 ('time', models.DateTimeField(blank=True, editable=False)),
                 ('primary', models.BooleanField(default=False)),
-                ('origin', models.CharField(default=b'', editable=False, max_length=150)),
+                ('origin', models.CharField(default='', editable=False, max_length=150)),
                 ('active', models.BooleanField(default=True)),
                 ('history_id', models.AutoField(primary_key=True, serialize=False)),
                 ('history_date', models.DateTimeField()),
@@ -46,13 +46,13 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.IntegerField(auto_created=True, blank=True, db_index=True, verbose_name='ID')),
                 ('time', models.DateTimeField(default=datetime.datetime.now)),
-                ('name', models.CharField(db_index=True, help_text=b'Preferred form of name.', max_length=255, verbose_name=b'Full Name (Unicode)')),
-                ('ascii', models.CharField(help_text=b'Name as rendered in ASCII (Latin, unaccented) characters.', max_length=255, verbose_name=b'Full Name (ASCII)')),
-                ('ascii_short', models.CharField(blank=True, help_text=b'Example: A. Nonymous.  Fill in this with initials and surname only if taking the initials and surname of the ASCII name above produces an incorrect initials-only form. (Blank is OK).', max_length=32, null=True, verbose_name=b'Abbreviated Name (ASCII)')),
-                ('biography', models.TextField(blank=True, help_text=b'Short biography for use on leadership pages. Use plain text or reStructuredText markup.')),
+                ('name', models.CharField(db_index=True, help_text='Preferred form of name.', max_length=255, verbose_name='Full Name (Unicode)')),
+                ('ascii', models.CharField(help_text='Name as rendered in ASCII (Latin, unaccented) characters.', max_length=255, verbose_name='Full Name (ASCII)')),
+                ('ascii_short', models.CharField(blank=True, help_text='Example: A. Nonymous.  Fill in this with initials and surname only if taking the initials and surname of the ASCII name above produces an incorrect initials-only form. (Blank is OK).', max_length=32, null=True, verbose_name='Abbreviated Name (ASCII)')),
+                ('biography', models.TextField(blank=True, help_text='Short biography for use on leadership pages. Use plain text or reStructuredText markup.')),
                 ('photo', models.TextField(blank=True, default=None, max_length=100)),
                 ('photo_thumb', models.TextField(blank=True, default=None, max_length=100)),
-                ('name_from_draft', models.CharField(editable=False, help_text=b'Name as found in a draft submission.', max_length=255, null=True, verbose_name=b'Full Name (from submission)')),
+                ('name_from_draft', models.CharField(editable=False, help_text='Name as found in a draft submission.', max_length=255, null=True, verbose_name='Full Name (from submission)')),
                 ('history_id', models.AutoField(primary_key=True, serialize=False)),
                 ('history_date', models.DateTimeField()),
                 ('history_change_reason', models.CharField(max_length=100, null=True)),
@@ -85,12 +85,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='email',
             name='origin',
-            field=models.CharField(default=b'', editable=False, max_length=150),
+            field=models.CharField(default='', editable=False, max_length=150),
         ),
         migrations.AddField(
             model_name='person',
             name='name_from_draft',
-            field=models.CharField(editable=False, help_text=b'Name as found in a draft submission.', max_length=255, null=True, verbose_name=b'Full Name (from submission)'),
+            field=models.CharField(editable=False, help_text='Name as found in a draft submission.', max_length=255, null=True, verbose_name='Full Name (from submission)'),
         ),
         migrations.DeleteModel(
             name='PersonHistory',
@@ -103,11 +103,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='historicalperson',
             name='consent',
-            field=models.NullBooleanField(default=None, verbose_name=b'I hereby give my consent to the use of the personal details I have provided (photo, bio, name, email) within the IETF Datatracker'),
+            field=models.NullBooleanField(default=None, verbose_name='I hereby give my consent to the use of the personal details I have provided (photo, bio, name, email) within the IETF Datatracker'),
         ),
         migrations.AddField(
             model_name='person',
             name='consent',
-            field=models.NullBooleanField(default=None, verbose_name=b'I hereby give my consent to the use of the personal details I have provided (photo, bio, name, email) within the IETF Datatracker'),
+            field=models.NullBooleanField(default=None, verbose_name='I hereby give my consent to the use of the personal details I have provided (photo, bio, name, email) within the IETF Datatracker'),
         ),
     ]
