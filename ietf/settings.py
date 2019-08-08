@@ -99,7 +99,10 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'USER': 'ietf',
         #'PASSWORD': 'ietf',
-        'OPTIONS': {'sql_mode': 'STRICT_TRANS_TABLES', },
+        'OPTIONS': {
+            'sql_mode': 'STRICT_TRANS_TABLES',
+            'init_command': 'SET storage_engine=MyISAM; SET names "utf8"'
+        },
     },
 }
 
