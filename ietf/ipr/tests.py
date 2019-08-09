@@ -238,7 +238,7 @@ class IprTests(TestCase):
 
         # successful post
         empty_outbox()
-        r = self.client.post(url, {
+        data = {
             "holder_legal_name": "Test Legal",
             "holder_contact_name": "Test Holder",
             "holder_contact_email": "test@holder.com",
@@ -258,7 +258,8 @@ class IprTests(TestCase):
             "licensing": "royalty-free",
             "submitter_name": "Test Holder",
             "submitter_email": "test@holder.com",
-            })
+        }
+        r = self.client.post(url, data)
         self.assertContains(r, "Your IPR disclosure has been submitted")
 
         iprs = IprDisclosureBase.objects.filter(title__icontains=draft.name)
@@ -272,6 +273,19 @@ class IprTests(TestCase):
         self.assertEqual(len(outbox),1)
         self.assertTrue('New IPR Submission' in outbox[0]['Subject'])
         self.assertTrue('ietf-ipr@' in outbox[0]['To'])
+
+        # Check some additional application number formats:
+        for patent_number in [
+                'PCT/EP2019/123456',    # WO application
+                'PCT/EP05/12345',       # WO application, old
+                'ATA123/2012',          # Austria
+                'AU2011901234',         # Australia
+                'BE2010/0912',          # Belgium
+                'CA1234567',            # Canada
+                ]:
+            data['patent_number'] = patent_number
+            r = self.client.post(url, data)
+            self.assertContains(r, "Your IPR disclosure has been submitted", msg_prefix="Checked patent number: %s" % patent_number)
 
     def test_new_thirdparty(self):
         """Add a new third-party disclosure.  Note: submitter does not need to be logged in.

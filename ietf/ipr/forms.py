@@ -119,6 +119,10 @@ validate_patent_number = RegexValidator(
                                              r"|[A-Z][A-Z]\d{6,12}([A-Z]\d?)?"
                                              r"|[A-Z][A-Z]\d{4}(\w{1,2}\d{5,7})?"
                                              r"|[A-Z][A-Z]\d{15}"
+                                             r"|[A-Z][A-Z][A-Z]\d{1,5}/\d{4}" 
+                                             r"|[A-Z][A-Z]\d{1,4}/\d{1,4}" 
+                                             r"|PCT/[A-Z][A-Z]\d{2}/\d{5}" # WO application, old
+                                             r"|PCT/[A-Z][A-Z]\d{4}/\d{6}" # WO application, new
                                              r")[, ]*)+$"),
                                     message="Please enter one or more patent publication or application numbers as country code and serial number, e.g.: US62/123456 or WO2017123456." )
 
