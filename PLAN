@@ -7,11 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Complete the transition to Python 3.  This will make it easier to add add
-  support for internationalsed email, and also other i18n enhancements.  The
-  code has now been made Python 2 / Python 3 compatible (as of release 6.99.0,
-  16 July 2019), but has not been deployed under Python 3 yet.
-
 * Change the draft submission form so that an email address is required for
   each author in order to complete self-service draft submission.  Missing
   email address(es) will lead to failure, and require submission via the
@@ -28,6 +23,13 @@ Planned work in rough order
   RFC numbers)
 
 * Revisit the review tool, work through the accumulated tickets.
+
+* Complete the transition to Python 3.  This will make it easier to add add
+  support for internationalsed email, and also other i18n enhancements.  The
+  code has now been made Python 2 / Python 3 compatible (as of release 6.99.0,
+  16 July 2019), but has not been deployed under Python 3 yet.  The natural
+  point for changing the deployment seems to be just after the next OS upgrade,
+  which we think will make Python 3.6 the default mod_wsgi python.
 
 * Review and change the draft submission and handling code to deal with UTF-8
   instead of ascii before upload of utf-8 drafts should be permitted.  
