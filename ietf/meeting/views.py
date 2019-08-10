@@ -2491,6 +2491,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 sub_name, sub_ext = os.path.splitext(submission.filename)
                 target_filename = '%s-%s%s' % (sub_name[:sub_name.rfind('-ss')],doc.rev,sub_ext)
                 os.rename(submission.staged_filepath(), os.path.join(path, target_filename))
+                post_process(doc)
                 acronym = submission.session.group.acronym
                 submission.delete()
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=acronym)
