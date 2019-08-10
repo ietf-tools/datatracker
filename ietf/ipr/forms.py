@@ -126,6 +126,52 @@ validate_patent_number = RegexValidator(
                                              r")[, ]*)+$"),
                                     message="Please enter one or more patent publication or application numbers as country code and serial number, e.g.: US62/123456 or WO2017123456." )
 
+"""
+Patent application number formats by country
+
+Cc Country	Format example                                  Regex comment
+-- ---------    --------------                                  -------------
+AT AUSTRIA	A 123/2012
+AU AUSTRALIA	2011901234
+BA BOSNIA AND HERZEGOVINA	BAP 01 898
+BE BELGIUM	2010/0912
+BG BULGARIA	10110685 A
+BR BRAZIL	302012000001
+BY BELARUS	a 20120001
+CA CANADA	2000000
+CN CHINA	200820033898.2
+CR COSTA RICA	2012-0145
+CZ CZECH REPUBLIC	PV 2011-772
+DE GERMANY	10 2004 000 001.7
+EA EURASIAN PATENT OFFICE	201270271
+EE ESTONIA	P201200001
+EM OHIM	EM500000001104306
+EP EUROPEAN PATENT OFFICE	12001234.9
+ES SPAIN	P200900623                                      [P0350]200900623
+FI FINLAND	20120001
+GB UNITED KINGDOM	8912345.1
+HR CROATIA	P20110001A
+IE IRELAND	2011/0123
+IL ISRAEL	195580
+IT ITALY	RM2012A000123
+JP JAPAN	2012123456
+KR REPUBLIC OF KOREA	10-2012-0123456
+LT LITHUANIA	2012 001
+MD REPUBLIC OF MOLDOVA	a 2012 0001
+PL POLAND	P.023456
+RO ROMANIA	a 2000 00023
+RS SERBIA	P-2010/0044
+RU RUSSIAN FEDERATION	2006100001
+SA SAUDI ARABIA	108290771
+SE SWEDEN	1201234-0
+SK SLOVAKIA	PP 50010-2011                                   (PP|PV) 50010-2011
+UA UKRAINE	a 2012 00001
+US UNITED STATES OF AMERICA	09/123,456
+WO World Intellectual Property Organization	PCT/IB2012/050001
+
+"""
+
+
 def validate_string(s, letter_min, digit_min, space_min, message):
     letter_count = 0
     space_count = 0
