@@ -2482,14 +2482,14 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                         if other_session != submission.session and not other_session.sessionpresentation_set.filter(document=doc).exists():
                             max_order = other_session.sessionpresentation_set.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
                             other_session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=max_order+1)
-                doc.uploaded_filename = submission.filename
+                sub_name, sub_ext = os.path.splitext(submission.filename)
+                target_filename = '%s-%s%s' % (sub_name[:sub_name.rfind('-ss')],doc.rev,sub_ext)
+                doc.uploaded_filename = target_filename
                 e = NewRevisionDocEvent.objects.create(doc=doc,by=submission.submitter,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
                 doc.save_with_history([e])
                 path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
                 if not os.path.exists(path):
                     os.makedirs(path)
-                sub_name, sub_ext = os.path.splitext(submission.filename)
-                target_filename = '%s-%s%s' % (sub_name[:sub_name.rfind('-ss')],doc.rev,sub_ext)
                 os.rename(submission.staged_filepath(), os.path.join(path, target_filename))
                 post_process(doc)
                 acronym = submission.session.group.acronym
