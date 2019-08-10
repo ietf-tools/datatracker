@@ -275,7 +275,7 @@ def post_process(doc):
     '''
     if is_powerpoint(doc) and hasattr(settings,'SECR_PPT2PDF_COMMAND'):
         try:
-            cmd = settings.SECR_PPT2PDF_COMMAND
+            cmd = list(settings.SECR_PPT2PDF_COMMAND) # Don't operate on the list actually in settings
             cmd.append(doc.get_file_path())                                 # outdir
             cmd.append(os.path.join(doc.get_file_path(),doc.uploaded_filename))  # filename
             subprocess.check_call(cmd)
