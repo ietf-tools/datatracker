@@ -172,7 +172,7 @@ def days_needed_to_fulfill_min_interval_for_reviewers(team):
     return res
 
 ReviewAssignmentData = namedtuple("ReviewAssignmentData", [
-    "assignment_pk", "doc_name", "doc_pages", "req_time", "state", "assigned_time", "deadline", "reviewed_rev", "result", "team", "reviewer",
+    "assignment_pk", "request_pk", "doc_name", "doc_pages", "req_time", "state", "assigned_time", "deadline", "reviewed_rev", "result", "team", "reviewer",
     "late_days",
     "request_to_assignment_days", "assignment_to_closure_days", "request_to_closure_days"])
 
@@ -199,7 +199,7 @@ def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, t
     event_qs = ReviewAssignment.objects.filter(filters)
 
     event_qs = event_qs.values_list(
-        "pk", "review_request__doc__name", "review_request__doc__pages", "review_request__time", "state", "review_request__deadline", "reviewed_rev", "result", "review_request__team",
+        "pk", "review_request__pk", "review_request__doc__name", "review_request__doc__pages", "review_request__time", "state", "review_request__deadline", "reviewed_rev", "result", "review_request__team",
         "reviewer__person", "assigned_on", "completed_on"
     )
 
@@ -220,7 +220,7 @@ def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, t
 
     for assignment in event_qs:
 
-        assignment_pk, doc_name, doc_pages, req_time, state, deadline, reviewed_rev, result, team, reviewer, assigned_on, completed_on = assignment
+        assignment_pk, request_pk, doc_name, doc_pages, req_time, state, deadline, reviewed_rev, result, team, reviewer, assigned_on, completed_on = assignment
 
         requested_time = req_time
         assigned_time = assigned_on
@@ -231,7 +231,7 @@ def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, t
         assignment_to_closure_days = positive_days(assigned_time, closed_time)
         request_to_closure_days = positive_days(requested_time, closed_time)
 
-        d = ReviewAssignmentData(assignment_pk, doc_name, doc_pages, req_time, state, assigned_time, deadline, reviewed_rev, result, team, reviewer,
+        d = ReviewAssignmentData(assignment_pk, request_pk, doc_name, doc_pages, req_time, state, assigned_time, deadline, reviewed_rev, result, team, reviewer,
                               late_days, request_to_assignment_days, assignment_to_closure_days,
                               request_to_closure_days)
 
@@ -248,7 +248,7 @@ def aggregate_raw_period_review_assignment_stats(review_assignment_data, count=N
     assignment_to_closure_days_list = []
     assignment_to_closure_days_count = 0
 
-    for (assignment_pk, doc, doc_pages, req_time, state, assigned_time, deadline, reviewed_rev, result, team, reviewer,
+    for (assignment_pk, request_pk, doc, doc_pages, req_time, state, assigned_time, deadline, reviewed_rev, result, team, reviewer,
          late_days, request_to_assignment_days, assignment_to_closure_days, request_to_closure_days) in review_assignment_data:
         if count == "pages":
             c = doc_pages

@@ -1407,15 +1407,14 @@ def reviewer_overview(request, acronym, group_type=None):
             person.busy = person.id in days_needed 
         
 
-        # TODO - What is this MAX_CLOSED_REQS trying to accomplish?
-        MAX_CLOSED_REQS = 10
+        MAX_CLOSED_REQS = 10 # This keeps the overview page with being filled with too many closed requests, since the focus should be on open or recently closed per reviewer
         days_since = 9999
         req_data = req_data_for_reviewers.get(person.pk, [])
         open_reqs = sum(1 for d in req_data if d.state in ["assigned", "accepted"])
         latest_reqs = []
         for d in req_data:
             if d.state in ["assigned", "accepted"] or len(latest_reqs) < MAX_CLOSED_REQS + open_reqs:
-                latest_reqs.append((d.assignment_pk, d.doc_name, d.reviewed_rev, d.assigned_time, d.deadline,
+                latest_reqs.append((d.assignment_pk, d.request_pk, d.doc_name, d.reviewed_rev, d.assigned_time, d.deadline,
                                     assignment_state_by_slug.get(d.state),
                                     int(math.ceil(d.assignment_to_closure_days)) if d.assignment_to_closure_days is not None else None))
             if d.state in ["completed", "completed_in_time", "completed_late"]:
