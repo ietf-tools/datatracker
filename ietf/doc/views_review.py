@@ -12,7 +12,7 @@ import email.utils
 
 import debug    # pyflakes:ignore
 
-from django.http import HttpResponseForbidden, JsonResponse
+from django.http import HttpResponseForbidden, JsonResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django import forms
 from django.conf import settings
@@ -186,6 +186,8 @@ def review_request_forced_login(request, name, request_id):
 def review_request(request, name, request_id):
     doc = get_object_or_404(Document, name=name)
     review_req = get_object_or_404(ReviewRequest, pk=request_id)
+    if review_req.doc != doc:
+        raise Http404('The indicated ReviewRequest is not a request for the indicated document')
 
     can_manage_request = can_manage_review_requests_for_team(request.user, review_req.team)
 
