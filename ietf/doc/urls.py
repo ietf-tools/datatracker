@@ -91,7 +91,8 @@ urlpatterns = [
     url(r'^%(name)s/email-aliases/$' % settings.URL_REGEXPS, RedirectView.as_view(pattern_name='ietf.doc.views_doc.document_email', permanent=False),name='ietf.doc.urls.redirect.document_email'),
 
     url(r'^%(name)s/edit/state/$' % settings.URL_REGEXPS, views_draft.change_state), # IESG state
-    url(r'^%(name)s/edit/state/(?P<state_type>iana-action|iana-review)/$' % settings.URL_REGEXPS, views_draft.change_iana_state),
+    url(r'^%(name)s/edit/state/(?P<state_type>iana-action|iana-review|iana-experts)/$' % settings.URL_REGEXPS, views_draft.change_iana_state),
+    url(r'^%(name)s/edit/ianaexpertcomment/$' % settings.URL_REGEXPS, views_draft.add_iana_experts_comment),
     url(r'^%(name)s/edit/info/$' % settings.URL_REGEXPS, views_draft.edit_info),
     url(r'^%(name)s/edit/requestresurrect/$' % settings.URL_REGEXPS, views_draft.request_resurrect),
     url(r'^%(name)s/edit/submit-to-iesg/$' % settings.URL_REGEXPS, views_draft.to_iesg),

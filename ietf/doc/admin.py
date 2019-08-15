@@ -12,7 +12,7 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     StateDocEvent, ConsensusDocEvent, BallotType, BallotDocEvent, WriteupDocEvent, LastCallDocEvent,
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
-    ReviewAssignmentDocEvent )
+    ReviewAssignmentDocEvent, IanaExpertDocEvent )
 
 
 class StateTypeAdmin(admin.ModelAdmin):
@@ -155,7 +155,7 @@ admin.site.register(InitialReviewDocEvent, DocEventAdmin)
 admin.site.register(AddedMessageEvent, DocEventAdmin)
 admin.site.register(SubmissionDocEvent, DocEventAdmin)
 admin.site.register(EditedAuthorsDocEvent, DocEventAdmin)
-
+admin.site.register(IanaExpertDocEvent, DocEventAdmin)
 
 class DeletedEventAdmin(admin.ModelAdmin):
     list_display = ['id', 'content_type', 'json', 'by', 'time']

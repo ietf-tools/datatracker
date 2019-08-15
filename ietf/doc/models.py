@@ -1052,6 +1052,9 @@ class DocEvent(models.Model):
 class NewRevisionDocEvent(DocEvent):
     pass
 
+class IanaExpertDocEvent(DocEvent):
+    pass
+
 class StateDocEvent(DocEvent):
     state_type = ForeignKey(StateType)
     state = ForeignKey(State, blank=True, null=True)

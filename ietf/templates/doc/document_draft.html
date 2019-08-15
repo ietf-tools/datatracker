@@ -514,34 +514,69 @@
       </tbody>
     {% endif %}
 
-    {% if iana_review_state %}
-    <tbody class="meta">
-      <tr>
-        <th>IANA</th>
-        <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">IANA review state</a></th>
-        <td class="edit">
-          {% if can_edit_iana_state and not snapshot %}
-            <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-review" %}">Edit</a>
-          {% endif %}
-        </td>
-        <td>
-          {{ iana_review_state }}
-        </td>
-      </tr>
+    {% if can_edit_iana_state or iana_review_state or iana_experts_state or iana_experts_comment %}
+      <tbody class="meta">
+        {% if iana_review_state or can_edit_iana_state %}
+          <tr>
+            <th>IANA</th>
+            <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">IANA review state</a></th>
+            <td class="edit">
+              {% if can_edit_iana_state and not snapshot %}
+                <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-review" %}">Edit</a>
+              {% endif %}
+            </td>
+            <td>
+              {{ iana_review_state }}
+            </td>
+          </tr>
+        {% endif %}
 
-      <tr>
-        <th></th>
-        <th>IANA action state</th>
-        <td class="edit">
-          {% if can_edit_iana_state and not snapshot %}
-            <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-action" %}">Edit</a>
-          {% endif %}
-        </td>
-        <td>
-          {{ iana_action_state }}
-        </td>
-      </tr>
-    </tbody>
+        {% if iana_action_state or can_edit_iana_state %}
+          <tr>
+            <th>{% if not can_edit_iana_state and not iana_review_state %}IANA{% endif %}</th>
+            <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-action" %}">IANA action state</a></th>
+            <td class="edit">
+              {% if can_edit_iana_state and not snapshot %}
+                <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-action" %}">Edit</a>
+              {% endif %}
+            </td>
+            <td>
+              {{ iana_action_state }}
+            </td>
+          </tr>
+        {% endif %}
+
+        {% if iana_experts_state or can_edit_iana_state %}
+          <tr>
+            <th>{% if not can_edit_iana_state and not iana_review_state and not iana_action_state %}IANA{% endif %}</th>
+            <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-experts" %}">IANA expert review state</a></th>
+            <td class="edit">
+              {% if can_edit_iana_state and not snapshot %}
+                <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-experts" %}">Edit</a>
+              {% endif %}
+            </td>
+            <td>
+              {{ iana_experts_state }}
+            </td>
+          </tr>
+        {% endif %}
+
+        {% if iana_experts_comment or can_edit_iana_state %}
+          <tr>
+            <th>{% if not can_edit_iana_state and not iana_review_state and not iana_action_state and not iana_experts_state %}IANA{% endif %}</th>
+            <th>IANA expert review comments</th>
+            <td class="edit">
+              {% if can_edit_iana_state and not snapshot %}
+                <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.add_iana_experts_comment' name=doc.name %}">Edit</a>
+              {% endif %}
+            </td>
+            <td>
+              {{ iana_experts_comment }}
+            </td>
+          </tr>
+        {% endif %}
+
+      </tbody>
     {% endif %}
 
     <tbody class="meta">
