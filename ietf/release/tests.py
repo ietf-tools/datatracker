@@ -33,11 +33,6 @@ class ReleasePagesTest(TestCase):
             self.assertIn(word, text)
         self.assertGreater(len(q('#content a')), 16)
 
-    def test_todo(self):
-        url = reverse('ietf.release.views.release')+"todo"
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-
     def test_stats(self):
         url = reverse('ietf.release.views.stats')
 
