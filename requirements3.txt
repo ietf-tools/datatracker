@@ -42,7 +42,7 @@ pathlib>=1.0
 pathlib2>=2.3.0
 Pillow>=3.0
 #pip==9.0.1			# Earlier pip has issues, 9.0.2 and 9.0.3, 10.0.0b1 leaves dross when down- and up-grading packages
-pyang>=1.7.2,<2.0
+pyang>=1.7.2
 pyflakes>=0.9.2
 pyopenssl>=17.5.0		# Used by urllib3.contrib, which is used by PyQuery but not marked as a dependency
 pyquery>=1.2.13,!=1.2.14	# Pyqyery 1.2.14 fails on some selectors or stacked selectors
