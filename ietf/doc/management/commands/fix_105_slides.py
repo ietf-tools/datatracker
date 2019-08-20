@@ -30,7 +30,6 @@ class Command(BaseCommand):
 
         for sp in SessionPresentation.objects.filter(session__meeting__number=105,document__type='slides'): #.filter(document__name='slides-105-manet-dlep-multicast-support-discussion'):
             slides = sp.document
-            self.stderr.write("DEBUG: Processing %s" % slides)
             if not os.path.exists(os.path.join(slides_path,slides.uploaded_filename)):
                 name, ext = os.path.splitext(slides.uploaded_filename)
                 target_filename = '%s-%s%s' % (name[:name.rfind('-ss')], slides.rev,ext)
