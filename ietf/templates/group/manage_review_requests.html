@@ -153,6 +153,8 @@
             <span class="close-controls form-inline">
               <label for="{{ r.form.reviewer.id_for_label }}">Close:</label>
               {{ r.form.close }}
+              <label for="{{ r.form.reviewer.id_for_close_comment }}">Optional comment:</label>
+              {{ r.form.close_comment }}
               <button type="button" class="btn btn-default undo" title="Cancel closing">Cancel</button>
               {% if r.form.close.errors %}
                 <br>

@@ -563,7 +563,7 @@ def possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id, 
 
             break
 
-def close_review_request(request, review_req, close_state):
+def close_review_request(request, review_req, close_state, close_comment=''):
     suggested_req = review_req.pk is None
 
     review_req.state = close_state
@@ -573,13 +573,16 @@ def close_review_request(request, review_req, close_state):
     review_req.save()
 
     if not suggested_req:
+        descr = "Closed request for {} review by {} with state '{}'".format(
+            review_req.type.name, review_req.team.acronym.upper(), close_state.name)
+        if close_comment:
+            descr += ': ' + close_comment
         ReviewRequestDocEvent.objects.create(
             type="closed_review_request",
             doc=review_req.doc,
             rev=review_req.doc.rev,
             by=request.user.person,
-            desc="Closed request for {} review by {} with state '{}'".format(
-                review_req.type.name, review_req.team.acronym.upper(), close_state.name),
+            desc=descr,
             review_request=review_req,
             state=review_req.state,
         )
@@ -597,11 +600,14 @@ def close_review_request(request, review_req, close_state):
                 state=assignment.state,
             )
 
+        msg = "Review request has been closed by {}.".format(request.user.person)
+        if close_comment:
+            msg += "\nComment: {}".format(close_comment)
         email_review_request_change(
             request, review_req,
             "Closed review request for {}: {}".format(review_req.doc.name, close_state.name),
-            "Review request has been closed by {}.".format(request.user.person),
-            by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=True)
+            msg=msg, by=request.user.person, notify_secretary=False,
+            notify_reviewer=True, notify_requested_by=True)
 
 def suggested_review_requests_for_team(team):
 

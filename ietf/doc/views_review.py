@@ -236,6 +236,7 @@ def review_request(request, name, request_id):
 
 class CloseReviewRequestForm(forms.Form):
     close_reason = forms.ModelChoiceField(queryset=close_review_request_states(), widget=forms.RadioSelect, empty_label=None)
+    close_comment = forms.CharField(label='Comment (optional)', max_length=255, required=False)
 
     def __init__(self, can_manage_request, *args, **kwargs):
         super(CloseReviewRequestForm, self).__init__(*args, **kwargs)
@@ -262,7 +263,8 @@ def close_request(request, name, request_id):
     if request.method == "POST":
         form = CloseReviewRequestForm(can_manage_request, request.POST)
         if form.is_valid():
-            close_review_request(request, review_req, form.cleaned_data["close_reason"])
+            close_review_request(request, review_req,form.cleaned_data["close_reason"],
+                                 form.cleaned_data["close_comment"])
 
         return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
     else:
