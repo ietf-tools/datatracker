@@ -688,13 +688,59 @@ class ReviewTests(TestCase):
             "review_content": "This is a review\nwith two lines",
             "review_url": "",
             "review_file": "",
+            # Custom completion should be ignored - review posted by assignee is always set to now
+            "completion_date": "2012-12-24",
+            "completion_time": "12:13:14",
         })
         self.assertEqual(r.status_code, 302)
 
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, "completed")
-        self.assertNotEqual(assignment.completed_on, None)
+        # Completed time should be close to now, but will not be exactly, so check within 10s margin
+        completed_time_diff = datetime.datetime.now() - assignment.completed_on
+        self.assertLess(completed_time_diff, datetime.timedelta(seconds=10))
 
+        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+            self.assertEqual(f.read(), "This is a review\nwith two lines")
+
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue(assignment.review_request.team.list_email in outbox[0]["To"])
+        self.assertTrue("This is a review" in outbox[0].get_payload(decode=True).decode("utf-8"))
+
+        self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in assignment.review.external_url)
+
+    def test_complete_review_enter_content_by_secretary(self):
+        assignment, url = self.setup_complete_review_test()
+        login_testing_unauthorized(self, 'reviewsecretary', url)
+
+        empty_outbox()
+
+        r = self.client.post(url, data={
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=assignment.review_request.team, slug="ready").pk,
+            "state": ReviewAssignmentStateName.objects.get(slug="completed").pk,
+            "reviewed_rev": assignment.review_request.doc.rev,
+            "review_submission": "enter",
+            "review_content": "This is a review\nwith two lines",
+            "review_url": "",
+            "review_file": "",
+            "completion_date": "2012-12-24",
+            "completion_time": "12:13:14",
+        })
+        self.assertEqual(r.status_code, 302)
+
+        # The secretary is allowed to set a custom completion date (#2590)
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "completed")
+        self.assertEqual(assignment.completed_on, datetime.datetime(2012, 12, 24, 12, 13, 14))
+
+        # There should be two events:
+        # - the event logging when the change when it was entered, i.e. very close to now.
+        # - the completion of the review, set to the provided date/time
+        events = ReviewAssignmentDocEvent.objects.filter(doc=assignment.review_request.doc).order_by('-time')
+        event0_time_diff = datetime.datetime.now() - events[0].time
+        self.assertLess(event0_time_diff, datetime.timedelta(seconds=10))
+        self.assertEqual(events[1].time, datetime.datetime(2012, 12, 24, 12, 13, 14))
+        
         with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
@@ -879,8 +925,11 @@ class ReviewTests(TestCase):
 
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, "completed")
-        event = ReviewAssignmentDocEvent.objects.get(type="closed_review_assignment", review_assignment=assignment)
-        self.assertEqual(event.time, datetime.datetime(2012, 12, 24, 12, 13, 14))
+        # The revision event time should be the date the revision was submitted, i.e. not backdated
+        event1 = assignment.review_request.doc.latest_event(ReviewAssignmentDocEvent)
+        event_time_diff = datetime.datetime.now() - event1.time
+        self.assertLess(event_time_diff, datetime.timedelta(seconds=10))
+        self.assertTrue('revised' in event1.desc.lower())
 
         with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
@@ -904,8 +953,11 @@ class ReviewTests(TestCase):
 
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.review.rev, "01")
-        event = ReviewAssignmentDocEvent.objects.get(type="closed_review_assignment", review_assignment=assignment)
-        self.assertEqual(event.time, datetime.datetime(2013, 12, 24, 11, 11, 11))
+        event2 = assignment.review_request.doc.latest_event(ReviewAssignmentDocEvent)
+        event_time_diff = datetime.datetime.now() - event2.time
+        self.assertLess(event_time_diff, datetime.timedelta(seconds=10))
+        # Ensure that a new event was created for the new revision (#2590)
+        self.assertNotEqual(event1.id, event2.id)
 
         self.assertEqual(len(outbox), 0)
         
