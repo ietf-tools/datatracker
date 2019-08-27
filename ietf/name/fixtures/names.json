@@ -4127,6 +4127,44 @@
     "pk": "sub_new_wg_00"
   },
   {
+   "model": "mailtrigger.mailtrigger",
+   "pk": "review_assignment_changed",
+   "fields": {
+    "desc": "Recipients for a change to a review assignment",
+    "to": [
+     "review_assignment_reviewer",
+     "review_assignment_review_req_by",
+     "review_secretaries"
+    ],
+    "cc": []
+   }
+  },
+  {
+   "model": "mailtrigger.mailtrigger",
+   "pk": "review_req_changed",
+   "fields": {
+    "desc": "Recipients for a change to a review request",
+    "to": [
+     "review_req_requested_by",
+     "review_req_reviewers",
+     "review_secretaries"
+    ],
+    "cc": []
+   }
+  },
+  {
+   "model": "mailtrigger.mailtrigger",
+   "pk": "review_availability_changed",
+   "fields": {
+    "desc": "Recipients for a change to a reviewer's availability",
+    "to": [
+     "review_reviewer",
+     "group_secretaries"
+    ],
+    "cc": []
+   }
+  },
+  {
     "fields": {
       "desc": "The person providing a comment to nomcom",
       "template": "{{commenter}}"
@@ -4701,6 +4739,54 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "submission_submitter"
+  },
+  {
+   "model": "mailtrigger.recipient",
+   "pk": "review_assignment_reviewer",
+   "fields": {
+    "desc": "The reviewer assigned to a review assignment",
+    "template": "{% if not skip_review_reviewer %}{{review_assignment.reviewer.email_address}}{% endif %}"
+   }
+  },
+  {
+   "model": "mailtrigger.recipient",
+   "pk": "review_assignment_review_req_by",
+   "fields": {
+    "desc": "The requester of an assigned review",
+    "template": "{% if not skip_review_requested_by %}{{review_assignment.review_request.requested_by.email_address}}{% endif %}"
+   }
+  },
+  {
+   "model": "mailtrigger.recipient",
+   "pk": "review_req_requested_by",
+   "fields": {
+    "desc": "The requester of a review",
+    "template": "{% if not skip_review_requested_by %}{{review_req.requested_by.email_address}}{% endif %}"
+   }
+  },
+  {
+   "model": "mailtrigger.recipient",
+   "pk": "review_req_reviewers",
+   "fields": {
+    "desc": "All reviewers assigned to a review request",
+    "template": null
+   }
+  },
+  {
+   "model": "mailtrigger.recipient",
+   "pk": "review_secretaries",
+   "fields": {
+    "desc": "The secretaries of the review team of a review request or assignment",
+    "template": null
+   }
+  },
+  {
+   "model": "mailtrigger.recipient",
+   "pk": "review_reviewer",
+   "fields": {
+    "desc": "A single reviewer",
+    "template": "{{reviewer.email_address}}"
+   }
   },
   {
     "fields": {

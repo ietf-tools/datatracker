@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2019, All Rights Reserved
+
 from collections import namedtuple
 
 import debug                            # pyflakes:ignore
@@ -17,18 +19,22 @@ class AddrLists(namedtuple('AddrLists',['to','cc'])):
 
         return namedtuple('AddrListsAsStrings',['to','cc'])(to=to_string,cc=cc_string)
 
-def gather_address_lists(slug, **kwargs):
+def gather_address_lists(slug, skipped_recipients=None, **kwargs):
     mailtrigger = MailTrigger.objects.get(slug=slug)
 
     to = set()
     for recipient in mailtrigger.to.all():
         to.update(recipient.gather(**kwargs))
     to.discard('')
+    if skipped_recipients:
+        to -= set(skipped_recipients)
 
     cc = set()
     for recipient in mailtrigger.cc.all():
         cc.update(recipient.gather(**kwargs))
     cc.discard('')
+    if skipped_recipients:
+        cc -= set(skipped_recipients)
 
     return AddrLists(to=list(to),cc=list(cc))
 
