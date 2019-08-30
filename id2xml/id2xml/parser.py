@@ -776,7 +776,7 @@ class TextParser(Base):
             return self.stack.pop()
         else:
             section = number.rstrip('.')
-            target = 'section-%s'%slugify(section)
+            target = 'sect-%s'%slugify(section)
             self.dshow('target')
             # check if this is a section of something else
             parts = self.peek(3+6)
@@ -910,7 +910,6 @@ class DraftParser(Base):
     pi = {}
     #
     _identify_paragraph_cache = {}
-    figure_and_table_anchors = {}
     section_anchors = []
     reference_anchors = []
     anchor_replacements = {}
@@ -1045,6 +1044,7 @@ class DraftParser(Base):
         self.postprocess()
         if self.options.schema == 'v3':
             xmlrfc = XmlRfc(lxml.etree.ElementTree(self.root), None)
+            xmlrfc.source = self.name
             v3 = V2v3XmlWriter(xmlrfc)
             v3.convert2to3()
             self.root = v3.root
@@ -2043,7 +2043,7 @@ class DraftParser(Base):
             if tag == 'section':
                 section.set('title', title)
                 if number:
-                    anchor = 'section-%s'%slugify(number.rstrip('.'))
+                    anchor = 'sect-%s'%slugify(number.rstrip('.'))
                 else:
                     anchor = '%s'%slugify(title)
                     section.set('numbered', 'no')
@@ -2329,14 +2329,12 @@ class DraftParser(Base):
             if len(parts) > 1:
                 num = parts[1]
                 num = num.replace(':','')
-                ref = "%s-%s"%(parts[0].lower(),num)
-                anchor = "ref-%s"%ref
+                anchor = "%s-%s"%(parts[0].lower()[3:], num)
             if len(parts) > 2:
                 title = parts[2]
                 figure.set('title', title)
-                anchor = "ref-%s"%slugify(title)
+                anchor = "%s-%s"%(parts[0].lower()[3:], slugify(title))
             figure.set('anchor', anchor)
-            self.figure_and_table_anchors[ref] = anchor
         text = para2text(flatten(block))
         artwork = self.element('artwork', CDATA('\n'+unindent(text, 3)+'\n'))
         figure.append(artwork)
@@ -2420,14 +2418,12 @@ class DraftParser(Base):
             if len(parts) > 1:
                 num = parts[1]
                 num = num.replace(':','')
-                ref = "%s-%s"%(parts[0].lower(),num)
-                anchor = "ref-%s"%ref
+                anchor = "%s-%s"%(parts[0].lower()[:3], num)
             if len(parts) > 2:
                 title = parts[2]
                 texttable.set('title', title)
-                anchor = "ref-%s"%slugify(title)
+                anchor = "%s-%s"%(parts[0].lower()[:3], slugify(title))
             texttable.set('anchor', anchor)
-            self.figure_and_table_anchors[ref] = anchor
         texttable.set('style', style)
         # skip top border
         line = paragraph.pop(0)
