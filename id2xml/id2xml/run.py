@@ -221,19 +221,19 @@ def run():
             with inf.open() as file:
                 txt = file.read()
             if options.strip_only:
-                note("Stripping '%s'" % (inf.name, ))
+                note(" Stripping '%s'" % (inf.name, ))
                 lines, __ = strip_pagebreaks(txt)
                 with (sys.stdout if options.output_file=='-' else outf.open('w')) as out:
                     out.write('\n'.join([l.txt for l in lines]))
                     out.write('\n')
-                note("Written to '%s'" % out.name)
+                note(" Written to '%s'" % out.name)
             else:
-                note("Converting '%s'" % (inf.name, ))
+                note(" Converting '%s'" % (inf.name, ))
                 parser = DraftParser(inf.name, txt, options=options)
                 xml = parser.parse_to_xml()
                 with (sys.stdout if options.output_file=='-' else outf.open('w')) as out:
                     out.write(xml)
-                note("Written to '%s'" % out.name)
+                note(" Written to '%s'" % out.name)
         except Exception as e:
             sys.stderr.write("Failure converting %s: %s\n" % (inf.name, e))
             raise
