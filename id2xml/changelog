@@ -1,3 +1,28 @@
+id2xml (1.5.0) ietf; urgency=medium
+
+  * Fixed a few Python 3.x nits in the parser code.
+
+  * Changed generated anchor slugs so as to not collide with IDs used by 
+    xml2rfc, which in v3 mode reserves certain prefixes used for section, 
+    figure and table anchors and fragment identifiers.  Also fixed an xml2rfc 
+    v2v3 convertere compatibility issue.
+
+  * Added outdent to id2xml progress statements in order to more clearly 
+    differentiate them from warnings and errors.
+
+  * Added the possibility of setting document stream, IPR, and consensus 
+    values with switches instead of deriving them from the 'Status of this 
+    Memo' section, to make processing of documents with old status wording 
+    easier.
+
+  * Added a list of valid submission types and stream names to id2xml.utils.
+
+  * Tweaked several command-line options to better match those of xml2rfc.  
+    Added help for trace options when --help is given together with --debug.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Sep 2019 15:35:45 +0000
+
+
 id2xml (1.4.4) ietf; urgency=medium
 
   * Since '--' isn't allowed inside html comments, trying to add a comment 
