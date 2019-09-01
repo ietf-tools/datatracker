@@ -67,7 +67,11 @@ env/bin/id2xml:	$(pyfiles) setup.py
 # ------------------------------------------------------------------------
 # test
 
-test:	env/bin/id2xml $(resfiles) $(xml3files) $(diffiles) $(tests) 
+test:	env/bin/id2xml clean $(resfiles) $(xml3files) $(diffiles) $(tests) 
+
+.PHONY: clean
+clean:
+	rm test/out/*
 
 infiles: $(textfiles)
 
