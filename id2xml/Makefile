@@ -71,7 +71,7 @@ test:	env/bin/id2xml clean $(resfiles) $(xml3files) $(diffiles) $(tests)
 
 .PHONY: clean
 clean:
-	rm test/out/*
+	rm -f test/out/*
 
 infiles: $(textfiles)
 
