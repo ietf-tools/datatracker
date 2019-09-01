@@ -383,9 +383,9 @@ def make_author_regex(name):
         }
     #
     def dotexp(s):
-        s = re.sub(r"\. ",    r"\w* ", s)
-        s = re.sub(r"\.$",    r"\w*", s)
-        s = re.sub(r"\.(\w)", r"\w* \1", s)
+        s = re.sub(r"\. ",    r"\\w* ", s)
+        s = re.sub(r"\.$",    r"\\w*", s)
+        s = re.sub(r"\.(\w)", r"\\w* \\1", s)
         return s
     #
     # remove any suffix from the name before building the pattern
@@ -440,7 +440,7 @@ def make_author_regex(name):
     #
     # Some chinese names are shown with double-letter(latin) abbreviated given names, rather than
     # a single-letter(latin) abbreviation:
-    first = re.sub(r"^([A-Z])[A-Z]+\\w\*", r"\1[-\w]+", first) 
+    first = re.sub(r"^([A-Z])[A-Z]+\\w\*", r"\\1[-\\w]+", first) 
     #
     # permit insertion of middle names between first and last, and
     # add possible honorific and suffix information
@@ -692,7 +692,7 @@ class TextParser(Base):
     squares = {
         '[': ']'
     }
-    endq = dict( (k,v) for (k,v) in quotes.items()+angles.items()+squares.items() )
+    endq = dict( (k,v) for (k,v) in list(quotes.items())+list(angles.items())+list(squares.items()) )
     #
     prev = None
     
