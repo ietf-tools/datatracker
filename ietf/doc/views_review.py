@@ -786,6 +786,8 @@ def complete_review(request, name, assignment_id):
         'form': form,
         'mail_archive_query_urls': mail_archive_query_urls,
         'revising_review': revising_review,
+        'review_to': to,
+        'review_cc': cc,
     })
 
 def search_mail_archive(request, name, assignment_id):

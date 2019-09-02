@@ -27,6 +27,9 @@
       system will post the review for you. If you already have posted
       the review, you can try to let the system find the link to the
       archive and retrieve the email body.</p>
+      <p>If you enter the review below, the review will be sent
+      to <em>{{ review_to|join:", " }}</em>
+      {% if review_cc %}, with a Cc to <em>{{ review_cc|join:", " }}</em>{% endif %}.</p>
   {% else %}
     <p>You can revise this review by entering the results below.</p>
   {% endif %}
