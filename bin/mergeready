@@ -288,6 +288,7 @@ hold  += get_changeset_list_from_file(repo, '../hold-for-merge')
 ready += get_ready_commits(repo, 'personal')
 ready += get_ready_commits(repo, 'branch/amsl')
 ready += get_ready_commits(repo, 'branch/iola')
+ready += get_ready_commits(repo, 'branch/dash')
 ready += get_ready_commits(repo, 'branch/proceedings')
 
 ready_commits = {}

@@ -18,7 +18,7 @@
     {% endif %}
   </td>
 
-  {% if session.status_id == 'canceled' %}
+  {% if session.all_meeting_sessions_cancelled %}
     {% if user|has_role:"Secretariat" or user_groups %}
       <td colspan="6"><span class="label label-danger">Session cancelled</span></td>
     {% else %}

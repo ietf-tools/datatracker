@@ -968,6 +968,10 @@ class Session(models.Model):
         else:
             return [self]
 
+    def all_meeting_sessions_cancelled(self):
+        states = set([s.status_id for s in self.all_meeting_sessions_for_group()])
+        return 'canceled' in states and len(states) == 1
+
     def all_meeting_recordings(self):
         recordings = [] # These are not sets because we need to preserve relative ordering or redo the ordering work later
         sessions = self.all_meeting_sessions_for_group()
