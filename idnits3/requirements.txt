@@ -1,5 +1,0 @@
-id2xml>=1.4.4
-lxml>=2.2.8
-python-magic-win64>=0.4.6
-requests!=2.12.*
-xml2rfc>=2.16.0
