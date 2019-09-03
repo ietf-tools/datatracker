@@ -184,10 +184,8 @@ class SecrMeetingTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before + 1)
         ames_stsa = meeting.agenda.assignments.get(session__group=ames_group)
-        print(ames_stsa.session.status_id)
         assert ames_stsa.session.status_id == 'sched'
         mars_stsa = meeting.agenda.assignments.get(session__group=mars_group)
-        print(mars_stsa.session.status_id)
         assert mars_stsa.session.status_id == 'sched'
 
     def test_meetings_rooms(self):
