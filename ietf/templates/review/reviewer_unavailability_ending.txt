@@ -1,0 +1,7 @@
+{% load ietf_filters %}{% autoescape off %}{% filter wordwrap:78 %}
+Reviewer {{ reviewer }} in {{ team.acronym }} will become available again in {{ reminder_days }} days.
+This ends their unavailability which lasted from {{ period_start }} until {{ period_end }}.
+
+{{ reviewer_overview_url }}
+
+{% endfilter %}{% endautoescape %}

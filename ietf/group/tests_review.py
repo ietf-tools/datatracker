@@ -23,7 +23,7 @@ from ietf.review.utils import (
     review_assignments_needing_reviewer_reminder, email_reviewer_reminder,
     review_assignments_needing_secretary_reminder, email_secretary_reminder,
     reviewer_rotation_list,
-)
+    email_unavaibility_period_ending_reminder)
 from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAssignmentStateName
 import ietf.group.views
 from ietf.utils.mail import outbox, empty_outbox
@@ -493,6 +493,58 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertTrue(review_req.doc.name in outbox[0].get_payload(decode=True).decode("utf-8"))
 
+    def test_email_unavaibility_period_ending_reminder(self):
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review",
+                                        list_email="reviewteam@ietf.org")
+        reviewer = RoleFactory(group=review_team, person__user__username='reviewer',
+                               person__user__email='reviewer@example.com',
+                               person__name='Some Reviewer', name_id='reviewer')
+        secretary = RoleFactory(group=review_team, person__user__username='reviewsecretary',
+                                person__user__email='reviewsecretary@example.com', name_id='secr')
+        empty_outbox()
+        today = datetime.date.today()
+        UnavailablePeriod.objects.create(
+            team=review_team,
+            person=reviewer.person,
+            start_date=today - datetime.timedelta(days=40),
+            end_date=today + datetime.timedelta(days=3),
+            availability="unavailable",
+        )
+        UnavailablePeriod.objects.create(
+            team=review_team,
+            person=reviewer.person,
+            # This object should be ignored, length is too short
+            start_date=today - datetime.timedelta(days=20),
+            end_date=today + datetime.timedelta(days=3),
+            availability="unavailable",
+        )
+        UnavailablePeriod.objects.create(
+            team=review_team,
+            person=reviewer.person,
+            start_date=today - datetime.timedelta(days=40),
+            # This object should be ignored, end date is too far away
+            end_date=today + datetime.timedelta(days=4),
+            availability="unavailable",
+        )
+        UnavailablePeriod.objects.create(
+            team=review_team,
+            person=reviewer.person,
+            # This object should be ignored, end date is too close
+            start_date=today - datetime.timedelta(days=40),
+            end_date=today + datetime.timedelta(days=2),
+            availability="unavailable",
+        )
+        log = email_unavaibility_period_ending_reminder(today)
+
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue(reviewer.person.email_address() in outbox[0]["To"])
+        self.assertTrue(secretary.person.email_address() in outbox[0]["To"])
+        message = outbox[0].get_payload(decode=True).decode("utf-8")
+        self.assertTrue(reviewer.person.name in message)
+        self.assertTrue(review_team.acronym in message)
+        self.assertEqual(len(log), 1)
+        self.assertTrue(reviewer.person.name in log[0])
+        self.assertTrue(review_team.acronym in log[0])
 
 
 class BulkAssignmentTests(TestCase):
