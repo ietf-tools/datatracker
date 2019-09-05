@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 import os
 import tempfile
 import re
@@ -9,7 +10,6 @@ from django.utils.safestring import mark_safe
 
 import debug           # pyflakes:ignore
 
-from ietf.utils.text import wordwrap
 from ietf.nomcom.utils import get_nomcom_by_year, retrieve_nomcom_private_key
 from ietf.person.models import Person
 from ietf.utils.log import log
@@ -76,4 +76,4 @@ def decrypt(string, request, year, plain=False):
 
     if not plain:
         return force_escape(linebreaksbr(out))
-    return mark_safe(wordwrap(force_escape(out)))
+    return mark_safe(force_escape(out))
