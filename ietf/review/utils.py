@@ -12,6 +12,7 @@ import six
 from collections import defaultdict, namedtuple
 
 from django.db.models import Q, Max, F
+from django.template.defaultfilters import pluralize
 from django.urls import reverse as urlreverse
 from django.contrib.sites.models import Site
 
@@ -957,7 +958,44 @@ def email_unavaibility_period_ending_reminder(remind_date):
             to, period.person, period.team.acronym,period.pk))
     return log
 
+
+def email_reminder_all_open_reviews(remind_date):
+    log = []
+    # The origin date is arbitrarily chosen, to have a single reference date for "every X days"
+    origin_date = datetime.date(2019, 1, 1)
+    days_since_origin = (remind_date - origin_date).days
+    relevant_reviewer_settings = ReviewerSettings.objects.filter(remind_days_open_reviews__isnull=False)
     
+    for reviewer_settings in relevant_reviewer_settings:
+        if days_since_origin % reviewer_settings.remind_days_open_reviews != 0:
+            continue
+            
+        assignments = ReviewAssignment.objects.filter(
+            state__in=("assigned", "accepted"),
+            reviewer__person=reviewer_settings.person,
+        )
+        if not assignments:
+            continue
+
+        to = reviewer_settings.person.formatted_email()
+        subject = "Reminder: you have {} open review assignment{}".format(len(assignments), pluralize(len(assignments)))
+
+        domain = Site.objects.get_current().domain
+        url = urlreverse("ietf.group.views.reviewer_overview",
+                         kwargs={"group_type": reviewer_settings.team.type_id,
+                                 "acronym": reviewer_settings.team.acronym})
+
+        send_mail(None, to, None, subject, "review/reviewer_reminder_all_open_reviews.txt", {
+            "reviewer_overview_url": "https://{}{}".format(domain, url),
+            "assignments": assignments,
+            "team": reviewer_settings.team,
+            "remind_days": reviewer_settings.remind_days_open_reviews,
+        })
+        log.append("Emailed reminder to {} of their {} open reviews".format(to, len(assignments)))
+
+    return log
+
+
 def review_assignments_needing_reviewer_reminder(remind_date):
     assignment_qs = ReviewAssignment.objects.filter(
         state__in=("assigned", "accepted"),

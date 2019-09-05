@@ -24,7 +24,7 @@ import datetime
 from ietf.review.utils import (
     review_assignments_needing_reviewer_reminder, email_reviewer_reminder,
     review_assignments_needing_secretary_reminder, email_secretary_reminder,
-    email_unavaibility_period_ending_reminder)
+    email_unavaibility_period_ending_reminder, email_reminder_all_open_reviews)
 
 today = datetime.date.today()
 
@@ -39,3 +39,4 @@ for assignment, secretary_role in review_assignments_needing_secretary_reminder(
     print("Emailed reminder to {} for review of {} in {} (req. id {})".format(secretary_role.email.address, review_req.doc_id, review_req.team.acronym, review_req.pk))
 
 print('\n'.join(email_unavaibility_period_ending_reminder(today)))
+print('\n'.join(email_reminder_all_open_reviews(today)))

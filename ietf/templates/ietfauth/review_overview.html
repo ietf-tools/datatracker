@@ -147,6 +147,10 @@
         <td>{{ t.reviewer_settings.remind_days_before_deadline|default:"(Do not remind)" }}</td>
       </tr>
       <tr>
+        <th>Periodic reminder of open reviews every X days</th>
+        <td>{{ t.reviewer_settings.remind_days_open_reviews|default:"(Do not remind)" }}</td>
+      </tr>
+      <tr>
         <th>Unavailable periods</th>
         <td>
           {% if t.unavailable_periods %}

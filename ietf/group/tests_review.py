@@ -23,7 +23,7 @@ from ietf.review.utils import (
     review_assignments_needing_reviewer_reminder, email_reviewer_reminder,
     review_assignments_needing_secretary_reminder, email_secretary_reminder,
     reviewer_rotation_list,
-    email_unavaibility_period_ending_reminder)
+    email_unavaibility_period_ending_reminder, email_reminder_all_open_reviews)
 from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAssignmentStateName
 import ietf.group.views
 from ietf.utils.mail import outbox, empty_outbox
@@ -316,6 +316,7 @@ class ReviewTests(TestCase):
             "min_interval": "7",
             "filter_re": "test-[regexp]",
             "remind_days_before_deadline": "6",
+            "remind_days_open_reviews": "8",
             "expertise": "Some expertise",
         })
         self.assertEqual(r.status_code, 302)
@@ -324,6 +325,7 @@ class ReviewTests(TestCase):
         self.assertEqual(settings.filter_re, "test-[regexp]")
         self.assertEqual(settings.skip_next, 0)
         self.assertEqual(settings.remind_days_before_deadline, 6)
+        self.assertEqual(settings.remind_days_open_reviews, 8)
         self.assertEqual(settings.expertise, "Some expertise")
         self.assertEqual(len(outbox), 1)
         self.assertTrue("reviewer availability" in outbox[0]["subject"].lower())
@@ -545,6 +547,29 @@ class ReviewTests(TestCase):
         self.assertEqual(len(log), 1)
         self.assertTrue(reviewer.person.name in log[0])
         self.assertTrue(review_team.acronym in log[0])
+
+    def test_email_reminder_all_open_reviews(self):
+        review_req = ReviewRequestFactory(state_id='assigned')
+        reviewer = RoleFactory(name_id='reviewer', group=review_req.team,person__user__username='reviewer').person
+        ReviewAssignmentFactory(review_request=review_req, state_id='assigned', assigned_on=review_req.time, reviewer=reviewer.email_set.first())
+        RoleFactory(name_id='secr', group=review_req.team, person__user__username='reviewsecretary')
+        ReviewerSettingsFactory(team=review_req.team, person=reviewer, remind_days_open_reviews=1)
+
+        empty_outbox()
+        today = datetime.date.today()
+        log = email_reminder_all_open_reviews(today)
+
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue(reviewer.email_address() in outbox[0]["To"])
+        self.assertEqual(outbox[0]["Subject"], "Reminder: you have 1 open review assignment")
+        message = outbox[0].get_payload(decode=True).decode("utf-8")
+        self.assertTrue(review_req.team.acronym in message)
+        self.assertTrue('you have 1 open review' in message)
+        self.assertTrue(review_req.doc.name in message)
+        self.assertTrue(review_req.deadline.strftime('%Y-%m-%d') in message)
+        self.assertEqual(len(log), 1)
+        self.assertTrue(reviewer.email_address() in log[0])
+        self.assertTrue('1 open review' in log[0])
 
 
 class BulkAssignmentTests(TestCase):
