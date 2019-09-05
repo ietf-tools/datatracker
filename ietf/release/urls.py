@@ -14,6 +14,5 @@ urlpatterns = [
     url(r'^(?P<version>[0-9.]+.*)/$',  views.release),
     url(r'^about/?$',  TemplateView.as_view(template_name='release/about.html')),
     url(r'^stats/?$',  views.stats),
-    url(r'^todo/?$',  TemplateView.as_view(template_name='release/todo.html')),
 ]
 
