@@ -292,6 +292,7 @@ def agenda_package(request, date=None):
             "minutes": data["sections"]["1.3"]["text"],
             "minutes_url": settings.IESG_MINUTES_URL,
             "management_items": [(num, section) for num, section in data["sections"].items() if "6" < num < "7"],
+            "domain": Site.objects.get_current().domain,
             }, content_type='text/plain')
 
 
