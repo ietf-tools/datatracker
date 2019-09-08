@@ -1,3 +1,107 @@
+ietfdb (6.101.0) ietf; urgency=medium
+
+  **IANA expert review tracking, new constraints labelling**
+
+  This release adds IANA expert review tracking for drafts, changes the
+  session request constraints labels, improves the handling of session slide
+  proposal uploads, and adds a number of smaller enhancements and issue
+  fixes.  From the commit log:
+
+  * Merged in [16656] from rjsparks@nostrum.com:
+    Added IANA expert review tracking.  
+
+  * Merged in [16650], [16655] from rjsparks@nostrum.com:
+    Removed the bootstrap project todo page. #2778 points to the old content 
+    so we can make new tickets for anything that is still relevant.
+
+  * Merged in [16649] from rjsparks@nostrum.com:
+    Guard against attempts to use the review request view with a 
+    ReviewRequest id that does not match the document for the ReviewRequest. 
+    This would have exposed #2776 much earlier.  
+
+  * Merged in [16647] from rjsparks@nostrum.com:
+    Corrected a view that was looking at review assignment ids when it 
+    should have been looking at request review ids. Fixes #2776.  
+
+  * Added a 'domain' variable to context supplied to the agenda_package.txt 
+    template.  Fixes issue #2793.
+
+  * Merged in [16646] from rjsparks@nostrum.com:
+    Don't manually linewrap when looking at feedback - let the pasted styling
+    do that. Fixes #2761.  
+
+  * Merged in [16630] from rjsparks@nostrum.com:
+    Rework how we are labeling constraints to provide a quick-fix for 
+    session requests at IETF106. Turned off several javascript functions that 
+    added/enforced old (possibly no longer correct) semantics for the session 
+    request forms. Fixes #2754.  
+
+  * Merged in [16629] from rjsparks@nostrum.com:
+    Removing unused template. I think it was an artifact of the Django 1.2 
+    to 1.6 conversion from 6 years ago. 
+
+  * Merged in [16615] from peter@akayla.com:
+    Spelling correction in a comment.  No open issue.   
+
+  * Merged in [16614] from peter@akayla.com:
+    Improved so that new draft diffs (from the working group drafts page) 
+    work correctly for both -00 drafts and later revisions.  Fixes issue #2697. 
+
+  * Merged in [16604] from rjsparks@nostrum.com:
+    Look at all scheduled sessions for a group when deciding to display a
+    cancelled banner. Fixes #2764.  
+
+  * The logic for displaying 'Email requested to be sent for earlier 
+    discuss' on IESG positions was wrong; it would count later discusses and 
+    discusses from other ADs as an 'earlier discuss'.  Moved any_email_sent() 
+    from ballot to position, and refined the criteria.
+
+  * Made sure Person.active_drafts() and .expired_drafts() don't return 
+    duplicate entries.  Fixes issue #2784.
+
+  * Changed requirements to permit pyang 2.0 and greater.
+
+  * Added a migration to fix some m2m table columns incorrectly left as 
+    varchar(8) when we changed the size of name slugs to varchar(32).
+
+  * Merged in [16601] from rjsparks@nostrum.com:
+    A management command to correct the state of several slide 
+    presentations uploaded during IETF105, and perform some missed powerpoint 
+    to pdf conversions. 
+
+  * Merged in [16600] from rjsparks@nostrum.com:
+    Fixed a subtle bug in the code that converts slides to PDF that was 
+    writing back into settings.  
+
+  * Merged in [16599] from rjsparks@nostrum.com:
+    Correct the uploaded_filename for slides that go through the 
+    approve-proposed-slides workflow.  
+
+  * Merged in [16598] from rjsparks@nostrum.com:
+    Add the ppt* to pdf conversion to the approve-suggested-slides 
+    workflow. Fixes #2762.  
+
+  * Added textual information about patent application formats according to
+    WIPO's Handbook on Industrial Property Information and Documentation, as
+    input to future extension of the regex set.
+
+  * Added some new formats to the regex validator for patent numbers and 
+    patent application numbers.  This is still not comprehensive.
+
+  * Adjusted migrations for Python2/3 compatibility.
+
+  * Updated database options settings to match our production database and 
+    dump files.
+
+  * Fixed an issue where the text file charset information for an upload would
+    be overwritten on upload of multiple files for a draft.  
+    Fixes issue #2768.
+
+  * Added 30 minutes caching to agenda.ics
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Sep 2019 15:28:29 +0000
+
+
 ietfdb (6.100.0) ietf; urgency=medium
 
   **IETF 105 code sprint**
