@@ -56,7 +56,7 @@ from django import forms
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent,
-    ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent,
+    ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS )
 from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
@@ -396,6 +396,9 @@ def document_main(request, name, rev=None):
         review_assignments = review_assignments_to_list_for_docs([doc]).get(doc.name, [])
         no_review_from_teams = no_review_from_teams_on_doc(doc, rev or doc.rev)
 
+        exp_comment = doc.latest_event(IanaExpertDocEvent,type="comment")
+        iana_experts_comment = exp_comment and exp_comment.desc
+
         return render(request, "doc/document_draft.html",
                                   dict(doc=doc,
                                        group=group,
@@ -452,6 +455,8 @@ def document_main(request, name, rev=None):
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
                                        iana_review_state=doc.get_state("draft-iana-review"),
                                        iana_action_state=doc.get_state("draft-iana-action"),
+                                       iana_experts_state=doc.get_state("draft-iana-experts"),
+                                       iana_experts_comment=iana_experts_comment,
                                        started_iesg_process=started_iesg_process,
                                        shepherd_writeup=shepherd_writeup,
                                        search_archive=search_archive,

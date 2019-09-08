@@ -19,7 +19,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
 from ietf.doc.models import ( Document, DocReminder, DocEvent,
     ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
-    WriteupDocEvent, DocRelationshipName)
+    WriteupDocEvent, DocRelationshipName, IanaExpertDocEvent )
 from ietf.doc.utils import get_tags_for_stream_id, create_ballot_if_not_open
 from ietf.name.models import StreamName, DocTagName
 from ietf.group.factories import GroupFactory, RoleFactory
@@ -199,6 +199,17 @@ class ChangeStateTests(TestCase):
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state("draft-iana-review"), next_state)
+
+    def test_add_expert_review_comment(self):
+        draft = WgDraftFactory()
+        url = urlreverse('ietf.doc.views_draft.add_iana_experts_comment',kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, 'iana', url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        r = self.client.post(url,dict(comment='!2ab3x#1'))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(draft.latest_event(IanaExpertDocEvent,type='comment').desc,'!2ab3x#1')
+
 
     def test_request_last_call(self):
         ad = Person.objects.get(user__username="ad")

@@ -25,7 +25,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, RelatedDocument, State,
     StateType, DocEvent, ConsensusDocEvent, TelechatDocEvent, WriteupDocEvent, StateDocEvent,
-    IESG_SUBSTATE_TAGS)
+    IanaExpertDocEvent, IESG_SUBSTATE_TAGS)
 from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_requested,
     email_resurrection_completed, email_state_changed, email_stream_changed,
     email_stream_state_changed, email_stream_tags_changed, extra_automation_headers,
@@ -188,6 +188,23 @@ def change_state(request, name):
                                    next_states=next_states,
                                    to_iesg_eval=to_iesg_eval))
 
+class AddIanaExpertsCommentForm(forms.Form):
+    comment = forms.CharField(required=True, widget=forms.Textarea, strip=False)
+
+@role_required('Secretariat', 'IANA')
+def add_iana_experts_comment(request, name):
+    doc = get_object_or_404(Document, docalias__name = name)
+    if request.method == 'POST':
+        form = AddIanaExpertsCommentForm(request.POST)
+        if form.is_valid():
+            IanaExpertDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type="comment", desc=form.cleaned_data['comment'])
+            return HttpResponseRedirect(doc.get_absolute_url())
+    else:
+        form = AddIanaExpertsCommentForm()
+
+    return render(request, 'doc/draft/add_iana_experts_comment.html', dict(form=form, doc=doc))
+
+
 class ChangeIanaStateForm(forms.Form):
     state = forms.ModelChoiceField(State.objects.all(), required=False)
 
@@ -196,6 +213,7 @@ class ChangeIanaStateForm(forms.Form):
 
         choices = State.objects.filter(used=True, type=state_type).order_by("order").values_list("pk", "name")
         self.fields['state'].choices = [("", "-------")] + list(choices)
+
 
 @role_required('Secretariat', 'IANA')
 def change_iana_state(request, name, state_type):
