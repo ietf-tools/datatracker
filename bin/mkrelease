@@ -79,8 +79,8 @@ trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; 
 # Option parsing
 
 # Options
-shortopts=hmnpvV
-longopts=help,message,dry-run,permit-migr-mix,verbose,version
+shortopts=hmnipvV
+longopts=help,message,dry-run,ignore-resources,permit-migr-mix,verbose,version
 
 # Default values
 MSG=""
@@ -88,6 +88,7 @@ PROJ=ietfdb
 VERFILE=ietf/__init__.py
 SETTINGS=ietf/settings.py
 PERMIT_MIGR_MIX=""
+IGNORE_RESOURCES=""
 do=""
 
 if   [ "$(uname)" = "Linux" ]; then
@@ -108,6 +109,7 @@ while true ; do
 	-h| --help)		usage; exit;;	#	 Show this help, then exit
 	-m| --message)		MSG=$2; shift;;		# Specify a commit message
 	-n| --dry-run)		do="echo ==>";;	#	 Show what would be done	
+	-i| --ignore-resources)	IGNORE_RESOURCES=1;; # Don't try to update resources
 	-p| --permit-migr-mix)	PERMIT_MIGR_MIX=1;; # Permit mixed schema and data migrations
 	-v| --verbose)		VERBOSE=1;;	#	 Be more talkative
 	-V| --version)		version; exit;;	#	 Show program version, then exit
@@ -202,15 +204,16 @@ if [ -z "$PERMIT_MIGR_MIX" ]; then
     fi
 fi
 
-note "Updating bower assets ..."
-$do ietf/manage.py bower_install > .mkrelease-bower-install.log
-$do rm .mkrelease-bower-install.log	# This happens at once unless the previous command returns error
-$do svn st ietf/externals/static | grep -v '^\?' || true
-$do svn commit ietf/externals/static -m "Updated bower-managed static web assets"
-# Get rid of bower-installed files which we don't use:
-$do rm -rf ietf/externals/static/datatracker/
-$do rm $(svn st ietf/externals/ | grep '^\?' | awk '{print $2}')
-
+if [ -z "$IGNORE_RESOURCES" ]; then
+    note "Updating bower assets ..."
+    $do ietf/manage.py bower_install > .mkrelease-bower-install.log
+    $do rm .mkrelease-bower-install.log	# This happens at once unless the previous command returns error
+    $do svn st ietf/externals/static | grep -v '^\?' || true
+    $do svn commit ietf/externals/static -m "Updated bower-managed static web assets"
+    # Get rid of bower-installed files which we don't use:
+    $do rm -rf ietf/externals/static/datatracker/
+    $do rm -f $(svn st ietf/externals/ | grep '^\?' | awk '{print $2}')
+fi
 
 note "Collecting static files ..."
 $do ietf/manage.py collectstatic --noinput --ignore=bower.json --ignore='README.*' --ignore=rev | grep -v "Found another file with the destination path"
