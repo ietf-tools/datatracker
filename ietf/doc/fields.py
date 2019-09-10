@@ -89,7 +89,10 @@ class SearchableDocumentsField(forms.CharField):
         value = super(SearchableDocumentsField, self).clean(value)
         pks = self.parse_select2_value(value)
 
-        objs = self.model.objects.filter(pk__in=pks)
+        try:
+            objs = self.model.objects.filter(pk__in=pks)
+        except ValueError as e:
+            raise forms.ValidationError("Unexpected field value; %s" % e)
 
         found_pks = [ str(o.pk) for o in objs ]
         failed_pks = [ x for x in pks if x not in found_pks ]
