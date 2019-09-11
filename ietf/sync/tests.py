@@ -288,9 +288,8 @@ class RFCSyncTests(TestCase):
         </date>
         <format>
             <file-format>ASCII</file-format>
-            <char-count>12345</char-count>
-            <page-count>42</page-count>
         </format>
+        <page-count>42</page-count>
         <keywords>
             <kw>test</kw>
         </keywords>
@@ -399,6 +398,11 @@ class RFCSyncTests(TestCase):
 
         drafts, warnings = rfceditor.parse_queue(io.StringIO(t))
         self.assertEqual(len(drafts), 1)
+        self.assertEqual(len(warnings), 0)
+
+        # Test with TI state introduced 11 Sep 2019
+        t = t.replace("<state>EDIT*R*A(1G)</state>", "<state>TI</state>")
+        __, warnings = rfceditor.parse_queue(io.StringIO(t))
         self.assertEqual(len(warnings), 0)
 
         draft_name, date_received, state, tags, missref_generation, stream, auth48, cluster, refs = drafts[0]

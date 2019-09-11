@@ -147,6 +147,7 @@ def update_drafts_from_queue(drafts):
         'ISR-AUTH': slookup['isr-auth'],
         'REF': slookup['ref'],
         'RFC-EDITOR': slookup['rfc-edit'],
+        'TI': slookup['tooling-issue'],
         'TO': slookup['timeout'],
         'MISSREF': slookup['missref'],
     }
@@ -300,7 +301,6 @@ def parse_index(response):
                     wg = None
 
                 l = []
-                pages = ""
                 for fmt in node.getElementsByTagName("format"):
                     l.append(get_child_text(fmt, "file-format"))
                 file_formats = (",".join(l)).lower()
