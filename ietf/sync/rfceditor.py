@@ -293,6 +293,7 @@ def parse_index(response):
                 updated_by = extract_doc_list(node, "updated-by")
                 obsoletes = extract_doc_list(node, "obsoletes") 
                 obsoleted_by = extract_doc_list(node, "obsoleted-by")
+                pages = get_child_text(node, "page-count")
                 stream = get_child_text(node, "stream")
                 wg = get_child_text(node, "wg_acronym")
                 if wg and ((wg == "NON WORKING GROUP") or len(wg) > 15):
@@ -302,8 +303,6 @@ def parse_index(response):
                 pages = ""
                 for fmt in node.getElementsByTagName("format"):
                     l.append(get_child_text(fmt, "file-format"))
-                    if get_child_text(fmt, "file-format") == "ASCII":
-                        pages = get_child_text(fmt, "page-count")
                 file_formats = (",".join(l)).lower()
 
                 abstract = ""
