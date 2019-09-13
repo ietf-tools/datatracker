@@ -723,6 +723,7 @@ RFC_EDITOR_GROUP_NOTIFICATION_EMAIL = "webmaster@rfc-editor.org"
 RFC_EDITOR_QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
 RFC_EDITOR_INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
 RFC_EDITOR_ERRATA_URL = "https://www.rfc-editor.org/errata_search.php?rfc={rfc_number}&amp;rec_status=0"
+RFC_EDITOR_INLINE_ERRATA_URL = "https://www.rfc-editor.org/rfc/beta/errata/RFC{rfc_number}.html"
 
 # NomCom Tool settings
 ROLODEX_URL = ""
