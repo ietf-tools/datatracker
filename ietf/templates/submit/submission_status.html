@@ -152,7 +152,7 @@
         {% show_submission_files submission %}
 
         {% if errors.files %}
-          <p class="text-danger"><b>{{ errors.files|safe }}</b></p>
+          <p class="text-danger bg-danger"><b>{{ errors.files|safe }}</b></p>
         {% endif %}
       </td>
     </tr>
@@ -164,7 +164,7 @@
 
         {% if errors.rev %}
           <button class="btn btn-default btn-xs pull-right" data-toggle="modal" data-target="#twopages">View errors in document</button>
-          <p class="text-danger"><b>{{ errors.rev }}</b></p>
+          <p class="text-danger bg-danger"><b>{{ errors.rev }}</b></p>
         {% endif %}
       </td>
     </tr>
@@ -174,7 +174,7 @@
       <td>
         {{ submission.group|default:"Individual Submission" }}
         {% if errors.group %}
-          <p class="text-danger"><b>{{ errors.group }}</b></p>
+          <p class="text-danger bg-danger"><b>{{ errors.group }}</b></p>
         {% endif %}
       </td>
     </tr>
@@ -184,7 +184,7 @@
       <td>
         {{ submission.document_date }}
         {% if errors.document_date %}
-          <p class="text-danger"><b>{{ errors.document_date }}</b></p>
+          <p class="text-danger bg-danger"><b>{{ errors.document_date }}</b></p>
         {% endif %}
       </td>
     </tr>
@@ -198,7 +198,7 @@
       <th>Title</th>
       <td>
         {{ submission.title|default:"" }}
-        {% if errors.title %}<p class="text-danger"><b>{{ errors.title }}</b></p>{% endif %}
+        {% if errors.title %}<p class="text-danger bg-danger"><b>{{ errors.title }}</b></p>{% endif %}
       </td>
     </tr>
 
@@ -206,7 +206,7 @@
       <th>Authors</th>
       <td>
         {{ submission.authors|length }} author{{ submission.authors|pluralize }}
-        {% if errors.authors %}<p class="text-danger"><b>{{ errors.authors|safe }}</b></p>{% endif %}
+        {% if errors.authors %}<p class="text-danger bg-danger"><b>{{ errors.authors|safe }}</b></p>{% endif %}
       </td>
     </tr>
 
@@ -244,7 +244,7 @@
       <th>Abstract</th>
       <td>
         {{ submission.abstract|linebreaksbr }}
-        {% if errors.abstract %}<p class="text-danger"><b>{{ errors.abstract }}</b></p>{% endif %}
+        {% if errors.abstract %}<p class="text-danger bg-danger"><b>{{ errors.abstract }}</b></p>{% endif %}
       </td>
     </tr>
 
@@ -252,7 +252,7 @@
       <th>Pages</th>
       <td>
         {{ submission.pages }}
-        {% if errors.pages %}<p class="text-danger"><b>{{ errors.pages }}</b></p>{% endif %}
+        {% if errors.pages %}<p class="text-danger bg-danger"><b>{{ errors.pages }}</b></p>{% endif %}
       </td>
     </tr>
 
@@ -265,7 +265,7 @@
       <th>Formal languages used</th>
       <td>
         {% for l in submission.formal_languages.all %}{{ l.name }}{% if not forloop.last %}, {% endif %}{% empty %}None recognized{% endfor %}
-        {% if errors.formal_languages %}<p class="text-danger"><b>{{ errors.formal_languages }}</b></p>{% endif %}
+        {% if errors.formal_languages %}<p class="text-danger bg-danger"><b>{{ errors.formal_languages }}</b></p>{% endif %}
       </td>
     </tr>
   </table>
