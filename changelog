@@ -1,3 +1,20 @@
+ietfdb (6.101.1) ietf; urgency=medium
+
+  * Added a link from the datatracker RFC pages to the new RFC rendereings
+    with inline errata on the RFC-Editor webpage (where available).
+
+  * Updated rfc-editor sync code to recognize the new Tooling Issue queue 
+    state.
+
+  * Updated ietf.sync.rfceditor.parse_index() to use the new rfc-index 
+    schema (changed placement of the page-count element).
+
+  * Added code to catch a form error regularly caused by form spam and 
+    return a failure instead of triggering a server 500.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 Sep 2019 11:35:29 +0000
+
+
 ietfdb (6.101.0) ietf; urgency=medium
 
   **IANA expert review tracking, new constraints labelling**
