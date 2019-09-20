@@ -64,7 +64,6 @@ def submission_file(name, rev, group, format, templatename, author=None, email=N
             expiration=(datetime.date.today() + datetime.timedelta(days=100)).strftime("%d %B, %Y"),
             year=year,
             month=datetime.date.today().strftime("%B"),
-            day=datetime.date.today().strftime("%d"),
             name="%s-%s" % (name, rev),
             group=group or "",
             author=author.ascii if ascii else author.name,
@@ -152,8 +151,6 @@ class SubmitTests(TestCase):
         status_url = r["Location"]
         for format in formats:
             self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, format))))
-            if format == 'xml':
-                self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, 'html'))))
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
         submission = Submission.objects.get(name=name)
         if len(submission.authors) != 1:
@@ -1687,7 +1684,7 @@ class ApiSubmitTests(TestCase):
         self.assertContains(r, expected, status_code=400)
 
     def test_api_submit_failed_idnits(self):
-        r, author, name = self.post_submission('00', year="2010")
+        r, author, name = self.post_submission('00', year="1900")
         expected = "Document date must be within 3 days of submission date"
         self.assertContains(r, expected, status_code=400)
 

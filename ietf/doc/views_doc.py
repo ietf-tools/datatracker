@@ -206,7 +206,7 @@ def document_main(request, name, rev=None):
 
             # file types
             base_path = os.path.join(settings.RFC_PATH, name + ".")
-            possible_types = settings.RFC_FILE_TYPES
+            possible_types = ["txt", "pdf", "ps"]
             found_types = [t for t in possible_types if os.path.exists(base_path + t)]
 
             base = "https://www.rfc-editor.org/rfc/"
@@ -220,7 +220,7 @@ def document_main(request, name, rev=None):
                 file_urls.append(("pdf", base + "pdfrfc/" + name + ".txt.pdf"))
 
             if "txt" in found_types:
-                file_urls.append(("htmlized", settings.TOOLS_ID_HTML_URL + name))
+                file_urls.append(("html", settings.TOOLS_ID_HTML_URL + name))
                 if doc.tags.filter(slug="errata"):
                     file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=rfc_number)))
 
@@ -236,8 +236,8 @@ def document_main(request, name, rev=None):
 
             # file types
             base_path = os.path.join(settings.INTERNET_DRAFT_PATH, doc.name + "-" + doc.rev + ".")
-            possible_types = settings.IDSUBMIT_FILE_TYPES
-            found_types = [t for t in possible_types if os.path.exists(base_path + t)]
+            possible_types = ["pdf", "xml", "ps"]
+            found_types = ["txt"] + [t for t in possible_types if os.path.exists(base_path + t)]
 
             if not snapshot and doc.get_state_slug() == "active":
                 base = settings.IETF_ID_URL
@@ -251,7 +251,7 @@ def document_main(request, name, rev=None):
 
             if "pdf" not in found_types:
                 file_urls.append(("pdf", settings.TOOLS_ID_PDF_URL + doc.name + "-" + doc.rev + ".pdf"))
-            file_urls.append(("htmlized", settings.TOOLS_ID_HTML_URL + doc.name + "-" + doc.rev))
+            file_urls.append(("html", settings.TOOLS_ID_HTML_URL + doc.name + "-" + doc.rev))
 
             # latest revision
             latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")

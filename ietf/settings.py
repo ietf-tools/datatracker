@@ -780,20 +780,15 @@ IDSUBMIT_CHECKER_CLASSES = (
 
 IDSUBMIT_MANUAL_STAGING_DIR = '/tmp/'
 
-
 IDSUBMIT_FILE_TYPES = (
     'txt',
-    'html',
     'xml',
     'pdf',
     'ps',
 )
-RFC_FILE_TYPES = IDSUBMIT_FILE_TYPES
-
 IDSUBMIT_MAX_DRAFT_SIZE =  {
     'txt':  2*1024*1024,  # Max size of txt draft file in bytes
     'xml':  3*1024*1024,  # Max size of xml draft file in bytes
-    'html': 4*1024*1024,
     'pdf':  6*1024*1024,
     'ps' :  6*1024*1024,
 }

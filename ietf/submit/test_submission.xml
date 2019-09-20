@@ -1,13 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE rfc SYSTEM "rfc2629-xhtml.ent">
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd" []>
 <?rfc toc="yes"?>
-<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="info" docName="%(name)s" ipr="trust200902" obsoletes="" updates="" submissionType="IETF" xml:lang="en" version="3">
-  <!-- xml2rfc v2v3 conversion 2.29.1 -->
+<rfc category="info" docName="%(name)s" ipr="trust200902">
   <front>
     <title>%(title)s</title>
-    <seriesInfo name="Internet-Draft" value="%(name)s"/>
     <author fullname="%(author)s" initials="%(initials)s" surname="%(surname)s">
       <organization>Test Centre Inc.</organization>
+
       <address>
         <postal>
           <street>42 Some Road</street>
@@ -17,7 +16,7 @@
         <email>%(email)s</email>
       </address>
     </author>
-    <date day="%(day)s" month="%(month)s" year="%(year)s"/>
+    <date month="%(month)s" year="%(year)s" />
     <workgroup>%(group)s</workgroup>
     <abstract>
       <t>
@@ -25,16 +24,18 @@
       </t>
     </abstract>
   </front>
+
   <middle>
-    <section numbered="true" toc="default">
-      <name>Introduction</name>
+    <section title="Introduction">
       <t>
          This document describes a protocol for testing tests.
       </t>
     </section>
-    <section numbered="true" toc="default">
-      <name>Yang</name>
-      <sourcecode name="ietf-yang-metadata@2016-08-05.yang" type="" markers="true"><![CDATA[
+    <section title="Yang">
+       <figure>
+          <artwork>
+             <![CDATA[
+<CODE BEGINS> file "ietf-yang-metadata@2016-08-05.yang"
 
 module ietf-yang-metadata {
 
@@ -121,10 +122,13 @@ module ietf-yang-metadata {
  }
 }
 
-]]></sourcecode>
+<CODE ENDS>
+             ]]>
+          </artwork>
+       </figure>
     </section>
-    <section anchor="JSON" numbered="true" toc="default">
-      <name>JSON example</name>
+
+    <section anchor="JSON" title="JSON example">
       <t>
    The JSON object should look like this:
 
@@ -133,18 +137,17 @@ module ietf-yang-metadata {
    }
       </t>
     </section>
-    <section anchor="Security" numbered="true" toc="default">
-      <name>Security Considerations</name>
+    <section anchor="Security" title="Security Considerations">
       <t>
          There are none.
       </t>
     </section>
-    <section anchor="IANA" numbered="true" toc="default">
-      <name>IANA Considerations</name>
+    <section anchor="IANA" title="IANA Considerations">
       <t>
          No new registrations for IANA.
       </t>
     </section>
   </middle>
-  <back/>
+  <back>
+  </back>
 </rfc>
