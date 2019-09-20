@@ -352,12 +352,16 @@ class SubmissionBaseUploadForm(forms.Form):
 class SubmissionManualUploadForm(SubmissionBaseUploadForm):
     xml = forms.FileField(label='.xml format', required=False) # xml field with required=False instead of True
     txt = forms.FileField(label='.txt format', required=False)
+    # We won't permit html upload until we can verify that the content
+    # reasonably matches the text and/or xml upload.  Till then, we generate
+    # html for version 3 xml submissions.
+    # html = forms.FileField(label='.html format', required=False)
     pdf = forms.FileField(label='.pdf format', required=False)
     ps  = forms.FileField(label='.ps format', required=False)
 
     def __init__(self, request, *args, **kwargs):
         super(SubmissionManualUploadForm, self).__init__(request, *args, **kwargs)
-        self.formats = ['txt', 'pdf', 'xml', 'ps', ]
+        self.formats = settings.IDSUBMIT_FILE_TYPES
         self.base_formats = ['txt', 'xml', ]
 
     def clean_txt(self):

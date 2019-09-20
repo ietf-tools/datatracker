@@ -528,16 +528,14 @@ def cancel_submission(submission):
     remove_submission_files(submission)
 
 def rename_submission_files(submission, prev_rev, new_rev):
-    from ietf.submit.forms import SubmissionManualUploadForm
-    for ext in list(SubmissionManualUploadForm.base_fields.keys()):
+    for ext in settings.IDSUBMIT_FILE_TYPES:
         source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, prev_rev, ext))
         dest = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, new_rev, ext))
         if os.path.exists(source):
             os.rename(source, dest)
 
 def move_files_to_repository(submission):
-    from ietf.submit.forms import SubmissionManualUploadForm
-    for ext in list(SubmissionManualUploadForm.base_fields.keys()):
+    for ext in settings.IDSUBMIT_FILE_TYPES:
         source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, submission.rev, ext))
         dest = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, '%s-%s.%s' % (submission.name, submission.rev, ext))
         if os.path.exists(source):
@@ -622,18 +620,24 @@ def get_draft_meta(form, saved_files):
     file_name = saved_files
     abstract = None
     file_size = None
+    xml2rfc.log.write_out = open(os.devnull, "w")
+    xml2rfc.log.write_err = open(os.devnull, "w")
     if form.cleaned_data['xml']:
+        try:
+            xmlroot = form.xmltree.getroot()
+            xml_version = xmlroot.get('version', '2')
+            if xml_version == '3':
+                prep = xml2rfc.PrepToolWriter(form.xmltree, quiet=True)
+                form.xmltree.tree = prep.prep()
+        except Exception as e:
+            raise ValidationError("Error from xml2rfc (prep): %s" % e)
         if not ('txt' in form.cleaned_data and form.cleaned_data['txt']):
             file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (form.filename, form.revision))
             try:
-                xmlroot = form.xmltree.getroot()
-                xml_version = xmlroot.get('version', '2')
                 if xml_version != '3':
                     pagedwriter = xml2rfc.PaginatedTextRfcWriter(form.xmltree, quiet=True)
                     pagedwriter.write(file_name['txt'])
                 else:
-                    prep = xml2rfc.PrepToolWriter(form.xmltree, quiet=True)
-                    form.xmltree.tree = prep.prep()
                     writer = xml2rfc.TextWriter(form.xmltree, quiet=True)
                     writer.write(file_name['txt'])
                 log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
@@ -643,8 +647,22 @@ def get_draft_meta(form, saved_files):
                             os.path.basename(file_name['xml']),
                             xml_version))
             except Exception as e:
-                raise ValidationError("Error from xml2rfc: %s" % e)
+                raise ValidationError("Error from xml2rfc (text): %s" % e) 
             file_size = os.stat(file_name['txt']).st_size
+        if xml_version == '3':
+            try:
+                file_name['html'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.html' % (form.filename, form.revision))
+                writer = xml2rfc.HtmlWriter(form.xmltree, quiet=True)
+                writer.write(file_name['html'])
+                form.file_types.append('.html')
+                log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
+                    (   os.path.dirname(file_name['xml']),
+                        xml2rfc.__version__,
+                        os.path.basename(file_name['html']),
+                        os.path.basename(file_name['xml']),
+                        xml_version))
+            except Exception as e:
+                raise ValidationError("Error from xml2rfc (html): %s" % e) 
         # Some meta-information, such as the page-count, can only
         # be retrieved from the generated text file.  Provide a
         # parsed draft object to get at that kind of information.
