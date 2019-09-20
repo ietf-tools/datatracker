@@ -1,3 +1,34 @@
+ietfdb (6.102.0) ietf; urgency=medium
+
+  **Links to RFC text with inlined errata.  HTML for v3 XML draft submissions**
+
+  * Added conversion of version 3 XML draft submissions to v3 HTML, in
+    addition to text.  Added a link to HTML versions (when present) to the
+    document status page, and renamed the link to the htmlized version to
+    'htmlized'.  Converted the test-file for XML submission tests to v3.
+    Added test code to check that HTML is generated for v3 XML submissions.
+
+  * Added class 'bg-danger' to submission error messages on the submission
+    upload result page.  The big 'Meta-Data errors found' pane with red
+    background is so noticeable that class 'text-danger' (which gives bold
+    text, but no change of background) is insufficient to stand out clearly.
+    Adding 'bg-danger' gives field error messages red background, too.
+
+  * Added a link from the datatracker RFC pages to the new RFC renderings
+    with inline errata on the RFC-Editor webpage (where available).
+
+  * Updated rfc-editor sync code to recognize the new Tooling Issue queue 
+    state.
+
+  * Updated ietf.sync.rfceditor.parse_index() to use the new rfc-index 
+    schema (changed placement of the page-count element).
+
+  * Added code to catch a form error regularly caused by form spam and 
+    return a failure instead of triggering a server 500.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Sep 2019 16:18:30 +0000
+
+
 ietfdb (6.101.0) ietf; urgency=medium
 
   **IANA expert review tracking, new constraints labelling**
