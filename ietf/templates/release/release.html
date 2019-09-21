@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin %}{% load cache %}
 
 {% block title %}Release information{% endblock %}
 
@@ -51,8 +51,10 @@
 
  -- {{entry.author}} &lt;{{entry.email}}&gt;  {{entry.date}}
   </pre>
+  {% cache 3600 ietf_release_list %}
   <div id="release-list"></div>
   <h2>Release list:</h2>
+  
   <table style="margin-left: 3em" class="table-striped">
      <tbody>
   {% for item in releases %}
@@ -74,6 +76,7 @@
   {% endfor %}
     </tbody>
   </table>
+  {% endcache %}
 </div>
 {% endblock %}
 

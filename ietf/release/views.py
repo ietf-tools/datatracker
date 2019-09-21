@@ -60,18 +60,23 @@ def get_changelog_entries():
             cache.set(cache_key, log_entries, 60*60*24)
     return log_entries
 
+entries = None
+log_entries = None
+coverage_data = None
 def release(request, version=None):
-    entries = {}
-    log_entries = get_changelog_entries()
-    if not log_entries:
-        return HttpResponse("Error: changelog file %s not found" % settings.CHANGELOG_PATH)
-    next = None
-    for entry in log_entries:
-        if next:
-            next.prev = entry
-        entry.next = next
-        next = entry
-    entries = dict((entry.version, entry) for entry in log_entries)
+    global entries, log_entries, coverage_data
+    if not entries:
+        log_entries = get_changelog_entries()
+        if not log_entries:
+            return HttpResponse("Error: changelog file %s not found" % settings.CHANGELOG_PATH)
+        next = None
+        for entry in log_entries:
+            if next:
+                next.prev = entry
+            entry.next = next
+            next = entry
+        entries = dict((entry.version, entry) for entry in log_entries)
+
     if version == None or version not in entries:
         version = log_entries[0].version
     entries[version].logentry = trac_links(escape(entries[version].logentry.strip('\n')))
@@ -83,7 +88,8 @@ def release(request, version=None):
         code_coverage_time = datetime.datetime.fromtimestamp(os.path.getmtime(settings.TEST_CODE_COVERAGE_REPORT_FILE))
 
     coverage = {}
-    coverage_data = get_coverage_data()
+    if not coverage_data:
+        coverage_data = get_coverage_data()
     if version in coverage_data:
         coverage = coverage_data[version]
         for key in coverage:
