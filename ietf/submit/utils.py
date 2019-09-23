@@ -72,6 +72,30 @@ def validate_submission(submission):
     if error:
         errors['document_date'] = error
 
+    # author email addresses
+    author_error_count = 0
+    seen = set()
+    for author in submission.authors:
+        email = author['email']
+        author['errors'] = []
+        if not email:
+            author['errors'].append("Found no email address.  A valid email address is required.")
+            author_error_count += 1
+        else:
+            try:
+                validate_email(email)
+            except ValidationError:
+                author['errors'].append("Invalid email address. A valid email address is required.")
+                author_error_count += 1
+        if email in seen:
+            author['errors'].append("Duplicate email address.  A unique email address is required.")
+            author_error_count += 1
+        else:
+            seen.add(email)
+            
+    if author_error_count:
+        errors['authors'] = "Author email error (see below)" if author_error_count == 1 else "Author email errors (see below)"
+
     return errors
 
 def has_been_replaced_by(name):

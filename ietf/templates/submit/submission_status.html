@@ -235,7 +235,9 @@
             <br>
             <b class="text-warning">Unrecognized country: "{{ author.country }}"</b>: See <a href="{% url "ietf.stats.views.known_countries_list" %}">recognized country names</a>.
           {% endif %}
-          
+	  {% for auth_err in author.errors %}
+	     <p class="text-danger bg-danger"><b>{{ auth_err }}</b></p>
+	  {% endfor %}
         </td>
       </tr>
     {% endfor %}
@@ -279,7 +281,7 @@
     </form>
     <p>Leads to manual post by the secretariat.</p>
 
-    {% if passes_checks and not errors %}
+    {% if passes_checks and not errors and not submission.errors %}
       <h2>Please edit the following meta-data before posting:</h2>
 
       <form class="idsubmit" method="post">
@@ -287,6 +289,7 @@
         {% include "submit/submitter_form.html" %}
         {% include "submit/replaces_form.html" %}
         <input type="hidden" name="action" value="autopost">
+	<h3>Post submission</h3>
         <button class="btn btn-primary" type="submit">Post submission</button>
       </form>
 
@@ -320,7 +323,7 @@
   {% endif %}
 
   {% if can_cancel %}
-    <h2>Cancel submission</h2>
+    <h3>Cancel submission</h3>
     <form id="cancel-submission" method="post">
       {% csrf_token %}
       <input type="hidden" name="action" value="cancel">

@@ -53,7 +53,7 @@ def submission_file(name, rev, group, format, templatename, author=None, email=N
     if author is None:
         author = PersonFactory()
     if email is None:
-        email = author.email().address.lower()
+        email = author.email().address.lower() if author.email() else None
     if title is None:
         title = "Test Document"
     if year is None:
@@ -754,7 +754,7 @@ class SubmitTests(TestCase):
             "authors-1-name": "Person 2",
             "authors-1-email": "person2@example.com",
             "authors-2-name": "Person 3",
-            "authors-2-email": "",
+            "authors-2-email": "person3@example.com",
             "authors-prefix": ["authors-", "authors-0", "authors-1", "authors-2"],
         })
         self.assertNoFormPostErrors(r, ".has-error,.alert-danger")
@@ -776,7 +776,7 @@ class SubmitTests(TestCase):
         self.assertEqual(authors[1]["name"], "Person 2")
         self.assertEqual(authors[1]["email"], "person2@example.com")
         self.assertEqual(authors[2]["name"], "Person 3")
-        self.assertEqual(authors[2]["email"], "")
+        self.assertEqual(authors[2]["email"], "person3@example.com")
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Manual Post Requested" in outbox[-1]["Subject"])
@@ -1038,20 +1038,62 @@ class SubmitTests(TestCase):
 
         self.assertIn('The idnits check returned 1 warning', m)
 
+    def test_submit_missing_author_email(self):
+        name = "draft-authorname-testing-noemail"
+        rev = "00"
+        group = None
+
+        author = PersonFactory()
+        for e in author.email_set.all():
+            e.delete()
+
+        files = {"txt": submission_file(name, rev, group, "txt", "test_submission.txt", author=author, ascii=False)[0] }
+
+        # submit
+        url = urlreverse('ietf.submit.views.upload_submission')
+        r = self.client.post(url, files)
+        self.assertEqual(r.status_code, 302)
+        status_url = r["Location"]
+        r = self.client.get(status_url)
+        q = PyQuery(r.content)
+        m = q('p.text-danger').text()
+
+        self.assertIn('Author email error', m)
+        self.assertIn('Found no email address.', m)
+
+    def test_submit_bad_author_email(self):
+        name = "draft-authorname-testing-bademail"
+        rev = "00"
+        group = None
+
+        author = PersonFactory()
+        email = author.email_set.first()
+        email.address = '@bad.email'
+        email.save()
+
+        files = {"xml": submission_file(name, rev, group, "xml", "test_submission.xml", author=author, ascii=False)[0] }
+
+        # submit
+        url = urlreverse('ietf.submit.views.upload_submission')
+        r = self.client.post(url, files)
+        self.assertEqual(r.status_code, 302)
+        status_url = r["Location"]
+        r = self.client.get(status_url)
+        q = PyQuery(r.content)
+        m = q('p.text-danger').text()
+
+        self.assertIn('Author email error', m)
+        self.assertIn('Invalid email address.', m)
+
     def test_submit_invalid_yang(self):
         name = "draft-yang-testing-invalid"
         rev = "00"
         group = None
 
-        # get
-        url = urlreverse('ietf.submit.views.upload_submission')
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-
         # submit
-        files = {"txt": submission_file(name, rev, group, "txt", "test_submission_invalid_yang.txt") }
+        files = {"txt": submission_file(name, rev, group, "txt", "test_submission_invalid_yang.txt")[0] }
 
+        url = urlreverse('ietf.submit.views.upload_submission')
         r = self.client.post(url, files)
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]

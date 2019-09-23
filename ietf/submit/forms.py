@@ -403,7 +403,6 @@ class AuthorForm(NameEmailForm):
 
     def __init__(self, *args, **kwargs):
         super(AuthorForm, self).__init__(*args, **kwargs)
-        self.fields["email"].required = False
 
 class SubmitterForm(NameEmailForm):
     #Fields for secretariat only

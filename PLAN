@@ -7,11 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Change the draft submission form so that an email address is required for
-  each author in order to complete self-service draft submission.  Missing
-  email address(es) will lead to failure, and require submission via the
-  secretariat (where email addresses for all will also be required).
-
 * Simplify submission if submitter is logged into the datatracker, skipping the
   email verification step.
 
