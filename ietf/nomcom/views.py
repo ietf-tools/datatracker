@@ -206,7 +206,7 @@ def private_index(request, year):
             totals[state['slug']] = Feedback.objects.filter(nomcom=nomcom, type='questio').count()
         else:
             totals[state['slug']] = all_nominee_positions.filter(state=state['slug']).count()
-    totals['comments'] = Feedback.objects.filter(nomcom=nomcom, type='comment').count()
+    totals['comments'] = Feedback.objects.filter(nomcom=nomcom, type='comment', positions__isnull=False).count()
     totals['open'] = nomcom.position_set.filter(is_open=True).count()
     totals['accepting_nominations'] = nomcom.position_set.filter(accepting_nominations=True).count()
     totals['accepting_feedback'] = nomcom.position_set.filter(accepting_feedback=True).count()
