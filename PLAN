@@ -7,9 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Simplify submission if submitter is logged into the datatracker, skipping the
-  email verification step.
-
 * Polish the htmlization pages, making the style identical with tools.ietf.org.
 
 * Investigate making RFCs first-class document objects to faciliate being
