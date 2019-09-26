@@ -9,12 +9,14 @@ Planned work in rough order
 
 * Polish the htmlization pages, making the style identical with tools.ietf.org.
 
+* Wrap Trac in a docker container, in preparation for transition to running
+  the datatracker under Python 3.  It doesn't look like Trac will be available
+  for Python 3 until January 2020 at the earliest.
+
 * Investigate making RFCs first-class document objects to faciliate being
   able to model BCPs that represent groups of RFCs properly. Then fix the rfc sync
   script to update BCP aliases when changes occur changes (a BCP points to new
   RFC numbers)
-
-* Revisit the review tool, work through the accumulated tickets.
 
 * Complete the transition to Python 3.  This will make it easier to add add
   support for internationalsed email, and also other i18n enhancements.  The
