@@ -34,7 +34,8 @@ from ietf.submit.models import (Submission, Preapproval,
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
     recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
     post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
-    get_submission, fill_in_submission, apply_checkers, send_confirmation_emails, save_files )
+    get_submission, fill_in_submission, apply_checkers, send_confirmation_emails, save_files,
+    get_person_from_name_email )
 from ietf.stats.utils import clean_country_name
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.log import log
@@ -74,6 +75,8 @@ def upload_submission(request):
             form = SubmissionManualUploadForm(request=request)
             form._errors = {}
             form._errors["__all__"] = form.error_class(["There was a failure converting the xml file to text -- please verify that your xml file is valid.  (%s)" % e.message])
+            if debug.debug:
+                raise
     else:
         form = SubmissionManualUploadForm(request=request)
 
@@ -258,6 +261,7 @@ def submission_status(request, submission_id, access_token=None):
             submitter_form = SubmitterForm(request.POST, prefix="submitter")
             replaces_form = ReplacesForm(request.POST, name=submission.name)
             validations = [submitter_form.is_valid(), replaces_form.is_valid()]
+
             if all(validations):
                 submission.submitter = submitter_form.cleaned_line()
                 replaces = replaces_form.cleaned_data.get("replaces", [])
@@ -276,13 +280,25 @@ def submission_status(request, submission_id, access_token=None):
                     post_submission(request, submission, desc)
                     create_submission_event(request, submission, desc)
                 else:
-                    sent_to, desc, docDesc = send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval)
-                    msg = "Set submitter to \"%s\", replaces to %s and %s" % (
-                        submission.submitter,
-                        ", ".join(prettify_std_name(r.name) for r in replaces) if replaces else "(none)",
-                        desc)
-                    create_submission_event(request, submission, msg)
-                    docevent_from_submission(request, submission, docDesc, who="(System)")
+                    doc = submission.existing_document()
+                    prev_authors = [] if not doc else [ author.person for author in doc.documentauthor_set.all() ]
+                    curr_authors = [ get_person_from_name_email(author["name"], author.get("email")) for author in submission.authors ]
+
+                    if request.user.is_authenticated and request.user.person in (prev_authors if prev_authors else curr_authors):
+                        # go directly to posting submission
+                        docevent_from_submission(request, submission, desc="Uploaded new revision", who=request.user.person)
+
+                        desc = "New version accepted (logged-in submitter: %s)" % request.user.person
+                        post_submission(request, submission, desc)
+                        create_submission_event(request, submission, desc)
+                    else:
+                        sent_to, desc, docDesc = send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval)
+                        msg = "Set submitter to \"%s\", replaces to %s and %s" % (
+                            submission.submitter,
+                            ", ".join(prettify_std_name(r.name) for r in replaces) if replaces else "(none)",
+                            desc)
+                        create_submission_event(request, submission, msg)
+                        docevent_from_submission(request, submission, docDesc, who="(System)")
     
                 if access_token:
                     return redirect("ietf.submit.views.submission_status", submission_id=submission.pk, access_token=access_token)

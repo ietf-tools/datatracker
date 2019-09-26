@@ -68,8 +68,10 @@ def submission_file(name, rev, group, format, templatename, author=None, email=N
             name="%s-%s" % (name, rev),
             group=group or "",
             author=author.ascii if ascii else author.name,
+            asciiAuthor=author.ascii,
             initials=author.initials(),
             surname=author.ascii_parts()[3] if ascii else author.name_parts()[3],
+            asciiSurname=author.ascii_parts()[3],
             email=email,
             title=title,
     )
@@ -158,7 +160,7 @@ class SubmitTests(TestCase):
         submission = Submission.objects.get(name=name)
         if len(submission.authors) != 1:
             sys.stderr.write("\nAuthor extraction failure.\n")
-            sys.stderr.write(("Author name used in test: %s\n"%author).encode('utf8'))
+            sys.stderr.write(six.ensure_text("Author name used in test: %s\n"%author))
             sys.stderr.write("Author ascii name: %s\n" % author.ascii)
             sys.stderr.write("Author initials: %s\n" % author.initials())
         self.assertEqual(len(submission.authors), 1)
@@ -593,6 +595,51 @@ class SubmitTests(TestCase):
 
     def test_submit_new_individual_txt_xml(self):
         self.submit_new_individual(["txt", "xml"])
+
+    def submit_new_individual_logged_in(self, formats):
+        # submit new -> supply submitter info -> done
+
+        name = "draft-authorname-testing-logged-in"
+        rev = "00"
+        group = None
+
+        author = PersonFactory()
+        username = author.user.email
+        self.client.login(username=username, password=username+"+password")
+        
+        status_url, author = self.do_submission(name, rev, group, formats, author=author)
+
+        # supply submitter info, then draft should be be ready for email auth
+        mailbox_before = len(outbox)
+        r = self.supply_extra_metadata(name, status_url, author.name, username, replaces="")
+
+        self.assertEqual(r.status_code, 302)
+        status_url = r["Location"]
+        r = self.client.get(status_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "New version accepted")
+
+        self.assertEqual(len(outbox), mailbox_before+2)
+        announcement_email = outbox[-2]
+        self.assertIn(name, announcement_email["Subject"])
+        self.assertIn('I-D Action:', announcement_email["Subject"])
+        self.assertIn('i-d-announce', announcement_email["To"])
+        notification_email = outbox[-1]
+        self.assertIn(name, notification_email["Subject"])
+        self.assertIn("New Version Notification", notification_email["Subject"])
+        self.assertIn(author.email().address.lower(), notification_email["To"])
+
+        draft = Document.objects.get(docalias__name=name)
+        self.assertEqual(draft.rev, rev)
+        new_revision = draft.latest_event()
+        self.assertEqual(new_revision.type, "new_revision")
+        self.assertEqual(new_revision.by.name, author.name)
+
+    def test_submit_new_logged_in_txt(self):
+        self.submit_new_individual_logged_in(["txt"])
+
+    def test_submit_new_logged_in_xml(self):
+        self.submit_new_individual_logged_in(["xml"])
 
     def test_submit_update_individual(self):
         IndividualDraftFactory(name='draft-ietf-random-thing', states=[('draft','rfc')], other_aliases=['rfc9999',], pages=5)
@@ -1047,7 +1094,7 @@ class SubmitTests(TestCase):
         for e in author.email_set.all():
             e.delete()
 
-        files = {"txt": submission_file(name, rev, group, "txt", "test_submission.txt", author=author, ascii=False)[0] }
+        files = {"txt": submission_file(name, rev, group, "txt", "test_submission.txt", author=author, ascii=True)[0] }
 
         # submit
         url = urlreverse('ietf.submit.views.upload_submission')

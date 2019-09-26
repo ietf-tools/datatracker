@@ -653,6 +653,8 @@ def get_draft_meta(form, saved_files):
             if xml_version == '3':
                 prep = xml2rfc.PrepToolWriter(form.xmltree, quiet=True)
                 form.xmltree.tree = prep.prep()
+                if form.xmltree.tree == None:
+                    raise ValidationError("Error from xml2rfc (prep): %s" % prep.errors)
         except Exception as e:
             raise ValidationError("Error from xml2rfc (prep): %s" % e)
         if not ('txt' in form.cleaned_data and form.cleaned_data['txt']):
