@@ -1,6 +1,36 @@
+ietfdb (6.103.0) ietf; urgency=medium
+
+  **Draft submission tool changes**
+
+  This release contains two changes to the submission tool: During draft
+  submission, the email verification is skipped for logged-in users, and
+  author email addresses are now required for all authors, in order to avoid
+  author notification problems during IETF and RFC-Editor processing.  Commit
+  log details:
+
+  * Changed draft submission to not require an email round-trip when the 
+    submitter is logged in.  Added corresponding test cases.
+
+  * Added code to detect conflicting information for draft name, revision, 
+    and title when both XML and text versions of a document are submitted.
+
+  * Changed the draft submission form and views so that an email address is 
+    required for each author in order to complete self-service draft 
+    submission.  It is possible to add these as metadata updates, but this will 
+    lead to submission through the secretariat (and the email addresses will 
+    still be required).  Also updated related templates to make the handling of 
+    form section headings more consistent.
+
+  * Added some caching to /release/ pages.  With now more than 350 
+    releases, the page response times had increased to typically 4s.  Caching 
+    in view and template brought this down to ~160ms.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Sep 2019 18:42:18 +0000
+
+
 ietfdb (6.102.0) ietf; urgency=medium
 
-  **Links to RFC text with inlined errata.  HTML for v3 XML draft submissions**
+  **Links to RFC text with in-lined errata.  HTML for v3 XML draft submissions**
 
   * Added conversion of version 3 XML draft submissions to v3 HTML, in
     addition to text.  Added a link to HTML versions (when present) to the
@@ -15,9 +45,9 @@ ietfdb (6.102.0) ietf; urgency=medium
     Adding 'bg-danger' gives field error messages red background, too.
 
   * Added a link from the datatracker RFC pages to the new RFC renderings
-    with inline errata on the RFC-Editor webpage (where available).
+    with inline errata on the RFC-Editor web page (where available).
 
-  * Updated rfc-editor sync code to recognize the new Tooling Issue queue 
+  * Updated rfc-editor sync code to recognise the new Tooling Issue queue 
     state.
 
   * Updated ietf.sync.rfceditor.parse_index() to use the new rfc-index 
