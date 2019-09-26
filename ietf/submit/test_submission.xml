@@ -5,7 +5,7 @@
   <front>
     <title>%(title)s</title>
     <seriesInfo name="Internet-Draft" value="%(name)s"/>
-    <author fullname="%(author)s" initials="%(initials)s" surname="%(surname)s">
+    <author asciiFullname="%(asciiAuthor)s" fullname="%(author)s" initials="%(initials)s" asciiSurname="%(asciiSurname)s" surname="%(surname)s">
       <organization>Test Centre Inc.</organization>
       <address>
         <postal>
