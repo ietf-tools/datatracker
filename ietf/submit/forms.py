@@ -230,10 +230,18 @@ class SubmissionBaseUploadForm(forms.Form):
                 raise forms.ValidationError('Failed decoding the uploaded file: "%s"' % str(e))
             #
             self.parsed_draft = Draft(text, txt_file.name)
-            self.filename = self.parsed_draft.filename
-            self.revision = self.parsed_draft.revision
-            self.title    = self.parsed_draft.get_title()
-
+            if self.filename == None:
+                self.filename = self.parsed_draft.filename
+            elif self.filename != self.parsed_draft.filename:
+                raise forms.ValidationError("Inconsistent name information: xml:%s, txt:%s" % (self.filename, self.parsed_draft.filename))
+            if self.revision == None:
+                self.revision = self.parsed_draft.revision
+            elif self.revision != self.parsed_draft.revision:
+                raise forms.ValidationError("Inconsistent revision information: xml:%s, txt:%s" % (self.revision, self.parsed_draft.revision))
+            if self.title == None:
+                self.title = self.parsed_draft.get_title()
+            elif self.title != self.parsed_draft.get_title():
+                raise forms.ValidationError("Inconsistent title information: xml:%s, txt:%s" % (self.title, self.parsed_draft.get_title()))
 
         if not self.filename:
             raise forms.ValidationError("Could not extract a valid draft name from the upload"
