@@ -284,7 +284,7 @@ def submission_status(request, submission_id, access_token=None):
                     prev_authors = [] if not doc else [ author.person for author in doc.documentauthor_set.all() ]
                     curr_authors = [ get_person_from_name_email(author["name"], author.get("email")) for author in submission.authors ]
 
-                    if request.user.is_authenticated and request.user.person in (prev_authors if prev_authors else curr_authors):
+                    if request.user.is_authenticated and request.user.person in (prev_authors if submission.rev != '00' else curr_authors):
                         # go directly to posting submission
                         docevent_from_submission(request, submission, desc="Uploaded new revision", who=request.user.person)
 
