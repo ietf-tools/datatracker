@@ -26,6 +26,7 @@ from ietf.group.utils import group_features_group_filter
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message, MessageAttachment
+from ietf.person.models import Person
 from ietf.submit.forms import ( SubmissionManualUploadForm, SubmissionAutoUploadForm, AuthorForm,
     SubmitterForm, EditSubmissionForm, PreapprovalForm, ReplacesForm, SubmissionEmailForm, MessageModelForm )
 from ietf.submit.mail import ( send_full_url, send_manual_post_request, add_submission_email, get_reply_to )
@@ -142,7 +143,7 @@ def api_submit(request):
                 sent_to, desc, docDesc = send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval)
                 msg = "Set submitter to \"%s\" and %s" % (submission.submitter, desc)
                 create_submission_event(request, submission, msg)
-                docevent_from_submission(request, submission, docDesc, who="(System)")
+                docevent_from_submission(request, submission, docDesc, who=Person.objects.get(name="(System)"))
 
                 return HttpResponse(
                     "Upload of %s OK, confirmation requests sent to:\n  %s" % (submission.name, ',\n  '.join(sent_to)),
@@ -298,7 +299,7 @@ def submission_status(request, submission_id, access_token=None):
                             ", ".join(prettify_std_name(r.name) for r in replaces) if replaces else "(none)",
                             desc)
                         create_submission_event(request, submission, msg)
-                        docevent_from_submission(request, submission, docDesc, who="(System)")
+                        docevent_from_submission(request, submission, docDesc, who=Person.objects.get(name="(System)"))
     
                 if access_token:
                     return redirect("ietf.submit.views.submission_status", submission_id=submission.pk, access_token=access_token)

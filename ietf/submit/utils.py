@@ -10,9 +10,12 @@ import os
 import re
 import six                              # pyflakes:ignore
 import xml2rfc
+if six.PY3:
+    from typing import Callable, Optional
 
 from django.conf import settings
 from django.core.validators import validate_email, ValidationError
+from django.http import HttpRequest
 from django.utils.module_loading import import_string
 
 import debug                            # pyflakes:ignore
@@ -161,23 +164,23 @@ def create_submission_event(request, submission, desc):
 
     SubmissionEvent.objects.create(submission=submission, by=by, desc=desc)
 
-def docevent_from_submission(request, submission, desc, who=None):
-    system = Person.objects.get(name="(System)")
+def docevent_from_submission(request, submission, desc, who=None): # type: (HttpRequest, Submission, str, Optional[Person]) -> Optional[DocEvent]
+    log.assertion('who is None or isinstance(who, Person)')
 
     try:
         draft = Document.objects.get(name=submission.name)
     except Document.DoesNotExist:
         # Assume this is revision 00 - we'll do this later
-        return
+        return None
 
     if who:
-        by = Person.objects.get(name=who)
+        by = who
     else:
         submitter_parsed = submission.submitter_parsed()
         if submitter_parsed["name"] and submitter_parsed["email"]:
             by, _ = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"], submission.name)
         else:
-            by = system
+            by = Person.objects.get(name="(System)")
 
     e = SubmissionDocEvent.objects.create(
             doc=draft,
