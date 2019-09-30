@@ -50,7 +50,7 @@ admin.site.register(Position, PositionAdmin)
 class FeedbackAdmin(admin.ModelAdmin):
     def nominee(self, obj):
         return ", ".join(n.person.ascii for n in obj.nominees.all())
-    nominee.admin_order_field = 'nominees__person__ascii'
+    nominee.admin_order_field = 'nominees__person__ascii' # type: ignore # https://github.com/python/mypy/issues/2087
 
     list_display = ['id', 'nomcom', 'author', 'nominee', 'subject', 'type', 'user', 'time']
     list_filter = ['nomcom', 'type', 'time', ]

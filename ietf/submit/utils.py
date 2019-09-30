@@ -11,11 +11,11 @@ import re
 import six                              # pyflakes:ignore
 import xml2rfc
 if six.PY3:
-    from typing import Callable, Optional
+    from typing import Callable, Optional # pyflakes:ignore
 
 from django.conf import settings
 from django.core.validators import validate_email, ValidationError
-from django.http import HttpRequest
+from django.http import HttpRequest     # pyflakes:ignore
 from django.utils.module_loading import import_string
 
 import debug                            # pyflakes:ignore
@@ -164,7 +164,8 @@ def create_submission_event(request, submission, desc):
 
     SubmissionEvent.objects.create(submission=submission, by=by, desc=desc)
 
-def docevent_from_submission(request, submission, desc, who=None): # type: (HttpRequest, Submission, str, Optional[Person]) -> Optional[DocEvent]
+def docevent_from_submission(request, submission, desc, who=None):
+    # type: (HttpRequest, Submission, str, Optional[Person]) -> Optional[DocEvent]
     log.assertion('who is None or isinstance(who, Person)')
 
     try:

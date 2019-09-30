@@ -11,7 +11,7 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.group.models import (Group, GroupStateTransitions, GroupMilestone, GroupHistory,
+from ietf.group.models import (Group, GroupStateTransitions, GroupMilestone, GroupHistory, # type: ignore
     GroupURL, Role, GroupEvent, RoleHistory, GroupMilestoneHistory, MilestoneGroupEvent,
     ChangeStateGroupEvent, GroupFeatures, HistoricalGroupFeatures)
 

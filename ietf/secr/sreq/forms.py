@@ -20,7 +20,7 @@ from ietf.person.fields import SearchablePersonsField
 NUM_SESSION_CHOICES = (('','--Please select'),('1','1'),('2','2'))
 # LENGTH_SESSION_CHOICES = (('','--Please select'),('1800','30 minutes'),('3600','1 hour'),('5400','1.5 hours'), ('7200','2 hours'),('9000','2.5 hours'))
 LENGTH_SESSION_CHOICES = (('','--Please select'),('1800','30 minutes'),('3600','1 hour'),('5400','1.5 hours'), ('7200','2 hours'))
-WG_CHOICES = list( Group.objects.filter(type__in=('wg','rg','ag'),state__in=('bof','proposed','active')).values_list('acronym','acronym').order_by('acronym'))
+WG_CHOICES = list( Group.objects.filter(type__in=('wg','rg','ag'),state__in=('bof','proposed','active')).values_list('acronym','acronym').order_by('acronym')) # type: ignore
 WG_CHOICES.insert(0,('','--Select WG(s)'))
 
 # -------------------------------------------------

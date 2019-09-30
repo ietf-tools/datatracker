@@ -9,9 +9,12 @@ from __future__ import absolute_import, print_function, unicode_literals
 # http://code.djangoproject.com/wiki/SplitSettings
 
 import os
+import six
 import sys
 import datetime
 import warnings
+if six.PY3:
+    from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
 warnings.simplefilter("always", DeprecationWarning)
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
@@ -19,7 +22,7 @@ warnings.filterwarnings("ignore", message="The popen2 module is deprecated.  Use
 warnings.filterwarnings("ignore", message="Usage of field.rel has been deprecated. Use field.remote_field instead.", module="tastypie.resources")
 warnings.filterwarnings("ignore", message="Importing from django.core.urlresolvers is deprecated in favor of django.urls.", module="tastypie.resources")
 warnings.filterwarnings("ignore", message="on_delete will be a required arg for OneToOneField in Django 2.0.", module="tastypie")
-warnings.filterwarnings("ignore", message="The load_template\(\) method is deprecated. Use get_template\(\) instead.")
+warnings.filterwarnings("ignore", message=r"The load_template\(\) method is deprecated. Use get_template\(\) instead.")
 warnings.filterwarnings("ignore", message="escape isn't the last filter in")
 warnings.filterwarnings("ignore", message="Deprecated allow_tags attribute used on field")
 warnings.filterwarnings("ignore", message="You passed a bytestring as `filenames`. This will not work on Python 3.")
@@ -57,13 +60,13 @@ SERVER_MODE = 'development'
 # Domain name of the IETF
 IETF_DOMAIN = 'ietf.org'
 
-ADMINS = (
+ADMINS = [
     ('Henrik Levkowetz', 'henrik@levkowetz.com'),
     ('Robert Sparks', 'rjsparks@nostrum.com'),
 #    ('Ole Laursen', 'olau@iola.dk'),
     ('Ryan Cross', 'rcross@amsl.com'),
     ('Glen Barney', 'glen@amsl.com'),
-)
+]                                       # type: List[Tuple[str, str]]
 
 BUG_REPORT_EMAIL = "datatracker-project@ietf.org"
 
@@ -320,7 +323,7 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 PREFERENCES_COOKIE_AGE = 60 * 60 * 24 * 365 * 50 # Age of cookie, in seconds: 50 years
 
-TEMPLATES = [
+TEMPLATES = [                           
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
@@ -351,13 +354,13 @@ TEMPLATES = [
             ]
         },
     },
-]
+]                                       # type: List[Dict[str,Any]]
 
 if DEBUG:
     TEMPLATES[0]['OPTIONS']['string_if_invalid'] = "** No value found for '%s' **"
 
 
-MIDDLEWARE = (
+MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'corsheaders.middleware.CorsMiddleware', # see docs on CORS_REPLACE_HTTPS_REFERER before using it
     'django.middleware.common.CommonMiddleware',
@@ -376,7 +379,7 @@ MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
     'csp.middleware.CSPMiddleware',
     'ietf.middleware.unicode_nfkc_normalization_middleware',
-)
+]
 
 ROOT_URLCONF = 'ietf.urls'
 
@@ -387,7 +390,7 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'externals/static'),
 )
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     # Django apps
     'django.contrib.admin',
     'django.contrib.admindocs',
@@ -445,7 +448,7 @@ INSTALLED_APPS = (
     'ietf.secr.rolodex',
     'ietf.secr.sreq',
     'ietf.secr.telechat',
-)
+]
 
 # Settings for django-bootstrap3
 # See http://django-bootstrap3.readthedocs.org/en/latest/settings.html
@@ -552,7 +555,7 @@ TEST_CODE_COVERAGE_EXCLUDE_FILES = [
 TEST_CODE_COVERAGE_EXCLUDE_LINES = [
     "coverage: *ignore",
     "debug",
-    "unreachable\([^)]*\)",
+    r"unreachable\([^)]*\)",
     "if settings.DEBUG",
     "if settings.TEST_CODE_COVERAGE_CHECKER",
     "if __name__ == .__main__.:",
@@ -763,7 +766,7 @@ IDSUBMIT_STAGING_URL = '//www.ietf.org/staging/'
 IDSUBMIT_IDNITS_BINARY = '/a/www/ietf-datatracker/scripts/idnits'
 SUBMIT_PYANG_COMMAND = 'pyang --verbose --ietf -p {libs} {model}'
 SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {tmplib} -p {rfclib} -p {draftlib} -p {ianalib} {model} -i'
-SUBMIT_YANGLINT_COMMAND = None        # use the value above if you have yanglint installed
+SUBMIT_YANGLINT_COMMAND = ''        # use the value above if you have yanglint installed
 
 SUBMIT_YANG_CATALOG_MODULEARG = "modules[]={module}"
 SUBMIT_YANG_CATALOG_IMPACT_URL = "https://www.yangcatalog.org/yang-search/impact_analysis.php?{moduleargs}&recurse=0&rfcs=1&show_subm=1&show_dir=both"
@@ -912,7 +915,7 @@ SKIP_SELENIUM = True
 
 # Set debug apps in settings_local.DEV_APPS
 
-DEV_APPS = ()
+DEV_APPS = []                           # type: List[str]
 DEV_MIDDLEWARE = ()
 
 # django-debug-toolbar and the debug listing of sql queries at the bottom of
@@ -1124,6 +1127,6 @@ if SERVER_MODE != 'production':
     try:
         # see https://github.com/omarish/django-cprofile-middleware
         import django_cprofile_middleware # pyflakes:ignore
-        MIDDLEWARE = MIDDLEWARE + ('django_cprofile_middleware.middleware.ProfilerMiddleware', )
+        MIDDLEWARE = MIDDLEWARE + ['django_cprofile_middleware.middleware.ProfilerMiddleware', ]
     except ImportError:
         pass

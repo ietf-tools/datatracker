@@ -13,6 +13,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import os 
 from ietf.settings import *                                          # pyflakes:ignore
+from ietf.settings import TEST_CODE_COVERAGE_CHECKER, BASE_DIR, PHOTOS_DIRNAME
 import debug                            # pyflakes:ignore
 debug.debug = True
 

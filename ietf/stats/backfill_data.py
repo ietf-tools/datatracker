@@ -11,6 +11,8 @@ import os.path
 import argparse
 import six
 import time
+if six.PY3:
+    from typing import Set, Optional    # pyflakes:ignore
 
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
@@ -129,12 +131,12 @@ for doc in docs_qs.prefetch_related("docalias", "formal_languages", "documentaut
             # the draft parser sometimes has a problem when
             # affiliation isn't in the second line and it then thinks
             # it's an extra author - skip those extra authors
-            seen = set()
+            seen = set()                # type: Set[Optional[str]]
             for full, _, _, _, _, email, country, company in d.get_author_list():
                 assert full is None or    isinstance(full,    six.text_type)
                 assert email is None or   isinstance(email,   six.text_type)
                 assert country is None or isinstance(country, six.text_type)
-                assert company is None or isinstance(company, six.text_type)
+                assert                    isinstance(company, six.text_type)
                 #full, email, country, company = [ unicode(s) for s in [full, email, country, company, ] ]
                 if email in seen:
                     continue

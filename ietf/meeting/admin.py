@@ -62,7 +62,7 @@ class TimeSlotAdmin(admin.ModelAdmin):
                 return "%s (%s)" % (instance.session.group.name, instance.session.group.acronym)
 
         return ""
-    session_desc.short_description = "session"
+    session_desc.short_description = "session" # type: ignore # https://github.com/python/mypy/issues/2087
 
 admin.site.register(TimeSlot, TimeSlotAdmin)
 
@@ -76,7 +76,7 @@ class ConstraintAdmin(admin.ModelAdmin):
     def name_lower(self, instance):
         return instance.name.name.lower()
 
-    name_lower.short_description = "constraint name"
+    name_lower.short_description = "constraint name" # type: ignore # https://github.com/python/mypy/issues/2087
 
 admin.site.register(Constraint, ConstraintAdmin)
 
@@ -90,7 +90,7 @@ class SessionAdmin(admin.ModelAdmin):
     def name_lower(self, instance):
         return instance.name.name.lower()
 
-    name_lower.short_description = "constraint name"
+    name_lower.short_description = "constraint name" # type: ignore # https://github.com/python/mypy/issues/2087
 
 admin.site.register(Session, SessionAdmin)
 
@@ -116,7 +116,7 @@ admin.site.register(SchedTimeSessAssignment, SchedTimeSessAssignmentAdmin)
 class ResourceAssociationAdmin(admin.ModelAdmin):
     def used(self, instance):
         return instance.name.used
-    used.boolean = True
+    used.boolean = True                 # type: ignore # https://github.com/python/mypy/issues/2087
 
     list_display = ["name", "icon", "used", "desc"]
 admin.site.register(ResourceAssociation, ResourceAssociationAdmin)

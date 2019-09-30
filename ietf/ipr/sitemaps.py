@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 #
 from django.contrib.sitemaps import GenericSitemap
 from ietf.ipr.models import IprDisclosureBase
@@ -8,4 +8,4 @@ from ietf.ipr.models import IprDisclosureBase
 
 queryset = IprDisclosureBase.objects.filter(state__in=('posted','removed'))
 archive = {'queryset':queryset, 'date_field': 'time', 'allow_empty':True }
-IPRMap = GenericSitemap(archive)
+IPRMap = GenericSitemap(archive)        # type: ignore (FIXME: remove when Django 2)

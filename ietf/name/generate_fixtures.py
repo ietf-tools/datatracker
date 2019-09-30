@@ -7,6 +7,9 @@
 import io
 import os, sys
 import django
+import six
+if six.PY3:
+    from typing import Any, List        # pyflakes:ignore
 
 basedir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
 sys.path.insert(0, basedir)
@@ -29,7 +32,7 @@ def output(name, seq):
         raise
 
 # pick all name models directly out of the module
-objects = []
+objects = []                            # type: List[object]
 
 import inspect
 import ietf.name.models

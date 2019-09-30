@@ -181,7 +181,7 @@ class LiaisonStatement(models.Model):
         interface'''
         groups = self.to_groups.order_by('acronym').values_list('acronym',flat=True)
         return ', '.join(groups)
-    from_groups_short_display.short_description = 'From Groups'
+    from_groups_short_display.short_description = 'From Groups' # type: ignore # https://github.com/python/mypy/issues/2087
 
     def set_state(self,slug):
         try:

@@ -11,7 +11,7 @@ from tastypie.cache import SimpleCache
 from ietf import api
 from ietf.api import ToOneField                         # pyflakes:ignore
 
-from ietf.review.models import (ReviewerSettings, ReviewRequest, ReviewAssignment,
+from ietf.review.models import (ReviewerSettings, ReviewRequest, ReviewAssignment, # type: ignore
                                 UnavailablePeriod, ReviewWish, NextReviewerInTeam,
                                 ReviewSecretarySettings, ReviewTeamSettings, 
                                 HistoricalReviewerSettings )

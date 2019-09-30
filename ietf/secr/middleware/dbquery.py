@@ -1,7 +1,9 @@
+# Copyright The IETF Trust 2014-2019, All Rights Reserved
 #import logging
 
 from django.db import connection
-from django.utils.log import getLogger
+from django.utils.log import getLogger  # type: ignore (FIXME: remove when Django 2)
+
 
 logger = getLogger(__name__)
 #logger.setLevel(logging.DEBUG)

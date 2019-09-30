@@ -1,17 +1,18 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 from django.db import models
 from django.db.models.query import QuerySet
 
 import debug                            # pyflakes:ignore
 
 class MixinManager(object):
-    def __getattr__(self, attr, *args):
+    def __getattr__(self, attr):
         if  attr.startswith('__'):
-            return getattr(self.__class__, attr, *args)            
+            return getattr(self.__class__, attr)            
         else:
             try:
-                return getattr(self.__class__, attr, *args)
+                return getattr(self.__class__, attr)
             except AttributeError:
-                return getattr(self.get_queryset(), attr, *args)
+                return getattr(self.get_queryset(), attr)
 
 class NomineePositionQuerySet(QuerySet):
 

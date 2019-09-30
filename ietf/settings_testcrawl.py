@@ -39,7 +39,7 @@ CACHES = {
     },
 }
 
-PASSWORD_HASHERS = ( 'django.contrib.auth.hashers.MD5PasswordHasher', )
+PASSWORD_HASHERS = [ 'django.contrib.auth.hashers.MD5PasswordHasher', ]
 SERVER_MODE = 'test'
 ALLOWED_HOSTS = ["127.0.0.1", "localhost:8000", "testserver", ]
 

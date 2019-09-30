@@ -3,10 +3,13 @@ import os
 import sys
 import time as timeutils
 import inspect
+import six
+if six.PY3:
+    from typing import Callable
 
 try:
     import syslog
-    logger = syslog.syslog
+    logger = syslog.syslog              # type: Callable
 except ImportError:                     # import syslog will fail on Windows boxes
     import logging
     logging.basicConfig(filename='tracker.log',level=logging.INFO)
@@ -15,7 +18,7 @@ except ImportError:                     # import syslog will fail on Windows box
 try:
     from pprint import pformat
 except ImportError:
-    pformat = lambda x: x
+    pformat = lambda x: x               # type: ignore
 
 import cProfile
 import traceback as tb

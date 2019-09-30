@@ -46,7 +46,7 @@ from django.urls import reverse as urlreverse
 from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
-from django.utils.cache import _generate_cache_key
+from django.utils.cache import _generate_cache_key # type: ignore (FIXME: remove when Django 2)
 
 
 import debug                            # pyflakes:ignore

@@ -8,6 +8,9 @@ import re
 import magic
 import datetime
 import debug                            # pyflakes:ignore
+import six
+if six.PY3:
+    from typing import List, Optional   # pyflakes:ignore
 
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
@@ -45,8 +48,8 @@ class ParseInfo(object):
 
 
 class FileParser(object):
-    ext = None
-    mimetypes = []
+    ext = None                          # type: Optional[str]
+    mimetypes = []                      # type: List[str]
 
     def __init__(self, fd):
         self.fd = fd

@@ -7,6 +7,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 import debug    # pyflakes:ignore
 import factory
 import datetime
+import six
+if six.PY3:
+    from typing import Optional         # pyflakes:ignore
 
 from django.conf import settings
 
@@ -28,7 +31,7 @@ class BaseDocumentFactory(factory.DjangoModelFactory):
 
     title = factory.Faker('sentence',nb_words=5)
     rev = '00'
-    std_level_id = None
+    std_level_id = None                 # type: Optional[str]
     intended_std_level_id = None
     time = datetime.datetime.now()
     expires = factory.LazyAttribute(lambda o: o.time+datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE))

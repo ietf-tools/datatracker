@@ -11,7 +11,7 @@ from docutils.utils import SystemMessage
 import debug                            # pyflakes:ignore
 
 from django.template.loaders.base import Loader as BaseLoader
-from django.template.base import Template as DjangoTemplate, TemplateEncodingError
+from django.template.base import Template as DjangoTemplate, TemplateEncodingError # type: ignore (FIXME: remove when Django 2)
 from django.template.exceptions import TemplateDoesNotExist
 from django.utils.encoding import smart_text
 
@@ -95,4 +95,4 @@ def load_template_source(template_name, template_dirs=None):
         PendingDeprecationWarning
     )
     return _loader.load_template_source(template_name, template_dirs)
-load_template_source.is_usable = True
+load_template_source.is_usable = True   # type: ignore # https://github.com/python/mypy/issues/2087

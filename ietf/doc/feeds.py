@@ -10,7 +10,8 @@ import six
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed, Rss201rev2Feed
 from django.urls import reverse as urlreverse
-from django.template.defaultfilters import truncatewords, truncatewords_html, date as datefilter, linebreaks
+from django.template.defaultfilters import truncatewords, truncatewords_html, date as datefilter
+from django.template.defaultfilters import linebreaks # type: ignore
 from django.utils.html import strip_tags
 
 from ietf.doc.models import Document, State, LastCallDocEvent, DocEvent

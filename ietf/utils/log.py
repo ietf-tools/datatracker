@@ -10,10 +10,12 @@ import inspect
 import os.path
 import six
 import traceback
+if six.PY3:
+    from typing import Callable         # pyflakes:ignore
 
 try:
     import syslog
-    logfunc = syslog.syslog
+    logfunc = syslog.syslog             # type: Callable
 except ImportError:                     # import syslog will fail on Windows boxes
     logging.basicConfig(filename='tracker.log',level=logging.INFO)
     logfunc = logging.info

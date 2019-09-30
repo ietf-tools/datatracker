@@ -38,6 +38,9 @@ import ietf
 from ietf.utils.log import log, assertion
 from ietf.utils.text import isascii
 
+if six.PY3:
+    from typing import Any, Dict, List  # pyflakes:ignore
+
 # Testing mode:
 # import ietf.utils.mail
 # ietf.utils.mail.test_mode = True
@@ -45,7 +48,7 @@ from ietf.utils.text import isascii
 # ... inspect ietf.utils.mail.outbox ...
 # ... call ietf.utils.mail.empty_outbox() ...
 test_mode = False
-outbox = []
+outbox = []                             # type: List[Message]
 
 SMTP_ADDR = { 'ip4':settings.EMAIL_HOST, 'port':settings.EMAIL_PORT}
 

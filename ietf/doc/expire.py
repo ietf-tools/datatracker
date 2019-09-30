@@ -8,7 +8,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 from django.conf import settings
 
 import datetime, os, shutil, glob, re
+import six
 from pathlib import Path
+if six.PY3:
+    from typing import List, Tuple      # pyflakes:ignore
 
 from ietf.utils import log
 from ietf.utils.mail import send_mail
@@ -28,7 +31,7 @@ def expirable_draft(draft):
     log.assertion('draft.get_state_slug("draft-iesg")')
     return bool(expirable_drafts(Document.objects.filter(pk=draft.pk)))
 
-nonexpirable_states = []
+nonexpirable_states = []                # type: List[State]
 
 def expirable_drafts(queryset=None):
     """Return a queryset with expirable drafts."""

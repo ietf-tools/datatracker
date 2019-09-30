@@ -8,6 +8,8 @@ import io
 import datetime, os
 import operator
 import six
+if six.PY3:
+    from typing import Union            # pyflakes:ignore
 
 from email.utils import parseaddr
 from form_utils.forms import BetterModelForm
@@ -216,7 +218,7 @@ class LiaisonModelForm(BetterModelForm):
     a problem with validating
     '''
     from_groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(),label='Groups',required=False)
-    from_contact = forms.EmailField()
+    from_contact = forms.EmailField()   # type: Union[forms.EmailField, SearchableEmailField]
     to_contacts = forms.CharField(label="Contacts", widget=forms.Textarea(attrs={'rows':'3', }), strip=False)
     to_groups = forms.ModelMultipleChoiceField(queryset=Group.objects,label='Groups',required=False)
     deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Deadline', required=True)

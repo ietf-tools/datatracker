@@ -1,9 +1,17 @@
+# Copyright The IETF Trust 2015-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function, unicode_literals
+
+import six
+if six.PY3:
+    from typing import Dict, List       # pyflakes:ignore
+
 from django import forms
 
 from ietf.mailtrigger.models import MailTrigger
 
 class CcSelectForm(forms.Form):
-    expansions = dict()
+    expansions = dict()                 # type: Dict[str, List[str]]
     cc_choices = forms.MultipleChoiceField(
                    label='Cc',
                    choices=[],

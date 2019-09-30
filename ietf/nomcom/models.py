@@ -9,7 +9,7 @@ from django.db.models.signals import post_delete
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
-from django.template.defaultfilters import linebreaks
+from django.template.defaultfilters import linebreaks # type: ignore
 from django.utils.encoding import python_2_unicode_compatible
 
 import debug                            # pyflakes:ignore

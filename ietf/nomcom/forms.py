@@ -5,6 +5,8 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import six
+if six.PY3:
+    from typing import List, Tuple      # pyflakes:ignore
 
 from django.conf import settings
 from django import forms
@@ -592,7 +594,7 @@ class QuestionnaireForm(forms.ModelForm):
 
     class Meta:
         model = Feedback
-        fields = []
+        fields = []                     # type: List[str]
 
 class NomComTemplateForm(DBTemplateForm):
     content = forms.CharField(label="Text", widget=forms.Textarea(attrs={'cols': '120', 'rows':'40', }), strip=False)

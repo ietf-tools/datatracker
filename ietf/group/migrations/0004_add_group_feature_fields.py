@@ -45,6 +45,7 @@ class Migration(migrations.Migration):
             model_name='groupfeatures',
             name='role_order',
             field=models.CharField(default='chair,secr,member', help_text='The order in which roles are shown, for instance on photo pages', max_length=128, validators=[django.core.validators.RegexValidator(code=b'invalid', message=b'Enter a comma-separated list of role slugs', regex=b'[a-z0-9_-]+(,[a-z0-9_-]+)*')]),
+            # type: ignore (FIXME: remove when Django 2)
         ),
         migrations.AddField(
             model_name='groupfeatures',
@@ -60,6 +61,7 @@ class Migration(migrations.Migration):
             model_name='groupfeatures',
             name='matman_roles',
             field=models.CharField(default='ad,chair,delegate,secr', max_length=64, validators=[django.core.validators.RegexValidator(code=b'invalid', message=b'Enter a comma-separated list of role slugs', regex=b'[a-z0-9_-]+(,[a-z0-9_-]+)*')]),
+            # type: ignore (FIXME: remove when Django 2)
         ),
         migrations.AddField(
             model_name='historicalgroupfeatures',
@@ -90,6 +92,7 @@ class Migration(migrations.Migration):
             model_name='historicalgroupfeatures',
             name='role_order',
             field=models.CharField(default='chair,secr,member', help_text='The order in which roles are shown, for instance on photo pages', max_length=128, validators=[django.core.validators.RegexValidator(code=b'invalid', message=b'Enter a comma-separated list of role slugs', regex=b'[a-z0-9_-]+(,[a-z0-9_-]+)*')]),
+            # type: ignore (FIXME: remove when Django 2)
         ),
         migrations.AddField(
             model_name='historicalgroupfeatures',
@@ -105,5 +108,6 @@ class Migration(migrations.Migration):
             model_name='historicalgroupfeatures',
             name='matman_roles',
             field=models.CharField(default='ad,chair,delegate,secr', max_length=64, validators=[django.core.validators.RegexValidator(code=b'invalid', message=b'Enter a comma-separated list of role slugs', regex=b'[a-z0-9_-]+(,[a-z0-9_-]+)*')]),
+            # type: ignore (FIXME: remove when Django 2)
         ),
     ]

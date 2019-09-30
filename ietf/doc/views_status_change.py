@@ -8,6 +8,9 @@ import datetime
 import io
 import os
 import re
+import six
+if six.PY3:
+    from typing import Dict             # pyflakes:ignore
 
 from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
@@ -435,7 +438,7 @@ def clean_helper(form, formtype):
         return cleaned_data
 
 class EditStatusChangeForm(forms.Form):
-    relations={}
+    relations={}                        # type: Dict[str, str]
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
@@ -452,7 +455,7 @@ class StartStatusChangeForm(forms.Form):
     create_in_state = forms.ModelChoiceField(State.objects.filter(type="statchg", slug__in=("needshep", "adrev")), empty_label=None, required=False)
     notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas.", required=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
-    relations={}
+    relations={}                        # type: Dict[str, str]
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)

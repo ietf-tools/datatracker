@@ -9,6 +9,8 @@ import os.path
 import shutil
 import six
 import types
+if six.PY3:
+    from typing import Dict, List       # pyflakes:ignore
 
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
@@ -25,6 +27,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django.core.management import call_command
 from django.template import Context
+from django.template import Template    # pyflakes:ignore
 from django.template.defaulttags import URLNode
 from django.template.loader import get_template
 from django.templatetags.static import StaticNode
@@ -174,8 +177,8 @@ def get_callbacks(urllist):
 
 class TemplateChecksTestCase(TestCase):
 
-    paths = []
-    templates = {}
+    paths = []                          # type: List[str]
+    templates = {}                      # type: Dict[str, Template]
 
     def setUp(self):
         set_coverage_checking(False)

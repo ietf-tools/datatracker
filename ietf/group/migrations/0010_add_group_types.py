@@ -143,7 +143,7 @@ def forward(apps, schema_editor):
 
 # This migration does not remove or change any previous fields, and executes
 # swirftly, so we permit it to be interleaved with schema migrations
-forward.interleavable = True
+forward.interleavable = True            # type: ignore # https://github.com/python/mypy/issues/2087
 
 def reverse(apps, schema_editor):
     pass

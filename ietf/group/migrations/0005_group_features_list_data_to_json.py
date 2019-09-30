@@ -26,7 +26,7 @@ def forward(apps, schema_editor):
 # This migration changes existing data fields in an incompatible manner, and
 # would not be interleavable if we hadn't added compatibility code in
 # Group.features() beforehand.  With that patched in, we permit interleaving.
-forward.interleavable = True
+forward.interleavable = True            # type: ignore # https://github.com/python/mypy/issues/2087
 
 def reverse(apps, schema_editor):
     GroupFeatures = apps.get_model('group', 'GroupFeatures')

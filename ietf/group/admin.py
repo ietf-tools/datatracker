@@ -43,8 +43,8 @@ class GroupAdmin(admin.ModelAdmin):
         for r in roles:
             res.append('<a href="../../person/person/%s/">%s</a> (<a href="../../group/role/%s/">%s)' % (r.person.pk, escape(r.person.plain_name()), r.pk, r.name.name))
         return ", ".join(res)
-    role_list.short_description = "Persons"
-    role_list.allow_tags = True
+    role_list.short_description = "Persons" # type: ignore # https://github.com/python/mypy/issues/2087
+    role_list.allow_tags = True         # type: ignore     # https://github.com/python/mypy/issues/2087
     
 
     # SDO reminder

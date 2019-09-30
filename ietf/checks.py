@@ -6,9 +6,12 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import patch
+import six
 import sys
 import time
 from textwrap import dedent
+if six.PY3:
+    from typing import List, Tuple      # pyflakes:ignore
 
 import debug                            # pyflakes:ignore
 debug.debug = True
@@ -17,7 +20,7 @@ from django.conf import settings
 from django.core import checks
 from django.utils.module_loading import import_string
 
-checks_run = []
+checks_run = []                         # type: List[str]
 
 def already_ran():
     import inspect

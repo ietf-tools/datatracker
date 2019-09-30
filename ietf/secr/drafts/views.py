@@ -126,8 +126,8 @@ def do_resurrect(draft, request):
         try:
             shutil.move(file, settings.INTERNET_DRAFT_PATH)
             log("  Moved file %s to %s" % (file, settings.INTERNET_DRAFT_PATH))
-        except shutil.Error as e:
-            log("  Exception %s when attempting to move %s" % (e, file))
+        except shutil.Error as ex:
+            log("  Exception %s when attempting to move %s" % (ex, file))
 
     # Update draft record
     draft.set_state(State.objects.get(type="draft", slug="active"))

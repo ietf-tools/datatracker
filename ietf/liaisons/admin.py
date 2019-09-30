@@ -32,7 +32,7 @@ class LiaisonStatementAdmin(admin.ModelAdmin):
 
     def related_to(self, obj):
         return '<br />'.join(['<a href="%s">%s</a>' % (reverse('admin:liaisons_liaisonstatement_change', None, (i.target.id, )), str(i.target)) for i in obj.source_of_set.select_related('target').all()])
-    related_to.allow_tags = True
+    related_to.allow_tags = True        # type: ignore # https://github.com/python/mypy/issues/2087
 
 class LiaisonStatementAttachmentAdmin(admin.ModelAdmin):
     list_display = ['id', 'statement', 'document', 'removed']

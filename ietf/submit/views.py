@@ -7,6 +7,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 import re
 import base64
 import datetime
+import six
+if six.PY3:
+    from typing import Optional         # pyflakes:ignore
 
 from django.conf import settings
 from django.contrib import messages
@@ -14,6 +17,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse as urlreverse
 from django.core.validators import ValidationError
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponse
+from django.http import HttpRequest     # pyflakes:ignore
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
 
@@ -145,6 +149,7 @@ def api_submit(request):
                 create_submission_event(request, submission, msg)
                 docevent_from_submission(request, submission, docDesc, who=Person.objects.get(name="(System)"))
 
+
                 return HttpResponse(
                     "Upload of %s OK, confirmation requests sent to:\n  %s" % (submission.name, ',\n  '.join(sent_to)),
                     content_type="text/plain")
@@ -198,6 +203,7 @@ def can_edit_submission(user, submission, access_token):
     return key_matched or has_role(user, "Secretariat")
 
 def submission_status(request, submission_id, access_token=None):
+    # type: (HttpRequest, str, Optional[str]) -> HttpResponse
     submission = get_object_or_404(Submission, pk=submission_id)
 
     key_matched = access_token and submission.access_token() == access_token
@@ -285,11 +291,11 @@ def submission_status(request, submission_id, access_token=None):
                     prev_authors = [] if not doc else [ author.person for author in doc.documentauthor_set.all() ]
                     curr_authors = [ get_person_from_name_email(author["name"], author.get("email")) for author in submission.authors ]
 
-                    if request.user.is_authenticated and request.user.person in (prev_authors if submission.rev != '00' else curr_authors):
+                    if request.user.is_authenticated and request.user.person in (prev_authors if submission.rev != '00' else curr_authors): # type: ignore (FIXME: revisit: "User" has no attribute "person" )
                         # go directly to posting submission
-                        docevent_from_submission(request, submission, desc="Uploaded new revision", who=request.user.person)
+                        docevent_from_submission(request, submission, desc="Uploaded new revision", who=request.user.person) # type: ignore (FIXME: revisit: "User" has no attribute "person" )
 
-                        desc = "New version accepted (logged-in submitter: %s)" % request.user.person
+                        desc = "New version accepted (logged-in submitter: %s)" % request.user.person # type: ignore (FIXME: revisit: "User" has no attribute "person")
                         post_submission(request, submission, desc)
                         create_submission_event(request, submission, desc)
                     else:

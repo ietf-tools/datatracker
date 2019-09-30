@@ -41,6 +41,7 @@ class Migration(migrations.Migration):
                 ('about_page', models.CharField(default='ietf.group.views.group_about', max_length=64)),
                 ('default_tab', models.CharField(default='ietf.group.views.group_about', max_length=64)),
                 ('material_types', models.CharField(default='slides', max_length=64, validators=[django.core.validators.RegexValidator(code=b'invalid', message=b'Enter a comma-separated list of material types', regex=b'[a-z0-9_-]+(,[a-z0-9_-]+)*')])),
+                # type: ignore (FIXME: remove when Django 2)
                 ('admin_roles', models.CharField(default='chair', max_length=64, validators=[django.core.validators.RegexValidator(code=b'invalid', message=b'Enter a comma-separated list of role slugs', regex=b'[a-z0-9_-]+(,[a-z0-9_-]+)*')])),
                 ('agenda_type', models.ForeignKey(default='ietf', null=True, on_delete=django.db.models.deletion.CASCADE, to='name.AgendaTypeName')),
             ],

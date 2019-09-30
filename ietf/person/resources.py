@@ -10,7 +10,7 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.person.models import (Person, Email, Alias, PersonalApiKey, PersonEvent, PersonApiKeyEvent, HistoricalPerson, HistoricalEmail)
+from ietf.person.models import (Person, Email, Alias, PersonalApiKey, PersonEvent, PersonApiKeyEvent, HistoricalPerson, HistoricalEmail) # type: ignore
 
 
 from ietf.utils.resources import UserResource

@@ -49,7 +49,8 @@ import six
 import stat
 import sys
 import time
-
+if six.PY3:
+    from typing import Dict, List       # pyflakes:ignore
 
 version = "0.35"
 program = os.path.basename(sys.argv[0])
@@ -502,7 +503,7 @@ class Draft():
         return self._authors_with_firm
         
 
-    def get_author_list(self):
+    def get_author_list(self):          # () -> List[List[str, str, str, str, str, str, str]]
         """Returns a list of tuples, with each tuple containing (given_names,
         surname, email, company).  Email will be None if unknown.
         """
@@ -1310,7 +1311,7 @@ def _printmeta(fn, outfile=sys.stdout):
 # Main
 # ----------------------------------------------------------------------
 
-company_domain = {}
+company_domain = {}                     # type: Dict[str, str]
 def _main(outfile=sys.stdout):
     global opt_debug, opt_timestamp, opt_trace, opt_authorinfo, opt_getauthors, files, company_domain, opt_attributes
     # set default values, if any
