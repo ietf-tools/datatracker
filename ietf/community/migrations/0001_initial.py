@@ -5,7 +5,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import six
 if six.PY3:
-    from typing import List             # pyflakes:ignore
+    from typing import List, Tuple      # pyflakes:ignore
 
 from django.db import migrations, models
 import django.db.models.deletion
@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-    ]                                   # type: List[str]
+    ]                                   # type: List[Tuple[str]]
 
     operations = [
         migrations.CreateModel(

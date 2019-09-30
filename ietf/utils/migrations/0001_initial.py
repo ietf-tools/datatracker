@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-    ]                                   # type: List[str]
+    ]                                   # type: List[Tuple[str]]
 
     operations = [
         migrations.CreateModel(
