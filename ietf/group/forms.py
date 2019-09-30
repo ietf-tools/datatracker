@@ -126,7 +126,6 @@ class GroupForm(forms.Form):
                     del self.fields[f]
 
     def clean_acronym(self):
-      try:
         # Changing the acronym of an already existing group will cause 404s all
         # over the place, loose history, and generally muck up a lot of
         # things, so we don't permit it
@@ -178,12 +177,8 @@ class GroupForm(forms.Form):
                 return acronym
             else:
                 raise forms.ValidationError("Warning: Acronym used for a historic group.")
+
         return acronym
-      except forms.ValidationError:
-          pass
-      except Exception:
-          import traceback
-          traceback.print_exc()
 
     def clean_urls(self):
         return [x.strip() for x in self.cleaned_data["urls"].splitlines() if x.strip()]
