@@ -23,7 +23,8 @@ from ietf.review.utils import (
     review_assignments_needing_reviewer_reminder, email_reviewer_reminder,
     review_assignments_needing_secretary_reminder, email_secretary_reminder,
     reviewer_rotation_list,
-    email_unavaibility_period_ending_reminder, email_reminder_all_open_reviews)
+    email_unavaibility_period_ending_reminder, email_reminder_all_open_reviews,
+    email_review_reminder_overdue_assignment)
 from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAssignmentStateName
 import ietf.group.views
 from ietf.utils.mail import outbox, empty_outbox
@@ -548,6 +549,26 @@ class ReviewTests(TestCase):
         self.assertTrue(reviewer.person.name in log[0])
         self.assertTrue(review_team.acronym in log[0])
 
+    def test_email_review_reminder_overdue_assignment(self):
+        today = datetime.date.today()
+        review_req = ReviewRequestFactory(state_id='assigned', deadline=today - datetime.timedelta(5))
+        reviewer = RoleFactory(name_id='reviewer', group=review_req.team,person__user__username='reviewer').person
+        ReviewAssignmentFactory(review_request=review_req, state_id='assigned', assigned_on=review_req.time, reviewer=reviewer.email_set.first())
+        secretary = RoleFactory(name_id='secr', group=review_req.team, person__user__username='reviewsecretary')
+
+        empty_outbox()
+        log = email_review_reminder_overdue_assignment(today)
+
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue(secretary.person.email_address() in outbox[0]["To"])
+        self.assertEqual(outbox[0]["Subject"], "1 Overdue review for team {}".format(review_req.team.acronym))
+        message = outbox[0].get_payload(decode=True).decode("utf-8")
+        self.assertTrue(review_req.team.acronym + ' has 1 accepted or assigned review overdue by at least 5 days.' in message)
+        self.assertTrue('Review of {} by {}'.format(review_req.doc.name, reviewer.name) in message)
+        self.assertEqual(len(log), 1)
+        self.assertTrue(secretary.person.email_address() in log[0])
+        self.assertTrue('1 overdue review' in log[0])
+        
     def test_email_reminder_all_open_reviews(self):
         review_req = ReviewRequestFactory(state_id='assigned')
         reviewer = RoleFactory(name_id='reviewer', group=review_req.team,person__user__username='reviewer').person

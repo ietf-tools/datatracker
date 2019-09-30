@@ -4165,6 +4165,17 @@
    }
   },
   {
+   "model": "mailtrigger.mailtrigger",
+   "pk": "review_reminder_overdue_assignment",
+   "fields": {
+    "desc": "Recipients for overdue review assignment reminders",
+    "to": [
+     "group_secretaries"
+    ],
+    "cc": []
+   }
+  },
+  {
     "fields": {
       "desc": "The person providing a comment to nomcom",
       "template": "{{commenter}}"
