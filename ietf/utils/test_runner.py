@@ -66,7 +66,7 @@ from django.template import TemplateDoesNotExist
 from django.template.loaders.base import Loader as BaseLoader
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
-from django.urls import RegexURLResolver
+from django.urls import RegexURLResolver # type: ignore
 
 import debug                            # pyflakes:ignore
 debug.debug = True
@@ -138,6 +138,20 @@ class PyFlakesTestCase(TestCase):
         warnings = pyflakes.checkPaths([path], verbosity=0)
         self.assertEqual([], [str(w) for w in warnings])
 
+class MyPyTest(TestCase):
+
+    def __init__(self, test_runner=None, **kwargs):
+        self.runner = test_runner
+        super(MyPyTest, self).__init__(**kwargs)
+
+    @unittest.skipIf(sys.version_info[0] < 3, "Mypy and django-stubs not available under Py2")
+    def mypy_test(self):
+        from mypy import api
+        out, err, code = api.run(['ietf', ])
+        self.assertEqual([], err.splitlines())
+        self.assertEqual([], out.splitlines())
+        self.assertEqual(code, 0)
+
 class TemplateCoverageLoader(BaseLoader):
     is_usable = True
 
@@ -146,7 +160,7 @@ class TemplateCoverageLoader(BaseLoader):
         if template_coverage_collection == True:
             loaded_templates.add(str(template_name))
         raise TemplateDoesNotExist(template_name)
-    load_template_source.is_usable = True
+    load_template_source.is_usable = True # type: ignore # https://github.com/python/mypy/issues/2087
 
 def record_urls_middleware(get_response):
     def record_urls(request):
@@ -694,6 +708,7 @@ class IetfTestRunner(DiscoverRunner):
             url_coverage_collection = True
             extra_tests += [
                 PyFlakesTestCase(test_runner=self, methodName='pyflakes_test'),
+                MyPyTest(test_runner=self, methodName='mypy_test'),
                 CoverageTest(test_runner=self, methodName='interleaved_migrations_test'),
                 CoverageTest(test_runner=self, methodName='url_coverage_test'),
                 CoverageTest(test_runner=self, methodName='template_coverage_test'),
@@ -705,7 +720,7 @@ class IetfTestRunner(DiscoverRunner):
             # parent classes to later subclasses, the parent classes will
             # determine the ordering, so use the most specific classes
             # necessary to get the right ordering:
-            self.reorder_by = (PyFlakesTestCase, ) + self.reorder_by + (StaticLiveServerTestCase, TemplateTagTest, CoverageTest, )
+            self.reorder_by = (PyFlakesTestCase, MyPyTest, ) + self.reorder_by + (StaticLiveServerTestCase, TemplateTagTest, CoverageTest, )
 
         failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
 
