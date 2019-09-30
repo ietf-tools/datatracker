@@ -230,7 +230,8 @@ else
 
     echo ""
     echo "Committing changes in the container to an image:"
-    latest=$(docker ps -lq)
+    image=$( docker images -q $REPO:$TAG)
+    latest=$(docker ps -lq -f "ancestor=$image")
     docker commit $latest $REPO:$TAG
 
     echo ""
@@ -239,7 +240,7 @@ else
     DANGLING=$( docker images -f dangling=true -q )
     if [ -n "$DANGLING" ]; then
 	echo "Dangling images: $DANGLING"
-	docker rmi -f $DANGLING;
+	docker rmi -f $DANGLING
     fi
 
 fi

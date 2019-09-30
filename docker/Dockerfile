@@ -19,7 +19,7 @@
 # but the database has *not* been loaded with a dump, and supporting files (drafts, charters, etc.)
 # have *not* been downloaded.
 
-FROM debian:jessie
+FROM dyne/devuan:ascii
 LABEL maintainer="Henrik Levkowetz <henrik@levkowetz.com>"
 
 # Default django runserver port
@@ -27,15 +27,16 @@ EXPOSE	8000
 
 # Run apt-get noninteractive
 ENV DEBIAN_FRONTEND=noninteractive
+ENV DEVUAN_FRONTEND=noninteractive
 
 RUN apt-get update
 RUN apt-get install -qy apt-transport-https
 
-# Use backports, updates, and security updates; over https if possible
-RUN echo "deb https://deb.debian.org/debian jessie main contrib non-free"  > /etc/apt/sources.list
-RUN echo "deb https://deb.debian.org/debian jessie-backports main contrib non-free"  >> /etc/apt/sources.list
-RUN echo "deb https://deb.debian.org/debian jessie-updates main contrib non-free" >> /etc/apt/sources.list
-RUN echo "deb http://security.debian.org/debian-security jessie/updates main contrib non-free" >> /etc/apt/sources.list
+# Use backports, updates, and security updates
+RUN echo "deb http://deb.devuan.org/merged ascii main contrib non-free"  > /etc/apt/sources.list
+RUN echo "deb http://deb.devuan.org/merged ascii-security main contrib non-free" >> /etc/apt/sources.list
+RUN echo "deb http://deb.devuan.org/merged ascii-updates main contrib non-free" >> /etc/apt/sources.list
+RUN echo "deb http://deb.devuan.org/merged ascii-backports main contrib non-free" >> /etc/apt/sources.list
 
 # Install needed packages
 #
@@ -44,27 +45,44 @@ RUN echo "deb http://security.debian.org/debian-security jessie/updates main con
 # 15%, about 100MB.
 
 # Fetch apt package information, and upgrade to latest package versions
+
 RUN apt-get update
 RUN apt-get -qy upgrade
 
 # Install the packages we need
 RUN apt-get install -qy \
+	build-essential \
 	bzip2 \
 	ca-certificates \
 	colordiff \
 	gawk \
 	gcc \
 	ipython \
+	jq \
 	less \
-	libfreetype6 \
-	libfontconfig \
+	libbz2-dev \
+	libdb5.3-dev \
+	libexpat1-dev \
+	libffi-dev \
+	libgdbm-dev \
 	libjpeg62-turbo-dev \
+	liblzma-dev \
+	libmagic1 \
+	libmariadbclient-dev \
+	libncurses5-dev \
+	libncursesw5-dev \
+	libreadline-dev \
+	libsqlite3-dev \
+	libssl-dev \
 	libsvn1 \
 	libxml2-dev \
 	libxslt-dev \
 	libz-dev \
 	locales \
+	make \
 	man \
+	mariadb-client \
+	mariadb-server \
 	openssh-client \
 	patch \
 	procps \
@@ -77,33 +95,12 @@ RUN apt-get install -qy \
 	rsync \
 	subversion \
 	sudo \
+	uuid-dev  \
 	vim \
-	wget 
-
-# Install SystemV init
-RUN apt-get install -qy sysvinit-core \
-    && cp /usr/share/sysvinit/inittab /etc/inittab
-
-# Get rid of systemd
-RUN apt-get remove --yes --purge --auto-remove systemd \
-    && echo -e "\nPackage: systemd\nPin: release *\nPin-Priority: -1\n" > /etc/apt/preferences.d/no-systemd
-
-# ------------------------------------------------------------------------------
-# The following section is all about installing mysql server 5.6, instead of
-# 5.5 which is provided in jessie.  It's a bit convoluted.
-# ------------------------------------------------------------------------------
-
-# Get the key used to sign the mysql repo
-RUN gpg --keyserver pgp.mit.edu --recv-keys 5072E1F5
-RUN gpg --export -a 5072E1F5 | apt-key add -
-
-# Install a package which will install apt sources entries for current mysql
-RUN echo 'mysql-apt-config mysql-apt-config/select-server select mysql-5.6' | debconf-set-selections
-RUN echo 'mysql-apt-config mysql-apt-config/repo-url      string https://repo.mysql.com/apt/' | debconf-set-selections
-RUN echo "deb https://repo.mysql.com/apt/debian/ jessie mysql-apt-config" >> /etc/apt/sources.list.d/mysql-apt-config.list
-RUN apt-get update
-RUN apt-get install -qy mysql-apt-config
-RUN rm /etc/apt/sources.list.d/mysql-apt-config.list
+	wget \
+	xz-utils\
+	zile \
+	zlib1g-dev
 
 # Get the key used to sign the libyang repo
 RUN wget -nv http://download.opensuse.org/repositories/home:liberouter/Debian_9.0/Release.key
@@ -111,14 +108,14 @@ RUN apt-key add - < Release.key
 RUN rm Release.key
 
 # Add apt source entry for libyang
-RUN echo "deb http://download.opensuse.org/repositories/home:/liberouter/Debian_8.0/ /" >> /etc/apt/sources.list.d/libyang.list
+RUN echo "deb http://download.opensuse.org/repositories/home:/liberouter/Debian_9.0/ /" >> /etc/apt/sources.list.d/libyang.list
 
 # Update the package defs, and install the desired mysql from the mysql repo
 RUN apt-get update
-RUN apt-get install -qy mysql-community-server libmysqlclient-dev libyang
+RUN apt-get install -qy libyang
 
 # This is expected to exist by the mysql startup scripts:
-RUN touch /etc/mysql/debian.cnf
+#RUN touch /etc/mysql/debian.cnf
 # ------------------------------------------------------------------------------
 
 # Get rid of installation files we don't need in the image, to reduce size
@@ -154,12 +151,29 @@ RUN ln -s /usr/local/phantomjs-1.9.8-linux-x86_64/bin/phantomjs .
 ADD https://tools.ietf.org/tools/idnits/idnits /usr/local/bin/
 RUN chmod +rx /usr/local/bin/idnits
 
+# # Python 3
+ENV PYVER=3.6.9
+ENV PYREV=3.6
+
+WORKDIR /usr/src
+RUN wget -q https://www.python.org/ftp/python/$PYVER/Python-$PYVER.tar.xz
+RUN tar xJf Python-$PYVER.tar.xz
+RUN rm Python-$PYVER.tar.xz
+WORKDIR /usr/src/Python-$PYVER/
+RUN ./configure
+RUN make
+RUN make altinstall
+WORKDIR /usr/src
+RUN rm -rf /usr/src/Python-$PYVER/
+
+ENV HOSTNAME="datatracker"
+
 ENV DDIR="/usr/local/share/datatracker"
 RUN mkdir -p $DDIR
 WORKDIR $DDIR
 
-COPY requirements.txt ./
-RUN pip --no-cache-dir install -r requirements.txt
+COPY requirements3.txt ./
+RUN pip$PYREV --no-cache-dir install -r requirements3.txt
 
 COPY settings_local.py ./
 COPY setprompt ./

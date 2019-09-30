@@ -84,10 +84,9 @@ fi
 VIRTDIR="/opt/home/$USER/$TAG"
 echo "Checking that there's a virtual environment for $TAG ..."
 if [ ! -f $VIRTDIR/bin/activate ]; then
-    echo "Setting up python virtualenv at /opt/home/$USER ..."
-    mkdir -p /opt/home/$USER
-    mkdir $VIRTDIR
-    virtualenv --system-site-packages $VIRTDIR
+    echo "Setting up python virtualenv at $VIRTDIR ..."
+    mkdir -p $VIRTDIR
+    python3.6 -m venv $VIRTDIR
     echo -e "
 # This is from $VIRTDIR/bin/activate, to activate the
 # datatracker virtual python environment on docker container entry:
@@ -103,7 +102,7 @@ echo "Activating the virtual python environment ..."
 
 if ! python -c "import django"; then
     echo "Installing requirements ..."
-    pip install -r /usr/local/share/datatracker/requirements.txt
+    pip install -r /usr/local/share/datatracker/requirements3.txt
 fi
 
 if [ ! -f $VIRTDIR/lib/site-python/settings_local.py ]; then
