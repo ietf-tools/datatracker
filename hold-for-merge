@@ -1,5 +1,7 @@
 # -*- conf-mode -*-
 
+/personal/rjs/6.103.1.dev0@16761	# Fixed in a different manner in [16757]
+
 /personal/rcross/6.99.2.dev0@16607	# Code review found an issue
 
 /personal/pusateri/6.99.2.dev0@16564	# Code review found an issue
