@@ -1,3 +1,40 @@
+ietfdb (6.103.1) ietf; urgency=medium
+
+  **Test improvement: Starting to use Python type hints and mypy type checking**
+
+  This release addresses two issues with the previous release, and as a result
+  of a test case failing to discover one of the issues, it also introduces the
+  use of Python type hints according to PEP 484.  Type hints for common Python
+  library modules are provided by mypy, and type hints for Django are provided
+  by the django-stubs module.  The problematic function that was used with the
+  wrong call signature has received a type annotation that will reveal similar
+  errors in the future.
+
+  This does not provide type annotation generally in the datatracker code;
+  that will require a lot of additional work (some of which can be automated),
+  but it gives us static type checking for Django and Python library calls,
+  and makes type hints useful when we provide them in datatracker code.
+
+  From the commit log:
+
+  * Fixed up mypy issues or added type:ignore comments as needed for a 
+    clean mypy run.
+
+  * Added a mypy .ini file
+
+  * Added mypy and django-stubs to Py3 requirements, and added a mypy test 
+    case.
+
+  * Changed the call signature of docevent_from_submission() to take an 
+    optional Person object, rather than person name.  Added a type hint for the 
+    signature.
+
+  * Tweaked the condition for waiving submission email confirmation 
+    slightly.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Sep 2019 16:55:32 +0000
+
+
 ietfdb (6.103.0) ietf; urgency=medium
 
   **Draft submission tool changes**
