@@ -1507,7 +1507,8 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
             for review_req in review_requests:
                 action = review_req.form.cleaned_data.get("action")
                 if action=="close":
-                    close_review_request(request, review_req, review_req.form.cleaned_data["close"])
+                    close_review_request(request, review_req, review_req.form.cleaned_data["close"],
+                                         review_req.form.cleaned_data["close_comment"])
                 elif action=="assign":
                     reqs_to_assign.append(review_req)
 

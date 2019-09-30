@@ -205,7 +205,8 @@ class ReviewTests(TestCase):
 
         # close
         empty_outbox()
-        r = self.client.post(close_url, { "close_reason": "withdrawn" })
+        r = self.client.post(close_url, {"close_reason": "withdrawn",
+                                         "close_comment": "review_request_close_comment"})
         self.assertEqual(r.status_code, 302)
 
         review_req = reload_db_objects(review_req)
@@ -213,14 +214,18 @@ class ReviewTests(TestCase):
 
         e = doc.latest_event(ReviewRequestDocEvent)
         self.assertEqual(e.type, "closed_review_request")
-        self.assertTrue("closed" in e.desc.lower())
+        self.assertIn("closed", e.desc.lower())
+        self.assertIn("review_request_close_comment", e.desc.lower())
 
         e = doc.latest_event(ReviewAssignmentDocEvent)
         self.assertEqual(e.type, "closed_review_assignment")
-        self.assertTrue("closed" in e.desc.lower())
+        self.assertIn("closed", e.desc.lower())
+        self.assertNotIn("review_request_close_comment", e.desc.lower())
 
         self.assertEqual(len(outbox), 1)
-        self.assertTrue("closed" in outbox[0].get_payload(decode=True).decode("utf-8").lower())
+        mail_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
+        self.assertIn("closed", mail_content)
+        self.assertIn("review_request_close_comment", mail_content)
 
     def test_possibly_advance_next_reviewer_for_team(self):
 
