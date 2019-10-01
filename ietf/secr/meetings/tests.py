@@ -92,18 +92,7 @@ class SecrMeetingTestCase(TestCase):
         self.assertEqual(Meeting.objects.count(),count + 1)
         new_meeting = Meeting.objects.get(number=number)
         
-        # ensure new schedule is populated with specials sessions from previous meeting
         self.assertTrue(new_meeting.agenda)
-        self.assertTrue(meeting.agenda.assignments.filter(timeslot__type='break').count() > 0)
-        self.assertEqual(
-            meeting.agenda.assignments.filter(timeslot__type='break').count(),
-            new_meeting.agenda.assignments.filter(timeslot__type='break').count()
-        )
-        self.assertTrue(meeting.agenda.assignments.filter(timeslot__type='reg').count() > 0)
-        self.assertEqual(
-            meeting.agenda.assignments.filter(timeslot__type='reg').count(),
-            new_meeting.agenda.assignments.filter(timeslot__type='reg').count()
-        )
         self.assertEqual(new_meeting.attendees, None)
 
     def test_edit_meeting(self):
