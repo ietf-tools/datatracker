@@ -22,12 +22,13 @@ from ietf.doc.models import (Document, ReviewRequestDocEvent, ReviewAssignmentDo
                              LastCallDocEvent, TelechatDocEvent,
                              DocumentAuthor, DocAlias)
 from ietf.iesg.models import TelechatDate
+from ietf.mailtrigger.utils import gather_address_lists
 from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
 from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewRequestStateName, ReviewTypeName, 
                                 ReviewerSettings, UnavailablePeriod, ReviewWish, NextReviewerInTeam,
-                                ReviewTeamSettings, ReviewSecretarySettings)
-from ietf.utils.mail import send_mail, get_email_addresses_from_text
+                                ReviewSecretarySettings)
+from ietf.utils.mail import send_mail
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 
 def active_review_teams():
@@ -329,128 +330,75 @@ def latest_review_assignments_for_reviewers(team, days_back=365):
     return assignment_data_for_reviewers
 
 def email_review_assignment_change(request, review_assignment, subject, msg, by, notify_secretary, notify_reviewer, notify_requested_by):
+    to, cc = gather_address_lists(
+        'review_assignment_changed',
+        skipped_recipients=[Person.objects.get(name="(System)").formatted_email(), by.email_address()],
+        doc=review_assignment.review_request.doc,
+        group=review_assignment.review_request.team,
+        review_assignment=review_assignment,
+        skip_review_secretary=not notify_secretary,
+        skip_review_reviewer=not notify_reviewer,
+        skip_review_requested_by=not notify_requested_by,
+    )
 
-    system_email = Person.objects.get(name="(System)").formatted_email()
-
-    to = set() 
-
-    def extract_email_addresses(objs):
-        for o in objs:
-            if o and o.person!=by:
-                e = o.formatted_email()
-                if e != system_email:
-                    to.add(e)
-
-    if notify_secretary:
-        rts = ReviewTeamSettings.objects.filter(group=review_assignment.review_request.team).first()
-        if rts and rts.secr_mail_alias and rts.secr_mail_alias.strip() != '':
-            for addr in get_email_addresses_from_text(rts.secr_mail_alias):
-                to.add(addr)
-        else:
-            extract_email_addresses(Role.objects.filter(name="secr", group=review_assignment.review_request.team).distinct())
-    if notify_reviewer:
-        extract_email_addresses([review_assignment.reviewer])
-    if notify_requested_by:
-        extract_email_addresses([review_assignment.review_request.requested_by.email()])
-        
-    if not to:
-        return
-
-    to = list(to)
-
-    url = urlreverse("ietf.doc.views_review.review_request_forced_login", kwargs={ "name": review_assignment.review_request.doc.name, "request_id": review_assignment.review_request.pk })
-    url = request.build_absolute_uri(url)
-    send_mail(request, to, request.user.person.formatted_email(), subject, "review/review_request_changed.txt", {
-        "review_req_url": url,
-        "review_req": review_assignment.review_request,
-        "msg": msg,
-    })
+    if to or cc:
+        url = urlreverse("ietf.doc.views_review.review_request_forced_login", kwargs={ "name": review_assignment.review_request.doc.name, "request_id": review_assignment.review_request.pk })
+        url = request.build_absolute_uri(url)
+        send_mail(request, to, request.user.person.formatted_email(), subject, "review/review_request_changed.txt", {
+            "review_req_url": url,
+            "review_req": review_assignment.review_request,
+            "msg": msg,
+        }, cc=cc)
  
 
 def email_review_request_change(request, review_req, subject, msg, by, notify_secretary, notify_reviewer, notify_requested_by):
-
     """Notify stakeholders about change, skipping a party if the change
-    was done by that party."""
-
-    system_email = Person.objects.get(name="(System)").formatted_email()
-
-    to = set() 
-
-    def extract_email_addresses(objs):
-        for o in objs:
-            if o and o.person!=by:
-                e = o.formatted_email()
-                if e != system_email:
-                    to.add(e)
-
-    if notify_secretary:
-        rts = ReviewTeamSettings.objects.filter(group=review_req.team).first()
-        if rts and rts.secr_mail_alias and rts.secr_mail_alias.strip() != '':
-            for addr in get_email_addresses_from_text(rts.secr_mail_alias):
-                to.add(addr)
-        else:
-            extract_email_addresses(Role.objects.filter(name="secr", group=review_req.team).distinct())
-    if notify_reviewer:
-        for assignment in review_req.reviewassignment_set.all():
-            extract_email_addresses([assignment.reviewer])
-    if notify_requested_by:
-        extract_email_addresses([review_req.requested_by.email()])
-        
-    if not to:
-        return
-
-    to = list(to)
-
-    url = urlreverse("ietf.doc.views_review.review_request_forced_login", kwargs={ "name": review_req.doc.name, "request_id": review_req.pk })
-    url = request.build_absolute_uri(url)
-    send_mail(request, to, request.user.person.formatted_email(), subject, "review/review_request_changed.txt", {
-                "review_req_url": url,
-                "review_req": review_req,
-                "msg": msg,
-            },
-        )
+    was done by that party."""    
+    (to, cc) = gather_address_lists(
+        'review_req_changed',
+        skipped_recipients=[Person.objects.get(name="(System)").formatted_email(), by.email_address()],
+        doc=review_req.doc,
+        group=review_req.team,
+        review_request=review_req,
+        skip_review_secretary=not notify_secretary,
+        skip_review_reviewer=not notify_reviewer,
+        skip_review_requested_by=not notify_requested_by,
+    )
+    
+    if to or cc:
+        url = urlreverse("ietf.doc.views_review.review_request_forced_login", kwargs={ "name": review_req.doc.name, "request_id": review_req.pk })
+        url = request.build_absolute_uri(url)
+        send_mail(request, to, request.user.person.formatted_email(), subject, "review/review_request_changed.txt", {
+                    "review_req_url": url,
+                    "review_req": review_req,
+                    "msg": msg,
+                },
+                cc=cc,
+            )
 
 def email_reviewer_availability_change(request, team, reviewer_role, msg, by):
     """Notify possibly both secretary and reviewer about change, skipping
     a party if the change was done by that party."""
+    (to, cc) = gather_address_lists(
+        'review_availability_changed',
+        skipped_recipients=[Person.objects.get(name="(System)").formatted_email(), by.email_address()],
+        group=team,
+        reviewer=reviewer_role,
+    )
 
-    system_email = Person.objects.get(name="(System)").formatted_email()
+    if to or cc:
+        subject = "Reviewer availability of {} changed in {}".format(reviewer_role.person, team.acronym)
+    
+        url = urlreverse("ietf.group.views.reviewer_overview", kwargs={ "group_type": team.type_id, "acronym": team.acronym })
+        url = request.build_absolute_uri(url)
+        send_mail(request, to, None, subject, "review/reviewer_availability_changed.txt", {
+            "reviewer_overview_url": url,
+            "reviewer": reviewer_role.person,
+            "team": team,
+            "msg": msg,
+            "by": by,
+        }, cc=cc)
 
-    to = []
-
-    def extract_email_addresses(objs):
-        if any(o.person == by for o in objs if o):
-            l = []
-        else:
-            l = []
-            for o in objs:
-                if o:
-                    e = o.formatted_email()
-                    if e != system_email:
-                        l.append(e)
-
-        for e in l:
-            if e not in to:
-                to.append(e)
-
-    extract_email_addresses(Role.objects.filter(name="secr", group=team).distinct())
-
-    extract_email_addresses([reviewer_role])
-
-    if not to:
-        return
-
-    subject = "Reviewer availability of {} changed in {}".format(reviewer_role.person, team.acronym)
-
-    url = urlreverse("ietf.group.views.reviewer_overview", kwargs={ "group_type": team.type_id, "acronym": team.acronym })
-    url = request.build_absolute_uri(url)
-    send_mail(request, to, None, subject, "review/reviewer_availability_changed.txt", {
-        "reviewer_overview_url": url,
-        "reviewer": reviewer_role.person,
-        "team": team,
-        "msg": msg,
-        "by": by,
-    })
 
 def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=False):
     assert review_req.state_id in ("requested", "assigned")

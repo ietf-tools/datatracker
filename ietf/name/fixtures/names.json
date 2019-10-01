@@ -3959,6 +3959,19 @@
   {
     "fields": {
       "cc": [],
+      "desc": "Recipients for a change to a review assignment",
+      "to": [
+        "review_assignment_reviewer",
+        "review_assignment_review_req_by",
+        "review_secretaries"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "review_assignment_changed"
+  },
+  {
+    "fields": {
+      "cc": [],
       "desc": "Recipients when an review team secretary send a summary of open review assignments",
       "to": [
         "group_mail_list"
@@ -3966,6 +3979,18 @@
     },
     "model": "mailtrigger.mailtrigger",
     "pk": "review_assignments_summarized"
+  },
+  {
+    "fields": {
+      "cc": [],
+      "desc": "Recipients for a change to a reviewer's availability",
+      "to": [
+        "review_reviewer",
+        "group_secretaries"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "review_availability_changed"
   },
   {
     "fields": {
@@ -3993,6 +4018,19 @@
     },
     "model": "mailtrigger.mailtrigger",
     "pk": "review_notify_ad"
+  },
+  {
+    "fields": {
+      "cc": [],
+      "desc": "Recipients for a change to a review request",
+      "to": [
+        "review_req_requested_by",
+        "review_req_reviewers",
+        "review_secretaries"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "review_req_changed"
   },
   {
     "fields": {
@@ -4648,6 +4686,22 @@
   },
   {
     "fields": {
+      "desc": "The requester of an assigned review",
+      "template": "{% if not skip_review_requested_by %}{{review_assignment.review_request.requested_by.email_address}}{% endif %}"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "review_assignment_review_req_by"
+  },
+  {
+    "fields": {
+      "desc": "The reviewer assigned to a review assignment",
+      "template": "{% if not skip_review_reviewer %}{{review_assignment.reviewer.email_address}}{% endif %}"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "review_assignment_reviewer"
+  },
+  {
+    "fields": {
       "desc": "The reviewed document's responsible area director",
       "template": "{% if review_req.doc.ad %}{{review_req.doc.ad.email_address}}{% endif %}"
     },
@@ -4669,6 +4723,38 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "review_doc_group_mail_list"
+  },
+  {
+    "fields": {
+      "desc": "The requester of a review",
+      "template": "{% if not skip_review_requested_by %}{{review_req.requested_by.email_address}}{% endif %}"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "review_req_requested_by"
+  },
+  {
+    "fields": {
+      "desc": "All reviewers assigned to a review request",
+      "template": null
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "review_req_reviewers"
+  },
+  {
+    "fields": {
+      "desc": "A single reviewer",
+      "template": "{{reviewer.email_address}}"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "review_reviewer"
+  },
+  {
+    "fields": {
+      "desc": "The secretaries of the review team of a review request or assignment",
+      "template": null
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "review_secretaries"
   },
   {
     "fields": {

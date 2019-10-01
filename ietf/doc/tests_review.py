@@ -223,6 +223,8 @@ class ReviewTests(TestCase):
         self.assertNotIn("review_request_close_comment", e.desc.lower())
 
         self.assertEqual(len(outbox), 1)
+        self.assertIn('<reviewer@example.com>', outbox[0]["To"])
+        self.assertNotIn("<reviewsecretary@example.com>", outbox[0]["To"])
         mail_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
         self.assertIn("closed", mail_content)
         self.assertIn("review_request_close_comment", mail_content)
@@ -420,6 +422,7 @@ class ReviewTests(TestCase):
         self.assertEqual(assignment.reviewer, reviewer)
         self.assertEqual(assignment.state_id, "assigned")
         self.assertEqual(len(outbox), 1)
+        self.assertEqual('"Some Reviewer" <reviewer@example.com>', outbox[0]["To"])
         self.assertTrue("assigned" in outbox[0].get_payload(decode=True).decode("utf-8"))
         self.assertEqual(NextReviewerInTeam.objects.get(team=review_req.team).next_reviewer, rotation_list[1])
 
@@ -482,6 +485,8 @@ class ReviewTests(TestCase):
         self.assertEqual(e.type, "closed_review_assignment")
         self.assertTrue("rejected" in e.desc)
         self.assertEqual(len(outbox), 1)
+        self.assertIn(assignment.reviewer.address, outbox[0]["To"])
+        self.assertNotIn("<reviewsecretary@example.com>", outbox[0]["To"])
         self.assertTrue("Test message" in outbox[0].get_payload(decode=True).decode("utf-8"))
 
     def make_test_mbox_tarball(self, review_req):
@@ -858,7 +863,8 @@ class ReviewTests(TestCase):
         self.assertTrue(assignment.review_request.doc.rev in assignment.review.name)
 
         self.assertEqual(len(outbox), 2)
-        self.assertTrue("reviewsecretary@example.com" in outbox[0]["To"])
+        self.assertIn("<reviewsecretary@example.com>", outbox[0]["To"])
+        self.assertNotIn(assignment.reviewer.address, outbox[0]["To"])
         self.assertTrue("partially" in outbox[0]["Subject"].lower())
 
         self.assertTrue(assignment.review_request.team.list_email in outbox[1]["To"])
@@ -998,6 +1004,7 @@ class ReviewTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
+        empty_outbox()
         old_deadline = review_req.deadline.date()
         new_deadline = old_deadline + datetime.timedelta(days=1)
         r = self.client.post(url, data={
@@ -1006,7 +1013,10 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 302)
         review_req = reload_db_objects(review_req)
         self.assertEqual(review_req.deadline,new_deadline)
-        self.assertTrue('Deadline changed' in outbox[-1]['Subject'])
+        self.assertEqual(len(outbox), 1)
+        self.assertIn('<reviewsecretary@example.com>', outbox[0]["To"])
+        self.assertIn('<reviewer@example.com>', outbox[0]["To"])
+        self.assertIn('Deadline changed', outbox[0]['Subject'])
 
     def test_mark_no_response(self):
         assignment = ReviewAssignmentFactory()
@@ -1017,11 +1027,17 @@ class ReviewTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
+        empty_outbox()
         r=self.client.post(url, data={"action":"noresponse"})
         self.assertEqual(r.status_code, 302)
 
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, 'no-response')
+
+        self.assertEqual(len(outbox), 1)
+        self.assertIn(assignment.reviewer.address,  outbox[0]["To"])
+        self.assertNotIn('<reviewsecretary@example.com>', outbox[0]["To"])
+        self.assertIn('Reviewer assignment marked no-response', outbox[0]['Subject'])
 
     def test_withdraw_assignment(self):
         assignment = ReviewAssignmentFactory()

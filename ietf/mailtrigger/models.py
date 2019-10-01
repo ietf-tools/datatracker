@@ -184,7 +184,20 @@ class Recipient(models.Model):
                 else:
                     addrs.extend(group.role_set.filter(name='secr').values_list('email__address',flat=True))
         return addrs
-
+    
+    def gather_review_req_reviewers(self, **kwargs):
+        addrs = []
+        if 'review_request' in kwargs:
+            review_request = kwargs['review_request']
+            for assignment in review_request.reviewassignment_set.all():
+                addrs.append(assignment.reviewer.formatted_email())
+        return addrs
+    
+    def gather_review_secretaries(self, **kwargs):
+        if not kwargs.get('skip_secretary'):
+            return self.gather_group_secretaries(**kwargs)
+        return []
+        
     def gather_doc_group_responsible_directors(self, **kwargs):
         addrs = []
         if 'doc' in kwargs:
