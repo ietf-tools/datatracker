@@ -174,6 +174,7 @@ class ReviewTeamSettings(models.Model):
     review_results = models.ManyToManyField(ReviewResultName, default=get_default_review_results, related_name='reviewteamsettings_review_results_set')
     notify_ad_when = models.ManyToManyField(ReviewResultName, related_name='reviewteamsettings_notify_ad_set', blank=True)
     secr_mail_alias = models.CharField(verbose_name="Email alias for all of the review team secretaries", max_length=255, blank=True, help_text="Email alias for all of the review team secretaries")
+    remind_days_unconfirmed_assignments = models.PositiveIntegerField(null=True, blank=True, verbose_name="Periodic reminder of not yet accepted or rejected review assignments to reviewer every X days", help_text="To send a periodic email reminder to reviewers of review assignments they have neither accepted nor rejected, enter the number of days between these reminders. Clear the field if you don't want these reminders to be sent.")
 
     def __str__(self):
         return "%s" % (self.group.acronym,)
