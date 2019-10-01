@@ -955,8 +955,8 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                 old = Email.objects.filter(role__group=group, role__name=slug).select_related("person")
                 if set(new) != set(old):
                     changes.append((attr, new, desc(title,
-                                        ", ".join(x.get_name() for x in new),
-                                        ", ".join(x.get_name() for x in old))))
+                                        ", ".join(sorted(x.get_name() for x in new)),
+                                        ", ".join(sorted(x.get_name() for x in old)))))
                     group.role_set.filter(name=slug).delete()
                     for e in new:
                         Role.objects.get_or_create(name_id=slug, email=e, group=group, person=e.person)
