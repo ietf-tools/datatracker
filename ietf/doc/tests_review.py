@@ -610,6 +610,9 @@ class ReviewTests(TestCase):
         # get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+        self.assertContains(r, assignment.review_request.team.list_email)
+        for author in assignment.review_request.doc.authors():
+            self.assertContains(r, author.formatted_email())
 
         # faulty post
         r = self.client.post(url, data={
