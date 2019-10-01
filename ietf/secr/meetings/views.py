@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import datetime
 import os
 import time
@@ -86,46 +89,12 @@ def build_timeslots(meeting,room=None):
                                         location=room,
                                         duration=t.duration)
 
-def build_nonsession(meeting,schedule):
-    '''
-    This function takes a meeting object and creates non-session records
-    for a new meeting, based on the last meeting
-    '''
-    last_meeting = get_last_meeting(meeting)
-    if not last_meeting:
-        return None
-    
-    delta = meeting.date - last_meeting.date
-    system = Person.objects.get(name='(System)')
-    
-    for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg','other','plenary','lead')):
-        new_time = slot.time + delta
-        session = Session.objects.create(meeting=meeting,
-                                         name=slot.name,
-                                         short=get_session(slot).short,
-                                         group=get_session(slot).group,
-                                         requested_by=system,
-                                         status_id='sched',
-                                         type=slot.type)
-
-        ts = TimeSlot.objects.create(type=slot.type,
-                                     meeting=meeting,
-                                     name=slot.name,
-                                     time=new_time,
-                                     duration=slot.duration,
-                                     show_location=slot.show_location)
-        SchedTimeSessAssignment.objects.create(schedule=schedule,session=session,timeslot=ts)
-
 def check_nonsession(meeting,schedule):
     '''
     Ensure non-session timeslots exist and have appropriate SchedTimeSessAssignment objects
     for the specified schedule.
     '''
     slots = TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other','plenary','lead','offagenda'))
-    if not slots:
-        build_nonsession(meeting,schedule)
-        return None
-
     plenary = slots.filter(type='plenary').first()
     if plenary:
         assignments = plenary.sessionassignments.all()
@@ -269,9 +238,6 @@ def add(request):
             meeting.save()
 
             populate_important_dates(meeting)
-
-            # copy special sessions from previous meeting
-            build_nonsession(meeting,schedule)
             
             # Create Physical new meeting directory and subdirectories
             make_materials_directories(meeting)
