@@ -573,7 +573,17 @@ def complete_review(request, name, assignment_id):
     if not (is_reviewer or can_manage_request):
         return HttpResponseForbidden("You do not have permission to perform this action")
 
-    (to, cc) = gather_address_lists('review_completed', review_req = assignment.review_request)
+    team_acronym = assignment.review_request.team.acronym.lower()
+    request_type = assignment.review_request.type
+    mailtrigger_slug = 'review_completed_{}_{}'.format(team_acronym, request_type.slug)
+    # Description is only used if the mailtrigger does not exist yet.
+    mailtrigger_desc = 'Recipients when a {} {} review is completed'.format(team_acronym, request_type)
+    to, cc = gather_address_lists(
+        mailtrigger_slug,
+        create_from_slug_if_not_exists='review_completed',
+        desc_if_not_exists=mailtrigger_desc,
+        review_req=assignment.review_request
+    )
 
     if request.method == "POST":
         form = CompleteReviewForm(assignment, is_reviewer,
@@ -590,7 +600,7 @@ def complete_review(request, name, assignment_id):
                         strip_prefix(assignment.review_request.doc.name, "draft-"),
                         form.cleaned_data["reviewed_rev"],
                         assignment.review_request.team.acronym,
-                        assignment.review_request.type.slug,
+                        request_type.slug,
                         xslugify(assignment.reviewer.person.ascii_parts()[3]),
                         datetime.date.today().isoformat(),
                     ]
@@ -763,7 +773,8 @@ def complete_review(request, name, assignment_id):
         }
 
         try:
-            initial['review_content'] = render_to_string('/group/%s/review/content_templates/%s.txt' % (assignment.review_request.team.acronym, assignment.review_request.type.slug), {'assignment':assignment,'today':datetime.date.today()}) 
+            initial['review_content'] = render_to_string('/group/%s/review/content_templates/%s.txt' % (assignment.review_request.team.acronym,
+                                                                                                        request_type.slug), {'assignment':assignment, 'today':datetime.date.today()}) 
         except TemplateDoesNotExist:
             pass
 

@@ -19,8 +19,10 @@ class AddrLists(namedtuple('AddrLists',['to','cc'])):
 
         return namedtuple('AddrListsAsStrings',['to','cc'])(to=to_string,cc=cc_string)
 
-def gather_address_lists(slug, skipped_recipients=None, **kwargs):
-    mailtrigger = MailTrigger.objects.get(slug=slug)
+
+def gather_address_lists(slug, skipped_recipients=None, create_from_slug_if_not_exists=None, 
+                         desc_if_not_exists=None, **kwargs):
+    mailtrigger = get_mailtrigger(slug, create_from_slug_if_not_exists, desc_if_not_exists)
 
     to = set()
     for recipient in mailtrigger.to.all():
@@ -37,6 +39,21 @@ def gather_address_lists(slug, skipped_recipients=None, **kwargs):
         cc -= set(skipped_recipients)
 
     return AddrLists(to=list(to),cc=list(cc))
+
+
+def get_mailtrigger(slug, create_from_slug_if_not_exists, desc_if_not_exists):
+    try:
+        mailtrigger = MailTrigger.objects.get(slug=slug)
+    except MailTrigger.DoesNotExist:
+        if create_from_slug_if_not_exists and desc_if_not_exists:
+            template = MailTrigger.objects.get(slug=create_from_slug_if_not_exists)
+            mailtrigger = MailTrigger.objects.create(slug=slug, desc=desc_if_not_exists)
+            mailtrigger.to.set(template.to.all())
+            mailtrigger.cc.set(template.cc.all())
+        else:
+            raise
+    return mailtrigger
+
 
 def gather_relevant_expansions(**kwargs):
 

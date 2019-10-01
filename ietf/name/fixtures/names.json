@@ -3999,7 +3999,7 @@
         "review_doc_all_parties",
         "review_doc_group_mail_list"
       ],
-      "desc": "Recipients when an review is completed",
+      "desc": "Default template for recipients when an review is completed - customised mail triggers are used/created per team and review type.",
       "to": [
         "review_team_mail_list"
       ]

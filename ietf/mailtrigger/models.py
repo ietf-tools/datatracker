@@ -35,7 +35,7 @@ def clean_duplicates(addrlist):
 
 @python_2_unicode_compatible
 class MailTrigger(models.Model):
-    slug = models.CharField(max_length=32, primary_key=True)
+    slug = models.CharField(max_length=64, primary_key=True)
     desc = models.TextField(blank=True)
     to   = models.ManyToManyField('Recipient', blank=True, related_name='used_in_to')
     cc   = models.ManyToManyField('Recipient', blank=True, related_name='used_in_cc')
