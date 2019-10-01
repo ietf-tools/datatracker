@@ -1,3 +1,74 @@
+ietfdb (6.104.0) ietf; urgency=medium
+
+  **Review tool tickets roundup, part 1**
+
+  This release constitutes the first batch of fixes from the review tool
+  tickets work package.  It also includes a few unrelated bugfixes.
+  From the commit log:
+
+  * Merged in [16688] from sasha@dashcare.nl:
+    When completing a review, show which addresses it is posted to. 
+    Fixes issue #2478.
+
+  * Merged in [16680] from sasha@dashcare.nl:
+    Made the review_completed mailtrigger configurable per team and review
+    type.  This includes a migration to change mailtrigger slugs to be up to
+    64 characters instead of 32, as some slugs would not fit and require
+    clunky abbreviations.  A data migration creates triggers for existing
+    teams, and they are also created on the fly if a trigger does not exist
+    yet, providing a safe fallback for new review teams. The review_completed
+    mailtrigger serves as the template for new triggers.  This commit also
+    includes tests for gather_address_lists(), as none existed. 
+    Fixes issue #2354.
+
+  * Merged in [16672] from sasha@dashcare.nl:
+    Use mailtriggers to find destinations in review app As the review app has
+    several conditionals that don't fit entirely well within mailtriggers, the
+    templates use a bit of extra context to figure out who exactly to include.
+    This also extends the tests for review, to check for correct recipients.
+    It also adds a tiny feature to mailtrigger to entirely exclude certain
+    addresses, as required by the review-generated mails. Fixes issue #2328.
+
+  * Merged in [16670] from sasha@dashcare.nl: Allow secretary to adjust date
+    when completing a review.  This also fixes other issues identified in
+    #2590, around the modification of historical document events. The
+    behaviour is now:
+
+    - When the assigned reviewer posts a review, a single event is created,
+      set to current date/time.
+
+    - When the secretary records a review in the datatracker, they may set a
+      different completion date, which is autofilled if an email is selected.
+      One event is generated for the original completion date, and one for the
+      secretary's action.
+
+    - Each revision generates a new event, rather than updating previous
+      existing events. 
+
+    Fixes issue #2590
+
+  * Improved the wrapping of long lines in emails sent by the datatracker: 
+    In wordwrap(), consider lines consisting entirely of some non-alphanumeric
+    characters like ---- or === to be block (paragraph) separators.  Fixes
+    issue #2806.
+
+  * Merged in [16668] from sasha@dashcare.nl:
+    Sort names alphabetically in review group history notes when changing the
+    list of members.  Fixes issue #2560
+
+  * Removed debug-related code from group edit clean_acronym().
+    Fixes issue #2804.
+
+  * Merged in [16667] from sasha@dashcare.nl:
+    Added an optional comment field for closing review requests.
+    Fixes issue #2071
+
+  * Updated the docker files to build and run an image based on devuan:ascii 
+    instead of debian:jessie.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Oct 2019 16:15:46 +0000
+
+
 ietfdb (6.103.1) ietf; urgency=medium
 
   **Test improvement: Starting to use Python type hints and mypy type checking**
