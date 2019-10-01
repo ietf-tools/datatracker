@@ -522,7 +522,7 @@ class CompleteReviewForm(forms.Form):
 
         if revising_review:
             del self.fields["cc"]
-        else:
+        elif is_reviewer:
             del self.fields["completion_date"]
             del self.fields["completion_time"]
 
@@ -649,6 +649,7 @@ def complete_review(request, name, assignment_id):
 
             need_to_email_review = review_submission != "link" and assignment.review_request.team.list_email and not revising_review
 
+            submitted_on_different_date = completion_datetime.date() != datetime.date.today()
             desc = "Request for {} review by {} {}: {}. Reviewer: {}.".format(
                 assignment.review_request.type.name,
                 assignment.review_request.team.acronym.upper(),
@@ -658,18 +659,38 @@ def complete_review(request, name, assignment_id):
             )
             if need_to_email_review:
                 desc += " " + "Sent review to list."
-
-            close_event = ReviewAssignmentDocEvent.objects.filter(type="closed_review_assignment", review_assignment=assignment).first()
-            if not close_event:
-                close_event = ReviewAssignmentDocEvent(type="closed_review_assignment", review_assignment=assignment)
-
+            if revising_review:
+                desc += " Review has been revised by {}.".format(request.user.person)
+            elif submitted_on_different_date:
+                desc += " Submission of review completed at an earlier date."
+            close_event = ReviewAssignmentDocEvent(type="closed_review_assignment", review_assignment=assignment)
             close_event.doc = assignment.review_request.doc
             close_event.rev = assignment.review_request.doc.rev
             close_event.by = request.user.person
             close_event.desc = desc
             close_event.state = assignment.state
-            close_event.time = completion_datetime
+            close_event.time = datetime.datetime.now()
             close_event.save()
+            
+            # If the completion date is different, record when the initial review was made too.
+            if not revising_review and submitted_on_different_date:
+                desc = "Request for {} review by {} {}: {}. Reviewer: {}.".format(
+                    assignment.review_request.type.name,
+                    assignment.review_request.team.acronym.upper(),
+                    assignment.state.name,
+                    assignment.result.name,
+                    assignment.reviewer.person,
+                )
+
+                initial_close_event = ReviewAssignmentDocEvent(type="closed_review_assignment",
+                                                               review_assignment=assignment)
+                initial_close_event.doc = assignment.review_request.doc
+                initial_close_event.rev = assignment.review_request.doc.rev
+                initial_close_event.by = request.user.person
+                initial_close_event.desc = desc
+                initial_close_event.state = assignment.state
+                initial_close_event.time = completion_datetime
+                initial_close_event.save()
 
             if assignment.state_id == "part-completed" and not revising_review: 
                 existing_assignments = ReviewAssignment.objects.filter(review_request__doc=assignment.review_request.doc, review_request__team=assignment.review_request.team, state__in=("assigned", "accepted", "completed"))
