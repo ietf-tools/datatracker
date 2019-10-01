@@ -62,6 +62,11 @@ def wordwrap(text, width=80):
        of short lines"""
     if not isinstance(text, six.string_types):
         return text
+    def block_separator(s):
+        "Look for lines of identical symbols, at least three long"
+        ss = s.strip()
+        chars = set(ss)
+        return len(chars) == 1 and len(ss) >= 3 and ss[0] in set('#*+-.=_~')
     width = int(width)                  # ensure we have an int, if this is used as a template filter
     text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings
     text = re.sub(" *\r", "\n", text)   # get rid of MAC line endings
@@ -74,7 +79,7 @@ def wordwrap(text, width=80):
         line = line.expandtabs().rstrip()
         indent = " " * (len(line) - len(line.lstrip()))
         ind = len(indent)
-        if wrapped and line.strip() != "" and indent == prev_indent:
+        if wrapped and line.strip() != "" and indent == prev_indent and not block_separator(line):
             line = filled[-1] + " " + line.lstrip()
             filled = filled[:-1]
         else:
