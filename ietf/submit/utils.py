@@ -502,6 +502,7 @@ def ensure_person_email_info_exists(name, email, docname):
         active = True
         addr = addr.lower()
     else:
+        log.unreachable('2019-10-02')
         # we're in trouble, use a fake one
         active = False
         addr = "unknown-email-%s" % person.plain_ascii().replace(" ", "-")
