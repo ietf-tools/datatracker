@@ -225,7 +225,7 @@ class Recipient(models.Model):
         if 'submission' in kwargs:
             submission = kwargs['submission']
             if '@' in submission.submitter:
-                addrs.extend([ get_email_addresses_from_text(submission.submitter) ])
+                addrs.extend( get_email_addresses_from_text(submission.submitter) )
             else:
                 try:
                     submitter = Alias.objects.get(name=submission.submitter).person
