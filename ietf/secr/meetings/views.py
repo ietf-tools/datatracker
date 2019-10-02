@@ -571,7 +571,7 @@ def notifications(request, meeting_id):
         # ensure session state is scheduled
         for ss in meeting.agenda.assignments.all():
             session = ss.session
-            if session.status.slug == "schedw":
+            if session.status.slug in ["schedw", "appr"]:
                 session.status_id = "sched"
                 session.scheduled = datetime.datetime.now()
                 session.save()

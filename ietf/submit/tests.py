@@ -23,7 +23,7 @@ from django.utils.encoding import force_str, force_text
 
 import debug                            # pyflakes:ignore
 
-from ietf.submit.utils import expirable_submissions, expire_submission, ensure_person_email_info_exists
+from ietf.submit.utils import expirable_submissions, expire_submission
 from ietf.doc.factories import DocumentFactory, WgDraftFactory, IndividualDraftFactory
 from ietf.doc.models import Document, DocAlias, DocEvent, State, BallotPositionDocEvent, DocumentAuthor
 from ietf.doc.utils import create_ballot_if_not_open
@@ -378,8 +378,11 @@ class SubmitTests(TestCase):
         prev_author = draft.documentauthor_set.all()[0]
         if change_authors:
             # Make it such that one of the previous authors has an invalid email address
-            bogus_person, bogus_email = ensure_person_email_info_exists('Bogus Person', None, draft.name)
-            DocumentAuthor.objects.create(document=draft, person=bogus_person, email=bogus_email, order=draft.documentauthor_set.latest('order').order+1)
+            nomail_author = PersonFactory()
+            email = nomail_author.email()
+            email.address='unknown-email-%s' % nomail_author.plain_ascii().replace(' ', '-')
+            email.save()
+            DocumentAuthor.objects.create(document=draft, person=nomail_author, email=email, order=draft.documentauthor_set.latest('order').order+1)
 
         # Set the revision needed tag
         draft.tags.add("need-rev")

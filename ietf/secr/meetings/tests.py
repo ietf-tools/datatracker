@@ -18,6 +18,7 @@ from django.urls import reverse
 from ietf.group.models import Group, GroupEvent
 from ietf.meeting.models import Meeting, Room, TimeSlot, SchedTimeSessAssignment, Session
 from ietf.meeting.test_data import make_meeting_test_data
+from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
 from ietf.secr.meetings.forms import get_times
 from ietf.utils.mail import outbox
@@ -148,16 +149,21 @@ class SecrMeetingTestCase(TestCase):
     def test_notifications(self):
         "Test Notifications"
         meeting = make_meeting_test_data()
+        mars_group = Group.objects.get(acronym='mars')
+        ames_group = Group.objects.get(acronym='ames')
+        ames_stsa = meeting.agenda.assignments.get(session__group=ames_group)
+        assert ames_stsa.session.status_id == 'schedw'
+        mars_stsa = meeting.agenda.assignments.get(session__group=mars_group)
+        mars_stsa.session.status = SessionStatusName.objects.get(slug='appr')
+        mars_stsa.session.save()
         url = reverse('ietf.secr.meetings.views.notifications',kwargs={'meeting_id':72})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
         self.assertEqual(q('#id_notification_list').html(),'ames, mars')
-        
+
         # test that only changes since last notification show up
-        mars_group = Group.objects.get(acronym='mars')
-        ames_group = Group.objects.get(acronym='ames')
         now = datetime.datetime.now()
         then = datetime.datetime.now()+datetime.timedelta(hours=1)
         person = Person.objects.get(name="(System)")
@@ -172,13 +178,17 @@ class SecrMeetingTestCase(TestCase):
         q = PyQuery(response.content)
         self.assertEqual(q('#id_notification_list').html(),'ames')
         
-        # test that email goes out
+        # test post: email goes out, status changed
         mailbox_before = len(outbox)
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before + 1)
-        
+        ames_stsa = meeting.agenda.assignments.get(session__group=ames_group)
+        assert ames_stsa.session.status_id == 'sched'
+        mars_stsa = meeting.agenda.assignments.get(session__group=mars_group)
+        assert mars_stsa.session.status_id == 'sched'
+
     def test_meetings_rooms(self):
         meeting = make_meeting_test_data()
         url = reverse('ietf.secr.meetings.views.rooms',kwargs={'meeting_id':72,'schedule_name':'test-agenda'})
