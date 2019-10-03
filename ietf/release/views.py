@@ -79,7 +79,8 @@ def release(request, version=None):
 
     if version == None or version not in entries:
         version = log_entries[0].version
-    entries[version].logentry = trac_links(escape(entries[version].logentry.strip('\n')))
+    if not hasattr(entries[version], 'html'):
+        entries[version].html = trac_links(escape(entries[version].logentry.strip('\n')))
 
     code_coverage_url = None
     code_coverage_time = None
