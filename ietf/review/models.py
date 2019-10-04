@@ -36,7 +36,8 @@ class ReviewerSettings(models.Model):
         validators=[validate_regular_expression_string, ],
         help_text="Draft names matching this regular expression should not be assigned")
     skip_next   = models.IntegerField(default=0, verbose_name="Skip next assignments")
-    remind_days_before_deadline = models.IntegerField(null=True, blank=True, help_text="To get an email reminder in case you forget to do an assigned review, enter the number of days before review deadline you want to receive it. Clear the field if you don't want a reminder.")
+    remind_days_before_deadline = models.IntegerField(null=True, blank=True, help_text="To get an email reminder in case you forget to do an assigned review, enter the number of days before review deadline you want to receive it. Clear the field if you don't want this reminder.")
+    remind_days_open_reviews = models.PositiveIntegerField(null=True, blank=True, verbose_name="Periodic reminder of open reviews every X days", help_text="To get a periodic email reminder of all your open reviews, enter the number of days between these reminders. Clear the field if you don't want these reminders.")
     expertise = models.TextField(verbose_name="Reviewer's expertise in this team's area", max_length=2048, blank=True, help_text="Describe the reviewer's expertise in this team's area", default='')
 
     def __str__(self):
