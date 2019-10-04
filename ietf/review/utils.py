@@ -395,7 +395,6 @@ def email_reviewer_availability_change(request, team, reviewer_role, msg, by):
             "reviewer_overview_url": url,
             "reviewer": reviewer_role.person,
             "team": team,
-            "msg": msg,
             "by": by,
         }, cc=cc)
 
@@ -932,6 +931,33 @@ def make_assignment_choices(email_queryset, review_req):
 
     return [(r["email"].pk, r["label"]) for r in ranking]
 
+
+def send_unavaibility_period_ending_reminder(remind_date):
+    reminder_days = 3
+    end_date = remind_date + datetime.timedelta(days=reminder_days)
+    min_start_date = end_date - datetime.timedelta(days=30)
+    periods = UnavailablePeriod.objects.filter(start_date__lte=min_start_date, end_date=end_date)
+    log = []
+    for period in periods:
+        (to, cc) = gather_address_lists('review_availability_changed', group=period.team, reviewer=period.person)
+        domain = Site.objects.get_current().domain
+        url = urlreverse("ietf.group.views.reviewer_overview", kwargs={ "group_type": period.team.type_id, "acronym": period.team.acronym })
+        
+        subject = "Reminder: unavailability period of {} is ending soon".format(period.person)
+        send_mail(None, to, None, subject, "review/reviewer_unavailability_ending.txt", {
+            "reviewer_overview_url": "https://{}{}".format(domain, url),
+            "reviewer": period.person,
+            "team": period.team,
+            "reminder_days": reminder_days,
+            "period_start": period.start_date.isoformat(),
+            "period_end": period.end_date.isoformat(),
+        }, cc=cc)
+        log.append("Emailed reminder to {} for ending of unavailability "
+                   "of {} in {} soon (unavailability period id {})".format(
+            to, period.person, period.team.acronym,period.pk))
+    return log
+
+    
 def review_assignments_needing_reviewer_reminder(remind_date):
     assignment_qs = ReviewAssignment.objects.filter(
         state__in=("assigned", "accepted"),
