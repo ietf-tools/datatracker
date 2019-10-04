@@ -373,7 +373,7 @@ for key in keys:
     i = unmerged_branch_commits[branch].index(rev)
     if not i == 0:
         unmerged = True
-        sys.stderr.write("There are unmerged commits ahead of r%s on branch %s:\n" % (rev, branch))
+        sys.stderr.write("There are unmerged commits ahead of r%s on branch ^/%s:\n" % (rev, branch))
         for j in range(0,i):
             commit = unmerged_branch_commits[branch][j]
             if commit != rev:

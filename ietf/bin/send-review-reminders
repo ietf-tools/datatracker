@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import os, sys
+import os
+import sys
 import syslog
 
 # boilerplate
@@ -10,7 +11,9 @@ os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
 
 virtualenv_activation = os.path.join(basedir, "env", "bin", "activate_this.py")
 if os.path.exists(virtualenv_activation):
-    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
+    with open(virtualenv_activation, 'rb') as f:
+        code = compile(f.read(), virtualenv_activation, 'exec')
+        exec(code, globals=dict(__name__="__main__", __file__=virtualenv_activation))
 
 syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 
@@ -27,11 +30,10 @@ today = datetime.date.today()
 
 for assignment in review_assignments_needing_reviewer_reminder(today):
     email_reviewer_reminder(assignment.review_request)
-    for review_assignment in assignments.review_req.reviewassignment_set.all():
+    for review_assignment in assignment.review_req.reviewassignment_set.all():
         print("Emailed reminder to {} for review of {} in {} (req. id {})".format(review_assignment.reviewer.address, assignment.review_req.doc_id, assignment.review_req.team.acronym, assignment.review_req.pk))
 
 for assignment, secretary_role in review_assignments_needing_secretary_reminder(today):
     email_secretary_reminder(assignment.review_request, secretary_role)
     review_req = assignment.review_request
     print("Emailed reminder to {} for review of {} in {} (req. id {})".format(secretary_role.email.address, review_req.doc_id, review_req.team.acronym, review_req.pk))
-    
