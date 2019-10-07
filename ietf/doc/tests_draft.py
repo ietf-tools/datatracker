@@ -941,6 +941,18 @@ class IndividualInfoFormsTests(TestCase):
         self.assertEqual(doc.ad,ad2)
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Shepherding AD changed'))
 
+        doc.set_state(State.objects.get(type_id='draft-iesg',slug='lc'))
+        r = self.client.post(url,dict())
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('.has-error'))
+
+        doc.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+        r = self.client.post(url,dict())
+        self.assertEqual(r.status_code,302)
+        doc = Document.objects.get(name=self.docname)
+        self.assertEqual(doc.ad, None)
+
     def test_doc_change_shepherd(self):
         doc = Document.objects.get(name=self.docname)
         doc.shepherd = None

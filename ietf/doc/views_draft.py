@@ -1067,16 +1067,24 @@ def change_shepherd_email(request, name):
 
 class AdForm(forms.Form):
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type="area").order_by('name'), 
-                                label="Shepherding AD", empty_label="(None)", required=True)
+                                label="Shepherding AD", empty_label="(None)", required=False)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, doc, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
-
+        self.doc = doc
         # if previous AD is now ex-AD, append that person to the list
         ad_pk = self.initial.get('ad')
         choices = self.fields['ad'].choices
         if ad_pk and ad_pk not in [pk for pk, name in choices]:
             self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).plain_name())]
+
+    def clean_ad(self):
+        ad = self.cleaned_data['ad']
+        state = self.doc.get_state('draft-iesg')
+        if not ad:
+            if state.slug not in ['idexists','dead']:
+                raise forms.ValidationError("Drafts in state %s must have an assigned AD." % state)
+        return ad
 
 @role_required("Area Director", "Secretariat")
 def edit_ad(request, name):
@@ -1085,21 +1093,23 @@ def edit_ad(request, name):
     doc = get_object_or_404(Document, type="draft", name=name)
 
     if request.method == 'POST':
-        form = AdForm(request.POST)
+        form = AdForm(doc, request.POST)
         if form.is_valid():
-            doc.ad = form.cleaned_data['ad']
+            new_ad = form.cleaned_data['ad']
+            if new_ad != doc.ad:
+                doc.ad = new_ad
 
-            c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
-            c.desc = "Shepherding AD changed to "+doc.ad.name
-            c.save()
+                c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
+                c.desc = "Shepherding AD changed to "+doc.ad.name if doc.ad else "None"
+                c.save()
 
-            doc.save_with_history([c])
+                doc.save_with_history([c])
     
             return redirect('ietf.doc.views_doc.document_main', name=doc.name)
 
     else:
         init = { "ad" : doc.ad_id }
-        form = AdForm(initial=init)
+        form = AdForm(doc, initial=init)
 
     return render(request, 'doc/draft/change_ad.html',
                     {'form':   form,
