@@ -1,3 +1,55 @@
+ietfdb (6.105.0) ietf; urgency=medium
+
+  * Merged in [16759] from rjsparks@nostrum.com:
+    Restrict comments total on nomcom private index to comments on positions.
+    Fixes #2792.  
+
+  * Merged in [16705] from sasha@dashcare.nl:
+
+    Send periodic reminders of open reviews every X days (opt-in).
+    Fixes issue #2337
+
+  * Merged in [16704] from sasha@dashcare.nl:
+
+    Send reminders before long UnavailabilityPeriods expire A notification is
+    sent to the team secretary and reviewer, if an unavailability period
+    lasting 30 days or more will end in 3 days. Fixes issue #2231.
+
+  * Merged in [16703] from sasha@dashcare.nl:
+    Fix send-review-reminders and add it to daily cron.  This fixes a syntax
+    error and a Python 3 incompatibility, and adds send-review-reminders to
+    the daily cron script.  Related to issue #2231.
+
+  * Fixed an issue with the htmlization of links in release notes.
+
+  * Merged in [16607] from rcross@amsl.com:
+    Fixed an issue where third session requests, which rerequire AD approval,
+    get left with approved status, instead of scheduled, after Secretraiat
+    sends out notifications of official schedule.  Fixes #2765.  
+
+  * Merged in [16701] from rcross@amsl.com:
+    Added a migration to remove any break / registration sessions that have 
+    already been created for future meetings.  Goes with changes for #2713.   
+
+  * Added log.unreachable() for the code that creates unknown-email-*' 
+    addresses.  Related to issue #2696.
+
+  * Fixed a bug in gather_submission_submitter().
+
+  * Fixed an incorrect version number for mypy in requirements3.txt
+
+  * Removed some test assertions which are incorrect after the previous 
+    commit.
+
+  * From rcross@amsl.com: Don't copy breaks etc, when creating new Empty 
+    Schedule for meetings.  Fixes issue #2713.
+
+  * Added a type hint stub file for ietf/api/__init__.py, to capture 
+    module variables created during module initialization.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 Oct 2019 15:06:27 +0000
+
+
 ietfdb (6.104.0) ietf; urgency=medium
 
   **Review tool tickets roundup, part 1**
