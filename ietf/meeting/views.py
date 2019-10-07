@@ -1456,12 +1456,19 @@ class UploadSlidesForm(FileUploadForm):
     title = forms.CharField(max_length=255)
     apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=False,required=False)
 
-    def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
+    def __init__(self, session, show_apply_to_all_checkbox, *args, **kwargs):
+        self.session = session
         kwargs['doc_type'] = 'slides'
         super(UploadSlidesForm, self).__init__(*args, **kwargs )
         if not show_apply_to_all_checkbox:
             self.fields.pop('apply_to_all')
 
+    def clean_title(self):
+        title = self.cleaned_data['title']
+        if self.session.meeting.type_id=='interim':
+            if re.search(r'-\d{2}$', title):
+                raise forms.ValidationError("Interim slides currently may not have a title that ends with something that looks like a revision number (-nn)")
+        return title
 
 def upload_session_slides(request, session_id, num, name):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
@@ -1486,7 +1493,7 @@ def upload_session_slides(request, session_id, num, name):
         slides_sp = session.sessionpresentation_set.filter(document=slides).first()
     
     if request.method == 'POST':
-        form = UploadSlidesForm(show_apply_to_all_checkbox,request.POST,request.FILES)
+        form = UploadSlidesForm(session, show_apply_to_all_checkbox,request.POST,request.FILES)
         if form.is_valid():
             file = request.FILES['file']
             _, ext = os.path.splitext(file.name)
@@ -1551,7 +1558,7 @@ def upload_session_slides(request, session_id, num, name):
         initial = {}
         if slides:
             initial = {'title':slides.title}
-        form = UploadSlidesForm(show_apply_to_all_checkbox, initial=initial)
+        form = UploadSlidesForm(session, show_apply_to_all_checkbox, initial=initial)
 
     return render(request, "meeting/upload_session_slides.html", 
                   {'session': session,
@@ -1573,7 +1580,7 @@ def propose_session_slides(request, session_id, num):
 
     
     if request.method == 'POST':
-        form = UploadSlidesForm(show_apply_to_all_checkbox,request.POST,request.FILES)
+        form = UploadSlidesForm(session, show_apply_to_all_checkbox,request.POST,request.FILES)
         if form.is_valid():
             file = request.FILES['file']
             _, ext = os.path.splitext(file.name)
@@ -1615,7 +1622,7 @@ def propose_session_slides(request, session_id, num):
             return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
         initial = {}
-        form = UploadSlidesForm(show_apply_to_all_checkbox, initial=initial)
+        form = UploadSlidesForm(session, show_apply_to_all_checkbox, initial=initial)
 
     return render(request, "meeting/propose_session_slides.html", 
                   {'session': session,
