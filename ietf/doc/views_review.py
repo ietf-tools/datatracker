@@ -337,6 +337,7 @@ def reject_reviewer_assignment(request, name, assignment_id):
         if form.is_valid():
             # reject the assignment
             review_assignment.state = ReviewAssignmentStateName.objects.get(slug="rejected")
+            review_assignment.completed_on = datetime.datetime.now()
             review_assignment.save()
 
             ReviewAssignmentDocEvent.objects.create(

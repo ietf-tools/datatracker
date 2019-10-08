@@ -481,6 +481,7 @@ class ReviewTests(TestCase):
 
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, "rejected")
+        self.assertNotEqual(assignment.completed_on,None)
         e = doc.latest_event()
         self.assertEqual(e.type, "closed_review_assignment")
         self.assertTrue("rejected" in e.desc)
