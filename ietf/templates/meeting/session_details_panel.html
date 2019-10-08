@@ -86,7 +86,7 @@
         </table>
         {% if can_manage_materials %}
           <a id="uploadslides" class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number %}">Upload New Slides</a>
-        {% elif request.user.is_authenticated %}
+        {% elif request.user.is_authenticated and not session.is_material_submission_cutoff %}
           <a id="proposeslides" class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.propose_session_slides' session_id=session.pk num=session.meeting.number %}">Propose Slides</a>
         {% endif %}
       </div>
