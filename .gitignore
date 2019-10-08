@@ -16,6 +16,7 @@
 .DS_store
 # Simulated Subversion default ignores end here
 /.coverage
+/.mypy_cache
 /.project
 /.pydevproject
 /.Python
