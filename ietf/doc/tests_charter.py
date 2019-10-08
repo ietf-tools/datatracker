@@ -16,7 +16,7 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.factories import CharterFactory
+from ietf.doc.factories import CharterFactory, NewRevisionDocEventFactory
 from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRevisionDocEvent,
     TelechatDocEvent, WriteupDocEvent )
 from ietf.doc.utils_charter import ( next_revision, default_review_text, default_action_text,
@@ -29,6 +29,61 @@ from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox, empty_outbox, get_payload
 from ietf.utils.test_utils import login_testing_unauthorized
+
+class ViewCharterTests(TestCase):
+    def test_view_revisions(self):
+        charter = CharterFactory()
+        e = NewRevisionDocEventFactory(doc=charter,rev="01")
+        charter.rev = e.rev
+        charter.save_with_history([e])
+        e = NewRevisionDocEventFactory(doc=charter,rev="01-00")
+        charter.rev = e.rev
+        charter.save_with_history([e])
+        e =NewRevisionDocEventFactory(doc=charter,rev="02")
+        charter.rev = e.rev
+        charter.save_with_history([e])
+        e =NewRevisionDocEventFactory(doc=charter,rev="02-00")
+        charter.rev = e.rev
+        charter.save_with_history([e])
+        e = NewRevisionDocEventFactory(doc=charter,rev="02-01")
+        charter.rev = e.rev
+        charter.save_with_history([e])
+
+        url = urlreverse('ietf.doc.views_doc.document_main',kwargs={'name':charter.name})
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertIn('The information below is for a proposed recharter. The current approved charter is',q('#message-row').text())
+
+        url = urlreverse('ietf.doc.views_doc.document_main',kwargs={'name':charter.name,'rev':'02-00'})
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertIn('The information below is for an older version of the current proposed rechartering effort',q('#message-row').text())
+            
+        url = urlreverse('ietf.doc.views_doc.document_main',kwargs={'name':charter.name,'rev':'02'})
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertIn('The information below is for the currently approved charter, but newer proposed charter text exists',q('#message-row').text())
+
+        url = urlreverse('ietf.doc.views_doc.document_main',kwargs={'name':charter.name,'rev':'01-00'})
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertIn('The information below is for an older proposed',q('#message-row').text())
+
+        url = urlreverse('ietf.doc.views_doc.document_main',kwargs={'name':charter.name,'rev':'01'})
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertIn('The information below is for an older approved',q('#message-row').text())
+
+        e = NewRevisionDocEventFactory(doc=charter,rev="03")
+        charter.rev='03'
+        charter.save_with_history([e])
+
+        url = urlreverse('ietf.doc.views_doc.document_main',kwargs={'name':charter.name})
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual('',q('#message-row').text())
+
+            
 
 class EditCharterTests(TestCase):
     def setUp(self):

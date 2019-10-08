@@ -528,3 +528,12 @@ def rfcbis(s):
 def urlize(value):
     raise RuntimeError("Use linkify from textfilters instead of urlize")
     
+@register.filter
+@stringfilter
+def charter_major_rev(rev):
+    return rev[:2]
+
+@register.filter
+@stringfilter
+def charter_minor_rev(rev):
+    return rev[3:5]

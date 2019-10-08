@@ -23,11 +23,23 @@
   <table class="table table-condensed">
     <thead id="message-row">
        <tr>
-	  {% if doc.rev != latest_rev %}
-	  <th colspan="4" class="alert-warning">The information below is for an old version of the document</th>
-	  {% else %}
-	  <th colspan="4"></th>
-	  {% endif %}  
+        {% if doc.rev|charter_major_rev != latest_rev|charter_major_rev %}
+          <th colspan="4" class="alert-warning">The information below is for an older {% if doc.rev|charter_minor_rev %}proposed{% else %}approved{% endif %} charter</th>
+        {% else %}
+          {% if doc.rev != latest_rev %}
+            {% if doc.rev|charter_minor_rev %}
+              <th colspan="4" class="alert-warning">The information below is for an older version of the current proposed rechartering effort</th>
+            {% else %}
+              <th colspan="4" class="alert-info">The information below is for the currently approved charter, but newer proposed charter text exists</th>
+            {% endif %}
+          {% else %}
+            {% if doc.rev|charter_minor_rev and doc.rev|charter_major_rev != '00' %}
+              <th colspan="4" class="alert-info">The information below is for a proposed recharter. The current approved charter is version {{ doc.rev|charter_major_rev }}</th>
+            {% else %}
+              <th colspan="4"></th>
+            {% endif %}
+          {% endif %}
+        {% endif %}
        </tr>
     </thead>
 
