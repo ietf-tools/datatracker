@@ -4022,6 +4022,17 @@
   {
     "fields": {
       "cc": [],
+      "desc": "Recipients for overdue review assignment reminders",
+      "to": [
+        "group_secretaries"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "review_reminder_overdue_assignment"
+  },
+  {
+    "fields": {
+      "cc": [],
       "desc": "Recipients for a change to a review request",
       "to": [
         "review_req_requested_by",

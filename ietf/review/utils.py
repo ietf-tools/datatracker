@@ -959,6 +959,37 @@ def send_unavaibility_period_ending_reminder(remind_date):
     return log
 
 
+def send_review_reminder_overdue_assignment(remind_date):
+    min_overdue_days = 5
+    min_deadline = remind_date + datetime.timedelta(days=min_overdue_days)
+    teams = Group.objects.exclude(reviewteamsettings=None)
+    log = []
+    for team in teams:
+        assignments = ReviewAssignment.objects.filter(
+            state__in=("assigned", "accepted"),
+            review_request__deadline__lte=min_deadline,
+            review_request__team=team,
+        )
+        if not assignments:
+            continue
+            
+        (to, cc) = gather_address_lists('review_reminder_overdue_assignment', group=team)
+        domain = Site.objects.get_current().domain
+        subject = "{} Overdue review{} for team {}".format(
+            len(assignments), pluralize(len(assignments)), team.acronym)
+        
+        send_mail(None, to, None, subject, "review/review_reminder_overdue_assignment.txt", {
+            "domain": domain,
+            "assignments": assignments,
+            "team": team,
+            "min_overdue_days": min_overdue_days,
+        }, cc=cc)
+        log.append("Emailed reminder to {} about {} overdue reviews in {}".format(
+            to, assignments.count(), team.acronym,
+        ))
+    return log
+
+
 def send_reminder_all_open_reviews(remind_date):
     log = []
     # The origin date is arbitrarily chosen, to have a single reference date for "every X days"
