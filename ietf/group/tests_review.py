@@ -564,11 +564,11 @@ class ReviewTests(TestCase):
         self.assertTrue(secretary.person.email_address() in outbox[0]["To"])
         self.assertEqual(outbox[0]["Subject"], "1 Overdue review for team {}".format(review_req.team.acronym))
         message = outbox[0].get_payload(decode=True).decode("utf-8")
-        self.assertTrue(review_req.team.acronym + ' has 1 accepted or assigned review overdue by at least 5 days.' in message)
-        self.assertTrue('Review of {} by {}'.format(review_req.doc.name, reviewer.name) in message)
+        self.assertIn(review_req.team.acronym + ' has 1 accepted or assigned review overdue by at least 5 days.', message)
+        self.assertIn('Review of {} by {}'.format(review_req.doc.name, reviewer.plain_name()), message)
         self.assertEqual(len(log), 1)
-        self.assertTrue(secretary.person.email_address() in log[0])
-        self.assertTrue('1 overdue review' in log[0])
+        self.assertIn(secretary.person.email_address(), log[0])
+        self.assertIn('1 overdue review', log[0])
         
     def test_send_reminder_all_open_reviews(self):
         review_req = ReviewRequestFactory(state_id='assigned')

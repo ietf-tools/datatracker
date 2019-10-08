@@ -291,7 +291,7 @@
 		      <td><span class="hidden-xs">{{item.session.historic_group.historic_parent.acronym}}</span></td>
 
                     <td>
-                      {% if item.session.historic_group.charter %}
+                      {% if item.session.historic_group %}
                         <a href="{% url 'ietf.group.views.group_about' acronym=item.session.historic_group.acronym %}">{{item.session.historic_group.acronym}}</a>
                       {% else %}
                         {{item.session.historic_group.acronym}}
