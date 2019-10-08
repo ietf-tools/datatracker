@@ -28,9 +28,14 @@ from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
 from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewRequestStateName, ReviewTypeName, 
                                 ReviewerSettings, UnavailablePeriod, ReviewWish, NextReviewerInTeam,
-                                ReviewSecretarySettings)
+                                ReviewSecretarySettings, ReviewTeamSettings)
 from ietf.utils.mail import send_mail
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
+
+# The origin date is used to have a single reference date for "every X days".
+# This date is arbitrarily chosen and has no special meaning, but should be consistent.
+ORIGIN_DATE_PERIODIC_REMINDERS = datetime.date(2019, 1, 1)
+
 
 def active_review_teams():
     return Group.objects.filter(reviewteamsettings__isnull=False,state="active")
@@ -992,9 +997,7 @@ def send_review_reminder_overdue_assignment(remind_date):
 
 def send_reminder_all_open_reviews(remind_date):
     log = []
-    # The origin date is arbitrarily chosen, to have a single reference date for "every X days"
-    origin_date = datetime.date(2019, 1, 1)
-    days_since_origin = (remind_date - origin_date).days
+    days_since_origin = (remind_date - ORIGIN_DATE_PERIODIC_REMINDERS).days
     relevant_reviewer_settings = ReviewerSettings.objects.filter(remind_days_open_reviews__isnull=False)
     
     for reviewer_settings in relevant_reviewer_settings:
@@ -1023,6 +1026,47 @@ def send_reminder_all_open_reviews(remind_date):
             "remind_days": reviewer_settings.remind_days_open_reviews,
         })
         log.append("Emailed reminder to {} of their {} open reviews".format(to, len(assignments)))
+
+    return log
+
+
+def send_reminder_unconfirmed_assignments(remind_date):
+    """
+    Remind reviewers of any assigned ReviewAssignments which they have not
+    accepted or rejected, if enabled in ReviewTeamSettings.
+    """
+    log = []
+    days_since_origin = (remind_date - ORIGIN_DATE_PERIODIC_REMINDERS).days
+    relevant_review_team_settings = ReviewTeamSettings.objects.filter(
+        remind_days_unconfirmed_assignments__isnull=False)
+
+    for review_team_settings in relevant_review_team_settings:
+        if days_since_origin % review_team_settings.remind_days_unconfirmed_assignments != 0:
+            continue
+
+        assignments = ReviewAssignment.objects.filter(
+            state='assigned',
+            review_request__team=review_team_settings.group,
+        )
+        if not assignments:
+            continue
+
+        for assignment in assignments:
+            to = assignment.reviewer.formatted_email()
+            subject = "Reminder: you have not responded to a review assignment"
+            domain = Site.objects.get_current().domain
+            review_request_url = urlreverse("ietf.doc.views_review.review_request", kwargs={
+                "name": assignment.review_request.doc.name,
+                "request_id": assignment.review_request.pk
+            })
+
+            send_mail(None, to, None, subject, "review/reviewer_reminder_unconfirmed_assignments.txt", {
+                "review_request_url": "https://{}{}".format(domain, review_request_url),
+                "assignment": assignment,
+                "team": assignment.review_request.team,
+                "remind_days": review_team_settings.remind_days_unconfirmed_assignments,
+            })
+            log.append("Emailed reminder to {} about not accepted/rejected review assignment {}".format(to, assignment.pk))
 
     return log
 

@@ -25,7 +25,7 @@ from ietf.review.utils import (
     review_assignments_needing_reviewer_reminder, email_reviewer_reminder,
     review_assignments_needing_secretary_reminder, email_secretary_reminder,
     send_unavaibility_period_ending_reminder, send_reminder_all_open_reviews,
-    send_review_reminder_overdue_assignment)
+    send_review_reminder_overdue_assignment, send_reminder_unconfirmed_assignments)
 
 today = datetime.date.today()
 
@@ -47,3 +47,6 @@ print('\n'.join(overdue_reviews_reminders_sent)
 
 open_reviews_reminders_sent = send_reminder_all_open_reviews(today)
 print('\n'.join(open_reviews_reminders_sent))
+
+unconfirmed_assignment_reminders_sent = send_reminder_unconfirmed_assignments(today)
+print('\n'.join(unconfirmed_assignment_reminders_sent))
