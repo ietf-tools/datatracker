@@ -1175,8 +1175,7 @@ def review_stats(request, stats_type=None, acronym=None):
         # choice
 
         possible_completion_types = add_url_to_choices([
-            ("completed_in_time", "Completed in time"),
-            ("completed_late", "Completed late"),
+            ("completed_in_time_or_late", "Completed (in time or late)"),
             ("not_completed", "Not completed"),
             ("average_assignment_to_closure_days", "Avg. compl. days"),
         ], lambda slug: build_review_stats_url(get_overrides={ "completion": slug, "result": None, "state": None }))
@@ -1198,25 +1197,37 @@ def review_stats(request, stats_type=None, acronym=None):
         selected_state = get_choice(request, "state", possible_states)
 
         if not selected_completion_type and not selected_result and not selected_state:
-            selected_completion_type = "completed_in_time"
+            selected_completion_type = "completed_in_time_or_late"
 
-        series_data = []
+        standard_color = '#3d22b3'
+        if selected_completion_type == 'completed_in_time_or_late':
+            graph_data = [
+                {'label': 'in time', 'color': standard_color, 'data': []},
+                {'label': 'late', 'color': '#b42222', 'data': []}
+            ]
+        else:
+            graph_data = [{'color': standard_color, 'data': []}]
         if selected_completion_type == "completed_combined":
                 pass
         else:
             for d, aggr in aggrs:
-                v = 0
-                if selected_completion_type is not None:
-                    v = aggr[selected_completion_type]
+                v1 = 0
+                v2 = None
+                js_timestamp = calendar.timegm(d.timetuple()) * 1000
+                if selected_completion_type == 'completed_in_time_or_late':
+                    v1 = aggr['completed_in_time']
+                    v2 = aggr['completed_late']
+                elif selected_completion_type is not None:
+                    v1 = aggr[selected_completion_type]
                 elif selected_result is not None:
-                    v = aggr["result"][selected_result]
+                    v1 = aggr["result"][selected_result]
                 elif selected_state is not None:
-                    v = aggr["state"][selected_state]
+                    v1 = aggr["state"][selected_state]
 
-                series_data.append((calendar.timegm(d.timetuple()) * 1000, v))
-            data = json.dumps([{
-                "data": series_data
-            }])
+                graph_data[0]['data'].append((js_timestamp, v1))
+                if v2 is not None:
+                    graph_data[1]['data'].append((js_timestamp, v2))
+            data = json.dumps(graph_data)
 
     else: # tabular data
         extracted_data = extract_review_assignment_data(query_teams, query_reviewers, from_time, to_time, ordering=[level])
