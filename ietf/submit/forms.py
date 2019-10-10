@@ -39,6 +39,7 @@ from ietf.submit.parsers.pdf_parser import PDFParser
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.ps_parser import PSParser
 from ietf.submit.parsers.xml_parser import XMLParser
+from ietf.utils import log
 from ietf.utils.draft import Draft
 
 class SubmissionBaseUploadForm(forms.Form):
@@ -145,6 +146,9 @@ class SubmissionBaseUploadForm(forms.Form):
             xml_file = self.cleaned_data.get('xml')
             name, ext = os.path.splitext(os.path.basename(xml_file.name))
             tfh, tfn = tempfile.mkstemp(prefix=name+'-', suffix='.xml')
+            file_name = {}
+            xml2rfc.log.write_out = open(os.devnull, "w")
+            xml2rfc.log.write_err = io.StringIO()   # open(os.devnull, "w")
             try:
                 # We need to write the xml file to disk in order to hand it
                 # over to the xml parser.  XXX FIXME: investigate updating
@@ -154,33 +158,15 @@ class SubmissionBaseUploadForm(forms.Form):
                     for chunk in xml_file.chunks():
                         tf.write(chunk)
                 os.environ["XML_LIBRARY"] = settings.XML_LIBRARY
+                # --- Parse the xml ---
                 try:
                     parser = xml2rfc.XmlRfcParser(str(tfn), quiet=True)
                     self.xmltree = parser.parse(normalize=True)
-                    root = self.xmltree.getroot()
-                    ver = root.get('version', '2')
-                    if ver == '2':
-                        ok, errors = self.xmltree.validate()
-                    else:
-                        # XXX TODO: Add v3 validation
-                        ok, errors = True, ''
-                except Exception as exc:
-                    raise forms.ValidationError("An exception occurred when trying to process the XML file: %s" % exc)
-                if not ok:
-                    # Each error has properties:
-                    #
-                    #     message:  the message text
-                    #     domain:   the domain ID (see lxml.etree.ErrorDomains)
-                    #     type:     the message type ID (see lxml.etree.ErrorTypes)
-                    #     level:    the log level ID (see lxml.etree.ErrorLevels)
-                    #     line:     the line at which the message originated (if applicable)
-                    #     column:   the character column at which the message originated (if applicable)
-                    #     filename: the name of the file in which the message originated (if applicable)
-                    raise forms.ValidationError(
-                            [ forms.ValidationError("One or more XML validation errors occurred when processing the XML file:") ] +
-                            [ forms.ValidationError("%s: Line %s: %s" % (xml_file.name, e.line, e.message), code="%s"%e.type) for e in errors ]
-                        )
-                self.xmlroot = self.xmltree.getroot()
+                    self.xmlroot = self.xmltree.getroot()
+                    xml_version = self.xmlroot.get('version', '2')
+                except Exception as e:
+                    raise forms.ValidationError("An exception occurred when trying to [arse the XML file: %s" % e)
+
                 draftname = self.xmlroot.attrib.get('docName')
                 if draftname is None:
                     raise forms.ValidationError("No docName attribute found in the xml root element")
@@ -212,8 +198,78 @@ class SubmissionBaseUploadForm(forms.Form):
                         if info[item]:
                             info[item] = info[item].strip()
                     self.authors.append(info)
-            except forms.ValidationError:
-                raise
+
+                # --- Prep the xml ---
+                file_name['xml'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (self.filename, self.revision, ext))
+                try:
+                    if xml_version == '3':
+                        prep = xml2rfc.PrepToolWriter(self.xmltree, quiet=True)
+                        self.xmltree.tree = prep.prep()
+                        if self.xmltree.tree == None:
+                            raise forms.ValidationError("Error from xml2rfc (prep): %s" % prep.errors)
+                except Exception as e:
+                    raise forms.ValidationError("Error from xml2rfc (prep): %s" % e)
+
+                # --- Convert to txt ---
+                if not ('txt' in self.cleaned_data and self.cleaned_data['txt']):
+                    file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (self.filename, self.revision))
+                    debug.show("file_name['txt']")
+                    try:
+                        if xml_version != '3':
+                            pagedwriter = xml2rfc.PaginatedTextRfcWriter(self.xmltree, quiet=True)
+                            debug.show('pagedwriter')
+                            pagedwriter.write(file_name['txt'])
+                        else:
+                            writer = xml2rfc.TextWriter(self.xmltree, quiet=True)
+                            writer.write(file_name['txt'])
+                        log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
+                                (   os.path.dirname(file_name['xml']),
+                                    xml2rfc.__version__,
+                                    os.path.basename(file_name['txt']),
+                                    os.path.basename(file_name['xml']),
+                                    xml_version))
+                    except Exception as e:
+                        raise
+                        debug.show('xml2rfc.log.write_err.getvalue()')
+                        debug.show('e.args')
+                        raise forms.ValidationError("Error from xml2rfc (text): %s" % e) 
+
+                # --- Convert to xml ---
+                if xml_version == '3':
+                    try:
+                        file_name['html'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.html' % (self.filename, self.revision))
+                        writer = xml2rfc.HtmlWriter(self.xmltree, quiet=True)
+                        writer.write(file_name['html'])
+                        self.file_types.append('.html')
+                        log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
+                            (   os.path.dirname(file_name['xml']),
+                                xml2rfc.__version__,
+                                os.path.basename(file_name['html']),
+                                os.path.basename(file_name['xml']),
+                                xml_version))
+                    except Exception as e:
+                        raise forms.ValidationError("Error from xml2rfc (html): %s" % e) 
+
+                if xml_version == '2':
+                    ok, errors = self.xmltree.validate()
+                else:
+                    ok, errors = True, ''
+
+                if not ok:
+                    # Each error has properties:
+                    #
+                    #     message:  the message text
+                    #     domain:   the domain ID (see lxml.etree.ErrorDomains)
+                    #     type:     the message type ID (see lxml.etree.ErrorTypes)
+                    #     level:    the log level ID (see lxml.etree.ErrorLevels)
+                    #     line:     the line at which the message originated (if applicable)
+                    #     column:   the character column at which the message originated (if applicable)
+                    #     filename: the name of the file in which the message originated (if applicable)
+                    raise forms.ValidationError(
+                            [ forms.ValidationError("One or more XML validation errors occurred when processing the XML file:") ] +
+                            [ forms.ValidationError("%s: Line %s: %s" % (xml_file.name, e.line, e.message), code="%s"%e.type) for e in errors ]
+                        )
+
             finally:
                 os.close(tfh)
                 os.unlink(tfn)
