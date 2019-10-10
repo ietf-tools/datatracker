@@ -25,6 +25,9 @@ Planned work in rough order
   point for changing the deployment seems to be just after the next OS upgrade,
   which we think will make Python 3.6 the default mod_wsgi python.
 
+* Rework email sending so that all emails sent by the datatracker, except for
+  logging and failure emails sent to ADMINS, are captured as a Message object.
+
 * Review and change the draft submission and handling code to deal with UTF-8
   instead of ascii before upload of utf-8 drafts should be permitted.  
   (This may fall out for free with the Python 3 transition).
@@ -54,9 +57,6 @@ Planned work in rough order
 
 * Test suite improvements.  Reduce and seek to eliminate causes of differences
   in code coverage between runs in the same and in different environments.
-
-* Rework email sending so that all emails sent by the datatracker, except for
-  logging and failure emails sent to ADMINS, are captured as a Message object.
 
 * Rework email subjects for messages relating to documents to consistently
   start with the document name.
