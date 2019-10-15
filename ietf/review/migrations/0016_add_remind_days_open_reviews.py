@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('review', '0014_document_primary_key_cleanup'),
+        ('review', '0015_populate_completed_on_for_rejected'),
     ]
 
     operations = [

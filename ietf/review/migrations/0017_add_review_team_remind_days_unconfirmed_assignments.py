@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('review', '0016_populate_completed_on_for_rejected'),
+        ('review', '0016_add_remind_days_open_reviews'),
     ]
 
     operations = [

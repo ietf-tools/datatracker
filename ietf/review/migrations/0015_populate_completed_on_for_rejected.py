@@ -20,7 +20,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('review', '0015_add_remind_days_open_reviews'),
+        ('review', '0014_document_primary_key_cleanup'),
         ('doc', '0026_add_draft_rfceditor_state'),
     ]
 
