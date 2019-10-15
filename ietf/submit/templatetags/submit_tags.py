@@ -8,7 +8,7 @@ import os
 
 from django import template
 from django.conf import settings
-from django.utils.html import mark_safe, escape
+from django.utils.html import mark_safe, escape # type:ignore
 
 register = template.Library()
 

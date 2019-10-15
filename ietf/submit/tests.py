@@ -1774,7 +1774,7 @@ class ApiSubmitTests(TestCase):
         self.assertContains(r, expected, status_code=400)
 
     def test_api_submit_no_title(self):
-        r, author, name = self.post_submission('00', title="")
+        r, author, name = self.post_submission('00', title=" ")
         expected = "Could not extract a valid title from the upload"
         self.assertContains(r, expected, status_code=400)
 
