@@ -146,10 +146,12 @@ class MyPyTest(TestCase):
 
     @unittest.skipIf(sys.version_info[0] < 3, "Mypy and django-stubs not available under Py2")
     def mypy_test(self):
+        self.maxDiff = None
         from mypy import api
         out, err, code = api.run(['ietf', ])
+        out_lines = [ l for l in out.splitlines() if not l.startswith('Success: ') ]
         self.assertEqual([], err.splitlines())
-        self.assertEqual([], out.splitlines())
+        self.assertEqual([], out_lines)
         self.assertEqual(code, 0)
 
 class TemplateCoverageLoader(BaseLoader):
