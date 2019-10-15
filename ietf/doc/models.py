@@ -18,7 +18,7 @@ from django.urls import reverse as urlreverse
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from django.utils.encoding import python_2_unicode_compatible, force_text
-from django.utils.html import mark_safe
+from django.utils.html import mark_safe # type:ignore
 
 import debug                            # pyflakes:ignore
 

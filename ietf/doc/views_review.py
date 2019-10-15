@@ -17,7 +17,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django import forms
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.utils.html import mark_safe
+from django.utils.html import mark_safe # type:ignore
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string, TemplateDoesNotExist
 from django.urls import reverse as urlreverse

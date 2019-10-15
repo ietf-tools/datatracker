@@ -11,7 +11,7 @@ import debug      # pyflakes:ignore
 
 # Django imports
 from django import forms
-from django.utils.html import mark_safe
+from django.utils.html import mark_safe # type:ignore
 
 # IETF imports
 from ietf.group.models import Group, GroupHistory, GroupStateName

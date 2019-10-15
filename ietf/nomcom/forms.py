@@ -11,7 +11,7 @@ if six.PY3:
 from django.conf import settings
 from django import forms
 from django.urls import reverse
-from django.utils.html import mark_safe
+from django.utils.html import mark_safe # type:ignore
 from django.forms.widgets import FileInput
 
 from ietf.dbtemplate.forms import DBTemplateForm

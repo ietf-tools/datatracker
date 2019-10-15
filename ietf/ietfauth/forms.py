@@ -12,7 +12,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils.html import mark_safe
+from django.utils.html import mark_safe # type:ignore
 from django.urls import reverse as urlreverse
 
 from django_password_strength.widgets import PasswordStrengthInput, PasswordConfirmationInput
