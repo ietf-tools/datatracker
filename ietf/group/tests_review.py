@@ -487,13 +487,13 @@ class ReviewTests(TestCase):
 
         # email reviewer
         empty_outbox()
-        email_reviewer_reminder(review_req)
+        email_reviewer_reminder(assignment)
         self.assertEqual(len(outbox), 1)
         self.assertTrue(review_req.doc.name in outbox[0].get_payload(decode=True).decode("utf-8"))
 
         # email secretary
         empty_outbox()
-        email_secretary_reminder(review_req, secretary_role)
+        email_secretary_reminder(assignment, secretary_role)
         self.assertEqual(len(outbox), 1)
         self.assertTrue(review_req.doc.name in outbox[0].get_payload(decode=True).decode("utf-8"))
 

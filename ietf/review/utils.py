@@ -1085,7 +1085,8 @@ def review_assignments_needing_reviewer_reminder(remind_date):
 
     return ReviewAssignment.objects.filter(pk__in=assignment_pks).select_related("reviewer", "reviewer__person", "state", "review_request__team")
 
-def email_reviewer_reminder(review_request):
+def email_reviewer_reminder(assignment):
+    review_request = assignment.review_request
     team = review_request.team
 
     deadline_days = (review_request.deadline - datetime.date.today()).days
@@ -1099,10 +1100,10 @@ def email_reviewer_reminder(review_request):
 
     domain = Site.objects.get_current().domain
 
-    settings = ReviewerSettings.objects.filter(person=review_request.reviewer.person, team=team).first()
+    settings = ReviewerSettings.objects.filter(person=assignment.reviewer.person, team=team).first()
     remind_days = settings.remind_days_before_deadline if settings else 0
 
-    send_mail(None, [review_request.reviewer.formatted_email()], None, subject, "review/reviewer_reminder.txt", {
+    send_mail(None, [assignment.reviewer.formatted_email()], None, subject, "review/reviewer_reminder.txt", {
         "reviewer_overview_url": "https://{}{}".format(domain, overview_url),
         "review_request_url": "https://{}{}".format(domain, request_url),
         "review_request": review_request,
@@ -1129,7 +1130,8 @@ def review_assignments_needing_secretary_reminder(remind_date):
 
     return [ (review_assignments[a_pk], secretary_roles[secretary_role_pk]) for a_pk, secretary_role_pk in assignment_pks.items() ]
 
-def email_secretary_reminder(review_request, secretary_role):
+def email_secretary_reminder(assignment, secretary_role):
+    review_request = assignment.review_request
     team = review_request.team
 
     deadline_days = (review_request.deadline - datetime.date.today()).days
@@ -1146,7 +1148,7 @@ def email_secretary_reminder(review_request, secretary_role):
     settings = ReviewSecretarySettings.objects.filter(person=secretary_role.person_id, team=team).first()
     remind_days = settings.remind_days_before_deadline if settings else 0
 
-    send_mail(None, [review_request.reviewer.formatted_email()], None, subject, "review/secretary_reminder.txt", {
+    send_mail(None, [assignment.reviewer.formatted_email()], None, subject, "review/secretary_reminder.txt", {
         "review_request_url": "https://{}{}".format(domain, request_url),
         "settings_url": "https://{}{}".format(domain, settings_url),
         "review_request": review_request,
