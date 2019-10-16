@@ -1,3 +1,56 @@
+ietfdb (6.106.0) ietf; urgency=medium
+
+  **Review tool tickets roundup, part 3, slide upload fixes, and more.**
+
+  * Added some type checking annotation tweaks and mypy_test() output tweaks.
+
+  * Moved the code that generates .txt and .html draft files from .xml to a 
+    place where potential errors can be caught and displayed better.  Related 
+    to ticket #2814.
+
+  * Updated PLAN: Moved reworked email sending sooner to the head of the 
+    list.
+
+  * Merged in [16815] from rjsparks@nostrum.com:
+    Link to the about pages for groups even if they don't have a charter (some
+    have other forms of descriptive text, and all have more information on the
+    group pages than they did a few years ago). Fixes #2744.  
+
+  * Merged in [16813] from rjsparks@nostrum.com:
+    Don't offer to propose slides when the next view will not allow you to
+    propose slides. Fixes #2763.  
+
+  * Merged in [16792] from sasha@dashcare.nl:
+    Send opt-in reminders for unconfirmed review assignments.  If enabled for
+    a team, reminders will be sent every X days to reviewers for review
+    assignments they have not accepted or rejected.  Fixes issue #2475.
+
+  * Merged in [16785] from rjsparks@nostrum.com:
+    Improved alerts when looking at non-current versions of a charter 
+    document. Fixes #2774.  
+
+  * Turned the ReviewAssignmentAdmin.review field into a raw_id_field, to 
+    avoid a form that lists all documents in the database in a drop-down.  
+    Fixes issue #2810.
+
+  * Merged in [16770] from rjsparks@nostrum.com:
+    Populate completed_on when rejecting a ReviewAssignment. Migrate past 
+    rejected assignments accordingly. Fixes #2782.  
+
+  * Merged in [16765] from sasha@dashcare.nl:
+    Send daily reminders of overdue reviews to secretaries.  See issue #2277
+
+  * Merged in [16763] from rjsparks@nostrum.com:
+    Allowed the responsible AD to be None for documents in iesg states
+    idexists and dead. Fixes #2803 and #993.  
+
+  * Merged in [16762] from rjsparks@nostrum.com:
+    Use form validation to prevent interim slide titles that end with -nn
+    until we change interims to use the modern HREF schemes. Fixes #2797.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Oct 2019 14:14:16 +0000
+
+
 ietfdb (6.105.0) ietf; urgency=medium
 
   * Merged in [16759] from rjsparks@nostrum.com:
@@ -31,7 +84,7 @@ ietfdb (6.105.0) ietf; urgency=medium
     Added a migration to remove any break / registration sessions that have 
     already been created for future meetings.  Goes with changes for #2713.   
 
-  * Added log.unreachable() for the code that creates unknown-email-*' 
+  * Added log.unreachable() for the code that creates unknown-email-* 
     addresses.  Related to issue #2696.
 
   * Fixed a bug in gather_submission_submitter().
