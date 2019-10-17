@@ -53,17 +53,17 @@ ietfdb (6.106.0) ietf; urgency=medium
 
 ietfdb (6.105.0) ietf; urgency=medium
 
+  **Review tool tickets roundup, part 2**
+
   * Merged in [16759] from rjsparks@nostrum.com:
     Restrict comments total on nomcom private index to comments on positions.
     Fixes #2792.  
 
   * Merged in [16705] from sasha@dashcare.nl:
-
     Send periodic reminders of open reviews every X days (opt-in).
     Fixes issue #2337
 
   * Merged in [16704] from sasha@dashcare.nl:
-
     Send reminders before long UnavailabilityPeriods expire A notification is
     sent to the team secretary and reviewer, if an unavailability period
     lasting 30 days or more will end in 3 days. Fixes issue #2231.
