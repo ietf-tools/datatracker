@@ -26,6 +26,7 @@ from ietf.review.utils import (
     review_assignments_needing_secretary_reminder, email_secretary_reminder,
     send_unavaibility_period_ending_reminder, send_reminder_all_open_reviews,
     send_review_reminder_overdue_assignment, send_reminder_unconfirmed_assignments)
+from ietf.utils.log import log
 
 today = datetime.date.today()
 
@@ -39,13 +40,17 @@ for assignment, secretary_role in review_assignments_needing_secretary_reminder(
     print("Emailed reminder to {} for review of {} in {} (req. id {})".format(secretary_role.email.address, review_req.doc_id, review_req.team.acronym, review_req.pk))
 
 period_end_reminders_sent = send_unavaibility_period_ending_reminder(today)
-print('\n'.join(period_end_reminders_sent))
+for msg in period_end_reminders_sent:
+    log(msg)
 
 overdue_reviews_reminders_sent = send_review_reminder_overdue_assignment(today)
-print('\n'.join(overdue_reviews_reminders_sent))
+for msg in overdue_reviews_reminders_sent:
+    log(msg)
 
 open_reviews_reminders_sent = send_reminder_all_open_reviews(today)
-print('\n'.join(open_reviews_reminders_sent))
+for msg in open_reviews_reminders_sent:
+    log(msg)
 
 unconfirmed_assignment_reminders_sent = send_reminder_unconfirmed_assignments(today)
-print('\n'.join(unconfirmed_assignment_reminders_sent))
+for msg in unconfirmed_assignment_reminders_sent:
+    log(msag)
