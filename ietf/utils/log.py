@@ -114,8 +114,7 @@ def assertion(statement, state=True):
     frame = stack[0][0]
     value = eval(statement, frame.f_globals, frame.f_locals)
     if bool(value) != bool(state):
-        settings.DEBUG = False
-        if settings.DEBUG is True or settings.SERVER_MODE == 'test' :
+        if (settings.DEBUG is True) or (settings.SERVER_MODE == 'test') :
             raise AssertionError("Assertion failed: '%s': %s != %s." % (statement, repr(value), state))
         else:
             # build a simulated traceback object
