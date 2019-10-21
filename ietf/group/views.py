@@ -1290,7 +1290,7 @@ def get_open_review_requests_for_team(team, assignment_status=None):
         Q(state_id='requested') | Q(state_id='assigned',reviewassignment__state__in=('assigned','accepted'))
     ).prefetch_related(
         "type", "state", "doc", "doc__states",
-    ).order_by("-time", "-id")
+    ).order_by("-time", "-id").distinct()
 
     if assignment_status == "unassigned":
         open_review_requests = suggested_review_requests_for_team(team) + list(open_review_requests.filter(state_id='requested'))

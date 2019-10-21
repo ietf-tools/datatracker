@@ -4,7 +4,8 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from ietf.utils.test_utils import TestCase
+from ietf.review.factories import ReviewAssignmentFactory, ReviewRequestFactory
+from ietf.utils.test_utils import TestCase, reload_db_objects
 from .mailarch import hash_list_message_id
 
 class HashTest(TestCase):
@@ -23,3 +24,36 @@ class HashTest(TestCase):
             ):
             self.assertEqual(hash, hash_list_message_id(list, msgid))
             
+
+class ReviewAssignmentTest(TestCase):
+    def test_update_review_req_status(self):
+        review_req = ReviewRequestFactory(state_id='assigned')
+        ReviewAssignmentFactory(review_request=review_req, state_id='part-completed')
+        assignment = ReviewAssignmentFactory(review_request=review_req)
+
+        assignment.state_id = 'no-response'
+        assignment.save()
+        review_req = reload_db_objects(review_req)
+        self.assertEqual(review_req.state_id, 'requested')
+
+    def test_no_update_review_req_status_when_other_active_assignment(self):
+        # If there is another still active assignment, do not update review_req state
+        review_req = ReviewRequestFactory(state_id='assigned')
+        ReviewAssignmentFactory(review_request=review_req, state_id='assigned')
+        assignment = ReviewAssignmentFactory(review_request=review_req)
+
+        assignment.state_id = 'no-response'
+        assignment.save()
+        review_req = reload_db_objects(review_req)
+        self.assertEqual(review_req.state_id, 'assigned')
+
+    def test_no_update_review_req_status_when_review_req_withdrawn(self):
+        # review_req state must only be changed to "requested", if old state was "assigned",
+        # to prevent reviving dead review requests
+        review_req = ReviewRequestFactory(state_id='withdrawn')
+        assignment = ReviewAssignmentFactory(review_request=review_req)
+
+        assignment.state_id = 'no-response'
+        assignment.save()
+        review_req = reload_db_objects(review_req)
+        self.assertEqual(review_req.state_id, 'withdrawn')

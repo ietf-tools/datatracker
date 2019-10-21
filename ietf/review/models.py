@@ -158,6 +158,19 @@ class ReviewAssignment(models.Model):
     def __str__(self):
         return "Assignment for %s (%s) : %s %s of %s" % (self.reviewer.person, self.state, self.review_request.team.acronym, self.review_request.type, self.review_request.doc)
 
+    def save(self, *args, **kwargs):
+        """
+        Save the assignment, and check whether the review request status needs to be updated.
+        If the review request has no other active or completed reviews, the review request
+        needs to be treated as an unassigned request, as it will need a new reviewer.
+        """
+        super(ReviewAssignment, self).save(*args, **kwargs)
+        active_states = ['assigned', 'accepted', 'completed']
+        review_req_has_active_assignments = self.review_request.reviewassignment_set.filter(state__in=active_states)
+        if self.review_request.state_id == 'assigned' and not review_req_has_active_assignments:
+            self.review_request.state_id = 'requested'
+            self.review_request.save()
+            
 
 def get_default_review_types():
     return ReviewTypeName.objects.filter(slug__in=['early','lc','telechat'])
