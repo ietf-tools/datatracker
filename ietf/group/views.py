@@ -972,6 +972,22 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                     if deleted:
                         change_text=title + ' deleted: ' + ", ".join(x.name_and_email() for x in deleted)
                         personnel_change_text+=change_text+"\n"
+                        
+                        today = datetime.date.today()
+                        for deleted_email in deleted:
+                            active_assignments = ReviewAssignment.objects.filter(
+                                reviewer__person=deleted_email.person,
+                                state_id__in=['accepted', 'assigned'],
+                            )
+                            for assignment in active_assignments:
+                                if assignment.review_request.deadline > today:
+                                    assignment.state_id = 'rejected'
+                                else:
+                                    assignment.state_id = 'no-response'
+                                # save() will update review_request state to 'requested'
+                                # if needed, so that the review can be assigned to someone else
+                                assignment.save()
+                                
                     changed_personnel.update(set(old)^set(new))
 
             if personnel_change_text!="":

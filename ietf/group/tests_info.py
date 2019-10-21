@@ -36,7 +36,7 @@ from ietf.meeting.factories import SessionFactory
 from ietf.name.models import DocTagName, GroupStateName, GroupTypeName
 from ietf.person.models import Person, Email
 from ietf.person.factories import PersonFactory
-from ietf.review.factories import ReviewRequestFactory
+from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
 
@@ -666,7 +666,8 @@ class GroupEditTests(TestCase):
 
     def test_edit_reviewers(self):
         group=GroupFactory(type_id='review',parent=GroupFactory(type_id='area'))
-        ReviewRequestFactory(team=group)
+        review_req = ReviewRequestFactory(team=group)
+        ad_email = Email.objects.get(address='ad2@example.org')
 
         url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit"))
         login_testing_unauthorized(self, "secretary", url)
@@ -679,23 +680,48 @@ class GroupEditTests(TestCase):
 
         # set reviewers
         empty_outbox()
-        r = self.client.post(url,
-                             dict(name=group.name,
-                                  acronym=group.acronym,
-                                  parent=group.parent_id,
-                                  ad=Person.objects.get(name="Areað Irector").pk,
-                                  state=group.state_id,
-                                  reviewer_roles="ad2@example.org",
-                                  list_email=group.list_email,
-                                  list_subscribe=group.list_subscribe,
-                                  list_archive=group.list_archive,
-                                  urls=""
-                                  ))
+        post_data = dict(
+            name=group.name,
+            acronym=group.acronym,
+            parent=group.parent_id,
+            ad=Person.objects.get(name="Areað Irector").pk,
+            state=group.state_id,
+            list_email=group.list_email,
+            list_subscribe=group.list_subscribe,
+            list_archive=group.list_archive,
+            urls=""
+        )
+        r = self.client.post(url, dict(post_data, reviewer_roles=ad_email.address))
         self.assertEqual(r.status_code, 302)
 
         group = reload_db_objects(group)
-        self.assertEqual(list(group.role_set.filter(name="reviewer").values_list("email", flat=True)), ["ad2@example.org"])
+        self.assertEqual(list(group.role_set.filter(name="reviewer").values_list("email", flat=True)), [ad_email.address])
         self.assertTrue('Personnel change' in outbox[0]['Subject'])
+        
+        # Assign a review to the reviewer, then remove the reviewer from the group
+        # As the request deadline has not passed, the assignment should be set to rejected
+        review_assignment = ReviewAssignmentFactory(review_request=review_req, state_id='assigned', reviewer=ad_email)
+        r = self.client.post(url, post_data)
+        self.assertEqual(r.status_code, 302)
+
+        group = reload_db_objects(group)
+        self.assertFalse(group.role_set.filter(name="reviewer"))
+        review_assignment = reload_db_objects(review_assignment)
+        self.assertEqual(review_assignment.state_id, 'rejected')
+
+        # Repeat after adding reviewer again, but now beyond request deadline
+        r = self.client.post(url, dict(post_data, reviewer_roles=ad_email.address))
+        self.assertEqual(r.status_code, 302)
+        review_assignment.state_id = 'accepted'
+        review_assignment.save()
+        review_req.deadline = datetime.date.today() - datetime.timedelta(days=1)
+        review_req.save()
+        
+        r = self.client.post(url, post_data)
+        self.assertEqual(r.status_code, 302)
+
+        review_assignment = reload_db_objects(review_assignment)
+        self.assertEqual(review_assignment.state_id, 'no-response')
 
     def test_conclude(self):
         group = GroupFactory(acronym="mars")
