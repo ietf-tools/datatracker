@@ -92,6 +92,8 @@ fieldset[disabled] .btn-pass.focus {
 .panel-pass > .panel-footer + .panel-collapse > .panel-body {
   border-bottom-color: #abd67f;
 }
+.position-moretime,
+.position-notready,
 .position-discuss,
 .position-block {
   background-color: #e12817;
@@ -111,6 +113,8 @@ fieldset[disabled] .btn-pass.focus {
 .position-norecord {
   background-color: #fff;
 }
+.position-moretime-row,
+.position-notready-row,
 .position-discuss-row,
 .position-block-row {
   background-color: #fddbd8 !important;
