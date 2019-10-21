@@ -1,7 +1,7 @@
 {% load ietf_filters %}{% load mail_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
 To: IETF-Announce <ietf-announce@ietf.org>{% if cc %}
 CC: {{ cc }}{% endif %}
-Reply-To: ietf@ietf.org
+Reply-To: last-call@ietf.org
 Sender: <iesg-secretary@ietf.org>
 Subject: Last Call: {{ doc.title|clean_whitespace }}
 
@@ -14,7 +14,7 @@ The supporting document for this request can be found here:
 
 {{ settings.IDTRACKER_BASE_URL }}{{ doc.get_absolute_url }}
 
-The IESG plans to make a decision in the next few weeks, and solicits final comments on this action. Please send substantive comments to the ietf@ietf.org mailing lists by {{ expiration_date }}. Exceptionally, comments may be sent to iesg@ietf.org instead. In either case, please retain the beginning of the Subject line to allow automated sorting.{% endfilter %}
+The IESG plans to make a decision in the next few weeks, and solicits final comments on this action. Please send substantive comments to the last-call@ietf.org mailing lists by {{ expiration_date }}. Exceptionally, comments may be sent to iesg@ietf.org instead. In either case, please retain the beginning of the Subject line to allow automated sorting.{% endfilter %}
 
 The affected document{{ urls|pluralize }} can be obtained via
 {% for u in urls %}{{ settings.IDTRACKER_BASE_URL}}{{ u }}
