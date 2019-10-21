@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2019, All rights reserved.
 # Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -50,7 +51,9 @@ register = template.Library()
 @register.filter
 def showballoticon(doc):
     if doc.type_id == "draft":
-        if doc.get_state_slug("draft-iesg") not in IESG_BALLOT_ACTIVE_STATES:
+        if doc.stream_id == 'ietf' and doc.get_state_slug("draft-iesg") not in IESG_BALLOT_ACTIVE_STATES:
+            return False
+        elif doc.stream_id == 'irtf' and doc.get_state_slug("draft-stream-irtf") not in ['irsgpoll']:
             return False
     elif doc.type_id == "charter":
         if doc.get_state_slug() not in ("intrev", "extrev", "iesgrev"):
@@ -101,10 +104,17 @@ def ballot_icon(context, doc):
             my_blocking = True
             break
 
-    res = ['<a %s href="%s" data-toggle="modal" data-target="#modal-%d" title="IESG positions (click to show more)" class="ballot-icon"><table' % (
+    typename = "Unknown"
+    if ballot.ballot_type.slug=='approve':
+        typename = "IESG"
+    elif ballot.ballot_type.slug=='irsg-approve':
+        typename = "IRSG"
+
+    res = ['<a %s href="%s" data-toggle="modal" data-target="#modal-%d" title="%s positions (click to show more)" class="ballot-icon"><table' % (
             right_click_string,
             urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)),
-            ballot.pk,)]
+            ballot.pk,
+            typename,)]
     if my_blocking:
         res.append(' class="is-blocking" ')
     res.append('>')

@@ -459,6 +459,8 @@ def pos_to_label(text):
         'Discuss':      'danger',
         'Block':        'danger',
         'Recuse':       'primary',
+        'Not Ready':    'danger',
+        'Need More Time': 'danger',
     }.get(str(text), 'blank')
 
 @register.filter
