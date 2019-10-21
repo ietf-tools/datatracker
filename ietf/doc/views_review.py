@@ -320,6 +320,7 @@ class RejectReviewerAssignmentForm(forms.Form):
 def reject_reviewer_assignment(request, name, assignment_id):
     doc = get_object_or_404(Document, name=name)
     review_assignment = get_object_or_404(ReviewAssignment, pk=assignment_id, state__in=["assigned", "accepted"])
+    review_request_past_deadline = review_assignment.review_request.deadline < datetime.date.today()
 
     if not review_assignment.reviewer:
         return redirect(review_request, name=review_assignment.review_request.doc.name, request_id=review_assignment.review_request.pk)
@@ -330,7 +331,7 @@ def reject_reviewer_assignment(request, name, assignment_id):
     if not (is_reviewer or can_manage_request):
         return HttpResponseForbidden("You do not have permission to perform this action")
 
-    if request.method == "POST" and request.POST.get("action") == "reject":
+    if request.method == "POST" and request.POST.get("action") == "reject" and not review_request_past_deadline:
         form = RejectReviewerAssignmentForm(request.POST)
         if form.is_valid():
             # reject the assignment
@@ -367,6 +368,7 @@ def reject_reviewer_assignment(request, name, assignment_id):
         'review_req': review_assignment.review_request,
         'assignments': review_assignment.review_request.reviewassignment_set.all(),
         'form': form,
+        'review_request_past_deadline': review_request_past_deadline,
     })
 
 @login_required
