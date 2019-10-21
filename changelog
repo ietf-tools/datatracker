@@ -28,6 +28,32 @@ ietfdb (6.107.0) ietf; urgency=medium
 
 ietfdb (6.106.0) ietf; urgency=medium
 
+  * Merged in [16824] and [16825] from rjsparks@nostrum.com:
+    Introduced the use of <last-call@ietf.org> for last-call announcements, 
+    changing various email message templates and recipients to match.
+
+  * Merged in [16819] from sasha@dashcare.nl:
+    Return review req to 'requested' status if no review assignments are open.
+    If a review assignment is rejected, withdrawn, marked no response, etc.,
+    and this leaves a review request without any assigned/accepted/completed
+    review assignments, return the request state to 'requested', which means
+    it will be shown as an unassigned review in all interfaces.  
+    Fixes issue #2186.
+
+  * Merged in [16818] from rjsparks@nostrum.com:
+    Make hybrid pdfs when converting ppt materials to pdf. Fixes #2769.  
+
+  * Send output of the review reminders script to log, rather than stdout
+    (since this is run from cron, stdout and stderr should be quiet if nothing
+    unexpected happens)
+
+  * Added a guard against missing conflrev state in IESG agenda code.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Oct 2019 13:58:55 +0000
+
+
+ietfdb (6.106.0) ietf; urgency=medium
+
   **Review tool tickets roundup, part 3, slide upload fixes, and more.**
 
   * Added some type checking annotation tweaks and mypy_test() output tweaks.
