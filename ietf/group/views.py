@@ -52,7 +52,6 @@ from simple_history.utils import update_change_reason
 from django import forms
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db.models.aggregates import Max
 from django.db.models import Q, Count
 from django.http import HttpResponse, HttpResponseForbidden, Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -1610,12 +1609,8 @@ def email_open_review_assignments(request, acronym, group_type=None):
         r.lastcall_ends = e and e.expires.date().isoformat()
         r.earlier_review = ReviewAssignment.objects.filter(review_request__doc=r.review_request.doc,reviewer__in=r.reviewer.person.email_set.all(),state="completed")
         if r.earlier_review:
-            req_rev = r.review_request.requested_rev or r.review_request.doc.rev
-            earlier_review_rev = r.earlier_review.aggregate(Max('reviewed_rev'))['reviewed_rev__max']
-            if req_rev == earlier_review_rev:
-                r.earlier_review_mark = '**'
-            else:
-                r.earlier_review_mark = '*'
+            earlier_reviews_formatted = ['-{} {} completed'.format(ra.reviewed_rev, ra.review_request.type.slug) for ra in r.earlier_review]
+            r.earlier_reviews = '({})'.format(', '.join(earlier_reviews_formatted))
 
     review_assignments.sort(key=lambda r: r.section_order)
 

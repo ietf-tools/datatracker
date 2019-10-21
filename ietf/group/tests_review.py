@@ -238,19 +238,24 @@ class ReviewTests(TestCase):
 
     def test_email_open_review_assignments(self):
         review_req1 = ReviewRequestFactory()
-        ReviewAssignmentFactory(review_request=review_req1,reviewer=EmailFactory(person__user__username='marschairman'))
+        review_assignment_completed = ReviewAssignmentFactory(review_request=review_req1,reviewer=EmailFactory(person__user__username='marschairman'), state_id='completed', reviewed_rev=0)
+        ReviewAssignmentFactory(review_request=review_req1,reviewer=review_assignment_completed.reviewer)
         DBTemplateFactory.create(path='/group/defaults/email/open_assignments.txt',
                                  type_id='django',
                                  content = """
-                                     {% autoescape off %}
-                                     Reviewer               Deadline   Draft
-                                     {% for r in review_assignments %}{{ r.reviewer.person.plain_name|ljust:"22" }} {{ r.review_request.deadline|date:"Y-m-d" }} {{ r.review_request.doc.name }}-{% if r.review_request.requested_rev %}{{ r.review_request.requested_rev }}{% else %}{{ r.review_request.doc.rev }}{% endif %}
-                                     {% endfor %}
-                                     {% if rotation_list %}Next in the reviewer rotation:
+                                        {% autoescape off %}Subject: Open review assignments in {{group.acronym}}
 
-                                     {% for p in rotation_list %}  {{ p }}
-                                     {% endfor %}{% endif %}
-                                     {% endautoescape %}
+                                        The following reviewers have assignments:{% for r in review_assignments %}{% ifchanged r.section %}
+                                        
+                                        {{r.section}}
+                                        
+                                        {% if r.section == 'Early review requests:' %}Reviewer               Due        Draft{% else %}Reviewer               LC end     Draft{% endif %}{% endifchanged %}
+                                        {{ r.reviewer.person.plain_name|ljust:"22" }} {% if r.section == 'Early review requests:' %}{{ r.review_request.deadline|date:"Y-m-d" }}{% else %}{{ r.lastcall_ends|default:"None      " }}{% endif %} {{ r.review_request.doc.name }}-{% if r.review_request.requested_rev %}{{ r.review_request.requested_rev }}{% else %}{{ r.review_request..doc.rev }}{% endif %} {{ r.earlier_reviews }}{% endfor %}
+                                        
+                                        {% if rotation_list %}Next in the reviewer rotation:
+                                        
+                                        {% for p in rotation_list %}  {{ p }}
+                                        {% endfor %}{% endif %}{% endautoescape %}
                                  """)
 
         group = review_req1.team
@@ -266,6 +271,7 @@ class ReviewTests(TestCase):
         q = PyQuery(r.content)
         generated_text = q("[name=body]").text()
         self.assertTrue(review_req1.doc.name in generated_text)
+        self.assertTrue('(-0 lc review)' in generated_text)  # previous completed assignment
         self.assertTrue(six.text_type(Person.objects.get(user__username="marschairman")) in generated_text)
 
         empty_outbox()
