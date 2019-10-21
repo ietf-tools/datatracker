@@ -50,6 +50,8 @@ def get_mailtrigger(slug, create_from_slug_if_not_exists, desc_if_not_exists):
             mailtrigger = MailTrigger.objects.create(slug=slug, desc=desc_if_not_exists)
             mailtrigger.to.set(template.to.all())
             mailtrigger.cc.set(template.cc.all())
+            if slug.startswith('review_completed') and slug.endswith('early'):
+                mailtrigger.cc.remove('ietf_last_call')
         else:
             raise
     return mailtrigger
