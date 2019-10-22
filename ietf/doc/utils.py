@@ -716,17 +716,19 @@ def make_rev_history(doc):
     def get_predecessors(doc, predecessors=[]):
         if hasattr(doc, 'relateddocument_set'):
             for alias in doc.related_that_doc('replaces'):
-                if alias.document not in predecessors:
-                    predecessors.append(alias.document)
-                    predecessors.extend(get_predecessors(alias.document, predecessors))
+                for document in alias.docs.all():
+                    if document not in predecessors:
+                        predecessors.append(document)
+                        predecessors.extend(get_predecessors(document, predecessors))
         return predecessors
 
     def get_ancestors(doc, ancestors = []):
         if hasattr(doc, 'relateddocument_set'):
             for alias in doc.related_that('replaces'):
-                if alias.document not in ancestors:
-                    ancestors.append(alias.document)
-                    ancestors.extend(get_ancestors(alias.document, ancestors))
+                for document in alias.docs.all():
+                    if document not in ancestors:
+                        ancestors.append(document)
+                        ancestors.extend(get_ancestors(document, ancestors))
         return ancestors
 
     def get_replaces_tree(doc):
@@ -854,9 +856,10 @@ def build_doc_meta_block(doc, path):
             if not doc.name.startswith('rfc'):
                 meta['from'] = [ "%s-%s"%(doc.name, doc.rev) ]
             meta['errata'] = [ "Errata exist" ] if doc.tags.filter(slug='errata').exists() else []
-            meta['obsoletedby'] = [ alias.document.rfc_number() for alias in doc.related_that('obs') ]
+            
+            meta['obsoletedby'] = [ document.rfc_number() for alias in doc.related_that('obs') for document in alias.docs.all() ]
             meta['obsoletedby'].sort()
-            meta['updatedby'] = [ alias.document.rfc_number() for alias in doc.related_that('updates') ]
+            meta['updatedby'] = [ document.rfc_number() for alias in doc.related_that('updates') for document in alias.docs.all() ]
             meta['updatedby'].sort()
             meta['stdstatus'] = [ doc.std_level.name ]
         else:
