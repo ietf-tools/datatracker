@@ -473,6 +473,8 @@ class ReviewTests(TestCase):
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, str(assignment.reviewer.person))
+        self.assertNotContains(r, 'can not be rejected')
+        self.assertContains(r, '<button type="submit"')
 
         # reject
         empty_outbox()
@@ -489,6 +491,28 @@ class ReviewTests(TestCase):
         self.assertIn(assignment.reviewer.address, outbox[0]["To"])
         self.assertNotIn("<reviewsecretary@example.com>", outbox[0]["To"])
         self.assertTrue("Test message" in outbox[0].get_payload(decode=True).decode("utf-8"))
+
+        # try again, but now with an expired review request, which should not be allowed (#2277)
+        assignment.state_id = 'assigned'
+        assignment.save()
+        review_req.deadline = datetime.date(2019, 1, 1)
+        review_req.save()
+        
+        r = self.client.get(reject_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, str(assignment.reviewer.person))
+        self.assertContains(r, 'can not be rejected')
+        self.assertNotContains(r, '<button type="submit"')
+
+        # even though the form is not visible, try posting to the URL, which should not work
+        empty_outbox()
+        r = self.client.post(reject_url, { "action": "reject", "message_to_secretary": "Test message" })
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'can not be rejected')
+
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "assigned")
+        self.assertEqual(len(outbox), 0)
 
     def make_test_mbox_tarball(self, review_req):
         mbox_path = os.path.join(self.review_dir, "testmbox.tar.gz")

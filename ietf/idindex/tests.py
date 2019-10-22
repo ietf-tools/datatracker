@@ -108,7 +108,7 @@ class IndexTests(TestCase):
         self.assertEqual(t[12], ".pdf,.txt")
         self.assertEqual(t[13], draft.title)
         author = draft.documentauthor_set.order_by("order").get()
-        self.assertEqual(t[14], "%s <%s>" % (author.person.name, author.email.address))
+        self.assertEqual(t[14], "%s <%s>" % (author.person.plain_name(), author.email.address))
         self.assertEqual(t[15], "%s <%s>" % (draft.shepherd.person.plain_ascii(), draft.shepherd.address))
         self.assertEqual(t[16], "%s <%s>" % (draft.ad.plain_ascii(), draft.ad.email_address()))
 
