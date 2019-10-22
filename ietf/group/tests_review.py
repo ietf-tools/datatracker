@@ -271,7 +271,7 @@ class ReviewTests(TestCase):
         q = PyQuery(r.content)
         generated_text = q("[name=body]").text()
         self.assertTrue(review_req1.doc.name in generated_text)
-        self.assertTrue('(-0 lc review)' in generated_text)  # previous completed assignment
+        self.assertTrue('(-0 lc reviewed)' in generated_text)  # previous completed assignment
         self.assertTrue(six.text_type(Person.objects.get(user__username="marschairman")) in generated_text)
 
         empty_outbox()
