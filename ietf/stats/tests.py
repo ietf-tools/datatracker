@@ -4,7 +4,9 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import calendar
 import datetime
+import json
 
 from mock import patch
 from pyquery import PyQuery
@@ -197,11 +199,27 @@ class StatisticsTests(TestCase):
             if stats_type != "results":
                 self.assertTrue(q('.review-stats td:contains("1")'))
 
-        # check chart
+        # check stacked chart
+        expected_date = datetime.date.today().replace(day=1)
+        expected_js_timestamp = calendar.timegm(expected_date.timetuple()) * 1000
         url = urlreverse(ietf.stats.views.review_stats, kwargs={ "stats_type": "time" })
         url += "?team={}".format(review_req.team.acronym)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+        self.assertEqual(json.loads(r.context['data']), [
+            {"label": "in time", "color": "#3d22b3", "data": [[expected_js_timestamp, 0]]},
+            {"label": "late", "color": "#b42222", "data": [[expected_js_timestamp, 0]]}
+        ])
+        q = PyQuery(r.content)
+        self.assertTrue(q('.stats-time-graph'))
+
+        # check non-stacked chart
+        url = urlreverse(ietf.stats.views.review_stats, kwargs={ "stats_type": "time" })
+        url += "?team={}".format(review_req.team.acronym)
+        url += "&completion=not_completed"
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(json.loads(r.context['data']), [{"color": "#3d22b3", "data": [[expected_js_timestamp, 0]]}])
         q = PyQuery(r.content)
         self.assertTrue(q('.stats-time-graph'))
 

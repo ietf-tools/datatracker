@@ -220,7 +220,7 @@
              tickDecimals: {% if selected_completion_type == "average_assignment_to_closure_days" %}null{% else %}0{% endif %}
          },
          series: {
-             color: "#3d22b3",
+             stack: true,
              bars: {
                  show: true,
                  barWidth: 20 * 24 * 60 * 60 * 1000,
@@ -257,6 +257,7 @@
   {% if stats_type == "time" %}
     <script src="{% static 'flot/jquery.flot.min.js' %}"></script>
     <script src="{% static 'flot/jquery.flot.time.min.js' %}"></script>
+    <script src="{% static 'flot/jquery.flot.stack.min.js' %}"></script>
     <script src="{% static 'ietf/js/review-stats.js' %}"></script>
   {% endif %}
 {% endblock %}
