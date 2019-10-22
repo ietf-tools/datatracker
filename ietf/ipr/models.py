@@ -56,6 +56,12 @@ class IprDisclosureBase(models.Model):
         """Returns the latest IprEvent of type msgout.  For use in templates."""
         return self.latest_event(type='msgout')
 
+    def get_latest_event_submitted(self):
+        return self.latest_event(type='submitted')
+
+    def get_latest_event_posted(self):
+        return self.latest_event(type='posted')
+
     def has_legacy_event(self):
         """Returns True if there is one or more LegacyMigrationIprEvents
         for this disclosure"""

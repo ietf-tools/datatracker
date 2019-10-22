@@ -10,7 +10,7 @@ import factory
 
 from ietf.ipr.models import (
     IprDisclosureBase, HolderIprDisclosure, ThirdPartyIprDisclosure, NonDocSpecificIprDisclosure,
-    GenericIprDisclosure, IprDocRel, RelatedIpr
+    GenericIprDisclosure, IprDocRel, RelatedIpr, IprEvent
 )
 
 def _fake_patent_info():
@@ -85,3 +85,12 @@ class GenericIprDisclosureFactory(IprDisclosureBaseFactory):
     holder_contact_email = factory.Faker('email')
     holder_contact_name = factory.Faker('name')
     
+class IprEventFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = IprEvent
+
+    type_id = 'submitted'
+    by = factory.SubFactory('ietf.person.factories.PersonFactory')
+    disclosure = factory.SubFactory(IprDisclosureBaseFactory)
+    desc = factory.Faker('sentence')
+

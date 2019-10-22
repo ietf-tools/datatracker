@@ -16,7 +16,8 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocAlias
 from ietf.doc.factories import DocumentFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory
-from ietf.ipr.factories import HolderIprDisclosureFactory
+from ietf.group.factories import RoleFactory
+from ietf.ipr.factories import HolderIprDisclosureFactory, GenericIprDisclosureFactory, IprEventFactory
 from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_submitter_emails,
     get_pseudo_submitter, get_holders, get_update_cc_addrs)
 from ietf.ipr.models import (IprDisclosureBase,GenericIprDisclosure,HolderIprDisclosure,
@@ -28,6 +29,24 @@ from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.text import text_to_dict
 
+
+def extract_message_content(message):
+    return message.get_payload(decode=True).decode(str(message.get_charset()))
+
+def make_data_from_content(content):
+    q = PyQuery(content)
+    data = dict()
+    for name in ['form-TOTAL_FORMS','form-INITIAL_FORMS','form-MIN_NUM_FORMS','form-MAX_NUM_FORMS']:
+        data[name] = q('form input[name=%s]'%name).val()
+    for i in range(0,int(data['form-TOTAL_FORMS'])):
+        name = 'form-%d-type' % i
+        data[name] = q('form input[name=%s]'%name).val()
+        text_name = 'form-%d-text' % i
+        data[text_name] = q('form textarea[name=%s]'%text_name).html().strip()
+        # Do not try to use
+        #data[text_name] = q('form textarea[name=%s]'%text_name).text()
+        # .text does not work - the field will likely contain <> characters
+    return data
 
 class IprTests(TestCase):
     def setUp(self):
@@ -527,8 +546,24 @@ I would like to revoke this declaration.
         pass
     
     def test_post(self):
+        ipr = HolderIprDisclosureFactory(state_id='pending')
+        url = urlreverse('ietf.ipr.views.state', kwargs={'id':ipr.id})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        r = self.client.post(url,{'state':'posted'})
+        self.assertEqual(r.status_code, 302)
+        ipr = HolderIprDisclosure.objects.get(id=ipr.id)
+        self.assertTrue(ipr.iprevent_set.filter(type='posted').exists())
+
+    def test_notify(self):
         doc = WgDraftFactory(group__acronym='mars-wg', name='draft-ietf-mars-test')
-        ipr = HolderIprDisclosureFactory(docs=[doc,], submitter_email='george@acme.com')
+        old_ipr = HolderIprDisclosureFactory(docs=[doc,], submitter_email='george@acme.com')
+        IprEventFactory(type_id='submitted', disclosure=old_ipr)
+        IprEventFactory(type_id='posted', disclosure=old_ipr)
+        ipr = HolderIprDisclosureFactory(docs=[doc,], submitter_email='george@acme.com', updates=[old_ipr])
+        IprEventFactory(type_id='submitted', disclosure=ipr)
+        IprEventFactory(type_id='posted', disclosure=ipr)
         url = urlreverse('ietf.ipr.views.post', kwargs={ "id": ipr.id })
         login_testing_unauthorized(self, "secretary", url)
 
@@ -543,24 +578,32 @@ I would like to revoke this declaration.
         self.assertEqual(ipr.state.slug,'posted')
         url = urlreverse('ietf.ipr.views.notify',kwargs={ 'id':ipr.id, 'type':'posted'})
         r = self.client.get(url,follow=True)
-        q = PyQuery(r.content)
-        data = dict()
-        for name in ['form-TOTAL_FORMS','form-INITIAL_FORMS','form-MIN_NUM_FORMS','form-MAX_NUM_FORMS']:
-            data[name] = q('form input[name=%s]'%name).val()
-        for i in range(0,int(data['form-TOTAL_FORMS'])):
-            name = 'form-%d-type' % i
-            data[name] = q('form input[name=%s]'%name).val()
-            text_name = 'form-%d-text' % i
-            data[text_name] = q('form textarea[name=%s]'%text_name).html().strip()
-            # Do not try to use
-            #data[text_name] = q('form textarea[name=%s]'%text_name).text()
-            # .text does not work - the field will likely contain <> characters
+        self.assertEqual(r.status_code,200)
+        data = make_data_from_content(r.content)
         r = self.client.post(url, data )
         self.assertEqual(r.status_code,302)
         self.assertEqual(len(outbox),len_before+2)
         self.assertTrue('george@acme.com' in outbox[len_before]['To'])
+        self.assertIn('posted on '+datetime.date.today().strftime("%Y-%m-%d"), extract_message_content(outbox[len_before]).replace('\n',' '))
         self.assertTrue('draft-ietf-mars-test@ietf.org' in outbox[len_before+1]['To'])
         self.assertTrue('mars-wg@ietf.org' in outbox[len_before+1]['Cc'])
+        self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), extract_message_content(outbox[len_before+1]).replace('\n',' '))
+
+    def test_notify_generic(self):
+        RoleFactory(name_id='ad',group__acronym='gen')
+        ipr = GenericIprDisclosureFactory(submitter_email='foo@example.com')
+        IprEventFactory(type_id='submitted', disclosure=ipr)
+        IprEventFactory(type_id='posted', disclosure=ipr)
+        url = urlreverse('ietf.ipr.views.notify',kwargs={ 'id':ipr.id, 'type':'posted'})
+        empty_outbox()
+        login_testing_unauthorized(self, 'secretary', url)
+        r = self.client.get(url, follow=True)
+        self.assertTrue(r.status_code, 200)
+        data = make_data_from_content(r.content)
+        r = self.client.post(url, data )
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(len(outbox),2)
+        self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), extract_message_content(outbox[1]).replace('\n',' '))
 
     def test_process_response_email(self):
         # first send a mail
