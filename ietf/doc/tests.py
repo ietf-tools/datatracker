@@ -29,15 +29,18 @@ from tastypie.test import ResourceTestCaseMixin
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
-    DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent )
-from ietf.doc.factories import DocumentFactory, DocEventFactory, CharterFactory, ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, IndividualRfcFactory, StateDocEventFactory
+    DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType )
+from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactory, 
+    ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
+    IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
+    BallotDocEventFactory )
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.models import Group
-from ietf.group.factories import GroupFactory
+from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
 from ietf.meeting.models import Meeting, Session, SessionPresentation
 from ietf.meeting.factories import MeetingFactory, SessionFactory
-from ietf.name.models import SessionStatusName
+from ietf.name.models import SessionStatusName, BallotPositionName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory
 from ietf.utils.mail import outbox
@@ -219,7 +222,7 @@ class SearchTests(TestCase):
         self.assertContains(r, "Document Search")
 
     def test_docs_for_ad(self):
-        ad = PersonFactory()
+        ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person
         draft = IndividualDraftFactory(ad=ad)
         draft.set_state(State.objects.get(type='draft-iesg', slug='lc'))
         rfc = IndividualDraftFactory(ad=ad)
@@ -231,7 +234,12 @@ class SearchTests(TestCase):
         statchg.set_state(State.objects.get(type='statchg', slug='iesgeval'))
         charter = CharterFactory(ad=ad)
         charter.set_state(State.objects.get(type='charter', slug='iesgrev'))
-        
+
+        ballot_type = BallotType.objects.get(doc_type_id='draft',slug='approve')
+        ballot = BallotDocEventFactory(ballot_type=ballot_type, doc__states=[('draft-iesg','iesg-eva')])
+        discuss_pos = BallotPositionName.objects.get(slug='discuss')
+        discuss_other = BallotPositionDocEventFactory(ballot=ballot, doc=ballot.doc, ad=ad, pos=discuss_pos)
+
         r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad', kwargs=dict(name=ad.full_name_as_key())))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
@@ -239,6 +247,8 @@ class SearchTests(TestCase):
         self.assertContains(r, conflrev.name)
         self.assertContains(r, statchg.name)
         self.assertContains(r, charter.name)
+
+        self.assertContains(r, discuss_other.doc.name)
         
 
     def test_drafts_in_last_call(self):

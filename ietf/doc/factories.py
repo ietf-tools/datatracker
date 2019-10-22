@@ -13,7 +13,7 @@ if six.PY3:
 
 from django.conf import settings
 
-from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor, StateDocEvent
+from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor, StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType
 from ietf.group.models import Group
 
 def draft_name_generator(type_id,group,n):
@@ -287,3 +287,34 @@ class StateDocEventFactory(DocEventFactory):
         else:
             obj.state = State.objects.get(type_id='draft-iesg',slug='ad-eval')
         obj.save()
+
+# All of these Ballot* factories are extremely skeletal. Flesh them out as needed by tests.
+class BallotTypeFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = BallotType
+
+    doc_type_id = 'draft'
+    slug = 'approve'
+
+
+class BallotDocEventFactory(DocEventFactory):
+    class Meta:
+        model = BallotDocEvent
+
+    ballot_type = factory.SubFactory(BallotTypeFactory)
+    type = 'created_ballot'
+
+class BallotPositionDocEventFactory(DocEventFactory):
+    class Meta:
+        model = BallotPositionDocEvent
+
+    type = 'changed_ballot_position'
+
+    # This isn't right - it needs to build a ballot for the same doc as this position
+    # For now, deal with this in test code by building BallotDocEvent and BallotPositionDocEvent
+    # separately and passing the same doc into thier factories.
+    ballot = factory.SubFactory(BallotDocEventFactory) 
+
+    ad = factory.SubFactory('ietf.person.factories.PersonFactory')
+    pos_id = 'discuss'
+

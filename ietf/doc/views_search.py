@@ -52,9 +52,9 @@ from django.utils.cache import _generate_cache_key # type: ignore (FIXME: remove
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, DocAlias, State,
-    LastCallDocEvent, NewRevisionDocEvent, IESG_SUBSTATE_TAGS )
+    LastCallDocEvent, NewRevisionDocEvent, IESG_SUBSTATE_TAGS, IESG_BALLOT_ACTIVE_STATES )
 from ietf.doc.fields import select2_id_doc_name_json
-from ietf.doc.utils import get_search_cache_key
+from ietf.doc.utils import get_search_cache_key, augment_events_with_revision
 from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
 from ietf.name.models import DocTagName, DocTypeName, StreamName
@@ -415,8 +415,40 @@ def docs_for_ad(request, name):
     for d in results:
         d.search_heading = ad_dashboard_group(d)
     #
+    # Additional content showing docs with blocking positions by this ad
+    blocked_docs = []
+    if ad in get_active_ads():
+        possible_docs = Document.objects.filter(Q(states__type="draft-iesg",
+                                                  states__slug__in=IESG_BALLOT_ACTIVE_STATES) |
+                                                Q(states__type="charter",
+                                                  states__slug__in=("intrev", "iesgrev")) |
+                                                Q(states__type__in=("statchg", "conflrev"),
+                                                  states__slug__in=("iesgeval", "defer")),
+                                                docevent__ballotpositiondocevent__pos__blocking=True,
+                                                docevent__ballotpositiondocevent__ad=ad)
+        for doc in possible_docs:
+            ballot = doc.active_ballot()
+            if not ballot:
+                continue
+
+            blocking_positions = [p for p in ballot.all_positions() if p.pos.blocking]
+
+            if not blocking_positions or not any( p.ad==ad for p in blocking_positions ):
+                continue
+
+            augment_events_with_revision(doc, blocking_positions)
+
+            doc.blocking_positions = blocking_positions
+            doc.ballot = ballot
+
+            blocked_docs.append(doc)
+
+        # latest first
+        if blocked_docs:
+            blocked_docs.sort(key=lambda d: min(p.time for p in d.blocking_positions if p.ad==ad), reverse=True)
+
     return render(request, 'doc/drafts_for_ad.html', {
-        'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name()
+        'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name(), 'blocked_docs': blocked_docs
     })
 
 def drafts_in_last_call(request):
