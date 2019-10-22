@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 
 import copy
 import datetime
@@ -101,7 +101,10 @@ def make_title(queryargs):
     elif by == "state":
         state = queryargs.get('state')
         if state:
-            title += ' in state %s::%s' % (state, queryargs['substate'])
+            title += ' in state %s' % state
+            substate = queryargs.get('substate')
+            if substate:
+                title += '::%s' % substate
     elif by == "stream":
         stream = queryargs.get('stream')
         if stream:
