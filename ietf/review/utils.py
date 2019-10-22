@@ -31,6 +31,7 @@ from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewRequestSt
                                 ReviewSecretarySettings, ReviewTeamSettings)
 from ietf.utils.mail import send_mail
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
+from ietf.utils import log
 
 # The origin date is used to have a single reference date for "every X days".
 # This date is arbitrarily chosen and has no special meaning, but should be consistent.
@@ -407,6 +408,10 @@ def email_reviewer_availability_change(request, team, reviewer_role, msg, by):
 
 def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=False):
     assert review_req.state_id in ("requested", "assigned")
+    # In the original implementation, review unassignments could be made on formsets by setting reviewers to None.
+    # After refactoring to explicitly model ReviewAssignments, this no longer makes sense. Unassignment is now done
+    # with a different view on a ReviewAssignment.
+    log.assertion('reviewer is not None')
 
     if review_req.reviewassignment_set.filter(reviewer=reviewer).exists():
         return
@@ -419,8 +424,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
         
     assignment = review_req.reviewassignment_set.create(state_id='assigned', reviewer = reviewer, assigned_on = datetime.datetime.now())
 
-    if reviewer:
-        possibly_advance_next_reviewer_for_team(review_req.team, reviewer.person_id, add_skip)
+    possibly_advance_next_reviewer_for_team(review_req.team, reviewer.person_id, add_skip)
 
     ReviewRequestDocEvent.objects.create(
         type="assigned_review_request",
@@ -430,7 +434,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
         desc="Request for {} review by {} is assigned to {}".format(
             review_req.type.name,
             review_req.team.acronym.upper(),
-            reviewer.person if reviewer else "(None)",
+            reviewer.person,
         ),
         review_request=review_req,
         state_id='assigned',
@@ -444,7 +448,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
         desc="Request for {} review by {} is assigned to {}".format(
             review_req.type.name,
             review_req.team.acronym.upper(),
-            reviewer.person if reviewer else "(None)",
+            reviewer.person,
         ),
         review_assignment=assignment,
         state_id='assigned',

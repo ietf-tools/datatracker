@@ -1525,16 +1525,15 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
                 if action=="close":
                     close_review_request(request, review_req, review_req.form.cleaned_data["close"],
                                          review_req.form.cleaned_data["close_comment"])
-                elif action=="assign":
+                elif action=="assign" and review_req.form.cleaned_data["reviewer"]:
                     reqs_to_assign.append(review_req)
 
             assignments_by_person = dict()
             for r in reqs_to_assign:
-                if r.form.cleaned_data["reviewer"]:
-                    person = r.form.cleaned_data["reviewer"].person
-                    if not person in assignments_by_person:
-                        assignments_by_person[person] = []
-                    assignments_by_person[person].append(r)
+                person = r.form.cleaned_data["reviewer"].person
+                if not person in assignments_by_person:
+                    assignments_by_person[person] = []
+                assignments_by_person[person].append(r)
             
             # Make sure the any assignments to the person at the head
             # of the rotation queue are processed first so that the queue

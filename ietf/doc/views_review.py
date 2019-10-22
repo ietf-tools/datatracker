@@ -281,7 +281,7 @@ def close_request(request, name, request_id):
 
 
 class AssignReviewerForm(forms.Form):
-    reviewer = PersonEmailChoiceField(label="Assign Additional Reviewer", empty_label="(None)", required=False)
+    reviewer = PersonEmailChoiceField(label="Assign Additional Reviewer", empty_label="(None)")
     add_skip = forms.BooleanField(label='Skip next time', required=False)
 
     def __init__(self, review_req, *args, **kwargs):
