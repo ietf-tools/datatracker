@@ -5,6 +5,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 # Stdlib imports
+import datetime
 import re
 
 import debug      # pyflakes:ignore
@@ -297,7 +298,7 @@ class AddUnavailablePeriodForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(AddUnavailablePeriodForm, self).__init__(*args, **kwargs)
 
-        self.fields["start_date"] = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label=self.fields["start_date"].label, help_text=self.fields["start_date"].help_text, required=self.fields["start_date"].required)
+        self.fields["start_date"] = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label=self.fields["start_date"].label, help_text=self.fields["start_date"].help_text, required=self.fields["start_date"].required, initial=datetime.date.today())
         self.fields["end_date"] = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label=self.fields["end_date"].label, help_text=self.fields["end_date"].help_text, required=self.fields["end_date"].required)
 
         self.fields['availability'].widget = forms.RadioSelect(choices=UnavailablePeriod.LONG_AVAILABILITY_CHOICES)
