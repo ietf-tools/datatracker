@@ -382,7 +382,7 @@ class NominateNewPersonForm(forms.ModelForm):
     def clean_candidate_email(self):
         candidate_email = self.cleaned_data['candidate_email']
         if Email.objects.filter(address=candidate_email).exists():
-            normal_url_name = 'ietf.nomcom.views.%s_nominate' % 'public' if self.public else 'private'
+            normal_url_name = 'ietf.nomcom.views.%s_nominate' % ('public' if self.public else 'private')
             msg = (('%s is already in the datatracker. '
                     'Use the <a href="%s">normal nomination form</a> to nominate the person '
                     'with this address. ') % 

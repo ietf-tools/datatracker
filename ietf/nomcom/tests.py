@@ -584,6 +584,11 @@ class NomcomViewsTest(TestCase):
         return self.nominate_newperson_view(public=False)
         self.client.logout()
 
+    def test_private_nominate_newperson_who_already_exists(self):
+        EmailFactory(address='nominee@example.com')
+        self.access_member_url(self.private_nominate_newperson_url)
+        return self.nominate_newperson_view(public=False)       
+
     def test_public_nominate_with_automatic_questionnaire(self):
         nomcom = get_nomcom_by_year(self.year)
         nomcom.send_questionnaire = True
@@ -715,34 +720,40 @@ class NomcomViewsTest(TestCase):
         if not public:
             test_data['nominator_email'] = nominator_email
 
-        response = self.client.post(nominate_url, test_data,follow=True)
-        self.assertTrue(response.redirect_chain)
-        self.assertEqual(response.status_code, 200)
-        q = PyQuery(response.content)
-        self.assertContains(response, "alert-success")
+        if Email.objects.filter(address=nominee_email).exists():
+            response = self.client.post(nominate_url, test_data,follow=True)
+            self.assertFalse(response.redirect_chain)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn('already in the datatracker',unicontent(response))
+        else:
+            response = self.client.post(nominate_url, test_data,follow=True)
+            self.assertTrue(response.redirect_chain)
+            self.assertEqual(response.status_code, 200)
+            q = PyQuery(response.content)
+            self.assertContains(response, "alert-success")
 
-        # check objects
-        email = Email.objects.get(address=candidate_email)
-        Person.objects.get(name=candidate_name)
-        nominee = Nominee.objects.get(email=email)
-        NomineePosition.objects.get(position=position, nominee=nominee)
-        feedback = Feedback.objects.filter(positions__in=[position],
-                                           nominees__in=[nominee],
-                                           type=FeedbackTypeName.objects.get(slug='nomina')).latest('id')
-        if public:
-            self.assertEqual(feedback.author, nominator_email)
+            # check objects
+            email = Email.objects.get(address=candidate_email)
+            Person.objects.get(name=candidate_name)
+            nominee = Nominee.objects.get(email=email)
+            NomineePosition.objects.get(position=position, nominee=nominee)
+            feedback = Feedback.objects.filter(positions__in=[position],
+                                               nominees__in=[nominee],
+                                               type=FeedbackTypeName.objects.get(slug='nomina')).latest('id')
+            if public:
+                self.assertEqual(feedback.author, nominator_email)
 
-        # to check feedback comments are saved like enrypted data
-        self.assertNotEqual(feedback.comments, comment_text)
+            # to check feedback comments are saved like enrypted data
+            self.assertNotEqual(feedback.comments, comment_text)
 
-        self.assertEqual(check_comments(feedback.comments, comment_text, self.privatekey_file), True)
-        Nomination.objects.get(position=position,
-                               candidate_name=candidate_name,
-                               candidate_email=candidate_email,
-                               candidate_phone=candidate_phone,
-                               nominee=nominee,
-                               comments=feedback,
-                               nominator_email="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
+            self.assertEqual(check_comments(feedback.comments, comment_text, self.privatekey_file), True)
+            Nomination.objects.get(position=position,
+                                   candidate_name=candidate_name,
+                                   candidate_email=candidate_email,
+                                   candidate_phone=candidate_phone,
+                                   nominee=nominee,
+                                   comments=feedback,
+                                   nominator_email="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
 
     def test_add_questionnaire(self):
         self.access_chair_url(self.add_questionnaire_url)
