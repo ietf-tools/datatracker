@@ -1,6 +1,15 @@
 [
   {
     "fields": {
+      "path": "/group/defaults/email/review_assigned.txt",
+      "type_id": "django",
+      "content": "{{ assigner.ascii }} has assigned you as a reviewer for this document.\n\n{% if prev_team_reviews %}This team has completed other reviews of this document:{% endif %}{% for assignment in prev_team_reviews %}\n- {{ assignment.completed_on }} {{ assignment.reviewer.person.ascii }} -{% if assignment.reviewed_rev %}{{ assignment.reviewed_rev }}{% else %}{{ assignment.review_request.requested_rev }}{% endif %} {{ assignment.result.name }}\n{% endfor %}"
+    },
+    "model": "dbtemplate.dbtemplate",
+    "pk": "1000"
+  },
+  {
+    "fields": {
       "doc_type": "charter",
       "name": "Ready for external review",
       "order": 1,
