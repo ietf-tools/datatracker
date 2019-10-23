@@ -36,6 +36,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import copy
 import datetime
 import itertools
 import io
@@ -1591,8 +1592,6 @@ def email_open_review_assignments(request, acronym, group_type=None):
         state__in=("assigned", "accepted"),
     ).prefetch_related("reviewer", "review_request__type", "state", "review_request__doc").distinct().order_by("reviewer","-review_request__deadline"))
 
-    review_assignments.sort(key=lambda r:r.reviewer.person.last_name()+r.reviewer.person.first_name())
-
     for r in review_assignments:
         if r.review_request.doc.telechat_date():
             r.section = 'For telechat %s' % r.review_request.doc.telechat_date().isoformat()
@@ -1610,7 +1609,19 @@ def email_open_review_assignments(request, acronym, group_type=None):
             earlier_reviews_formatted = ['-{} {} reviewed'.format(ra.reviewed_rev, ra.review_request.type.slug) for ra in r.earlier_review]
             r.earlier_reviews = '({})'.format(', '.join(earlier_reviews_formatted))
 
-    review_assignments.sort(key=lambda r: r.section_order)
+    # If a document is both scheduled for a telechat and a last call review, replicate
+    # a copy of the review assignment in the last calls section (#2118)
+    def should_be_replicated_in_last_call_section(r):
+        return r.section.startswith('For telechat') and r.review_request.type_id != 'early'
+    
+    for r in filter(should_be_replicated_in_last_call_section, review_assignments):
+        r_new = copy.copy(r)
+        r_new.section = 'Last calls:'
+        r_new.section_order = '1'
+        review_assignments.append(r_new)
+
+    review_assignments.sort(key=lambda r: r.section_order + r.reviewer.person.last_name() + 
+                                          r.reviewer.person.first_name())
 
     back_url = request.GET.get("next")
     if not back_url:

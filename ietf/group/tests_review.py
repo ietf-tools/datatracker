@@ -240,6 +240,8 @@ class ReviewTests(TestCase):
         review_req1 = ReviewRequestFactory()
         review_assignment_completed = ReviewAssignmentFactory(review_request=review_req1,reviewer=EmailFactory(person__user__username='marschairman'), state_id='completed', reviewed_rev=0)
         ReviewAssignmentFactory(review_request=review_req1,reviewer=review_assignment_completed.reviewer)
+        TelechatDocEvent.objects.create(telechat_date=datetime.date.today(), type='scheduled_for_telechat', by=review_assignment_completed.reviewer.person, doc=review_req1.doc, rev=0)
+
         DBTemplateFactory.create(path='/group/defaults/email/open_assignments.txt',
                                  type_id='django',
                                  content = """
@@ -270,8 +272,10 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         generated_text = q("[name=body]").text()
-        self.assertTrue(review_req1.doc.name in generated_text)
-        self.assertTrue('(-0 lc reviewed)' in generated_text)  # previous completed assignment
+        # The document should be listed both for the telechat, and in the last call section,
+        # i.e. the document name is expected twice in the output (#2118)
+        self.assertEqual(generated_text.count(review_req1.doc.name), 2)
+        self.assertEqual(generated_text.count('(-0 lc reviewed)'), 2)  # previous completed assignment
         self.assertTrue(six.text_type(Person.objects.get(user__username="marschairman")) in generated_text)
 
         empty_outbox()
