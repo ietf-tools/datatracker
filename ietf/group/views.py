@@ -1607,7 +1607,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
         r.lastcall_ends = e and e.expires.date().isoformat()
         r.earlier_review = ReviewAssignment.objects.filter(review_request__doc=r.review_request.doc,reviewer__in=r.reviewer.person.email_set.all(),state="completed")
         if r.earlier_review:
-            earlier_reviews_formatted = ['-{} {} completed'.format(ra.reviewed_rev, ra.review_request.type.slug) for ra in r.earlier_review]
+            earlier_reviews_formatted = ['-{} {} reviewed'.format(ra.reviewed_rev, ra.review_request.type.slug) for ra in r.earlier_review]
             r.earlier_reviews = '({})'.format(', '.join(earlier_reviews_formatted))
 
     review_assignments.sort(key=lambda r: r.section_order)
