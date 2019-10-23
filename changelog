@@ -1,3 +1,90 @@
+ietfdb (6.108.0) ietf; urgency=medium
+
+  **Review tool tickets roundup, part 4; and other fixes**
+
+  * Merged in [16904] from sasha@dashcare.nl:
+    Always list all last call drafts in assignment summary.  If a draft is
+    scheduled for a telechat, but also assigned for LC review, it will now be
+    listed both in the telechat section and under 'last calls'.  Fixes #2118.
+
+  * Merged in [16902] from sasha@dashcare.nl:
+    Fixed a test failure in [16895]. This also makes a small text
+    clarification, which was also the initial reason for the test failure.
+    Related to #2526.
+
+  * Merged in [16895] from sasha@dashcare.nl:
+    List previous reviews in assignments email.
+
+    This includes a migration to update the database templates. Note that not
+    all templates currently included them (secdir at least), and previous
+    reviews are only listed in templates that included */** before.  As
+    before, previous reviews are only included if they are done by the same
+    reviewer(s) as the current assignment.
+
+    This also fixes a bug in database template 182
+    (/group/defaults/email/open_assignments.txt) which referred to
+    r.review_request..doc.rev and r.review_request..requested_rev in the
+    template, and updates the test to use the current version of template 182.
+
+    Fixes issue #2526.
+
+  * Merged in [16891] from sasha@dashcare.nl:
+    Set default start date for UnavailabilityPeriod to today.  Fixes #2198.
+
+  * Merged in [16883] from sasha@dashcare.nl:
+    Do not allow reviewers to reject overdue reviews.  If a review request is
+    past the deadline, reviewers will no longer be able to reject the
+    assignment.  Fixes issue #2277.
+
+  * Merged in [16907] from rjsparks@nostrum.com:
+    Correct construction for a reverse URL in an edge case. Fixes #2815.  
+
+  * Merged in [16875] from rjsparks@nostrum.com:
+    Adds docs with blocking positions to the ADs my-documents page. Fixes
+    #2800.  
+
+  * Merged in [16860] from rjsparks@nostrum.com:
+    Be resilient to statistics queries that provide a state but not a
+    substate. Fixes #2813.  
+
+  * Fixed a couple of places where document alias.document was used instead of
+    alias.docs.all().
+
+  * Merged in [16854] from rjsparks@nostrum.com:
+    Remove some pre-ReviewAssignment refactor logic, and simplify what remains
+    while still allowing a group secretary to not assign a row on the
+    unassigned requests form after touching the control to assign a reviewer.
+    Fixes #2812.  
+
+  * Merged in [16853] from rjsparks@nostrum.com:
+    Add submitted and posted dates to several ipr notification email messages.
+    Fixes #2807.  
+
+  * Merged in [16852] from sasha@dashcare.nl:
+    Show stacked bar graph for in time and late reviews.  On the stats page, a
+    single stacked bar graph is now shown which combines in time and late
+    reviews, replacing the separate graphs for these statistics.  Tests for
+    the charts are also expanded to validate the actual graph content for both
+    stacked and non-stacked charts.  Fixes issue #2331.
+
+  * Merged in [16850] from sasha@dashcare.nl:
+
+    Close review assignments when reviewer is removed from team.  If a
+    reviewer is removed from a team, any accepted or assigned review
+    assignments are set to rejected if the request deadline has not passed, or
+    set to no-response when the request deadline has passed.  Per [16819], if
+    this scenario happens, and there are no other active or completed review
+    assignments, the request is shown as an unassigned review.  Fixes #2185.
+
+  * Merged in [16833], [16834], [16835], [16836] from rjsparks@nostrum.com:
+    Changes to displaying the ballot_icon to account for IRSG ballots.
+    Updates Grunt generated css and map files based on updated ietf.less to
+    add styles for IRSG ballot positions.  Updated copyrights in grunt
+    generated bootstrap.js.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Oct 2019 15:57:50 +0000
+
+
 ietfdb (6.107.0) ietf; urgency=medium
 
   **Use <last-call@ietf.org> for last-call announcements.**
