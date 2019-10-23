@@ -9,6 +9,8 @@ import re
 from django.core.exceptions import ValidationError
 
 import debug                            # pyflakes:ignore
+from ietf.settings import DOC_TEXT_FILE_VALID_UPLOAD_MIME_TYPES
+
 
 def get_cleaned_text_file_content(uploaded_file):
     """Read uploaded file, try to fix up encoding to UTF-8 and
@@ -36,8 +38,10 @@ def get_cleaned_text_file_content(uploaded_file):
         magic.magic_load(m.cookie, None)
         filetype = m.from_buffer(content)
 
-    if not filetype.startswith("text"):
-        raise ValidationError("Uploaded file does not appear to be a text file.")
+    if not filetype.startswith(DOC_TEXT_FILE_VALID_UPLOAD_MIME_TYPES):
+        raise ValidationError("Uploaded file does not appear to be a text file. "
+                              "Permitted MIME types are {}, this file is {}"
+                              .format(', '.join(DOC_TEXT_FILE_VALID_UPLOAD_MIME_TYPES), filetype))
 
     match = re.search(r"charset=([\w-]+)", filetype)
     if not match:

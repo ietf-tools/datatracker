@@ -672,6 +672,10 @@ MEETING_DOC_GREFS = {
     "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
 }
 
+# Valid MIME types for cases where text is uploaded and immediately extracted,
+# e.g. a charter or a review. Must be a tuple, not a list.
+DOC_TEXT_FILE_VALID_UPLOAD_MIME_TYPES = ('text/plain', 'text/markdown', 'text/x-rst')
+
 # Override this in settings_local.py if needed
 CACHE_MIDDLEWARE_SECONDS = 300
 CACHE_MIDDLEWARE_KEY_PREFIX = ''
@@ -858,6 +862,13 @@ BIBXML_BASE_PATH = '/a/www/ietf-ftp/xml2rfc'
 # Timezone files for iCalendar
 TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
 CHANGELOG_PATH =  BASE_DIR + '/../changelog'
+
+MEETING_VALID_UPLOAD_MIME_TYPES = {
+    'agenda':       ['text/plain', 'text/html', 'text/markdown', ],
+    'minutes':      ['text/plain', 'text/html', 'application/pdf', 'text/markdown', ],
+    'slides':       [],
+    'bluesheets':   ['application/pdf', 'text/plain', ],
+}
 
 SECR_BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
 SECR_BLUE_SHEET_URL = '//datatracker.ietf.org/documents/blue_sheet.rtf'
