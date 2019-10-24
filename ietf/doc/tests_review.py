@@ -160,7 +160,8 @@ class ReviewTests(TestCase):
         self.assertContains(r, "{} Review".format(review_req.type.name))
 
     def test_review_request(self):
-        doc = WgDraftFactory(group__acronym='mars',rev='01')
+        author = PersonFactory()
+        doc = WgDraftFactory(group__acronym='mars',rev='01', authors=[author])
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
@@ -171,6 +172,7 @@ class ReviewTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, review_req.team.acronym)
         self.assertContains(r, review_req.team.name)
+        self.assertContains(r, author.name)
 
         url = urlreverse('ietf.doc.views_review.review_request_forced_login', kwargs={ "name": doc.name, "request_id": review_req.pk })
         r = self.client.get(url)

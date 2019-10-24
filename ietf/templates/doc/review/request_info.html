@@ -68,6 +68,22 @@
         </tr>
       {% endif %}
 
+      {% if review_req.doc.authors %}
+        <tr>
+          <th></th>
+          <th>Authors</th>
+          <td>{{ review_req.doc.authors|join:", " }}</td>
+        </tr>
+      {% endif %}
+
+      {% if wg_chairs %}
+        <tr>
+          <th></th>
+          <th>WG chairs</th>
+          <td>{{ wg_chairs|join:", " }}</td>
+        </tr>
+      {% endif %}
+
       {% if doc.time %}
       <tr>
         <th></th>

@@ -56,6 +56,11 @@
                       Auto-suggested
                     {% endif %}
                   </p>
+                  <p>
+                    {% if r.doc.authors %}Authors: {{ r.doc.authors|join:", " }}{% endif %}
+                    <br>
+                    {% if r.wg_chairs %}WG chairs: {{ r.wg_chairs|join:", " }}{% endif %}
+                  </p>
 
                   {% if r.latest_reqs %}
                     {% for rlatest in r.latest_reqs %}
