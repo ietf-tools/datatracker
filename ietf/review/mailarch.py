@@ -42,13 +42,13 @@ def hash_list_message_id(list_name, msgid):
     sha.update(force_bytes(list_name))
     return base64.urlsafe_b64encode(sha.digest()).rstrip(b"=")
 
-def construct_query_urls(review_req, query=None):
-    list_name = list_name_from_email(review_req.team.list_email)
+def construct_query_urls(doc, team, query=None):
+    list_name = list_name_from_email(team.list_email)
     if not list_name:
         return None
 
     if not query:
-        query = review_req.doc.name
+        query = doc.name
 
     encoded_query = "?" + urlencode({
         "qdr": "c", # custom time frame

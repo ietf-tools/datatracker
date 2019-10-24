@@ -224,6 +224,11 @@
           {% if can_request_review %}
             <div>
               <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.request_review" doc.name %}"><span class="fa fa-check-circle-o"></span> Request review</a>
+              {% if can_submit_unsolicited_review_for_teams|length == 1 %}
+                <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.complete_review" doc.name can_submit_unsolicited_review_for_teams.0.acronym %}"><span class="fa fa-pencil-square-o"></span> Submit unsolicited review</a>
+              {% elif can_submit_unsolicited_review_for_teams %}
+                <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.submit_unsolicited_review_choose_team" doc.name %}"><span class="fa fa-pencil-square-o"></span> Submit unsolicited review</a>
+              {% endif %}    
             </div>
           {% endif %}
         </td>

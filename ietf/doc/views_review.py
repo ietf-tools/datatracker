@@ -24,7 +24,9 @@ from django.urls import reverse as urlreverse
 
 from ietf.doc.models import (Document, NewRevisionDocEvent, State, DocAlias,
                              LastCallDocEvent, ReviewRequestDocEvent, ReviewAssignmentDocEvent, DocumentAuthor)
-from ietf.name.models import ReviewRequestStateName, ReviewAssignmentStateName, ReviewResultName, DocTypeName
+from ietf.name.models import ReviewRequestStateName, ReviewAssignmentStateName, ReviewResultName, \
+    DocTypeName, ReviewTypeName
+from ietf.person.models import Person
 from ietf.review.models import ReviewRequest, ReviewAssignment
 from ietf.group.models import Group
 from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person, has_role
@@ -451,10 +453,43 @@ def mark_reviewer_assignment_no_response(request, name, assignment_id):
     })    
 
 
+class SubmitUnsolicitedReviewTeamChoiceForm(forms.Form):
+    team = forms.ModelChoiceField(queryset=Group.objects.filter(reviewteamsettings__isnull=False), widget=forms.RadioSelect, empty_label=None)
+    
+    def __init__(self, user, *args, **kwargs):
+        super(SubmitUnsolicitedReviewTeamChoiceForm, self).__init__(*args, **kwargs)
+        self.fields['team'].queryset = self.fields['team'].queryset.filter(role__person__user=user, role__name='secr')
+        
+
+def submit_unsolicited_review_choose_team(request, name):
+    """
+    If a user is submitting an unsolicited review, and is allowed to do this for more
+    than one team, they are routed through this small view to pick a team.
+    This is needed as the complete review form needs to be specific for a team.
+    """
+    if not request.user.is_authenticated:
+        # This view only produces a redirect, so it's open for any user
+        return HttpResponseForbidden("You do not have permission to perform this action")
+    doc = get_object_or_404(Document, name=name)
+    if request.method == "POST":
+        form = SubmitUnsolicitedReviewTeamChoiceForm(request.user, request.POST)
+        if form.is_valid():
+            return redirect("ietf.doc.views_review.complete_review",
+                            name=doc.name, acronym=form.cleaned_data['team'].acronym)
+    else:
+        form = SubmitUnsolicitedReviewTeamChoiceForm(user=request.user)
+    return render(request, 'doc/review/submit_unsolicited_review.html', {
+        'doc': doc,
+        'form': form,
+    })
+
 class CompleteReviewForm(forms.Form):
     state = forms.ModelChoiceField(queryset=ReviewAssignmentStateName.objects.filter(slug__in=("completed", "part-completed")).order_by("-order"), widget=forms.RadioSelect, initial="completed")
     reviewed_rev = forms.CharField(label="Reviewed revision", max_length=4)
     result = forms.ModelChoiceField(queryset=ReviewResultName.objects.filter(used=True), widget=forms.RadioSelect, empty_label=None)
+    review_type = forms.ModelChoiceField(queryset=ReviewTypeName.objects.filter(used=True), widget=forms.RadioSelect, empty_label=None)
+    reviewer = forms.ModelChoiceField(queryset=Person.objects.all(), widget=forms.Select)
+
     ACTIONS = [
         ("enter", "Enter review content (automatically posts to {mailing_list})"),
         ("upload", "Upload review content in text file (automatically posts to {mailing_list})"),
@@ -470,16 +505,15 @@ class CompleteReviewForm(forms.Form):
     cc = MultiEmailField(required=False, help_text="Email addresses to send to in addition to the review team list")
     email_ad = forms.BooleanField(label="Send extra email to the responsible AD suggesting early attention", required=False)
 
-    def __init__(self, assignment, is_reviewer, *args, **kwargs):
+    def __init__(self, assignment, doc, team, is_reviewer, *args, **kwargs):
         self.assignment = assignment
+        self.doc = doc
 
         super(CompleteReviewForm, self).__init__(*args, **kwargs)
 
-        doc = self.assignment.review_request.doc
-
         known_revisions = NewRevisionDocEvent.objects.filter(doc=doc).order_by("time", "id").values_list("rev", "time", flat=False)
 
-        revising_review = assignment.state_id not in ["assigned", "accepted"]
+        revising_review = assignment.state_id not in ["assigned", "accepted"] if assignment else False
 
         if not revising_review:
             self.fields["state"].choices = [
@@ -487,7 +521,7 @@ class CompleteReviewForm(forms.Form):
                 for slug, label in self.fields["state"].choices
             ]
 
-        if 'initial' in kwargs:
+        if 'initial' in kwargs and assignment:
             reviewed_rev_class = []
             for r in known_revisions:
                 last_version = r[0]
@@ -515,16 +549,24 @@ class CompleteReviewForm(forms.Form):
                 " ".join("<a class=\"rev label label-default {0}\" title=\"{2:%Y-%m-%d}\">{1}</a>".format('', *r)
                          for i, r in enumerate(known_revisions)))
 
-        self.fields["result"].queryset = self.fields["result"].queryset.filter(reviewteamsettings_review_results_set__group=assignment.review_request.team)
+        self.fields["result"].queryset = self.fields["result"].queryset.filter(reviewteamsettings_review_results_set__group=team)
 
         def format_submission_choice(label):
             if revising_review:
                 label = label.replace(" (automatically posts to {mailing_list})", "")
 
-            return label.format(mailing_list=assignment.review_request.team.list_email or "[error: team has no mailing list set]")
+            return label.format(mailing_list=team.list_email or "[error: team has no mailing list set]")
+
+        if assignment:
+            del self.fields["review_type"]
+            del self.fields["reviewer"]
+        else:
+            self.fields["review_type"].queryset = self.fields["review_type"].queryset.filter(
+                reviewteamsettings__group=team)
+            self.fields["reviewer"].queryset = self.fields["reviewer"].queryset.filter(role__name="reviewer", role__group=team)
 
         self.fields["review_submission"].choices = [ (k, format_submission_choice(label)) for k, label in self.fields["review_submission"].choices]
-
+        
         if revising_review:
             del self.fields["cc"]
         elif is_reviewer:
@@ -532,7 +574,7 @@ class CompleteReviewForm(forms.Form):
             del self.fields["completion_time"]
 
     def clean_reviewed_rev(self):
-        return clean_doc_revision(self.assignment.review_request.doc, self.cleaned_data.get("reviewed_rev"))
+        return clean_doc_revision(self.doc, self.cleaned_data.get("reviewed_rev"))
 
     def clean_review_content(self):
         return self.cleaned_data["review_content"].replace("\r", "")
@@ -550,7 +592,7 @@ class CompleteReviewForm(forms.Form):
         return url
 
     def clean(self):
-        if "@" in self.assignment.reviewer.person.ascii:
+        if self.assignment and "@" in self.assignment.reviewer.person.ascii:
             raise forms.ValidationError("Reviewer name must be filled in (the ASCII version is currently \"{}\" - since it contains an @ sign the name is probably still the original email address).".format(self.review_req.reviewer.person.ascii))
 
         def require_field(f):
@@ -566,35 +608,67 @@ class CompleteReviewForm(forms.Form):
             require_field("review_url")
 
 @login_required
-def complete_review(request, name, assignment_id):
+def complete_review(request, name, assignment_id=None, acronym=None):
     doc = get_object_or_404(Document, name=name)
-    assignment = get_object_or_404(ReviewAssignment, pk=assignment_id)
-
-    revising_review = assignment.state_id not in ["assigned", "accepted"]
-
-    is_reviewer = user_is_person(request.user, assignment.reviewer.person)
-    can_manage_request = can_manage_review_requests_for_team(request.user, assignment.review_request.team)
-
-    if not (is_reviewer or can_manage_request):
-        return HttpResponseForbidden("You do not have permission to perform this action")
-
-    team_acronym = assignment.review_request.team.acronym.lower()
-    request_type = assignment.review_request.type
-    mailtrigger_slug = 'review_completed_{}_{}'.format(team_acronym, request_type.slug)
-    # Description is only used if the mailtrigger does not exist yet.
-    mailtrigger_desc = 'Recipients when a {} {} review is completed'.format(team_acronym, request_type)
-    to, cc = gather_address_lists(
-        mailtrigger_slug,
-        create_from_slug_if_not_exists='review_completed',
-        desc_if_not_exists=mailtrigger_desc,
-        review_req=assignment.review_request
-    )
+    if assignment_id:
+        assignment = get_object_or_404(ReviewAssignment, pk=assignment_id)
+    
+        revising_review = assignment.state_id not in ["assigned", "accepted"]
+    
+        is_reviewer = user_is_person(request.user, assignment.reviewer.person)
+        can_manage_request = can_manage_review_requests_for_team(request.user, assignment.review_request.team)
+    
+        if not (is_reviewer or can_manage_request):
+            return HttpResponseForbidden("You do not have permission to perform this action")
+    
+        team = assignment.review_request.team
+        team_acronym = assignment.review_request.team.acronym.lower()
+        request_type = assignment.review_request.type
+        mailtrigger_slug = 'review_completed_{}_{}'.format(team_acronym, request_type.slug)
+        # Description is only used if the mailtrigger does not exist yet.
+        mailtrigger_desc = 'Recipients when a {} {} review is completed'.format(team_acronym, request_type)
+        to, cc = gather_address_lists(
+            mailtrigger_slug,
+            create_from_slug_if_not_exists='review_completed',
+            desc_if_not_exists=mailtrigger_desc,
+            review_req=assignment.review_request
+        )
+    else:
+        team = get_object_or_404(Group, acronym=acronym)
+        if not can_manage_review_requests_for_team(request.user, team):
+            return HttpResponseForbidden("You do not have permission to perform this action")
+        assignment = None
+        is_reviewer = False
+        revising_review = False
+        request_type = None
+        to, cc = [], []
 
     if request.method == "POST":
-        form = CompleteReviewForm(assignment, is_reviewer,
+        form = CompleteReviewForm(assignment, doc, team, is_reviewer,
                                   request.POST, request.FILES)
         if form.is_valid():
             review_submission = form.cleaned_data['review_submission']
+            
+            if not assignment:
+                # If this is an unsolicited review, create a new request and assignment.
+                # The assignment will be immediately closed after, sharing the usual
+                # processes for regular assigned reviews.
+                review_request = ReviewRequest.objects.create(
+                    state_id='assigned',
+                    type=form.cleaned_data['review_type'],
+                    doc=doc,
+                    team=team,
+                    deadline=datetime.date.today(),
+                    requested_by=Person.objects.get(user=request.user),
+                    requested_rev=form.cleaned_data['reviewed_rev'],
+                )
+                assignment = ReviewAssignment.objects.create(
+                    review_request=review_request,
+                    state_id='assigned',
+                    reviewer=form.cleaned_data['reviewer'].role_email('reviewer', group=team),
+                    assigned_on=datetime.datetime.now(),
+                )
+                request_type = form.cleaned_data['review_type']
 
             review = assignment.review
             if not review:
@@ -772,23 +846,24 @@ def complete_review(request, name, assignment_id):
             return redirect("ietf.doc.views_doc.document_main", name=assignment.review.name)
     else:
         initial={
-            "reviewed_rev": assignment.reviewed_rev,
-            "result": assignment.result_id,
+            "reviewed_rev": assignment.reviewed_rev if assignment else None,
+            "result": assignment.result_id if assignment else None,
             "cc": ", ".join(cc),
         }
 
         try:
             initial['review_content'] = render_to_string('/group/%s/review/content_templates/%s.txt' % (assignment.review_request.team.acronym,
                                                                                                         request_type.slug), {'assignment':assignment, 'today':datetime.date.today()}) 
-        except TemplateDoesNotExist:
+        except (TemplateDoesNotExist, AttributeError):
             pass
 
-        form = CompleteReviewForm(assignment, is_reviewer, initial=initial)
+        form = CompleteReviewForm(assignment, doc, team, is_reviewer, initial=initial)
 
-    mail_archive_query_urls = mailarch.construct_query_urls(assignment.review_request)
+    mail_archive_query_urls = mailarch.construct_query_urls(doc, team)
 
     return render(request, 'doc/review/complete_review.html', {
         'doc': doc,
+        'team': team,
         'assignment': assignment,
         'form': form,
         'mail_archive_query_urls': mail_archive_query_urls,
@@ -797,16 +872,22 @@ def complete_review(request, name, assignment_id):
         'review_cc': cc,
     })
 
-def search_mail_archive(request, name, assignment_id):
-    assignment = get_object_or_404(ReviewAssignment, pk=assignment_id)
+def search_mail_archive(request, name, acronym=None, assignment_id=None):
+    if assignment_id:
+        assignment = get_object_or_404(ReviewAssignment, pk=assignment_id)
+        team = assignment.review_request.team
+    else:
+        assignment = None
+        team = get_object_or_404(Group, acronym=acronym)
+    doc = get_object_or_404(Document, name=name)
 
-    is_reviewer = user_is_person(request.user, assignment.reviewer.person)
-    can_manage_request = can_manage_review_requests_for_team(request.user, assignment.review_request.team)
+    is_reviewer = assignment and user_is_person(request.user, assignment.reviewer.person)
+    can_manage_request = can_manage_review_requests_for_team(request.user, team)
 
     if not (is_reviewer or can_manage_request):
         return HttpResponseForbidden("You do not have permission to perform this action")
 
-    res = mailarch.construct_query_urls(assignment.review_request, query=request.GET.get("query"))
+    res = mailarch.construct_query_urls(doc, team, query=request.GET.get("query"))
     if not res:
         return JsonResponse({ "error": "Couldn't do lookup in mail archive - don't know where to look"})
 

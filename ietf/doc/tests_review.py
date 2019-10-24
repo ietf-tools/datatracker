@@ -27,7 +27,8 @@ from ietf.doc.models import DocumentAuthor, RelatedDocument, DocEvent, ReviewReq
 from ietf.group.factories import RoleFactory, ReviewTeamFactory
 from ietf.group.models import Group
 from ietf.message.models import Message
-from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAssignmentStateName
+from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAssignmentStateName, \
+    ReviewTypeName
 from ietf.person.models import Email, Person
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import (ReviewRequest, ReviewerSettings,
@@ -563,7 +564,7 @@ class ReviewTests(TestCase):
         assignment = ReviewAssignmentFactory(review_request=review_req, reviewer=rev_role.person.email_set.first(), state_id='accepted')
 
         # test URL construction
-        query_urls = ietf.review.mailarch.construct_query_urls(review_req)
+        query_urls = ietf.review.mailarch.construct_query_urls(doc, review_team)
         self.assertTrue(review_req.doc.name in query_urls["query_data_url"])
 
         # test parsing
@@ -574,12 +575,17 @@ class ReviewTests(TestCase):
             # to work, the module (and not the function) must be
             # imported in the view
             real_fn = ietf.review.mailarch.construct_query_urls
-            ietf.review.mailarch.construct_query_urls = lambda review_req, query=None: { "query_data_url": "file://" + os.path.abspath(mbox_path) }
-
+            ietf.review.mailarch.construct_query_urls = lambda doc, team, query=None: { "query_data_url": "file://" + os.path.abspath(mbox_path) }
             url = urlreverse('ietf.doc.views_review.search_mail_archive', kwargs={ "name": doc.name, "assignment_id": assignment.pk })
+            url2 = urlreverse('ietf.doc.views_review.search_mail_archive', kwargs={ "name": doc.name, "acronym": review_team.acronym })
             login_testing_unauthorized(self, "reviewsecretary", url)
 
             r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            messages = r.json()["messages"]
+            self.assertEqual(len(messages), 2)
+
+            r = self.client.get(url2)
             self.assertEqual(r.status_code, 200)
             messages = r.json()["messages"]
             self.assertEqual(len(messages), 2)
@@ -604,7 +610,7 @@ class ReviewTests(TestCase):
             no_result_path = os.path.join(self.review_dir, "mailarch_no_result.html")
             with io.open(no_result_path, "w") as f:
                 f.write('Content-Type: text/html\n\n<html><body><div class="xtr"><div class="xtd no-results">No results found</div></div>')
-            ietf.review.mailarch.construct_query_urls = lambda review_req, query=None: { "query_data_url": "file://" + os.path.abspath(no_result_path) }
+            ietf.review.mailarch.construct_query_urls = lambda doc, team, query=None: { "query_data_url": "file://" + os.path.abspath(no_result_path) }
 
             url = urlreverse('ietf.doc.views_review.search_mail_archive', kwargs={ "name": doc.name, "assignment_id": assignment.pk })
 
@@ -616,6 +622,27 @@ class ReviewTests(TestCase):
 
         finally:
             ietf.review.mailarch.construct_query_urls = real_fn
+
+    def test_submit_unsolicited_review_choose_team(self):
+        doc = WgDraftFactory(group__acronym='mars', rev='01')
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        secretary = RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com', name_id='secr')
+        
+        url = urlreverse('ietf.doc.views_review.submit_unsolicited_review_choose_team',
+                         kwargs={'name': doc.name})
+        redirect_url = urlreverse("ietf.doc.views_review.complete_review",
+                                  kwargs={'name': doc.name, 'acronym': review_team.acronym})
+        login_testing_unauthorized(self, secretary.person.user.username, url)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, review_team.name)
+
+        r = self.client.post(url, data={'team': review_team.pk})
+        self.assertRedirects(r, redirect_url)
+
+        r = self.client.post(url, data={'team': review_team.pk + 5})
+        self.assertEqual(r.status_code, 200)
 
     def setup_complete_review_test(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
@@ -872,6 +899,56 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 0)
         self.assertTrue("http://example.com" in assignment.review.external_url)
 
+    @patch('requests.get')
+    def test_complete_unsolicited_review_link_to_mailing_list_by_secretary(self, mock):
+        # Mock up the url response for the request.get() call to retrieve the mailing list url
+        response = Response()
+        response.status_code = 200
+        response._content = b"This is a review\nwith two lines"
+        mock.return_value = response
+
+        # Run the test
+        doc = WgDraftFactory(group__acronym='mars', rev='01')
+        NewRevisionDocEventFactory(doc=doc, rev='01')
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        rev_role = RoleFactory(group=review_team, person__user__username='reviewer', person__user__email='reviewer@example.com', name_id='reviewer')
+        secretary_role = RoleFactory(group=review_team, person__user__username='reviewsecretary', person__user__email='reviewsecretary@example.com', name_id='secr')
+
+        url = urlreverse('ietf.doc.views_review.complete_review',
+                         kwargs={"name": doc.name, "acronym": review_team.acronym})
+
+        login_testing_unauthorized(self, secretary_role.person.user.username, url)
+
+        empty_outbox()
+        
+        r = self.client.post(url, data={
+            "result": ReviewResultName.objects.get(slug="ready").pk,
+            "state": ReviewAssignmentStateName.objects.get(slug="completed").pk,
+            "reviewed_rev": '01',
+            "review_submission": "link",
+            "review_content": response.content.decode(),
+            "review_url": "http://example.com/testreview/",
+            "review_file": "",
+            "review_type": ReviewTypeName.objects.get(slug="early").pk,
+            "reviewer": rev_role.person.pk,
+            "completion_date": "2012-12-24",
+            "completion_time": "12:13:14",
+        })
+        self.assertEqual(r.status_code, 302)
+
+        review_req = doc.reviewrequest_set.get()
+        assignment = review_req.reviewassignment_set.get()
+        self.assertEqual(review_req.type_id, "early")
+        self.assertEqual(review_req.requested_by, secretary_role.person)
+        self.assertEqual(assignment.reviewer, rev_role.person.role_email('reviewer'))
+        self.assertEqual(assignment.state_id, "completed")
+
+        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
+            self.assertEqual(f.read(), "This is a review\nwith two lines")
+
+        self.assertEqual(len(outbox), 0)
+        self.assertTrue("http://example.com" in assignment.review.external_url)
+        
     def test_partially_complete_review(self):
         assignment, url = self.setup_complete_review_test()
 

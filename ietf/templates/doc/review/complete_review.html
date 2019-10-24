@@ -2,7 +2,7 @@
 {# Copyright The IETF Trust 2016, All Rights Reserved #}
 {% load origin bootstrap3 static %}
 
-{% block title %}{% if revising_review %}Revise{% else %}Complete{% endif %} review of {{ review_req.doc.name }}{% endblock %}
+{% block title %}{% if revising_review %}Revise{% elif assignment %}Complete{% else %}Submit unsolicited{% endif %} review of {{ review_req.doc.name }}{% endblock %}
 
 {% block pagehead %}
   <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
@@ -10,18 +10,26 @@
 
 {% block content %}
   {% origin %}
-  <h1>{% if revising_review %}Revise{% else %}Complete{% endif %} review<br>
-      <small>{{ assignment.review_request.doc.name }}</small>
+  <h1>{% if revising_review %}Revise{% elif assignment %}Complete{% else %}Submit unsolicited{% endif %} review<br>
+      <small>{{ doc.name }}</small>
   </h1>
 
-  <p>
-    <div><strong>Review type:</strong> {{ assignment.review_request.team.acronym }} - {{ assignment.review_request.type }} review </div>
-    <div><strong>Requested version for review:</strong> {{ assignment.review_request.requested_rev|default:"Current" }} </div>
-    <div><strong>Requested:</strong> {{ assignment.review_request.time|date:"Y-m-d" }} </div>
-    <div><strong>Reviewer:</strong> {{ assignment.reviewer.person.name }}</div>
-  </p>
+  {% if assignment %}
+    <p>
+      <div><strong>Review type:</strong> {{ assignment.review_request.team.acronym }} - {{ assignment.review_request.type }} review </div>
+      <div><strong>Requested version for review:</strong> {{ assignment.review_request.requested_rev|default:"Current" }} </div>
+      <div><strong>Requested:</strong> {{ assignment.review_request.time|date:"Y-m-d" }} </div>
+      <div><strong>Reviewer:</strong> {{ assignment.reviewer.person.name }}</div>
+    </p>
+  {% else %}
+    <p>
+      You are submitting an <strong>unsolicited</strong> review for this document for the {{ team }}.
+      <strong>This process should only be used for unsolicited reviews.</strong>
+      A review request and assignment will be created automatically upon submitting this review.
+    </p>
+  {% endif %}
 
-  {% if not revising_review %}
+  {% if assignment and not revising_review %}
     <p>The review findings should be made available here and the review
       posted to the mailing list. If you enter the findings below, the
       system will post the review for you. If you already have posted
@@ -30,7 +38,7 @@
       <p>If you enter the review below, the review will be sent
       to <em>{{ review_to|join:", " }}</em>
       {% if review_cc %}, with a Cc to <em>{{ review_cc|join:", " }}</em>{% endif %}.</p>
-  {% else %}
+  {% elif assignment %}
     <p>You can revise this review by entering the results below.</p>
   {% endif %}
     
@@ -40,7 +48,11 @@
     {% bootstrap_form form layout="horizontal" %}
 
     {% buttons %}
-    <a class="btn btn-default" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=assignment.review_request.pk %}">Cancel</a>
+    {% if assignment %}
+      <a class="btn btn-default" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=assignment.review_request.pk %}">Cancel</a>
+    {% else %}
+      <a class="btn btn-default" href="{{ doc.get_absolute_url }}">Cancel</a>
+    {% endif %}
     <button type="submit" class="btn btn-primary">{% if revising_review %}Revise{% else %}Complete{% endif %} review</button>
     {% endbuttons %}
 
@@ -98,7 +110,11 @@
 {% block js %}
   <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
   <script>
-   var searchMailArchiveUrl = "{% url "ietf.doc.views_review.search_mail_archive" name=assignment.review_request.doc.name assignment_id=assignment.pk %}";
+  {% if assignment %}
+    var searchMailArchiveUrl = "{% url "ietf.doc.views_review.search_mail_archive" name=doc.name assignment_id=assignment.pk %}";   
+  {% else %}
+    var searchMailArchiveUrl = "{% url "ietf.doc.views_review.search_mail_archive" name=doc.name acronym=team.acronym %}";
+  {% endif %}
   </script>
   <script src="{% static 'ietf/js/complete-review.js' %}"></script>
 {% endblock %}
