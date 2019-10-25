@@ -970,7 +970,7 @@ def send_unavaibility_period_ending_reminder(remind_date):
 
 def send_review_reminder_overdue_assignment(remind_date):
     min_overdue_days = 5
-    min_deadline = remind_date + datetime.timedelta(days=min_overdue_days)
+    min_deadline = remind_date - datetime.timedelta(days=min_overdue_days)
     teams = Group.objects.exclude(reviewteamsettings=None)
     log = []
     for team in teams:
