@@ -64,7 +64,7 @@ from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_wi
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content, build_doc_meta_block)
 from ietf.community.utils import augment_docs_with_tracking_info
-from ietf.group.models import Role
+from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_group_type, can_manage_materials, group_features_role_filter
 from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is_person,
     role_required, is_individual_draft_author)
@@ -319,6 +319,10 @@ def document_main(request, name, rev=None):
             consensus = nice_consensus(e and e.consensus)
 
         can_request_review = can_request_review_of_doc(request.user, doc)
+        can_submit_unsolicited_review_for_teams = None
+        if request.user.is_authenticated:
+            can_submit_unsolicited_review_for_teams = Group.objects.filter(
+                reviewteamsettings__isnull=False, role__person__user=request.user, role__name='secr')
 
         # mailing list search archive
         search_archive = "www.ietf.org/mail-archive/web/"
@@ -424,6 +428,7 @@ def document_main(request, name, rev=None):
                                        can_edit_replaces=can_edit_replaces,
                                        can_view_possibly_replaces=can_view_possibly_replaces,
                                        can_request_review=can_request_review,
+                                       can_submit_unsolicited_review_for_teams=can_submit_unsolicited_review_for_teams,
 
                                        rfc_number=rfc_number,
                                        draft_name=draft_name,
