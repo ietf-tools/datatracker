@@ -225,6 +225,10 @@ def review_request(request, name, request_id):
                 assignment.save()
         return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
 
+    wg_chairs = None
+    if review_req.doc.group:
+        wg_chairs = [role.person for role in review_req.doc.group.role_set.filter(name__slug='chair')]
+
     return render(request, 'doc/review/review_request.html', {
         'doc': doc,
         'review_req': review_req,
@@ -233,6 +237,7 @@ def review_request(request, name, request_id):
         'can_edit_comment': can_edit_comment,
         'can_edit_deadline': can_edit_deadline,
         'assignments': assignments,
+        'wg_chairs': wg_chairs,
     })
 
 

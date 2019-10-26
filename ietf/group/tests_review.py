@@ -185,7 +185,8 @@ class ReviewTests(TestCase):
         group = ReviewTeamFactory()
         RoleFactory(name_id='reviewer',group=group,person__user__username='reviewer').person
         marsperson = RoleFactory(name_id='reviewer',group=group,person=PersonFactory(name="Mars Anders Chairman",user__username='marschairman')).person
-        review_req1 = ReviewRequestFactory(doc__pages=2,doc__shepherd=marsperson.email(),team=group)
+        doc_author = PersonFactory()
+        review_req1 = ReviewRequestFactory(doc__pages=2,doc__shepherd=marsperson.email(),team=group, doc__authors=[doc_author])
         review_req2 = ReviewRequestFactory(team=group)
         review_req3 = ReviewRequestFactory(team=group)
         RoleFactory(name_id='chair',group=review_req1.doc.group,person=marsperson)
@@ -205,6 +206,7 @@ class ReviewTests(TestCase):
         r = self.client.get(unassigned_url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, review_req1.doc.name)
+        self.assertContains(r, doc_author.name)
 
         # Test that conflicts are detected
         r = self.client.post(unassigned_url, {

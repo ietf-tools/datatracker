@@ -1492,6 +1492,9 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
         augment_review_requests_with_events(l)
 
         req.latest_reqs = l
+        req.wg_chairs = None
+        if req.doc.group:
+            req.wg_chairs = [role.person for role in req.doc.group.role_set.filter(name__slug='chair')]
 
     saving = False
     newly_closed = newly_opened = newly_assigned = 0
