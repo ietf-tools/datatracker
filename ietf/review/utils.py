@@ -13,10 +13,12 @@ from collections import defaultdict, namedtuple
 
 from django.db.models import Q, Max, F
 from django.template.defaultfilters import pluralize
+from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.contrib.sites.models import Site
 
 import debug                            # pyflakes:ignore
+from ietf.dbtemplate.models import DBTemplate
 
 from ietf.group.models import Group, Role
 from ietf.doc.models import (Document, ReviewRequestDocEvent, ReviewAssignmentDocEvent, State,
@@ -454,21 +456,20 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
         state_id='assigned',
     )
 
-    msg = "%s has assigned you as a reviewer for this document." % request.user.person.ascii
     prev_team_reviews = ReviewAssignment.objects.filter(
         review_request__doc=review_req.doc,
         state="completed",
         review_request__team=review_req.team,
     )
-    if prev_team_reviews.exists():
-        msg = msg + '\n\nThis team has completed other reviews of this document:\n'
-        for assignment in prev_team_reviews:
-            msg += '%s %s -%s %s\n'% (
-                     assignment.completed_on.strftime('%d %b %Y'), 
-                     assignment.reviewer.person.ascii,
-                     assignment.reviewed_rev or assignment.review_request.requested_rev,
-                     assignment.result.name,
-                   )
+
+    try:
+        template = DBTemplate.objects.get(
+            path="/group/%s/email/review_assigned.txt" % review_req.team.acronym)
+    except DBTemplate.DoesNotExist:
+        template = DBTemplate.objects.get(path="/group/defaults/email/review_assigned.txt")
+
+    context = {'assigner': request.user.person, 'prev_team_reviews': prev_team_reviews}
+    msg = render_to_string(template.path, context, request=request)
 
     email_review_request_change(
         request, review_req,

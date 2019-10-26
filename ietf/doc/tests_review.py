@@ -322,7 +322,7 @@ class ReviewTests(TestCase):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',person__name='Some Reviewer',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='marschairman',person__name='WG Cháir Man',name_id='reviewer')
-        RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
+        secretary = RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
         ReviewerSettings.objects.create(team=review_team, person=rev_role.person, min_interval=14, skip_next=0)
 
         # review to assign to
@@ -421,10 +421,14 @@ class ReviewTests(TestCase):
         assignment = review_req.reviewassignment_set.first()
         self.assertEqual(assignment.reviewer, reviewer)
         self.assertEqual(assignment.state_id, "assigned")
+        self.assertEqual(NextReviewerInTeam.objects.get(team=review_req.team).next_reviewer, rotation_list[1])
+
         self.assertEqual(len(outbox), 1)
         self.assertEqual('"Some Reviewer" <reviewer@example.com>', outbox[0]["To"])
-        self.assertTrue("assigned" in outbox[0].get_payload(decode=True).decode("utf-8"))
-        self.assertEqual(NextReviewerInTeam.objects.get(team=review_req.team).next_reviewer, rotation_list[1])
+        message = outbox[0].get_payload(decode=True).decode("utf-8")
+        self.assertTrue("{} has assigned you".format(secretary.person.ascii) in message)
+        self.assertTrue("This team has completed other reviews" in message)
+        self.assertTrue("{} -01 Serious Issues".format(reviewer_email.person.ascii) in message)
 
     def test_accept_reviewer_assignment(self):
 
