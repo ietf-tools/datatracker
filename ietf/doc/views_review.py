@@ -461,15 +461,14 @@ class SubmitUnsolicitedReviewTeamChoiceForm(forms.Form):
         self.fields['team'].queryset = self.fields['team'].queryset.filter(role__person__user=user, role__name='secr')
         
 
+@login_required()
 def submit_unsolicited_review_choose_team(request, name):
     """
     If a user is submitting an unsolicited review, and is allowed to do this for more
     than one team, they are routed through this small view to pick a team.
     This is needed as the complete review form needs to be specific for a team.
+    This view only produces a redirect, so it's open for any user.
     """
-    if not request.user.is_authenticated:
-        # This view only produces a redirect, so it's open for any user
-        return HttpResponseForbidden("You do not have permission to perform this action")
     doc = get_object_or_404(Document, name=name)
     if request.method == "POST":
         form = SubmitUnsolicitedReviewTeamChoiceForm(request.user, request.POST)
