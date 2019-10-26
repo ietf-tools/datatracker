@@ -678,6 +678,10 @@ MEETING_DOC_GREFS = {
     "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
 }
 
+# Valid MIME types for cases where text is uploaded and immediately extracted,
+# e.g. a charter or a review. Must be a tuple, not a list.
+DOC_TEXT_FILE_VALID_UPLOAD_MIME_TYPES = ('text/plain', 'text/markdown', 'text/x-rst')
+
 # Override this in settings_local.py if needed
 CACHE_MIDDLEWARE_SECONDS = 300
 CACHE_MIDDLEWARE_KEY_PREFIX = ''
