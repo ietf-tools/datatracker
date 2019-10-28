@@ -1331,6 +1331,7 @@ def review_requests(request, acronym, group_type=None):
         raise Http404
 
     unassigned_review_requests = [r for r in get_open_review_requests_for_team(group) if not r.state_id=='assigned']
+    unassigned_review_requests.sort(key=lambda r: r.doc.name)
 
     open_review_assignments = list(ReviewAssignment.objects.filter(review_request__team=group, state_id__in=('assigned','accepted')).order_by('-assigned_on'))
     today = datetime.date.today()
