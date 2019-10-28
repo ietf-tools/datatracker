@@ -1482,9 +1482,9 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
             for a in r.reviewassignment_set.all():
                 if l and rev:
                     if r.doc_id == l[0].doc_id and a.reviewed_rev:
-                        if int(a.reviewed_rev) > rev:
+                        if int(a.reviewed_rev) > int(rev):
                             l = [r]
-                        elif int(a.reviewed_rev) == rev:
+                        elif int(a.reviewed_rev) == int(rev):
                             l.append(r)
                 else:
                     l = [r]
@@ -1505,7 +1505,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
         saving = form_action.startswith("save")
 
         # check for conflicts
-        review_requests_dict = { six.text_type(r.pk): r for r in review_requests }
+        review_requests_dict = { six.text_type(r.pk): r for r in review_requests if r.pk}
         posted_reqs = set(request.POST.getlist("reviewrequest", []))
         current_reqs = set(review_requests_dict.keys())
 
@@ -1530,6 +1530,8 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
                     close_review_request(request, review_req, review_req.form.cleaned_data["close"],
                                          review_req.form.cleaned_data["close_comment"])
                 elif action=="assign":
+                    if review_req.form.cleaned_data.get("review_type"):
+                        review_req.type = review_req.form.cleaned_data.get("review_type")
                     reqs_to_assign.append(review_req)
 
             assignments_by_person = dict()

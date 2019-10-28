@@ -13,7 +13,7 @@ from pyquery import PyQuery
 from django.urls import reverse as urlreverse
 
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, reload_db_objects
-from ietf.doc.models import TelechatDocEvent
+from ietf.doc.models import TelechatDocEvent, LastCallDocEvent, State
 from ietf.group.models import Role
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
@@ -26,7 +26,8 @@ from ietf.review.utils import (
     reviewer_rotation_list,
     email_unavaibility_period_ending_reminder, email_reminder_all_open_reviews,
     email_review_reminder_overdue_assignment, email_reminder_unconfirmed_assignments)
-from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAssignmentStateName
+from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAssignmentStateName, \
+    ReviewTypeName
 import ietf.group.views
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.dbtemplate.factories import DBTemplateFactory
@@ -91,6 +92,7 @@ class ReviewTests(TestCase):
         self.assertEqual(len(suggestions), 1)
         self.assertEqual(suggestions[0].doc, doc)
         self.assertEqual(suggestions[0].team, team)
+        self.assertFalse(getattr(suggestions[0], 'in_lc_and_telechat', None))
 
         # blocked by non-versioned refusal
         review_req.requested_rev = ""
@@ -119,6 +121,35 @@ class ReviewTests(TestCase):
         assignment.save()
 
         self.assertEqual(len(suggested_review_requests_for_team(team)), 1)
+
+    def test_suggested_review_requests_on_lc_and_telechat(self):
+        review_req = ReviewRequestFactory(state_id='assigned')
+        doc = review_req.doc
+        team = review_req.team
+
+        # put on telechat
+        TelechatDocEvent.objects.create(
+            type="scheduled_for_telechat",
+            by=Person.objects.get(name="(System)"),
+            doc=doc,
+            rev=doc.rev,
+            telechat_date=TelechatDate.objects.all().first().date,
+        )
+
+        # Put on last call as well
+        doc.states.add(State.objects.get(type="draft-iesg", slug="lc", used=True))
+        LastCallDocEvent.objects.create(
+            doc=doc,
+            expires=datetime.datetime.now() + datetime.timedelta(days=365),
+            by=Person.objects.get(name="(System)"),
+            rev=doc.rev
+        )
+
+        suggestions = suggested_review_requests_for_team(team)
+        self.assertEqual(len(suggestions), 1)
+        self.assertEqual(suggestions[0].doc, doc)
+        self.assertEqual(suggestions[0].team, team)
+        self.assertTrue(suggestions[0].in_lc_and_telechat)
 
     def test_reviewer_overview(self):
         team = ReviewTeamFactory()
@@ -228,7 +259,9 @@ class ReviewTests(TestCase):
             "r{}-action".format(review_req3.pk): "assign",
             "r{}-reviewer".format(review_req3.pk): another_reviewer.email_set.first().pk,
             "r{}-add_skip".format(review_req3.pk): 1,
-            
+            # Should be ignored, setting review_type only applies to suggested reviews
+            "r{}-review_type".format(review_req3.pk): ReviewTypeName.objects.get(slug='telechat').pk,
+
             "action": "save",
         })
         self.assertEqual(r.status_code, 302)
@@ -237,7 +270,67 @@ class ReviewTests(TestCase):
         settings = ReviewerSettings.objects.filter(team=review_req3.team, person=another_reviewer).first()
         self.assertEqual(settings.skip_next,1)
         self.assertEqual(review_req3.state_id, "assigned")
+        self.assertEqual(review_req3.type_id, "lc")
 
+    def test_manage_review_requests_assign_suggested_reviews(self):
+        doc = DocumentFactory()
+        team = ReviewTeamFactory()
+
+        # put on telechat
+        TelechatDocEvent.objects.create(
+            type="scheduled_for_telechat",
+            by=Person.objects.get(name="(System)"),
+            doc=doc,
+            rev=doc.rev,
+            telechat_date=TelechatDate.objects.all().first().date,
+        )
+
+        # Put on last call as well
+        doc.states.add(State.objects.get(type="draft-iesg", slug="lc", used=True))
+        LastCallDocEvent.objects.create(
+            doc=doc,
+            expires=datetime.datetime.now() + datetime.timedelta(days=365),
+            by=Person.objects.get(name="(System)"),
+            rev=doc.rev
+        )
+
+        reviewer = RoleFactory(name_id='reviewer', group=team, person__user__username='reviewer')
+        unassigned_url = urlreverse(ietf.group.views.manage_review_requests, kwargs={ 'acronym': team.acronym, 'group_type': team.type_id, "assignment_status": "unassigned" })
+
+        login_testing_unauthorized(self, "secretary", unassigned_url)
+
+        # get
+        r = self.client.get(unassigned_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, doc.name)
+
+        # Submit as lc review
+        r = self.client.post(unassigned_url, {
+            "rlc-{}-action".format(doc.name): "assign",
+            "rlc-{}-review_type".format(doc.name): ReviewTypeName.objects.get(slug='lc').pk,
+            "rlc-{}-reviewer".format(doc.name): reviewer.person.email_set.first().pk,
+
+            "action": "save",
+        })
+        self.assertEqual(r.status_code, 302)
+        review_request = doc.reviewrequest_set.get()
+        self.assertEqual(review_request.type_id, 'lc')
+        
+        # Clean up and try again as telechat
+        review_request.reviewassignment_set.all().delete()
+        review_request.delete()
+        
+        r = self.client.post(unassigned_url, {
+            "rlc-{}-action".format(doc.name): "assign",
+            "rlc-{}-review_type".format(doc.name): ReviewTypeName.objects.get(slug='telechat').pk,
+            "rlc-{}-reviewer".format(doc.name): reviewer.person.email_set.first().pk,
+
+            "action": "save",
+        })
+        self.assertEqual(r.status_code, 302)
+        review_request = doc.reviewrequest_set.get()
+        self.assertEqual(review_request.type_id, 'telechat')
+        
     def test_email_open_review_assignments(self):
         review_req1 = ReviewRequestFactory()
         review_assignment_completed = ReviewAssignmentFactory(review_request=review_req1,reviewer=EmailFactory(person__user__username='marschairman'), state_id='completed', reviewed_rev=0)

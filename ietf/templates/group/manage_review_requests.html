@@ -37,7 +37,7 @@
 
             <h3 class="panel-title">
               <span class="pull-right">
-                {{ r.type.name }}
+                {% if r.in_lc_and_telechat %}Last Call and telechat{% else %}{{ r.type.name }}{% endif %}
                 - deadline {{ r.deadline|date:"Y-m-d" }}
                 {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
               </span>
@@ -134,6 +134,10 @@
             {{ r.form.action }}
 
             <span class="reviewer-controls form-inline">
+              {% if r.form.review_type %}
+                <label for="{{ r.form.review_type.id_for_label }}">Review Type:</label>
+                {{ r.form.review_type }}
+              {% endif %}
               <label for="{{ r.form.reviewer.id_for_label }}">Assign:</label>
               {{ r.form.reviewer }} 
               {{ r.form.add_skip }} <label for="{{ r.form.add_skip.id_for_label }}">Skip next time</label>
