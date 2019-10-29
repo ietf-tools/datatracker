@@ -587,6 +587,10 @@
       <a class="btn btn-default btn-xs track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}" href="{% url "ietf.community.views.untrack_document" username=user.username name=doc.name %}" title="Remove from your personal ID list"><span class="fa fa-bookmark"></span> Untrack</a>
       <a class="btn btn-default btn-xs track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}" href="{% url "ietf.community.views.track_document" username=user.username name=doc.name %}" title="Add to your personal ID list"><span class="fa fa-bookmark-o"></span> Track</a>
     {% endif %}
+    {% if user.review_teams %}
+      <a class="btn btn-default btn-xs review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}hide{% endif %}" href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}" title="Remove from your review wishes for all teams"><span class="fa fa-comments"></span> Remove review wishes</a>
+      <a class="btn btn-default btn-xs review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %}{% if doc.has_review_wish %}hide{% endif %}" href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}" title="Add to your review wishes"><span class="fa fa-comments-o"></span> Add review wish</a>
+    {% endif %}
 
     {% if can_edit and iesg_state.slug != 'idexists' %}
       <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_ballot.lastcalltext' name=doc.name %}">Last call text</a>

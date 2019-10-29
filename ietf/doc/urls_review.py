@@ -20,4 +20,6 @@ urlpatterns = [
     url(r'^team/%(acronym)s/searchmailarchive/$' % settings.URL_REGEXPS, views_review.search_mail_archive),
     url(r'^(?P<request_id>[0-9]+)/editcomment/$', views_review.edit_comment),
     url(r'^(?P<request_id>[0-9]+)/editdeadline/$', views_review.edit_deadline),
+    url(r'^addreviewwish/$' % settings.URL_REGEXPS, views_review.review_wish_add),
+    url(r'^removereviewwishes/$' % settings.URL_REGEXPS, views_review.review_wishes_remove),
 ]

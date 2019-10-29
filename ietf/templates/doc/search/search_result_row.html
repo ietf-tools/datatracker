@@ -21,6 +21,16 @@
       </a>
       <br>
     {% endif %}
+    {% if user.review_teams %}
+      <a class="review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}hide{% endif %}" href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}" title="Remove from your review wishes for all teams">
+        <span class="fa fa-comments"></span>
+      </a>
+      <a class="review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %}{% if doc.has_review_wish %}hide{% endif %}" href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}" title="Add to your review wishes">
+        <span class="fa fa-comments-o"></span>
+      </a>
+      <br>
+    {% endif %}
+
     {% for session in doc.sessions %}
       <a href="{% url 'ietf.meeting.views.ical_agenda' num=session.meeting.number session_id=session.id %}"
 	title="Calendar entry: document is on the agenda for {{ session.group.acronym }}@{{ session.meeting }}">

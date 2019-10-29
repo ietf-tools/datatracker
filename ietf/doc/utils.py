@@ -23,14 +23,18 @@ from django.utils.html import escape
 from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
+from ietf.community.models import CommunityList
+from ietf.community.utils import docs_tracked_by_community_list
 
 from ietf.doc.models import Document, DocHistory, State, DocumentAuthor, DocHistoryAuthor
 from ietf.doc.models import DocAlias, RelatedDocument, RelatedDocHistory, BallotType, DocReminder
 from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import TelechatDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
-from ietf.group.models import Role
+from ietf.group.models import Role, Group
 from ietf.ietfauth.utils import has_role
+from ietf.person.models import Person
+from ietf.review.models import ReviewWish
 from ietf.utils import draft, text
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
@@ -903,3 +907,31 @@ def build_doc_meta_block(doc, path):
     #
     return block
 
+
+def augment_docs_and_user_with_user_info(docs, user):
+    """Add attribute to each document with whether the document is tracked
+    or has a review wish by the user or not, and the review teams the user is on."""
+
+    tracked = set()
+    review_wished = set()
+    
+    if user and user.is_authenticated:
+        user.review_teams = Group.objects.filter(
+                reviewteamsettings__isnull=False, role__person__user=user, role__name='reviewer')
+
+        doc_pks = [d.pk for d in docs]
+        clist = CommunityList.objects.filter(user=user).first()
+        if clist:
+            tracked.update(
+                docs_tracked_by_community_list(clist).filter(pk__in=doc_pks).values_list("pk", flat=True))
+
+        try:
+            wishes = ReviewWish.objects.filter(person=Person.objects.get(user=user))
+            wishes = wishes.filter(doc__pk__in=doc_pks).values_list("doc__pk", flat=True)
+            review_wished.update(wishes)
+        except Person.DoesNotExist:
+            pass
+
+    for d in docs:
+        d.tracked_in_personal_community_list = d.pk in tracked
+        d.has_review_wish = d.pk in review_wished

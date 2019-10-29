@@ -5,14 +5,17 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import io
+import json
 import os
 import datetime
 import requests
 import email.utils
 
+from django.utils.http import is_safe_url
+
 import debug    # pyflakes:ignore
 
-from django.http import HttpResponseForbidden, JsonResponse
+from django.http import HttpResponseForbidden, JsonResponse, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django import forms
 from django.conf import settings
@@ -27,7 +30,7 @@ from ietf.doc.models import (Document, NewRevisionDocEvent, State, DocAlias,
 from ietf.name.models import ReviewRequestStateName, ReviewAssignmentStateName, ReviewResultName, \
     DocTypeName, ReviewTypeName
 from ietf.person.models import Person
-from ietf.review.models import ReviewRequest, ReviewAssignment
+from ietf.review.models import ReviewRequest, ReviewAssignment, ReviewWish
 from ietf.group.models import Group
 from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person, has_role
 from ietf.message.models import Message
@@ -967,3 +970,64 @@ def edit_deadline(request, name, request_id):
         'review_req': review_req,
         'form' : form,
     })
+
+
+class ReviewWishAddForm(forms.Form):
+    team = forms.ModelChoiceField(queryset=Group.objects.filter(reviewteamsettings__isnull=False),
+                                  widget=forms.RadioSelect, empty_label=None, required=True)
+
+    def __init__(self, user, doc, *args, **kwargs):
+        super(ReviewWishAddForm, self).__init__(*args, **kwargs)
+        self.person = get_object_or_404(Person, user=user)
+        self.doc = doc
+        self.fields['team'].queryset = self.fields['team'].queryset.filter(role__person=self.person,
+                                                                           role__name='reviewer')
+        if len(self.fields['team'].queryset) == 1:
+            self.team = self.fields['team'].queryset.get()
+            del self.fields['team']
+            
+    def save(self):
+        team = self.team if hasattr(self, 'team') else self.cleaned_data['team']
+        ReviewWish.objects.get_or_create(person=self.person, team=team, doc=self.doc)
+
+@login_required
+def review_wish_add(request, name):
+    doc = get_object_or_404(Document, docalias__name=name)
+
+    if request.method == "POST":
+        form = ReviewWishAddForm(request.user, doc, request.POST)
+        if form.is_valid():
+            form.save()
+            return _generate_ajax_or_redirect_response(request, doc)
+    else:
+        form = ReviewWishAddForm(request.user, doc)
+        
+    return render(request, "doc/review/review_wish_add.html", {
+        "doc": doc,
+        "form": form,
+    })
+
+@login_required
+def review_wishes_remove(request, name):
+    doc = get_object_or_404(Document, docalias__name=name)
+    person = get_object_or_404(Person, user=request.user)
+
+    if request.method == "POST":
+        ReviewWish.objects.filter(person=person, doc=doc).delete()
+        return _generate_ajax_or_redirect_response(request, doc)
+
+    return render(request, "doc/review/review_wishes_remove.html", {
+        "name": doc.name,
+    })
+
+
+def _generate_ajax_or_redirect_response(request, doc):
+    redirect_url = request.GET.get('next')
+    url_is_safe = is_safe_url(url=redirect_url, allowed_hosts=request.get_host(),
+                              require_https=request.is_secure())
+    if request.is_ajax():
+        return HttpResponse(json.dumps({'success': True}), content_type='application/json')
+    elif url_is_safe:
+        return HttpResponseRedirect(redirect_url)
+    else:
+        return HttpResponseRedirect(doc.get_absolute_url())
