@@ -425,7 +425,7 @@ def docs_for_ad(request, name):
                                                 Q(states__type__in=("statchg", "conflrev"),
                                                   states__slug__in=("iesgeval", "defer")),
                                                 docevent__ballotpositiondocevent__pos__blocking=True,
-                                                docevent__ballotpositiondocevent__ad=ad)
+                                                docevent__ballotpositiondocevent__ad=ad).distinct()
         for doc in possible_docs:
             ballot = doc.active_ballot()
             if not ballot:
