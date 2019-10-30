@@ -565,13 +565,24 @@ class ReviewTests(TestCase):
 
     def test_send_review_reminder_overdue_assignment(self):
         today = datetime.date.today()
+
+        # An assignment that's exactly on the date at which the grace period expires
         review_req = ReviewRequestFactory(state_id='assigned', deadline=today - datetime.timedelta(5))
         reviewer = RoleFactory(name_id='reviewer', group=review_req.team,person__user__username='reviewer').person
         ReviewAssignmentFactory(review_request=review_req, state_id='assigned', assigned_on=review_req.time, reviewer=reviewer.email_set.first())
         secretary = RoleFactory(name_id='secr', group=review_req.team, person__user__username='reviewsecretary')
 
+        # A assignment that is not yet overdue
+        not_overdue = today + datetime.timedelta(days=1)
+        ReviewAssignmentFactory(review_request__team=review_req.team, review_request__state_id='assigned', review_request__deadline=not_overdue, state_id='assigned', assigned_on=not_overdue, reviewer=reviewer.email_set.first())
+
+        # An assignment that is overdue but is not past the grace period
+        in_grace_period = today - datetime.timedelta(days=1)
+        ReviewAssignmentFactory(review_request__team=review_req.team, review_request__state_id='assigned', review_request__deadline=in_grace_period, state_id='assigned', assigned_on=in_grace_period, reviewer=reviewer.email_set.first())
+
         empty_outbox()
         log = send_review_reminder_overdue_assignment(today)
+        self.assertEqual(len(log), 1)
 
         self.assertEqual(len(outbox), 1)
         self.assertTrue(secretary.person.email_address() in outbox[0]["To"])
