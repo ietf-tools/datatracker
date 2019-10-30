@@ -1,3 +1,61 @@
+ietfdb (6.109.0) ietf; urgency=medium
+
+  **Review tool tickets roundup, part 5; and other fixes**
+
+  * Merged in [16926] from rjsparks@nostrum.com:
+    Flipped a sense to put the grace period on the right side of 'today' when
+    sending review overdue reminders to team secretaries. Fixes #2816.
+
+  * Merged in [16937] from rjsparks@nostrum.com:
+    Only show a blocked document once in the set of blocked documents on an 
+    ADs document page. Fixes #2818.
+
+  * Added mising GET parameters to the fragment cache in the agenda.ics 
+    template.  Fixes issue #2817.
+
+  * Merged in [16924] from sasha@dashcare.nl:
+    Allow submission of unsolicited reviews by secretaries.
+
+    - For team secretaries, a button 'Submit unsolicited review' will now
+      appear next to 'Request review' on the document's main page.
+
+    - If the secretary is a secretary for multiple teams, they are taken
+      through an intermediate page to select for which team they are
+      submitting their review.
+
+    - The form is similar (and using the same code) as the usual review
+      completion, with a few extra fields for the review type and reviewer,
+      which would usually already be known.
+
+    - When submitting the review, a ReviewRequest and ReviewAssignment are
+      automatically created. The assignment is then immediately closed in the
+      usual way.  Other workflows are unchanged.
+
+    The issues with the review form in #2061 are slightly worse for the
+    unsolicited review scenario, but that will be improved when #2061 is
+    fixed.  Fixes issue #2217.
+
+  * Merged in [16923] from sasha@dashcare.nl:
+    Show doc authors and WG chairs in unassigned reviews views.  
+    Fixes issue #2087.
+
+  * Merged in [16922] from sasha@dashcare.nl:
+    Added additional content validation for uploaded texts.  Permitted MIME
+    types are now text/plain, text/markdown and text/x-rst.  This applies to
+    all usages of get_cleaned_text_file_content(), including reviews, but also
+    other similar places where text can either be written either into a
+    textarea or uploaded.  Fixes issue #2584.
+
+  * Merged in [16921] from sasha@dashcare.nl:
+    Use a DBTemplate when a review assignment is mailed.  The message sent to
+    a reviewer when a new review is assigned to them, is now taken from a
+    DBTemplate, allowing it to be customised per team. This includes a
+    migration to create a default template, which looks the same as before.
+    Fixes issue #2123.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Oct 2019 13:34:17 +0000
+
+
 ietfdb (6.108.0) ietf; urgency=medium
 
   **Review tool tickets roundup, part 4; and other fixes**
