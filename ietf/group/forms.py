@@ -19,7 +19,8 @@ from ietf.group.models import Group, GroupHistory, GroupStateName
 from ietf.person.fields import SearchableEmailsField, PersonEmailChoiceField
 from ietf.person.models import Person
 from ietf.review.models import ReviewerSettings, UnavailablePeriod, ReviewSecretarySettings
-from ietf.review.utils import close_review_request_states, setup_reviewer_field
+from ietf.review.policies import policy_for_team
+from ietf.review.utils import close_review_request_states
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.text import strip_suffix
 #from ietf.utils.ordereddict import insert_after_in_ordered_dict
@@ -254,7 +255,7 @@ class ManageReviewRequestForm(forms.Form):
 
         self.fields["close"].widget.attrs["class"] = "form-control input-sm"
 
-        setup_reviewer_field(self.fields["reviewer"], review_req)
+        policy_for_team(review_req.team).setup_reviewer_field(self.fields["reviewer"], review_req)
         self.fields["reviewer"].widget.attrs["class"] = "form-control input-sm"
 
         if self.is_bound:

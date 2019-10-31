@@ -92,6 +92,7 @@ from ietf.meeting.utils import group_sessions
 from ietf.name.models import GroupTypeName, StreamName
 from ietf.person.models import Email
 from ietf.review.models import ReviewRequest, ReviewAssignment, ReviewerSettings, ReviewSecretarySettings
+from ietf.review.policies import policy_for_team
 from ietf.review.utils import (can_manage_review_requests_for_team,
                                can_access_review_stats_for_team,
 
@@ -103,7 +104,6 @@ from ietf.review.utils import (can_manage_review_requests_for_team,
                                unavailable_periods_to_list,
                                current_unavailable_periods_for_reviewers,
                                email_reviewer_availability_change,
-                               reviewer_rotation_list,
                                latest_review_assignments_for_reviewers,
                                augment_review_requests_with_events,
                                get_default_filter_re,
@@ -1391,7 +1391,7 @@ def reviewer_overview(request, acronym, group_type=None):
 
     can_manage = can_manage_review_requests_for_team(request.user, group)
 
-    reviewers = reviewer_rotation_list(group)
+    reviewers = policy_for_team(group).reviewer_rotation_list(group)
 
     reviewer_settings = { s.person_id: s for s in ReviewerSettings.objects.filter(team=group) }
     unavailable_periods = defaultdict(list)
@@ -1541,13 +1541,14 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
             # Make sure the any assignments to the person at the head
             # of the rotation queue are processed first so that the queue
             # rotates before any more assignments are processed
-            head_of_rotation = reviewer_rotation_list(group)[0]
+            reviewer_policy = policy_for_team(group)
+            head_of_rotation = reviewer_policy.reviewer_rotation_list(group)[0]
             while head_of_rotation in assignments_by_person:
                 for review_req in assignments_by_person[head_of_rotation]:
                     assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"],review_req.form.cleaned_data["add_skip"])
                     reqs_to_assign.remove(review_req)
                 del assignments_by_person[head_of_rotation]
-                head_of_rotation = reviewer_rotation_list(group)[0]
+                head_of_rotation = reviewer_policy.reviewer_rotation_list(group)[0]
 
             for review_req in reqs_to_assign:
                 assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"],review_req.form.cleaned_data["add_skip"])
@@ -1660,7 +1661,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
 
         partial_msg = render_to_string(template.path, {
             "review_assignments": review_assignments,
-            "rotation_list": reviewer_rotation_list(group)[:10],
+            "rotation_list": policy_for_team(group).reviewer_rotation_list(group)[:10],
             "group" : group,
         })
         

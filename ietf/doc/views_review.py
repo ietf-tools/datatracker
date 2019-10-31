@@ -33,11 +33,12 @@ from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person, has
 from ietf.message.models import Message
 from ietf.message.utils import infer_message
 from ietf.person.fields import PersonEmailChoiceField, SearchablePersonField
+from ietf.review.policies import policy_for_team
 from ietf.review.utils import (active_review_teams, assign_review_request_to_reviewer,
                                can_request_review_of_doc, can_manage_review_requests_for_team,
                                email_review_assignment_change, email_review_request_change,
                                close_review_request_states,
-                               close_review_request, setup_reviewer_field)
+                               close_review_request)
 from ietf.review import mailarch
 from ietf.utils.fields import DatepickerDateField
 from ietf.utils.text import strip_prefix, xslugify
@@ -293,7 +294,7 @@ class AssignReviewerForm(forms.Form):
 
     def __init__(self, review_req, *args, **kwargs):
         super(AssignReviewerForm, self).__init__(*args, **kwargs)
-        setup_reviewer_field(self.fields["reviewer"], review_req)
+        policy_for_team(review_req.team).setup_reviewer_field(self.fields["reviewer"], review_req)
 
 
 @login_required
