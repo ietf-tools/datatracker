@@ -608,7 +608,6 @@ def suggested_review_requests_for_team(team):
                 requested_by=system_person,
                 state=requested_state,
             )
-
             seen_deadlines[doc.pk] = deadline
 
 
@@ -642,16 +641,20 @@ def suggested_review_requests_for_team(team):
 
             if not deadline or deadline > seen_deadlines.get(doc_pk, datetime.date.max):
                 continue
-
-            requests[doc_pk] = ReviewRequest(
-                time=event_time,
-                type=telechat_type,
-                doc_id=doc_pk,
-                team=team,
-                deadline=deadline,
-                requested_by=system_person,
-                state=requested_state,
-            )
+                
+            if doc_pk in requests:
+                # Document was already added in last call, i.e. it is both in last call and telechat
+                requests[doc_pk].in_lc_and_telechat = True
+            else:
+                requests[doc_pk] = ReviewRequest(
+                    time=event_time,
+                    type=telechat_type,
+                    doc_id=doc_pk,
+                    team=team,
+                    deadline=deadline,
+                    requested_by=system_person,
+                    state=requested_state,
+                )
 
             seen_deadlines[doc_pk] = deadline
 

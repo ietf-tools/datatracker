@@ -16,6 +16,7 @@ from django.utils.html import mark_safe # type:ignore
 
 # IETF imports
 from ietf.group.models import Group, GroupHistory, GroupStateName
+from ietf.name.models import ReviewTypeName
 from ietf.person.fields import SearchableEmailsField, PersonEmailChoiceField
 from ietf.person.models import Person
 from ietf.review.models import ReviewerSettings, UnavailablePeriod, ReviewSecretarySettings
@@ -229,6 +230,7 @@ class ManageReviewRequestForm(forms.Form):
     close = forms.ModelChoiceField(queryset=close_review_request_states(), required=False)
     close_comment = forms.CharField(max_length=255, required=False)
     reviewer = PersonEmailChoiceField(empty_label="(None)", required=False, label_with="person")
+    review_type = forms.ModelChoiceField(queryset=ReviewTypeName.objects.filter(slug__in=['telechat', 'lc']), required=True)
     add_skip = forms.BooleanField(required=False)
 
     def __init__(self, review_req, *args, **kwargs):
@@ -256,6 +258,9 @@ class ManageReviewRequestForm(forms.Form):
 
         setup_reviewer_field(self.fields["reviewer"], review_req)
         self.fields["reviewer"].widget.attrs["class"] = "form-control input-sm"
+
+        if not getattr(review_req, 'in_lc_and_telechat', False):
+            del self.fields["review_type"]
 
         if self.is_bound:
             if self.data.get("action") == "close":
