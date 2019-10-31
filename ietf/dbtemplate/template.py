@@ -11,7 +11,7 @@ from docutils.utils import SystemMessage
 import debug                            # pyflakes:ignore
 
 from django.template.loaders.base import Loader as BaseLoader
-from django.template.base import Template as DjangoTemplate, TemplateEncodingError # type: ignore (FIXME: remove when Django 2)
+from django.template.base import Template as DjangoTemplate, TemplateEncodingError  # type: ignore
 from django.template.exceptions import TemplateDoesNotExist
 from django.utils.encoding import smart_text
 
