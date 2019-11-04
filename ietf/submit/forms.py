@@ -224,7 +224,8 @@ class SubmissionBaseUploadForm(forms.Form):
                 file_name['xml'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (self.filename, self.revision, ext))
                 try:
                     if xml_version == '3':
-                        prep = xml2rfc.PrepToolWriter(self.xmltree, quiet=True)
+                        prep = xml2rfc.PrepToolWriter(self.xmltree, quiet=True, liberal=True)
+                        prep.options.accept_prepped = True                        
                         self.xmltree.tree = prep.prep()
                         if self.xmltree.tree == None:
                             raise forms.ValidationError("Error from xml2rfc (prep): %s" % prep.errors)
@@ -241,6 +242,7 @@ class SubmissionBaseUploadForm(forms.Form):
                             pagedwriter.write(file_name['txt'])
                         else:
                             writer = xml2rfc.TextWriter(self.xmltree, quiet=True)
+                            writer.options.accept_prepped = True
                             writer.write(file_name['txt'])
                         log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
                                 (   os.path.dirname(file_name['xml']),
