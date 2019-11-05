@@ -194,3 +194,5 @@ def texescape(s):
 def unwrap(s):
     return s.replace('\n', ' ')
     
+def normalize_text(s):
+    return s.replace(r'\s+', ' ').strip()

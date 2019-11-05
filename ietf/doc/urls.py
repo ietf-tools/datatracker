@@ -74,6 +74,7 @@ urlpatterns = [
 
     url(r'^%(name)s(?:/%(rev)s)?/$' % settings.URL_REGEXPS, views_doc.document_main),
     url(r'^%(name)s(?:/%(rev)s)?/bibtex/$' % settings.URL_REGEXPS, views_doc.document_bibtex),
+    url(r'^bibxml3/%(name)s(?:-%(rev)s)?.xml$' % settings.URL_REGEXPS, views_doc.document_bibxml),
     url(r'^%(name)s/history/$' % settings.URL_REGEXPS, views_doc.document_history),
     url(r'^%(name)s/writeup/$' % settings.URL_REGEXPS, views_doc.document_writeup),
     url(r'^%(name)s/email/$' % settings.URL_REGEXPS, views_doc.document_email),

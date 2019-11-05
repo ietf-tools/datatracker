@@ -30,6 +30,7 @@ class BaseDocumentFactory(factory.DjangoModelFactory):
         model = Document
 
     title = factory.Faker('sentence',nb_words=5)
+    abstract = factory.Faker('paragraph', nb_sentences=5)
     rev = '00'
     std_level_id = None                 # type: Optional[str]
     intended_std_level_id = None

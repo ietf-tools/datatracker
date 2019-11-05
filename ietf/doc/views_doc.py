@@ -824,7 +824,37 @@ def document_bibtex(request, name, rev=None):
                                    latest_revision=latest_revision,
                                    doi=doi,
                                ),
-                              content_type="text/plain; charset=utf-8",
+                              content_type="application/xml; charset=utf-8",
+                          )
+
+
+def document_bibxml(request, name, rev=None):
+    # This only deals with drafts, as bibxml entries for RFCs should come from
+    # the RFC-Editor.
+    doc = get_object_or_404(Document, docalias__name=name, name__startswith='draft-', type_id='draft')
+
+    latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
+    latest_rev = latest_revision.rev if latest_revision else None
+        
+    if rev != None and rev != doc.rev:
+        # find the entry in the history
+        for h in doc.history_set.order_by("-time"):
+            if rev == h.rev:
+                doc = h
+                break
+
+    try:
+        doc_event = NewRevisionDocEvent.objects.get(doc__name=doc.name, rev=(rev or latest_rev))
+        doc.date = doc_event.time.date()
+    except DocEvent.DoesNotExist:
+        doc.date = doc.time.date()      # Even if this may be incoreect, what would be better?
+
+    return render(request, "doc/bibxml.xml",
+                              dict(
+                                  doc=doc,
+                                  doc_bibtype='I-D',
+                               ),
+                              content_type="application/xml; charset=utf-8",
                           )
 
 

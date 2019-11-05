@@ -8,6 +8,7 @@ import os
 import shutil
 import datetime
 import io
+import lxml
 import sys
 import bibtexparser
 
@@ -46,6 +47,7 @@ from ietf.person.factories import PersonFactory
 from ietf.utils.mail import outbox
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
+from ietf.utils.text import normalize_text
 
 class SearchTests(TestCase):
     def test_search(self):
@@ -971,6 +973,22 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['day'],      str(draft.pub_date().day))
         #
         self.assertNotIn('doi', entry)
+
+    def test_document_bibxml(self):
+
+        draft = IndividualDraftFactory.create()
+        docname = '%s-%s' % (draft.name, draft.rev)
+        url = urlreverse('ietf.doc.views_doc.document_bibxml', kwargs=dict(name=draft.name))
+        r = self.client.get(url)
+        entry = lxml.etree.fromstring(r.content)
+        self.assertEqual(entry.find('./front/title').text, draft.title)
+        date = entry.find('./front/date')
+        self.assertEqual(date.get('year'),     str(draft.pub_date().year))
+        self.assertEqual(date.get('month'),    draft.pub_date().strftime('%B'))
+        self.assertEqual(date.get('day'),      str(draft.pub_date().day))
+        self.assertEqual(normalize_text(entry.find('./front/abstract/t').text), normalize_text(draft.abstract))
+        self.assertEqual(entry.find('./seriesInfo').get('value'), docname)
+        self.assertEqual(entry.find('./seriesInfo[@name="DOI"]'), None)
 
 class AddCommentTestCase(TestCase):
     def test_add_comment(self):
