@@ -291,11 +291,11 @@ def submission_status(request, submission_id, access_token=None):
                     prev_authors = [] if not doc else [ author.person for author in doc.documentauthor_set.all() ]
                     curr_authors = [ get_person_from_name_email(author["name"], author.get("email")) for author in submission.authors ]
 
-                    if request.user.is_authenticated and request.user.person in (prev_authors if submission.rev != '00' else curr_authors): # type: ignore (FIXME: revisit: "User" has no attribute "person" )
+                    if request.user.is_authenticated and request.user.person in (prev_authors if submission.rev != '00' else curr_authors): # type: ignore
                         # go directly to posting submission
-                        docevent_from_submission(request, submission, desc="Uploaded new revision", who=request.user.person) # type: ignore (FIXME: revisit: "User" has no attribute "person" )
+                        docevent_from_submission(request, submission, desc="Uploaded new revision", who=request.user.person) # type: ignore
 
-                        desc = "New version accepted (logged-in submitter: %s)" % request.user.person # type: ignore (FIXME: revisit: "User" has no attribute "person")
+                        desc = "New version accepted (logged-in submitter: %s)" % request.user.person # type: ignore
                         post_submission(request, submission, desc)
                         create_submission_event(request, submission, desc)
                     else:

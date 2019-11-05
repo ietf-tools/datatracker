@@ -8,4 +8,4 @@ from ietf.ipr.models import IprDisclosureBase
 
 queryset = IprDisclosureBase.objects.filter(state__in=('posted','removed'))
 archive = {'queryset':queryset, 'date_field': 'time', 'allow_empty':True }
-IPRMap = GenericSitemap(archive)        # type: ignore (FIXME: remove when Django 2)
+IPRMap = GenericSitemap(archive)        # type: ignore

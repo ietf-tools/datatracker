@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
 # Copyright The IETF Trust 2007, 2009, All Rights Reserved
 
-from django.contrib.auth.views import logout # type: ignore (FIXME: remove when Django 2)
+from django.contrib.auth.views import logout # type: ignore
 
 from ietf.ietfauth import views
 from ietf.utils.urls import url

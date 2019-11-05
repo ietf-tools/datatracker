@@ -2,7 +2,7 @@
 #import logging
 
 from django.db import connection
-from django.utils.log import getLogger  # type: ignore (FIXME: remove when Django 2)
+from django.utils.log import getLogger  # type: ignore
 
 
 logger = getLogger(__name__)
