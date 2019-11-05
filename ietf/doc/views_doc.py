@@ -842,6 +842,8 @@ def document_bibxml(request, name, rev=None):
             if rev == h.rev:
                 doc = h
                 break
+    if rev and rev != doc.rev:
+        raise Http404("Revision not found")
 
     try:
         doc_event = NewRevisionDocEvent.objects.get(doc__name=doc.name, rev=(rev or latest_rev))
