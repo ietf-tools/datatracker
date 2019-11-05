@@ -1,3 +1,46 @@
+ietfdb (6.110.0) ietf; urgency=medium
+
+  **Trial bibxml3/ pages for drafts, and review ticket fixes**
+
+  * Added a trial version of datatracker draft bibxml pages, located under
+    /doc/bibxml3/; for example:
+    https://datatracker.ietf.org/doc/bibxml3/draft-iab-fiftyyears-01.xml
+
+  * Added a management command to generate draft bibxml3 files.
+
+  * Fixed some type: ignore annotations
+
+  * Tweaked the submission tool to be more liberal with v3 xml submissions.
+
+  * Rewrote the ietf/bin/fix-ambiguous-timestamps command as a management 
+    command (fix_ambiguous_timestamps) and made it look at all instances of 
+    DateTimeField by means of model introspection.
+
+  * Merged in [16934] from sasha@dashcare.nl:
+    Sort unassigned review requests by doc name by default.  
+    Fixes issue #2088.
+
+  * Merged in [16933] from sasha@dashcare.nl:
+    Allow specifying review type for suggested reviews in LC and telechat.  If
+    a review is suggested on the 'manage unassigned reviews' page, and the
+    document is in both last call and telechat, the assign form now asks for
+    the type of review that should be assigned.  This commit also fixes two
+    bugs in this process:
+
+    - Comparisons in some cases between strings and integers
+      (group/views.py:1485/1487)
+
+    - Rejections when assigning suggested reviews, as they could be considered
+      a newly opened request due to not having a pk (group/views.py:1508)
+
+    Fixes issue #2119 
+
+  * Merged in [16927] from sasha@dashcare.nl:
+    Small cleanup from changeset [16924], see issue #2217.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Nov 2019 23:29:35 +0000
+
+
 ietfdb (6.109.0) ietf; urgency=medium
 
   **Review tool tickets roundup, part 5; and other fixes**
