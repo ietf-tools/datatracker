@@ -656,7 +656,7 @@ class BulkAssignmentTests(TestCase):
         docs = [DocumentFactory.create(type_id='draft',group=None) for i in range(4)]
         requests = [ReviewRequestFactory(team=group,doc=docs[i]) for i in range(4)]
         policy = policy_for_team(group)
-        rot_list = policy.reviewer_rotation_list(group)
+        rot_list = policy.default_reviewer_rotation_list()
 
         expected_ending_head_of_rotation = rot_list[3]
     
@@ -677,6 +677,6 @@ class BulkAssignmentTests(TestCase):
         self.client.login(username=secretary.person.user.username,password=secretary.person.user.username+'+password')
         r = self.client.post(unassigned_url, postdict)
         self.assertEqual(r.status_code,302)
-        self.assertEqual(expected_ending_head_of_rotation, policy.reviewer_rotation_list(group)[0])
+        self.assertEqual(expected_ending_head_of_rotation, policy.default_reviewer_rotation_list()[0])
         self.assertMailboxContains(outbox, subject='Last Call assignment', text='Requested by', count=4)
         

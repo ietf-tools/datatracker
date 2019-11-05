@@ -325,7 +325,7 @@ class ReviewTests(TestCase):
 
         # assign
         empty_outbox()
-        rotation_list = policy_for_team(review_req.team).reviewer_rotation_list(review_req.team)
+        rotation_list = policy_for_team(review_req.team).default_reviewer_rotation_list()
         reviewer = Email.objects.filter(role__name="reviewer", role__group=review_req.team, person=rotation_list[0]).first()
         r = self.client.post(assign_url, { "action": "assign", "reviewer": reviewer.pk })
         self.assertEqual(r.status_code, 302)
