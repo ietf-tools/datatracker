@@ -22,7 +22,7 @@ from pyquery import PyQuery
 import debug                            # pyflakes:ignore
 
 import ietf.review.mailarch
-from ietf.doc.factories import NewRevisionDocEventFactory, WgDraftFactory, WgRfcFactory, ReviewFactory
+from ietf.doc.factories import NewRevisionDocEventFactory, IndividualDraftFactory, WgDraftFactory, WgRfcFactory, ReviewFactory
 from ietf.doc.models import DocumentAuthor, RelatedDocument, DocEvent, ReviewRequestDocEvent, ReviewAssignmentDocEvent
 from ietf.group.factories import RoleFactory, ReviewTeamFactory
 from ietf.group.models import Group
@@ -432,6 +432,29 @@ class ReviewTests(TestCase):
         self.assertIn("{} has assigned you".format(secretary.person.ascii), message)
         self.assertIn("This team has completed other reviews", message)
         self.assertIn("{} -01 Serious Issues".format(reviewer_email.person.ascii), message)
+
+    def test_previously_reviewed_replaced_doc(self):
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',person__name='Some Reviewer',name_id='reviewer')
+        RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
+
+        ind_doc = IndividualDraftFactory()
+        old_wg_doc = WgDraftFactory(relations=[('replaces',ind_doc)])
+        middle_wg_doc = WgDraftFactory(relations=[('replaces',old_wg_doc)])
+        new_wg_doc = WgDraftFactory(relations=[('replaces',middle_wg_doc)])
+
+        ReviewAssignmentFactory(review_request__team=review_team, review_request__doc=old_wg_doc, reviewer=rev_role.email, state_id='completed')
+
+        review_req=ReviewRequestFactory(team=review_team, doc=new_wg_doc)
+
+        assign_url = urlreverse('ietf.doc.views_review.assign_reviewer', kwargs={ "name": new_wg_doc.name, "request_id": review_req.pk })
+
+        login_testing_unauthorized(self, "reviewsecretary", assign_url)
+        r = self.client.get(assign_url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        reviewer_label = q("option[value=\"{}\"]".format(rev_role.email.address)).text().lower()
+        self.assertIn("reviewed document before", reviewer_label)
 
     def test_accept_reviewer_assignment(self):
 
