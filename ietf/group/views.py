@@ -1507,6 +1507,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
         # check for conflicts
         review_requests_dict = { six.text_type(r.pk): r for r in review_requests if r.pk}
         posted_reqs = set(request.POST.getlist("reviewrequest", []))
+        posted_reqs.discard(u'None')
         current_reqs = set(review_requests_dict.keys())
 
         closed_reqs = posted_reqs - current_reqs
