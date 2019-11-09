@@ -169,7 +169,7 @@ def make_meeting_test_data(meeting=None):
     mars_session.sessionpresentation_set.add(pres) # 
 
     doc = DocumentFactory.create(name='minutes-72-mars', type_id='minutes', title="Minutes",
-        uploaded_filename="minutes-72-mars.txt", group=mars, rev='00', states=[('minutes','active')])
+        uploaded_filename="minutes-72-mars.md", group=mars, rev='00', states=[('minutes','active')])
     pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
     mars_session.sessionpresentation_set.add(pres)
 

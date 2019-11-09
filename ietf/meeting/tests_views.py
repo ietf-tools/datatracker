@@ -8,6 +8,7 @@ import datetime
 import io
 import os
 import random
+import re
 import shutil
 import six
 
@@ -21,6 +22,7 @@ from six.moves.urllib.parse import urlparse
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.test import Client
 
 import debug           # pyflakes:ignore
 
@@ -300,6 +302,26 @@ class MeetingTests(TestCase):
                          kwargs=dict(num=meeting.number, document=session.minutes()))
         r = self.client.get(url)
         self.assertContains(r, "1. More work items underway")
+        
+        
+        cont_disp = r._headers.get('content-disposition', ('Content-Disposition', ''))[1]
+        cont_disp = re.split('; ?', cont_disp)
+        cont_disp_settings = dict( e.split('=', 1) for e in cont_disp if '=' in e )
+        filename = cont_disp_settings.get('filename', '').strip('"')
+        if filename.endswith('.md'):
+            for accept, cont_type, content in [
+                    ('text/html,text/plain,text/markdown',  'text/html',     '<li><p>More work items underway</p></li>'),
+                    ('text/markdown,text/html,text/plain',  'text/markdown', '1. More work items underway'),
+                    ('text/plain,text/markdown, text/html', 'text/plain',    '1. More work items underway'),
+                    ('text/html',                           'text/html',     '<li><p>More work items underway</p></li>'),
+                    ('text/markdown',                       'text/markdown', '1. More work items underway'),
+                    ('text/plain',                          'text/plain',    '1. More work items underway'),
+                ]:
+                client = Client(HTTP_ACCEPT=accept)
+                r = client.get(url)
+                rtype = r['Content-Type'].split(';')[0]
+                self.assertEqual(cont_type, rtype)
+                self.assertContains(r, content)
 
         # test with explicit meeting number in url
         if meeting.number.isdigit():
