@@ -4,7 +4,7 @@ import datetime
 
 from ietf.doc.factories import WgDraftFactory
 from ietf.group.factories import ReviewTeamFactory
-from ietf.group.models import Group
+from ietf.group.models import Group, Role
 from ietf.review.factories import ReviewAssignmentFactory
 from ietf.review.models import ReviewerSettings, NextReviewerInTeam, UnavailablePeriod, \
     ReviewRequest
@@ -14,7 +14,45 @@ from ietf.utils.test_utils import TestCase
 
 
 class RotateWithSkipReviewerPolicyTests(TestCase):
-    def test_possibly_advance_next_reviewer_for_team(self):
+    def test_default_reviewer_rotation_list(self):
+        team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        policy = get_reviewer_queue_policy(team)
+
+        reviewers = [
+            create_person(team, "reviewer", name="Test Reviewer{}".format(i), username="testreviewer{}".format(i))
+            for i in range(5)
+        ]
+        reviewers_pks = [r.pk for r in reviewers]
+        
+        # This reviewer should never be included.
+        unavailable_reviewer = create_person(team, "reviewer", name="unavailable reviewer", username="unavailablereviewer")
+        UnavailablePeriod.objects.create(
+            team=team,
+            person=unavailable_reviewer,
+            start_date='2000-01-01',
+            end_date='3000-01-01',
+            availability=UnavailablePeriod.AVAILABILITY_CHOICES[0],
+        )
+
+        # Default policy without a NextReviewerInTeam
+        rotation = policy.default_reviewer_rotation_list(skip_unavailable=True)
+        self.assertNotIn(unavailable_reviewer.pk, rotation)
+        self.assertEqual(rotation, reviewers_pks)
+
+        # Policy with a current NextReviewerInTeam
+        NextReviewerInTeam.objects.create(team=team, next_reviewer=reviewers[3])
+        rotation = policy.default_reviewer_rotation_list(skip_unavailable=True)
+        self.assertNotIn(unavailable_reviewer.pk, rotation)
+        self.assertEqual(rotation, reviewers_pks[3:] + reviewers_pks[:3])
+
+        # Policy with a NextReviewerInTeam that has left the team.
+        Role.objects.get(person=reviewers[1]).delete()
+        NextReviewerInTeam.objects.filter(team=team).update(next_reviewer=reviewers[1])
+        rotation = policy.default_reviewer_rotation_list(skip_unavailable=True)
+        self.assertNotIn(unavailable_reviewer.pk, rotation)
+        self.assertEqual(rotation, reviewers_pks[2:] + reviewers_pks[:1])
+
+    def test_update_policy_state_for_assignment(self):
 
         team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         policy = get_reviewer_queue_policy(team)
