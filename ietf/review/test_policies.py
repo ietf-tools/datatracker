@@ -22,7 +22,6 @@ class RotateWithSkipReviewerPolicyTests(TestCase):
             create_person(team, "reviewer", name="Test Reviewer{}".format(i), username="testreviewer{}".format(i))
             for i in range(5)
         ]
-        reviewers_pks = [r.pk for r in reviewers]
         
         # This reviewer should never be included.
         unavailable_reviewer = create_person(team, "reviewer", name="unavailable reviewer", username="unavailablereviewer")
@@ -30,27 +29,26 @@ class RotateWithSkipReviewerPolicyTests(TestCase):
             team=team,
             person=unavailable_reviewer,
             start_date='2000-01-01',
-            end_date='3000-01-01',
             availability=UnavailablePeriod.AVAILABILITY_CHOICES[0],
         )
 
         # Default policy without a NextReviewerInTeam
-        rotation = policy.default_reviewer_rotation_list(skip_unavailable=True)
-        self.assertNotIn(unavailable_reviewer.pk, rotation)
-        self.assertEqual(rotation, reviewers_pks)
+        rotation = policy.default_reviewer_rotation_list()
+        self.assertNotIn(unavailable_reviewer, rotation)
+        self.assertEqual(rotation, reviewers)
 
         # Policy with a current NextReviewerInTeam
         NextReviewerInTeam.objects.create(team=team, next_reviewer=reviewers[3])
-        rotation = policy.default_reviewer_rotation_list(skip_unavailable=True)
-        self.assertNotIn(unavailable_reviewer.pk, rotation)
-        self.assertEqual(rotation, reviewers_pks[3:] + reviewers_pks[:3])
+        rotation = policy.default_reviewer_rotation_list()
+        self.assertNotIn(unavailable_reviewer, rotation)
+        self.assertEqual(rotation, reviewers[3:] + reviewers[:3])
 
         # Policy with a NextReviewerInTeam that has left the team.
         Role.objects.get(person=reviewers[1]).delete()
         NextReviewerInTeam.objects.filter(team=team).update(next_reviewer=reviewers[1])
-        rotation = policy.default_reviewer_rotation_list(skip_unavailable=True)
-        self.assertNotIn(unavailable_reviewer.pk, rotation)
-        self.assertEqual(rotation, reviewers_pks[2:] + reviewers_pks[:1])
+        rotation = policy.default_reviewer_rotation_list()
+        self.assertNotIn(unavailable_reviewer, rotation)
+        self.assertEqual(rotation, reviewers[2:] + reviewers[:1])
 
     def test_update_policy_state_for_assignment(self):
 

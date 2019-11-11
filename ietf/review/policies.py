@@ -32,10 +32,9 @@ class AbstractReviewerQueuePolicy:
     def __init__(self, team):
         self.team = team
         
-    def default_reviewer_rotation_list(self, skip_unavailable=False, dont_skip=[]):
+    def default_reviewer_rotation_list(self, dont_skip=[]):
         """
         Return a list of reviewers in the default reviewer rotation for a policy.
-        TODO: fix return types
         """
         raise NotImplementedError
     
@@ -283,8 +282,8 @@ class RotateWithSkipReviewerQueuePolicy(AbstractReviewerQueuePolicy):
     def update_policy_state_for_assignment(self, assignee_person_id, add_skip=False):
         assert assignee_person_id is not None
 
-        rotation_list = self.default_reviewer_rotation_list(skip_unavailable=True,
-                                                            dont_skip=[assignee_person_id])
+        rotation_list = [p.id for p in self.default_reviewer_rotation_list(
+                                                            dont_skip=[assignee_person_id])]
 
         def reviewer_at_index(i):
             if not rotation_list:
@@ -324,7 +323,7 @@ class RotateWithSkipReviewerQueuePolicy(AbstractReviewerQueuePolicy):
 
                 break
 
-    def default_reviewer_rotation_list(self, skip_unavailable=False, dont_skip=[]):
+    def default_reviewer_rotation_list(self, include_unavailable=False, dont_skip=[]):
         reviewers = list(Person.objects.filter(role__name="reviewer", role__group=self.team))
         reviewers.sort(key=lambda p: p.last_name())
         next_reviewer_index = 0
@@ -347,10 +346,9 @@ class RotateWithSkipReviewerQueuePolicy(AbstractReviewerQueuePolicy):
     
         rotation_list = reviewers[next_reviewer_index:] + reviewers[:next_reviewer_index]
     
-        reviewers_to_skip = []            
-        if skip_unavailable:
+        if not include_unavailable:
             reviewers_to_skip = self._unavailable_reviewers(dont_skip)
-            rotation_list = [p.pk for p in rotation_list if p.pk not in reviewers_to_skip]
-    
+            rotation_list = [p for p in rotation_list if p.pk not in reviewers_to_skip]
+        
         return rotation_list
 

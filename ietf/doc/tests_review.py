@@ -280,13 +280,6 @@ class ReviewTests(TestCase):
         another_reviewer = PersonFactory.create(name = "Extra TestReviewer") # needs to be lexically greater than the existing one
         another_reviewer.role_set.create(name_id='reviewer', email=another_reviewer.email(), group=review_req.team)
 
-        UnavailablePeriod.objects.create(
-            team=review_req.team,
-            person=reviewer_email.person,
-            start_date=datetime.date.today() - datetime.timedelta(days=10),
-            availability="unavailable",
-        )
-
         ReviewWish.objects.create(person=reviewer_email.person, team=review_req.team, doc=doc)
 
         # pick a non-existing reviewer as next to see that we can
@@ -318,7 +311,6 @@ class ReviewTests(TestCase):
         self.assertIn("wishes to review", reviewer_label)
         self.assertIn("is author", reviewer_label)
         self.assertIn("regexp matches", reviewer_label)
-        self.assertIn("unavailable indefinitely", reviewer_label)
         self.assertIn("skip next 1", reviewer_label)
         self.assertIn("#1", reviewer_label)
         self.assertIn("1 fully completed", reviewer_label)

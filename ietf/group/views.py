@@ -1391,7 +1391,7 @@ def reviewer_overview(request, acronym, group_type=None):
 
     can_manage = can_manage_review_requests_for_team(request.user, group)
 
-    reviewers = get_reviewer_queue_policy(group).default_reviewer_rotation_list()
+    reviewers = get_reviewer_queue_policy(group).default_reviewer_rotation_list(include_unavailable=True)
 
     reviewer_settings = { s.person_id: s for s in ReviewerSettings.objects.filter(team=group) }
     unavailable_periods = defaultdict(list)
