@@ -16,12 +16,19 @@ from ietf.review.utils import (current_unavailable_periods_for_reviewers,
                                get_default_filter_re,
                                latest_review_assignments_for_reviewers)
 
+"""
+This file contains policies regarding reviewer queues.
+The policies are documented in more detail on:
+https://trac.tools.ietf.org/tools/ietfdb/wiki/ReviewerQueuePolicy
+Terminology used here should match terminology used in that document.
+"""
 
-def policy_for_team(team):
-    return RotateWithSkipReviewerPolicy(team)
+
+def get_reviewer_queue_policy(team):
+    return RotateWithSkipReviewerQueuePolicy(team)
 
 
-class AbstractReviewerPolicy:
+class AbstractReviewerQueuePolicy:
     def __init__(self, team):
         self.team = team
         
@@ -32,6 +39,12 @@ class AbstractReviewerPolicy:
         """
         raise NotImplementedError
     
+    def update_policy_state_for_assignment(self, assignee_person_id, add_skip=False):
+        """
+        Update the internal state of a policy to reflect an assignment. 
+        """
+        raise NotImplementedError
+
     # TODO : Change this field to deal with multiple already assigned reviewers???
     def setup_reviewer_field(self, field, review_req):
         """
@@ -57,7 +70,7 @@ class AbstractReviewerPolicy:
         returning Email objects.
         """
         if review_req.team != self.team:
-            raise ValueError('Reviewer policy was passed review request belonging to different team.')            
+            raise ValueError('Reviewer queue policy was passed review request belonging to different team.')            
         resolver = AssignmentOrderResolver(email_queryset, review_req, self.default_reviewer_rotation_list())
         return resolver.determine_ranking()
         
@@ -90,7 +103,7 @@ class AssignmentOrderResolver:
         self._collect_context()
 
     def _collect_context(self):
-        # Collect all relevant data about this team, document and review request.
+        """Collect all relevant data about this team, document and review request."""
 
         self.doc_aliases = DocAlias.objects.filter(docs=self.doc).values_list("name", flat=True)
 
@@ -109,6 +122,10 @@ class AssignmentOrderResolver:
         self.assignment_data_for_reviewers = latest_review_assignments_for_reviewers(self.team)
 
     def determine_ranking(self):
+        """
+        Determine the ranking of reviewers.
+        Returns a list of tuples, each tuple containing an Email pk and an explanation label.
+        """
         ranking = []
         for e in self.possible_emails:
             ranking.append(self._ranking_for_email(e))
@@ -118,6 +135,12 @@ class AssignmentOrderResolver:
         return [(r["email"].pk, r["label"]) for r in ranking]
 
     def _ranking_for_email(self, email):
+        """
+        Determine the ranking for a specific Email.
+        Returns a dict with an email object, the scores and an explanation label.
+        The scores are a list of individual scores, i.e. they are prioritised, not
+        cumulative. 
+        """
         settings = self.reviewer_settings.get(email.person_id)
         scores = []
         explanations = []
@@ -183,6 +206,7 @@ class AssignmentOrderResolver:
         }
 
     def _collect_reviewer_stats(self, email):
+        """Collect statistics on past reviews for a particular Email."""
         stats = []
         assignment_data = self.assignment_data_for_reviewers.get(email.person_id, [])
         currently_open = sum(1 for d in assignment_data if d.state in ["assigned", "accepted"])
@@ -206,8 +230,13 @@ class AssignmentOrderResolver:
         return stats
             
     def _connections_with_doc(self, doc, person_ids):
+        """
+        Collect any connections any Person in person_ids has with a document.
+        Returns a dict containing Person IDs that have a connection as keys,
+        values being an explanation string, 
+        """
         connections = {}
-        # examine the closest connections last to let them override
+        # examine the closest connections last to let them override the label
         connections[doc.ad_id] = "is associated Area Director"
         for r in Role.objects.filter(group=doc.group_id,
                                      person__in=person_ids).select_related("name"):
@@ -221,6 +250,10 @@ class AssignmentOrderResolver:
         return connections
 
     def _persons_with_previous_review(self, review_req, possible_person_ids):
+        """
+        Collect anyone in possible_person_ids that have reviewed the request before.
+        Returns a set with Person IDs of anyone who has.
+        """
         has_reviewed_previous = ReviewRequest.objects.filter(
             doc=review_req.doc,
             reviewassignment__reviewer__person__in=possible_person_ids,
@@ -232,7 +265,7 @@ class AssignmentOrderResolver:
         has_reviewed_previous = set(
             has_reviewed_previous.values_list("reviewassignment__reviewer__person", flat=True))
         return has_reviewed_previous
-
+    
     def _reviewer_settings_for_person_ids(self, person_ids):
         reviewer_settings = {
             r.person_id: r
@@ -245,7 +278,7 @@ class AssignmentOrderResolver:
         return reviewer_settings
     
 
-class RotateWithSkipReviewerPolicy(AbstractReviewerPolicy):
+class RotateWithSkipReviewerQueuePolicy(AbstractReviewerQueuePolicy):
 
     def update_policy_state_for_assignment(self, assignee_person_id, add_skip=False):
         assert assignee_person_id is not None

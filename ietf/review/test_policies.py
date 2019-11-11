@@ -8,7 +8,7 @@ from ietf.group.models import Group
 from ietf.review.factories import ReviewAssignmentFactory
 from ietf.review.models import ReviewerSettings, NextReviewerInTeam, UnavailablePeriod, \
     ReviewRequest
-from ietf.review.policies import policy_for_team
+from ietf.review.policies import get_reviewer_queue_policy
 from ietf.utils.test_data import create_person
 from ietf.utils.test_utils import TestCase
 
@@ -17,7 +17,7 @@ class RotateWithSkipReviewerPolicyTests(TestCase):
     def test_possibly_advance_next_reviewer_for_team(self):
 
         team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
-        policy = policy_for_team(team)
+        policy = get_reviewer_queue_policy(team)
         doc = WgDraftFactory()
 
         # make a bunch of reviewers

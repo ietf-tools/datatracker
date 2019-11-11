@@ -12,7 +12,7 @@ from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
 
-from ietf.review.policies import policy_for_team
+from ietf.review.policies import get_reviewer_queue_policy
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, reload_db_objects
 from ietf.doc.models import TelechatDocEvent
 from ietf.group.models import Role
@@ -655,7 +655,7 @@ class BulkAssignmentTests(TestCase):
         secretary = RoleFactory.create(group=group,name_id='secr')
         docs = [DocumentFactory.create(type_id='draft',group=None) for i in range(4)]
         requests = [ReviewRequestFactory(team=group,doc=docs[i]) for i in range(4)]
-        policy = policy_for_team(group)
+        policy = get_reviewer_queue_policy(group)
         rot_list = policy.default_reviewer_rotation_list()
 
         expected_ending_head_of_rotation = rot_list[3]

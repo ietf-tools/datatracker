@@ -33,7 +33,7 @@ from ietf.person.models import Email, Person
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import (ReviewRequest, ReviewerSettings,
                                 ReviewWish, UnavailablePeriod, NextReviewerInTeam)
-from ietf.review.policies import policy_for_team
+from ietf.review.policies import get_reviewer_queue_policy
 
 from ietf.utils.test_utils import TestCase
 from ietf.utils.test_utils import login_testing_unauthorized, reload_db_objects
@@ -325,7 +325,7 @@ class ReviewTests(TestCase):
 
         # assign
         empty_outbox()
-        rotation_list = policy_for_team(review_req.team).default_reviewer_rotation_list()
+        rotation_list = get_reviewer_queue_policy(review_req.team).default_reviewer_rotation_list()
         reviewer = Email.objects.filter(role__name="reviewer", role__group=review_req.team, person=rotation_list[0]).first()
         r = self.client.post(assign_url, { "action": "assign", "reviewer": reviewer.pk })
         self.assertEqual(r.status_code, 302)
