@@ -1,3 +1,44 @@
+ietfdb (6.110.1) ietf; urgency=medium
+
+  This release provides various fixes, and clears the slate for the
+  upcoming IETF 106 Sprint work.
+
+  * Merged in [16981] from rjsparks@nostrum.com:
+    Look at the tree of replaces-relationships when determining if some
+    reviewer has reviewed this (or perhaps an ancestor) of this document.
+    Fixes #2821.  
+
+  * Merged in [16966] from rjsparks@nostrum.com:
+    Use the recently released shepherd writeup templates. Fixes #2820.
+
+  * Fixed a wrong link to field help for liaison forms.
+
+  * Merged in [16939] from sasha@dashcare.nl:
+    Allow adding review wishes from document and search pages.  On the main
+    page of a document and in document search results, a new button allows
+    review team members to add a review wish for that document.  
+    For reviewers that are only on one team, this essentially works
+    identical to tracking a document. Reviewers that are on multiple teams
+    are lead through an intermediate step to select a review team, and then
+    returned to their search or document page.
+    Fixes issue #2050.
+
+  * Merged in [16564] from pusateri@bangj.com and added tests:
+    Convert markdown to html if Accept header prioritizes text/html over
+    text/markdown. Fixes #1926.
+
+  * Merged in [16977] from rjsparks@nostrum.com:
+    Disregard unassigned reviews when building the sets to compare when
+    checking for race-conditions on assigning reviews. 
+    Partially addresses #2821.  
+
+  * Moved the ietf/names/generate_fixtures.py command to a management command
+    "generate_name_fixture", and updated it to include a necessary dbtemplate
+    object in the fixture.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  11 Nov 2019 21:35:46 +0000
+
+
 ietfdb (6.110.0) ietf; urgency=medium
 
   **Trial bibxml3/ pages for drafts, and review ticket fixes**
