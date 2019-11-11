@@ -56,13 +56,13 @@ class AbstractReviewerQueuePolicy:
         if one_assignment:
             field.initial = one_assignment.reviewer_id
 
-        choices = self._recommended_assignment_order(field.queryset, review_req)
+        choices = self.recommended_assignment_order(field.queryset, review_req)
         if not field.required:
             choices = [("", field.empty_label)] + choices
 
         field.choices = choices
         
-    def _recommended_assignment_order(self, email_queryset, review_req):
+    def recommended_assignment_order(self, email_queryset, review_req):
         """
         Determine the recommended assignment order for a review request,
         choosing from the reviewers in email_queryset, which should be a queryset
@@ -71,7 +71,7 @@ class AbstractReviewerQueuePolicy:
         if review_req.team != self.team:
             raise ValueError('Reviewer queue policy was passed review request belonging to different team.')            
         resolver = AssignmentOrderResolver(email_queryset, review_req, self.default_reviewer_rotation_list())
-        return resolver.determine_ranking()
+        return [(r['email'].pk, r['label']) for r in resolver.determine_ranking()]
         
     def _unavailable_reviewers(self, dont_skip):
         # prune reviewers not in the rotation (but not the assigned
@@ -127,11 +127,12 @@ class AssignmentOrderResolver:
         """
         ranking = []
         for e in self.possible_emails:
-            ranking.append(self._ranking_for_email(e))
+            ranking_for_email = self._ranking_for_email(e)
+            if ranking_for_email:
+                ranking.append(ranking_for_email)
 
         ranking.sort(key=lambda r: r["scores"], reverse=True)
-
-        return [(r["email"].pk, r["label"]) for r in ranking]
+        return ranking
 
     def _ranking_for_email(self, email):
         """
@@ -149,23 +150,9 @@ class AssignmentOrderResolver:
             if expr and explanation:
                 explanations.append(explanation)
 
-        # unavailable for review periods
-        periods = self.unavailable_periods.get(email.person_id, [])
-        unavailable_at_the_moment = periods and not (
-            email.person_id in self.has_reviewed_previous and all(
-            p.availability == "canfinish" for p in periods))
-        add_boolean_score(-1, unavailable_at_the_moment)
-
-        def format_period(p):
-            if p.end_date:
-                res = "unavailable until {}".format(p.end_date.isoformat())
-            else:
-                res = "unavailable indefinitely"
-            return "{} ({})".format(res, p.get_availability_display())
-
-        if periods:
-            explanations.append(", ".join(format_period(p) for p in periods))
-            
+        if email.person_id not in self.rotation_index:
+            return
+        
         # misc
         add_boolean_score(+1, email.person_id in self.has_reviewed_previous, "reviewed document before")
         add_boolean_score(+1, email.person_id in self.wish_to_review, "wishes to review document")

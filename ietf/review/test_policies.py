@@ -5,10 +5,11 @@ import datetime
 from ietf.doc.factories import WgDraftFactory
 from ietf.group.factories import ReviewTeamFactory
 from ietf.group.models import Group, Role
-from ietf.review.factories import ReviewAssignmentFactory
+from ietf.person.models import Email
+from ietf.review.factories import ReviewAssignmentFactory, ReviewRequestFactory
 from ietf.review.models import ReviewerSettings, NextReviewerInTeam, UnavailablePeriod, \
-    ReviewRequest
-from ietf.review.policies import get_reviewer_queue_policy
+    ReviewRequest, ReviewWish
+from ietf.review.policies import get_reviewer_queue_policy, AssignmentOrderResolver
 from ietf.utils.test_data import create_person
 from ietf.utils.test_utils import TestCase
 
@@ -49,6 +50,14 @@ class RotateWithSkipReviewerPolicyTests(TestCase):
         rotation = policy.default_reviewer_rotation_list()
         self.assertNotIn(unavailable_reviewer, rotation)
         self.assertEqual(rotation, reviewers[2:] + reviewers[:1])
+        
+    def test_recommended_assignment_order(self):
+        team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        policy = get_reviewer_queue_policy(team)
+
+        reviewer_high = create_person(team, "reviewer", name="Test Reviewer-high", username="testreviewerhigh")
+        reviewer_low = create_person(team, "reviewer", name="Test Reviewer-low", username="testreviewerlow")
+
 
     def test_update_policy_state_for_assignment(self):
 
@@ -138,3 +147,47 @@ class RotateWithSkipReviewerPolicyTests(TestCase):
         self.assertEqual(get_skip_next(reviewers[2]), 0)
         self.assertEqual(get_skip_next(reviewers[3]), 0)
         self.assertEqual(get_skip_next(reviewers[4]), 0)
+        
+
+class AssignmentOrderResolverTests(TestCase):
+    def test_determine_ranking(self):
+        # reviewer_high is second in the default rotation, reviewer_low is first
+        # however, reviewer_high hits every score increase, reviewer_low hits every score decrease
+        team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        reviewer_high = create_person(team, "reviewer", name="Test Reviewer-high", username="testreviewerhigh")
+        reviewer_low = create_person(team, "reviewer", name="Test Reviewer-low", username="testreviewerlow")
+
+        # Trigger author check, AD check and group check
+        doc = WgDraftFactory(group__acronym='mars', rev='01', authors=[reviewer_low], ad_id=reviewer_low.pk, shepherd=reviewer_low)
+        Role.objects.create(group=doc.group, person=reviewer_low, email=reviewer_low.email(), name_id='advisor')
+        
+        review_req = ReviewRequestFactory(doc=doc, team=team, type_id='early', state_id='assigned')
+        rotation_list = [reviewer_low, reviewer_high]
+        
+        # Trigger previous review check and completed review stats - TODO: something something related documents
+        ReviewAssignmentFactory(review_request__team=team, review_request__doc=doc, reviewer=reviewer_high.email(), state_id='completed')
+        # Trigger other review stats
+        ReviewAssignmentFactory(review_request__team=team, review_request__doc=doc, reviewer=reviewer_high.email(), state_id='no-response')
+        ReviewAssignmentFactory(review_request__team=team, review_request__doc=doc, reviewer=reviewer_high.email(), state_id='part-completed')
+        # Trigger review wish check
+        ReviewWish.objects.create(team=team, doc=doc, person=reviewer_high)
+        
+        # Trigger max frequency and open review stats
+        ReviewAssignmentFactory(review_request__team=team, reviewer=reviewer_low.email(), state_id='assigned', review_request__doc__pages=10)
+        # Trigger skip_next, max frequency and filter_re
+        ReviewerSettings.objects.create(
+            team=team,
+            person=reviewer_low,
+            filter_re='.*draft.*',
+            skip_next=2,
+            min_interval=91,
+        )
+
+        order = AssignmentOrderResolver(Email.objects.all(), review_req, rotation_list)
+        ranking = order.determine_ranking()
+        self.assertEqual(ranking[0]['email'], reviewer_high.email())
+        self.assertEqual(ranking[1]['email'], reviewer_low.email())
+        self.assertEqual(ranking[0]['scores'], [ 1,  1,  1,  1,   0,  0, -1])
+        self.assertEqual(ranking[1]['scores'], [-1, -1, -1, -1, -91, -2,  0])
+        self.assertEqual(ranking[0]['label'], 'Test Reviewer-high: reviewed document before; wishes to review document; #2; 1 no response, 1 partially complete, 1 fully completed')
+        self.assertEqual(ranking[1]['label'], 'Test Reviewer-low: is author of document; filter regexp matches; max frequency exceeded, ready in 91 days; skip next 2; #1; currently 1 open, 10 pages')
