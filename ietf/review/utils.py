@@ -826,7 +826,7 @@ def make_assignment_choices(email_queryset, review_req):
 
     # previous review of document
     has_reviewed_previous = ReviewRequest.objects.filter(
-        doc=doc,
+        doc__name__in=set([doc.name]).union(*extract_complete_replaces_ancestor_mapping_for_docs([doc.name]).values()),
         reviewassignment__reviewer__person__in=possible_person_ids,
         reviewassignment__state="completed",
         team=team,

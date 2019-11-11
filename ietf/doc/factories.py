@@ -6,6 +6,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import debug    # pyflakes:ignore
 import factory
+import factory.fuzzy
 import datetime
 import six
 if six.PY3:
@@ -36,6 +37,8 @@ class BaseDocumentFactory(factory.DjangoModelFactory):
     intended_std_level_id = None
     time = datetime.datetime.now()
     expires = factory.LazyAttribute(lambda o: o.time+datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE))
+    pages = factory.fuzzy.FuzzyInteger(2,400)
+
 
     @factory.lazy_attribute_sequence
     def name(self, n):
