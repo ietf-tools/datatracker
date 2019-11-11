@@ -38,7 +38,7 @@
   {% if not liaison %}
     <p class="help-block">If you wish to submit your liaison statement by e-mail, then please send it to <a href="mailto:statements@ietf.org">statements@ietf.org</a></p>
 
-    <p class="help-block">Fields marked with <label class="required"></label> are required. For detailed descriptions of the fields see the <a href="{% url 'django.views.generic.base.TemplateView' %}">field help</a>.</p>
+    <p class="help-block">Fields marked with <label class="required"></label> are required. For detailed descriptions of the fields see the <a href="{% url 'liaison-help-fields'%}">field help</a>.</p>
   {% endif %}
 
   <form role="form" class="liaisons-form form-horizontal show-required" method="post" enctype="multipart/form-data" data-edit-form="{{ form.edit }}" data-ajax-info-url="{% url "ietf.liaisons.views.ajax_get_liaison_info" %}">{% csrf_token %}
