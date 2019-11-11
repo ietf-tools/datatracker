@@ -5,6 +5,7 @@ import datetime
 from ietf.doc.factories import WgDraftFactory
 from ietf.group.factories import ReviewTeamFactory
 from ietf.group.models import Group, Role
+from ietf.person.fields import PersonEmailChoiceField
 from ietf.person.models import Email
 from ietf.review.factories import ReviewAssignmentFactory, ReviewRequestFactory
 from ietf.review.models import ReviewerSettings, NextReviewerInTeam, UnavailablePeriod, \
@@ -50,17 +51,45 @@ class RotateWithSkipReviewerPolicyTests(TestCase):
         rotation = policy.default_reviewer_rotation_list()
         self.assertNotIn(unavailable_reviewer, rotation)
         self.assertEqual(rotation, reviewers[2:] + reviewers[:1])
+    
+    def test_setup_reviewer_field(self):
+        team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        policy = get_reviewer_queue_policy(team)
+        reviewer_0 = create_person(team, "reviewer", name="Test Reviewer-0", username="testreviewer0")
+        reviewer_1 = create_person(team, "reviewer", name="Test Reviewer-1", username="testreviewer1")
+        review_req = ReviewRequestFactory(team=team, type_id='early')
+        ReviewAssignmentFactory(review_request=review_req, reviewer=reviewer_1.email(), state_id='part-completed')
+        field = PersonEmailChoiceField(label="Assign Reviewer", empty_label="(None)", required=False)
+        
+        policy.setup_reviewer_field(field, review_req)
+        self.assertEqual(field.choices[0], ('', '(None)'))
+        self.assertEqual(field.choices[1][0], str(reviewer_0.email()))
+        self.assertEqual(field.choices[2][0], str(reviewer_1.email()))
+        self.assertEqual(field.choices[1][1], 'Test Reviewer-0: #1')
+        self.assertEqual(field.choices[2][1], 'Test Reviewer-1: #2; 1 partially complete')
+        self.assertEqual(field.initial, str(reviewer_1.email()))
         
     def test_recommended_assignment_order(self):
         team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         policy = get_reviewer_queue_policy(team)
+        reviewer_high = create_person(team, "reviewer", name="Test Reviewer-1-high", username="testreviewerhigh")
+        reviewer_low = create_person(team, "reviewer", name="Test Reviewer-0-low", username="testreviewerlow")
+        
+        # reviewer_high appears later in the default rotation, but reviewer_low is the author
+        doc = WgDraftFactory(group__acronym='mars', rev='01', authors=[reviewer_low])
+        review_req = ReviewRequestFactory(doc=doc, team=team, type_id='early')
 
-        reviewer_high = create_person(team, "reviewer", name="Test Reviewer-high", username="testreviewerhigh")
-        reviewer_low = create_person(team, "reviewer", name="Test Reviewer-low", username="testreviewerlow")
+        order = policy.recommended_assignment_order(Email.objects.all(), review_req)
+        self.assertEqual(order[0][0], str(reviewer_high.email()))
+        self.assertEqual(order[1][0], str(reviewer_low.email()))
+        self.assertEqual(order[0][1], 'Test Reviewer-1-high: #2')
+        self.assertEqual(order[1][1], 'Test Reviewer-0-low: is author of document; #1')
 
+        with self.assertRaises(ValueError):
+            review_req_other_team = ReviewRequestFactory(doc=doc, type_id='early')
+            policy.recommended_assignment_order(Email.objects.all(), review_req_other_team)
 
     def test_update_policy_state_for_assignment(self):
-
         team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         policy = get_reviewer_queue_policy(team)
         doc = WgDraftFactory()
@@ -158,10 +187,10 @@ class AssignmentOrderResolverTests(TestCase):
         reviewer_low = create_person(team, "reviewer", name="Test Reviewer-low", username="testreviewerlow")
 
         # Trigger author check, AD check and group check
-        doc = WgDraftFactory(group__acronym='mars', rev='01', authors=[reviewer_low], ad_id=reviewer_low.pk, shepherd=reviewer_low)
+        doc = WgDraftFactory(group__acronym='mars', rev='01', authors=[reviewer_low], ad=reviewer_low, shepherd=reviewer_low.email())
         Role.objects.create(group=doc.group, person=reviewer_low, email=reviewer_low.email(), name_id='advisor')
         
-        review_req = ReviewRequestFactory(doc=doc, team=team, type_id='early', state_id='assigned')
+        review_req = ReviewRequestFactory(doc=doc, team=team, type_id='early')
         rotation_list = [reviewer_low, reviewer_high]
         
         # Trigger previous review check and completed review stats - TODO: something something related documents

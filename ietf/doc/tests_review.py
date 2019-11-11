@@ -32,7 +32,7 @@ from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAss
 from ietf.person.models import Email, Person
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import (ReviewRequest, ReviewerSettings,
-                                ReviewWish, UnavailablePeriod, NextReviewerInTeam)
+                                ReviewWish, NextReviewerInTeam)
 from ietf.review.policies import get_reviewer_queue_policy
 
 from ietf.utils.test_utils import TestCase

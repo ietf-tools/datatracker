@@ -36,13 +36,13 @@ class AbstractReviewerQueuePolicy:
         """
         Return a list of reviewers in the default reviewer rotation for a policy.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
     
     def update_policy_state_for_assignment(self, assignee_person_id, add_skip=False):
         """
         Update the internal state of a policy to reflect an assignment. 
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     # TODO : Change this field to deal with multiple already assigned reviewers???
     def setup_reviewer_field(self, field, review_req):
