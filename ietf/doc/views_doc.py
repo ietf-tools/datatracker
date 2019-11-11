@@ -58,12 +58,12 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent,
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS )
-from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_with_revision,
+from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
-    add_events_message_info, get_unicode_document_content, build_doc_meta_block)
-from ietf.community.utils import augment_docs_with_tracking_info
+    add_events_message_info, get_unicode_document_content, build_doc_meta_block,
+    augment_docs_and_user_with_user_info)
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_group_type, can_manage_materials, group_features_role_filter
 from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is_person,
@@ -390,7 +390,7 @@ def document_main(request, name, rev=None):
             elif can_edit_stream_info and (iesg_state.slug in ('idexists','watching')):
                 actions.append(("Submit to IESG for Publication", urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=doc.name))))
 
-        augment_docs_with_tracking_info([doc], request.user)
+        augment_docs_and_user_with_user_info([doc], request.user)
 
         replaces = [d.name for d in doc.related_that_doc("replaces")]
         replaced_by = [d.name for d in doc.related_that("replaces")]

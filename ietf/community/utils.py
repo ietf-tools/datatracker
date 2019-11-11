@@ -58,20 +58,6 @@ def can_manage_community_list(user, clist):
 
     return False
 
-def augment_docs_with_tracking_info(docs, user):
-    """Add attribute to each document with whether the document is tracked
-    by the user or not."""
-
-    tracked = set()
-
-    if user and user.is_authenticated:
-        clist = CommunityList.objects.filter(user=user).first()
-        if clist:
-            tracked.update(docs_tracked_by_community_list(clist).filter(pk__in=[ d.pk for d in docs ]).values_list("pk", flat=True))
-
-    for d in docs:
-        d.tracked_in_personal_community_list = d.pk in tracked
-
 def reset_name_contains_index_for_rule(rule):
     if not rule.rule_type == "name_contains":
         return

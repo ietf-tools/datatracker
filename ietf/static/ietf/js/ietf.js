@@ -98,10 +98,9 @@ $(document).ready(function () {
 
 	updateAdvanced();
     }
-
-    // search results
-    $('.track-untrack-doc').click(function(e) {
-	e.preventDefault();
+    
+    $('.review-wish-add-remove-doc.ajax, .track-untrack-doc').click(function(e) {
+	    e.preventDefault();
         var trigger = $(this);
         $.ajax({
 	    url: trigger.attr('href'),
@@ -109,13 +108,21 @@ $(document).ready(function () {
 	    cache: false,
 	    dataType: 'json',
 	    success: function(response){
-		if (response.success) {
-                    trigger.parent().find(".tooltip").remove();
-                    trigger.addClass("hide");
-                    trigger.parent().find(".track-untrack-doc").not(trigger).removeClass("hide");
+            if (response.success) {
+                trigger.parent().find(".tooltip").remove();
+                trigger.addClass("hide");
+                
+                var target_unhide = null;
+                if(trigger.hasClass('review-wish-add-remove-doc')) {
+                    target_unhide = '.review-wish-add-remove-doc';
+                } else if(trigger.hasClass('track-untrack-doc')) {
+                    target_unhide = '.track-untrack-doc';
                 }
-	    }
-	});
+                if(target_unhide) {}
+                    trigger.parent().find(target_unhide).not(trigger).removeClass("hide");
+                }
+            }
+        });
     });
 });
 

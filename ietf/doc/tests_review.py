@@ -22,7 +22,8 @@ from pyquery import PyQuery
 import debug                            # pyflakes:ignore
 
 import ietf.review.mailarch
-from ietf.doc.factories import NewRevisionDocEventFactory, WgDraftFactory, WgRfcFactory, ReviewFactory
+from ietf.doc.factories import NewRevisionDocEventFactory, WgDraftFactory, WgRfcFactory, \
+    ReviewFactory, DocumentFactory
 from ietf.doc.models import DocumentAuthor, RelatedDocument, DocEvent, ReviewRequestDocEvent, ReviewAssignmentDocEvent
 from ietf.group.factories import RoleFactory, ReviewTeamFactory
 from ietf.group.models import Group
@@ -479,7 +480,7 @@ class ReviewTests(TestCase):
         login_testing_unauthorized(self, "reviewsecretary", reject_url)
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, str(assignment.reviewer.person))
+        self.assertContains(r, assignment.reviewer.person.plain_name())
         self.assertNotContains(r, 'can not be rejected')
         self.assertContains(r, '<button type="submit"')
 
@@ -1165,3 +1166,51 @@ class ReviewTests(TestCase):
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, 'withdrawn')
 
+    def test_review_wish_add(self):
+        doc = DocumentFactory()
+        team = ReviewTeamFactory()
+        reviewer = RoleFactory(group=team, name_id='reviewer').person
+        url = urlreverse('ietf.doc.views_review.review_wish_add', kwargs={'name': doc.name})
+        
+        login_testing_unauthorized(self, reviewer.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        
+        # As this reviewer is only on a single team, posting without data should work
+        r = self.client.post(url + '?next=/redirect-url')
+        self.assertRedirects(r, '/redirect-url', fetch_redirect_response=False)
+        self.assertTrue(ReviewWish.objects.get(person=reviewer, doc=doc, team=team))
+
+        # Try again with a reviewer on multiple teams, requiring team selection.
+        # This also uses an invalid redirect URL that should be ignored.
+        ReviewWish.objects.all().delete()
+        team2 = ReviewTeamFactory()
+        RoleFactory(group=team2, person=reviewer, name_id='reviewer')
+
+        r = self.client.post(url + '?next=http://example.com/')
+        self.assertEqual(r.status_code, 200)  # Missing team parameter
+        
+        r = self.client.post(url + '?next=http://example.com/', data={'team': team2.pk})
+        self.assertRedirects(r, doc.get_absolute_url(), fetch_redirect_response=False)
+        self.assertTrue(ReviewWish.objects.get(person=reviewer, doc=doc, team=team2))
+
+    def test_review_wishes_remove(self):
+        doc = DocumentFactory()
+        team = ReviewTeamFactory()
+        reviewer = RoleFactory(group=team, name_id='reviewer').person
+        ReviewWish.objects.create(person=reviewer, doc=doc, team=team)
+        url = urlreverse('ietf.doc.views_review.review_wishes_remove', kwargs={'name': doc.name})
+
+        login_testing_unauthorized(self, reviewer.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.post(url + '?next=/redirect-url')
+        self.assertRedirects(r, '/redirect-url', fetch_redirect_response=False)
+        self.assertFalse(ReviewWish.objects.all())
+
+        # Try again with an invalid redirect URL that should be ignored.
+        ReviewWish.objects.create(person=reviewer, doc=doc, team=team)
+        r = self.client.post(url + '?next=http://example.com')
+        self.assertRedirects(r, doc.get_absolute_url(), fetch_redirect_response=False)
+        self.assertFalse(ReviewWish.objects.all())
