@@ -182,7 +182,7 @@ class SubmissionBaseUploadForm(forms.Form):
                 # --- Parse the xml ---
                 try:
                     parser = xml2rfc.XmlRfcParser(str(tfn), quiet=True)
-                    self.xmltree = parser.parse(normalize=True)
+                    self.xmltree = parser.parse(remove_comments=False, quiet=True, add_xmlns=True)
                     self.xmlroot = self.xmltree.getroot()
                     xml_version = self.xmlroot.get('version', '2')
                 except Exception as e:
@@ -224,8 +224,8 @@ class SubmissionBaseUploadForm(forms.Form):
                 file_name['xml'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (self.filename, self.revision, ext))
                 try:
                     if xml_version == '3':
-                        prep = xml2rfc.PrepToolWriter(self.xmltree, quiet=True, liberal=True)
-                        prep.options.accept_prepped = True                        
+                        prep = xml2rfc.PrepToolWriter(self.xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
+                        prep.options.accept_prepped = True
                         self.xmltree.tree = prep.prep()
                         if self.xmltree.tree == None:
                             raise forms.ValidationError("Error from xml2rfc (prep): %s" % prep.errors)
