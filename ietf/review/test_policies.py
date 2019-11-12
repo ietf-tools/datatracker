@@ -31,9 +31,16 @@ class RotateWithSkipReviewerPolicyTests(TestCase):
             team=team,
             person=unavailable_reviewer,
             start_date='2000-01-01',
-            availability=UnavailablePeriod.AVAILABILITY_CHOICES[0],
+            availability='unavailable',
         )
-
+        # This should not have any impact. Canfinish unavailable reviewers are included in
+        # the default rotation, and filtered further when making assignment choices.
+        UnavailablePeriod.objects.create(
+            team=team,
+            person=reviewers[1],
+            start_date='2000-01-01',
+            availability='canfinish',
+        )
         # Default policy without a NextReviewerInTeam
         rotation = policy.default_reviewer_rotation_list()
         self.assertNotIn(unavailable_reviewer, rotation)
@@ -185,13 +192,16 @@ class AssignmentOrderResolverTests(TestCase):
         team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         reviewer_high = create_person(team, "reviewer", name="Test Reviewer-high", username="testreviewerhigh")
         reviewer_low = create_person(team, "reviewer", name="Test Reviewer-low", username="testreviewerlow")
+        reviewer_unavailable = create_person(team, "reviewer", name="Test Reviewer-unavailable", username="testreviewerunavailable")
+        # This reviewer should be ignored because it is not in the rotation list.
+        create_person(team, "reviewer", name="Test Reviewer-out-of-rotation", username="testreviewer-out-of-rotation")
 
         # Trigger author check, AD check and group check
         doc = WgDraftFactory(group__acronym='mars', rev='01', authors=[reviewer_low], ad=reviewer_low, shepherd=reviewer_low.email())
         Role.objects.create(group=doc.group, person=reviewer_low, email=reviewer_low.email(), name_id='advisor')
         
         review_req = ReviewRequestFactory(doc=doc, team=team, type_id='early')
-        rotation_list = [reviewer_low, reviewer_high]
+        rotation_list = [reviewer_low, reviewer_high, reviewer_unavailable]
         
         # Trigger previous review check and completed review stats - TODO: something something related documents
         ReviewAssignmentFactory(review_request__team=team, review_request__doc=doc, reviewer=reviewer_high.email(), state_id='completed')
@@ -201,6 +211,23 @@ class AssignmentOrderResolverTests(TestCase):
         # Trigger review wish check
         ReviewWish.objects.create(team=team, doc=doc, person=reviewer_high)
         
+        # This period should not have an impact, because it is the canfinish type,
+        # and this reviewer has reviewed previously.
+        UnavailablePeriod.objects.create(
+            team=team,
+            person=reviewer_high,
+            start_date='2000-01-01',
+            availability='canfinish',
+        )
+        # This period should exclude this reviewer entirely, as it is 'canfinish',
+        # but this reviewer has not reviewed previously.
+        UnavailablePeriod.objects.create(
+            team=team,
+            person=reviewer_unavailable,
+            start_date='2000-01-01',
+            availability='canfinish',
+        )
+
         # Trigger max frequency and open review stats
         ReviewAssignmentFactory(review_request__team=team, reviewer=reviewer_low.email(), state_id='assigned', review_request__doc__pages=10)
         # Trigger skip_next, max frequency and filter_re
@@ -214,9 +241,10 @@ class AssignmentOrderResolverTests(TestCase):
 
         order = AssignmentOrderResolver(Email.objects.all(), review_req, rotation_list)
         ranking = order.determine_ranking()
+        self.assertEqual(len(ranking), 2)
         self.assertEqual(ranking[0]['email'], reviewer_high.email())
         self.assertEqual(ranking[1]['email'], reviewer_low.email())
         self.assertEqual(ranking[0]['scores'], [ 1,  1,  1,  1,   0,  0, -1])
         self.assertEqual(ranking[1]['scores'], [-1, -1, -1, -1, -91, -2,  0])
-        self.assertEqual(ranking[0]['label'], 'Test Reviewer-high: reviewed document before; wishes to review document; #2; 1 no response, 1 partially complete, 1 fully completed')
+        self.assertEqual(ranking[0]['label'], 'Test Reviewer-high: unavailable indefinitely (Can do follow-ups); reviewed document before; wishes to review document; #2; 1 no response, 1 partially complete, 1 fully completed')
         self.assertEqual(ranking[1]['label'], 'Test Reviewer-low: is author of document; filter regexp matches; max frequency exceeded, ready in 91 days; skip next 2; #1; currently 1 open, 10 pages')

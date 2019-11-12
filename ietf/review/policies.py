@@ -73,7 +73,7 @@ class AbstractReviewerQueuePolicy:
         resolver = AssignmentOrderResolver(email_queryset, review_req, self.default_reviewer_rotation_list())
         return [(r['email'].pk, r['label']) for r in resolver.determine_ranking()]
         
-    def _unavailable_reviewers(self, dont_skip):
+    def _entirely_unavailable_reviewers(self, dont_skip):
         # prune reviewers not in the rotation (but not the assigned
         # reviewer who must have been available for assignment anyway)
         reviewers_to_skip = set()
@@ -119,7 +119,8 @@ class AssignmentOrderResolver:
         self.connections = self._connections_with_doc(self.doc, self.possible_person_ids)
         self.unavailable_periods = current_unavailable_periods_for_reviewers(self.team)
         self.assignment_data_for_reviewers = latest_review_assignments_for_reviewers(self.team)
-
+        self.unavailable_periods = current_unavailable_periods_for_reviewers(self.team)
+        
     def determine_ranking(self):
         """
         Determine the ranking of reviewers.
@@ -139,7 +140,7 @@ class AssignmentOrderResolver:
         Determine the ranking for a specific Email.
         Returns a dict with an email object, the scores and an explanation label.
         The scores are a list of individual scores, i.e. they are prioritised, not
-        cumulative. 
+        cumulative.
         """
         settings = self.reviewer_settings.get(email.person_id)
         scores = []
@@ -152,7 +153,25 @@ class AssignmentOrderResolver:
 
         if email.person_id not in self.rotation_index:
             return
+
+        # If a reviewer is unavailable, they are ignored.
+        periods = self.unavailable_periods.get(email.person_id, [])
+        unavailable_at_the_moment = periods and not (
+            email.person_id in self.has_reviewed_previous and
+            all(p.availability == "canfinish" for p in periods)
+        )
+        if unavailable_at_the_moment:
+            return
         
+        def format_period(p):
+            if p.end_date:
+                res = "unavailable until {}".format(p.end_date.isoformat())
+            else:
+                res = "unavailable indefinitely"
+            return "{} ({})".format(res, p.get_availability_display())
+        if periods:
+            explanations.append(", ".join(format_period(p) for p in periods))
+            
         # misc
         add_boolean_score(+1, email.person_id in self.has_reviewed_previous, "reviewed document before")
         add_boolean_score(+1, email.person_id in self.wish_to_review, "wishes to review document")
@@ -334,7 +353,7 @@ class RotateWithSkipReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         rotation_list = reviewers[next_reviewer_index:] + reviewers[:next_reviewer_index]
     
         if not include_unavailable:
-            reviewers_to_skip = self._unavailable_reviewers(dont_skip)
+            reviewers_to_skip = self._entirely_unavailable_reviewers(dont_skip)
             rotation_list = [p for p in rotation_list if p.pk not in reviewers_to_skip]
         
         return rotation_list
