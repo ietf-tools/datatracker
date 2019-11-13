@@ -1,15 +1,12 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
 
-import datetime
-
 from ietf.doc.factories import WgDraftFactory
 from ietf.group.factories import ReviewTeamFactory
 from ietf.group.models import Group, Role
 from ietf.person.fields import PersonEmailChoiceField
 from ietf.person.models import Email
 from ietf.review.factories import ReviewAssignmentFactory, ReviewRequestFactory
-from ietf.review.models import ReviewerSettings, NextReviewerInTeam, UnavailablePeriod, \
-    ReviewRequest, ReviewWish
+from ietf.review.models import ReviewerSettings, NextReviewerInTeam, UnavailablePeriod, ReviewWish
 from ietf.review.policies import get_reviewer_queue_policy, AssignmentOrderResolver
 from ietf.utils.test_data import create_person
 from ietf.utils.test_utils import TestCase
@@ -99,7 +96,6 @@ class RotateWithSkipReviewerPolicyTests(TestCase):
     def test_update_policy_state_for_assignment(self):
         team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         policy = get_reviewer_queue_policy(team)
-        doc = WgDraftFactory()
 
         # make a bunch of reviewers
         reviewers = [
@@ -109,81 +105,66 @@ class RotateWithSkipReviewerPolicyTests(TestCase):
 
         self.assertEqual(reviewers, policy.default_reviewer_rotation_list())
 
-        def get_skip_next(person):
-            settings = (ReviewerSettings.objects.filter(team=team, person=person).first()
-                        or ReviewerSettings(team=team))
-            return settings.skip_next
+        def reviewer_settings_for(person):
+            return (ReviewerSettings.objects.filter(team=team, person=person).first()
+                    or ReviewerSettings(team=team, person=person))
 
-        policy.update_policy_state_for_assignment(assignee_person_id=reviewers[0].pk, add_skip=False)
+        def get_skip_next(person):
+            return reviewer_settings_for(person).skip_next
+
+        # Regular in-order assignment without skips
+        policy.update_policy_state_for_assignment(assignee_person=reviewers[0], add_skip=False)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[1])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
         self.assertEqual(get_skip_next(reviewers[1]), 0)
-
-        policy.update_policy_state_for_assignment(assignee_person_id=reviewers[1].pk, add_skip=True)
-        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
-        self.assertEqual(get_skip_next(reviewers[1]), 1)
         self.assertEqual(get_skip_next(reviewers[2]), 0)
+        self.assertEqual(get_skip_next(reviewers[3]), 0)
+        self.assertEqual(get_skip_next(reviewers[4]), 0)
 
-        # skip reviewer 2
-        policy.update_policy_state_for_assignment(assignee_person_id=reviewers[3].pk, add_skip=True)
+        # In-order assignment with add_skip
+        policy.update_policy_state_for_assignment(assignee_person=reviewers[1], add_skip=True)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
+        self.assertEqual(get_skip_next(reviewers[1]), 1)  # from current add_skip=True
+        self.assertEqual(get_skip_next(reviewers[2]), 0)
+        self.assertEqual(get_skip_next(reviewers[3]), 0)
+        self.assertEqual(get_skip_next(reviewers[4]), 0)
+
+        # In-order assignment to 2, but 3 has a skip_next, so 4 should be assigned.
+        # 3 has skip_next decreased as it is skipped over, 1 retains its skip_next
+        reviewer3_settings = reviewer_settings_for(reviewers[3])
+        reviewer3_settings.skip_next = 2
+        reviewer3_settings.save()
+        policy.update_policy_state_for_assignment(assignee_person=reviewers[2], add_skip=False)
+        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[4])
+        self.assertEqual(get_skip_next(reviewers[0]), 0)
+        self.assertEqual(get_skip_next(reviewers[1]), 1)  # from previous add_skip=true
+        self.assertEqual(get_skip_next(reviewers[2]), 0)
+        self.assertEqual(get_skip_next(reviewers[3]), 1)  # from manually set skip_next - 1
+        self.assertEqual(get_skip_next(reviewers[4]), 0)
+
+        # Out of order assignments, nothing should change,
+        # except the add_skip=True should still apply
+        policy.update_policy_state_for_assignment(assignee_person=reviewers[3], add_skip=False)
+        policy.update_policy_state_for_assignment(assignee_person=reviewers[2], add_skip=False)
+        policy.update_policy_state_for_assignment(assignee_person=reviewers[1], add_skip=False)
+        policy.update_policy_state_for_assignment(assignee_person=reviewers[0], add_skip=True)
+        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[4])
+        self.assertEqual(get_skip_next(reviewers[0]), 1)  # from current add_skip=True
         self.assertEqual(get_skip_next(reviewers[1]), 1)
         self.assertEqual(get_skip_next(reviewers[2]), 0)
         self.assertEqual(get_skip_next(reviewers[3]), 1)
-
-        # pick reviewer 2, use up reviewer 3's skip_next
-        policy.update_policy_state_for_assignment(assignee_person_id=reviewers[2].pk, add_skip=False)
-        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[4])
-        self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 1)
-        self.assertEqual(get_skip_next(reviewers[2]), 0)
-        self.assertEqual(get_skip_next(reviewers[3]), 0)
-        self.assertEqual(get_skip_next(reviewers[4]), 0)
-
-        # check wrap-around
-        policy.update_policy_state_for_assignment(assignee_person_id=reviewers[4].pk)
-        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[0])
-        self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 1)
-        self.assertEqual(get_skip_next(reviewers[2]), 0)
-        self.assertEqual(get_skip_next(reviewers[3]), 0)
-        self.assertEqual(get_skip_next(reviewers[4]), 0)
-
-        # unavailable
-        today = datetime.date.today()
-        UnavailablePeriod.objects.create(team=team, person=reviewers[1], start_date=today, end_date=today, availability="unavailable")
-        policy.update_policy_state_for_assignment(assignee_person_id=reviewers[0].pk)
-        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
-        self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 1) # don't consume that skip while the reviewer is unavailable
-        self.assertEqual(get_skip_next(reviewers[2]), 0)
-        self.assertEqual(get_skip_next(reviewers[3]), 0)
-        self.assertEqual(get_skip_next(reviewers[4]), 0)
-
-        # pick unavailable anyway
-        policy.update_policy_state_for_assignment(assignee_person_id=reviewers[1].pk, add_skip=False)
-        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
-        self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 1)
-        self.assertEqual(get_skip_next(reviewers[2]), 0)
-        self.assertEqual(get_skip_next(reviewers[3]), 0)
-        self.assertEqual(get_skip_next(reviewers[4]), 0)
-
-        # not through min_interval so advance past reviewer[2]
-        settings, _ = ReviewerSettings.objects.get_or_create(team=team, person=reviewers[2])
-        settings.min_interval = 30
-        settings.save()
-        req = ReviewRequest.objects.create(team=team, doc=doc, type_id="early", state_id="assigned", deadline=today, requested_by=reviewers[0])
-        ReviewAssignmentFactory(review_request=req, state_id="accepted", reviewer = reviewers[2].email_set.first(),assigned_on = req.time)
-        policy.update_policy_state_for_assignment(assignee_person_id=reviewers[3].pk)
-        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[4])
-        self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 1)
-        self.assertEqual(get_skip_next(reviewers[2]), 0)
-        self.assertEqual(get_skip_next(reviewers[3]), 0)
         self.assertEqual(get_skip_next(reviewers[4]), 0)
         
+        # Regular assignment, testing wrap-around
+        policy.update_policy_state_for_assignment(assignee_person=reviewers[4], add_skip=False)
+        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
+        self.assertEqual(get_skip_next(reviewers[0]), 0)  # skipped over with this assignment
+        self.assertEqual(get_skip_next(reviewers[1]), 0)  # skipped over with this assignment
+        self.assertEqual(get_skip_next(reviewers[2]), 0)
+        self.assertEqual(get_skip_next(reviewers[3]), 1)
+        self.assertEqual(get_skip_next(reviewers[4]), 0)
+
 
 class AssignmentOrderResolverTests(TestCase):
     def test_determine_ranking(self):

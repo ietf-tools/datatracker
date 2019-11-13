@@ -381,7 +381,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
     assignment = review_req.reviewassignment_set.create(state_id='assigned', reviewer = reviewer, assigned_on = datetime.datetime.now())
 
     from ietf.review.policies import get_reviewer_queue_policy
-    get_reviewer_queue_policy(review_req.team).update_policy_state_for_assignment(reviewer.person_id, add_skip)
+    get_reviewer_queue_policy(review_req.team).update_policy_state_for_assignment(reviewer.person, add_skip)
 
     ReviewRequestDocEvent.objects.create(
         type="assigned_review_request",
