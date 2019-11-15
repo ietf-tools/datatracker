@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 
 from django.conf.urls import include
 from django.views.generic import RedirectView
@@ -15,7 +15,9 @@ safe_for_all_meeting_types = [
     url(r'^session/(?P<session_id>\d+)/agenda$', views.upload_session_agenda),
     url(r'^session/(?P<session_id>\d+)/propose_slides$', views.propose_session_slides),
     url(r'^session/(?P<session_id>\d+)/slides(?:/%(name)s)?$' % settings.URL_REGEXPS, views.upload_session_slides),
-    url(r'^session/(?P<session_id>\d+)/slides/%(name)s/order$' % settings.URL_REGEXPS, views.set_slide_order),
+    url(r'^session/(?P<session_id>\d+)/add_to_session$', views.ajax_add_slides_to_session),
+    url(r'^session/(?P<session_id>\d+)/remove_from_session$', views.ajax_remove_slides_from_session),
+    url(r'^session/(?P<session_id>\d+)/reorder_in_session$', views.ajax_reorder_slides_in_session),
     url(r'^session/(?P<session_id>\d+)/doc/%(name)s/remove$' % settings.URL_REGEXPS, views.remove_sessionpresentation),
     url(r'^session/(?P<session_id>\d+)\.ics$',    views.ical_agenda),
     url(r'^sessions/(?P<acronym>[-a-z0-9]+)\.ics$', views.ical_agenda),

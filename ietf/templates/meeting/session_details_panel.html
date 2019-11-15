@@ -66,9 +66,9 @@
       <div class="panel-heading" data-toggle="tooltip" title="Drag and drop to reorder slides">Slides</div>
       <div class="panel-body">
         <table class="table table-condensed table-striped slides" id="slides_{{session.pk}}">
-         <tbody>
+         <tbody session="{{session.pk}}" addToSession="{% url 'ietf.meeting.views.ajax_add_slides_to_session' session_id=session.pk num=session.meeting.number %}" removeFromSession="{% url 'ietf.meeting.views.ajax_remove_slides_from_session' session_id=session.pk num=session.meeting.number %}" reorderInSession="{% url 'ietf.meeting.views.ajax_reorder_slides_in_session' session_id=session.pk num=session.meeting.number %}">
           {% for pres in session.filtered_slides %}
-            <tr data-order="{{pres.order}}" data-url="{% url 'ietf.meeting.views.set_slide_order' session_id=session.pk num=session.meeting.number name=pres.document.name %}">
+            <tr name="{{pres.document.name}}">
               {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
               <td>
                 <a href="{{pres.document.href}}">{{pres.document.title}} </a>
