@@ -78,6 +78,7 @@ RUN apt-get install -qy \
 	libxml2-dev \
 	libxslt-dev \
 	libz-dev \
+	libffi-dev \
 	locales \
 	make \
 	man \

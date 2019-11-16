@@ -105,10 +105,9 @@ if ! python -c "import django"; then
     pip install -r /usr/local/share/datatracker/requirements3.txt
 fi
 
-if [ ! -f $VIRTDIR/lib/site-python/settings_local.py ]; then
+if [ ! -f $CWD/ietf/settings_local.py ]; then
     echo "Setting up a default settings_local.py ..."
-    mkdir -p $VIRTDIR/lib/site-python/
-    cp /usr/local/share/datatracker/settings_local.py $VIRTDIR/lib/site-python/
+    cp /usr/local/share/datatracker/settings_local.py /home/$USER/$CWD/ietf/settings_local.py
 fi
 
 for sub in test/id/ test/staging/ test/archive/ test/rfc test/media test/wiki/ietf; do
@@ -143,6 +142,7 @@ for sub in					\
     if [ ! -d "$dir"  ]; then
 	echo "Creating dir $dir"
 	mkdir -p "$dir";
+	chown "$USER" "$dir"
     fi
 done
 
@@ -161,6 +161,8 @@ chmod -R g+w   /usr/local/lib/		# so we can patch libs if needed
 
 cd "/home/$USER/$CWD" || cd "/home/$USER/"
 
+export LANG=en_GB.UTF-8
+
 echo "Done!"
 
-su $USER
+su -p $USER

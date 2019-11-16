@@ -82,7 +82,6 @@ MYSQLDIR=$parent/data/mysql
 FILEDIR=$parent/../data/
 PORT=8000
 REPO="ietf/datatracker-environment"
-TAG=$(basename $(svn info $parent | grep ^URL | awk '{print $2}'))
 DBURL=https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2
 WHO=$(whoami)
 WHOUID=$(id -u $WHO)
@@ -119,6 +118,10 @@ while true ; do
     esac
     shift
 done
+
+if [ -z "$TAG" ]; then
+  TAG=$(basename $(svn info $parent | grep ^URL | awk '{print $2}'))
+fi
 
 # ----------------------------------------------------------------------
 # The program itself
