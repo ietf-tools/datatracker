@@ -71,14 +71,14 @@ if [ ! -d $MYSQLDIR/ietf_utf8 ]; then
     fi
 fi
 
+if ! grep -q ":$GID:$" /etc/group ; then
+    echo "Creating group entry for GID '$GID' ..."
+    groupadd -g "$GID" "$USER"
+fi
 if ! id -u "$USER" &> /dev/null; then
     echo "Creating user '$USER' ..."
     useradd -s /bin/bash --groups staff,sudo --uid $UID --gid $GID $USER
     echo "$USER:$USER" | chpasswd
-fi
-if ! grep -q ":$GID:$" /etc/group ; then
-    echo "Creating group entry for GID '$GID' ..."
-    groupadd -g $GID users
 fi
 
 VIRTDIR="/opt/home/$USER/$TAG"
