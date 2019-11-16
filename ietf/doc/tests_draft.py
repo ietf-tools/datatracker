@@ -16,6 +16,7 @@ from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
+from ietf.doc.expire import get_expired_drafts, send_expire_notice_for_draft, expire_draft
 from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
 from ietf.doc.models import ( Document, DocReminder, DocEvent,
     ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
@@ -492,7 +493,33 @@ class EditInfoTests(TestCase):
         self.assertEqual(draft.latest_event(ConsensusDocEvent, type="changed_consensus").consensus, None)
 
 
-class ResurrectTests(TestCase):
+class DraftFileMixin():
+    '''A mixin to setup temporary draft directories and files'''
+    def setUp(self):
+        self.saved_id_dir = settings.INTERNET_DRAFT_PATH
+        self.saved_archive_dir = settings.INTERNET_DRAFT_ARCHIVE_DIR
+        self.id_dir = self.tempdir('id')
+        self.archive_dir = self.tempdir('id-archive')
+        os.mkdir(os.path.join(self.archive_dir, "unknown_ids"))
+        os.mkdir(os.path.join(self.archive_dir, "deleted_tombstones"))
+        os.mkdir(os.path.join(self.archive_dir, "expired_without_tombstone"))
+
+        settings.INTERNET_DRAFT_PATH = self.id_dir
+        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
+
+    def tearDown(self):
+        shutil.rmtree(self.id_dir)
+        shutil.rmtree(self.archive_dir)
+        settings.INTERNET_DRAFT_PATH = self.saved_id_dir
+        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
+
+    def write_draft_file(self, name, size):
+        f = io.open(os.path.join(self.id_dir, name), 'w')
+        f.write("a" * size)
+        f.close()
+
+
+class ResurrectTests(DraftFileMixin, TestCase):
     def test_request_resurrect(self):
         draft = WgDraftFactory(states=[('draft','expired')])
 
@@ -526,14 +553,17 @@ class ResurrectTests(TestCase):
 
     def test_resurrect(self):
         ad = Person.objects.get(name="Areað Irector")
-        draft = WgDraftFactory(ad=ad,states=[('draft','expired')])
+        draft = WgDraftFactory(ad=ad,states=[('draft','active')])
         DocEventFactory(doc=draft,type="requested_resurrect",by=ad)
 
-        url = urlreverse('ietf.doc.views_draft.resurrect', kwargs=dict(name=draft.name))
-        
-        login_testing_unauthorized(self, "secretary", url)
+        # create file and expire draft
+        txt = "%s-%s.txt" % (draft.name, draft.rev)
+        self.write_draft_file(txt, 5000)
+        expire_draft(draft)
 
         # normal get
+        url = urlreverse('ietf.doc.views_draft.resurrect', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -556,31 +586,12 @@ class ResurrectTests(TestCase):
         self.assertTrue('iesg-secretary' in outbox[-1]['To'])
         self.assertTrue('aread' in outbox[-1]['To'])
 
+        # ensure file restored from archive directory
+        self.assertTrue(os.path.exists(os.path.join(self.id_dir, txt)))
+        self.assertTrue(not os.path.exists(os.path.join(self.archive_dir, txt)))
 
-class ExpireIDsTests(TestCase):
-    def setUp(self):
-        self.saved_id_dir = settings.INTERNET_DRAFT_PATH
-        self.saved_archive_dir = settings.INTERNET_DRAFT_ARCHIVE_DIR
-        self.id_dir = self.tempdir('id')
-        self.archive_dir = self.tempdir('id-archive')
-        os.mkdir(os.path.join(self.archive_dir, "unknown_ids"))
-        os.mkdir(os.path.join(self.archive_dir, "deleted_tombstones"))
-        os.mkdir(os.path.join(self.archive_dir, "expired_without_tombstone"))
-        
-        settings.INTERNET_DRAFT_PATH = self.id_dir
-        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
 
-    def tearDown(self):
-        shutil.rmtree(self.id_dir)
-        shutil.rmtree(self.archive_dir)
-        settings.INTERNET_DRAFT_PATH = self.saved_id_dir
-        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
-
-    def write_draft_file(self, name, size):
-        f = io.open(os.path.join(self.id_dir, name), 'w')
-        f.write("a" * size)
-        f.close()
-        
+class ExpireIDsTests(DraftFileMixin, TestCase):
     def test_in_draft_expire_freeze(self):
         from ietf.doc.expire import in_draft_expire_freeze
 
@@ -623,8 +634,6 @@ class ExpireIDsTests(TestCase):
         self.assertTrue('aread@' in outbox[-1]['Cc'])
         
     def test_expire_drafts(self):
-        from ietf.doc.expire import get_expired_drafts, send_expire_notice_for_draft, expire_draft
-
         mars = GroupFactory(type_id='wg',acronym='mars')
         ad_role = RoleFactory(group=mars, name_id='ad', person=Person.objects.get(user__username='ad'))
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=mars)

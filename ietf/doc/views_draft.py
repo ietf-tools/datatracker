@@ -7,6 +7,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 # changing state and metadata on Internet Drafts
 
 import datetime
+import os
+import glob
+import shutil
 
 from django import forms
 from django.conf import settings
@@ -47,6 +50,7 @@ from ietf.person.fields import SearchableEmailField
 from ietf.person.models import Person, Email
 from ietf.utils.mail import send_mail, send_mail_message, on_behalf_of
 from ietf.utils.textupload import get_cleaned_text_file_content
+from ietf.utils import log
 from ietf.mailtrigger.utils import gather_address_lists
 
 class ChangeStateForm(forms.Form):
@@ -835,12 +839,29 @@ def resurrect(request, name):
         doc.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
         doc.save_with_history(events)
 
+        restore_draft_file(request, doc)
+
         return HttpResponseRedirect(doc.get_absolute_url())
   
     return render(request, 'doc/draft/resurrect.html',
                               dict(doc=doc,
                                    resurrect_requested_by=resurrect_requested_by,
                                    back_url=doc.get_absolute_url()))
+
+
+def restore_draft_file(request, draft):
+    '''restore latest revision document file from archive'''
+    basename = '{}-{}'.format(draft.name, draft.rev)
+    files = glob.glob(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, basename) + '.*')
+    log.log("Resurrecting %s.  Moving files:" % draft.name)
+    for file in files:
+        try:
+            shutil.move(file, settings.INTERNET_DRAFT_PATH)
+            log.log("  Moved file %s to %s" % (file, settings.INTERNET_DRAFT_PATH))
+        except shutil.Error as ex:
+            messages.warning(request, 'There was an error restoring the draft file: {} ({})'.format(file, ex))
+            log.log("  Exception %s when attempting to move %s" % (ex, file))
+
 
 class IESGNoteForm(forms.Form):
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False, strip=False)
