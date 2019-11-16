@@ -156,6 +156,7 @@ class ReviewTests(TestCase):
         reviewer = RoleFactory(name_id='reviewer',group=team,person__user__username='reviewer').person
         ReviewerSettingsFactory(person=reviewer,team=team)
         review_req1 = ReviewRequestFactory(state_id='completed',team=team)
+        secretary = Person.objects.get(user__username="secretary")
         ReviewAssignmentFactory(review_request = review_req1, reviewer=reviewer.email())
         PersonFactory(user__username='plain')
 
@@ -211,6 +212,156 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 200)
         # secretariat can see reason for being unavailable
         self.assertContains(r, "Availability")
+
+        # add one closed review with no response and see it is visible
+        review_req2 = ReviewRequestFactory(state_id='completed',team=team)
+        ReviewAssignmentFactory(
+            review_request__doc=review_req2.doc,
+            review_request__team=review_req2.team,
+            review_request__type_id="lc",
+            review_request__deadline=datetime.date.today() - datetime.timedelta(days=30),
+            review_request__state_id="assigned",
+            review_request__requested_by=Person.objects.get(user__username="reviewer"),
+            state_id = "no-response",
+            reviewer=reviewer.email_set.first(),
+        )
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        # We should see the new document with status of no response
+        self.assertContains(r, "No Response")
+        self.assertContains(r, review_req1.doc.name)
+        self.assertContains(r, review_req2.doc.name)
+        # None of the reviews should be completed this time,
+        # note that "Days Since Completed has soft hypens in it, so it
+        # will not match
+        self.assertNotContains(r, "Completed")
+        # add multiple completed reviews
+        review_req3 = ReviewRequestFactory(state_id='completed', team=team)
+        ReviewAssignmentFactory(
+            review_request__doc=review_req3.doc,
+            review_request__time=datetime.date.today() - datetime.timedelta(days=30),
+            review_request__team=review_req3.team,
+            review_request__type_id="telechat",
+            review_request__deadline=datetime.date.today() - datetime.timedelta(days=25),
+            review_request__state_id="completed",
+            review_request__requested_by=Person.objects.get(user__username="reviewer"),
+            state_id = "completed",
+            reviewer=reviewer.email_set.first(),
+            assigned_on=datetime.date.today() - datetime.timedelta(days=30)
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Completed")
+        self.assertContains(r, review_req1.doc.name)
+        self.assertContains(r, review_req2.doc.name)
+        self.assertContains(r, review_req3.doc.name)
+        # Few more to make sure we hit the limit
+        reqs = [ReviewRequestFactory(state_id='completed', team=team) for i in range(10)]
+        for i in range(10):
+            ReviewAssignmentFactory(
+                review_request__doc=reqs[i].doc,
+                review_request__time=datetime.date.today() - datetime.timedelta(days=i*30),
+                review_request__team=reqs[i].team,
+                review_request__type_id="telechat",
+                review_request__deadline=datetime.date.today() - datetime.timedelta(days=i*20),
+                review_request__state_id="completed",
+                review_request__requested_by=Person.objects.get(user__username="reviewer"),
+                state_id = "completed",
+                reviewer=reviewer.email_set.first(),
+                assigned_on=datetime.date.today() - datetime.timedelta(days=i*30)
+            )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Completed")
+        self.assertContains(r, review_req1.doc.name)
+        self.assertContains(r, review_req2.doc.name)
+        self.assertContains(r, review_req3.doc.name)
+        # The default is 10 completed entries, we had one before + one No response
+        # so we should have 8 more here
+        for i in range(10):
+            if i < 8:
+                self.assertContains(r, reqs[i].doc.name)
+            else:
+                self.assertNotContains(r, reqs[i].doc.name)
+        # Change the limit to be 15 instead of 10, so we should get all
+        secretary_settings = ReviewSecretarySettings(team=team, person=secretary)
+        secretary_settings.max_items_to_show_in_reviewer_list = 15
+        secretary_settings.save()
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, review_req1.doc.name)
+        self.assertContains(r, review_req2.doc.name)
+        self.assertContains(r, review_req3.doc.name)
+        for i in range(10):
+            self.assertContains(r, reqs[i].doc.name)
+        # Change the time limit to 100 days, so we should only get 3 completed
+        secretary_settings.days_to_show_in_reviewer_list = 100
+        secretary_settings.save()
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, review_req1.doc.name)
+        self.assertContains(r, review_req2.doc.name)
+        self.assertContains(r, review_req3.doc.name)
+        for i in range(10):
+            if i < 4:
+                self.assertContains(r, reqs[i].doc.name)
+            else:
+                self.assertNotContains(r, reqs[i].doc.name)
+        # Add assigned items, they should be visible as long as they
+        # are withing time period
+        review_req4 = ReviewRequestFactory(state_id='completed', team=team)
+        ReviewAssignmentFactory(
+            review_request__doc=review_req4.doc,
+            review_request__time=datetime.date.today() - datetime.timedelta(days=80),
+            review_request__team=review_req4.team,
+            review_request__type_id="lc",
+            review_request__deadline=datetime.date.today() - datetime.timedelta(days=60),
+            review_request__state_id="assigned",
+            review_request__requested_by=Person.objects.get(user__username="reviewer"),
+            state_id = "accepted",
+            reviewer=reviewer.email_set.first(),
+            assigned_on=datetime.date.today() - datetime.timedelta(days=80)
+        )
+        review_req5 = ReviewRequestFactory(state_id='completed', team=team)
+        ReviewAssignmentFactory(
+            review_request__doc=review_req5.doc,
+            review_request__time=datetime.date.today() - datetime.timedelta(days=120),
+            review_request__team=review_req5.team,
+            review_request__type_id="lc",
+            review_request__deadline=datetime.date.today() - datetime.timedelta(days=100),
+            review_request__state_id="assigned",
+            review_request__requested_by=Person.objects.get(user__username="reviewer"),
+            state_id = "accepted",
+            reviewer=reviewer.email_set.first(),
+            assigned_on=datetime.date.today() - datetime.timedelta(days=120)
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, review_req1.doc.name)
+        self.assertContains(r, review_req2.doc.name)
+        self.assertContains(r, review_req3.doc.name)
+        self.assertContains(r, review_req4.doc.name)
+        self.assertNotContains(r, review_req5.doc.name)
+        for i in range(10):
+            if i < 4:
+                self.assertContains(r, reqs[i].doc.name)
+            else:
+                self.assertNotContains(r, reqs[i].doc.name)
+        # Change the limit to be 1 instead of 10, so we should only one entry
+        secretary_settings.max_items_to_show_in_reviewer_list = 1
+        secretary_settings.save()
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, review_req1.doc.name)
+        self.assertContains(r, review_req2.doc.name)
+        self.assertNotContains(r, review_req3.doc.name)
+        for i in range(10):
+            self.assertNotContains(r, reqs[i].doc.name)
+        self.assertContains(r, review_req4.doc.name)
+        self.assertNotContains(r, review_req5.doc.name)
+
+        # print(r.content)
 
     def test_manage_review_requests(self):
         group = ReviewTeamFactory()
@@ -539,11 +690,15 @@ class ReviewTests(TestCase):
 
         # set settings
         r = self.client.post(url, {
-            "remind_days_before_deadline": "6"
+            "remind_days_before_deadline": "6",
+            "max_items_to_show_in_reviewer_list": 10,
+            "days_to_show_in_reviewer_list": 365
         })
         self.assertEqual(r.status_code, 302)
         settings = ReviewSecretarySettings.objects.get(person=secretary, team=review_req.team)
         self.assertEqual(settings.remind_days_before_deadline, 6)
+        self.assertEqual(settings.max_items_to_show_in_reviewer_list, 10)
+        self.assertEqual(settings.days_to_show_in_reviewer_list, 365)
 
     def test_review_reminders(self):
         review_req = ReviewRequestFactory(state_id='assigned')
