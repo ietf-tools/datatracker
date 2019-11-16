@@ -124,7 +124,7 @@ class GroupForm(forms.Form):
         if field:
             keys = list(self.fields.keys())
             for f in keys:
-                if f != field:
+                if f != field and not (f == 'closing_note' and field == 'state'):
                     del self.fields[f]
 
     def clean_acronym(self):
