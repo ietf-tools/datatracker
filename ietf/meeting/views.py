@@ -34,7 +34,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.urls import reverse,reverse_lazy
-from django.db.models import Min, Max, Q
+from django.db.models import F, Min, Max, Prefetch, Q
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
@@ -515,6 +515,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
               and a.session.historic_group
               and a.session.historic_group.type_id in ('wg', 'rg', 'ag', 'iab')
               and a.session.historic_group.historic_parent]
+
     group_parents = []
     for g in groups:
         if g.historic_parent.acronym not in seen:
@@ -949,12 +950,32 @@ def json_agenda(request, num=None ):
     assignments = meeting.agenda.assignments.exclude(session__type__in=['lead','offagenda','break','reg'])
     # Update the assignments with historic information, i.e., valid at the
     # time of the meeting
+    assignments = assignments.prefetch_related(
+        Prefetch("session__materials",
+                 queryset=Document.objects.exclude(states__type=F("type"),states__slug='deleted').select_related("group").order_by("sessionpresentation__order"),
+                 to_attr="prefetched_active_materials",
+             ),
+             "session__materials__docevent_set",
+             "session__sessionpresentation_set",
+             "timeslot__meeting",
+        )
     assignments = preprocess_assignments_for_agenda(assignments, meeting)
+
     for asgn in assignments:
+        t0 = time.process_time()
+
         sessdict = dict()
         sessdict['objtype'] = 'session'
         sessdict['id'] = asgn.pk
         sessdict['is_bof'] = False
+        sessdict['start'] = asgn.timeslot.utc_start_time().strftime("%Y-%m-%dT%H:%M:%SZ")
+        sessdict['duration'] = str(asgn.timeslot.duration)
+        sessdict['location'] = asgn.room_name
+        if asgn.session.name:
+            sessdict['name'] = asgn.session.name
+        if asgn.session.short:
+            sessdict['short'] = asgn.session.short
+
         if asgn.session.historic_group:
             sessdict['group'] = {
                     "acronym": asgn.session.historic_group.acronym,
@@ -964,25 +985,19 @@ def json_agenda(request, num=None ):
                 }
             if asgn.session.historic_group.is_bof():
                 sessdict['is_bof'] = True
-        if asgn.session.historic_group.type_id in ['wg','rg', 'ag',] or asgn.session.historic_group.acronym in ['iesg',]:
-            sessdict['group']['parent'] = asgn.session.historic_group.historic_parent.acronym
-            parent_acronyms.add(asgn.session.historic_group.historic_parent.acronym)
-        if asgn.session.name:
-            sessdict['name'] = asgn.session.name
-        else:
-            sessdict['name'] = asgn.session.historic_group.name
-        if asgn.session.short:
-            sessdict['short'] = asgn.session.short
-        sessdict['start'] = asgn.timeslot.utc_start_time().strftime("%Y-%m-%dT%H:%M:%SZ")
-        sessdict['duration'] = str(asgn.timeslot.duration)
-        sessdict['location'] = asgn.room_name
+            if asgn.session.historic_group.type_id in ['wg','rg', 'ag',] or asgn.session.historic_group.acronym in ['iesg',]:
+                sessdict['group']['parent'] = asgn.session.historic_group.historic_parent.acronym
+                parent_acronyms.add(asgn.session.historic_group.historic_parent.acronym)
+
         if asgn.timeslot.location:      # Some socials have an assignment but no location
             locations.add(asgn.timeslot.location)
+
         if asgn.session.agenda():
             sessdict['agenda'] = asgn.session.agenda().href()
 
         if asgn.session.minutes():
             sessdict['minutes'] = asgn.session.minutes().href()
+
         if asgn.session.slides():
             # Deprecated 19 May 2017, remove after ietf 100;
             sessdict['slides'] = []
@@ -1000,12 +1015,15 @@ def json_agenda(request, num=None ):
                         'rev':      pres.rev,
                         'resource_uri': '/api/v1/meeting/sessionpresentation/%s/'%pres.id,
                     })
+
         sessdict['session_res_uri'] = '/api/v1/meeting/session/%s/'%asgn.session.id
-        sessdict['session_id'] = asgn.session.id
+        sessdict['session_id'] = asgn.session.i
+
         modified = asgn.session.modified
         for doc in asgn.session.materials.all():
             rev_docevent = doc.latest_event(NewRevisionDocEvent,'new_revision')
             modified = max(modified, (rev_docevent and rev_docevent.time) or modified)
+
         sessdict['modified'] = modified
         sessdict['status'] = asgn.session.status_id
         sessions.append(sessdict)
@@ -1056,6 +1074,7 @@ def json_agenda(request, num=None ):
     if last_modified:
         last_modified = tz.localize(last_modified).astimezone(pytz.utc)
         response['Last-Modified'] = format_date_time(timegm(last_modified.timetuple()))
+
     return response
 
 def meeting_requests(request, num=None):
@@ -2186,7 +2205,6 @@ def floor_plan(request, num=None, floor=None, ):
         })
 
 def proceedings(request, num=None):
-
     meeting = get_meeting(num)
 
     if (meeting.number.isdigit() and int(meeting.number) <= 64) or not meeting.agenda or not meeting.agenda.assignments.exists():
