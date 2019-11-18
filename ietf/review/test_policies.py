@@ -12,7 +12,7 @@ from ietf.utils.test_data import create_person
 from ietf.utils.test_utils import TestCase
 
 
-class RotateWithSkipReviewerPolicyTests(TestCase):
+class RotateAlphabeticallyReviewerQueuePolicyTest(TestCase):
     def test_default_reviewer_rotation_list(self):
         team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         policy = get_reviewer_queue_policy(team)
