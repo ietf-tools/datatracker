@@ -23,7 +23,7 @@
         Meetings in progress
     </div>
     <div class="panel-body">
-      {% with sessions=in_progress show_request=True show_ical=True %}
+      {% with sessions=in_progress show_request=True show_ical=True can_edit_materials=can_edit %}
          {% include "group/meetings-row.html" %}
       {% endwith %}
     </div>
@@ -37,7 +37,7 @@
         <a class="regular pull-right" title="icalendar entry for all scheduled future {{group.acronym}} meetings" href="{% url 'ietf.meeting.views.upcoming_ical' %}?filters={{group.acronym}}"><span class="fa fa-calendar"></span></a>
     </div>
     <div class="panel-body">
-      {% with sessions=future show_request=True show_ical=True %}
+      {% with sessions=future show_request=True show_ical=True can_edit_materials=can_edit %}
          {% include "group/meetings-row.html" %}
       {% endwith %}
     </div>
@@ -50,7 +50,10 @@
         Past Meetings
     </div>
     <div class="panel-body">
-      {% with past as sessions %}
+      {% with sessions=recent can_edit_materials=can_edit %}
+         {% include "group/meetings-row.html" %}
+      {% endwith %}
+      {% with sessions=past can_edit_materials=False %}
          {% include "group/meetings-row.html" %}
       {% endwith %}
     </div>

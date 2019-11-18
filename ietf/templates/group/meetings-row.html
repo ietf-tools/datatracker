@@ -50,7 +50,7 @@
          <td>{% if s.minutes %}<a href="{{ s.minutes.get_absolute_url }}">Minutes</a>{% endif %}</td>
          <td>
 	   <a href="{% url 'ietf.meeting.views.session_details' num=s.meeting.number acronym=s.group.acronym %}">
-	     {% if can_edit %}Edit {% endif %}Materials
+	     {% if can_always_edit or can_edit_materials %}Edit {% endif %}Materials
 	   </a>
 	 </td>
       {% endfor %}

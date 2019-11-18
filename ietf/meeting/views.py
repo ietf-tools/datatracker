@@ -48,7 +48,7 @@ from django.views.generic import RedirectView
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocAlias
 from ietf.group.models import Group
-from ietf.group.utils import can_manage_materials
+from ietf.group.utils import can_manage_session_materials
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
@@ -1116,8 +1116,8 @@ def session_details(request, num, acronym ):
             session.type_counter.update([p.document.type.slug for p in qs])
 
     # we somewhat arbitrarily use the group of the last session wet get from
-    # get_sessions() above when checking can_manage_materials()
-    can_manage = can_manage_materials(request.user, session.group)
+    # get_sessions() above when checking can_manage_session_materials()
+    can_manage = can_manage_session_materials(request.user, session.group, session)
 
     scheduled_sessions=[s for s in sessions if s.status_id=='sched']
     unscheduled_sessions = [s for s in sessions if s.status_id!='sched']
