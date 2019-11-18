@@ -30,14 +30,14 @@
               <th class="col-md-1">Public</th>
               <th class="col-md-1"></th>
             </tr>
-            {% for agenda in class.list %}
+            {% for schedule in class.list %}
             <tr>
-              <td><a href="{% url "ietf.meeting.views.edit_agenda" agenda.meeting.number agenda.owner_email agenda.name %}">
-                    {{ agenda.name }}</a></td>
-              <td>{{ agenda.owner }}</td>
-              <td>{{ agenda.visible_token }}</td>
-              <td>{{ agenda.public_token }}</td>
-              <td><a class="btn btn-default" href="{% url "ietf.meeting.views.edit_agenda_properties" agenda.meeting.number agenda.owner_email agenda.name %}">
+              <td><a href="{% url "ietf.meeting.views.edit_schedule" schedule.meeting.number schedule.owner_email schedule.name %}">
+                    {{ schedule.name }}</a></td>
+              <td>{{ schedule.owner }}</td>
+              <td>{{ schedule.visible_token }}</td>
+              <td>{{ schedule.public_token }}</td>
+              <td><a class="btn btn-default" href="{% url "ietf.meeting.views.edit_schedule_properties" schedule.meeting.number schedule.owner_email schedule.name %}">
                   EDIT</a></td>
           </tr>
           {% endfor %}

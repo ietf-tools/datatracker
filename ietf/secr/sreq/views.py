@@ -327,7 +327,7 @@ def edit(request, *args, **kwargs):
 
 def session_save(session):
     session.save()
-    if session.status_id == "schedw" and session.meeting.agenda != None:
+    if session.status_id == "schedw" and session.meeting.schedule != None:
         # send an email to iesg-secretariat to alert to change
         pass
 

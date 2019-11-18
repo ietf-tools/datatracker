@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 import json
 
 from django.shortcuts import get_object_or_404, redirect
@@ -7,9 +8,9 @@ from django.http import Http404
 from django.views.decorators.http import require_POST
 
 from ietf.ietfauth.utils import role_required, has_role
-from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, get_person_by_email, get_schedule_by_name
+from ietf.meeting.helpers import get_meeting, get_schedule, schedule_permissions, get_person_by_email, get_schedule_by_name
 from ietf.meeting.models import TimeSlot, Session, Schedule, Room, Constraint, SchedTimeSessAssignment, ResourceAssociation
-from ietf.meeting.views   import edit_timeslots, edit_agenda
+from ietf.meeting.views   import edit_timeslots, edit_schedule
 
 import debug                            # pyflakes:ignore
 
@@ -43,8 +44,8 @@ def get_meeting_schedule(num, owner, name):
 
 
 
-# should asking if an agenda is read-only require any kind of permission?
-def agenda_permission_api(request, num, owner, name):
+# should asking if an schedule is read-only require any kind of permission?
+def schedule_permission_api(request, num, owner, name):
     meeting  = get_meeting(num)
     person   = get_person_by_email(owner)
     schedule = get_schedule_by_name(meeting, person, name)
@@ -56,7 +57,7 @@ def agenda_permission_api(request, num, owner, name):
     owner_href  = ""
 
     if schedule is not None:
-        cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
+        cansee,canedit,secretariat = schedule_permissions(meeting, schedule, request.user)
         owner_href = request.build_absolute_uri(schedule.owner.json_url())
 
     if has_role(request.user, "Area Director") or secretariat:
@@ -256,39 +257,39 @@ def timeslot_sloturl(request, num=None, slotid=None):
         return timeslot_delslot(request, meeting, slotid)
 
 #############################################################################
-## Agenda List API
+## Schedule List API
 #############################################################################
-AgendaEntryForm = modelform_factory(Schedule, exclude=('meeting','owner'))
-EditAgendaEntryForm = modelform_factory(Schedule, exclude=('meeting','owner', 'name'))
+ScheduleEntryForm = modelform_factory(Schedule, exclude=('meeting','owner'))
+EditScheduleEntryForm = modelform_factory(Schedule, exclude=('meeting','owner', 'name'))
 
 @role_required('Area Director','Secretariat')
-def agenda_list(request, mtg):
-    agendas = mtg.schedule_set.all()
+def schedule_list(request, mtg):
+    schedules = mtg.schedule_set.all()
     json_array=[]
-    for agenda in agendas:
-        json_array.append(agenda.json_dict(request.build_absolute_uri('/')))
+    for schedule in schedules:
+        json_array.append(schedule.json_dict(request.build_absolute_uri('/')))
     return HttpResponse(json.dumps(json_array),
                         content_type="application/json")
 
 # duplicates save-as functionality below.
 @role_required('Area Director','Secretariat')
-def agenda_add(request, meeting):
-    newagendaform = AgendaEntryForm(request.POST)
-    if not newagendaform.is_valid():
+def schedule_add(request, meeting):
+    newscheduleform = ScheduleEntryForm(request.POST)
+    if not newscheduleform.is_valid():
         return HttpResponse(status=404)
 
-    newagenda = newagendaform.save(commit=False)
-    newagenda.meeting = meeting
-    newagenda.owner   = request.user.person
-    newagenda.save()
+    newschedule = newscheduleform.save(commit=False)
+    newschedule.meeting = meeting
+    newschedule.owner   = request.user.person
+    newschedule.save()
 
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
-        return redirect(agenda_infourl, meeting.number, newagenda.owner_email(), newagenda.name)
+        return redirect(schedule_infourl, meeting.number, newschedule.owner_email(), newschedule.name)
     else:
-        return redirect(edit_agenda, meeting.number, newagenda.owner_email(), newagenda.name)
+        return redirect(edit_schedule, meeting.number, newschedule.owner_email(), newschedule.name)
 
 @require_POST
-def agenda_update(request, meeting, schedule):
+def schedule_update(request, meeting, schedule):
     # forms are completely useless for update actions that want to
     # accept a subset of values. (huh? we could use required=False)
 
@@ -297,7 +298,7 @@ def agenda_update(request, meeting, schedule):
     if not user.is_authenticated:
         return HttpResponse({'error':'no permission'}, status=403)
 
-    cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
+    cansee,canedit,secretariat = schedule_permissions(meeting, schedule, request.user)
     #read_only = not canedit ## not used
 
     # TODO: Secretariat should always get canedit
@@ -316,53 +317,53 @@ def agenda_update(request, meeting, schedule):
     schedule.save()
 
     # enforce that a non-public schedule can not be the public one.
-    if meeting.agenda == schedule and not schedule.public:
-        meeting.agenda = None
+    if meeting.schedule == schedule and not schedule.public:
+        meeting.schedule = None
         meeting.save()
 
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
         return HttpResponse(json.dumps(schedule.json_dict(request.build_absolute_uri('/'))),
                             content_type="application/json")
     else:
-        return redirect(edit_agenda, meeting.number, schedule.owner_email(), schedule.name)
+        return redirect(edit_schedule, meeting.number, schedule.owner_email(), schedule.name)
 
 @role_required('Secretariat')
-def agenda_del(request, meeting, schedule):
+def schedule_del(request, meeting, schedule):
     schedule.delete_assignments()
-    #debug.log("deleting meeting: %s agenda: %s" % (meeting, meeting.agenda))
-    if meeting.agenda == schedule:
-        meeting.agenda = None
+    #debug.log("deleting meeting: %s schedule: %s" % (meeting, meeting.schedule))
+    if meeting.schedule == schedule:
+        meeting.schedule = None
         meeting.save()
     schedule.delete()
     return HttpResponse('{"error":"none"}', status = 200)
 
-def agenda_infosurl(request, num=None):
+def schedule_infosurl(request, num=None):
     meeting = get_meeting(num)
 
     if request.method == 'GET':
-        return agenda_list(request, meeting)
+        return schedule_list(request, meeting)
     elif request.method == 'POST':
-        return agenda_add(request, meeting)
+        return schedule_add(request, meeting)
 
     # unacceptable action
     return HttpResponse(status=406)
 
-def agenda_infourl(request, num=None, owner=None, name=None):
+def schedule_infourl(request, num=None, owner=None, name=None):
     meeting  = get_meeting(num)
     person   = get_person_by_email(owner)
     schedule = get_schedule_by_name(meeting, person, name)
     if schedule is None:
         raise Http404("No meeting information for meeting %s schedule %s available" % (num,name))
 
-    #debug.log("results in agenda: %u / %s" % (schedule.id, request.method))
+    #debug.log("results in schedule: %u / %s" % (schedule.id, request.method))
 
     if request.method == 'GET':
         return HttpResponse(json.dumps(schedule.json_dict(request.build_absolute_uri('/'))),
                             content_type="application/json")
     elif request.method == 'POST':
-        return agenda_update(request, meeting, schedule)
+        return schedule_update(request, meeting, schedule)
     elif request.method == 'DELETE':
-        return agenda_del(request, meeting, schedule)
+        return schedule_del(request, meeting, schedule)
     else:
         return HttpResponse(status=406)
 
@@ -377,22 +378,22 @@ def meeting_get(request, meeting):
 
 @role_required('Secretariat')
 def meeting_update(request, meeting):
-    # at present, only the official agenda can be updated from this interface.
+    # at present, only the official schedule can be updated from this interface.
 
-    #debug.log("1 meeting.agenda: %s / %s / %s" % (meeting.agenda, update_dict, request.body))
-    if "agenda" in request.POST:
-        value = request.POST["agenda"]
-        #debug.log("4 meeting.agenda: %s" % (value))
+    #debug.log("1 meeting.schedule: %s / %s / %s" % (meeting.schedule, update_dict, request.body))
+    if "schedule" in request.POST:
+        value = request.POST["schedule"]
+        #debug.log("4 meeting.schedule: %s" % (value))
         if not value or value == "None": # value == "None" is just weird, better with empty string
-            meeting.set_official_agenda(None)
+            meeting.set_official_schedule(None)
         else:
             schedule = get_schedule(meeting, value)
             if not schedule.public:
                 return HttpResponse(status = 406)
-            #debug.log("3 meeting.agenda: %s" % (schedule))
-            meeting.set_official_agenda(schedule)
+            #debug.log("3 meeting.schedule: %s" % (schedule))
+            meeting.set_official_schedule(schedule)
 
-    #debug.log("2 meeting.agenda: %s" % (meeting.agenda))
+    #debug.log("2 meeting.schedule: %s" % (meeting.schedule))
     meeting.save()
     return meeting_get(request, meeting)
 
@@ -442,9 +443,9 @@ def sessions_json(request, num):
 
 # this creates an entirely *NEW* schedtimesessassignment
 def assignments_post(request, meeting, schedule):
-    cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
+    cansee,canedit,secretariat = schedule_permissions(meeting, schedule, request.user)
     if not canedit:
-        return HttpResponse(json.dumps({'error':'no permission to modify this agenda'}),
+        return HttpResponse(json.dumps({'error':'no permission to modify this schedule'}),
                             status = 403,
                             content_type="application/json")
 
@@ -491,7 +492,7 @@ def assignments_get(request, num, schedule):
     return HttpResponse(json.dumps(sess1_dict, sort_keys=True, indent=2),
                         content_type="application/json")
 
-# this returns the list of scheduled sessions for the given named agenda
+# this returns the list of scheduled sessions for the given named schedule
 def assignments_json(request, num, owner, name):
     info = get_meeting_schedule(num, owner, name)
     # The return values from get_meeting_schedule() are silly, in that it
@@ -512,9 +513,9 @@ def assignments_json(request, num, owner, name):
 
 # accepts both POST and PUT in order to implement Postel Doctrine.
 def assignment_update(request, meeting, schedule, ss):
-    cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
+    cansee,canedit,secretariat = schedule_permissions(meeting, schedule, request.user)
     if not canedit:
-        return HttpResponse(json.dumps({'error':'no permission to update this agenda'}),
+        return HttpResponse(json.dumps({'error':'no permission to update this schedule'}),
                             status = 403,
                             content_type="application/json")
 
@@ -530,9 +531,9 @@ def assignment_update(request, meeting, schedule, ss):
                         content_type="application/json")
 
 def assignment_delete(request, meeting, schedule, ss):
-    cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
+    cansee,canedit,secretariat = schedule_permissions(meeting, schedule, request.user)
     if not canedit:
-        return HttpResponse(json.dumps({'error':'no permission to update this agenda'}),
+        return HttpResponse(json.dumps({'error':'no permission to update this schedule'}),
                             status = 403,
                             content_type="application/json")
 
@@ -552,10 +553,10 @@ def assignment_delete(request, meeting, schedule, ss):
                         content_type="application/json")
 
 def assignment_get(request, meeting, schedule, ss):
-    cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)
+    cansee,canedit,secretariat = schedule_permissions(meeting, schedule, request.user)
 
     if not cansee:
-        return HttpResponse(json.dumps({'error':'no permission to see this agenda'}),
+        return HttpResponse(json.dumps({'error':'no permission to see this schedule'}),
                             status = 403,
                             content_type="application/json")
 

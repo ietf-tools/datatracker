@@ -187,11 +187,11 @@ class InterimMeetingModelForm(forms.ModelForm):
         if kwargs.get('commit', True):
             # create schedule with meeting
             meeting.save()  # pre-save so we have meeting.pk for schedule
-            if not meeting.agenda:
-                meeting.agenda = Schedule.objects.create(
+            if not meeting.schedule:
+                meeting.schedule = Schedule.objects.create(
                     meeting=meeting,
                     owner=Person.objects.get(name='(System)'))
-            meeting.save()  # save with agenda
+            meeting.save()  # save with schedule
             
             # create directories
             make_materials_directories(meeting)

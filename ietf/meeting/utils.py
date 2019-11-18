@@ -23,7 +23,7 @@ from ietf.secr.proceedings.proc_utils import import_audio_files
 def group_sessions(sessions):
 
     def sort_key(session):
-        official_sessions = session.timeslotassignments.filter(schedule=session.meeting.agenda)
+        official_sessions = session.timeslotassignments.filter(schedule=session.meeting.schedule)
         if official_sessions:
             return official_sessions.first().timeslot.time
         elif session.meeting.date:
@@ -77,7 +77,7 @@ def sort_sessions(sessions):
     # (or the time of the session request if the session isn't scheduled).
 
     def time_sort_key(session):
-        official_sessions = session.timeslotassignments.filter(schedule=session.meeting.agenda)
+        official_sessions = session.timeslotassignments.filter(schedule=session.meeting.schedule)
         if official_sessions:
             return official_sessions.first().timeslot.time
         else:

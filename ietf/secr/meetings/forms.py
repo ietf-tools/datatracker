@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 import re
 
 from django import forms
@@ -102,7 +103,7 @@ class MeetingModelForm(forms.ModelForm):
     idsubmit_cutoff_warning_days = ietf.utils.fields.DurationField()
     class Meta:
         model = Meeting
-        exclude = ('type', 'agenda', 'session_request_lock_message')
+        exclude = ('type', 'schedule', 'session_request_lock_message')
         
 
     def __init__(self,*args,**kwargs):

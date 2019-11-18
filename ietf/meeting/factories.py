@@ -63,9 +63,9 @@ class MeetingFactory(factory.DjangoModelFactory):
 
 
     @factory.post_generation
-    def populate_agenda(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
+    def populate_schedule(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         '''
-        Create a default agenda, unless the factory is called
+        Create a default schedule, unless the factory is called
         with populate_agenda=False
         '''
         if extracted is None:
@@ -73,7 +73,7 @@ class MeetingFactory(factory.DjangoModelFactory):
         if create and extracted:
             for x in range(3):
                 TimeSlotFactory(meeting=obj)
-            obj.agenda = ScheduleFactory(meeting=obj)
+            obj.schedule = ScheduleFactory(meeting=obj)
             obj.save()
 
 class SessionFactory(factory.DjangoModelFactory):
@@ -96,7 +96,7 @@ class SessionFactory(factory.DjangoModelFactory):
             extracted = True
         if create and extracted:
             ts = obj.meeting.timeslot_set.all()
-            obj.timeslotassignments.create(timeslot=ts[random.randrange(len(ts))],schedule=obj.meeting.agenda)
+            obj.timeslotassignments.create(timeslot=ts[random.randrange(len(ts))],schedule=obj.meeting.schedule)
 
 class ScheduleFactory(factory.DjangoModelFactory):
     class Meta:

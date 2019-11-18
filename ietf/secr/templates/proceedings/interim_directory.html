@@ -14,8 +14,8 @@
     <tr class="{% cycle 'row1' 'row2' %}">
       <td align="left" style="white-space: nowrap">{{ meeting.date }}</td>
       <td><a href="https://datatracker.ietf.org/wg/{{ meeting.group.acronym }}">{{ meeting.group.acronym }}</a></td>
-      {% if meeting.agenda %}
-        <td width="70" align="center"><a href="{{ meeting.agenda.get_absolute_url }}">Agenda</a></td>
+      {% if meeting.schedule %}
+        <td width="70" align="center"><a href="{{ meeting.schedule.get_absolute_url }}">Agenda</a></td>
       {% else %}
         <td width="70" align="center">Agenda</td>
       {% endif %}

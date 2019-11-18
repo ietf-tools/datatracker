@@ -37,7 +37,7 @@ def make_interim_meeting(group,date,status='sched'):
     SchedTimeSessAssignment.objects.create(
         timeslot=slot,
         session=session,
-        schedule=session.meeting.agenda)
+        schedule=session.meeting.schedule)
     # agenda
     name = "agenda-%s-%s-%s" % (meeting.number, group.acronym, "01")
     rev = '00'
@@ -77,8 +77,8 @@ def make_meeting_test_data(meeting=None):
 
     if not meeting:
         meeting = Meeting.objects.get(number="72", type="ietf")
-    schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-agenda", visible=True, public=True)
-    unofficial_schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-unofficial-agenda", visible=True, public=True)
+    schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-schedule", visible=True, public=True)
+    unofficial_schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-unofficial-schedule", visible=True, public=True)
 
     # test room
     pname = RoomResourceName.objects.create(name='projector',slug='proj')
@@ -156,7 +156,7 @@ def make_meeting_test_data(meeting=None):
                                            scheduled=datetime.datetime.now(),type_id="break")
     SchedTimeSessAssignment.objects.create(timeslot=break_slot, session=break_session, schedule=schedule)
 
-    meeting.agenda = schedule
+    meeting.schedule = schedule
     meeting.save()
 
     # Convenience for the tests

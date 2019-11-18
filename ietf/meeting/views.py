@@ -57,7 +57,7 @@ from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
 from ietf.meeting.helpers import get_modified_from_assignments
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
-from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, get_ietf_meeting
+from ietf.meeting.helpers import get_meeting, get_schedule, schedule_permissions, get_ietf_meeting
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
 from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
 from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
@@ -133,7 +133,7 @@ def materials(request, num=None):
     schedule = get_schedule(meeting, None)
     sessions  = ( Session.objects
         .filter(meeting__number=meeting.number, timeslotassignments__schedule=schedule)
-        .select_related('meeting__agenda','status','group__state','group__parent', )
+        .select_related('meeting__schedule','status','group__state','group__parent', )
     )
     for session in sessions:
         session.past_cutoff_date = past_cutoff_date
@@ -244,7 +244,7 @@ class SaveAsForm(forms.Form):
     savename = forms.CharField(max_length=16)
 
 @role_required('Area Director','Secretariat')
-def agenda_create(request, num=None, owner=None, name=None):
+def schedule_create(request, num=None, owner=None, name=None):
     meeting  = get_meeting(num)
     person   = get_person_by_email(owner)
     schedule = get_schedule_by_name(meeting, person, name)
@@ -252,29 +252,29 @@ def agenda_create(request, num=None, owner=None, name=None):
     if schedule is None:
         # here we have to return some ajax to display an error.
         messages.error("Error: No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name)) # pylint: disable=no-value-for-parameter
-        return redirect(edit_agenda, num=num, owner=owner, name=name)
+        return redirect(edit_schedule, num=num, owner=owner, name=name)
 
     # authorization was enforced by the @group_require decorator above.
 
     saveasform = SaveAsForm(request.POST)
     if not saveasform.is_valid():
         messages.info(request, "This name is not valid. Please choose another one.")
-        return redirect(edit_agenda, num=num, owner=owner, name=name)
+        return redirect(edit_schedule, num=num, owner=owner, name=name)
 
     savedname = saveasform.cleaned_data['savename']
 
     if not ascii_alphanumeric(savedname):
         messages.info(request, "This name contains illegal characters. Please choose another one.")
-        return redirect(edit_agenda, num=num, owner=owner, name=name)
+        return redirect(edit_schedule, num=num, owner=owner, name=name)
 
     # create the new schedule, and copy the assignments
     try:
         sched = meeting.schedule_set.get(name=savedname, owner=request.user.person)
         if sched:
-            return redirect(edit_agenda, num=meeting.number, owner=sched.owner_email(), name=sched.name)
+            return redirect(edit_schedule, num=meeting.number, owner=sched.owner_email(), name=sched.name)
         else:
-            messages.info(request, "Agenda creation failed. Please try again.")
-            return redirect(edit_agenda, num=num, owner=owner, name=name)
+            messages.info(request, "Schedule creation failed. Please try again.")
+            return redirect(edit_schedule, num=num, owner=owner, name=name)
 
     except Schedule.DoesNotExist:
         pass
@@ -313,7 +313,7 @@ def agenda_create(request, num=None, owner=None, name=None):
 
 
     # now redirect to this new schedule.
-    return redirect(edit_agenda, meeting.number, newschedule.owner_email(), newschedule.name)
+    return redirect(edit_schedule, meeting.number, newschedule.owner_email(), newschedule.name)
 
 
 @role_required('Secretariat')
@@ -344,16 +344,16 @@ def edit_timeslots(request, num=None):
 #@role_required('Area Director','Secretariat')
 # disable the above security for now, check it below.
 @ensure_csrf_cookie
-def edit_agenda(request, num=None, owner=None, name=None):
+def edit_schedule(request, num=None, owner=None, name=None):
 
     if request.method == 'POST':
-        return agenda_create(request, num, owner, name)
+        return schedule_create(request, num, owner, name)
 
     user     = request.user
     meeting  = get_meeting(num)
     person   = get_person_by_email(owner)
     if name is None:
-        schedule = meeting.agenda
+        schedule = meeting.schedule
     else:
         schedule = get_schedule_by_name(meeting, person, name)
     if schedule is None:
@@ -364,13 +364,13 @@ def edit_agenda(request, num=None, owner=None, name=None):
 
     rooms = meeting.room_set.filter(session_types__slug='session').distinct().order_by("capacity")
     saveas = SaveAsForm()
-    saveasurl=reverse(edit_agenda,
+    saveasurl=reverse(edit_schedule,
                       args=[meeting.number, schedule.owner_email(), schedule.name])
 
-    can_see, can_edit,secretariat = agenda_permissions(meeting, schedule, user)
+    can_see, can_edit,secretariat = schedule_permissions(meeting, schedule, user)
 
     if not can_see:
-        return render(request, "meeting/private_agenda.html",
+        return render(request, "meeting/private_schedule.html",
                                              {"schedule":schedule,
                                               "meeting": meeting,
                                               "meeting_base_url":meeting_base_url,
@@ -413,32 +413,32 @@ def edit_agenda(request, num=None, owner=None, name=None):
                                       })
 
 ##############################################################################
-#  show the properties associated with an agenda (visible, public)
+#  show the properties associated with a schedule (visible, public)
 #
-AgendaPropertiesForm = modelform_factory(Schedule, fields=('name','visible', 'public'))
+SchedulePropertiesForm = modelform_factory(Schedule, fields=('name','visible', 'public'))
 
 # The meeing urls.py won't allow empy num, owmer, or name values
 
 @role_required('Area Director','Secretariat')
-def edit_agenda_properties(request, num=None, owner=None, name=None):
+def edit_schedule_properties(request, num=None, owner=None, name=None):
     meeting  = get_meeting(num)
     person   = get_person_by_email(owner)
     schedule = get_schedule_by_name(meeting, person, name)
     if schedule is None:
         raise Http404("No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
 
-    cansee, canedit, secretariat = agenda_permissions(meeting, schedule, request.user)
+    cansee, canedit, secretariat = schedule_permissions(meeting, schedule, request.user)
 
     if not (canedit or has_role(request.user,'Secretariat')):
-        return HttpResponseForbidden("You may not edit this agenda")
+        return HttpResponseForbidden("You may not edit this schedule")
     else:
         if request.method == 'POST':
-            form = AgendaPropertiesForm(instance=schedule,data=request.POST)
+            form = SchedulePropertiesForm(instance=schedule,data=request.POST)
             if form.is_valid():
                form.save()
-               return HttpResponseRedirect(reverse('ietf.meeting.views.list_agendas',kwargs={'num': num}))
+               return HttpResponseRedirect(reverse('ietf.meeting.views.list_schedules',kwargs={'num': num}))
         else: 
-            form = AgendaPropertiesForm(instance=schedule)
+            form = SchedulePropertiesForm(instance=schedule)
         return render(request, "meeting/properties_edit.html",
                                              {"schedule":schedule,
                                               "form":form,
@@ -446,11 +446,11 @@ def edit_agenda_properties(request, num=None, owner=None, name=None):
                                           })
 
 ##############################################################################
-# show list of agendas.
+# show list of schedules.
 #
 
 @role_required('Area Director','Secretariat')
-def list_agendas(request, num=None ):
+def list_schedules(request, num=None ):
 
     meeting = get_meeting(num)
     user = request.user
@@ -463,7 +463,7 @@ def list_agendas(request, num=None ):
 
     schedules = sorted(list(schedules),key=lambda x:not x.is_official)
 
-    return render(request, "meeting/agenda_list.html",
+    return render(request, "meeting/schedule_list.html",
                                          {"meeting":   meeting,
                                           "schedules": schedules,
                                           })
@@ -484,7 +484,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     assert num is None or num.isdigit()
 
     meeting = get_ietf_meeting(num)
-    if not meeting or (meeting.number.isdigit() and int(meeting.number) <= 64 and (not meeting.agenda or not meeting.agenda.assignments.exists())):
+    if not meeting or (meeting.number.isdigit() and int(meeting.number) <= 64 and (not meeting.schedule or not meeting.schedule.assignments.exists())):
         if ext == '.html' or (meeting and meeting.number.isdigit() and 0 < int(meeting.number) <= 64):
             return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
         else:
@@ -946,7 +946,7 @@ def json_agenda(request, num=None ):
     sessions = []
     locations = set()
     parent_acronyms = set()
-    assignments = meeting.agenda.assignments.exclude(session__type__in=['lead','offagenda','break','reg'])
+    assignments = meeting.schedule.assignments.exclude(session__type__in=['lead','offagenda','break','reg'])
     # Update the assignments with historic information, i.e., valid at the
     # time of the meeting
     assignments = preprocess_assignments_for_agenda(assignments, meeting)
@@ -1076,7 +1076,7 @@ def get_sessions(num, acronym):
         sessions = Session.objects.filter(meeting=meeting,short=acronym,type__in=['session','plenary','other']) 
 
     def sort_key(session):
-        official_sessions = session.timeslotassignments.filter(schedule=session.meeting.agenda)
+        official_sessions = session.timeslotassignments.filter(schedule=session.meeting.schedule)
         if official_sessions:
             return official_sessions.first().timeslot.time
         else:
@@ -1094,7 +1094,7 @@ def session_details(request, num, acronym ):
     for session in sessions:
 
         session.type_counter = Counter()
-        ss = session.timeslotassignments.filter(schedule=meeting.agenda).order_by('timeslot__time')
+        ss = session.timeslotassignments.filter(schedule=meeting.schedule).order_by('timeslot__time')
         if ss:
             session.time = ', '.join(x.timeslot.time.strftime("%A %b-%d-%Y %H%M") for x in ss) 
             if session.status.slug == 'canceled':
@@ -1704,9 +1704,9 @@ def make_schedule_official(request, num, owner, name):
             schedule.public = True
             schedule.visible = True
             schedule.save()
-        meeting.agenda = schedule
+        meeting.schedule = schedule
         meeting.save()
-        return HttpResponseRedirect(reverse('ietf.meeting.views.list_agendas',kwargs={'num':num}))
+        return HttpResponseRedirect(reverse('ietf.meeting.views.list_schedules',kwargs={'num':num}))
 
     if not schedule.public:
         messages.warning(request,"This schedule will be made public as it is made official.")
@@ -1731,15 +1731,15 @@ def delete_schedule(request, num, owner, name):
     if schedule.name=='Empty-Schedule':
         return HttpResponseForbidden('You may not delete the default empty schedule')
 
-    if schedule == meeting.agenda:
-        return HttpResponseForbidden('You may not delete the official agenda for %s'%meeting)
+    if schedule == meeting.schedule:
+        return HttpResponseForbidden('You may not delete the official schedule for %s'%meeting)
 
     if not ( has_role(request.user, 'Secretariat') or person.user == request.user ):
         return HttpResponseForbidden("You may not delete other user's schedules")
 
     if request.method == 'POST':
         schedule.delete()
-        return HttpResponseRedirect(reverse('ietf.meeting.views.list_agendas',kwargs={'num':num}))
+        return HttpResponseRedirect(reverse('ietf.meeting.views.list_schedules',kwargs={'num':num}))
 
     return render(request, "meeting/delete_schedule.html",
                   { 'schedule' : schedule,
@@ -2143,7 +2143,7 @@ def upcoming_ical(request):
 
     assignments = []
     for meeting in meetings:
-        items = meeting.agenda.assignments.order_by(
+        items = meeting.schedule.assignments.order_by(
             'session__type__slug', 'timeslot__time')
         assignments.extend(items)
 
@@ -2175,7 +2175,7 @@ def upcoming_ical(request):
 
 def floor_plan(request, num=None, floor=None, ):
     meeting = get_meeting(num)
-    schedule = meeting.agenda
+    schedule = meeting.schedule
     floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
     if floor:
         floors = [ f for f in floors if xslugify(f.name) == floor ]
@@ -2189,7 +2189,7 @@ def proceedings(request, num=None):
 
     meeting = get_meeting(num)
 
-    if (meeting.number.isdigit() and int(meeting.number) <= 64) or not meeting.agenda or not meeting.agenda.assignments.exists():
+    if (meeting.number.isdigit() and int(meeting.number) <= 64) or not meeting.schedule or not meeting.schedule.assignments.exists():
             return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
 
     begin_date = meeting.get_submission_start_date()
@@ -2220,7 +2220,7 @@ def finalize_proceedings(request, num=None):
 
     meeting = get_meeting(num)
 
-    if (meeting.number.isdigit() and int(meeting.number) <= 64) or not meeting.agenda or not meeting.agenda.assignments.exists() or meeting.proceedings_final:
+    if (meeting.number.isdigit() and int(meeting.number) <= 64) or not meeting.schedule or not meeting.schedule.assignments.exists() or meeting.proceedings_final:
         raise Http404
 
     if request.method=='POST':
@@ -2404,7 +2404,7 @@ def edit_timeslot_type(request, num, slot_id):
     else:
         form = TimeSlotTypeForm(instance=timeslot)
         
-    sessions = timeslot.sessions.filter(timeslotassignments__schedule=meeting.agenda)
+    sessions = timeslot.sessions.filter(timeslotassignments__schedule=meeting.schedule)
 
     return render(request, 'meeting/edit_timeslot_type.html', {'timeslot':timeslot,'form':form,'sessions':sessions})
 
@@ -2425,7 +2425,7 @@ def request_minutes(request, num=None):
             return HttpResponseRedirect(reverse('ietf.meeting.views.materials',kwargs={'num':num}))
     else:
         needs_minutes = set() 
-        for a in meeting.agenda.assignments.filter(session__group__type_id__in=('wg','rg','ag')).exclude(session__status='canceled'):
+        for a in meeting.schedule.assignments.filter(session__group__type_id__in=('wg','rg','ag')).exclude(session__status='canceled'):
             if not a.session.all_meeting_minutes():
                 group = a.session.group
                 if group.parent and group.parent.type_id in ('area','irtf'):

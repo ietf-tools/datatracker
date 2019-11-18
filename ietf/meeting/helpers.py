@@ -138,14 +138,14 @@ def get_ietf_meeting(num=None):
 
 def get_schedule(meeting, name=None):
     if name is None:
-        schedule = meeting.agenda
+        schedule = meeting.schedule
     else:
         schedule = get_object_or_404(meeting.schedule_set, name=name)
     return schedule
 
 def get_schedule_by_id(meeting, schedid):
     if schedid is None:
-        schedule = meeting.agenda
+        schedule = meeting.schedule
     else:
         schedule = get_object_or_404(meeting.schedule_set, id=int(schedid))
     return schedule
@@ -271,7 +271,7 @@ def convert_draft_to_pdf(doc_name):
     pipe("ps2pdf "+psname+" "+outpath)
     os.unlink(psname)
 
-def agenda_permissions(meeting, schedule, user):
+def schedule_permissions(meeting, schedule, user):
     # do this in positive logic.
     cansee = False
     canedit = False
@@ -389,7 +389,7 @@ def create_interim_meeting(group, date, city='', country='', timezone='UTC',
         owner=person,
         visible=True,
         public=True)
-    meeting.agenda = schedule
+    meeting.schedule = schedule
     meeting.save()
     return meeting
 
@@ -622,7 +622,7 @@ def update_interim_session_assignment(form):
         SchedTimeSessAssignment.objects.create(
             timeslot=slot,
             session=session,
-            schedule=session.meeting.agenda)
+            schedule=session.meeting.schedule)
 
 def populate_important_dates(meeting):
     assert ImportantDate.objects.filter(meeting=meeting).exists() is False

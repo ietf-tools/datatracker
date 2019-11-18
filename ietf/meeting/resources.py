@@ -18,7 +18,7 @@ from ietf.meeting.models import ( Meeting, ResourceAssociation, Constraint, Room
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
     type             = ToOneField(MeetingTypeNameResource, 'type')
-    agenda           = ToOneField('ietf.meeting.resources.ScheduleResource', 'agenda', null=True)
+    schedule         = ToOneField('ietf.meeting.resources.ScheduleResource', 'schedule', null=True)
     updated          = DateTimeField(attribute='updated')
     class Meta:
         cache = SimpleCache()
@@ -48,7 +48,7 @@ class MeetingResource(ModelResource):
             "agenda_warning_note": ALL,
             "session_request_lock_message": ALL,
             "type": ALL_WITH_RELATIONS,
-            "agenda": ALL_WITH_RELATIONS,
+            "schedule": ALL_WITH_RELATIONS,
             "proceedings_final": ALL,
         }
 api.meeting.register(MeetingResource())

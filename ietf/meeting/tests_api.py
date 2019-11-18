@@ -21,16 +21,16 @@ from ietf.utils.mail import outbox
 
 
 class ApiTests(TestCase):
-    def test_update_agenda(self):
+    def test_update_schedule(self):
         meeting = make_meeting_test_data()
-        schedule = Schedule.objects.get(meeting__number=72,name="test-agenda")
+        schedule = Schedule.objects.get(meeting__number=72,name="test-schedule")
         mars_session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         ames_session = Session.objects.filter(meeting=meeting, group__acronym="ames").first()
     
-        mars_scheduled = SchedTimeSessAssignment.objects.get(session=mars_session,schedule__name='test-agenda')
+        mars_scheduled = SchedTimeSessAssignment.objects.get(session=mars_session,schedule__name='test-schedule')
         mars_slot = mars_scheduled.timeslot 
 
-        ames_scheduled = SchedTimeSessAssignment.objects.get(session=ames_session,schedule__name='test-agenda')
+        ames_scheduled = SchedTimeSessAssignment.objects.get(session=ames_session,schedule__name='test-schedule')
         ames_slot = ames_scheduled.timeslot 
 
         def do_unschedule(assignment):
@@ -96,16 +96,16 @@ class ApiTests(TestCase):
         r = do_extend(schedule,mars_scheduled)
         self.assertEqual(r.status_code, 201)
         self.assertTrue("error" not in r.json())
-        self.assertEqual(mars_session.timeslotassignments.filter(schedule__name='test-agenda').count(),2)
+        self.assertEqual(mars_session.timeslotassignments.filter(schedule__name='test-schedule').count(),2)
 
         # Unschedule mars 
         r = do_unschedule(mars_scheduled)
         self.assertEqual(r.status_code, 200)
         self.assertNotIn("error", r.json())
         # Make sure it got both the original and extended session
-        self.assertEqual(mars_session.timeslotassignments.filter(schedule__name='test-agenda').count(),0)
+        self.assertEqual(mars_session.timeslotassignments.filter(schedule__name='test-schedule').count(),0)
 
-        self.assertEqual(SchedTimeSessAssignment.objects.get(session=ames_session,schedule__name='test-agenda').timeslot, mars_slot)
+        self.assertEqual(SchedTimeSessAssignment.objects.get(session=ames_session,schedule__name='test-schedule').timeslot, mars_slot)
 
 
     def test_constraints_json(self):
@@ -212,9 +212,9 @@ class ApiTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         info = r.json()
-        self.assertEqual(set([x['short_name'] for x in info]),set([s.session.short_name for s in meeting.agenda.assignments.filter(session__type_id='session')]))
+        self.assertEqual(set([x['short_name'] for x in info]),set([s.session.short_name for s in meeting.schedule.assignments.filter(session__type_id='session')]))
 
-        schedule = meeting.agenda
+        schedule = meeting.schedule
         url = urlreverse("ietf.meeting.ajax.assignments_json",
                          kwargs=dict(num=meeting.number,owner=schedule.owner_email(),name=schedule.name))
         r = self.client.get(url)
@@ -281,45 +281,45 @@ class ApiTests(TestCase):
     def test_schedule_json(self):
         meeting = make_meeting_test_data()
 
-        url = urlreverse("ietf.meeting.ajax.agenda_infourl",
+        url = urlreverse("ietf.meeting.ajax.schedule_infourl",
                          kwargs=dict(num=meeting.number,
-                                     owner=meeting.agenda.owner_email(),
-                                     name=meeting.agenda.name))
+                                     owner=meeting.schedule.owner_email(),
+                                     name=meeting.schedule.name))
 
         r = self.client.get(url)
         info = r.json()
-        self.assertEqual(info["schedule_id"], meeting.agenda.pk)
+        self.assertEqual(info["schedule_id"], meeting.schedule.pk)
 
     def test_create_new_schedule(self):
         meeting = make_meeting_test_data()
 
-        url = urlreverse("ietf.meeting.ajax.agenda_infosurl",
+        url = urlreverse("ietf.meeting.ajax.schedule_infosurl",
                          kwargs=dict(num=meeting.number))
         post_data = {
-            'name': 'new-agenda',
+            'name': 'new-schedule',
         }
 
         # unauthorized post
         self.client.login(username="plain", password="plain+password")
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 403)
-        self.assertTrue(not meeting.schedule_set.filter(name='new-agenda'))
+        self.assertTrue(not meeting.schedule_set.filter(name='new-schedule'))
 
-        # create new agenda
+        # create new schedule
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 302)
-        self.assertTrue(meeting.schedule_set.filter(name='new-agenda'))
+        self.assertTrue(meeting.schedule_set.filter(name='new-schedule'))
 
-    def test_update_schedule(self):
+    def test_update_meeting_schedule(self):
         meeting = make_meeting_test_data()
 
-        self.assertTrue(meeting.agenda.visible)
+        self.assertTrue(meeting.schedule.visible)
 
-        url = urlreverse("ietf.meeting.ajax.agenda_infourl",
+        url = urlreverse("ietf.meeting.ajax.schedule_infourl",
                          kwargs=dict(num=meeting.number,
-                                     owner=meeting.agenda.owner_email(),
-                                     name=meeting.agenda.name))
+                                     owner=meeting.schedule.owner_email(),
+                                     name=meeting.schedule.name))
 
         post_data = {
             'visible': 'false',
@@ -334,21 +334,21 @@ class ApiTests(TestCase):
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 403)
 
-        # change agenda
+        # change schedule
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 302)
-        changed_schedule = Schedule.objects.get(pk=meeting.agenda.pk)
+        changed_schedule = Schedule.objects.get(pk=meeting.schedule.pk)
         self.assertTrue(not changed_schedule.visible)
         self.assertEqual(changed_schedule.name, "new-test-name")
 
     def test_delete_schedule(self):
         meeting = make_meeting_test_data()
 
-        url = urlreverse("ietf.meeting.ajax.agenda_infourl",
+        url = urlreverse("ietf.meeting.ajax.schedule_infourl",
                          kwargs=dict(num=meeting.number,
-                                     owner=meeting.agenda.owner_email(),
-                                     name=meeting.agenda.name))
+                                     owner=meeting.schedule.owner_email(),
+                                     name=meeting.schedule.name))
         # unauthorized delete
         self.client.login(username="plain", password="plain+password")
         r = self.client.delete(url)
@@ -358,16 +358,16 @@ class ApiTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.delete(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(not Schedule.objects.filter(pk=meeting.agenda.pk))
+        self.assertTrue(not Schedule.objects.filter(pk=meeting.schedule.pk))
 
-    def test_set_meeting_agenda(self):
+    def test_set_meeting_schedule(self):
         meeting = make_meeting_test_data()
-        schedule = meeting.agenda
+        schedule = meeting.schedule
 
         url = urlreverse("ietf.meeting.ajax.meeting_json",
                          kwargs=dict(num=meeting.number))
         post_data = {
-            "agenda": "",
+            "schedule": "",
             }
         # unauthorized post
         self.client.login(username="ad", password="ad+password")
@@ -378,18 +378,18 @@ class ApiTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(not Meeting.objects.get(pk=meeting.pk).agenda)
+        self.assertTrue(not Meeting.objects.get(pk=meeting.pk).schedule)
 
-        # set agenda - first fail with non-public
+        # set schedule - first fail with non-public
         post_data = {
-            "agenda": schedule.name,
+            "schedule": schedule.name,
             }
         schedule.public = False
         schedule.save()
 
         r = self.client.post(url, post_data)
         self.assertTrue(r.status_code != 200)
-        self.assertTrue(not Meeting.objects.get(pk=meeting.pk).agenda)
+        self.assertTrue(not Meeting.objects.get(pk=meeting.pk).schedule)
 
         # then go through with public
         schedule.public = True
@@ -399,7 +399,7 @@ class ApiTests(TestCase):
         prior_length= len(outbox)
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(Meeting.objects.get(pk=meeting.pk).agenda, schedule)
+        self.assertEqual(Meeting.objects.get(pk=meeting.pk).schedule, schedule)
         self.assertEqual(len(outbox),prior_length)
 
     def test_read_only(self):
@@ -407,20 +407,20 @@ class ApiTests(TestCase):
 
         # Secretariat
         self.client.login(username="secretary", password="secretary+password")
-        url = '/meeting/%s/agenda/%s/%s/permissions' % (meeting.number, meeting.agenda.owner.email_address(), meeting.agenda.name);
+        url = '/meeting/%s/agenda/%s/%s/permissions' % (meeting.number, meeting.schedule.owner.email_address(), meeting.schedule.name);
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
         info = r.json()
         self.assertEqual(info['secretariat'], True)
-        self.assertEqual(urlsplit(info['owner_href'])[2], "/person/%s.json" % meeting.agenda.owner_id)
+        self.assertEqual(urlsplit(info['owner_href'])[2], "/person/%s.json" % meeting.schedule.owner_id)
         self.assertEqual(info['read_only'], True)
         self.assertEqual(info['save_perm'], True)
 
         # owner
-        self.client.login(username=meeting.agenda.owner.user.username,
-                          password=meeting.agenda.owner.user.username+"+password")
-        url = '/meeting/%s/agenda/%s/%s/permissions' % (meeting.number, meeting.agenda.owner.email_address(), meeting.agenda.name);
+        self.client.login(username=meeting.schedule.owner.user.username,
+                          password=meeting.schedule.owner.user.username+"+password")
+        url = '/meeting/%s/agenda/%s/%s/permissions' % (meeting.number, meeting.schedule.owner.email_address(), meeting.schedule.name);
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
@@ -434,7 +434,7 @@ class ApiTests(TestCase):
         scheduled = SchedTimeSessAssignment.objects.filter(
             session__meeting=meeting, session__group__acronym="mars").first()
 
-        url = '/meeting/%s/agenda/%s/%s/session/%u.json' % (meeting.number, meeting.agenda.owner_email(), meeting.agenda.name, scheduled.pk)
+        url = '/meeting/%s/agenda/%s/%s/session/%u.json' % (meeting.number, meeting.schedule.owner_email(), meeting.schedule.name, scheduled.pk)
 
         post_data = {
             "pinned": True
@@ -448,11 +448,11 @@ class ApiTests(TestCase):
         self.assertTrue(not SchedTimeSessAssignment.objects.get(pk=scheduled.pk).pinned)
 
         # set pinned
-        meeting.agenda.owner = Person.objects.get(user__username="secretary")
-        meeting.agenda.save()
+        meeting.schedule.owner = Person.objects.get(user__username="secretary")
+        meeting.schedule.save()
 
-        # need to rebuild URL, since the agenda owner has changed.
-        url = '/meeting/%s/agenda/%s/%s/session/%u.json' % (meeting.number, meeting.agenda.owner_email(), meeting.agenda.name, scheduled.pk)
+        # need to rebuild URL, since the schedule owner has changed.
+        url = '/meeting/%s/agenda/%s/%s/session/%u.json' % (meeting.number, meeting.schedule.owner_email(), meeting.schedule.name, scheduled.pk)
 
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.put(url, post_data)

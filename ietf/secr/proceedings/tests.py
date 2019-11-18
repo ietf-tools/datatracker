@@ -134,7 +134,7 @@ class RecordingTestCase(TestCase):
         ames_session.status = scheduled
         ames_session.save()
         timeslot = mars_session.official_timeslotassignment().timeslot
-        SchedTimeSessAssignment.objects.create(timeslot=timeslot,session=ames_session,schedule=meeting.agenda)
+        SchedTimeSessAssignment.objects.create(timeslot=timeslot,session=ames_session,schedule=meeting.schedule)
         self.create_audio_file_for_timeslot(timeslot)
         import_audio_files(meeting)
         doc = mars_session.materials.filter(type='recording').first()

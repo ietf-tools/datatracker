@@ -34,7 +34,7 @@ VIDEO_TITLE_RE = re.compile(r'IETF(?P<number>[\d]+)-(?P<name>.*)-(?P<date>\d{8})
 def _get_session(number,name,date,time):
     '''Lookup session using data from video title'''
     meeting = Meeting.objects.get(number=number)
-    schedule = meeting.agenda
+    schedule = meeting.schedule
     timeslot_time = datetime.datetime.strptime(date + time,'%Y%m%d%H%M')
     try:
         assignment = SchedTimeSessAssignment.objects.get(
@@ -73,7 +73,7 @@ def import_audio_files(meeting):
         timeslot = get_timeslot_for_filename(filename)
         if timeslot:
             sessionassignments = timeslot.sessionassignments.filter(
-                schedule=timeslot.meeting.agenda,
+                schedule=timeslot.meeting.schedule,
                 session__status='sched',
                 ).exclude(session__agenda_note__icontains='canceled').order_by('timeslot__time')
             if not sessionassignments:
@@ -103,7 +103,7 @@ def get_timeslot_for_filename(filename):
                 meeting=meeting,
                 location__name=room_mapping[match.groupdict()['room']],
                 time=time,
-                sessionassignments__schedule=meeting.agenda,
+                sessionassignments__schedule=meeting.schedule,
             ).exclude(sessions__status_id='canceled').distinct()
             return slots.get()
         except (ObjectDoesNotExist, KeyError):

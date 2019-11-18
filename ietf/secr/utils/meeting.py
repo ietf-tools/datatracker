@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+
 import os
 
 from django.conf import settings
@@ -49,7 +51,7 @@ def get_session(timeslot, schedule=None):
     '''
     # todo, doesn't account for shared timeslot
     if not schedule:
-        schedule = timeslot.meeting.agenda
+        schedule = timeslot.meeting.schedule
     qs = timeslot.sessions.filter(timeslotassignments__schedule=schedule)  #.exclude(states__slug='deleted')
     if qs:
         return qs[0]
@@ -63,7 +65,7 @@ def get_timeslot(session, schedule=None):
     schedule to use the meeting "official" schedule.
     '''
     if not schedule:
-        schedule = session.meeting.agenda
+        schedule = session.meeting.schedule
     ss = session.timeslotassignments.filter(schedule=schedule)
     if ss:
         return ss[0].timeslot

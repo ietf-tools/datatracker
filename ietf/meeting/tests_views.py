@@ -96,7 +96,7 @@ class MeetingTests(TestCase):
     def test_meeting_agenda(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
-        slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.agenda)
+        slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.schedule)
         #
         self.write_materials_files(meeting, session)
         #
@@ -475,7 +475,7 @@ class MeetingTests(TestCase):
         # Create an extra session
         t2 = TimeSlotFactory.create(meeting=meeting, time=datetime.datetime.combine(meeting.date, datetime.time(11, 30)))
         s2 = SessionFactory.create(meeting=meeting, group=s1.group, add_to_schedule=False)
-        SchedTimeSessAssignment.objects.create(timeslot=t2, session=s2, schedule=meeting.agenda)
+        SchedTimeSessAssignment.objects.create(timeslot=t2, session=s2, schedule=meeting.schedule)
         #
         url = urlreverse('ietf.meeting.views.ical_agenda', kwargs={'num':meeting.number, 'acronym':s1.group.acronym, })
         r = self.client.get(url)
@@ -537,14 +537,14 @@ class MeetingTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 302)
 
-    def test_edit_agenda_properties(self):
+    def test_edit_schedule_properties(self):
         self.client.login(username='secretary',password='secretary+password')
-        url = urlreverse('ietf.meeting.views.edit_agenda_properties',kwargs={'owner':'does@notexist.example','name':'doesnotexist','num':00})
+        url = urlreverse('ietf.meeting.views.edit_schedule_properties',kwargs={'owner':'does@notexist.example','name':'doesnotexist','num':00})
         response = self.client.get(url)
         self.assertEqual(response.status_code,404)
         self.client.logout()
         schedule = ScheduleFactory(meeting__type_id='ietf',visible=False,public=False)
-        url = urlreverse('ietf.meeting.views.edit_agenda_properties',kwargs={'owner':schedule.owner.email(),'name':schedule.name,'num':schedule.meeting.number})
+        url = urlreverse('ietf.meeting.views.edit_schedule_properties',kwargs={'owner':schedule.owner.email(),'name':schedule.name,'num':schedule.meeting.number})
         response = self.client.get(url)
         self.assertEqual(response.status_code,302)
         self.client.login(username='secretary',password='secretary+password')
@@ -590,27 +590,27 @@ class EditTests(TestCase):
         fg_group_colors[area_upper] = "#333"
         bg_group_colors[area_upper] = "#aaa"
 
-    def test_edit_agenda(self):
+    def test_edit_schedule(self):
         meeting = make_meeting_test_data()
 
         self.client.login(username="secretary", password="secretary+password")
-        r = self.client.get(urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number)))
+        r = self.client.get(urlreverse("ietf.meeting.views.edit_schedule", kwargs=dict(num=meeting.number)))
         self.assertContains(r, "load_assignments")
 
     def test_save_agenda_as_and_read_permissions(self):
         meeting = make_meeting_test_data()
 
         # try to get non-existing agenda
-        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number,
-                                                                       owner=meeting.agenda.owner_email(),
+        url = urlreverse("ietf.meeting.views.edit_schedule", kwargs=dict(num=meeting.number,
+                                                                       owner=meeting.schedule.owner_email(),
                                                                        name="foo"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 404)
 
         # save as new name (requires valid existing agenda)
-        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number,
-                                                                       owner=meeting.agenda.owner_email(),
-                                                                       name=meeting.agenda.name))
+        url = urlreverse("ietf.meeting.views.edit_schedule", kwargs=dict(num=meeting.number,
+                                                                       owner=meeting.schedule.owner_email(),
+                                                                       name=meeting.schedule.name))
         self.client.login(username="ad", password="ad+password")
         r = self.client.post(url, {
             'savename': "foo",
@@ -622,7 +622,7 @@ class EditTests(TestCase):
 
         # get
         schedule = meeting.get_schedule_by_name("foo")
-        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number,
+        url = urlreverse("ietf.meeting.views.edit_schedule", kwargs=dict(num=meeting.number,
                                                                        owner=schedule.owner_email(),
                                                                        name="foo"))
         r = self.client.get(url)
@@ -655,9 +655,9 @@ class EditTests(TestCase):
         meeting = make_meeting_test_data()
 
         # save as new name (requires valid existing agenda)
-        url = urlreverse("ietf.meeting.views.edit_agenda", kwargs=dict(num=meeting.number,
-                                                                       owner=meeting.agenda.owner_email(),
-                                                                       name=meeting.agenda.name))
+        url = urlreverse("ietf.meeting.views.edit_schedule", kwargs=dict(num=meeting.number,
+                                                                       owner=meeting.schedule.owner_email(),
+                                                                       name=meeting.schedule.name))
         self.client.login(username="ad", password="ad+password")
         r = self.client.post(url, {
             'savename': "/no/this/should/not/work/it/is/too/long",
@@ -706,12 +706,12 @@ class EditTests(TestCase):
     def test_slot_to_the_right(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
-        mars_scheduled = session.timeslotassignments.get(schedule__name='test-agenda')
-        mars_slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule__name='test-agenda')
+        mars_scheduled = session.timeslotassignments.get(schedule__name='test-schedule')
+        mars_slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule__name='test-schedule')
         mars_ends = mars_slot.time + mars_slot.duration
 
         session = Session.objects.filter(meeting=meeting, group__acronym="ames").first()
-        ames_slot_qs = TimeSlot.objects.filter(sessionassignments__session=session,sessionassignments__schedule__name='test-agenda')
+        ames_slot_qs = TimeSlot.objects.filter(sessionassignments__session=session,sessionassignments__schedule__name='test-schedule')
 
         ames_slot_qs.update(time=mars_ends + datetime.timedelta(seconds=11 * 60))
         self.assertTrue(not mars_slot.slot_to_the_right)
@@ -784,8 +784,8 @@ class EditScheduleListTests(TestCase):
         self.mtg = MeetingFactory(type_id='ietf')
         ScheduleFactory(meeting=self.mtg,name='Empty-Schedule')
 
-    def test_list_agendas(self):
-        url = urlreverse('ietf.meeting.views.list_agendas',kwargs={'num':self.mtg.number})
+    def test_list_schedules(self):
+        url = urlreverse('ietf.meeting.views.list_schedules',kwargs={'num':self.mtg.number})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertTrue(r.status_code, 200)
@@ -793,8 +793,8 @@ class EditScheduleListTests(TestCase):
     def test_delete_schedule(self):
         url = urlreverse('ietf.meeting.views.delete_schedule',
                          kwargs={'num':self.mtg.number,
-                                 'owner':self.mtg.agenda.owner.email_address(),
-                                 'name':self.mtg.agenda.name,
+                                 'owner':self.mtg.schedule.owner.email_address(),
+                                 'name':self.mtg.schedule.name,
                          })
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
@@ -802,7 +802,7 @@ class EditScheduleListTests(TestCase):
         r = self.client.post(url,{'save':1})
         self.assertTrue(r.status_code, 403)
         self.assertEqual(self.mtg.schedule_set.count(),2)
-        self.mtg.agenda=None
+        self.mtg.schedule=None
         self.mtg.save()
         r = self.client.get(url)
         self.assertTrue(r.status_code, 200)
@@ -811,7 +811,7 @@ class EditScheduleListTests(TestCase):
         self.assertEqual(self.mtg.schedule_set.count(),1)
 
     def test_make_schedule_official(self):
-        schedule = self.mtg.schedule_set.exclude(id=self.mtg.agenda.id).first()
+        schedule = self.mtg.schedule_set.exclude(id=self.mtg.schedule.id).first()
         url = urlreverse('ietf.meeting.views.make_schedule_official',
                          kwargs={'num':self.mtg.number,
                                  'owner':schedule.owner.email_address(),
@@ -823,7 +823,7 @@ class EditScheduleListTests(TestCase):
         r = self.client.post(url,{'save':1})
         self.assertTrue(r.status_code, 302)
         mtg = Meeting.objects.get(number=self.mtg.number)
-        self.assertEqual(mtg.agenda,schedule)
+        self.assertEqual(mtg.schedule,schedule)
 
 # -------------------------------------------------
 # Interim Meeting Tests
@@ -1594,7 +1594,7 @@ class InterimTests(TestCase):
         # Create an extra session
         t2 = TimeSlotFactory.create(meeting=meeting, time=datetime.datetime.combine(meeting.date, datetime.time(11, 30)))
         s2 = SessionFactory.create(meeting=meeting, group=s1.group, add_to_schedule=False)
-        SchedTimeSessAssignment.objects.create(timeslot=t2, session=s2, schedule=meeting.agenda)
+        SchedTimeSessAssignment.objects.create(timeslot=t2, session=s2, schedule=meeting.schedule)
         #
         url = urlreverse('ietf.meeting.views.ical_agenda', kwargs={'num':meeting.number, 'acronym':s1.group.acronym, })
         r = self.client.get(url)

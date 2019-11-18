@@ -102,7 +102,7 @@ class Meeting(models.Model):
     reg_area = models.CharField(blank=True, max_length=255)
     agenda_info_note = models.TextField(blank=True, help_text="Text in this field will be placed at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.")
     agenda_warning_note = models.TextField(blank=True, help_text="Text in this field will be placed more prominently at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.")
-    agenda     = ForeignKey('Schedule',null=True,blank=True, related_name='+')
+    schedule   = ForeignKey('Schedule',null=True,blank=True, related_name='+')
     session_request_lock_message = models.CharField(blank=True,max_length=255) # locked if not empty
     proceedings_final = models.BooleanField(default=False, help_text="Are the proceedings for this meeting complete?")
     acknowledgements = models.TextField(blank=True, help_text="Acknowledgements for use in meeting proceedings.  Use ReStructuredText markup.")
@@ -217,8 +217,8 @@ class Meeting(models.Model):
         # unfortunately, using the datetime aware json encoder seems impossible,
         # so the dates are formatted as strings here.
         agenda_url = ""
-        if self.agenda:
-            agenda_url = urljoin(host_scheme, self.agenda.base_url())
+        if self.schedule:
+            agenda_url = urljoin(host_scheme, self.schedule.base_url())
         return {
             'href':                 urljoin(host_scheme, self.json_url()),
             'name':                 self.number,
@@ -290,16 +290,16 @@ class Meeting(models.Model):
                 pass
         return ''
 
-    def set_official_agenda(self, agenda):
-        if self.agenda != agenda:
-            self.agenda = agenda
+    def set_official_schedule(self, schedule):
+        if self.schedule != schedule:
+            self.schedule = schedule
             self.save()
 
     def updated(self):
         min_time = datetime.datetime(1970, 1, 1, 0, 0, 0) # should be Meeting.modified, but we don't have that
         timeslots_updated = self.timeslot_set.aggregate(Max('modified'))["modified__max"] or min_time
         sessions_updated = self.session_set.aggregate(Max('modified'))["modified__max"] or min_time
-        assignments_updated = (self.agenda.assignments.aggregate(Max('modified'))["modified__max"] or min_time) if self.agenda else min_time
+        assignments_updated = (self.schedule.assignments.aggregate(Max('modified'))["modified__max"] or min_time) if self.schedule else min_time
         ts = max(timeslots_updated, sessions_updated, assignments_updated)
         tz = pytz.timezone(settings.PRODUCTION_TIMEZONE)
         ts = tz.localize(ts)
@@ -459,7 +459,7 @@ class TimeSlot(models.Model):
     @property
     def session(self):
         if not hasattr(self, "_session_cache"):
-            self._session_cache = self.sessions.filter(timeslotassignments__schedule=self.meeting.agenda).first()
+            self._session_cache = self.sessions.filter(timeslotassignments__schedule=self.meeting.schedule).first()
         return self._session_cache
 
     @property
@@ -609,15 +609,15 @@ class TimeSlot(models.Model):
 @python_2_unicode_compatible
 class Schedule(models.Model):
     """
-    Each person may have multiple agendas saved.
-    An Agenda may be made visible, which means that it will show up in
+    Each person may have multiple schedules saved.
+    An Schedule may be made visible, which means that it will show up in
     public drop down menus, etc.  It may also be made public, which means
     that someone who knows about it by name/id would be able to reference
-    it.  A non-visible, public agenda might be passed around by the
+    it.  A non-visible, public schedule might be passed around by the
     Secretariat to IESG members for review.  Only the owner may edit the
-    agenda, others may copy it
+    schedule, others may copy it
     """
-    meeting  = ForeignKey(Meeting, null=True)
+    meeting  = ForeignKey(Meeting, null=True, related_name='schedule_set')
     name     = models.CharField(max_length=16, blank=False)
     owner    = ForeignKey(Person)
     visible  = models.BooleanField(default=True, help_text="Make this agenda available to those who know about it.")
@@ -666,7 +666,7 @@ class Schedule(models.Model):
 
     @property
     def is_official(self):
-        return (self.meeting.agenda == self)
+        return (self.meeting.schedule == self)
 
     # returns a dictionary {group -> [schedtimesessassignment+]}
     # and it has [] if the session is not placed.
@@ -720,7 +720,7 @@ class Schedule(models.Model):
 class SchedTimeSessAssignment(models.Model):
     """
     This model provides an N:M relationship between Session and TimeSlot.
-    Each relationship is attached to the named agenda, which is owned by
+    Each relationship is attached to the named schedule, which is owned by
     a specific person/user.
     """
     timeslot = ForeignKey('TimeSlot', null=False, blank=False, related_name='sessionassignments')
@@ -1032,7 +1032,7 @@ class Session(models.Model):
             ss0name = "(%s)" % self.status.name
         else:
             ss0name = "(unscheduled)"
-            ss = self.timeslotassignments.filter(schedule=self.meeting.agenda).order_by('timeslot__time')
+            ss = self.timeslotassignments.filter(schedule=self.meeting.schedule).order_by('timeslot__time')
             if ss:
                 ss0name = ','.join([x.timeslot.time.strftime("%a-%H%M") for x in ss])
         return "%s: %s %s %s" % (self.meeting, self.group.acronym, self.name, ss0name)
@@ -1065,11 +1065,11 @@ class Session(models.Model):
     def reverse_constraints(self):
         return Constraint.objects.filter(target=self.group, meeting=self.meeting).order_by('name__name')
 
-    def timeslotassignment_for_agenda(self, schedule):
+    def timeslotassignment_for_schedule(self, schedule):
         return self.timeslotassignments.filter(schedule=schedule).first()
 
     def official_timeslotassignment(self):
-        return self.timeslotassignment_for_agenda(self.meeting.agenda)
+        return self.timeslotassignment_for_schedule(self.meeting.schedule)
 
     def constraints_dict(self, host_scheme):
         constraint_list = []

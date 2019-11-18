@@ -40,7 +40,7 @@ def assign(session,timeslot,meeting,schedule=None):
     Robust function to assign a session to a timeslot.  Much simplyfied 2014-03-26.
     '''
     if schedule == None:
-        schedule = meeting.agenda
+        schedule = meeting.schedule
     SchedTimeSessAssignment.objects.create(schedule=schedule,
                                     session=session,
                                     timeslot=timeslot)
@@ -122,7 +122,7 @@ def is_combined(session,meeting,schedule=None):
     Check to see if this session is using two combined timeslots
     '''
     if schedule == None:
-        schedule = meeting.agenda
+        schedule = meeting.schedule
     if session.timeslotassignments.filter(schedule=schedule).count() > 1:
         return True
     else:
@@ -230,7 +230,7 @@ def add(request):
                                                owner   = Person.objects.get(name='(System)'),
                                                visible = True,
                                                public  = True)
-            meeting.agenda = schedule
+            meeting.schedule = schedule
             
             # we want to carry session request lock status over from previous meeting
             previous_meeting = get_meeting( int(meeting.number) - 1 )
@@ -300,7 +300,7 @@ def blue_sheet_generate(request, meeting_id):
         # TODO: Why aren't 'ag' in here as well?
         groups = Group.objects.filter(
             type__in=['wg','rg'],
-            session__timeslotassignments__schedule=meeting.agenda).order_by('acronym')
+            session__timeslotassignments__schedule=meeting.schedule).order_by('acronym')
         create_blue_sheets(meeting, groups)
 
         messages.success(request, 'Blue Sheets generated')
@@ -560,7 +560,7 @@ def notifications(request, meeting_id):
     meeting = get_object_or_404(Meeting, number=meeting_id)
     last_notice = GroupEvent.objects.filter(type='sent_notification').first()
     groups = set()
-    for ss in meeting.agenda.assignments.filter(timeslot__type='session'):
+    for ss in meeting.schedule.assignments.filter(timeslot__type='session'):
         last_notice = ss.session.group.latest_event(type='sent_notification')
         if last_notice and ss.modified > last_notice.time:
             groups.add(ss.session.group)
@@ -569,7 +569,7 @@ def notifications(request, meeting_id):
 
     if request.method == "POST":
         # ensure session state is scheduled
-        for ss in meeting.agenda.assignments.all():
+        for ss in meeting.schedule.assignments.all():
             session = ss.session
             if session.status.slug in ["schedw", "appr"]:
                 session.status_id = "sched"
@@ -848,7 +848,7 @@ def view(request, meeting_id):
 
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
-    
+
     return render(request, 'meetings/view.html', {
         'meeting': meeting},
     )

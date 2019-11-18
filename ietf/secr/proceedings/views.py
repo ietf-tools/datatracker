@@ -232,7 +232,7 @@ def recording(request, meeting_num):
     session.
     '''
     meeting = get_object_or_404(Meeting, number=meeting_num)
-    assignments = meeting.agenda.assignments.exclude(session__type__in=('reg','break')).order_by('session__group__acronym')
+    assignments = meeting.schedule.assignments.exclude(session__type__in=('reg','break')).order_by('session__group__acronym')
     sessions = [ x.session for x in assignments ]
     
     if request.method == 'POST':
