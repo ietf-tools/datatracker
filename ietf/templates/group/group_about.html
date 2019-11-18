@@ -221,9 +221,21 @@
     {% endif %}
   </table>
 
-  {% if closing_note and closing_note.desc != "(Closing note deleted)" %}
-   <h2>Closing note for {{ group.type.desc.title }}</h2>
-    {{ closing_note.desc }}
+  {% if requested_close or group.state_id == "conclude" %}
+    {% if user|has_role:"Secretariat" %}
+      <h2>Closing note for {{ group.type.desc.title }}</h2>
+   	  <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='closing_note' %}">Edit</a><br />
+      {% if closing_note and closing_note.desc != "(Closing note deleted)" %}
+       {{ closing_note.desc }}
+      {% endif %}
+    {% else %}
+
+     {% if closing_note and closing_note.desc != "(Closing note deleted)" %}
+       <h2>Closing note for {{ group.type.desc.title }}</h2>
+       {{ closing_note.desc }}
+  
+      {% endif %}
+    {% endif %}
   {% endif %}
 
   {% if group.features.has_chartering_process %}
