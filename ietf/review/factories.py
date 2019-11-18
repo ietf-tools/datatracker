@@ -1,14 +1,17 @@
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 import factory
 import datetime
 
 from ietf.review.models import ReviewTeamSettings, ReviewRequest, ReviewAssignment, ReviewerSettings
 from ietf.name.models import ReviewTypeName, ReviewResultName
 
+
 class ReviewTeamSettingsFactory(factory.DjangoModelFactory):
     class Meta:
         model = ReviewTeamSettings
 
     group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='review')
+    reviewer_queue_policy_id = 'RotateAlphabetically'
 
     @factory.post_generation
     def review_types(obj, create, extracted, **kwargs):

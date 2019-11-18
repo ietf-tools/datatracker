@@ -3,14 +3,36 @@
 from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory
 from ietf.group.factories import ReviewTeamFactory
 from ietf.group.models import Group, Role
+from ietf.name.models import ReviewerQueuePolicyName
 from ietf.person.fields import PersonEmailChoiceField
 from ietf.person.models import Email
 from ietf.review.factories import ReviewAssignmentFactory, ReviewRequestFactory
-from ietf.review.models import ReviewerSettings, NextReviewerInTeam, UnavailablePeriod, ReviewWish
-from ietf.review.policies import get_reviewer_queue_policy, AssignmentOrderResolver, \
-    LeastRecentlyUsedReviewerQueuePolicy, RotateAlphabeticallyReviewerQueuePolicy
+from ietf.review.models import ReviewerSettings, NextReviewerInTeam, UnavailablePeriod, ReviewWish, \
+    ReviewTeamSettings
+from ietf.review.policies import (AssignmentOrderResolver, LeastRecentlyUsedReviewerQueuePolicy,
+                                  RotateAlphabeticallyReviewerQueuePolicy,
+                                  get_reviewer_queue_policy)
 from ietf.utils.test_data import create_person
 from ietf.utils.test_utils import TestCase
+
+
+class GetReviewerQueuePolicyTest(TestCase):
+    def test_valid_policy(self):
+        team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"), settings__reviewer_queue_policy_id='LeastRecentlyUsed')
+        policy = get_reviewer_queue_policy(team)
+        self.assertEqual(policy.__class__, LeastRecentlyUsedReviewerQueuePolicy)
+        
+    def test_missing_settings(self):
+        team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        ReviewTeamSettings.objects.all().delete()
+        with self.assertRaises(ValueError):
+            get_reviewer_queue_policy(team)
+            
+    def test_invalid_policy_name(self):
+        ReviewerQueuePolicyName.objects.create(slug='invalid')
+        team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"), settings__reviewer_queue_policy_id='invalid')
+        with self.assertRaises(ValueError):
+            get_reviewer_queue_policy(team)
 
 
 class RotateAlphabeticallyReviewerQueuePolicyTest(TestCase):
@@ -63,7 +85,7 @@ class RotateAlphabeticallyReviewerQueuePolicyTest(TestCase):
     
     def test_setup_reviewer_field(self):
         team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
-        policy = get_reviewer_queue_policy(team)
+        policy = RotateAlphabeticallyReviewerQueuePolicy(team)
         reviewer_0 = create_person(team, "reviewer", name="Test Reviewer-0", username="testreviewer0")
         reviewer_1 = create_person(team, "reviewer", name="Test Reviewer-1", username="testreviewer1")
         review_req = ReviewRequestFactory(team=team, type_id='early')
@@ -80,7 +102,7 @@ class RotateAlphabeticallyReviewerQueuePolicyTest(TestCase):
         
     def test_recommended_assignment_order(self):
         team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
-        policy = get_reviewer_queue_policy(team)
+        policy = RotateAlphabeticallyReviewerQueuePolicy(team)
         reviewer_high = create_person(team, "reviewer", name="Test Reviewer-1-high", username="testreviewerhigh")
         reviewer_low = create_person(team, "reviewer", name="Test Reviewer-0-low", username="testreviewerlow")
         
@@ -100,7 +122,7 @@ class RotateAlphabeticallyReviewerQueuePolicyTest(TestCase):
 
     def test_update_policy_state_for_assignment(self):
         team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
-        policy = get_reviewer_queue_policy(team)
+        policy = RotateAlphabeticallyReviewerQueuePolicy(team)
 
         # make a bunch of reviewers
         reviewers = [

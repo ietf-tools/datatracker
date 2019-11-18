@@ -13,7 +13,7 @@ from ietf.group.models import Role
 from ietf.person.models import Person
 import debug                            # pyflakes:ignore
 from ietf.review.models import NextReviewerInTeam, ReviewerSettings, ReviewWish, ReviewRequest, \
-    ReviewAssignment
+    ReviewAssignment, ReviewTeamSettings
 from ietf.review.utils import (current_unavailable_periods_for_reviewers,
                                days_needed_to_fulfill_min_interval_for_reviewers, 
                                get_default_filter_re,
@@ -28,7 +28,17 @@ Terminology used here should match terminology used in that document.
 
 
 def get_reviewer_queue_policy(team):
-    return RotateAlphabeticallyReviewerQueuePolicy(team)
+    try:
+        settings = ReviewTeamSettings.objects.get(group=team)
+    except ReviewTeamSettings.DoesNotExist:
+        raise ValueError('Request for a reviewer queue policy for team {} '
+                         'which has no ReviewTeamSettings'.format(team))
+    try:
+        policy = QUEUE_POLICY_NAME_MAPPING[settings.reviewer_queue_policy.slug]
+    except KeyError:
+        raise ValueError('Team {} has unknown reviewer queue policy: '
+                         '{}'.format(team, settings.reviewer_queue_policy.slug))
+    return policy(team)
 
 
 class AbstractReviewerQueuePolicy:
@@ -406,3 +416,8 @@ class LeastRecentlyUsedReviewerQueuePolicy(AbstractReviewerQueuePolicy):
 
         return rotation_list
 
+
+QUEUE_POLICY_NAME_MAPPING = {
+    'RotateAlphabetically': RotateAlphabeticallyReviewerQueuePolicy,
+    'LeastRecentlyUsed': LeastRecentlyUsedReviewerQueuePolicy,
+}

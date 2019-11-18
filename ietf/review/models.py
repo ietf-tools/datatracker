@@ -14,7 +14,8 @@ from django.utils.encoding import python_2_unicode_compatible
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
-from ietf.name.models import ReviewTypeName, ReviewRequestStateName, ReviewResultName, ReviewAssignmentStateName
+from ietf.name.models import ReviewTypeName, ReviewRequestStateName, ReviewResultName, \
+    ReviewAssignmentStateName, ReviewerQueuePolicyName
 from ietf.utils.validators import validate_regular_expression_string
 from ietf.utils.models import ForeignKey, OneToOneField
 
@@ -184,6 +185,7 @@ class ReviewTeamSettings(models.Model):
     """Holds configuration specific to groups that are review teams"""
     group = OneToOneField(Group)
     autosuggest = models.BooleanField(default=True, verbose_name="Automatically suggest possible review requests")
+    reviewer_queue_policy = models.ForeignKey(ReviewerQueuePolicyName, default='RotateAlphabetically', on_delete=models.PROTECT)
     review_types = models.ManyToManyField(ReviewTypeName, default=get_default_review_types)
     review_results = models.ManyToManyField(ReviewResultName, default=get_default_review_results, related_name='reviewteamsettings_review_results_set')
     notify_ad_when = models.ManyToManyField(ReviewResultName, related_name='reviewteamsettings_notify_ad_set', blank=True)
