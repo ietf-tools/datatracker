@@ -232,7 +232,6 @@ class ReviewTests(TestCase):
         self.assertIn("review_request_close_comment", mail_content)
 
     def test_assign_reviewer(self):
-        # TODO: this test overlaps way too much with the reviewer policy
         doc = WgDraftFactory(pages=2)
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',person__name='Some Reviewer',name_id='reviewer')

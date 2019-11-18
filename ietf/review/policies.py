@@ -182,7 +182,8 @@ class AssignmentOrderResolver:
         self.rotation_index = {p.pk: i for i, p in enumerate(self.rotation_list)}
 
         # This data is collected as a set of person IDs.
-        self.has_reviewed_previous = self._persons_with_previous_review(self.review_req, self.possible_person_ids)
+        self.has_completed_review_previous = self._persons_with_previous_review(self.review_req, self.possible_person_ids, 'completed')
+        self.has_rejected_review_previous = self._persons_with_previous_review(self.review_req, self.possible_person_ids, 'rejected')
         self.wish_to_review = set(ReviewWish.objects.filter(team=self.team, person__in=self.possible_person_ids,
                                                        doc=self.doc).values_list("person", flat=True))
 
@@ -227,7 +228,7 @@ class AssignmentOrderResolver:
         # If a reviewer is unavailable, they are ignored.
         periods = self.unavailable_periods.get(email.person_id, [])
         unavailable_at_the_moment = periods and not (
-            email.person_id in self.has_reviewed_previous and
+            email.person_id in self.has_completed_review_previous and
             all(p.availability == "canfinish" for p in periods)
         )
         if unavailable_at_the_moment:
@@ -242,8 +243,9 @@ class AssignmentOrderResolver:
         if periods:
             explanations.append(", ".join(format_period(p) for p in periods))
             
+        add_boolean_score(-1, email.person_id in self.has_rejected_review_previous, "rejected review of document before")
         add_boolean_score(+1, settings.request_assignment_next, "requested to be selected next for assignment")
-        add_boolean_score(+1, email.person_id in self.has_reviewed_previous, "reviewed document before")
+        add_boolean_score(+1, email.person_id in self.has_completed_review_previous, "reviewed document before")
         add_boolean_score(+1, email.person_id in self.wish_to_review, "wishes to review document")
         add_boolean_score(-1, email.person_id in self.connections,
                           self.connections.get(email.person_id))  # reviewer is somehow connected: bad
@@ -324,7 +326,7 @@ class AssignmentOrderResolver:
             connections[author] = "is author of document"
         return connections
 
-    def _persons_with_previous_review(self, review_req, possible_person_ids):
+    def _persons_with_previous_review(self, review_req, possible_person_ids, state_id):
         """
         Collect anyone in possible_person_ids that have reviewed the document before,
         or an ancestor document.
@@ -334,7 +336,7 @@ class AssignmentOrderResolver:
         has_reviewed_previous = ReviewRequest.objects.filter(
             doc__name__in=doc_names,
             reviewassignment__reviewer__person__in=possible_person_ids,
-            reviewassignment__state="completed",
+            reviewassignment__state=state_id,
             team=self.team,
         ).distinct()
         if review_req.pk is not None:

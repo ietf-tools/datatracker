@@ -301,6 +301,8 @@ class AssignmentOrderResolverTests(TestCase):
             start_date='2000-01-01',
             availability='canfinish',
         )
+        # Trigger "reviewer has rejected before"
+        ReviewAssignmentFactory(review_request__team=team, review_request__doc=doc, reviewer=reviewer_low.email(), state_id='rejected')
 
         # Trigger max frequency and open review stats
         ReviewAssignmentFactory(review_request__team=team, reviewer=reviewer_low.email(), state_id='assigned', review_request__doc__pages=10)
@@ -324,7 +326,7 @@ class AssignmentOrderResolverTests(TestCase):
         self.assertEqual(len(ranking), 2)
         self.assertEqual(ranking[0]['email'], reviewer_high.email())
         self.assertEqual(ranking[1]['email'], reviewer_low.email())
-        self.assertEqual(ranking[0]['scores'], [ 1,  1,  1,  1,  1,   0,  0, -1])
-        self.assertEqual(ranking[1]['scores'], [-1, -1, -1, -1, -1, -91, -2,  0])
+        self.assertEqual(ranking[0]['scores'], [ 1,  1,  1,  1,  1,  1,   0,  0, -1])
+        self.assertEqual(ranking[1]['scores'], [-1, -1, -1, -1, -1, -1, -91, -2,  0])
         self.assertEqual(ranking[0]['label'], 'Test Reviewer-high: unavailable indefinitely (Can do follow-ups); requested to be selected next for assignment; reviewed document before; wishes to review document; #2; 1 no response, 1 partially complete, 1 fully completed')
-        self.assertEqual(ranking[1]['label'], 'Test Reviewer-low: is author of document; filter regexp matches; max frequency exceeded, ready in 91 days; skip next 2; #1; currently 1 open, 10 pages')
+        self.assertEqual(ranking[1]['label'], 'Test Reviewer-low: rejected review of document before; is author of document; filter regexp matches; max frequency exceeded, ready in 91 days; skip next 2; #1; currently 1 open, 10 pages')
