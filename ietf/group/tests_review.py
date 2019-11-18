@@ -332,6 +332,7 @@ class ReviewTests(TestCase):
             "filter_re": "test-[regexp]",
             "remind_days_before_deadline": "6",
             "remind_days_open_reviews": "8",
+            "request_assignment_next": "1",
             "expertise": "Some expertise",
         })
         self.assertEqual(r.status_code, 302)
@@ -347,6 +348,7 @@ class ReviewTests(TestCase):
         msg_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
         self.assertTrue("frequency changed", msg_content)
         self.assertTrue("skip next", msg_content)
+        self.assertTrue("requested to be the next person", msg_content)
 
         # Normal reviewer should not be able to change skip_next
         r = self.client.post(url, {

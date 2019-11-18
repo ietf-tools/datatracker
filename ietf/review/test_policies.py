@@ -113,6 +113,9 @@ class RotateAlphabeticallyReviewerQueuePolicyTest(TestCase):
             return reviewer_settings_for(person).skip_next
 
         # Regular in-order assignment without skips
+        reviewer0_settings = reviewer_settings_for(reviewers[0])
+        reviewer0_settings.request_assignment_next = True
+        reviewer0_settings.save()
         policy.update_policy_state_for_assignment(assignee_person=reviewers[0], add_skip=False)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[1])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
@@ -120,6 +123,8 @@ class RotateAlphabeticallyReviewerQueuePolicyTest(TestCase):
         self.assertEqual(get_skip_next(reviewers[2]), 0)
         self.assertEqual(get_skip_next(reviewers[3]), 0)
         self.assertEqual(get_skip_next(reviewers[4]), 0)
+        # request_assignment_next should be reset after any assignment
+        self.assertFalse(reviewer_settings_for(reviewers[0]).request_assignment_next)
 
         # In-order assignment with add_skip
         policy.update_policy_state_for_assignment(assignee_person=reviewers[1], add_skip=True)
@@ -214,7 +219,7 @@ class AssignmentOrderResolverTests(TestCase):
 
         # Trigger max frequency and open review stats
         ReviewAssignmentFactory(review_request__team=team, reviewer=reviewer_low.email(), state_id='assigned', review_request__doc__pages=10)
-        # Trigger skip_next, max frequency and filter_re
+        # Trigger skip_next, max frequency, filter_re
         ReviewerSettings.objects.create(
             team=team,
             person=reviewer_low,
@@ -222,13 +227,19 @@ class AssignmentOrderResolverTests(TestCase):
             skip_next=2,
             min_interval=91,
         )
+        # Trigger "assign me next"
+        ReviewerSettings.objects.create(
+            team=team,
+            person=reviewer_high,
+            request_assignment_next=True,
+        )
 
         order = AssignmentOrderResolver(Email.objects.all(), review_req, rotation_list)
         ranking = order.determine_ranking()
         self.assertEqual(len(ranking), 2)
         self.assertEqual(ranking[0]['email'], reviewer_high.email())
         self.assertEqual(ranking[1]['email'], reviewer_low.email())
-        self.assertEqual(ranking[0]['scores'], [ 1,  1,  1,  1,   0,  0, -1])
-        self.assertEqual(ranking[1]['scores'], [-1, -1, -1, -1, -91, -2,  0])
-        self.assertEqual(ranking[0]['label'], 'Test Reviewer-high: unavailable indefinitely (Can do follow-ups); reviewed document before; wishes to review document; #2; 1 no response, 1 partially complete, 1 fully completed')
+        self.assertEqual(ranking[0]['scores'], [ 1,  1,  1,  1,  1,   0,  0, -1])
+        self.assertEqual(ranking[1]['scores'], [-1, -1, -1, -1, -1, -91, -2,  0])
+        self.assertEqual(ranking[0]['label'], 'Test Reviewer-high: unavailable indefinitely (Can do follow-ups); requested to be selected next for assignment; reviewed document before; wishes to review document; #2; 1 no response, 1 partially complete, 1 fully completed')
         self.assertEqual(ranking[1]['label'], 'Test Reviewer-low: is author of document; filter regexp matches; max frequency exceeded, ready in 91 days; skip next 2; #1; currently 1 open, 10 pages')

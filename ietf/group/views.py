@@ -1732,7 +1732,10 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
                 changes.append("Frequency changed to \"{}\" from \"{}\".".format(settings.get_min_interval_display() or "Not specified", prev_min_interval or "Not specified"))
             if settings.skip_next != prev_skip_next:
                 changes.append("Skip next assignments changed to {} from {}.".format(settings.skip_next, prev_skip_next))
-
+            if settings.request_assignment_next:
+                changes.append("Reviewer has requested to be the next person selected for an "
+                               "assignment, as soon as possible, and will be on the top of "
+                               "the queue.") 
             if changes:
                 email_reviewer_availability_change(request, group, reviewer_role, "\n\n".join(changes), request.user.person)
 

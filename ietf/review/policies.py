@@ -39,11 +39,13 @@ class AbstractReviewerQueuePolicy:
         """
         raise NotImplementedError  # pragma: no cover
     
-    def update_policy_state_for_assignment(self, assignee_person_id, add_skip=False):
+    def update_policy_state_for_assignment(self, assignee_person, add_skip=False):
         """
         Update the internal state of a policy to reflect an assignment. 
         """
-        raise NotImplementedError  # pragma: no cover
+        settings = self._reviewer_settings_for(assignee_person)
+        settings.request_assignment_next = False
+        settings.save()
 
     # TODO : Change this field to deal with multiple already assigned reviewers???
     def setup_reviewer_field(self, field, review_req):
@@ -89,8 +91,12 @@ class AbstractReviewerQueuePolicy:
                 reviewers_to_skip.add(person_id)
                 
         return reviewers_to_skip
-                
+    
+    def _reviewer_settings_for(self, person):
+            return (ReviewerSettings.objects.filter(team=self.team, person=person).first()
+                    or ReviewerSettings(team=self.team, person=person))
 
+                
 class AssignmentOrderResolver:
     """
     The AssignmentOrderResolver resolves the "recommended assignment order",
@@ -178,7 +184,7 @@ class AssignmentOrderResolver:
         if periods:
             explanations.append(", ".join(format_period(p) for p in periods))
             
-        # misc
+        add_boolean_score(+1, settings.request_assignment_next, "requested to be selected next for assignment")
         add_boolean_score(+1, email.person_id in self.has_reviewed_previous, "reviewed document before")
         add_boolean_score(+1, email.person_id in self.wish_to_review, "wishes to review document")
         add_boolean_score(-1, email.person_id in self.connections,
@@ -294,6 +300,7 @@ class AssignmentOrderResolver:
 class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
 
     def update_policy_state_for_assignment(self, assignee_person, add_skip=False):
+        super(RotateAlphabeticallyReviewerQueuePolicy, self).update_policy_state_for_assignment(assignee_person, add_skip)
         assert assignee_person is not None
 
         rotation_list = self.default_reviewer_rotation_list(dont_skip_person_ids=[assignee_person.pk])
@@ -303,14 +310,10 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
                 return None
             return rotation_list[i % len(rotation_list)]
 
-        def reviewer_settings_for(person):
-            return (ReviewerSettings.objects.filter(team=self.team, person=person).first()
-                    or ReviewerSettings(team=self.team, person=person))
-
         if not rotation_list:
             return
         
-        rotation_list_without_skip = [r for r in rotation_list if not reviewer_settings_for(r).skip_next]
+        rotation_list_without_skip = [r for r in rotation_list if not self._reviewer_settings_for(r).skip_next]
         # In order means: assigned to the first person in the rotation list with skip_next=0
         # If the assignment is not in order, skip_next and NextReviewerInTeam are not modified.
         in_order_assignment = rotation_list_without_skip[0] == assignee_person
@@ -322,7 +325,7 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         if in_order_assignment:
             while True:
                 current_idx_person = reviewer_at_index(current_idx)
-                settings = reviewer_settings_for(current_idx_person)
+                settings = self._reviewer_settings_for(current_idx_person)
                 if settings.skip_next > 0:
                     settings.skip_next -= 1
                     settings.save()
@@ -336,7 +339,7 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
                 current_idx += 1
             
         if add_skip:
-            settings = reviewer_settings_for(assignee_person)
+            settings = self._reviewer_settings_for(assignee_person)
             settings.skip_next += 1
             settings.save()
 

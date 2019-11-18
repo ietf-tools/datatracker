@@ -276,7 +276,7 @@ class ReviewerSettingsForm(forms.ModelForm):
     class Meta:
         model = ReviewerSettings
         fields = ['min_interval', 'filter_re', 'skip_next', 'remind_days_before_deadline', 
-                  'remind_days_open_reviews', 'expertise']
+                  'remind_days_open_reviews', 'request_assignment_next', 'expertise']
 
     def __init__(self, *args, **kwargs):
        exclude_fields = kwargs.pop('exclude_fields', [])
