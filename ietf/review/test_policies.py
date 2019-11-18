@@ -7,15 +7,20 @@ from ietf.person.fields import PersonEmailChoiceField
 from ietf.person.models import Email
 from ietf.review.factories import ReviewAssignmentFactory, ReviewRequestFactory
 from ietf.review.models import ReviewerSettings, NextReviewerInTeam, UnavailablePeriod, ReviewWish
-from ietf.review.policies import get_reviewer_queue_policy, AssignmentOrderResolver
+from ietf.review.policies import get_reviewer_queue_policy, AssignmentOrderResolver, \
+    LeastRecentlyUsedReviewerQueuePolicy, RotateAlphabeticallyReviewerQueuePolicy
 from ietf.utils.test_data import create_person
 from ietf.utils.test_utils import TestCase
 
 
 class RotateAlphabeticallyReviewerQueuePolicyTest(TestCase):
+    """
+    These tests also cover the common behaviour in RotateAlphabeticallyReviewerQueuePolicy,
+    as that's difficult to test on it's own.
+    """
     def test_default_reviewer_rotation_list(self):
         team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
-        policy = get_reviewer_queue_policy(team)
+        policy = RotateAlphabeticallyReviewerQueuePolicy(team)
 
         reviewers = [
             create_person(team, "reviewer", name="Test Reviewer{}".format(i), username="testreviewer{}".format(i))
@@ -169,6 +174,64 @@ class RotateAlphabeticallyReviewerQueuePolicyTest(TestCase):
         self.assertEqual(get_skip_next(reviewers[2]), 0)
         self.assertEqual(get_skip_next(reviewers[3]), 1)
         self.assertEqual(get_skip_next(reviewers[4]), 0)
+
+
+class LeastRecentlyUsedReviewerQueuePolicyTest(TestCase):
+    """
+    These tests only cover where this policy deviates from
+    RotateAlphabeticallyReviewerQueuePolicy - the common behaviour
+    inherited from AbstractReviewerQueuePolicy is covered in
+    RotateAlphabeticallyReviewerQueuePolicyTest.
+    """
+    def test_default_reviewer_rotation_list(self):
+        team = ReviewTeamFactory(acronym="rotationteam", name="Review Team",
+                                 list_email="rotationteam@ietf.org",
+                                 parent=Group.objects.get(acronym="farfut"))
+        policy = LeastRecentlyUsedReviewerQueuePolicy(team)
+
+        reviewers = [
+            create_person(team, "reviewer", name="Test Reviewer{}".format(i),
+                          username="testreviewer{}".format(i))
+            for i in range(5)
+        ]
+
+        # This reviewer should never be included.
+        unavailable_reviewer = create_person(team, "reviewer", name="unavailable reviewer",
+                                             username="unavailablereviewer")
+        UnavailablePeriod.objects.create(
+            team=team,
+            person=unavailable_reviewer,
+            start_date='2000-01-01',
+            availability='unavailable',
+        )
+        # This should not have any impact. Canfinish unavailable reviewers are included in
+        # the default rotation, and filtered further when making assignment choices.
+        UnavailablePeriod.objects.create(
+            team=team,
+            person=reviewers[1],
+            start_date='2000-01-01',
+            availability='canfinish',
+        )
+
+        # No known assignments
+        rotation = policy.default_reviewer_rotation_list()
+        self.assertNotIn(unavailable_reviewer, rotation)
+        self.assertEqual(rotation, reviewers)
+        
+        # Regular accepted assignment
+        ReviewAssignmentFactory(reviewer=reviewers[1].email(), assigned_on='2019-01-01',
+                                state_id='accepted', review_request__team=team)
+        # Rejected assignment, should not affect reviewer 2's position
+        ReviewAssignmentFactory(reviewer=reviewers[2].email(), state_id='rejected',
+                                review_request__team=team)
+        # Completed assignment, assigned before reviewer 1,
+        # but completed after (assign date should count).
+        ReviewAssignmentFactory(reviewer=reviewers[0].email(), assigned_on='2018-01-01',
+                                completed_on='2020-01-01', state_id='completed',
+                                review_request__team=team)
+        rotation = policy.default_reviewer_rotation_list()
+        self.assertNotIn(unavailable_reviewer, rotation)
+        self.assertEqual(rotation, [reviewers[2], reviewers[3], reviewers[4], reviewers[0], reviewers[1]])
 
 
 class AssignmentOrderResolverTests(TestCase):
