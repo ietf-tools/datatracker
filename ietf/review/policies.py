@@ -7,6 +7,7 @@ import re
 import six
 
 from ietf.doc.models import DocumentAuthor, DocAlias
+from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 from ietf.group.models import Role
 from ietf.person.models import Person
 import debug                            # pyflakes:ignore
@@ -261,11 +262,13 @@ class AssignmentOrderResolver:
 
     def _persons_with_previous_review(self, review_req, possible_person_ids):
         """
-        Collect anyone in possible_person_ids that have reviewed the request before.
+        Collect anyone in possible_person_ids that have reviewed the document before,
+        or an ancestor document.
         Returns a set with Person IDs of anyone who has.
         """
+        doc_names = {review_req.doc.name}.union(*extract_complete_replaces_ancestor_mapping_for_docs([review_req.doc.name]).values())
         has_reviewed_previous = ReviewRequest.objects.filter(
-            doc=review_req.doc,
+            doc__name__in=doc_names,
             reviewassignment__reviewer__person__in=possible_person_ids,
             reviewassignment__state="completed",
             team=self.team,
@@ -313,6 +316,8 @@ class RotateWithSkipReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         print('with skipped {}'.format([r for r in rotation_list]))
         print('without skip {}'.format([r for r in rotation_list_without_skip]))
         print('skip counts {}'.format([(r, reviewer_settings_for(r).skip_next) for r in rotation_list]))
+        # In order means: assigned to the first person in the rotation list with skip_next=0
+        # If the assignment is not in order, skip_next and NextReviewerInTeam are not modified.
         in_order_assignment = rotation_list_without_skip[0] == assignee_person
         print('in order: {}'.format(in_order_assignment))
         
@@ -320,23 +325,24 @@ class RotateWithSkipReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         # who is not the current assignee. Anyone with skip_next>0 encountered before
         # has their skip_next decreased.
         current_idx = 0
-        while in_order_assignment:
-            current_idx_person = reviewer_at_index(current_idx)
-            settings = reviewer_settings_for(current_idx_person)
-            print('evaluating {} with skip_next {}, assignee {}'.format(current_idx_person, settings.skip_next, assignee_person))
-            if settings.skip_next > 0:
-                print('dropping skip_next')
-                settings.skip_next -= 1
-                settings.save()
-            elif current_idx_person != assignee_person:
-                print('nr appointed')
-                nr = NextReviewerInTeam.objects.filter(team=self.team).first() or NextReviewerInTeam(
-                    team=self.team)
-                nr.next_reviewer = current_idx_person
-                nr.save()
-
-                break
-            current_idx += 1
+        if in_order_assignment:
+            while True:
+                current_idx_person = reviewer_at_index(current_idx)
+                settings = reviewer_settings_for(current_idx_person)
+                print('evaluating {} with skip_next {}, assignee {}'.format(current_idx_person, settings.skip_next, assignee_person))
+                if settings.skip_next > 0:
+                    print('dropping skip_next')
+                    settings.skip_next -= 1
+                    settings.save()
+                elif current_idx_person != assignee_person:
+                    print('nr appointed')
+                    nr = NextReviewerInTeam.objects.filter(team=self.team).first() or NextReviewerInTeam(
+                        team=self.team)
+                    nr.next_reviewer = current_idx_person
+                    nr.save()
+    
+                    break
+                current_idx += 1
             
         if add_skip:
             print('raising skip count for assignee')

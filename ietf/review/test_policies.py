@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2016-2019, All Rights Reserved
 
-from ietf.doc.factories import WgDraftFactory
+from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory
 from ietf.group.factories import ReviewTeamFactory
 from ietf.group.models import Group, Role
 from ietf.person.fields import PersonEmailChoiceField
@@ -177,15 +177,18 @@ class AssignmentOrderResolverTests(TestCase):
         # This reviewer should be ignored because it is not in the rotation list.
         create_person(team, "reviewer", name="Test Reviewer-out-of-rotation", username="testreviewer-out-of-rotation")
 
-        # Trigger author check, AD check and group check
-        doc = WgDraftFactory(group__acronym='mars', rev='01', authors=[reviewer_low], ad=reviewer_low, shepherd=reviewer_low.email())
+        # Create a document with ancestors, that also triggers author check, AD check and group check
+        doc_individual = IndividualDraftFactory()
+        doc_wg = WgDraftFactory(relations=[('replaces', doc_individual)])
+        doc_middle_wg = WgDraftFactory(relations=[('replaces', doc_wg)])
+        doc = WgDraftFactory(group__acronym='mars', rev='01', authors=[reviewer_low], ad=reviewer_low, shepherd=reviewer_low.email(), relations=[('replaces', doc_middle_wg)])
         Role.objects.create(group=doc.group, person=reviewer_low, email=reviewer_low.email(), name_id='advisor')
         
         review_req = ReviewRequestFactory(doc=doc, team=team, type_id='early')
         rotation_list = [reviewer_low, reviewer_high, reviewer_unavailable]
         
-        # Trigger previous review check and completed review stats - TODO: something something related documents
-        ReviewAssignmentFactory(review_request__team=team, review_request__doc=doc, reviewer=reviewer_high.email(), state_id='completed')
+        # Trigger previous review check (including finding ancestor documents) and completed review stats.
+        ReviewAssignmentFactory(review_request__team=team, review_request__doc=doc_individual, reviewer=reviewer_high.email(), state_id='completed')
         # Trigger other review stats
         ReviewAssignmentFactory(review_request__team=team, review_request__doc=doc, reviewer=reviewer_high.email(), state_id='no-response')
         ReviewAssignmentFactory(review_request__team=team, review_request__doc=doc, reviewer=reviewer_high.email(), state_id='part-completed')
