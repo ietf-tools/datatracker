@@ -161,8 +161,8 @@ chmod -R g+w   /usr/local/lib/		# so we can patch libs if needed
 
 cd "/home/$USER/$CWD" || cd "/home/$USER/"
 
-export LANG=en_GB.UTF-8
-
 echo "Done!"
+echo ""
+echo "Make sure you export LANG=en_GB.UTF-8 (or another UTF-8 locale) in your .bashrc"
 
-su -p $USER
+su $USER
