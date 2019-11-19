@@ -323,7 +323,7 @@ for entry in ready:
         unittest = pipe(cmd).strip()
     except OSError as e:
         if "E200017" in str(e):
-            unittestt = ""
+            unittest = ""
             pass
         else:
             raise
