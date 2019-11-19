@@ -52,6 +52,8 @@ class ReviewSecretarySettings(models.Model):
     team        = ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     person      = ForeignKey(Person)
     remind_days_before_deadline = models.IntegerField(null=True, blank=True, help_text="To get an email reminder in case a reviewer forgets to do an assigned review, enter the number of days before review deadline you want to receive it. Clear the field if you don't want a reminder.")
+    max_items_to_show_in_reviewer_list = models.IntegerField(null=True, blank=True, help_text="Maximum number of completed items to show for one reviewer in the reviewer list view, the list is also filtered by the days to show in reviews list setting.")
+    days_to_show_in_reviewer_list = models.IntegerField(null=True, blank=True, help_text="Maximum number of days to show in reviewer list for completed items.")
 
     def __str__(self):
         return "{} in {}".format(self.person, self.team)
