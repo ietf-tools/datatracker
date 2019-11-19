@@ -50,7 +50,14 @@ class AbstractReviewerQueuePolicy:
         Return a list of reviewers (Person objects) in the default reviewer rotation for a policy.
         """
         raise NotImplementedError  # pragma: no cover
-    
+
+    def return_reviewer_to_top_rotation(self, reviewer_person):
+        """
+        Return a reviewer to the top of the rotation, e.g. because they rejected a review,
+        and should retroactively not have been rotated over.
+        """
+        raise NotImplementedError  # pragma: no cover
+
     def update_policy_state_for_assignment(self, assignee_person, add_skip=False):
         """
         Update the skip_count if the assignment was in order, and
@@ -363,7 +370,6 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
     NextReviewerInTeam is used to store a pointer to where the queue is currently
     positioned.
     """
-
     def default_reviewer_rotation_list(self, include_unavailable=False, dont_skip_person_ids=None):
         reviewers = list(Person.objects.filter(role__name="reviewer", role__group=self.team))
         reviewers.sort(key=lambda p: p.last_name())
@@ -393,6 +399,14 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         
         return rotation_list
 
+    def return_reviewer_to_top_rotation(self, reviewer_person):
+        # As RotateAlphabetically does not keep a full rotation list,
+        # returning someone to a particular order is complex.
+        # Instead, the "assign me next" flag is set.
+        settings = self._reviewer_settings_for(reviewer_person)
+        settings.request_assignment_next = True
+        settings.save()
+
 
 class LeastRecentlyUsedReviewerQueuePolicy(AbstractReviewerQueuePolicy):
     """
@@ -417,6 +431,12 @@ class LeastRecentlyUsedReviewerQueuePolicy(AbstractReviewerQueuePolicy):
             rotation_list = [p for p in rotation_list if p.pk not in reviewers_to_skip]
 
         return rotation_list
+
+    def return_reviewer_to_top_rotation(self, reviewer_person):
+        # Reviewer rotation for this policy ignored rejected/withdrawn
+        # reviews, so it automatically adjusts the position of someone
+        # who rejected a review and no action is needed.
+        pass
 
 
 QUEUE_POLICY_NAME_MAPPING = {

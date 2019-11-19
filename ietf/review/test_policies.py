@@ -35,9 +35,9 @@ class GetReviewerQueuePolicyTest(TestCase):
             get_reviewer_queue_policy(team)
 
 
-class RotateAlphabeticallyReviewerQueuePolicyTest(TestCase):
+class RotateAlphabeticallyReviewerAndGenericQueuePolicyTest(TestCase):
     """
-    These tests also cover the common behaviour in RotateAlphabeticallyReviewerQueuePolicy,
+    These tests also cover the common behaviour in AbstractReviewerQueuePolicy,
     as that's difficult to test on it's own.
     """
     def test_default_reviewer_rotation_list(self):
@@ -197,7 +197,16 @@ class RotateAlphabeticallyReviewerQueuePolicyTest(TestCase):
         self.assertEqual(get_skip_next(reviewers[3]), 1)
         self.assertEqual(get_skip_next(reviewers[4]), 0)
 
-
+    def test_return_reviewer_to_top_rotation(self):
+        team = ReviewTeamFactory(acronym="rotationteam", name="Review Team",
+                                 list_email="rotationteam@ietf.org",
+                                 parent=Group.objects.get(acronym="farfut"))
+        reviewer = create_person(team, "reviewer", name="reviewer", username="reviewer")
+        policy = RotateAlphabeticallyReviewerQueuePolicy(team)
+        policy.return_reviewer_to_top_rotation(reviewer)
+        self.assertTrue(ReviewerSettings.objects.get(person=reviewer).request_assignment_next)
+        
+        
 class LeastRecentlyUsedReviewerQueuePolicyTest(TestCase):
     """
     These tests only cover where this policy deviates from
@@ -254,6 +263,14 @@ class LeastRecentlyUsedReviewerQueuePolicyTest(TestCase):
         rotation = policy.default_reviewer_rotation_list()
         self.assertNotIn(unavailable_reviewer, rotation)
         self.assertEqual(rotation, [reviewers[2], reviewers[3], reviewers[4], reviewers[0], reviewers[1]])
+
+    def test_return_reviewer_to_top_rotation(self):
+        team = ReviewTeamFactory(acronym="rotationteam", name="Review Team",
+                                 list_email="rotationteam@ietf.org",
+                                 parent=Group.objects.get(acronym="farfut"))
+        reviewer = create_person(team, "reviewer", name="reviewer", username="reviewer")
+        policy = LeastRecentlyUsedReviewerQueuePolicy(team)
+        policy.return_reviewer_to_top_rotation(reviewer)
 
 
 class AssignmentOrderResolverTests(TestCase):
