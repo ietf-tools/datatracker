@@ -186,7 +186,7 @@ def condition_slide_order(session):
     qs = session.sessionpresentation_set.filter(document__type_id='slides').order_by('order')
     order_list = qs.values_list('order',flat=True)
     #assertion('list(order_list) == range(1,qs.count()+1)')
-    if list(order_list) != range(1,qs.count()+1):
+    if list(order_list) != list(range(1,qs.count()+1)):
         for num, sp in enumerate(qs, start=1):
             sp.order=num
             sp.save()

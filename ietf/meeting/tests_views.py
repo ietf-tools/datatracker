@@ -659,21 +659,21 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session2.sessionpresentation_set.get(document=more_slides[0]).order,1)
-            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), range(1,5))
+            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,5)))
 
             # Insert at end
             r = self.client.post(url, {'order':5, 'name':more_slides[1].name})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session2.sessionpresentation_set.get(document=more_slides[1]).order,5)
-            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), range(1,6))
+            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,6)))
 
             # Insert in middle
             r = self.client.post(url, {'order':3, 'name':more_slides[2].name})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session2.sessionpresentation_set.get(document=more_slides[2]).order,3)
-            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), range(1,7))
+            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,7)))
 
     def test_remove_slides_from_session(self):
         for type_id in ['ietf','interim']:
@@ -770,21 +770,21 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertFalse(session2.sessionpresentation_set.filter(pk=sp_list[0].pk).exists())
-            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), range(1,5))
+            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,5)))
 
             # delete in middle of list
             r = self.client.post(url, {'oldIndex':4, 'name':sp_list[4].document.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertFalse(session2.sessionpresentation_set.filter(pk=sp_list[4].pk).exists())
-            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), range(1,4))
+            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,4)))
 
             # delete at end of list
             r = self.client.post(url, {'oldIndex':2, 'name':sp_list[2].document.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertFalse(session2.sessionpresentation_set.filter(pk=sp_list[2].pk).exists())
-            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), range(1,3))
+            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,3)))
 
 
     def test_reorder_slides_in_session(self):
@@ -892,7 +892,7 @@ class ReorderSlidesTests(TestCase):
         except AssertionError:
             pass
 
-        self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('order',flat=True)),range(1,6))
+        self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('order',flat=True)),list(range(1,6)))
 
 
 class EditTests(TestCase):
