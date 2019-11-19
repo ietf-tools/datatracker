@@ -1542,13 +1542,13 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
             # of the rotation queue are processed first so that the queue
             # rotates before any more assignments are processed
             reviewer_policy = get_reviewer_queue_policy(group)
-            head_of_rotation = reviewer_policy.default_reviewer_rotation_list()[0]
+            head_of_rotation = reviewer_policy.default_reviewer_rotation_list_without_skipped()[0]
             while head_of_rotation in assignments_by_person:
                 for review_req in assignments_by_person[head_of_rotation]:
                     assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"],review_req.form.cleaned_data["add_skip"])
                     reqs_to_assign.remove(review_req)
                 del assignments_by_person[head_of_rotation]
-                head_of_rotation = reviewer_policy.default_reviewer_rotation_list()[0]
+                head_of_rotation = reviewer_policy.default_reviewer_rotation_list_without_skipped()[0]
 
             for review_req in reqs_to_assign:
                 assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"],review_req.form.cleaned_data["add_skip"])

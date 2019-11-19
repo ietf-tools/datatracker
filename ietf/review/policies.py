@@ -57,6 +57,13 @@ class AbstractReviewerQueuePolicy:
         and should retroactively not have been rotated over.
         """
         raise NotImplementedError  # pragma: no cover
+    
+    def default_reviewer_rotation_list_without_skipped(self):
+        """
+        Return a list of reviewers (Person objects) in the default reviewer rotation for a policy,
+        while skipping those with a skip_next>0.
+        """
+        return [r for r in self.default_reviewer_rotation_list() if not self._reviewer_settings_for(r).skip_next]
 
     def update_policy_state_for_assignment(self, assignee_person, add_skip=False):
         """
@@ -78,8 +85,7 @@ class AbstractReviewerQueuePolicy:
         if not rotation_list:
             return
 
-        rotation_list_without_skip = [r for r in rotation_list if
-                                      not self._reviewer_settings_for(r).skip_next]
+        rotation_list_without_skip = self.default_reviewer_rotation_list_without_skipped()
         # In order means: assigned to the first person in the rotation list with skip_next=0
         # If the assignment is not in order, skip_next and NextReviewerInTeam are not modified.
         in_order_assignment = rotation_list_without_skip[0] == assignee_person
