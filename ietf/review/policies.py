@@ -184,20 +184,19 @@ class AssignmentOrderResolver:
         self.doc_aliases = DocAlias.objects.filter(docs=self.doc).values_list("name", flat=True)
 
         # This data is collected as a dict, keys being person IDs, values being numbers/objects.
+        self.rotation_index = {p.pk: i for i, p in enumerate(self.rotation_list)}
         self.reviewer_settings = self._reviewer_settings_for_person_ids(self.possible_person_ids)
         self.days_needed_for_reviewers = days_needed_to_fulfill_min_interval_for_reviewers(self.team)
-        self.rotation_index = {p.pk: i for i, p in enumerate(self.rotation_list)}
+        self.connections = self._connections_with_doc(self.doc, self.possible_person_ids)
+        self.unavailable_periods = current_unavailable_periods_for_reviewers(self.team)
+        self.assignment_data_for_reviewers = latest_review_assignments_for_reviewers(self.team)
+        self.unavailable_periods = current_unavailable_periods_for_reviewers(self.team)
 
         # This data is collected as a set of person IDs.
         self.has_completed_review_previous = self._persons_with_previous_review(self.review_req, self.possible_person_ids, 'completed')
         self.has_rejected_review_previous = self._persons_with_previous_review(self.review_req, self.possible_person_ids, 'rejected')
         self.wish_to_review = set(ReviewWish.objects.filter(team=self.team, person__in=self.possible_person_ids,
                                                        doc=self.doc).values_list("person", flat=True))
-
-        self.connections = self._connections_with_doc(self.doc, self.possible_person_ids)
-        self.unavailable_periods = current_unavailable_periods_for_reviewers(self.team)
-        self.assignment_data_for_reviewers = latest_review_assignments_for_reviewers(self.team)
-        self.unavailable_periods = current_unavailable_periods_for_reviewers(self.team)
         
     def determine_ranking(self):
         """
@@ -232,7 +231,7 @@ class AssignmentOrderResolver:
         if email.person_id not in self.rotation_index:
             return
 
-        # If a reviewer is unavailable, they are ignored.
+        # If a reviewer is unavailable at the moment, they are ignored.
         periods = self.unavailable_periods.get(email.person_id, [])
         unavailable_at_the_moment = periods and not (
             email.person_id in self.has_completed_review_previous and
@@ -265,12 +264,12 @@ class AssignmentOrderResolver:
         if days_needed > 0:
             explanations.append("max frequency exceeded, ready in {} {}".format(days_needed,
                                                                                 "day" if days_needed == 1 else "days"))
-        # skip next
+        # skip next value
         scores.append(-settings.skip_next)
         if settings.skip_next > 0:
             explanations.append("skip next {}".format(settings.skip_next))
             
-        # index
+        # index in the default rotation order
         index = self.rotation_index.get(email.person_id, 0)
         scores.append(-index)
         explanations.append("#{}".format(index + 1))
@@ -375,21 +374,21 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         reviewers.sort(key=lambda p: p.last_name())
         next_reviewer_index = 0
     
-        # now to figure out where the rotation is currently at
-        saved_reviewer = NextReviewerInTeam.objects.filter(team=self.team).select_related("next_reviewer").first()
-        if saved_reviewer:
-            n = saved_reviewer.next_reviewer
+        next_reviewer_in_team = NextReviewerInTeam.objects.filter(team=self.team).select_related("next_reviewer").first()
+        if next_reviewer_in_team:
+            next_reviewer = next_reviewer_in_team.next_reviewer
     
-            if n not in reviewers:
-                # saved reviewer might not still be here, if not just
-                # insert and use that position (Python will wrap around,
+            if next_reviewer not in reviewers:
+                # If the next reviewer is no longer on the team,
+                # advance to the person that would be after them in
+                # the rotation. (Python will wrap around,
                 # so no harm done by using the index on the original list
                 # afterwards)
-                reviewers_with_next = reviewers[:] + [n]
+                reviewers_with_next = reviewers[:] + [next_reviewer]
                 reviewers_with_next.sort(key=lambda p: p.last_name())
-                next_reviewer_index = reviewers_with_next.index(n)
+                next_reviewer_index = reviewers_with_next.index(next_reviewer)
             else:
-                next_reviewer_index = reviewers.index(n)
+                next_reviewer_index = reviewers.index(next_reviewer)
     
         rotation_list = reviewers[next_reviewer_index:] + reviewers[:next_reviewer_index]
     
@@ -418,7 +417,7 @@ class LeastRecentlyUsedReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         assignments = ReviewAssignment.objects.filter(
             review_request__team=self.team,
             state__in=['accepted', 'assigned', 'completed'],   
-        ).order_by('assigned_on')
+        ).order_by('assigned_on').select_related('reviewer')
         
         reviewers_with_assignment = [assignment.reviewer.person for assignment in assignments]
         reviewers_without_assignment = set(reviewers) - set(reviewers_with_assignment)
@@ -433,9 +432,9 @@ class LeastRecentlyUsedReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         return rotation_list
 
     def return_reviewer_to_top_rotation(self, reviewer_person):
-        # Reviewer rotation for this policy ignored rejected/withdrawn
+        # Reviewer rotation for this policy ignores rejected/withdrawn
         # reviews, so it automatically adjusts the position of someone
-        # who rejected a review and no action is needed.
+        # who rejected a review and no further action is needed.
         pass
 
 

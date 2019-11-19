@@ -281,7 +281,7 @@ class AssignmentOrderResolverTests(TestCase):
         reviewer_high = create_person(team, "reviewer", name="Test Reviewer-high", username="testreviewerhigh")
         reviewer_low = create_person(team, "reviewer", name="Test Reviewer-low", username="testreviewerlow")
         reviewer_unavailable = create_person(team, "reviewer", name="Test Reviewer-unavailable", username="testreviewerunavailable")
-        # This reviewer should be ignored because it is not in the rotation list.
+        # This reviewer should be entirely ignored because it is not in the rotation list.
         create_person(team, "reviewer", name="Test Reviewer-out-of-rotation", username="testreviewer-out-of-rotation")
 
         # Create a document with ancestors, that also triggers author check, AD check and group check
@@ -290,9 +290,6 @@ class AssignmentOrderResolverTests(TestCase):
         doc_middle_wg = WgDraftFactory(relations=[('replaces', doc_wg)])
         doc = WgDraftFactory(group__acronym='mars', rev='01', authors=[reviewer_low], ad=reviewer_low, shepherd=reviewer_low.email(), relations=[('replaces', doc_middle_wg)])
         Role.objects.create(group=doc.group, person=reviewer_low, email=reviewer_low.email(), name_id='advisor')
-        
-        review_req = ReviewRequestFactory(doc=doc, team=team, type_id='early')
-        rotation_list = [reviewer_low, reviewer_high, reviewer_unavailable]
         
         # Trigger previous review check (including finding ancestor documents) and completed review stats.
         ReviewAssignmentFactory(review_request__team=team, review_request__doc=doc_individual, reviewer=reviewer_high.email(), state_id='completed')
@@ -338,11 +335,15 @@ class AssignmentOrderResolverTests(TestCase):
             request_assignment_next=True,
         )
 
+        review_req = ReviewRequestFactory(doc=doc, team=team, type_id='early')
+        rotation_list = [reviewer_low, reviewer_high, reviewer_unavailable]
+
         order = AssignmentOrderResolver(Email.objects.all(), review_req, rotation_list)
         ranking = order.determine_ranking()
         self.assertEqual(len(ranking), 2)
         self.assertEqual(ranking[0]['email'], reviewer_high.email())
         self.assertEqual(ranking[1]['email'], reviewer_low.email())
+        # These scores follow the ordering of https://trac.tools.ietf.org/tools/ietfdb/wiki/ReviewerQueuePolicy,
         self.assertEqual(ranking[0]['scores'], [ 1,  1,  1,  1,  1,  1,   0,  0, -1])
         self.assertEqual(ranking[1]['scores'], [-1, -1, -1, -1, -1, -1, -91, -2,  0])
         self.assertEqual(ranking[0]['label'], 'Test Reviewer-high: unavailable indefinitely (Can do follow-ups); requested to be selected next for assignment; reviewed document before; wishes to review document; #2; 1 no response, 1 partially complete, 1 fully completed')
