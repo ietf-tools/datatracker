@@ -11,7 +11,7 @@ import re
 from tempfile import mkstemp
 
 from django.http import HttpRequest, Http404
-from django.db.models import Max, Q, Prefetch, F
+from django.db.models import Max, Q
 from django.conf import settings
 from django.core.cache import cache
 from django.urls import reverse
@@ -164,41 +164,52 @@ def get_schedule_by_name(meeting, owner, name):
         return meeting.schedule_set.filter(name = name).first()
 
 def preprocess_assignments_for_agenda(assignments_queryset, meeting):
-    # prefetch some stuff to prevent a myriad of small, inefficient queries
+    # prefetch was not improving performance, except for json_agenda, so
+    # it was removed.  Saved in comment in case others find it useful
+    # in the future ...
+    #
+    #.prefetch_related(
+    #       Prefetch("session__materials",
+    #           queryset=Document.objects.exclude(states__type=F("type"),states__slug='deleted').select_related("group").order_by("sessionpresentation__order"),
+    #           to_attr="prefetched_active_materials",
+    #       ),
+    #       "timeslot__meeting",
+    #   )
     assignments_queryset = assignments_queryset.select_related(
         "timeslot", "timeslot__location", "timeslot__type",
-        "session",
-        "session__group", "session__group__charter", "session__group__charter__group",
-    ).prefetch_related(
-        Prefetch("session__materials",
-                 queryset=Document.objects.exclude(states__type=F("type"),states__slug='deleted').select_related("group").order_by("sessionpresentation__order"),
-                 to_attr="prefetched_active_materials",
-             ),
-        "timeslot__meeting",
-    )
+        "session", "session__group", "session__group__charter",
+        "session__group__charter__group",
+        )  
 
-    assignments = list(assignments_queryset) # make sure we're set in stone
+    # removed list(); it was consuming a very large amount of processor time
+    # assignments = list(assignments_queryset) # make sure we're set in stone
+    assignments = assignments_queryset
 
     meeting_time = datetime.datetime.combine(meeting.date, datetime.time())
 
     # replace groups with historic counterparts
+    groups = [ ]
     for a in assignments:
         if a.session:
             a.session.historic_group = None
 
-    groups = [a.session.group for a in assignments if a.session and a.session.group]
+            if a.session.group and a.session.group not in groups:
+                groups.append(a.session.group)
+
     group_replacements = find_history_replacements_active_at(groups, meeting_time)
 
+    parent_id_set = set()
     for a in assignments:
         if a.session and a.session.group:
             a.session.historic_group = group_replacements.get(a.session.group_id)
 
-    # replace group parents with historic counterparts
-    for a in assignments:
-        if a.session and a.session.historic_group:
-            a.session.historic_group.historic_parent = None
+            if a.session.historic_group:
+                a.session.historic_group.historic_parent = None
+                
+                if a.session.historic_group.parent_id:
+                    parent_id_set.add(a.session.historic_group.parent_id)
 
-    parents = Group.objects.filter(pk__in=set(a.session.historic_group.parent_id for a in assignments if a.session and a.session.historic_group and a.session.historic_group.parent_id))
+    parents = Group.objects.filter(pk__in=parent_id_set)
     parent_replacements = find_history_replacements_active_at(parents, meeting_time)
 
     for a in assignments:

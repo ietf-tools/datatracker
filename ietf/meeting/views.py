@@ -34,7 +34,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.urls import reverse,reverse_lazy
-from django.db.models import Min, Max, Q
+from django.db.models import F, Min, Max, Prefetch, Q
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
@@ -949,6 +949,15 @@ def json_agenda(request, num=None ):
     assignments = meeting.agenda.assignments.exclude(session__type__in=['lead','offagenda','break','reg'])
     # Update the assignments with historic information, i.e., valid at the
     # time of the meeting
+    assignments = assignments.prefetch_related(
+        Prefetch("session__materials",
+                 queryset=Document.objects.exclude(states__type=F("type"),states__slug='deleted').select_related("group").order_by("sessionpresentation__order"),
+                 to_attr="prefetched_active_materials",
+             ),
+             "session__materials__docevent_set",
+             "session__sessionpresentation_set",
+             "timeslot__meeting",
+        )
     assignments = preprocess_assignments_for_agenda(assignments, meeting)
     for asgn in assignments:
         sessdict = dict()
@@ -964,9 +973,9 @@ def json_agenda(request, num=None ):
                 }
             if asgn.session.historic_group.is_bof():
                 sessdict['is_bof'] = True
-        if asgn.session.historic_group.type_id in ['wg','rg', 'ag',] or asgn.session.historic_group.acronym in ['iesg',]:
-            sessdict['group']['parent'] = asgn.session.historic_group.historic_parent.acronym
-            parent_acronyms.add(asgn.session.historic_group.historic_parent.acronym)
+            if asgn.session.historic_group.type_id in ['wg','rg', 'ag',] or asgn.session.historic_group.acronym in ['iesg',]:
+                sessdict['group']['parent'] = asgn.session.historic_group.historic_parent.acronym
+                parent_acronyms.add(asgn.session.historic_group.historic_parent.acronym)
         if asgn.session.name:
             sessdict['name'] = asgn.session.name
         else:
