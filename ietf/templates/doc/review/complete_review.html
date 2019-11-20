@@ -115,6 +115,7 @@
   {% else %}
     var searchMailArchiveUrl = "{% url "ietf.doc.views_review.search_mail_archive" name=doc.name acronym=team.acronym %}";
   {% endif %}
+  var isReviewer = {{ is_reviewer|yesno:'true,false' }};
   </script>
   <script src="{% static 'ietf/js/complete-review.js' %}"></script>
 {% endblock %}

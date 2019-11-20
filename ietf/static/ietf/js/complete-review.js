@@ -47,6 +47,7 @@ $(document).ready(function () {
             if (!err && (!data.messages || !data.messages.length))
                 err = "No messages matching document name found in archive";
 
+            var non_reply_row = null;
             if (err) {
                 var errorDiv = mailArchiveSearch.find(".error");
                 errorDiv.removeClass("hidden");
@@ -74,7 +75,15 @@ $(document).ready(function () {
                     row.data("content", msg.content);
                     row.data("date", msg.utcdate[0]);
                     row.data("time", msg.utcdate[1]);
+                    row.data("revision_guess", msg.revision_guess);
                     results.append(row);
+                    if (msg.subject.toUpperCase().substr(0, 3) !== 'RE:') {
+                        non_reply_row = row;
+                    }
+                }
+                if (!isReviewer && non_reply_row) {
+                    // Automatically select the first non-reply.
+                    non_reply_row.click();
                 }
             }
         }, function () {
@@ -103,6 +112,7 @@ $(document).ready(function () {
         form.find("[name=review_content]").val(row.data("content")).prop("scrollTop", 0);
         form.find("[name=completion_date]").val(row.data("date"));
         form.find("[name=completion_time]").val(row.data("time"));
+        form.find("[name=reviewed_rev]").val(row.data("revision_guess"));
     });
 
 
@@ -133,4 +143,9 @@ $(document).ready(function () {
         if (val == "link")
             searchMailArchive();
     }).trigger("change");
+    
+    if (!isReviewer) {
+        // Select mail search by default for secretary completions.
+        form.find("[name=review_submission][value=link]").click()
+    }
 });
