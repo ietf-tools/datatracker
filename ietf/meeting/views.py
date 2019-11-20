@@ -993,11 +993,6 @@ def json_agenda(request, num=None ):
         if asgn.session.minutes():
             sessdict['minutes'] = asgn.session.minutes().href()
         if asgn.session.slides():
-            # Deprecated 19 May 2017, remove after ietf 100;
-            sessdict['slides'] = []
-            for slides in asgn.session.slides():
-                sessdict['slides'].append('/api/v1/doc/document/%s/'%slides.name)
-            # New alternative
             sessdict['presentations'] = []
             presentations = SessionPresentation.objects.filter(session=asgn.session, document__type__slug='slides')
             for pres in presentations:
