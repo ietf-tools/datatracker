@@ -67,8 +67,7 @@ from ietf.meeting.helpers import sessions_post_save, is_meeting_approved
 from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_announcement_request
-from ietf.meeting.utils import finalize
-from ietf.meeting.utils import sort_accept_tuple
+from ietf.meeting.utils import finalize, sort_accept_tuple, condition_slide_order
 from ietf.message.utils import infer_message
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
@@ -1667,11 +1666,9 @@ def remove_sessionpresentation(request, session_id, num, name):
 
     return render(request,'meeting/remove_sessionpresentation.html', {'sp': sp })
 
-def set_slide_order(request, session_id, num, name):
-    # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
+def ajax_add_slides_to_session(request, session_id, num):
     session = get_object_or_404(Session,pk=session_id)
-    if not Document.objects.filter(type_id='slides',name=name).exists():
-        raise Http404
+
     if not session.can_manage_materials(request.user):
         return HttpResponseForbidden("You don't have permission to upload slides for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
@@ -1679,19 +1676,109 @@ def set_slide_order(request, session_id, num, name):
 
     if request.method != 'POST' or not request.POST:
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'No data submitted or not POST' }),content_type='application/json')
-    order_str = request.POST.get('order', None)
+
+    order_str = request.POST.get('order', None)    
     try:
         order = int(order_str)
-    except ValueError:
+    except (ValueError, TypeError):
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied order is not valid' }),content_type='application/json')
-    if order <=0 or order > 32767 :
+    if order < 1 or order > session.sessionpresentation_set.filter(document__type_id='slides').count() + 1 :
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied order is not valid' }),content_type='application/json')
-    
-    sp = session.sessionpresentation_set.get(document__name = name)
-    sp.order = order
+
+    name = request.POST.get('name', None)
+    doc = Document.objects.filter(name=name).first()
+    if not doc:
+        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied name is not valid' }),content_type='application/json')
+
+    if not session.sessionpresentation_set.filter(document=doc).exists():
+        condition_slide_order(session)
+        session.sessionpresentation_set.filter(document__type_id='slides', order__gte=order).update(order=F('order')+1)
+        session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=order)
+        DocEvent.objects.create(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person, desc="Added to session: %s" % session)
+
+    return HttpResponse(json.dumps({'success':True}), content_type='application/json')
+
+
+def ajax_remove_slides_from_session(request, session_id, num):
+    session = get_object_or_404(Session,pk=session_id)
+
+    if not session.can_manage_materials(request.user):
+        return HttpResponseForbidden("You don't have permission to upload slides for this session.")
+    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
+        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+
+    if request.method != 'POST' or not request.POST:
+        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'No data submitted or not POST' }),content_type='application/json')  
+
+    oldIndex_str = request.POST.get('oldIndex', None)
+    try:
+        oldIndex = int(oldIndex_str)
+    except (ValueError, TypeError):
+        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
+    if oldIndex < 1 or oldIndex > session.sessionpresentation_set.filter(document__type_id='slides').count() :
+        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
+
+    name = request.POST.get('name', None)
+    doc = Document.objects.filter(name=name).first()
+    if not doc:
+        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied name is not valid' }),content_type='application/json')
+
+    condition_slide_order(session)
+    affected_presentations = session.sessionpresentation_set.filter(document=doc).first()
+    if affected_presentations:
+        if affected_presentations.order == oldIndex:
+            affected_presentations.delete()
+            session.sessionpresentation_set.filter(document__type_id='slides', order__gt=oldIndex).update(order=F('order')-1)    
+            DocEvent.objects.create(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person, desc="Removed from session: %s" % session)
+            return HttpResponse(json.dumps({'success':True}), content_type='application/json')
+        else:
+            return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Name does not match index' }),content_type='application/json')
+    else:
+        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'SessionPresentation not found' }),content_type='application/json')
+
+
+def ajax_reorder_slides_in_session(request, session_id, num):
+    session = get_object_or_404(Session,pk=session_id)
+
+    if not session.can_manage_materials(request.user):
+        return HttpResponseForbidden("You don't have permission to upload slides for this session.")
+    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
+        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+
+    if request.method != 'POST' or not request.POST:
+        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'No data submitted or not POST' }),content_type='application/json')  
+
+    num_slides_in_session = session.sessionpresentation_set.filter(document__type_id='slides').count()
+    oldIndex_str = request.POST.get('oldIndex', None)
+    try:
+        oldIndex = int(oldIndex_str)
+    except (ValueError, TypeError):
+        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
+    if oldIndex < 1 or oldIndex > num_slides_in_session :
+        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
+
+    newIndex_str = request.POST.get('newIndex', None)
+    try:
+        newIndex = int(newIndex_str)
+    except (ValueError, TypeError):
+        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
+    if newIndex < 1 or newIndex > num_slides_in_session :
+        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
+
+    if newIndex == oldIndex:
+        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
+
+    condition_slide_order(session)
+    sp = session.sessionpresentation_set.get(order=oldIndex)
+    if oldIndex < newIndex:
+        session.sessionpresentation_set.filter(order__gt=oldIndex, order__lte=newIndex).update(order=F('order')-1)
+    else:
+        session.sessionpresentation_set.filter(order__gte=newIndex, order__lt=oldIndex).update(order=F('order')+1)
+    sp.order = newIndex
     sp.save()
 
-    return HttpResponse(json.dumps({'success':True}),content_type='application/json')
+    return HttpResponse(json.dumps({'success':True}), content_type='application/json')
+
 
 @role_required('Secretariat')
 def make_schedule_official(request, num, owner, name):

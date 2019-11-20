@@ -23,6 +23,7 @@ from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import Client
+from django.db.models import F
 
 import debug           # pyflakes:ignore
 
@@ -34,7 +35,7 @@ from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates, update_important_dates
 from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
-from ietf.meeting.utils import finalize
+from ietf.meeting.utils import finalize, condition_slide_order
 from ietf.name.models import SessionStatusName, ImportantDateName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox
@@ -569,18 +570,330 @@ class MeetingTests(TestCase):
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.get('Content-Type'), 'text/calendar')
 
-    def test_edit_slide_order(self):
-        session=SessionFactory(meeting__type_id='iestf',type_id='session')
-        slides = DocumentFactory(type_id='slides')
-        session.sessionpresentation_set.create(document=slides,order=0)
-        url = urlreverse('ietf.meeting.views.set_slide_order',kwargs={'session_id':session.id,'num':session.meeting.number,'name':slides.name})
-        response = self.client.put(url,{'order':2})
-        self.assertEqual(response.status_code, 403)
-        self.client.login(username='secretary', password='secretary+password')
-        response = self.client.post(url,{'order':'2'})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get('Content-Type'), 'application/json')
-        self.assertEqual(session.sessionpresentation_set.first().order,2)
+class ReorderSlidesTests(TestCase):
+
+    def test_add_slides_to_session(self):
+        for type_id in ('ietf','interim'):
+            chair_role = RoleFactory(name_id='chair')
+            session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90), meeting__type_id=type_id)
+            slides = DocumentFactory(type_id='slides')
+            url = urlreverse('ietf.meeting.views.ajax_add_slides_to_session', kwargs={'session_id':session.pk, 'num':session.meeting.number})
+
+            # Not a valid user
+            r = self.client.post(url, {'order':1, 'name':slides.name })
+            self.assertEqual(r.status_code, 403)
+            self.assertIn('have permission', unicontent(r))
+
+            self.client.login(username=chair_role.person.user.username, password=chair_role.person.user.username+"+password")
+
+            # Past submission cutoff
+            r = self.client.post(url, {'order':0, 'name':slides.name })
+            self.assertEqual(r.status_code, 403)
+            self.assertIn('materials cutoff', unicontent(r))
+
+            session.meeting.date = datetime.date.today()
+            session.meeting.save()
+
+            # Invalid order
+            r = self.client.post(url, {})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('No data',r.json()['error'])
+
+            r = self.client.post(url, {'garbage':'garbage'})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('order is not valid',r.json()['error'])
+
+            r = self.client.post(url, {'order':0, 'name':slides.name })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('order is not valid',r.json()['error'])
+
+            r = self.client.post(url, {'order':2, 'name':slides.name })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('order is not valid',r.json()['error'])
+
+            r = self.client.post(url, {'order':'garbage', 'name':slides.name })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('order is not valid',r.json()['error'])
+
+            # Invalid name
+            r = self.client.post(url, {'order':1 })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('name is not valid',r.json()['error'])
+
+            r = self.client.post(url, {'order':1, 'name':'garbage' })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('name is not valid',r.json()['error'])
+
+            # Valid post
+            r = self.client.post(url, {'order':1, 'name':slides.name })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertEqual(session.sessionpresentation_set.count(),1)
+
+            # Ingore a request to add slides that are already in a session
+            r = self.client.post(url, {'order':1, 'name':slides.name })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertEqual(session.sessionpresentation_set.count(),1)
+
+
+            session2 = SessionFactory(group=session.group, meeting=session.meeting)
+            SessionPresentationFactory.create_batch(3, document__type_id='slides', session=session2)
+            for num, sp in enumerate(session2.sessionpresentation_set.filter(document__type_id='slides'),start=1):
+                sp.order = num
+                sp.save()
+
+            url = urlreverse('ietf.meeting.views.ajax_add_slides_to_session', kwargs={'session_id':session2.pk, 'num':session2.meeting.number})
+
+            more_slides = DocumentFactory.create_batch(3, type_id='slides')
+
+            # Insert at beginning
+            r = self.client.post(url, {'order':1, 'name':more_slides[0].name})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertEqual(session2.sessionpresentation_set.get(document=more_slides[0]).order,1)
+            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,5)))
+
+            # Insert at end
+            r = self.client.post(url, {'order':5, 'name':more_slides[1].name})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertEqual(session2.sessionpresentation_set.get(document=more_slides[1]).order,5)
+            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,6)))
+
+            # Insert in middle
+            r = self.client.post(url, {'order':3, 'name':more_slides[2].name})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertEqual(session2.sessionpresentation_set.get(document=more_slides[2]).order,3)
+            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,7)))
+
+    def test_remove_slides_from_session(self):
+        for type_id in ['ietf','interim']:
+            chair_role = RoleFactory(name_id='chair')
+            session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90), meeting__type_id=type_id)
+            slides = DocumentFactory(type_id='slides')
+            url = urlreverse('ietf.meeting.views.ajax_remove_slides_from_session', kwargs={'session_id':session.pk, 'num':session.meeting.number})
+
+            # Not a valid user
+            r = self.client.post(url, {'oldIndex':1, 'name':slides.name })
+            self.assertEqual(r.status_code, 403)
+            self.assertIn('have permission', unicontent(r))
+
+            self.client.login(username=chair_role.person.user.username, password=chair_role.person.user.username+"+password")
+            
+            # Past submission cutoff
+            r = self.client.post(url, {'oldIndex':0, 'name':slides.name })
+            self.assertEqual(r.status_code, 403)
+            self.assertIn('materials cutoff', unicontent(r))
+
+            session.meeting.date = datetime.date.today()
+            session.meeting.save()
+
+            # Invalid order
+            r = self.client.post(url, {})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('No data',r.json()['error'])
+
+            r = self.client.post(url, {'garbage':'garbage'})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('index is not valid',r.json()['error'])
+
+            r = self.client.post(url, {'oldIndex':0, 'name':slides.name })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('index is not valid',r.json()['error'])
+
+            r = self.client.post(url, {'oldIndex':'garbage', 'name':slides.name })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('index is not valid',r.json()['error'])
+           
+            # No matching thing to delete
+            r = self.client.post(url, {'oldIndex':1, 'name':slides.name })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('index is not valid',r.json()['error'])
+
+            session.sessionpresentation_set.create(document=slides, rev=slides.rev, order=1)
+
+            # Bad names
+            r = self.client.post(url, {'oldIndex':1})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('name is not valid',r.json()['error'])
+
+            r = self.client.post(url, {'oldIndex':1, 'name':'garbage' })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('name is not valid',r.json()['error'])
+
+            slides2 = DocumentFactory(type_id='slides')
+
+            # index/name mismatch
+            r = self.client.post(url, {'oldIndex':1, 'name':slides2.name })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('SessionPresentation not found',r.json()['error'])
+
+            session.sessionpresentation_set.create(document=slides2, rev=slides2.rev, order=2)
+            r = self.client.post(url, {'oldIndex':1, 'name':slides2.name })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('Name does not match index',r.json()['error'])
+
+            # valid removal
+            r = self.client.post(url, {'oldIndex':1, 'name':slides.name })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertEqual(session.sessionpresentation_set.count(),1)
+
+            session2 = SessionFactory(group=session.group, meeting=session.meeting)
+            sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session2)
+            for num, sp in enumerate(session2.sessionpresentation_set.filter(document__type_id='slides'),start=1):
+                sp.order = num
+                sp.save()
+
+            url = urlreverse('ietf.meeting.views.ajax_remove_slides_from_session', kwargs={'session_id':session2.pk, 'num':session2.meeting.number})
+
+            # delete at first of list
+            r = self.client.post(url, {'oldIndex':1, 'name':sp_list[0].document.name })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertFalse(session2.sessionpresentation_set.filter(pk=sp_list[0].pk).exists())
+            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,5)))
+
+            # delete in middle of list
+            r = self.client.post(url, {'oldIndex':4, 'name':sp_list[4].document.name })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertFalse(session2.sessionpresentation_set.filter(pk=sp_list[4].pk).exists())
+            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,4)))
+
+            # delete at end of list
+            r = self.client.post(url, {'oldIndex':2, 'name':sp_list[2].document.name })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertFalse(session2.sessionpresentation_set.filter(pk=sp_list[2].pk).exists())
+            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,3)))
+
+
+    def test_reorder_slides_in_session(self):
+        chair_role = RoleFactory(name_id='chair')
+        session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90))
+        sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session)
+        for num, sp in enumerate(sp_list, start=1):
+            sp.order = num
+            sp.save()
+        url = urlreverse('ietf.meeting.views.ajax_reorder_slides_in_session', kwargs={'session_id':session.pk, 'num':session.meeting.number})
+
+        for type_id in ['ietf','interim']:
+            
+            session.meeting.type_id = type_id
+            session.meeting.date = datetime.date.today()-datetime.timedelta(days=90)
+            session.meeting.save()
+
+            # Not a valid user
+            r = self.client.post(url, {'oldIndex':1, 'newIndex':2 })
+            self.assertEqual(r.status_code, 403)
+            self.assertIn('have permission', unicontent(r))
+
+            self.client.login(username=chair_role.person.user.username, password=chair_role.person.user.username+"+password")
+
+            # Past submission cutoff
+            r = self.client.post(url, {'oldIndex':1, 'newIndex':2 })
+            self.assertEqual(r.status_code, 403)
+            self.assertIn('materials cutoff', unicontent(r))
+
+            session.meeting.date = datetime.date.today()
+            session.meeting.save()
+
+            # Bad index values
+            r = self.client.post(url, {'oldIndex':0, 'newIndex':2 })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('index is not valid',r.json()['error'])
+
+            r = self.client.post(url, {'oldIndex':2, 'newIndex':6 })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('index is not valid',r.json()['error'])
+
+            r = self.client.post(url, {'oldIndex':2, 'newIndex':2 })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],False)
+            self.assertIn('index is not valid',r.json()['error'])
+
+            # Move from beginning
+            r = self.client.post(url, {'oldIndex':1, 'newIndex':3})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,3,1,4,5])
+
+            # Move to beginning
+            r = self.client.post(url, {'oldIndex':3, 'newIndex':1})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[1,2,3,4,5])
+            
+            # Move from end
+            r = self.client.post(url, {'oldIndex':5, 'newIndex':3})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[1,2,5,3,4])
+
+            # Move to end
+            r = self.client.post(url, {'oldIndex':3, 'newIndex':5})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[1,2,3,4,5])
+
+            # Move beginning to end
+            r = self.client.post(url, {'oldIndex':1, 'newIndex':5})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,3,4,5,1])
+
+            # Move middle to middle 
+            r = self.client.post(url, {'oldIndex':3, 'newIndex':4})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,3,5,4,1])
+
+            r = self.client.post(url, {'oldIndex':3, 'newIndex':2})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()['success'],True)
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,5,3,4,1])
+
+            # Reset for next iteration in the loop
+            session.sessionpresentation_set.update(order=F('pk'))
+            self.client.logout()
+
+
+    def test_slide_order_reconditioning(self):
+        chair_role = RoleFactory(name_id='chair')
+        session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90))
+        sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session)
+        for num, sp in enumerate(sp_list, start=1):
+            sp.order = 2*num
+            sp.save()
+
+        try:
+            condition_slide_order(session)
+        except AssertionError:
+            pass
+
+        self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('order',flat=True)),list(range(1,6)))
+
 
 class EditTests(TestCase):
     def setUp(self):
