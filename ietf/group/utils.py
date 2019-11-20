@@ -135,6 +135,9 @@ def milestone_reviewer_for_group_type(group_type):
 def can_manage_materials(user, group):
     return has_role(user, 'Secretariat') or group.has_role(user, group.features.matman_roles)
 
+def can_manage_session_materials(user, group, session):
+    return has_role(user, 'Secretariat') or (group.has_role(user, group.features.matman_roles) and not session.is_material_submission_cutoff())
+
 def can_provide_status_update(user, group):
     if not group.features.acts_like_wg:
         return False

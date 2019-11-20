@@ -112,7 +112,6 @@ from ietf.review.utils import (can_manage_review_requests_for_team,
 from ietf.doc.models import LastCallDocEvent
 
 
-
 from ietf.name.models import ReviewAssignmentStateName
 from ietf.utils.mail import send_mail_text, parse_preformatted, get_payload
 
@@ -754,17 +753,20 @@ def meetings(request, acronym=None, group_type=None):
                                         meeting__date__gt=four_years_ago,
                                         type__in=['session','plenary','other'])
 
-    future, in_progress, past = group_sessions(sessions)
+    future, in_progress, recent, past = group_sessions(sessions)
 
-    can_edit = has_role(request.user,["Secretariat","Area Director"]) or group.has_role(request.user,["Chair","Secretary"])
+    can_edit = group.has_role(request.user,["Chair","Secretary"])
+    can_always_edit = has_role(request.user,["Secretariat","Area Director"])
 
     return render(request,'group/meetings.html',
                   construct_group_menu_context(request, group, "meetings", group_type, {
                      'group':group,
                      'future':future,
                      'in_progress':in_progress,
+                     'recent':recent,
                      'past':past,
                      'can_edit':can_edit,
+                     'can_always_edit':can_always_edit,
                   }))
 
 def chair_photos(request, group_type=None):

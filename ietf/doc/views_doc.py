@@ -1349,12 +1349,12 @@ def all_presentations(request, name):
     sessions = doc.session_set.filter(status__in=['sched','schedw','appr','canceled'],
                                       type__in=['session','plenary','other'])
 
-    future, in_progress, past = group_sessions(sessions)
+    future, in_progress, recent, past = group_sessions(sessions)
 
     return render(request, 'doc/material/all_presentations.html', {
         'user': request.user,
         'doc': doc,
         'future': future,
         'in_progress': in_progress,
-        'past' : past,
+        'past' : past+recent,
         })

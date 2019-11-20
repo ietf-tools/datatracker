@@ -39,12 +39,15 @@ def group_sessions(sessions):
     today = datetime.date.today()
     future = []
     in_progress = []
+    recent = []
     past = []
     for s in sessions:
         if s.meeting.date > today:
             future.append(s)
         elif s.meeting.end_date() >= today:
             in_progress.append(s)
+        elif not s.is_material_submission_cutoff():
+            recent.append(s)
         else:
             past.append(s)
 
@@ -52,7 +55,7 @@ def group_sessions(sessions):
     # meetings with descending time
     past.reverse()
 
-    return future, in_progress, past
+    return future, in_progress, recent, past
 
 def get_upcoming_manageable_sessions(user):
     """  Find all the sessions for meetings that haven't ended that the user could affect """
