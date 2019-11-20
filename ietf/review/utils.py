@@ -16,6 +16,7 @@ from django.template.defaultfilters import pluralize
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.contrib.sites.models import Site
+from simple_history.utils import update_change_reason
 
 import debug                            # pyflakes:ignore
 from ietf.dbtemplate.models import DBTemplate
@@ -425,16 +426,17 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
     if reviewer:
         possibly_advance_next_reviewer_for_team(review_req.team, reviewer.person_id, add_skip)
 
+    descr = "Request for {} review by {} is assigned to {}".format(
+            review_req.type.name,
+            review_req.team.acronym.upper(),
+            reviewer.person if reviewer else "(None)")
+    update_change_reason(assignment, descr)
     ReviewRequestDocEvent.objects.create(
         type="assigned_review_request",
         doc=review_req.doc,
         rev=review_req.doc.rev,
         by=request.user.person,
-        desc="Request for {} review by {} is assigned to {}".format(
-            review_req.type.name,
-            review_req.team.acronym.upper(),
-            reviewer.person if reviewer else "(None)",
-        ),
+        desc=descr,
         review_request=review_req,
         state_id='assigned',
     )
@@ -526,12 +528,13 @@ def close_review_request(request, review_req, close_state, close_comment=''):
 #    if close_state.slug == "no-review-version":
 #        review_req.reviewed_rev = review_req.requested_rev or review_req.doc.rev # save rev for later reference
     review_req.save()
-
+    
     if not suggested_req:
         descr = "Closed request for {} review by {} with state '{}'".format(
             review_req.type.name, review_req.team.acronym.upper(), close_state.name)
         if close_comment:
             descr += ': ' + close_comment
+        update_change_reason(review_req, descr)
         ReviewRequestDocEvent.objects.create(
             type="closed_review_request",
             doc=review_req.doc,

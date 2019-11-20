@@ -27,7 +27,7 @@ class ReviewSecretarySettingsAdmin(admin.ModelAdmin):
     raw_id_fields = ['team', 'person']
 admin.site.register(ReviewSecretarySettings, ReviewSecretarySettingsAdmin)
 
-class UnavailablePeriodAdmin(admin.ModelAdmin):
+class UnavailablePeriodAdmin(simple_history.admin.SimpleHistoryAdmin):
     list_display = ["person", "team", "start_date", "end_date", "availability", "reason"]
     list_display_links = ["person"]
     list_filter = ["team"]
@@ -56,7 +56,7 @@ class NextReviewerInTeamAdmin(admin.ModelAdmin):
 
 admin.site.register(NextReviewerInTeam, NextReviewerInTeamAdmin)
 
-class ReviewRequestAdmin(admin.ModelAdmin):
+class ReviewRequestAdmin(simple_history.admin.SimpleHistoryAdmin):
     list_display = ["doc", "time", "type", "team", "deadline"]
     list_display_links = ["doc"]
     list_filter = ["team", "type", "state"]
@@ -67,7 +67,7 @@ class ReviewRequestAdmin(admin.ModelAdmin):
 
 admin.site.register(ReviewRequest, ReviewRequestAdmin)
 
-class ReviewAssignmentAdmin(admin.ModelAdmin):
+class ReviewAssignmentAdmin(simple_history.admin.SimpleHistoryAdmin):
     list_display = ["review_request", "reviewer", "assigned_on", "result"]
     list_filter = ["result", "state"]
     ordering = ["-id"]
