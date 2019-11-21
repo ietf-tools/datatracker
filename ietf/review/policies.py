@@ -422,7 +422,8 @@ class LeastRecentlyUsedReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         reviewers = list(Person.objects.filter(role__name="reviewer", role__group=self.team))
         assignments = ReviewAssignment.objects.filter(
             review_request__team=self.team,
-            state__in=['accepted', 'assigned', 'completed'],   
+            state__in=['accepted', 'assigned', 'completed'],
+            reviewer__person__in=reviewers,
         ).order_by('assigned_on').select_related('reviewer')
         
         reviewers_with_assignment = [assignment.reviewer.person for assignment in assignments]

@@ -4,6 +4,7 @@ from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory
 from ietf.group.factories import ReviewTeamFactory
 from ietf.group.models import Group, Role
 from ietf.name.models import ReviewerQueuePolicyName
+from ietf.person.factories import PersonFactory
 from ietf.person.fields import PersonEmailChoiceField
 from ietf.person.models import Email
 from ietf.review.factories import ReviewAssignmentFactory, ReviewRequestFactory
@@ -243,6 +244,9 @@ class LeastRecentlyUsedReviewerQueuePolicyTest(TestCase):
             start_date='2000-01-01',
             availability='canfinish',
         )
+        # This reviewer has an assignment, but is no longer in the team and should not be in rotation.
+        out_of_team_reviewer = PersonFactory()
+        ReviewAssignmentFactory(review_request__team=team, reviewer=out_of_team_reviewer.email())
 
         # No known assignments
         rotation = policy.default_reviewer_rotation_list()
