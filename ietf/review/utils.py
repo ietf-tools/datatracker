@@ -468,7 +468,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
     except DBTemplate.DoesNotExist:
         template = DBTemplate.objects.get(path="/group/defaults/email/review_assigned.txt")
 
-    context = {'assigner': request.user.person, 'prev_team_reviews': prev_team_reviews}
+    context = {'assigner': request.user.person, 'reviewer': reviewer, 'prev_team_reviews': prev_team_reviews}
     msg = render_to_string(template.path, context, request=request)
 
     email_review_request_change(
