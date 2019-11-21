@@ -198,6 +198,15 @@ class RotateAlphabeticallyReviewerAndGenericQueuePolicyTest(TestCase):
         self.assertEqual(get_skip_next(reviewers[3]), 1)
         self.assertEqual(get_skip_next(reviewers[4]), 0)
 
+        # Leave only a single reviewer remaining, which should not trigger an infinite loop.
+        # The deletion also causes NextReviewerInTeam to be deleted.
+        [reviewer.delete() for reviewer in reviewers[1:]]
+        self.assertEqual([reviewers[0]], policy.default_reviewer_rotation_list())
+        policy.update_policy_state_for_assignment(assignee_person=reviewers[0], add_skip=False)
+        # No NextReviewerInTeam should be created, the only possible next is the excluded assignee.
+        self.assertFalse(NextReviewerInTeam.objects.filter(team=team))
+        self.assertEqual([reviewers[0]], policy.default_reviewer_rotation_list())
+
     def test_return_reviewer_to_top_rotation(self):
         team = ReviewTeamFactory(acronym="rotationteam", name="Review Team",
                                  list_email="rotationteam@ietf.org",

@@ -92,10 +92,13 @@ class AbstractReviewerQueuePolicy:
 
         # Loop through the list until finding the first person with skip_next=0,
         # who is not the current assignee. Anyone with skip_next>0 encountered before
-        # has their skip_next decreased.
+        # has their skip_next decreased. There is a cap on the number of loops, which can
+        # be hit e.g. if there is only a single reviewer, and the current assignee is excluded
+        # from being set as NextReviewerInTeam.
         current_idx = 0
+        max_loops = sum([self._reviewer_settings_for(r).skip_next for r in rotation_list]) + len(rotation_list)
         if in_order_assignment:
-            while True:
+            while current_idx <= max_loops:
                 current_idx_person = reviewer_at_index(current_idx)
                 settings = self._reviewer_settings_for(current_idx_person)
                 if settings.skip_next > 0:
