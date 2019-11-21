@@ -189,6 +189,7 @@ class ReviewTests(TestCase):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
+        RoleFactory(group=review_team,person__user__username='reviewsecretary2',person__user__email='reviewsecretary2@example.com',name_id='secr')
         review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='assigned',requested_by=rev_role.person,deadline=datetime.datetime.now()+datetime.timedelta(days=20))
         ReviewAssignmentFactory(review_request=review_req, state_id='accepted', reviewer=rev_role.person.email_set.first())
 
@@ -229,6 +230,7 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertTrue('<reviewer@example.com>' in outbox[0]["To"])
         self.assertFalse("<reviewsecretary@example.com>" in outbox[0]["To"])
+        self.assertTrue("<reviewsecretary2@example.com>" in outbox[0]["To"])
         mail_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
         self.assertTrue("closed" in mail_content)
         self.assertTrue("review_request_close_comment" in mail_content)
