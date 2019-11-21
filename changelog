@@ -1,3 +1,81 @@
+ietfdb (6.111.0) ietf; urgency=medium
+
+  **IETF 106 code sprint**
+
+  This release contains datatracker bug fixes and enhancements from the
+  IETF-106 Code Sprint.  This sprint brought in new contributors, and saw
+  substantial work from previous contributors.  Thanks to everyone who
+  contributed!
+
+  * Merged in [17062] from rjsparks@nostrum.com:
+    Change the default template for assigned review emails to name the
+    assigned reviewer. Fixes #2830.  
+
+  * Merged in [17061] and [17024] from rjsparks@nostrum.com:
+    Allow slides drag-drop between sessions for groups meeting with 
+    multiple sessions. Fixes #2700.
+
+  * Merged in [17044] from valery@smyslov.net:
+    Make it clearer that a chair can't revise materials for a meeting once 
+    the proceedings deadline has passed.  Fixes issue #2612.  
+
+  * Merged in [17037] from kivinen@iki.fi:
+    Added padding to the <th> column in the unavailability period list of
+    the reviewers page.  
+
+  * Merged in [17036] from housley@vigilsec.com:
+    Drop old 'slides' section from agenda.json 
+
+  * Merged in [17035] from housley@vigilsec.com:
+    Improved performance for some agenda-related pages 
+
+  * Merged in [17034] from kivinen@iki.fi:
+    Added two new configuration settings for the review team secretary,
+    one to set how many days to include in the reviewers list, and
+    another one to limit the number of completed items in the list for
+    each person. This version replaces the one I did earlier, and includes
+    much more test cases to test different limits on the reviewers page. 
+
+  * Added an instance of force_text() to ensure non_ascii mail subjects are 
+    unicode when used for string interpolation, rather than bytes (which will 
+    trigger ascii decode()).
+
+  * Merged in [17033] from kivinen@iki.fi:
+    Reviewers page template changes. Changed draft names so they never wrap.
+    Changed the Unavailability period table so it is much narrower. 
+
+  * Merged in [17031] from fenton@bluepopcorn.net:
+    Add edit button for Secreatriat on concluded groups. Fixes #2781.  
+
+  * RFCs with inline errata now have a non-beta URL.  Updated the setting.
+
+  * Merged in [17028] from fenton@bluepopcorn.net:
+    Added a Closing note field to state specific WG edit. Fixes #2779.  
+
+  * Merged in [17027] from rcross@amsl.com:
+    Fix issue where draft resurrect feature does not move most recent draft 
+    file from the archive directory back to the current draft directory. Fixes 
+    #2646.  
+
+  * Tweaked docker-init.sh to create a needed GID entry before using it 
+    when creating a new user.  Fixes an issue when the user GID in the
+    host OS is missing in the docker image.
+
+  * Added fullcalendar to the bower.json file.
+
+  * Changed the call arguments for submission tool conversion from XML to 
+    v3 text to match those of the standalone tool.  Fixes an issue where 
+    <sourecode> would have line ends stripped when converted by the datatracker.
+
+  * Tweaked a test's person name form to match the usage in the tested code.
+
+  * Fixed naming of staged xml draft submission files and tweaked the
+    arguments for the xml2rfc parser invocation for xml draft submissions.
+    Added some more logging.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Nov 2019 06:50:19 +0000
+
+
 ietfdb (6.110.1) ietf; urgency=medium
 
   This release provides various fixes, and clears the slate for the
