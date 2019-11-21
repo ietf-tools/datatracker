@@ -374,6 +374,9 @@ def email_review_request_change(request, review_req, subject, msg, by, notify_se
         skip_review_requested_by=not notify_requested_by,
     )
     
+    if cc and not to:
+        to = cc
+        cc = []
     if to or cc:
         url = urlreverse("ietf.doc.views_review.review_request_forced_login", kwargs={ "name": review_req.doc.name, "request_id": review_req.pk })
         url = request.build_absolute_uri(url)

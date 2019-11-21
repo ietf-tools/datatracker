@@ -1149,7 +1149,7 @@ class ReviewTests(TestCase):
         review_req = reload_db_objects(review_req)
         self.assertEqual(review_req.deadline,new_deadline)
         self.assertEqual(len(outbox), 1)
-        self.assertIn('<reviewsecretary@example.com>', outbox[0]["To"])
+        self.assertIn('reviewsecretary@example.com', outbox[0]["Cc"])
         self.assertIn('<reviewer@example.com>', outbox[0]["To"])
         self.assertIn('Deadline changed', outbox[0]['Subject'])
 
