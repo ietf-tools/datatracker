@@ -591,6 +591,10 @@ MAX_WG_DELEGATES = 3
 GROUP_STATES_WITH_EXTRA_PROCESSING = ["sub-pub", "rfc-edit", ]
 GROUP_TYPES_LISTED_ACTIVE = ['wg', 'rg', 'ag', 'team', 'dir', 'review', 'area', 'program', ]
 
+# Review team releated settings
+GROUP_REVIEW_MAX_ITEMS_TO_SHOW_IN_REVIEWER_LIST = 10
+GROUP_REVIEW_DAYS_TO_SHOW_IN_REVIEWER_LIST = 365
+
 DATE_FORMAT = "Y-m-d"
 DATETIME_FORMAT = "Y-m-d H:i T"
 
