@@ -182,7 +182,7 @@ class SubmissionBaseUploadForm(forms.Form):
                 # --- Parse the xml ---
                 try:
                     parser = xml2rfc.XmlRfcParser(str(tfn), quiet=True)
-                    self.xmltree = parser.parse(remove_comments=False, quiet=True, add_xmlns=True)
+                    self.xmltree = parser.parse(remove_comments=False, quiet=True)
                     self.xmlroot = self.xmltree.getroot()
                     xml_version = self.xmlroot.get('version', '2')
                 except Exception as e:
@@ -221,7 +221,7 @@ class SubmissionBaseUploadForm(forms.Form):
                     self.authors.append(info)
 
                 # --- Prep the xml ---
-                file_name['xml'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (self.filename, self.revision, ext))
+                file_name['xml'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (self.filename, self.revision, ext))
                 try:
                     if xml_version == '3':
                         prep = xml2rfc.PrepToolWriter(self.xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
@@ -252,6 +252,7 @@ class SubmissionBaseUploadForm(forms.Form):
                                     xml_version))
                     except Exception as e:
                         msgs = format_messages('txt', e, xml2rfc.log)
+                        log.log('\n'.join(msgs))
                         raise forms.ValidationError(msgs)
 
                 # --- Convert to xml ---
@@ -290,7 +291,6 @@ class SubmissionBaseUploadForm(forms.Form):
                             [ forms.ValidationError("One or more XML validation errors occurred when processing the XML file:") ] +
                             [ forms.ValidationError("%s: Line %s: %s" % (xml_file.name, r.line, r.message), code="%s"%r.type) for r in errors ] 
                         )
-
             finally:
                 os.close(tfh)
                 os.unlink(tfn)
