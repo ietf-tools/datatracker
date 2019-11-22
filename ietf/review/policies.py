@@ -427,7 +427,7 @@ class LeastRecentlyUsedReviewerQueuePolicy(AbstractReviewerQueuePolicy):
             review_request__team=self.team,
             state__in=['accepted', 'assigned', 'completed'],
             reviewer__person__in=reviewers,
-        ).order_by('assigned_on').select_related('reviewer')
+        ).order_by('assigned_on').select_related('reviewer', 'reviewer__person')
         
         reviewers_with_assignment = [assignment.reviewer.person for assignment in assignments]
         reviewers_without_assignment = set(reviewers) - set(reviewers_with_assignment)
