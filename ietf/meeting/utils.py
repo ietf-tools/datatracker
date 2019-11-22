@@ -19,7 +19,6 @@ from ietf.meeting.models import Session, Meeting
 from ietf.group.utils import can_manage_materials
 from ietf.person.models import Email
 from ietf.secr.proceedings.proc_utils import import_audio_files
-from ietf.utils.log import unreachable
 
 def group_sessions(sessions):
 
@@ -188,9 +187,7 @@ def sort_accept_tuple(accept):
 def condition_slide_order(session):
     qs = session.sessionpresentation_set.filter(document__type_id='slides').order_by('order')
     order_list = qs.values_list('order',flat=True)
-    #assertion('list(order_list) == range(1,qs.count()+1)')
     if list(order_list) != list(range(1,qs.count()+1)):
         for num, sp in enumerate(qs, start=1):
             sp.order=num
             sp.save()
-        unreachable('2019-11-15')
