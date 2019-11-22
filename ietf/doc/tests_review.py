@@ -33,11 +33,10 @@ from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAss
 from ietf.person.models import Email, Person
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import (ReviewRequest, ReviewerSettings,
-                                ReviewWish, UnavailablePeriod, NextReviewerInTeam)
-from ietf.review.utils import reviewer_rotation_list, possibly_advance_next_reviewer_for_team
+                                ReviewWish, NextReviewerInTeam)
+from ietf.review.policies import get_reviewer_queue_policy
 
 from ietf.utils.test_utils import TestCase
-from ietf.utils.test_data import create_person
 from ietf.utils.test_utils import login_testing_unauthorized, reload_db_objects
 from ietf.utils.mail import outbox, empty_outbox, parseaddr, on_behalf_of
 from ietf.person.factories import PersonFactory
@@ -233,94 +232,6 @@ class ReviewTests(TestCase):
         self.assertIn("closed", mail_content)
         self.assertIn("review_request_close_comment", mail_content)
 
-    def test_possibly_advance_next_reviewer_for_team(self):
-
-        team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
-        doc = WgDraftFactory()
-
-        # make a bunch of reviewers
-        reviewers = [
-            create_person(team, "reviewer", name="Test Reviewer{}".format(i), username="testreviewer{}".format(i))
-            for i in range(5)
-        ]
-
-        self.assertEqual(reviewers, reviewer_rotation_list(team))
-
-        def get_skip_next(person):
-            settings = (ReviewerSettings.objects.filter(team=team, person=person).first()
-                        or ReviewerSettings(team=team))
-            return settings.skip_next
-
-        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[0].pk, add_skip=False)
-        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[1])
-        self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 0)
-
-        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[1].pk, add_skip=True)
-        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
-        self.assertEqual(get_skip_next(reviewers[1]), 1)
-        self.assertEqual(get_skip_next(reviewers[2]), 0)
-
-        # skip reviewer 2
-        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[3].pk, add_skip=True)
-        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
-        self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 1)
-        self.assertEqual(get_skip_next(reviewers[2]), 0)
-        self.assertEqual(get_skip_next(reviewers[3]), 1)
-
-        # pick reviewer 2, use up reviewer 3's skip_next
-        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[2].pk, add_skip=False)
-        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[4])
-        self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 1)
-        self.assertEqual(get_skip_next(reviewers[2]), 0)
-        self.assertEqual(get_skip_next(reviewers[3]), 0)
-        self.assertEqual(get_skip_next(reviewers[4]), 0)
-
-        # check wrap-around
-        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[4].pk)
-        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[0])
-        self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 1)
-        self.assertEqual(get_skip_next(reviewers[2]), 0)
-        self.assertEqual(get_skip_next(reviewers[3]), 0)
-        self.assertEqual(get_skip_next(reviewers[4]), 0)
-
-        # unavailable
-        today = datetime.date.today()
-        UnavailablePeriod.objects.create(team=team, person=reviewers[1], start_date=today, end_date=today, availability="unavailable")
-        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[0].pk)
-        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
-        self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 1) # don't consume that skip while the reviewer is unavailable
-        self.assertEqual(get_skip_next(reviewers[2]), 0)
-        self.assertEqual(get_skip_next(reviewers[3]), 0)
-        self.assertEqual(get_skip_next(reviewers[4]), 0)
-
-        # pick unavailable anyway
-        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[1].pk, add_skip=False)
-        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
-        self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 1)
-        self.assertEqual(get_skip_next(reviewers[2]), 0)
-        self.assertEqual(get_skip_next(reviewers[3]), 0)
-        self.assertEqual(get_skip_next(reviewers[4]), 0)
-
-        # not through min_interval so advance past reviewer[2]
-        settings, _ = ReviewerSettings.objects.get_or_create(team=team, person=reviewers[2])
-        settings.min_interval = 30
-        settings.save()
-        req = ReviewRequest.objects.create(team=team, doc=doc, type_id="early", state_id="assigned", deadline=today, requested_by=reviewers[0])
-        ReviewAssignmentFactory(review_request=req, state_id="accepted", reviewer = reviewers[2].email_set.first(),assigned_on = req.time)
-        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[3].pk)
-        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[4])
-        self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 1)
-        self.assertEqual(get_skip_next(reviewers[2]), 0)
-        self.assertEqual(get_skip_next(reviewers[3]), 0)
-        self.assertEqual(get_skip_next(reviewers[4]), 0)
-
     def test_assign_reviewer(self):
         doc = WgDraftFactory(pages=2)
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
@@ -328,6 +239,7 @@ class ReviewTests(TestCase):
         RoleFactory(group=review_team,person__user__username='marschairman',person__name='WG Cháir Man',name_id='reviewer')
         secretary = RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
         ReviewerSettings.objects.create(team=review_team, person=rev_role.person, min_interval=14, skip_next=0)
+        queue_policy = get_reviewer_queue_policy(review_team)
 
         # review to assign to
         review_req = ReviewRequestFactory(team=review_team,doc=doc,state_id='requested')
@@ -369,17 +281,8 @@ class ReviewTests(TestCase):
         another_reviewer = PersonFactory.create(name = "Extra TestReviewer") # needs to be lexically greater than the existing one
         another_reviewer.role_set.create(name_id='reviewer', email=another_reviewer.email(), group=review_req.team)
 
-        UnavailablePeriod.objects.create(
-            team=review_req.team,
-            person=reviewer_email.person,
-            start_date=datetime.date.today() - datetime.timedelta(days=10),
-            availability="unavailable",
-        )
-
         ReviewWish.objects.create(person=reviewer_email.person, team=review_req.team, doc=doc)
 
-        # pick a non-existing reviewer as next to see that we can
-        # handle reviewers who have left
         NextReviewerInTeam.objects.filter(team=review_req.team).delete()
         NextReviewerInTeam.objects.create(
             team=review_req.team,
@@ -407,14 +310,13 @@ class ReviewTests(TestCase):
         self.assertIn("wishes to review", reviewer_label)
         self.assertIn("is author", reviewer_label)
         self.assertIn("regexp matches", reviewer_label)
-        self.assertIn("unavailable indefinitely", reviewer_label)
         self.assertIn("skip next 1", reviewer_label)
         self.assertIn("#1", reviewer_label)
         self.assertIn("1 fully completed", reviewer_label)
 
         # assign
         empty_outbox()
-        rotation_list = reviewer_rotation_list(review_req.team)
+        rotation_list = queue_policy.default_reviewer_rotation_list()
         reviewer = Email.objects.filter(role__name="reviewer", role__group=review_req.team, person=rotation_list[0]).first()
         r = self.client.post(assign_url, { "action": "assign", "reviewer": reviewer.pk })
         self.assertEqual(r.status_code, 302)
@@ -425,7 +327,6 @@ class ReviewTests(TestCase):
         assignment = review_req.reviewassignment_set.first()
         self.assertEqual(assignment.reviewer, reviewer)
         self.assertEqual(assignment.state_id, "assigned")
-        self.assertEqual(NextReviewerInTeam.objects.get(team=review_req.team).next_reviewer, rotation_list[1])
 
         self.assertEqual(len(outbox), 1)
         self.assertEqual('"Some Reviewer" <reviewer@example.com>', outbox[0]["To"])

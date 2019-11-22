@@ -1,7 +1,9 @@
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 from django.contrib import admin
 
 from ietf.name.models import (
-    AgendaTypeName, BallotPositionName, ConstraintName, ContinentName, CountryName, DBTemplateTypeName,
+    AgendaTypeName, BallotPositionName, ConstraintName, ContinentName, CountryName,
+    DBTemplateTypeName,
     DocRelationshipName, DocReminderTypeName, DocTagName, DocTypeName, DraftSubmissionStateName,
     FeedbackTypeName, FormalLanguageName, GroupMilestoneStateName, GroupStateName, GroupTypeName,
     ImportantDateName, IntendedStdLevelName, IprDisclosureStateName, IprEventTypeName,
@@ -9,7 +11,7 @@ from ietf.name.models import (
     LiaisonStatementState, LiaisonStatementTagName, MeetingTypeName, NomineePositionStateName,
     ReviewRequestStateName, ReviewResultName, ReviewTypeName, RoleName, RoomResourceName,
     SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName, TopicAudienceName,
-    DocUrlTagName, ReviewAssignmentStateName)
+    DocUrlTagName, ReviewAssignmentStateName, ReviewerQueuePolicyName)
 
 from ietf.stats.models import CountryAlias
 
@@ -70,6 +72,7 @@ admin.site.register(NomineePositionStateName, NameAdmin)
 admin.site.register(ReviewRequestStateName, NameAdmin)
 admin.site.register(ReviewAssignmentStateName, NameAdmin)
 admin.site.register(ReviewResultName, NameAdmin)
+admin.site.register(ReviewerQueuePolicyName, NameAdmin)
 admin.site.register(ReviewTypeName, NameAdmin)
 admin.site.register(RoleName, NameAdmin)
 admin.site.register(RoomResourceName, NameAdmin)
