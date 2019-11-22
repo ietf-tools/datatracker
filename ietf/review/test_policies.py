@@ -257,20 +257,26 @@ class LeastRecentlyUsedReviewerQueuePolicyTest(TestCase):
         out_of_team_reviewer = PersonFactory()
         ReviewAssignmentFactory(review_request__team=team, reviewer=out_of_team_reviewer.email())
 
-        # No known assignments
+        # No known assignments, order in PK order.
         rotation = policy.default_reviewer_rotation_list()
         self.assertNotIn(unavailable_reviewer, rotation)
         self.assertEqual(rotation, reviewers)
         
-        # Regular accepted assignment
+        # Regular accepted assignments. Note that one is older and one is newer than reviewer 0's,
+        # the newest one should count for ordering, i.e. reviewer 1 should be later in the list.
         ReviewAssignmentFactory(reviewer=reviewers[1].email(), assigned_on='2019-01-01',
                                 state_id='accepted', review_request__team=team)
+        ReviewAssignmentFactory(reviewer=reviewers[1].email(), assigned_on='2017-01-01',
+                                state_id='accepted', review_request__team=team)
         # Rejected assignment, should not affect reviewer 2's position
-        ReviewAssignmentFactory(reviewer=reviewers[2].email(), state_id='rejected',
-                                review_request__team=team)
-        # Completed assignment, assigned before reviewer 1,
+        ReviewAssignmentFactory(reviewer=reviewers[2].email(), assigned_on='2020-01-01',
+                                state_id='rejected', review_request__team=team)
+        # Completed assignments, assigned before the most recent assignment of reviewer 1,
         # but completed after (assign date should count).
         ReviewAssignmentFactory(reviewer=reviewers[0].email(), assigned_on='2018-01-01',
+                                completed_on='2020-01-01', state_id='completed',
+                                review_request__team=team)
+        ReviewAssignmentFactory(reviewer=reviewers[0].email(), assigned_on='2018-05-01',
                                 completed_on='2020-01-01', state_id='completed',
                                 review_request__team=team)
         rotation = policy.default_reviewer_rotation_list()
@@ -278,6 +284,7 @@ class LeastRecentlyUsedReviewerQueuePolicyTest(TestCase):
         self.assertEqual(rotation, [reviewers[2], reviewers[3], reviewers[4], reviewers[0], reviewers[1]])
 
     def test_return_reviewer_to_top_rotation(self):
+        # Should do nothing, this is implicit in this policy, no state change is needed.
         team = ReviewTeamFactory(acronym="rotationteam", name="Review Team",
                                  list_email="rotationteam@ietf.org",
                                  parent=Group.objects.get(acronym="farfut"))

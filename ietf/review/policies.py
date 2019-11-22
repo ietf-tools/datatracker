@@ -6,6 +6,7 @@ import re
 from collections import OrderedDict
 
 import six
+from django.db.models.aggregates import Max
 
 from ietf.doc.models import DocumentAuthor, DocAlias
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
@@ -423,17 +424,21 @@ class LeastRecentlyUsedReviewerQueuePolicy(AbstractReviewerQueuePolicy):
     """
     def default_reviewer_rotation_list(self, include_unavailable=False, dont_skip_person_ids=None):
         reviewers = list(Person.objects.filter(role__name="reviewer", role__group=self.team))
+        reviewers_dict = {p.pk: p for p in reviewers}
         assignments = ReviewAssignment.objects.filter(
             review_request__team=self.team,
             state__in=['accepted', 'assigned', 'completed'],
             reviewer__person__in=reviewers,
-        ).order_by('assigned_on').select_related('reviewer', 'reviewer__person')
-        
-        reviewers_with_assignment = [assignment.reviewer.person for assignment in assignments]
+        ).values('reviewer__person').annotate(most_recent=Max('assigned_on')).order_by('most_recent')
+
+        reviewers_with_assignment = [
+            reviewers_dict[assignment['reviewer__person']]
+            for assignment in assignments
+        ] 
         reviewers_without_assignment = set(reviewers) - set(reviewers_with_assignment)
         
         rotation_list = sorted(list(reviewers_without_assignment), key=lambda r: r.pk)
-        rotation_list += list(OrderedDict.fromkeys(reviewers_with_assignment))
+        rotation_list += reviewers_with_assignment
         
         if not include_unavailable:
             reviewers_to_skip = self._entirely_unavailable_reviewers(dont_skip_person_ids)
