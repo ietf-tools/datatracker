@@ -1404,8 +1404,8 @@ def reviewer_overview(request, acronym, group_type=None):
 
     today = datetime.date.today()
 
-    max_closed_reqs = 10
-    days_back = 365
+    max_closed_reqs = settings.GROUP_REVIEW_MAX_ITEMS_TO_SHOW_IN_REVIEWER_LIST
+    days_back = settings.GROUP_REVIEW_DAYS_TO_SHOW_IN_REVIEWER_LIST
     if can_manage:
         secretary_settings = (ReviewSecretarySettings.objects.filter(person=
                                                                      request.user.person,
