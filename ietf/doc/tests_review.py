@@ -430,6 +430,7 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertEqual('"Some Reviewer" <reviewer@example.com>', outbox[0]["To"])
         message = outbox[0].get_payload(decode=True).decode("utf-8")
+        self.assertIn("Pages: {}".format(doc.pages), message )
         self.assertIn("{} has assigned {}".format(secretary.person.ascii, reviewer.person.ascii), message)
         self.assertIn("This team has completed other reviews", message)
         self.assertIn("{} -01 Serious Issues".format(reviewer_email.person.ascii), message)
