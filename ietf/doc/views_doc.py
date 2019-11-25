@@ -824,7 +824,7 @@ def document_bibtex(request, name, rev=None):
                                    latest_revision=latest_revision,
                                    doi=doi,
                                ),
-                              content_type="application/xml; charset=utf-8",
+                              content_type="text/plain; charset=utf-8",
                           )
 
 
