@@ -63,6 +63,7 @@ class ReviewSecretarySettings(models.Model):
 
 @python_2_unicode_compatible
 class UnavailablePeriod(models.Model):
+    history      = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
     team         = ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     person       = ForeignKey(Person)
     start_date   = models.DateField(default=datetime.date.today, null=True, help_text="Choose the start date so that you can still do a review if it's assigned just before the start date - this usually means you should mark yourself unavailable for assignment some time before you are actually away. The default is today.")
@@ -122,6 +123,7 @@ class NextReviewerInTeam(models.Model):
 @python_2_unicode_compatible
 class ReviewRequest(models.Model):
     """Represents a request for a review and the process it goes through."""
+    history       = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
     state         = ForeignKey(ReviewRequestStateName)
 
     # Fields filled in on the initial record creation - these
@@ -147,6 +149,7 @@ class ReviewRequest(models.Model):
 @python_2_unicode_compatible
 class ReviewAssignment(models.Model):
     """ One of possibly many reviews assigned in response to a ReviewRequest """
+    history        = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
     review_request = ForeignKey(ReviewRequest)
     state          = ForeignKey(ReviewAssignmentStateName)
     reviewer       = ForeignKey(Email)

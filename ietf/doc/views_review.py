@@ -5,6 +5,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import io
+import itertools
 import json
 import os
 import datetime
@@ -12,6 +13,7 @@ import requests
 import email.utils
 
 from django.utils.http import is_safe_url
+from simple_history.utils import update_change_reason
 
 import debug    # pyflakes:ignore
 
@@ -27,8 +29,8 @@ from django.urls import reverse as urlreverse
 
 from ietf.doc.models import (Document, NewRevisionDocEvent, State, DocAlias,
                              LastCallDocEvent, ReviewRequestDocEvent, ReviewAssignmentDocEvent, DocumentAuthor)
-from ietf.name.models import ReviewRequestStateName, ReviewAssignmentStateName, ReviewResultName, \
-    DocTypeName, ReviewTypeName
+from ietf.name.models import (ReviewRequestStateName, ReviewAssignmentStateName, ReviewResultName, 
+                             DocTypeName, ReviewTypeName)
 from ietf.person.models import Person
 from ietf.review.models import ReviewRequest, ReviewAssignment, ReviewWish
 from ietf.group.models import Group
@@ -135,12 +137,15 @@ def request_review(request, name):
                 review_req.team = team
                 review_req.save()
 
+                descr = "Requested {} review by {}".format(review_req.type.name,
+                                                           review_req.team.acronym.upper())
+                update_change_reason(review_req, descr)
                 ReviewRequestDocEvent.objects.create(
                     type="requested_review",
                     doc=doc,
                     rev=doc.rev,
                     by=request.user.person,
-                    desc="Requested {} review by {}".format(review_req.type.name, review_req.team.acronym.upper()),
+                    desc=descr,
                     time=review_req.time,
                     review_request=review_req,
                     state=None,
@@ -228,12 +233,17 @@ def review_request(request, name, request_id):
             if assignment.can_accept_reviewer_assignment:
                 assignment.state = ReviewAssignmentStateName.objects.get(slug="accepted")
                 assignment.save()
+                update_change_reason(assignment, 'Assignment for {} accepted'.format(assignment.reviewer.person))
         return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
 
     wg_chairs = None
     if review_req.doc.group:
         wg_chairs = [role.person for role in review_req.doc.group.role_set.filter(name__slug='chair')]
 
+    history = list(review_req.history.all()) 
+    history += itertools.chain(*[list(r.history.all()) for r in review_req.reviewassignment_set.all()])
+    history.sort(key=lambda h: h.history_date, reverse=True)
+    
     return render(request, 'doc/review/review_request.html', {
         'doc': doc,
         'review_req': review_req,
@@ -243,6 +253,7 @@ def review_request(request, name, request_id):
         'can_edit_deadline': can_edit_deadline,
         'assignments': assignments,
         'wg_chairs': wg_chairs,
+        'history': history,
     })
 
 
@@ -351,16 +362,18 @@ def reject_reviewer_assignment(request, name, assignment_id):
             review_assignment.completed_on = datetime.datetime.now()
             review_assignment.save()
 
+            descr = "Assignment of request for {} review by {} to {} was rejected".format(
+                review_assignment.review_request.type.name,
+                review_assignment.review_request.team.acronym.upper(),
+                review_assignment.reviewer.person
+            )
+            update_change_reason(review_assignment, descr)
             ReviewAssignmentDocEvent.objects.create(
                 type="closed_review_assignment",
                 doc=review_assignment.review_request.doc,
                 rev=review_assignment.review_request.doc.rev,
                 by=request.user.person,
-                desc="Assignment of request for {} review by {} to {} was rejected".format(
-                    review_assignment.review_request.type.name,
-                    review_assignment.review_request.team.acronym.upper(),
-                    review_assignment.reviewer.person,
-                ),
+                desc=descr,
                 review_assignment=review_assignment,
                 state=review_assignment.state,
             )
@@ -397,16 +410,17 @@ def withdraw_reviewer_assignment(request, name, assignment_id):
         review_assignment.state_id = 'withdrawn'
         review_assignment.save()
 
+        descr = "Assignment of request for {} review by {} to {} was withdrawn".format(
+            review_assignment.review_request.type.name,
+            review_assignment.review_request.team.acronym.upper(),
+            review_assignment.reviewer.person, )
+        update_change_reason(review_assignment, descr)
         ReviewAssignmentDocEvent.objects.create(
             type="closed_review_assignment",
             doc=review_assignment.review_request.doc,
             rev=review_assignment.review_request.doc.rev,
             by=request.user.person,
-            desc="Assignment of request for {} review by {} to {} was withdrawn".format(
-                review_assignment.review_request.type.name,
-                review_assignment.review_request.team.acronym.upper(),
-                review_assignment.reviewer.person,
-            ),
+            desc=descr,
             review_assignment=review_assignment,
             state=review_assignment.state,
         )            
@@ -434,16 +448,17 @@ def mark_reviewer_assignment_no_response(request, name, assignment_id):
         review_assignment.state_id = 'no-response'
         review_assignment.save()
 
+        descr = "Assignment of request for {} review by {} to {} was marked no-response".format(
+            review_assignment.review_request.type.name,
+            review_assignment.review_request.team.acronym.upper(),
+            review_assignment.reviewer.person)
+        update_change_reason(review_assignment, descr)
         ReviewAssignmentDocEvent.objects.create(
             type="closed_review_assignment",
             doc=review_assignment.review_request.doc,
             rev=review_assignment.review_request.doc.rev,
             by=request.user.person,
-            desc="Assignment of request for {} review by {} to {} was marked no-response".format(
-                review_assignment.review_request.type.name,
-                review_assignment.review_request.team.acronym.upper(),
-                review_assignment.reviewer.person,
-            ),
+            desc=descr,
             review_assignment=review_assignment,
             state=review_assignment.state,
         )            
@@ -751,6 +766,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                 assignment.result.name,
                 assignment.reviewer.person,
             )
+            update_change_reason(assignment, desc)
             if need_to_email_review:
                 desc += " " + "Sent review to list."
             if revising_review:

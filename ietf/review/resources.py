@@ -14,7 +14,8 @@ from ietf.api import ToOneField                         # pyflakes:ignore
 from ietf.review.models import (ReviewerSettings, ReviewRequest, ReviewAssignment, # type: ignore
                                 UnavailablePeriod, ReviewWish, NextReviewerInTeam,
                                 ReviewSecretarySettings, ReviewTeamSettings, 
-                                HistoricalReviewerSettings )
+                                HistoricalReviewerSettings, HistoricalUnavailablePeriod,
+                                HistoricalReviewRequest, HistoricalReviewAssignment)
 
 
 from ietf.person.resources import PersonResource
@@ -70,6 +71,33 @@ class ReviewRequestResource(ModelResource):
 api.review.register(ReviewRequestResource())
 
 
+class HistoricalReviewRequestResource(ModelResource):
+    state            = ToOneField(ReviewRequestStateNameResource, 'state')
+    type             = ToOneField(ReviewTypeNameResource, 'type')
+    doc              = ToOneField(DocumentResource, 'doc')
+    team             = ToOneField(GroupResource, 'team')
+    requested_by     = ToOneField(PersonResource, 'requested_by')
+    class Meta:
+        queryset = HistoricalReviewRequest.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'reviewrequest'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "time": ALL,
+            "deadline": ALL,
+            "requested_rev": ALL,
+            "comment": ALL,
+            "state": ALL_WITH_RELATIONS,
+            "type": ALL_WITH_RELATIONS,
+            "doc": ALL_WITH_RELATIONS,
+            "team": ALL_WITH_RELATIONS,
+            "requested_by": ALL_WITH_RELATIONS,
+        }
+api.review.register(HistoricalReviewRequestResource())
+
+
 from ietf.person.resources import PersonResource
 from ietf.group.resources import GroupResource
 class UnavailablePeriodResource(ModelResource):
@@ -91,6 +119,26 @@ class UnavailablePeriodResource(ModelResource):
             "person": ALL_WITH_RELATIONS,
         }
 api.review.register(UnavailablePeriodResource())
+
+
+class HistoricalUnavailablePeriodResource(ModelResource):
+    team             = ToOneField(GroupResource, 'team')
+    person           = ToOneField(PersonResource, 'person')
+    class Meta:
+        queryset = HistoricalUnavailablePeriod.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "start_date": ALL,
+            "end_date": ALL,
+            "availability": ALL,
+            "reason": ALL,
+            "team": ALL_WITH_RELATIONS,
+            "person": ALL_WITH_RELATIONS,
+        }
+api.review.register(HistoricalUnavailablePeriodResource())
 
 
 from ietf.person.resources import PersonResource
@@ -236,3 +284,30 @@ class ReviewAssignmentResource(ModelResource):
             "result": ALL_WITH_RELATIONS,
         }
 api.review.register(ReviewAssignmentResource())
+
+
+class HistoricalReviewAssignmentResource(ModelResource):
+    review_request   = ToOneField(ReviewRequestResource, 'review_request')
+    state            = ToOneField(ReviewAssignmentStateNameResource, 'state')
+    reviewer         = ToOneField(EmailResource, 'reviewer')
+    review           = ToOneField(DocumentResource, 'review', null=True)
+    result           = ToOneField(ReviewResultNameResource, 'result', null=True)
+    class Meta:
+        queryset = HistoricalReviewAssignment.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'reviewassignment'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "assigned_on": ALL,
+            "completed_on": ALL,
+            "reviewed_rev": ALL,
+            "mailarch_url": ALL,
+            "review_request": ALL_WITH_RELATIONS,
+            "state": ALL_WITH_RELATIONS,
+            "reviewer": ALL_WITH_RELATIONS,
+            "review": ALL_WITH_RELATIONS,
+            "result": ALL_WITH_RELATIONS,
+        }
+api.review.register(HistoricalReviewAssignmentResource())

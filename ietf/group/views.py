@@ -91,7 +91,8 @@ from ietf.meeting.helpers import get_meeting
 from ietf.meeting.utils import group_sessions
 from ietf.name.models import GroupTypeName, StreamName
 from ietf.person.models import Email
-from ietf.review.models import ReviewRequest, ReviewAssignment, ReviewerSettings, ReviewSecretarySettings
+from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewerSettings, 
+                                ReviewSecretarySettings, UnavailablePeriod )
 from ietf.review.utils import (can_manage_review_requests_for_team,
                                can_access_review_stats_for_team,
 
@@ -1773,6 +1774,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
             period.team = group
             period.person = reviewer
             period.save()
+            update_change_reason(period, "Added unavailability period: {}".format(period))
 
             today = datetime.date.today()
 
@@ -1813,6 +1815,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
             for period in unavailable_periods:
                 if str(period.pk) == period_id:
                     period.delete()
+                    update_change_reason(period, "Removed unavailability period: {}".format(period))
 
                     today = datetime.date.today()
 
@@ -1840,6 +1843,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
                 if not period.end_date and period.end_form.is_valid():
                     period.end_date = period.end_form.cleaned_data["end_date"]
                     period.save()
+                    update_change_reason(period, "Set end date of unavailability period: {}".format(period))
 
                     msg = "Set end date of unavailable period: {} - {} ({})".format(
                         period.start_date.isoformat() if period.start_date else "indefinite",
@@ -1859,6 +1863,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
         'settings_form': settings_form,
         'period_form': period_form,
         'unavailable_periods': unavailable_periods,
+        'unavailable_periods_history': UnavailablePeriod.history.filter(person=reviewer, team=group),
         'reviewersettings': settings,
     })
 
