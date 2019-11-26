@@ -952,6 +952,7 @@ class DocTestCase(TestCase):
         #
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=april1.name))
         r = self.client.get(url)
+        self.assertEqual(r.get('Content-Type'), 'text/plain; charset=utf-8')
         entry = bibtexparser.loads(unicontent(r)).get_entry_dict()['rfc%s'%num]
         self.assertEqual(entry['series'],   'Request for Comments')
         self.assertEqual(entry['number'],   num)
