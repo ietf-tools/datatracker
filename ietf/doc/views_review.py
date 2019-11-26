@@ -535,6 +535,11 @@ class CompleteReviewForm(forms.Form):
 
         revising_review = assignment.state_id not in ["assigned", "accepted"] if assignment else False
 
+        if not is_reviewer:
+            new_field_order = ['review_submission', 'review_url', 'review_file', 'review_content']
+            new_field_order += [f for f in self.fields.keys() if f not in new_field_order]
+            self.order_fields(new_field_order)
+
         if not revising_review:
             self.fields["state"].choices = [
                 (slug, "{} - extra reviewer is to be assigned".format(label)) if slug == "part-completed" else (slug, label)
@@ -891,6 +896,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
         'revising_review': revising_review,
         'review_to': to,
         'review_cc': cc,
+        'is_reviewer': is_reviewer,
     })
 
 def search_mail_archive(request, name, acronym=None, assignment_id=None):
@@ -916,6 +922,12 @@ def search_mail_archive(request, name, acronym=None, assignment_id=None):
 
     try:
         res["messages"] = mailarch.retrieve_messages(res["query_data_url"])[:MAX_RESULTS]
+        for message in res["messages"]:
+            try:
+                revision_guess = message["subject"].split(name)[1].split('-')[1]
+                message["revision_guess"] = revision_guess if revision_guess.isnumeric() else None
+            except IndexError:
+                pass
     except KeyError as e:
         res["error"] = "No results found (%s)" % str(e)
     except Exception as e:

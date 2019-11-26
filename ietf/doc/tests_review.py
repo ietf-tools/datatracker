@@ -621,6 +621,7 @@ class ReviewTests(TestCase):
             self.assertEqual(messages[0]["url"], "https://www.example.com/testmessage")
             self.assertTrue("John Doe" in messages[0]["content"])
             self.assertEqual(messages[0]["subject"], "Review of {}-01".format(review_req.doc.name))
+            self.assertEqual(messages[0]["revision_guess"], "01")
             self.assertEqual(messages[0]["splitfrom"], ["John Doe", "johndoe@example.com"])
             self.assertEqual(messages[0]["utcdate"][0], today.isoformat())
 
@@ -628,6 +629,7 @@ class ReviewTests(TestCase):
             self.assertTrue("Looks OK" in messages[1]["content"])
             self.assertTrue("<html>" not in messages[1]["content"])
             self.assertEqual(messages[1]["subject"], "Review of {}".format(review_req.doc.name))
+            self.assertFalse('revision_guess' in messages[1])
             self.assertEqual(messages[1]["splitfrom"], ["John Doe II", "johndoe2@example.com"])
             self.assertEqual(messages[1]["utcdate"][0], "")
 
