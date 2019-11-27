@@ -827,16 +827,24 @@ def document_bibtex(request, name, rev=None):
                               content_type="text/plain; charset=utf-8",
                           )
 
-
+def document_bibxml_ref(request, name, rev=None):
+    if re.search(r'^rfc\d+$', name):
+        raise Http404()
+    if not name.startswith('draft-'):
+        name = 'draft-'+name
+    return document_bibxml(request, name, rev=rev)
+    
 def document_bibxml(request, name, rev=None):
     # This only deals with drafts, as bibxml entries for RFCs should come from
     # the RFC-Editor.
-    doc = get_object_or_404(Document, docalias__name=name, name__startswith='draft-', type_id='draft')
+    if re.search(r'^rfc\d+$', name):
+        raise Http404()
+    doc = get_object_or_404(Document, name=name, type_id='draft')
 
     latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
     latest_rev = latest_revision.rev if latest_revision else None
         
-    if rev != None and rev != doc.rev:
+    if rev != None:
         # find the entry in the history
         for h in doc.history_set.order_by("-time"):
             if rev == h.rev:
