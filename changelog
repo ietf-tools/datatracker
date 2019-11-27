@@ -1,3 +1,60 @@
+ietfdb (6.112.0) ietf; urgency=medium
+
+  **Review tool tickets roundup, part 6; and other fixes**
+
+  This provides more review tool fixes, and clears the slate for an upcoming
+  branch merge.  From the commit log:
+
+  * Merged in [17085] from sasha@dashcare.nl:
+    Notify secretary when a review request is closed.  The assigned reviewer
+    was already notified, but secretaries were always excluded.  
+    Fixes issue #2278
+
+  * When group secretary email addresses occurred in some mailtrigger To:
+    entries, they were given with both name and address parts, while when
+    occurring in Cc: entries, no name parts were present.  Fixed one case of
+    this related to current review tool changes, and adjusted a test case for
+    consistency.  Also added a general utility function to exclude selected
+    email addresses from email address lists.
+
+  * Added support for bibxml3 entries using the traditional reference entry 
+    name (using 'reference.I-D....'), instead of just the plain draft name.
+
+  * Merged in [17070] from sasha@dashcare.nl:
+    Improved 'complete review' workflow for secretaries.  When a secretary
+    completes a review, 'link to a review message' is automatically selected,
+    and the first non-reply mail is used to fill in the review details. The
+    secretary can still modify all details.  The order of fields for
+    secretaries is also modified to fit this workflow.  All cases where 'link
+    to review message' is used, by reviewers or secretaries, now attempt to
+    fill in the 'reviewed version' if found in the email subject.  
+    Fixes issue #2061.
+
+  * Merged in [17069] from sasha@dashcare.nl:
+    Added history for assignments, requests and unavailability. 
+    Fixes issues #2074 and #2358.
+
+  * Added a test for bibtex page content-type.
+
+  * Fixed an incorrect content_type.
+
+  * Merged in [17097] from rjsparks@nostrum.com:
+    Removed unreachable assertion from slide reordering utility function.  
+
+  * Merged in [17090] from rjsparks@nostrum.com:
+    Added pages to assignment email. Fixes #2838.  
+
+  * Merged in [17083] from kivinen@iki.fi:
+    Moved hard coded defaults for max items to show and days to show to the
+    settings.py.  
+
+  * Merged in [17071] from rjsparks@nostrum.com:
+    Use doc.name explicitly now that name is no lonker the pk. Pointed out 
+    by Sasha in #2050.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Nov 2019 23:04:12 +0000
+
+
 ietfdb (6.111.0) ietf; urgency=medium
 
   **IETF 106 code sprint**
