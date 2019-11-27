@@ -570,7 +570,7 @@ def close_review_request(request, review_req, close_state, close_comment=''):
         email_review_request_change(
             request, review_req,
             "Closed review request for {}: {}".format(review_req.doc.name, close_state.name),
-            msg=msg, by=request.user.person, notify_secretary=False,
+            msg=msg, by=request.user.person, notify_secretary=True,
             notify_reviewer=True, notify_requested_by=True)
 
 def suggested_review_requests_for_team(team):
