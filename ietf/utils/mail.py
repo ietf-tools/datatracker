@@ -249,6 +249,19 @@ def parseaddr(addr):
     name, addr = simple_parseaddr(addr)
     return name, addr
 
+def excludeaddrs(addrlist, exlist):
+    """
+    Takes a list or set of email address strings in 2822 format, and
+    eliminates entries whose address part occurs in the given exclusion list.
+    """
+    exlist = set([ parseaddr(a)[1] for a in exlist ])
+    filtered = []
+    for a in addrlist:
+        if not parseaddr(a)[1] in exlist:
+            filtered.append(a)
+    filtered = type(addrlist)(filtered)
+    return filtered
+
 def condition_message(to, frm, subject, msg, cc, extra):
     if extra:
         assertion("isinstance(extra, (dict, Message))")

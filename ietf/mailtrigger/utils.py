@@ -6,6 +6,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.mailtrigger.models import MailTrigger, Recipient
 from ietf.submit.models import Submission
+from ietf.utils.mail import excludeaddrs
 
 class AddrLists(namedtuple('AddrLists',['to','cc'])):
 
@@ -29,17 +30,16 @@ def gather_address_lists(slug, skipped_recipients=None, create_from_slug_if_not_
         to.update(recipient.gather(**kwargs))
     to.discard('')
     if skipped_recipients:
-        to -= set(skipped_recipients)
+        to = excludeaddrs(to, skipped_recipients)
 
     cc = set()
     for recipient in mailtrigger.cc.all():
         cc.update(recipient.gather(**kwargs))
     cc.discard('')
     if skipped_recipients:
-        cc -= set(skipped_recipients)
+        cc = excludeaddrs(cc, skipped_recipients)
 
     return AddrLists(to=list(to),cc=list(cc))
-
 
 def get_mailtrigger(slug, create_from_slug_if_not_exists, desc_if_not_exists):
     try:
