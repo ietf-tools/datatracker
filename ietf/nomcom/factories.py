@@ -174,7 +174,7 @@ class FeedbackFactory(factory.DjangoModelFactory):
 
     @factory.post_generation
     def comments(obj, create, extracted, **kwargs):
-        comment_text = factory.Faker('paragraph').generate()
+        comment_text = factory.Faker('paragraph').generate({})
         obj.comments = obj.nomcom.encrypt(comment_text)
 
 class TopicFactory(factory.DjangoModelFactory):
