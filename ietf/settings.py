@@ -534,6 +534,7 @@ TEST_CODE_COVERAGE_EXCLUDE_FILES = [
     "*/factories.py",
     "*/migrations/*",
     "*/management/commands/*",
+    "docker/*",
     "idindex/generate_all_id2_txt.py",
     "idindex/generate_all_id_txt.py",
     "idindex/generate_id_abstracts_txt.py",
