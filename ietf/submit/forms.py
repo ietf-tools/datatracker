@@ -48,6 +48,7 @@ from ietf.submit.parsers.ps_parser import PSParser
 from ietf.submit.parsers.xml_parser import XMLParser
 from ietf.utils import log
 from ietf.utils.draft import Draft
+from ietf.utils.text import normalize_text
 
 class SubmissionBaseUploadForm(forms.Form):
     xml = forms.FileField(label='.xml format', required=True)
@@ -204,6 +205,7 @@ class SubmissionBaseUploadForm(forms.Form):
                 self.title = self.xmlroot.findtext('front/title').strip()
                 if type(self.title) is six.text_type:
                     self.title = unidecode(self.title)
+                self.title = normalize_text(self.title)
                 self.abstract = (self.xmlroot.findtext('front/abstract') or '').strip()
                 if type(self.abstract) is six.text_type:
                     self.abstract = unidecode(self.abstract)

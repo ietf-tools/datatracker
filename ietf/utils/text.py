@@ -195,4 +195,4 @@ def unwrap(s):
     return s.replace('\n', ' ')
     
 def normalize_text(s):
-    return s.replace(r'\s+', ' ').strip()
+    return re.sub(r'[\s\u2028\u2029\n\r]+', ' ', s).strip()
