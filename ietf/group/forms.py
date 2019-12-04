@@ -20,7 +20,8 @@ from ietf.name.models import ReviewTypeName
 from ietf.person.fields import SearchableEmailsField, PersonEmailChoiceField
 from ietf.person.models import Person
 from ietf.review.models import ReviewerSettings, UnavailablePeriod, ReviewSecretarySettings
-from ietf.review.utils import close_review_request_states, setup_reviewer_field
+from ietf.review.policies import get_reviewer_queue_policy
+from ietf.review.utils import close_review_request_states
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.text import strip_suffix
 #from ietf.utils.ordereddict import insert_after_in_ordered_dict
@@ -256,7 +257,7 @@ class ManageReviewRequestForm(forms.Form):
 
         self.fields["close"].widget.attrs["class"] = "form-control input-sm"
 
-        setup_reviewer_field(self.fields["reviewer"], review_req)
+        get_reviewer_queue_policy(review_req.team).setup_reviewer_field(self.fields["reviewer"], review_req)
         self.fields["reviewer"].widget.attrs["class"] = "form-control input-sm"
 
         if not getattr(review_req, 'in_lc_and_telechat', False):
@@ -280,7 +281,7 @@ class ReviewerSettingsForm(forms.ModelForm):
     class Meta:
         model = ReviewerSettings
         fields = ['min_interval', 'filter_re', 'skip_next', 'remind_days_before_deadline', 
-                  'remind_days_open_reviews', 'expertise']
+                  'remind_days_open_reviews', 'request_assignment_next', 'expertise']
 
     def __init__(self, *args, **kwargs):
        exclude_fields = kwargs.pop('exclude_fields', [])

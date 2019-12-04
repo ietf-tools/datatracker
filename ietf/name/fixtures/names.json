@@ -10768,6 +10768,26 @@
   {
     "fields": {
       "desc": "",
+      "name": "Least recently used",
+      "order": 2,
+      "used": true
+    },
+    "model": "name.reviewerqueuepolicyname",
+    "pk": "LeastRecentlyUsed"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Rotate alphabetically",
+      "order": 1,
+      "used": true
+    },
+    "model": "name.reviewerqueuepolicyname",
+    "pk": "RotateAlphabetically"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Accepted",
       "order": 2,
       "used": false

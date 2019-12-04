@@ -12,6 +12,7 @@ from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
 
+from ietf.review.policies import get_reviewer_queue_policy
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, reload_db_objects
 from ietf.doc.models import TelechatDocEvent, LastCallDocEvent, State
 from ietf.group.models import Role
@@ -23,7 +24,6 @@ from ietf.review.utils import (
     suggested_review_requests_for_team,
     review_assignments_needing_reviewer_reminder, email_reviewer_reminder,
     review_assignments_needing_secretary_reminder, email_secretary_reminder,
-    reviewer_rotation_list,
     send_unavaibility_period_ending_reminder, send_reminder_all_open_reviews,
     send_review_reminder_overdue_assignment, send_reminder_unconfirmed_assignments)
 from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAssignmentStateName, \
@@ -576,6 +576,7 @@ class ReviewTests(TestCase):
             "filter_re": "test-[regexp]",
             "remind_days_before_deadline": "6",
             "remind_days_open_reviews": "8",
+            "request_assignment_next": "1",
             "expertise": "Some expertise",
         })
         self.assertEqual(r.status_code, 302)
@@ -591,6 +592,7 @@ class ReviewTests(TestCase):
         msg_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
         self.assertTrue("frequency changed", msg_content)
         self.assertTrue("skip next", msg_content)
+        self.assertTrue("requested to be the next person", msg_content)
 
         # Normal reviewer should not be able to change skip_next
         r = self.client.post(url, {
@@ -903,7 +905,8 @@ class BulkAssignmentTests(TestCase):
         secretary = RoleFactory.create(group=group,name_id='secr')
         docs = [DocumentFactory.create(type_id='draft',group=None) for i in range(4)]
         requests = [ReviewRequestFactory(team=group,doc=docs[i]) for i in range(4)]
-        rot_list = reviewer_rotation_list(group)
+        policy = get_reviewer_queue_policy(group)
+        rot_list = policy.default_reviewer_rotation_list()
 
         expected_ending_head_of_rotation = rot_list[3]
     
@@ -924,6 +927,6 @@ class BulkAssignmentTests(TestCase):
         self.client.login(username=secretary.person.user.username,password=secretary.person.user.username+'+password')
         r = self.client.post(unassigned_url, postdict)
         self.assertEqual(r.status_code,302)
-        self.assertEqual(expected_ending_head_of_rotation,reviewer_rotation_list(group)[0])
+        self.assertEqual(expected_ending_head_of_rotation, policy.default_reviewer_rotation_list()[0])
         self.assertMailboxContains(outbox, subject='Last Call assignment', text='Requested by', count=4)
         

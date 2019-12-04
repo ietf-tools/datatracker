@@ -93,6 +93,7 @@ from ietf.name.models import GroupTypeName, StreamName
 from ietf.person.models import Email
 from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewerSettings, 
                                 ReviewSecretarySettings, UnavailablePeriod )
+from ietf.review.policies import get_reviewer_queue_policy
 from ietf.review.utils import (can_manage_review_requests_for_team,
                                can_access_review_stats_for_team,
 
@@ -104,7 +105,6 @@ from ietf.review.utils import (can_manage_review_requests_for_team,
                                unavailable_periods_to_list,
                                current_unavailable_periods_for_reviewers,
                                email_reviewer_availability_change,
-                               reviewer_rotation_list,
                                latest_review_assignments_for_reviewers,
                                augment_review_requests_with_events,
                                get_default_filter_re,
@@ -1395,7 +1395,7 @@ def reviewer_overview(request, acronym, group_type=None):
 
     can_manage = can_manage_review_requests_for_team(request.user, group)
 
-    reviewers = reviewer_rotation_list(group)
+    reviewers = get_reviewer_queue_policy(group).default_reviewer_rotation_list(include_unavailable=True)
 
     reviewer_settings = { s.person_id: s for s in ReviewerSettings.objects.filter(team=group) }
     unavailable_periods = defaultdict(list)
@@ -1566,13 +1566,14 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
             # Make sure the any assignments to the person at the head
             # of the rotation queue are processed first so that the queue
             # rotates before any more assignments are processed
-            head_of_rotation = reviewer_rotation_list(group)[0]
+            reviewer_policy = get_reviewer_queue_policy(group)
+            head_of_rotation = reviewer_policy.default_reviewer_rotation_list_without_skipped()[0]
             while head_of_rotation in assignments_by_person:
                 for review_req in assignments_by_person[head_of_rotation]:
                     assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"],review_req.form.cleaned_data["add_skip"])
                     reqs_to_assign.remove(review_req)
                 del assignments_by_person[head_of_rotation]
-                head_of_rotation = reviewer_rotation_list(group)[0]
+                head_of_rotation = reviewer_policy.default_reviewer_rotation_list_without_skipped()[0]
 
             for review_req in reqs_to_assign:
                 assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"],review_req.form.cleaned_data["add_skip"])
@@ -1685,7 +1686,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
 
         partial_msg = render_to_string(template.path, {
             "review_assignments": review_assignments,
-            "rotation_list": reviewer_rotation_list(group)[:10],
+            "rotation_list": get_reviewer_queue_policy(group).default_reviewer_rotation_list()[:10],
             "group" : group,
         })
         
@@ -1756,7 +1757,10 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
                 changes.append("Frequency changed to \"{}\" from \"{}\".".format(settings.get_min_interval_display() or "Not specified", prev_min_interval or "Not specified"))
             if settings.skip_next != prev_skip_next:
                 changes.append("Skip next assignments changed to {} from {}.".format(settings.skip_next, prev_skip_next))
-
+            if settings.request_assignment_next:
+                changes.append("Reviewer has requested to be the next person selected for an "
+                               "assignment, as soon as possible, and will be on the top of "
+                               "the queue.") 
             if changes:
                 email_reviewer_availability_change(request, group, reviewer_role, "\n\n".join(changes), request.user.person)
 

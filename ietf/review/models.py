@@ -14,7 +14,8 @@ from django.utils.encoding import python_2_unicode_compatible
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
-from ietf.name.models import ReviewTypeName, ReviewRequestStateName, ReviewResultName, ReviewAssignmentStateName
+from ietf.name.models import ReviewTypeName, ReviewRequestStateName, ReviewResultName, \
+    ReviewAssignmentStateName, ReviewerQueuePolicyName
 from ietf.utils.validators import validate_regular_expression_string
 from ietf.utils.models import ForeignKey, OneToOneField
 
@@ -38,6 +39,7 @@ class ReviewerSettings(models.Model):
     skip_next   = models.IntegerField(default=0, verbose_name="Skip next assignments")
     remind_days_before_deadline = models.IntegerField(null=True, blank=True, help_text="To get an email reminder in case you forget to do an assigned review, enter the number of days before review deadline you want to receive it. Clear the field if you don't want this reminder.")
     remind_days_open_reviews = models.PositiveIntegerField(null=True, blank=True, verbose_name="Periodic reminder of open reviews every X days", help_text="To get a periodic email reminder of all your open reviews, enter the number of days between these reminders. Clear the field if you don't want these reminders.")
+    request_assignment_next = models.BooleanField(default=False, verbose_name="Select me next for an assignment", help_text="If you would like to be assigned to a review as soon as possible, select this option. It is automatically reset once you receive any assignment.")
     expertise = models.TextField(verbose_name="Reviewer's expertise in this team's area", max_length=2048, blank=True, help_text="Describe the reviewer's expertise in this team's area", default='')
 
     def __str__(self):
@@ -188,6 +190,7 @@ class ReviewTeamSettings(models.Model):
     """Holds configuration specific to groups that are review teams"""
     group = OneToOneField(Group)
     autosuggest = models.BooleanField(default=True, verbose_name="Automatically suggest possible review requests")
+    reviewer_queue_policy = models.ForeignKey(ReviewerQueuePolicyName, default='RotateAlphabetically', on_delete=models.PROTECT)
     review_types = models.ManyToManyField(ReviewTypeName, default=get_default_review_types)
     review_results = models.ManyToManyField(ReviewResultName, default=get_default_review_results, related_name='reviewteamsettings_review_results_set')
     notify_ad_when = models.ManyToManyField(ReviewResultName, related_name='reviewteamsettings_notify_ad_set', blank=True)

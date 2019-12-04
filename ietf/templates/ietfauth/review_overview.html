@@ -151,6 +151,10 @@
         <td>{{ t.reviewer_settings.remind_days_open_reviews|default:"(Do not remind)" }}</td>
       </tr>
       <tr>
+        <th>Select me next for an assignment</th>
+        <td>{{ t.reviewer_settings.request_assignment_next|yesno }}</td>
+      </tr>
+      <tr>
         <th>Unavailable periods</th>
         <td>
           {% if t.unavailable_periods %}
