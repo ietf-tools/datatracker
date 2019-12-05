@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('name', '0008_reviewerqueuepolicyname'),
-        ('review', '0020_auto_20191115_2059'),
+        ('review', '0021_add_additional_history'),
     ]
 
     operations = [
