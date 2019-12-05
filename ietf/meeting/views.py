@@ -138,10 +138,10 @@ def materials(request, num=None):
 
     schedule = get_schedule(meeting, None)
 
-    sessions  = Session.objects.filter(
+    sessions  = add_event_info_to_session_qs(Session.objects.filter(
         meeting__number=meeting.number,
         timeslotassignments__schedule=schedule
-    ).distinct().select_related('meeting__schedule', 'group__state', 'group__parent')
+    ).distinct().select_related('meeting__schedule', 'group__state', 'group__parent'))
 
     plenaries = sessions.filter(name__icontains='plenary')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')

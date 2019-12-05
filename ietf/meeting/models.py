@@ -940,6 +940,10 @@ class Session(models.Model):
     def drafts(self):
         return list(self.materials.filter(type='draft'))
 
+    # The utilities below are used in the proceedings and materials
+    # templates, and should be moved there - then we could also query
+    # out the needed information in a few passes and speed up those
+    # pages.
     def all_meeting_sessions_for_group(self):
         from ietf.meeting.utils import add_event_info_to_session_qs
         if self.group.type_id in ['wg','rg','ag']:
