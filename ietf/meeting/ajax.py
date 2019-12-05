@@ -10,7 +10,9 @@ from django.views.decorators.http import require_POST
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.meeting.helpers import get_meeting, get_schedule, schedule_permissions, get_person_by_email, get_schedule_by_name
 from ietf.meeting.models import TimeSlot, Session, Schedule, Room, Constraint, SchedTimeSessAssignment, ResourceAssociation
-from ietf.meeting.views   import edit_timeslots, edit_schedule
+from ietf.meeting.views import edit_timeslots, edit_schedule
+from ietf.meeting.utils import only_sessions_that_can_meet
+from ietf.meeting.utils import add_event_info_to_session_qs
 
 import debug                            # pyflakes:ignore
 
@@ -431,7 +433,11 @@ def session_json(request, num, sessionid):
 def sessions_json(request, num):
     meeting = get_meeting(num)
 
-    sessions = meeting.sessions_that_can_meet.all()
+    sessions = add_event_info_to_session_qs(
+        only_sessions_that_can_meet(meeting.session_set),
+        requested_time=True,
+        requested_by=True,
+    )
 
     sess1_dict = [ x.json_dict(request.build_absolute_uri('/')) for x in sessions ]
     return HttpResponse(json.dumps(sess1_dict, sort_keys=True, indent=2),

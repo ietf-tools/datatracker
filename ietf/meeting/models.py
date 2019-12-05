@@ -200,13 +200,6 @@ class Meeting(models.Model):
         else:
             return None
 
-    @property
-    def sessions_that_can_meet(self):
-        qs = self.session_set.exclude(status__slug='notmeet').exclude(status__slug='disappr').exclude(status__slug='deleted').exclude(status__slug='apprw')
-        # Restrict graphical scheduling to meeting requests (Sessions) of type 'session' for now
-        qs = qs.filter(type__slug='session')
-        return qs
-
     def json_url(self):
         return "/meeting/%s/json" % (self.number, )
 
@@ -705,12 +698,6 @@ class Schedule(models.Model):
     def qs_assignments_with_sessions(self):
         return self.assignments.filter(session__isnull=False)
 
-    @property
-    def sessions_that_can_meet(self):
-        if not hasattr(self, "_cached_sessions_that_can_meet"):
-            self._cached_sessions_that_can_meet = self.meeting.sessions_that_can_meet.all()
-        return self._cached_sessions_that_can_meet
-
     def delete_schedule(self):
         self.assignments.all().delete()
         self.delete()
@@ -900,11 +887,8 @@ class Session(models.Model):
     group = ForeignKey(Group)    # The group type historically determined the session type.  BOFs also need to be added as a group. Note that not all meeting requests have a natural group to associate with.
     attendees = models.IntegerField(null=True, blank=True)
     agenda_note = models.CharField(blank=True, max_length=255)
-    requested = models.DateTimeField(default=datetime.datetime.now)
-    requested_by = ForeignKey(Person)
     requested_duration = models.DurationField(default=datetime.timedelta(0))
     comments = models.TextField(blank=True)
-    status = ForeignKey(SessionStatusName)
     scheduled = models.DateTimeField(null=True, blank=True)
     modified = models.DateTimeField(auto_now=True)
     remote_instructions = models.CharField(blank=True,max_length=1024)
@@ -914,9 +898,6 @@ class Session(models.Model):
 
     unique_constraints_dict = None
 
-    def not_meeting(self):
-        return self.status_id == 'notmeet'
- 
     # Should work on how materials are captured so that deleted things are no longer associated with the session
     # (We can keep the information about something being added to and removed from a session in the document's history)
     def get_material(self, material_type, only_one):
@@ -960,17 +941,17 @@ class Session(models.Model):
         return list(self.materials.filter(type='draft'))
 
     def all_meeting_sessions_for_group(self):
+        from ietf.meeting.utils import add_event_info_to_session_qs
         if self.group.type_id in ['wg','rg','ag']:
             if not hasattr(self, "_all_meeting_sessions_for_group_cache"):
-                sessions = [s for s in self.meeting.session_set.filter(group=self.group,type=self.type) if s.official_timeslotassignment()]
+                sessions = [s for s in add_event_info_to_session_qs(self.meeting.session_set.filter(group=self.group,type=self.type)) if s.official_timeslotassignment()]
                 self._all_meeting_sessions_for_group_cache = sorted(sessions, key = lambda x: x.official_timeslotassignment().timeslot.time)
             return self._all_meeting_sessions_for_group_cache
         else:
             return [self]
 
     def all_meeting_sessions_cancelled(self):
-        states = set([s.status_id for s in self.all_meeting_sessions_for_group()])
-        return 'canceled' in states and len(states) == 1
+        return set(s.current_status for s in self.all_meeting_sessions_for_group()) == {'canceled'}
 
     def all_meeting_recordings(self):
         recordings = [] # These are not sets because we need to preserve relative ordering or redo the ordering work later
@@ -1028,13 +1009,21 @@ class Session(models.Model):
         if self.meeting.type_id == "interim":
             return self.meeting.number
 
-        if self.status.slug in ('canceled','disappr','notmeet','deleted'):
-            ss0name = "(%s)" % self.status.name
+        status_id = None
+        if hasattr(self, 'current_status'):
+            status_id = self.current_status
+        elif self.pk is not None:
+            latest_event = SchedulingEvent.objects.filter(session=self.pk).order_by('-time', '-id').first()
+            if latest_event:
+                status_id = latest_event.status_id
+
+        if status_id in ('canceled','disappr','notmeet','deleted'):
+            ss0name = "(%s)" % SessionStatusName.objects.get(slug=status_id).name
         else:
             ss0name = "(unscheduled)"
             ss = self.timeslotassignments.filter(schedule=self.meeting.schedule).order_by('timeslot__time')
             if ss:
-                ss0name = ','.join([x.timeslot.time.strftime("%a-%H%M") for x in ss])
+                ss0name = ','.join(x.timeslot.time.strftime("%a-%H%M") for x in ss)
         return "%s: %s %s %s" % (self.meeting, self.group.acronym, self.name, ss0name)
 
     @property
@@ -1110,16 +1099,47 @@ class Session(models.Model):
         sess1['bof']            = str(self.group.is_bof())
         sess1['agenda_note']    = self.agenda_note
         sess1['attendees']      = str(self.attendees)
-        sess1['status']         = self.status.name
+
+        # fish out scheduling information - eventually, we should pick
+        # this out in the caller instead
+        latest_event = None
+        first_event = None
+
+        if self.pk is not None:
+            if not hasattr(self, 'current_status') or not hasattr(self, 'requested_time'):
+                events = list(SchedulingEvent.objects.filter(session=self.pk).order_by('time', 'id'))
+                if events:
+                    first_event = events[0]
+                    latest_event = events[-1]
+
+        status_id = None
+        if hasattr(self, 'current_status'):
+            status_id = self.current_status
+        elif latest_event:
+            status_id = latest_event.status_id
+
+        sess1['status']         = SessionStatusName.objects.get(slug=status_id).name if status_id else None
         if self.comments is not None:
             sess1['comments']       = self.comments
-        sess1['requested_time'] = self.requested.strftime("%Y-%m-%d")
-        # the related person object sometimes does not exist in the dataset.
-        try:
-            if self.requested_by is not None:
-                sess1['requested_by']   = str(self.requested_by)
-        except Person.DoesNotExist:
-            pass
+
+        requested_time = None
+        if hasattr(self, 'requested_time'):
+            requested_time = self.requested_time
+        elif first_event:
+            requested_time = first_event.time
+        sess1['requested_time'] = requested_time.strftime("%Y-%m-%d") if requested_time else None
+
+
+        requested_by = None
+        if hasattr(self, 'requested_by'):
+            requested_by = self.requested_by
+        elif first_event:
+            requested_by = first_event.by_id
+
+        if requested_by is not None:
+            requested_by_person = Person.objects.filter(pk=requested_by).first()
+            if requested_by_person:
+                sess1['requested_by']   = str(requested_by_person)
 
         sess1['requested_duration']= "%.1f" % (float(self.requested_duration.seconds) / 3600)
         sess1['special_request'] = str(self.special_request_token)
@@ -1136,12 +1156,6 @@ class Session(models.Model):
                 return "No agenda file found"
         else:
             return "The agenda has not been uploaded yet."
-
-    def ical_status(self):
-        if self.status.slug == 'canceled': # sic
-            return "CANCELLED"
-        else:
-            return "CONFIRMED"
 
     def agenda_file(self):
         if not hasattr(self, '_agenda_file'):
@@ -1163,6 +1177,16 @@ class Session(models.Model):
             return self.historic_group.acronym
         else:
             return self.group.acronym
+
+@python_2_unicode_compatible
+class SchedulingEvent(models.Model):
+    session = ForeignKey(Session)
+    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
+    status = ForeignKey(SessionStatusName)
+    by = ForeignKey(Person)
+
+    def __str__(self):
+        return u'%s : %s : %s : %s' % (self.session, self.status, self.time, self.by)
 
 @python_2_unicode_compatible
 class ImportantDate(models.Model):

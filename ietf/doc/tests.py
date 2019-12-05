@@ -39,7 +39,7 @@ from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
-from ietf.meeting.models import Meeting, Session, SessionPresentation
+from ietf.meeting.models import Meeting, Session, SessionPresentation, SchedulingEvent
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.name.models import SessionStatusName, BallotPositionName
 from ietf.person.models import Person
@@ -712,11 +712,14 @@ class DocTestCase(TestCase):
             name = "session-72-mars-1",
             meeting = Meeting.objects.get(number='72'),
             group = Group.objects.get(acronym='mars'),
-            status = SessionStatusName.objects.create(slug='scheduled', name='Scheduled'),
             modified = datetime.datetime.now(),
-            requested_by = Person.objects.get(user__username="marschairman"),
             type_id = "session",
-            )
+        )
+        SchedulingEvent.objects.create(
+            session=session,
+            status=SessionStatusName.objects.create(slug='scheduled'),
+            by = Person.objects.get(user__username="marschairman"),
+        )
         SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))

@@ -3,7 +3,7 @@
 {% load origin %}
 {% load staticfiles bootstrap3 widget_tweaks %}
 
-{% block title %}Cancel Interim Meeting {% if meeting.session_set.first.status.slug != "sched" %}Request{% endif %}{% endblock %}
+
 
 {% block pagehead %}
   <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
@@ -13,7 +13,7 @@
 
 {% block content %}
   {% origin %}
-  <h1>Cancel Interim Meeting {% if meeting.session_set.first.status.slug != "sched" %}Request{% endif %}</h1>
+  <h1>{% block title %}Cancel Interim Meeting {% if session_status != "sched" %}Request{% endif %}{% endblock %}</h1>
 
   <form id="interim-request-cancel-form" role="form" method="post" class="form-horizontal">
     {% csrf_token %}

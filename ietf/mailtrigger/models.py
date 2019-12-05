@@ -355,7 +355,10 @@ class Recipient(models.Model):
         addrs=[]
         if 'session' in kwargs:
             session = kwargs['session']
-            addrs.append(session.requested_by.role_email('chair').address)
+            from ietf.meeting.models import SchedulingEvent
+            first_event = SchedulingEvent.objects.filter(session=session).select_related('by').order_by('time', 'id').first()
+            if first_event and first_event.status_id in ['appw', 'schedw']:
+                addrs.append(first_event.by.role_email('chair').address)
         return addrs
 
     def gather_review_team_ads(self, **kwargs):

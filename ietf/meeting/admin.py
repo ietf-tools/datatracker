@@ -8,7 +8,7 @@ from django.contrib import admin
 
 from ietf.meeting.models import (Meeting, Room, Session, TimeSlot, Constraint, Schedule,
     SchedTimeSessAssignment, ResourceAssociation, FloorPlan, UrlResource,
-    SessionPresentation, ImportantDate, SlideSubmission, )
+    SessionPresentation, ImportantDate, SlideSubmission, SchedulingEvent)
 
 
 class UrlResourceAdmin(admin.ModelAdmin):
@@ -80,19 +80,50 @@ class ConstraintAdmin(admin.ModelAdmin):
 
 admin.site.register(Constraint, ConstraintAdmin)
 
-class SessionAdmin(admin.ModelAdmin):
-    list_display = ["meeting", "name", "group", "attendees", "requested", "status"]
-    list_filter = ["meeting", ]
-    raw_id_fields = ["meeting", "group", "requested_by", "materials"]
-    search_fields = ["meeting__number", "name", "group__name", "group__acronym", ]
-    ordering = ["-requested"]
+class SchedulingEventInline(admin.TabularInline):
+    model = SchedulingEvent
+    raw_id_fields = ["by"]
 
+class SessionAdmin(admin.ModelAdmin):
+    list_display = ["meeting", "name", "group", "attendees", "requested", "current_status"]
+    list_filter = ["meeting", ]
+    raw_id_fields = ["meeting", "group", "materials"]
+    search_fields = ["meeting__number", "name", "group__name", "group__acronym", ]
+    ordering = ["-id"]
+    inlines = [SchedulingEventInline]
+
+
+    def get_queryset(self, request):
+        qs = super(SessionAdmin, self).get_queryset(request)
+        return qs.prefetch_related('schedulingevent_set')
+
+    def current_status(self, instance):
+        events = sorted(instance.schedulingevent_set.all(), key=lambda e: (e.time, e.id))
+        if events:
+            return events[-1].time
+        else:
+            return None
+
+    def requested(self, instance):
+        events = sorted(instance.schedulingevent_set.all(), key=lambda e: (e.time, e.id))
+        if events:
+            return events[0].time
+        else:
+            return None
+        
     def name_lower(self, instance):
         return instance.name.name.lower()
 
     name_lower.short_description = "constraint name" # type: ignore # https://github.com/python/mypy/issues/2087
 
 admin.site.register(Session, SessionAdmin)
+
+class SchedulingEventAdmin(admin.ModelAdmin):
+    list_display = ["session", "status", "time", "by"]
+    raw_id_fields = ["session", "by"]
+    ordering = ["-id"]
+
+admin.site.register(SchedulingEvent, SchedulingEventAdmin)
 
 class ScheduleAdmin(admin.ModelAdmin):
     list_display = ["name", "meeting", "owner", "visible", "public", "badness"]

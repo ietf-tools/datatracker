@@ -14,7 +14,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.factories import DocumentFactory
 from ietf.group.models import Group
 from ietf.meeting.models import (Meeting, Room, TimeSlot, Session, Schedule, SchedTimeSessAssignment,
-    ResourceAssociation, SessionPresentation, UrlResource)
+ ResourceAssociation, SessionPresentation, UrlResource, SchedulingEvent)
 from ietf.meeting.helpers import create_interim_meeting
 from ietf.name.models import RoomResourceName
 from ietf.person.models import Person
@@ -25,10 +25,11 @@ def make_interim_meeting(group,date,status='sched'):
     time = datetime.datetime.combine(date, datetime.time(9))
     meeting = create_interim_meeting(group=group,date=date)
     session = Session.objects.create(meeting=meeting, group=group,
-        attendees=10, requested_by=system_person, status_id=status,
+        attendees=10,
         requested_duration=datetime.timedelta(minutes=20),
         remote_instructions='http://webex.com',
-        scheduled=datetime.datetime.now(),type_id="session")
+        type_id="session")
+    SchedulingEvent.objects.create(session=session, status_id=status, by=system_person)
     slot = TimeSlot.objects.create(
         meeting=meeting,
         type_id="session",
@@ -117,43 +118,44 @@ def make_meeting_test_data(meeting=None):
     # mars WG
     mars = Group.objects.get(acronym='mars')
     mars_session = Session.objects.create(meeting=meeting, group=mars,
-                                          attendees=10, requested_by=system_person, status_id="schedw",
-                                          requested_duration=datetime.timedelta(minutes=20),
-                                          scheduled=datetime.datetime.now(),type_id="session")
+                                          attendees=10, requested_duration=datetime.timedelta(minutes=20),
+                                          type_id="session")
+    SchedulingEvent.objects.create(session=mars_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=slot1, session=mars_session, schedule=schedule)
     SchedTimeSessAssignment.objects.create(timeslot=slot2, session=mars_session, schedule=unofficial_schedule)
 
     # ames WG
     ames_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="ames"),
-                                          attendees=10, requested_by=system_person, status_id="schedw",
+                                          attendees=10,
                                           requested_duration=datetime.timedelta(minutes=20),
-                                          scheduled=datetime.datetime.now(),type_id="session")
+                                          type_id="session")
+    SchedulingEvent.objects.create(session=ames_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=slot2, session=ames_session, schedule=schedule)
     SchedTimeSessAssignment.objects.create(timeslot=slot1, session=ames_session, schedule=unofficial_schedule)
 
     # IESG breakfast
     iesg_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="iesg"),
                                           name="IESG Breakfast", attendees=25,
-                                          requested_by=system_person, status_id="schedw",
                                           requested_duration=datetime.timedelta(minutes=20),
-                                          scheduled=datetime.datetime.now(),type_id="lead")
+                                          type_id="lead")
+    SchedulingEvent.objects.create(session=iesg_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=breakfast_slot, session=iesg_session, schedule=schedule)
     # No breakfast on unofficial schedule
 
     # Registration
     reg_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="secretariat"),
                                          name="Registration", attendees=250,
-                                         requested_by=system_person, status_id="schedw",
                                          requested_duration=datetime.timedelta(minutes=480),
-                                         scheduled=datetime.datetime.now(),type_id="reg")
+                                         type_id="reg")
+    SchedulingEvent.objects.create(session=reg_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=reg_slot, session=reg_session, schedule=schedule)
     
     # Break
     break_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="secretariat"),
                                            name="Morning Break", attendees=250,
-                                           requested_by=system_person, status_id="schedw",
                                            requested_duration=datetime.timedelta(minutes=30),
-                                           scheduled=datetime.datetime.now(),type_id="break")
+                                           type_id="break")
+    SchedulingEvent.objects.create(session=break_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=break_slot, session=break_session, schedule=schedule)
 
     meeting.schedule = schedule

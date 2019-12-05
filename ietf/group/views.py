@@ -88,7 +88,7 @@ from ietf.group.utils import (get_charter_text, can_manage_group_type,
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.helpers import get_meeting
-from ietf.meeting.utils import group_sessions
+from ietf.meeting.utils import group_sessions, add_event_info_to_session_qs
 from ietf.name.models import GroupTypeName, StreamName
 from ietf.person.models import Email
 from ietf.review.models import ReviewRequest, ReviewAssignment, ReviewerSettings, ReviewSecretarySettings
@@ -750,9 +750,14 @@ def meetings(request, acronym=None, group_type=None):
 
     four_years_ago = datetime.datetime.now()-datetime.timedelta(days=4*365)
 
-    sessions = group.session_set.filter(status__in=['sched','schedw','appr','canceled'],
-                                        meeting__date__gt=four_years_ago,
-                                        type__in=['session','plenary','other'])
+    sessions = add_event_info_to_session_qs(
+        group.session_set.filter(
+            meeting__date__gt=four_years_ago,
+            type__in=['session','plenary','other']
+        )
+    ).filter(
+        current_status__in=['sched','schedw','appr','canceled'],
+    )
 
     future, in_progress, past = group_sessions(sessions)
 

@@ -25,6 +25,7 @@ from ietf.doc.models import Document, DocEvent
 from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.meeting.models import Meeting, Session
+from ietf.meeting.utils import add_event_info_to_session_qs
 
 from ietf.secr.proceedings.forms import RecordingForm, RecordingEditForm 
 from ietf.secr.proceedings.proc_utils import (create_recording)
@@ -170,7 +171,8 @@ def main(request):
         meetings = [m for m in Meeting.objects.filter(type='ietf').order_by('-number') if m.get_submission_correction_date()>=today]
 
     groups = get_my_groups(request.user)
-    interim_meetings = Meeting.objects.filter(type='interim',session__group__in=groups,session__status='sched').order_by('-date')
+    interim_sessions = add_event_info_to_session_qs(Session.objects.filter(group__in=groups, meeting__type='interim')).filter(current_status='sched').select_related('meeting')
+    interim_meetings = sorted({s.meeting for s in interim_sessions}, key=lambda m: m.date, reverse=True)
     # tac on group for use in templates
     for m in interim_meetings:
         m.group = m.session_set.first().group

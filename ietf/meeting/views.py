@@ -8,6 +8,7 @@ import csv
 import datetime
 import glob
 import io
+import itertools
 import json
 import os
 import pytz
@@ -34,7 +35,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.urls import reverse,reverse_lazy
-from django.db.models import Min, Max, Q
+from django.db.models import Min, Max, Q, F
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
@@ -49,9 +50,10 @@ from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocAlias
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
+from ietf.person.models import Person
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
+from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission, SessionStatusName, SchedulingEvent, SchedTimeSessAssignment
 from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
@@ -63,12 +65,17 @@ from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
 from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
 from ietf.meeting.helpers import can_edit_interim_request
 from ietf.meeting.helpers import can_request_interim_meeting, get_announcement_initial
-from ietf.meeting.helpers import sessions_post_save, is_meeting_approved
+from ietf.meeting.helpers import sessions_post_save, is_interim_meeting_approved
 from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_announcement_request
 from ietf.meeting.utils import finalize
 from ietf.meeting.utils import sort_accept_tuple
+from ietf.meeting.utils import add_event_info_to_session_qs
+from ietf.meeting.utils import session_time_for_sorting
+from ietf.meeting.utils import session_requested_by
+from ietf.meeting.utils import current_session_status
+from ietf.meeting.utils import data_for_meetings_overview
 from ietf.message.utils import infer_message
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
@@ -85,7 +92,7 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
     InterimCancelForm, InterimSessionInlineFormSet, FileUploadForm, RequestMinutesForm,)
 
 
-def get_menu_entries(request):
+def get_interim_menu_entries(request):
     '''Setup menu entries for interim meeting view tabs'''
     entries = []
     if has_role(request.user, ('Area Director','Secretariat','IRTF Chair','WG Chair', 'RG Chair')):
@@ -129,22 +136,21 @@ def materials(request, num=None):
 
     past_cutoff_date = datetime.date.today() > meeting.get_submission_correction_date()
 
-    #sessions  = Session.objects.filter(meeting__number=meeting.number, timeslot__isnull=False)
     schedule = get_schedule(meeting, None)
-    sessions  = ( Session.objects
-        .filter(meeting__number=meeting.number, timeslotassignments__schedule=schedule)
-        .select_related('meeting__schedule','status','group__state','group__parent', )
-    )
-    for session in sessions:
-        session.past_cutoff_date = past_cutoff_date
+
+    sessions  = Session.objects.filter(
+        meeting__number=meeting.number,
+        timeslotassignments__schedule=schedule
+    ).distinct().select_related('meeting__schedule', 'group__state', 'group__parent')
+
     plenaries = sessions.filter(name__icontains='plenary')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
     training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['session', 'other', ])
     iab       = sessions.filter(group__parent__acronym = 'iab')
-    other     = sessions.filter(type_id__in=['session'], group__type__features__has_meetings = True)
-    for ss in [plenaries, ietf, irtf, training, iab]:
-        other = other.exclude(pk__in=[s.pk for s in ss])
+
+    session_pks = [s.pk for ss in [plenaries, ietf, irtf, training, iab] for s in ss]
+    other     = sessions.filter(type_id__in=['session'], group__type__features__has_meetings=True).exclude(pk__in=session_pks)
 
     for topic in [plenaries, ietf, training, irtf, iab]:
         for event in topic:
@@ -152,6 +158,10 @@ def materials(request, num=None):
             for slide_event in event.all_meeting_slides(): date_list.append(slide_event.time)
             for agenda_event in event.all_meeting_agendas(): date_list.append(agenda_event.time)
             if date_list: setattr(event, 'last_update', sorted(date_list, reverse=True)[0])
+
+    for session_list in [plenaries, ietf, training, irtf, iab, other]:
+        for session in session_list:
+            session.past_cutoff_date = past_cutoff_date
             
     return render(request, "meeting/materials.html", {
         'meeting': meeting,
@@ -819,7 +829,7 @@ def week_view(request, num=None, name=None, owner=None):
             if a.session and a.session.agenda():
                 item["agenda"] = a.session.agenda().href()
 
-            if a.session.status_id=='canceled':
+            if a.session.current_status == 'canceled':
                 item["name"] = "CANCELLED - " + item["name"]
 
         items.append(item)
@@ -887,6 +897,12 @@ def room_view(request, num=None, name=None, owner=None):
     template = "meeting/room-view.html"
     return render(request, template,{"meeting":meeting,"schedule":schedule,"unavailable":unavailable,"assignments":assignments,"rooms":rooms,"days":days})
 
+def ical_session_status(session_with_current_status):
+    if session_with_current_status == 'canceled':
+        return "CANCELLED"
+    else:
+        return "CONFIRMED"
+
 def ical_agenda(request, num=None, name=None, acronym=None, session_id=None):
     meeting = get_meeting(num, type_in=None)
     schedule = get_schedule(meeting, name)
@@ -932,6 +948,10 @@ def ical_agenda(request, num=None, name=None, acronym=None, session_id=None):
         assignments = [ a for a in assignments if a.session.historic_group and a.session.historic_group.acronym == acronym ]
     elif session_id:
         assignments = [ a for a in assignments if a.session_id == int(session_id) ]
+
+    for a in assignments:
+        if a.session:
+            a.session.ical_status = ical_session_status(a.session)
 
     return render(request, "meeting/agenda.ics", {
         "schedule": schedule,
@@ -1007,7 +1027,7 @@ def json_agenda(request, num=None ):
             rev_docevent = doc.latest_event(NewRevisionDocEvent,'new_revision')
             modified = max(modified, (rev_docevent and rev_docevent.time) or modified)
         sessdict['modified'] = modified
-        sessdict['status'] = asgn.session.status_id
+        sessdict['status'] = asgn.session.current_status
         sessions.append(sessdict)
 
     rooms = []
@@ -1060,7 +1080,27 @@ def json_agenda(request, num=None ):
 
 def meeting_requests(request, num=None):
     meeting = get_meeting(num)
-    sessions = Session.objects.filter(meeting__number=meeting.number, type__slug='session', group__parent__isnull = False).exclude(requested_by=0).order_by("group__parent__acronym","status__slug","group__acronym").prefetch_related("group","group__ad_role__person","requested_by")
+    sessions = add_event_info_to_session_qs(
+        Session.objects.filter(
+            meeting__number=meeting.number,
+            type__slug='session',
+            group__parent__isnull=False
+        ),
+        requested_by=True,
+    ).exclude(
+        requested_by=0
+    ).order_by(
+        "group__parent__acronym", "current_status", "group__acronym"
+    ).prefetch_related(
+        "group","group__ad_role__person"
+    )
+
+    status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
+    session_requesters = {p.pk: p for p in Person.objects.filter(pk__in=[s.requested_by for s in sessions if s.requested_by is not None])}
+
+    for s in sessions:
+        s.current_status_name = status_names.get(s.current_status, s.current_status)
+        s.requested_by_person = session_requesters.get(s.requested_by)
 
     groups_not_meeting = Group.objects.filter(state='Active',type__in=['wg','rg','ag','bof']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym").prefetch_related("parent")
 
@@ -1075,36 +1115,32 @@ def get_sessions(num, acronym):
     if not sessions:
         sessions = Session.objects.filter(meeting=meeting,short=acronym,type__in=['session','plenary','other']) 
 
-    def sort_key(session):
-        official_sessions = session.timeslotassignments.filter(schedule=session.meeting.schedule)
-        if official_sessions:
-            return official_sessions.first().timeslot.time
-        else:
-            return session.requested
+    sessions = add_event_info_to_session_qs(sessions)
 
-    return sorted(sessions,key=sort_key)
+    return sorted(sessions, key=lambda s: session_time_for_sorting(s, use_meeting_date=False))
 
-def session_details(request, num, acronym ):
+def session_details(request, num, acronym):
     meeting = get_meeting(num=num,type_in=None)
     sessions = get_sessions(num, acronym)
 
     if not sessions:
         raise Http404
 
+    status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
     for session in sessions:
 
         session.type_counter = Counter()
         ss = session.timeslotassignments.filter(schedule=meeting.schedule).order_by('timeslot__time')
         if ss:
             session.time = ', '.join(x.timeslot.time.strftime("%A %b-%d-%Y %H%M") for x in ss) 
-            if session.status.slug == 'canceled':
+            if session.current_status == 'canceled':
                 session.time += " CANCELLED"
         elif session.meeting.type_id=='interim':
             session.time = session.meeting.date.strftime("%A %b-%d-%Y")
-            if session.status.slug == 'canceled':
+            if session.current_status == 'canceled':
                 session.time += " CANCELLED"
         else:
-            session.time = session.status.name
+            session.time = status_names.get(session.current_status, session.current_status)
 
         session.filtered_artifacts = list(session.sessionpresentation_set.filter(document__type__slug__in=['agenda','minutes','bluesheets']))
         session.filtered_artifacts.sort(key=lambda d:['agenda','minutes','bluesheets'].index(d.document.type.slug))
@@ -1115,12 +1151,12 @@ def session_details(request, num, acronym ):
             qs = [p for p in qs if p.document.get_state_slug(p.document.type_id)!='deleted']
             session.type_counter.update([p.document.type.slug for p in qs])
 
-    # we somewhat arbitrarily use the group of the last session wet get from
+    # we somewhat arbitrarily use the group of the last session we get from
     # get_sessions() above when checking can_manage_materials()
     can_manage = can_manage_materials(request.user, session.group)
 
-    scheduled_sessions=[s for s in sessions if s.status_id=='sched']
-    unscheduled_sessions = [s for s in sessions if s.status_id!='sched']
+    scheduled_sessions = [s for s in sessions if s.current_status == 'sched']
+    unscheduled_sessions = [s for s in sessions if s.current_status != 'sched']
 
     pending_suggestions = None
     if request.user.is_authenticated:
@@ -1790,8 +1826,8 @@ def ajax_get_utc(request):
 @role_required('Secretariat',)
 def interim_announce(request):
     '''View which shows interim meeting requests awaiting announcement'''
-    meetings = Meeting.objects.filter(type='interim', session__status='scheda').distinct()
-    menu_entries = get_menu_entries(request)
+    meetings, _ = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='scheda')
+    menu_entries = get_interim_menu_entries(request)
     selected_menu_entry = 'announce'
 
     return render(request, "meeting/interim_announce.html", {
@@ -1812,7 +1848,12 @@ def interim_send_announcement(request, number):
         if form.is_valid():
             message = form.save(user=request.user)
             message.related_groups.add(group)
-            meeting.session_set.update(status_id='sched')
+            for session in meeting.session_set.all():
+                SchedulingEvent.objects.create(
+                    session=session,
+                    status=SessionStatusName.objects.get(slug='sched'),
+                    by=request.user.person,
+                )
             send_mail_message(request, message)
             messages.success(request, 'Interim meeting announcement sent')
             return redirect(interim_announce)
@@ -1832,7 +1873,12 @@ def interim_skip_announcement(request, number):
     meeting = get_object_or_404(Meeting, number=number)
 
     if request.method == 'POST':
-        meeting.session_set.update(status_id='sched')
+        for session in meeting.session_set.all():
+            SchedulingEvent.objects.create(
+                session=session,
+                status=SessionStatusName.objects.get(slug='sched'),
+                by=request.user.person,
+            )
         messages.success(request, 'Interim meeting scheduled.  No announcement sent.')
         return redirect(interim_announce)
 
@@ -1843,12 +1889,12 @@ def interim_skip_announcement(request, number):
 @role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
 def interim_pending(request):
     '''View which shows interim meeting requests pending approval'''
-    meetings = Meeting.objects.filter(type='interim', session__status='apprw').distinct().order_by('date')
-    menu_entries = get_menu_entries(request)
+    meetings, group_parents = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='apprw')
+
+    menu_entries = get_interim_menu_entries(request)
     selected_menu_entry = 'pending'
 
-    meetings = [m for m in meetings if can_view_interim_request(
-        m, request.user)]
+    meetings = [m for m in meetings if can_view_interim_request(m, request.user)]
     for meeting in meetings:
         if can_approve_interim_request(meeting, request.user):
             meeting.can_approve = True
@@ -1891,7 +1937,7 @@ def interim_request(request):
                 formset = SessionFormset(instance=meeting, data=request.POST)
                 formset.is_valid()
                 formset.save()
-                sessions_post_save(formset)
+                sessions_post_save(request, formset)
 
                 if not (is_approved or is_virtual):
                     send_interim_approval_request(meetings=[meeting])
@@ -1922,7 +1968,7 @@ def interim_request(request):
                     session.meeting = meeting
                     session.save()
                     series.append(meeting)
-                    sessions_post_save([session_form])
+                    sessions_post_save(request, [session_form])
 
                 if not (is_approved or is_virtual):
                     send_interim_approval_request(meetings=series)
@@ -1947,7 +1993,9 @@ def interim_request(request):
 def interim_request_cancel(request, number):
     '''View for cancelling an interim meeting request'''
     meeting = get_object_or_404(Meeting, number=number)
-    group = meeting.session_set.first().group
+    first_session = meeting.session_set.first()
+    session_status = current_session_status(first_session)
+    group = first_session.group
     if not can_view_interim_request(meeting, request.user):
         return HttpResponseForbidden("You do not have permissions to cancel this meeting request")
 
@@ -1956,11 +2004,20 @@ def interim_request_cancel(request, number):
         if form.is_valid():
             if 'comments' in form.changed_data:
                 meeting.session_set.update(agenda_note=form.cleaned_data.get('comments'))
-            if meeting.session_set.first().status.slug == 'sched':
-                meeting.session_set.update(status_id='canceled')
+
+            was_scheduled = session_status.slug == 'sched'
+
+            result_status = SessionStatusName.objects.get(slug='canceled' if was_scheduled else 'canceledpa')
+            for session in meeting.session_set.all():
+                SchedulingEvent.objects.create(
+                    session=first_session,
+                    status=result_status,
+                    by=request.user.person,
+                )
+
+            if was_scheduled:
                 send_interim_cancellation_notice(meeting)
-            else:
-                meeting.session_set.update(status_id='canceledpa')
+
             messages.success(request, 'Interim meeting cancelled')
             return redirect(upcoming)
     else:
@@ -1968,7 +2025,9 @@ def interim_request_cancel(request, number):
 
     return render(request, "meeting/interim_request_cancel.html", {
         "form": form,
-        "meeting": meeting})
+        "meeting": meeting,
+        "session_status": session_status,
+    })
 
 
 @role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
@@ -1981,7 +2040,12 @@ def interim_request_details(request, number):
 
     if request.method == 'POST':
         if request.POST.get('approve') and can_approve_interim_request(meeting, request.user):
-            meeting.session_set.update(status_id='scheda')
+            for session in meeting.session_set.all():
+                SchedulingEvent.objects.create(
+                    session=session,
+                    status=SessionStatusName.objects.get(slug='scheda'),
+                    by=request.user.person,
+                )
             messages.success(request, 'Interim meeting approved')
             if has_role(request.user, 'Secretariat'):
                 return redirect(interim_send_announcement, number=number)
@@ -1989,13 +2053,23 @@ def interim_request_details(request, number):
                 send_interim_announcement_request(meeting)
                 return redirect(interim_pending)
         if request.POST.get('disapprove') and can_approve_interim_request(meeting, request.user):
-            meeting.session_set.update(status_id='disappr')
+            for session in meeting.session_set.all():
+                SchedulingEvent.objects.create(
+                    session=session,
+                    status=SessionStatusName.objects.get(slug='disappr'),
+                    by=request.user.person,
+                )
             messages.success(request, 'Interim meeting disapproved')
             return redirect(interim_pending)
+
+    first_session = sessions.first()
 
     return render(request, "meeting/interim_request_details.html", {
         "meeting": meeting,
         "sessions": sessions,
+        "group": first_session.group,
+        "requester": session_requested_by(first_session),
+        "session_status": current_session_status(first_session),
         "can_edit": can_edit,
         "can_approve": can_approve})
 
@@ -2018,7 +2092,7 @@ def interim_request_edit(request, number):
         form = InterimMeetingModelForm(request=request, instance=meeting,
                                        data=request.POST)
         group = Group.objects.get(pk=form.data['group'])
-        is_approved = is_meeting_approved(meeting)
+        is_approved = is_interim_meeting_approved(meeting)
 
         SessionFormset.form.__init__ = curry(
             InterimSessionModelForm.__init__,
@@ -2031,10 +2105,11 @@ def interim_request_edit(request, number):
         if form.is_valid() and formset.is_valid():
             meeting = form.save(date=get_earliest_session_date(formset))
             formset.save()
-            sessions_post_save(formset)
+            sessions_post_save(request, formset)
 
             message = 'Interim meeting request saved'
-            if (form.has_changed() or formset.has_changed()) and meeting.session_set.filter(status='sched'):
+            meeting_is_scheduled = add_event_info_to_session_qs(meeting.session_set).filter(current_status='sched').exists()
+            if (form.has_changed() or formset.has_changed()) and meeting_is_scheduled:
                 send_interim_change_notice(request, meeting)
                 message = message + ' and change announcement sent'
             messages.success(request, message)
@@ -2053,32 +2128,8 @@ def interim_request_edit(request, number):
 def past(request):
     '''List of past meetings'''
     today = datetime.datetime.today()
-    meetings = ( Meeting.objects.filter(date__lte=today)
-            .exclude(session__status__in=('apprw', 'scheda', 'canceledpa'))
-            .order_by('-date')
-            .select_related('type')
-            .prefetch_related('session_set__status','session_set__group',)
-        )
 
-    # extract groups hierarchy for display filter
-    seen = set()
-    groups = [m.session_set.first().group for m
-              in meetings.filter(type='interim')]
-    group_parents = [ Group.objects.get(acronym='ietf') ]
-    for g in groups:
-        if g.parent and g.parent.acronym not in seen:
-            group_parents.append(g.parent)
-            seen.add(g.parent.acronym)
-
-    seen = set()
-    for p in group_parents:
-        p.group_list = []
-        for g in groups:
-            if g.acronym not in seen and g.parent == p:
-                p.group_list.append(g)
-                seen.add(g.acronym)
-
-        p.group_list.sort(key=lambda g: g.acronym)
+    meetings, group_parents = data_for_meetings_overview(Meeting.objects.filter(date__lte=today).order_by('-date'))
 
     return render(request, 'meeting/past.html', {
                   'meetings': meetings,
@@ -2087,35 +2138,11 @@ def past(request):
 def upcoming(request):
     '''List of upcoming meetings'''
     today = datetime.datetime.today()
-    meetings = Meeting.objects.filter(date__gte=today).exclude(
-        session__status__in=('apprw', 'scheda', 'canceledpa')).order_by('date')
 
-    # extract groups hierarchy for display filter
-    seen = set()
-    groups = [m.session_set.first().group for m
-              in meetings.filter(type='interim')]
-    group_parents = []
-    for g in groups:
-        if g.parent.acronym not in seen:
-            group_parents.append(g.parent)
-            seen.add(g.parent.acronym)
-
-    seen = set()
-    for p in group_parents:
-        p.group_list = []
-        for g in groups:
-            if g.acronym not in seen and g.parent == p:
-                p.group_list.append(g)
-                seen.add(g.acronym)
-
-        p.group_list.sort(key=lambda g: g.acronym)
-
-    meetings = list(meetings)
-    for m in meetings:
-        m.end = m.date+datetime.timedelta(days=m.days)
+    meetings, group_parents = data_for_meetings_overview(Meeting.objects.filter(date__gte=today).order_by('date'))
 
     # add menu entries
-    menu_entries = get_menu_entries(request)
+    menu_entries = get_interim_menu_entries(request)
     selected_menu_entry = 'upcoming'
 
     # add menu actions
@@ -2138,14 +2165,17 @@ def upcoming_ical(request):
     '''Return Upcoming meetings in iCalendar file'''
     filters = request.GET.getlist('filters')
     today = datetime.datetime.today()
-    meetings = Meeting.objects.filter(date__gte=today).exclude(
-        session__status__in=('apprw', 'schedpa')).order_by('date')
 
-    assignments = []
-    for meeting in meetings:
-        items = meeting.schedule.assignments.order_by(
-            'session__type__slug', 'timeslot__time')
-        assignments.extend(items)
+    meetings, _ = data_for_meetings_overview(Meeting.objects.filter(date__gte=today).order_by('date'))
+
+    assignments = list(SchedTimeSessAssignment.objects.filter(
+        schedule__meeting__schedule=F('schedule'),
+        session__in=[s.pk for m in meetings for s in m.sessions]
+    ).order_by(
+        'schedule__meeting__date', 'session__type', 'timeslot__time'
+    ).select_related(
+        'session__group', 'session__group__parent', 'timeslot', 'schedule', 'schedule__meeting'
+    ).distinct())
 
     # apply filters
     if filters:
@@ -2155,6 +2185,14 @@ def upcoming_ical(request):
                                a.session.group.parent and a.session.group.parent.acronym in filters
                            )
                        ) ]
+
+    # we already collected sessions with current_status, so reuse those
+    sessions = {s.pk: s for m in meetings for s in m.sessions}
+    for a in assignments:
+        if a.session_id is not None:
+            a.session = sessions.get(a.session_id) or a.session
+            a.session.ical_status = ical_session_status(a.session.current_status)
+
     # gather vtimezones
     vtimezones = set()
     for meeting in meetings:
@@ -2198,17 +2236,36 @@ def proceedings(request, num=None):
     now = datetime.date.today()
 
     schedule = get_schedule(meeting, None)
-    sessions  = Session.objects.filter(meeting__number=meeting.number).filter(Q(timeslotassignments__schedule=schedule)|Q(status='notmeet')).select_related().order_by('-status_id')
-    plenaries = sessions.filter(name__icontains='plenary').exclude(status='notmeet')
+    sessions  = add_event_info_to_session_qs(
+        Session.objects.filter(meeting__number=meeting.number)
+    ).filter(
+        Q(timeslotassignments__schedule=schedule) | Q(current_status='notmeet')
+    ).select_related().order_by('-current_status')
+    plenaries = sessions.filter(name__icontains='plenary').exclude(current_status='notmeet')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
-    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['session', 'other', ]).exclude(status='notmeet')
-    iab       = sessions.filter(group__parent__acronym = 'iab').exclude(status='notmeet')
+    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['session', 'other', ]).exclude(current_status='notmeet')
+    iab       = sessions.filter(group__parent__acronym = 'iab').exclude(current_status='notmeet')
 
     cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
+
+    ietf_areas = []
+    for area, sessions in itertools.groupby(sorted(ietf, key=lambda s: (s.group.parent.acronym, s.group.acronym)), key=lambda s: s.group.parent):
+        sessions = list(sessions)
+        meeting_groups = set(s.group_id for s in sessions if s.current_status != 'notmeet')
+        meeting_sessions = []
+        not_meeting_sessions = []
+        for s in sessions:
+            if s.current_status == 'notmeet' and s.group_id not in meeting_groups:
+                not_meeting_sessions.append(s)
+            else:
+                meeting_sessions.append(s)
+        ietf_areas.append((area, meeting_sessions, not_meeting_sessions))
+
     return render(request, "meeting/proceedings.html", {
         'meeting': meeting,
         'plenaries': plenaries, 'ietf': ietf, 'training': training, 'irtf': irtf, 'iab': iab,
+        'ietf_areas': ietf_areas,
         'cut_off_date': cut_off_date,
         'cor_cut_off_date': cor_cut_off_date,
         'submission_started': now > begin_date,
@@ -2424,12 +2481,19 @@ def request_minutes(request, num=None):
                           )
             return HttpResponseRedirect(reverse('ietf.meeting.views.materials',kwargs={'num':num}))
     else:
-        needs_minutes = set() 
-        for a in meeting.schedule.assignments.filter(session__group__type_id__in=('wg','rg','ag')).exclude(session__status='canceled'):
-            if not a.session.all_meeting_minutes():
-                group = a.session.group
+        needs_minutes = set()
+        session_qs = add_event_info_to_session_qs(
+            Session.objects.filter(
+                timeslotassignments__schedule__meeting=meeting,
+                timeslotassignments__schedule__meeting__schedule=F('timeslotassignments__schedule'),
+                group__type__in=['wg','rg','ag'],
+            )
+        ).filter(~Q(current_status='canceled')).select_related('group', 'group__parent')
+        for session in session_qs:
+            if not session.all_meeting_minutes():
+                group = session.group
                 if group.parent and group.parent.type_id in ('area','irtf'):
-                    needs_minutes.add(a.session.group)
+                    needs_minutes.add(group)
         needs_minutes = list(needs_minutes)
         needs_minutes.sort(key=lambda g: ('zzz' if g.parent.acronym == 'irtf' else g.parent.acronym)+":"+g.acronym)
         body_context = {'meeting':meeting, 

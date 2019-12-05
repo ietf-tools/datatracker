@@ -24,7 +24,7 @@
       </thead>
       <tbody>
         {% for assignment in assignments %}
-          <tr class="{% cycle 'row1' 'row2' %}{% ifchanged assignment.session.type %} break{% endifchanged %}{% if assignment.session.status.slug == "canceled" %} cancelled{% endif %}">
+          <tr class="{% cycle 'row1' 'row2' %}{% ifchanged assignment.session.type %} break{% endifchanged %}{% if assignment.current_session_status == "canceled" %} cancelled{% endif %}">
             <td>{{ assignment.timeslot.time|date:"D" }}</td>
             <td>{{ assignment.timeslot.time|date:"H:i" }}-{{ assignment.timeslot.end_time|date:"H:i" }}</td>
             <td>{{ assignment.timeslot.name }}</td>

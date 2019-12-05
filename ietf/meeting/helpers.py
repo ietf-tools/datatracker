@@ -27,7 +27,8 @@ from ietf.ietfauth.utils import has_role, user_is_person
 from ietf.liaisons.utils import get_person_for_user
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.person.models  import Person
-from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment, ImportantDate
+from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment, ImportantDate, SchedulingEvent
+from ietf.meeting.utils import session_requested_by
 from ietf.name.models import ImportantDateName
 from ietf.utils.history import find_history_active_at, find_history_replacements_active_at
 from ietf.utils.mail import send_mail
@@ -204,6 +205,11 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting):
     for a in assignments:
         if a.session and a.session.historic_group and a.session.historic_group.parent_id:
             a.session.historic_group.historic_parent = parent_replacements.get(a.session.historic_group.parent_id)
+
+    # add current session status
+    sessions = {a.session_id: a.session for a in assignments if a.session}
+    for e in SchedulingEvent.objects.filter(session__in=sessions.keys()).order_by('time', 'id').iterator():
+        sessions[e.session_id].current_status = e.status_id
 
     return assignments
 
@@ -435,12 +441,9 @@ def get_earliest_session_date(formset):
     return sorted([f.cleaned_data['date'] for f in formset.forms if f.cleaned_data.get('date')])[0]
 
 
-def is_meeting_approved(meeting):
-    """Returns True if the meeting is approved"""
-    if meeting.session_set.first().status.slug == 'apprw':
-        return False
-    else:
-        return True
+def is_interim_meeting_approved(meeting):
+    from ietf.meeting.utils import add_event_info_to_session_qs
+    return add_event_info_to_session_qs(meeting.session_set.all()).first().current_status == 'apprw'
 
 def get_next_interim_number(acronym,date):
     '''
@@ -493,8 +496,9 @@ def send_interim_approval_request(meetings):
     """Sends an email to the secretariat, group chairs, and responsible area
     director or the IRTF chair noting that approval has been requested for a
     new interim meeting.  Takes a list of one or more meetings."""
-    group = meetings[0].session_set.first().group
-    requester = meetings[0].session_set.first().requested_by
+    first_session = meetings[0].session_set.first()
+    group = first_session.group
+    requester = session_requested_by(first_session)
     (to_email, cc_list) = gather_address_lists('session_requested',group=group,person=requester)
     from_email = (settings.SESSION_REQUEST_FROM_EMAIL)
     subject = '{group} - New Interim Meeting Request'.format(group=group.acronym)
@@ -524,8 +528,9 @@ def send_interim_approval_request(meetings):
 def send_interim_announcement_request(meeting):
     """Sends an email to the secretariat that an interim meeting is ready for 
     announcement, includes the link to send the official announcement"""
-    group = meeting.session_set.first().group
-    requester = meeting.session_set.first().requested_by
+    first_session = meeting.session_set.first()
+    group = first_session.group
+    requester = session_requested_by(first_session)
     (to_email, cc_list) = gather_address_lists('interim_approved')
     from_email = (settings.SESSION_REQUEST_FROM_EMAIL)
     subject = '{group} - interim meeting ready for announcement'.format(group=group.acronym)
@@ -553,10 +558,8 @@ def send_interim_cancellation_notice(meeting):
         date=meeting.date.strftime('%Y-%m-%d'))
     start_time = session.official_timeslotassignment().timeslot.time
     end_time = start_time + session.requested_duration
-    if meeting.session_set.filter(status='sched').count() > 1:
-        is_multi_day = True
-    else:
-        is_multi_day = False
+    from ietf.meeting.utils import add_event_info_to_session_qs
+    is_multi_day = add_event_info_to_session_qs(meeting.session_set.all()).filter(current_status='sched').count() > 1
     template = 'meeting/interim_cancellation_notice.txt'
     context = locals()
     send_mail(None,
@@ -590,12 +593,24 @@ def send_interim_minutes_reminder(meeting):
               cc=cc_list)
 
 
-def sessions_post_save(forms):
+def sessions_post_save(request, forms):
     """Helper function to perform various post save operations on each form of a
     InterimSessionModelForm formset"""
     for form in forms:
         if not form.has_changed():
             continue
+
+        if form.instance.pk is not None and not SchedulingEvent.objects.filter(session=form.instance).exists():
+            if form.is_approved_or_virtual:
+                status_id = 'scheda'
+            else:
+                status_id = 'apprw'
+            SchedulingEvent.objects.create(
+                session=form.instance,
+                status_id=status_id,
+                by=request.user.person,
+            )
+        
         if ('date' in form.changed_data) or ('time' in form.changed_data):
             update_interim_session_assignment(form)
         if 'agenda' in form.changed_data:

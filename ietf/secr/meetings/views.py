@@ -17,7 +17,9 @@ from ietf.ietfauth.utils import role_required
 from ietf.utils.mail import send_mail
 from ietf.meeting.forms import duration_string
 from ietf.meeting.helpers import get_meeting, make_materials_directories, populate_important_dates
-from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule
+from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule, SchedulingEvent
+from ietf.meeting.utils import add_event_info_to_session_qs
+from ietf.meeting.utils import only_sessions_that_can_meet
 from ietf.name.models import SessionStatusName
 from ietf.group.models import Group, GroupEvent
 from ietf.person.models import Person
@@ -35,17 +37,6 @@ from ietf.mailtrigger.utils import gather_address_lists
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
-def assign(session,timeslot,meeting,schedule=None):
-    '''
-    Robust function to assign a session to a timeslot.  Much simplyfied 2014-03-26.
-    '''
-    if schedule == None:
-        schedule = meeting.schedule
-    SchedTimeSessAssignment.objects.create(schedule=schedule,
-                                    session=session,
-                                    timeslot=timeslot)
-    session.status_id = 'sched'
-    session.save()
 
 def build_timeslots(meeting,room=None):
     '''
@@ -155,16 +146,21 @@ def send_notifications(meeting, groups, person):
             items[i]['period'] = '%s-%s' % (t.time.strftime('%H%M'),(t.time + t.duration).strftime('%H%M'))
 
         # send email
+        first_event = SchedulingEvent.objects.filter(session=sessions[0]).select_related('by').order_by('time', 'id').first()
+        requested_by = None
+        if first_event and first_event.status_id in ['appw', 'schedw']:
+            requested_by = first_event.by
+        
         context = {
             'items': items,
             'meeting': meeting,
             'baseurl': settings.IDTRACKER_BASE_URL,
         }
-        context['to_name'] = sessions[0].requested_by
+        context['to_name'] = str(requested_by) or "Requester"
         context['agenda_note'] = sessions[0].agenda_note
         context['session'] = get_initial_session(sessions)
         context['group'] = group
-        context['login'] = sessions[0].requested_by
+        context['login'] = requested_by
 
         send_mail(None,
                   addrs.to,
@@ -411,16 +407,18 @@ def non_session(request, meeting_id, schedule_name):
                 group = Group.objects.get(acronym='secretariat')
             
             # create associated Session object
-            session = Session(meeting=meeting,
-                                  name=name,
-                                  short=short,
-                                  group=group,
-                                  requested_by=Person.objects.get(name='(System)'),
-                                  status_id='sched',
-                                  type=type,
-                             )
-            session.save()
-            
+            session = Session.objects.create(meeting=meeting,
+                                             name=name,
+                                             short=short,
+                                             group=group,
+                                             type=type)
+
+            SchedulingEvent.objects.create(
+                session=session,
+                status=SessionStatusName.objects.get(slug='sched'),
+                by=request.user.person,
+            )
+
             # create association
             SchedTimeSessAssignment.objects.create(timeslot=timeslot,
                                             session=session,
@@ -433,6 +431,14 @@ def non_session(request, meeting_id, schedule_name):
 
     if TimeSlot.objects.filter(meeting=meeting,type='other',location__isnull=True):
         messages.warning(request, 'There are non-session items which do not have a room assigned')
+
+    session_statuses = {
+        e.session_id: e.status_id
+        for e in SchedulingEvent.objects.filter(session__in=[a.session_id for a in assignments]).order_by('time', 'id')
+    }
+
+    for a in assignments:
+        a.current_session_status = session_statuses.get(a.session_id)
 
     return render(request, 'meetings/non_session.html', {
         'assignments': assignments,
@@ -453,8 +459,12 @@ def non_session_cancel(request, meeting_id, schedule_name, slot_id):
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
 
     if request.method == 'POST' and request.POST['post'] == 'yes':
-        assignments = slot.sessionassignments.filter(schedule=schedule)
-        Session.objects.filter(pk__in=[x.session.pk for x in assignments]).update(status_id='canceled')
+        for session in Session.objects.filter(timeslotassignments__schedule=schedule, timeslotassignments__timeslot=slot):
+            SchedulingEvent.objects.create(
+                session=session,
+                status=SessionStatusName.objects.get(slug='canceled'),
+                by=request.user.person,
+            )
 
         messages.success(request, 'The session was cancelled successfully')
         return redirect('ietf.secr.meetings.views.non_session', meeting_id=meeting_id, schedule_name=schedule_name)
@@ -569,12 +579,13 @@ def notifications(request, meeting_id):
 
     if request.method == "POST":
         # ensure session state is scheduled
-        for ss in meeting.schedule.assignments.all():
-            session = ss.session
-            if session.status.slug in ["schedw", "appr"]:
-                session.status_id = "sched"
-                session.scheduled = datetime.datetime.now()
-                session.save()
+        sessions = add_event_info_to_session_qs(Session.objects.filter(timeslotassignments__schedule=meeting.schedule_id)).filter(current_status__in=["schedw", "appr"])
+        for session in sessions:
+            SchedulingEvent.objects.create(
+                session=session,
+                status=SessionStatusName.objects.get(slug='sched'),
+                by=request.user.person,
+            )
         send_notifications(meeting,groups,request.user.person)
 
         messages.success(request, "Notifications Sent")
@@ -638,15 +649,26 @@ def sessions(request, meeting_id, schedule_name):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
-    sessions = schedule.sessions_that_can_meet.order_by('group__acronym')
-    
+
+    sessions = add_event_info_to_session_qs(
+        only_sessions_that_can_meet(schedule.meeting.session_set)
+    ).order_by('group__acronym')
+
     if request.method == 'POST':
         if 'cancel' in request.POST:
             pk = request.POST.get('pk')
-            session = Session.objects.get(pk=pk)
-            session.status = SessionStatusName.objects.get(slug='canceled')
-            session.save()
+            session = get_object_or_404(sessions, pk=pk)
+            SchedulingEvent.objects.create(
+                session=session,
+                status=SessionStatusName.objects.get(slug='canceled'),
+                by=request.user.person,
+            )
             messages.success(request, 'Session cancelled')
+
+    status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
+
+    for s in sessions:
+        s.current_status_name = status_names.get(s.current_status, s.current_status)
 
     return render(request, 'meetings/sessions.html', {
         'meeting': meeting,
@@ -664,7 +686,7 @@ def session_edit(request, meeting_id, schedule_name, session_id):
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
     session = get_object_or_404(Session, id=session_id)
-    assignment = SchedTimeSessAssignment.objects.get(schedule=schedule,session=session)
+    assignment = SchedTimeSessAssignment.objects.filter(schedule=schedule, session=session).first()
 
     if request.method == 'POST':
         form = SessionEditForm(request.POST, instance=session)
@@ -676,11 +698,17 @@ def session_edit(request, meeting_id, schedule_name, session_id):
     else:
         form = SessionEditForm(instance=session)
 
+    current_status_name = None
+    latest_event = SchedulingEvent.objects.filter(session=session).order_by('-time', '-id').first()
+    if latest_event:
+        current_status_name = latest_event.status.name
+
     return render(request, 'meetings/session_edit.html', {
         'meeting': meeting,
         'schedule': schedule,
         'session': session,
-        'timeslot': assignment.timeslot,
+        'timeslot': assignment.timeslot if assignment else None,
+        'current_status_name': current_status_name,
         'form': form},
     )
 
@@ -821,8 +849,13 @@ def times_delete(request, meeting_id, schedule_name, time):
             for assignment in slot.sessionassignments.all():
                 if assignment.session:
                     session = assignment.session
-                    session.status = status
-                    session.save()
+                    latest_event = SchedulingEvent.objects.filter(session=session).order_by('-time', '-id').first()
+                    if not latest_event or latest_event.status_id != 'schedw':
+                        SchedulingEvent.objects.create(
+                            session=session,
+                            status=status,
+                            by=request.user.person,
+                        )
                 assignment.delete()
             slot.delete()
         messages.success(request, 'The entry was deleted successfully')

@@ -20,7 +20,7 @@ from ietf.doc.models import Document, State, DocAlias, NewRevisionDocEvent
 from ietf.group.factories import RoleFactory
 from ietf.group.models import Group
 from ietf.meeting.factories import MeetingFactory
-from ietf.meeting.models import Meeting, Session, SessionPresentation
+from ietf.meeting.models import Meeting, Session, SessionPresentation, SchedulingEvent
 from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
@@ -158,11 +158,14 @@ class GroupMaterialTests(TestCase):
             name = "session-42-mars-1",
             meeting = Meeting.objects.get(number='42'),
             group = Group.objects.get(acronym='mars'),
-            status = SessionStatusName.objects.create(slug='scheduled', name='Scheduled'),
             modified = datetime.datetime.now(),
-            requested_by = Person.objects.get(user__username="marschairman"),
             type_id="session",
-            )
+        )
+        SchedulingEvent.objects.create(
+            session=session,
+            status=SessionStatusName.objects.create(slug='scheduled'),
+            by = Person.objects.get(user__username="marschairman"),
+        )
         SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
 
         url = urlreverse('ietf.doc.views_material.edit_material', kwargs=dict(name=doc.name, action="revise"))

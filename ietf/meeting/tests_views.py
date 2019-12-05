@@ -28,13 +28,16 @@ import debug           # pyflakes:ignore
 
 from ietf.doc.models import Document
 from ietf.group.models import Group, Role
+from ietf.person.models import Person
 from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates, update_important_dates
-from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission
+from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission, SchedulingEvent
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.utils import finalize
+from ietf.meeting.utils import add_event_info_to_session_qs
+from ietf.meeting.utils import current_session_status
 from ietf.name.models import SessionStatusName, ImportantDateName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox
@@ -195,8 +198,11 @@ class MeetingTests(TestCase):
         self.assertContains(r, slot.location.name)
 
         # week view with a cancelled session
-        session.status_id='canceled'
-        session.save()
+        SchedulingEvent.objects.create(
+            session=session,
+            status=SessionStatusName.objects.get(slug='canceled'),
+            by=Person.objects.get(name='(System)')
+        )
         r = self.client.get(urlreverse("ietf.meeting.views.week_view", kwargs=dict(num=meeting.number)))
         self.assertContains(r, 'CANCELLED')
         self.assertContains(r, session.group.acronym)
@@ -874,8 +880,11 @@ class InterimTests(TestCase):
         url = urlreverse("ietf.meeting.views.interim_announce")
         meeting = Meeting.objects.filter(type='interim', session__group__acronym='mars').first()
         session = meeting.session_set.first()
-        session.status = SessionStatusName.objects.get(slug='scheda')
-        session.save()
+        SchedulingEvent.objects.create(
+            session=session,
+            status=SessionStatusName.objects.get(slug='scheda'),
+            by=Person.objects.get(name='(System)')
+        )
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertContains(r, meeting.number)
@@ -894,12 +903,12 @@ class InterimTests(TestCase):
         len_before = len(outbox)
         r = self.client.post(url)
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_announce'))
-        self.assertEqual(meeting.session_set.first().status.slug,'sched')
+        self.assertEqual(add_event_info_to_session_qs(meeting.session_set).first().current_status, 'sched')
         self.assertEqual(len(outbox), len_before)
         
     def test_interim_send_announcement(self):
         make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
         url = urlreverse("ietf.meeting.views.interim_send_announcement", kwargs={'number': meeting.number})
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
@@ -914,26 +923,26 @@ class InterimTests(TestCase):
 
     def test_interim_approve_by_ad(self):
         make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
         url = urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
         length_before = len(outbox)
         login_testing_unauthorized(self, "ad", url)
         r = self.client.post(url, {'approve': 'approve'})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_pending'))
-        for session in meeting.session_set.all():
-            self.assertEqual(session.status.slug, 'scheda')
+        for session in add_event_info_to_session_qs(meeting.session_set.all()):
+            self.assertEqual(session.current_status, 'scheda')
         self.assertEqual(len(outbox), length_before + 1)
         self.assertIn('ready for announcement', outbox[-1]['Subject'])
 
     def test_interim_approve_by_secretariat(self):
         make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
         url = urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.post(url, {'approve': 'approve'})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_send_announcement', kwargs={'number': meeting.number}))
-        for session in meeting.session_set.all():
-            self.assertEqual(session.status.slug, 'scheda')
+        for session in add_event_info_to_session_qs(meeting.session_set.all()):
+            self.assertEqual(session.current_status, 'scheda')
 
     def test_past(self):
         today = datetime.date.today()
@@ -951,8 +960,9 @@ class InterimTests(TestCase):
         make_meeting_test_data()
         url = urlreverse("ietf.meeting.views.upcoming")
         today = datetime.date.today()
-        mars_interim = Meeting.objects.filter(date__gt=today, type='interim', session__group__acronym='mars', session__status='sched').first()
-        ames_interim = Meeting.objects.filter(date__gt=today, type='interim', session__group__acronym='ames', session__status='canceled').first()
+        add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first()
+        mars_interim = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='mars')).filter(current_status='sched').first().meeting
+        ames_interim = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='ames')).filter(current_status='canceled').first().meeting
         r = self.client.get(url)
         self.assertContains(r, mars_interim.number)
         self.assertContains(r, ames_interim.number)
@@ -1078,7 +1088,7 @@ class InterimTests(TestCase):
         session = meeting.session_set.first()
         self.assertEqual(session.remote_instructions,remote_instructions)
         self.assertEqual(session.agenda_note,agenda_note)
-        self.assertEqual(session.status.slug,'scheda')
+        self.assertEqual(current_session_status(session).slug,'scheda')
         timeslot = session.official_timeslotassignment().timeslot
         self.assertEqual(timeslot.time,dt)
         self.assertEqual(timeslot.duration,duration)
@@ -1322,7 +1332,7 @@ class InterimTests(TestCase):
     def test_interim_pending(self):
         make_meeting_test_data()
         url = urlreverse('ietf.meeting.views.interim_pending')
-        count = Meeting.objects.filter(type='interim',session__status='apprw').distinct().count()
+        count = len(set(s.meeting_id for s in add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim')).filter(current_status='apprw')))
 
         # unpriviledged user
         login_testing_unauthorized(self,"plain",url)
@@ -1343,7 +1353,7 @@ class InterimTests(TestCase):
         # unprivileged user
         user = User.objects.get(username='plain')
         group = Group.objects.get(acronym='mars')
-        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group=group).first()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group=group)).filter(current_status='apprw').first().meeting
         self.assertFalse(can_approve_interim_request(meeting=meeting,user=user))
         # Secretariat
         user = User.objects.get(username='secretary')
@@ -1363,7 +1373,7 @@ class InterimTests(TestCase):
         # unprivileged user
         user = User.objects.get(username='plain')
         group = Group.objects.get(acronym='mars')
-        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group=group).first()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group=group)).filter(current_status='apprw').first().meeting
         self.assertFalse(can_view_interim_request(meeting=meeting,user=user))
         # Secretariat
         user = User.objects.get(username='secretary')
@@ -1383,7 +1393,7 @@ class InterimTests(TestCase):
 
     def test_interim_request_details(self):
         make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
         url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
@@ -1413,17 +1423,17 @@ class InterimTests(TestCase):
 
     def test_interim_request_disapprove(self):
         make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
         url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.post(url,{'disapprove':'Disapprove'})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_pending'))
-        for session in meeting.session_set.all():
-            self.assertEqual(session.status_id,'disappr')
+        for session in add_event_info_to_session_qs(meeting.session_set.all()):
+            self.assertEqual(session.current_status,'disappr')
 
     def test_interim_request_cancel(self):
         make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
         url = urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
         # ensure no cancel button for unauthorized user
         self.client.login(username="ameschairman", password="ameschairman+password")
@@ -1448,17 +1458,17 @@ class InterimTests(TestCase):
         length_before = len(outbox)
         r = self.client.post(url, {'comments': comments})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.upcoming'))
-        for session in meeting.session_set.all():
-            self.assertEqual(session.status_id, 'canceledpa')
+        for session in add_event_info_to_session_qs(meeting.session_set.all()):
+            self.assertEqual(session.current_status,'canceledpa')
             self.assertEqual(session.agenda_note, comments)
         self.assertEqual(len(outbox), length_before)     # no email notice
         # test cancelling after announcement
-        meeting = Meeting.objects.filter(type='interim', session__status='sched', session__group__acronym='mars').first()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='sched').first().meeting
         url = urlreverse('ietf.meeting.views.interim_request_cancel', kwargs={'number': meeting.number})
         r = self.client.post(url, {'comments': comments})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.upcoming'))
-        for session in meeting.session_set.all():
-            self.assertEqual(session.status_id, 'canceled')
+        for session in add_event_info_to_session_qs(meeting.session_set.all()):
+            self.assertEqual(session.current_status,'canceled')
             self.assertEqual(session.agenda_note, comments)
         self.assertEqual(len(outbox), length_before + 1)
         self.assertIn('Interim Meeting Cancelled', outbox[-1]['Subject'])
@@ -1466,7 +1476,7 @@ class InterimTests(TestCase):
     def test_interim_request_edit_no_notice(self):
         '''Edit a request.  No notice should go out if it hasn't been announced yet'''
         make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
         group = meeting.session_set.first().group
         url = urlreverse('ietf.meeting.views.interim_request_edit', kwargs={'number': meeting.number})
         # test unauthorized access
@@ -1504,7 +1514,7 @@ class InterimTests(TestCase):
     def test_interim_request_edit(self):
         '''Edit request.  Send notice of change'''
         make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim', session__status='sched', session__group__acronym='mars').first()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='sched').first().meeting
         group = meeting.session_set.first().group
         url = urlreverse('ietf.meeting.views.interim_request_edit', kwargs={'number': meeting.number})
         # test unauthorized access
@@ -1550,7 +1560,7 @@ class InterimTests(TestCase):
 
     def test_interim_request_details_permissions(self):
         make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
         url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
 
         # unprivileged user
@@ -1560,7 +1570,7 @@ class InterimTests(TestCase):
 
     def test_send_interim_approval_request(self):
         make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
         length_before = len(outbox)
         send_interim_approval_request(meetings=[meeting])
         self.assertEqual(len(outbox),length_before+1)
@@ -1568,7 +1578,7 @@ class InterimTests(TestCase):
 
     def test_send_interim_cancellation_notice(self):
         make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim',session__status='sched',session__group__acronym='mars').first()
+        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='sched').first().meeting
         length_before = len(outbox)
         send_interim_cancellation_notice(meeting=meeting)
         self.assertEqual(len(outbox),length_before+1)

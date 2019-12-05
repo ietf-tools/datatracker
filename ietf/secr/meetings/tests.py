@@ -16,7 +16,7 @@ from django.conf import settings
 from django.urls import reverse
 
 from ietf.group.models import Group, GroupEvent
-from ietf.meeting.models import Meeting, Room, TimeSlot, SchedTimeSessAssignment, Session
+from ietf.meeting.models import Meeting, Room, TimeSlot, SchedTimeSessAssignment, Session, SchedulingEvent
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
@@ -152,10 +152,9 @@ class SecrMeetingTestCase(TestCase):
         mars_group = Group.objects.get(acronym='mars')
         ames_group = Group.objects.get(acronym='ames')
         ames_stsa = meeting.schedule.assignments.get(session__group=ames_group)
-        assert ames_stsa.session.status_id == 'schedw'
+        assert SchedulingEvent.objects.filter(session=ames_stsa.session).order_by('-id')[0].status_id == 'schedw'
         mars_stsa = meeting.schedule.assignments.get(session__group=mars_group)
-        mars_stsa.session.status = SessionStatusName.objects.get(slug='appr')
-        mars_stsa.session.save()
+        SchedulingEvent.objects.create(session=mars_stsa.session, status=SessionStatusName.objects.get(slug='appr'), by=Person.objects.get(name="(System)"))
         url = reverse('ietf.secr.meetings.views.notifications',kwargs={'meeting_id':72})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
@@ -185,9 +184,9 @@ class SecrMeetingTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before + 1)
         ames_stsa = meeting.schedule.assignments.get(session__group=ames_group)
-        assert ames_stsa.session.status_id == 'sched'
+        self.assertEqual(SchedulingEvent.objects.filter(session=ames_stsa.session).order_by('-id')[0].status_id, 'sched')
         mars_stsa = meeting.schedule.assignments.get(session__group=mars_group)
-        assert mars_stsa.session.status_id == 'sched'
+        self.assertEqual(SchedulingEvent.objects.filter(session=mars_stsa.session).order_by('-id')[0].status_id, 'sched')
 
     def test_meetings_rooms(self):
         meeting = make_meeting_test_data()
@@ -363,7 +362,7 @@ class SecrMeetingTestCase(TestCase):
         response = self.client.post(url, {'post':'yes'})
         self.assertRedirects(response, redirect_url)
         session = slot.sessionassignments.filter(schedule=meeting.schedule).first().session
-        self.assertEqual(session.status_id, 'canceled')
+        self.assertEqual(SchedulingEvent.objects.filter(session=session).order_by('-id')[0].status_id, 'canceled')
 
     def test_meetings_session_edit(self):
         meeting = make_meeting_test_data()

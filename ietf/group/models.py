@@ -70,7 +70,7 @@ class GroupInfo(models.Model):
         return list(set([ role for role in self.parent.role_set.filter(name__in=['ad', 'chair']) ]))
 
     def is_bof(self):
-        return (self.state.slug in ["bof", "bof-conc"])
+        return self.state_id in ["bof", "bof-conc"]
 
     class Meta:
         abstract = True

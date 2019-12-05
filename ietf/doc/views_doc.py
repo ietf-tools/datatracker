@@ -68,13 +68,13 @@ from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_group_type, can_manage_materials, group_features_role_filter
 from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is_person,
     role_required, is_individual_draft_author)
-from ietf.name.models import StreamName, BallotPositionName
+from ietf.name.models import StreamName, BallotPositionName, SessionStatusName
 from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm
 from ietf.doc.mails import email_comment
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session
-from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions
+from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions, add_event_info_to_session_qs
 from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
@@ -1345,9 +1345,13 @@ def add_sessionpresentation(request,name):
 def all_presentations(request, name):
     doc = get_object_or_404(Document, name=name)
 
+    sessions = add_event_info_to_session_qs(
+        doc.session_set.filter(type__in=['session','plenary','other'])
+    ).filter(current_status__in=['sched','schedw','appr','canceled'])
 
-    sessions = doc.session_set.filter(status__in=['sched','schedw','appr','canceled'],
-                                      type__in=['session','plenary','other'])
+    status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
+    for session in sessions:
+        session.current_status_name = status_names.get(session.current_status, session.current_status)
 
     future, in_progress, past = group_sessions(sessions)
 

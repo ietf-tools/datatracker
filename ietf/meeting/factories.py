@@ -10,7 +10,8 @@ import datetime
 
 from django.core.files.base import ContentFile
 
-from ietf.meeting.models import Meeting, Session, Schedule, TimeSlot, SessionPresentation, FloorPlan, Room, SlideSubmission
+from ietf.meeting.models import Meeting, Session, SchedulingEvent, Schedule, TimeSlot, SessionPresentation, FloorPlan, Room, SlideSubmission
+from ietf.name.models import SessionStatusName
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
 
@@ -83,9 +84,28 @@ class SessionFactory(factory.DjangoModelFactory):
     meeting = factory.SubFactory(MeetingFactory)
     type_id='session'
     group = factory.SubFactory(GroupFactory)
-    requested_by = factory.SubFactory(PersonFactory) 
-    status_id='sched'
 
+    @factory.post_generation
+    def status_id(obj, create, extracted, **kwargs):
+        if create:
+            if not extracted:
+                extracted = 'sched'
+
+            if extracted not in ['apprw', 'schedw']:
+                # requested event
+                SchedulingEvent.objects.create(
+                    session=obj,
+                    status=SessionStatusName.objects.get(slug='schedw'),
+                    by=PersonFactory(),
+                )
+
+            # actual state event
+            SchedulingEvent.objects.create(
+                session=obj,
+                status=SessionStatusName.objects.get(slug=extracted),
+                by=PersonFactory(),
+            )
+                
     @factory.post_generation
     def add_to_schedule(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         '''

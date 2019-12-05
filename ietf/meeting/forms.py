@@ -21,7 +21,7 @@ from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.models import Session, Meeting, Schedule, countries, timezones
 from ietf.meeting.helpers import get_next_interim_number, make_materials_directories
-from ietf.meeting.helpers import is_meeting_approved, get_next_agenda_name
+from ietf.meeting.helpers import is_interim_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
 from ietf.person.models import Person
 from ietf.utils.fields import DatepickerDateField, DurationField, MultiEmailField
@@ -132,7 +132,7 @@ class InterimMeetingModelForm(forms.ModelForm):
             self.fields['group'].widget.attrs['disabled'] = True
             if self.instance.city or self.instance.country:
                 self.fields['in_person'].initial = True
-            if is_meeting_approved(self.instance):
+            if is_interim_meeting_approved(self.instance):
                 self.fields['approved'].initial = True
             else:
                 self.fields['approved'].initial = False
@@ -244,15 +244,8 @@ class InterimSessionModelForm(forms.ModelForm):
         """NOTE: as the baseform of an inlineformset self.save(commit=True)
         never gets called"""
         session = super(InterimSessionModelForm, self).save(commit=kwargs.get('commit', True))
-        if self.is_approved_or_virtual:
-            session.status_id = 'scheda'
-        else:
-            session.status_id = 'apprw'
         session.group = self.group
         session.type_id = 'session'
-        if not self.instance.pk:
-            session.requested_by = self.user.person
-
         return session
 
     def save_agenda(self):

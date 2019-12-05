@@ -5,22 +5,25 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
+from collections import defaultdict
 
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
+from django.http import Http404
 
 import debug                            # pyflakes:ignore
 
-from ietf.group.models import Group
+from ietf.group.models import Group, GroupFeatures
 from ietf.ietfauth.utils import has_role, role_required
-from ietf.meeting.models import Meeting, Session, Constraint, ResourceAssociation
+from ietf.meeting.models import Meeting, Session, Constraint, ResourceAssociation, SchedulingEvent
 from ietf.meeting.helpers import get_meeting
+from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.name.models import SessionStatusName, ConstraintName
 from ietf.secr.sreq.forms import SessionForm, ToolStatusForm
 from ietf.secr.utils.decorators import check_permissions
-from ietf.secr.utils.group import groups_by_session
+from ietf.secr.utils.group import get_my_groups
 from ietf.utils.mail import send_mail
 from ietf.person.models import Person
 from ietf.mailtrigger.utils import gather_address_lists
@@ -171,11 +174,18 @@ def approve(request, acronym):
     '''
     meeting = get_meeting()
     group = get_object_or_404(Group, acronym=acronym)
-    session = Session.objects.get(meeting=meeting,group=group,status='apprw')
+
+    session = add_event_info_to_session_qs(Session.objects.filter(meeting=meeting, group=group)).filter(current_status='apprw').first()
+    if session is None:
+        raise Http404
 
     if has_role(request.user,'Secretariat') or group.parent.role_set.filter(name='ad',person=request.user.person):
-        session.status = SessionStatusName.objects.get(slug='appr')
-        session_save(session)
+        SchedulingEvent.objects.create(
+            session=session,
+            status=SessionStatusName.objects.get(slug='appr'),
+            by=request.user.person,
+        )
+        session_changed(session)
 
         messages.success(request, 'Third session approved')
         return redirect('ietf.secr.sreq.views.view', acronym=acronym)
@@ -205,8 +215,12 @@ def cancel(request, acronym):
 
     # mark sessions as deleted
     for session in sessions:
-        session.status_id = 'deleted'
-        session_save(session)
+        SchedulingEvent.objects.create(
+            session=session,
+            status=SessionStatusName.objects.get(slug='deleted'),
+            by=request.user.person,
+        )
+        session_changed(session)
 
         # clear schedule assignments if already scheduled
         session.timeslotassignments.all().delete()
@@ -236,7 +250,7 @@ def confirm(request, acronym):
     login = request.user.person
 
     # check if request already exists for this group
-    if Session.objects.filter(group=group,meeting=meeting).exclude(status__in=('deleted','notmeet')):
+    if add_event_info_to_session_qs(Session.objects.filter(group=group, meeting=meeting)).filter(Q(current_status__isnull=True) | ~Q(current_status__in=['deleted', 'notmeet'])):
         messages.warning(request, 'Sessions for working group %s have already been requested once.' % group.acronym)
         return redirect('ietf.secr.sreq.views.main')
                 
@@ -258,7 +272,7 @@ def confirm(request, acronym):
 
     if request.method == 'POST' and button_text == 'Submit':
         # delete any existing session records with status = canceled or notmeet
-        Session.objects.filter(group=group,meeting=meeting,status__in=('canceled','notmeet')).delete()
+        add_event_info_to_session_qs(Session.objects.filter(group=group, meeting=meeting)).filter(current_status__in=['canceled', 'notmeet']).delete()
 
         # create new session records
         count = 0
@@ -268,19 +282,22 @@ def confirm(request, acronym):
             count += 1
             if duration:
                 slug = 'apprw' if count == 3 else 'schedw'
-                new_session = Session(meeting=meeting,
-                                      group=group,
-                                      attendees=form.data['attendees'],
-                                      requested=datetime.datetime.now(),
-                                      requested_by=login,
-                                      requested_duration=datetime.timedelta(0,int(duration)),
-                                      comments=form.data['comments'],
-                                      status=SessionStatusName.objects.get(slug=slug),
-                                      type_id='session',
-                                     )
-                session_save(new_session)
+                new_session = Session.objects.create(
+                    meeting=meeting,
+                    group=group,
+                    attendees=form.data['attendees'],
+                    requested_duration=datetime.timedelta(0,int(duration)),
+                    comments=form.data['comments'],
+                    type_id='session',
+                )
+                SchedulingEvent.objects.create(
+                    session=new_session,
+                    status=SessionStatusName.objects.get(slug=slug),
+                    by=login,
+                )
                 if 'resources' in form.data:
                     new_session.resources.set(session_data['resources'])
+                session_changed(new_session)
 
         # write constraint records
         save_conflicts(group,meeting,form.data.get('conflict1',''),'conflict')
@@ -293,7 +310,7 @@ def confirm(request, acronym):
                 Constraint.objects.create(name=bethere_cn, source=group, person=p, meeting=new_session.meeting)
 
         # clear not meeting
-        Session.objects.filter(group=group,meeting=meeting,status='notmeet').delete()
+        add_event_info_to_session_qs(Session.objects.filter(group=group, meeting=meeting)).filter(current_status='notmeet').delete()
 
         # send notification
         send_notification(group,meeting,login,session_data,'new')
@@ -322,23 +339,21 @@ def add_essential_people(group,initial):
     initial['bethere'] = list(people)
     
 
-def edit(request, *args, **kwargs):
-    return edit_mtg(request, None, *args, **kwargs)
+def session_changed(session):
+    latest_event = SchedulingEvent.objects.filter(session=session).order_by('-time', '-id').first()
 
-def session_save(session):
-    session.save()
-    if session.status_id == "schedw" and session.meeting.schedule != None:
+    if latest_event and latest_event.status_id == "schedw" and session.meeting.schedule != None:
         # send an email to iesg-secretariat to alert to change
         pass
 
 @check_permissions
-def edit_mtg(request, num, acronym):
+def edit(request, acronym, num=None):
     '''
     This view allows the user to edit details of the session request
     '''
     meeting = get_meeting(num)
     group = get_object_or_404(Group, acronym=acronym)
-    sessions = Session.objects.filter(meeting=meeting,group=group).exclude(status__in=('deleted','notmeet')).order_by('id')
+    sessions = add_event_info_to_session_qs(Session.objects.filter(group=group, meeting=meeting)).filter(Q(current_status__isnull=True) | ~Q(current_status__in=['canceled', 'notmeet'])).order_by('id')
     sessions_count = sessions.count()
     initial = get_initial_session(sessions)
     if 'resources' in initial:
@@ -370,7 +385,8 @@ def edit_mtg(request, num, acronym):
                 if 'length_session1' in form.changed_data:
                     session = sessions[0]
                     session.requested_duration = datetime.timedelta(0,int(form.cleaned_data['length_session1']))
-                    session_save(session)
+                    session.save()
+                    session_changed(session)
 
                 # session 2
                 if 'length_session2' in form.changed_data:
@@ -379,22 +395,24 @@ def edit_mtg(request, num, acronym):
                         sessions[1].delete()
                     elif sessions_count < 2:
                         duration = datetime.timedelta(0,int(form.cleaned_data['length_session2']))
-                        new_session = Session(meeting=meeting,
-                                              group=group,
-                                              attendees=form.cleaned_data['attendees'],
-                                              requested=datetime.datetime.now(),
-                                              requested_by=login,
-                                              requested_duration=duration,
-                                              comments=form.cleaned_data['comments'],
-                                              status=SessionStatusName.objects.get(slug='schedw'),
-                                              type_id='session',
-                                             )
-                        new_session.save()
+                        new_session = Session.objects.create(
+                            meeting=meeting,
+                            group=group,
+                            attendees=form.cleaned_data['attendees'],
+                            requested_duration=duration,
+                            comments=form.cleaned_data['comments'],
+                            type_id='session',
+                        )
+                        SchedulingEvent.objects.create(
+                            session=new_session,
+                            status=SessionStatusName.objects.get(slug='schedw'),
+                            by=request.user.person,
+                        )
                     else:
                         duration = datetime.timedelta(0,int(form.cleaned_data['length_session2']))
                         session = sessions[1]
                         session.requested_duration = duration
-                        session_save(session)
+                        session.save()
 
                 # session 3
                 if 'length_session3' in form.changed_data:
@@ -403,22 +421,25 @@ def edit_mtg(request, num, acronym):
                         sessions[2].delete()
                     elif sessions_count < 3:
                         duration = datetime.timedelta(0,int(form.cleaned_data['length_session3']))
-                        new_session = Session(meeting=meeting,
-                                              group=group,
-                                              attendees=form.cleaned_data['attendees'],
-                                              requested=datetime.datetime.now(),
-                                              requested_by=login,
-                                              requested_duration=duration,
-                                              comments=form.cleaned_data['comments'],
-                                              status=SessionStatusName.objects.get(slug='apprw'),
-                                              type_id='session',
-                                             )
-                        new_session.save()
+                        new_session = Session.objects.create(
+                            meeting=meeting,
+                            group=group,
+                            attendees=form.cleaned_data['attendees'],
+                            requested_duration=duration,
+                            comments=form.cleaned_data['comments'],
+                            type_id='session',
+                        )
+                        SchedulingEvent.objects.create(
+                            session=new_session,
+                            status=SessionStatusName.objects.get(slug='apprw'),
+                            by=request.user.person,
+                        )
                     else:
                         duration = datetime.timedelta(0,int(form.cleaned_data['length_session3']))
                         session = sessions[2]
                         session.requested_duration = duration
-                        session_save(session)
+                        session.save()
+                        session_changed(session)
 
 
                 if 'attendees' in form.changed_data:
@@ -495,7 +516,28 @@ def main(request):
 
     meeting = get_meeting()
 
-    scheduled_groups, unscheduled_groups = groups_by_session(request.user, meeting)
+    scheduled_groups = []
+    unscheduled_groups = []
+
+    group_types = GroupFeatures.objects.filter(has_meetings=True).values_list('type', flat=True)
+
+    my_groups = [g for g in get_my_groups(request.user, conclude=True) if g.type_id in group_types]
+
+    sessions_by_group = defaultdict(list)
+    for s in add_event_info_to_session_qs(Session.objects.filter(meeting=meeting, group__in=my_groups)).filter(current_status__in=['schedw', 'apprw', 'appr', 'sched']):
+        sessions_by_group[s.group_id].append(s)
+
+    for group in my_groups:
+        group.meeting_sessions = sessions_by_group.get(group.pk, [])
+
+        if group.pk in sessions_by_group:
+            # include even if concluded as we need to to see that the
+            # sessions are there
+            scheduled_groups.append(group)
+        else:
+            if group.state_id not in ['conclude', 'bof-conc']:
+                # too late for unscheduled if concluded
+                unscheduled_groups.append(group)
 
     # warn if there are no associated groups
     if not scheduled_groups and not unscheduled_groups:
@@ -503,15 +545,14 @@ def main(request):
      
     # add session status messages for use in template
     for group in scheduled_groups:
-        sessions = group.session_set.filter(meeting=meeting)
-        if sessions.count() < 3:
-            group.status_message = sessions[0].status
+        if len(group.meeting_sessions) < 3:
+            group.status_message = group.meeting_sessions[0].current_status
         else:
-            group.status_message = 'First two sessions: %s, Third session: %s' % (sessions[0].status,sessions[2].status)
+            group.status_message = 'First two sessions: %s, Third session: %s' % (group.meeting_sessions[0].current_status, group.meeting_sessions[2].current_status)
 
     # add not meeting indicators for use in template
     for group in unscheduled_groups:
-        if group.session_set.filter(meeting=meeting,status='notmeet'):
+        if any(s.current_status == 'notmeet' for s in group.meeting_sessions):
             group.not_meeting = True
 
     return render(request, 'sreq/main.html', {
@@ -550,7 +591,7 @@ def new(request, acronym):
     # pre-populated with data from last meeeting's session request
     elif request.method == 'GET' and 'previous' in request.GET:
         previous_meeting = Meeting.objects.get(number=str(int(meeting.number) - 1))
-        previous_sessions = Session.objects.filter(meeting=previous_meeting,group=group).exclude(status__in=('notmeet','deleted')).order_by('id')
+        previous_sessions = add_event_info_to_session_qs(Session.objects.filter(meeting=previous_meeting, group=group)).filter(current_status__in=['notmeet', 'deleted']).order_by('id')
         if not previous_sessions:
             messages.warning(request, 'This group did not meet at %s' % previous_meeting)
             return redirect('ietf.secr.sreq.views.new', acronym=acronym)
@@ -586,22 +627,25 @@ def no_session(request, acronym):
     login = request.user.person
 
     # delete canceled record if there is one
-    Session.objects.filter(group=group,meeting=meeting,status='canceled').delete()
+    add_event_info_to_session_qs(Session.objects.filter(group=group, meeting=meeting)).filter(current_status='canceled').delete()
 
     # skip if state is already notmeet
-    if Session.objects.filter(group=group,meeting=meeting,status='notmeet'):
+    if add_event_info_to_session_qs(Session.objects.filter(group=group, meeting=meeting)).filter(current_status='notmeet'):
         messages.info(request, 'The group %s is already marked as not meeting' % group.acronym)
         return redirect('ietf.secr.sreq.views.main')
 
-    session = Session(group=group,
-                      meeting=meeting,
-                      requested=datetime.datetime.now(),
-                      requested_by=login,
-                      requested_duration=datetime.timedelta(0),
-                      status=SessionStatusName.objects.get(slug='notmeet'),
-                      type_id='session',
-                      )
-    session_save(session)
+    session = Session.objects.create(
+        group=group,
+        meeting=meeting,
+        requested_duration=datetime.timedelta(0),
+        type_id='session',
+    )
+    SchedulingEvent.objects.create(
+        session=session,
+        status=SessionStatusName.objects.get(slug='notmeet'),
+        by=login,
+    )
+    session_changed(session)
 
     # send notification
     (to_email, cc_list) = gather_address_lists('session_request_not_meeting',group=group,person=login)
@@ -669,7 +713,7 @@ def view(request, acronym, num = None):
     '''
     meeting = get_meeting(num)
     group = get_object_or_404(Group, acronym=acronym)
-    sessions = Session.objects.filter(~Q(status__in=('canceled','notmeet','deleted')),meeting=meeting,group=group).order_by('id')
+    sessions = add_event_info_to_session_qs(Session.objects.filter(meeting=meeting, group=group)).filter(Q(current_status__isnull=True) | ~Q(current_status__in=('canceled','notmeet','deleted'))).order_by('id')
 
     # check if app is locked
     is_locked = check_app_locked()
@@ -683,16 +727,12 @@ def view(request, acronym, num = None):
         else:
             return redirect('ietf.secr.sreq.views.new', acronym=acronym)
 
-    # TODO simulate activity records
-    activities = [{'act_date':sessions[0].requested.strftime('%b %d, %Y'),
-                   'act_time':sessions[0].requested.strftime('%H:%M:%S'),
-                   'activity':'New session was requested',
-                   'act_by':sessions[0].requested_by}]
-    if sessions[0].scheduled:
-        activities.append({'act_date':sessions[0].scheduled.strftime('%b %d, %Y'),
-                       'act_time':sessions[0].scheduled.strftime('%H:%M:%S'),
-                       'activity':'Session was scheduled',
-                       'act_by':'Secretariat'})
+    activities = [{
+        'act_date': e.time.strftime('%b %d, %Y'),
+        'act_time': e.time.strftime('%H:%M:%S'),
+        'activity': e.status.name,
+        'act_by': e.by,
+    } for e in sessions[0].schedulingevent_set.select_related('status', 'by')]
 
     # other groups that list this group in their conflicts
     session_conflicts = session_conflicts_as_string(group, meeting)
@@ -700,7 +740,7 @@ def view(request, acronym, num = None):
 
     # if sessions include a 3rd session waiting approval and the user is a secretariat or AD of the group
     # display approve button
-    if sessions.filter(status='apprw'):
+    if any(s.current_status == 'apprw' for s in sessions):
         if has_role(request.user,'Secretariat') or group.parent.role_set.filter(name='ad',person=request.user.person):
             show_approve_button = True
 

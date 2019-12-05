@@ -223,7 +223,7 @@
 		      {{item.timeslot.name}}
 		    {% endif %}
 
-		    {% if item.session.status.slug == 'canceled' %}
+                    {% if item.session.current_status == 'canceled' %}
 		      <span class="label label-danger pull-right">CANCELLED</span>
 		    {% endif %}
 
@@ -316,7 +316,7 @@
                       <span class="label label-success pull-right">BOF</span>
                     {% endif %}
 
-                    {% if item.session.status.slug == 'canceled' %}
+                    {% if item.session.current_status == 'canceled' %}
                       <span class="label label-danger pull-right">CANCELLED</span>
                     {% endif %}
 

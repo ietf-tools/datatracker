@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+
 from django.conf import settings
 
 from ietf.secr.sreq import views
@@ -14,5 +16,5 @@ urlpatterns = [
     url(r'^%(acronym)s/edit/$' % settings.URL_REGEXPS, views.edit),
     url(r'^%(acronym)s/new/$' % settings.URL_REGEXPS, views.new),
     url(r'^%(acronym)s/no_session/$' % settings.URL_REGEXPS, views.no_session),
-    url(r'^(?P<num>[A-Za-z0-9_\-\+]+)/%(acronym)s/edit/$' % settings.URL_REGEXPS, views.edit_mtg),
+    url(r'^(?P<num>[A-Za-z0-9_\-\+]+)/%(acronym)s/edit/$' % settings.URL_REGEXPS, views.edit),
 ]

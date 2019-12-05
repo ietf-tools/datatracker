@@ -13,7 +13,7 @@ from ietf import api
 
 from ietf.meeting.models import ( Meeting, ResourceAssociation, Constraint, Room, Schedule, Session,
                                 TimeSlot, SchedTimeSessAssignment, SessionPresentation, FloorPlan,
-                                UrlResource, ImportantDate, SlideSubmission )
+                                UrlResource, ImportantDate, SlideSubmission, SchedulingEvent )
 
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
@@ -163,14 +163,12 @@ api.meeting.register(ScheduleResource())
 
 from ietf.group.resources import GroupResource
 from ietf.doc.resources import DocumentResource
-from ietf.name.resources import TimeSlotTypeNameResource, SessionStatusNameResource
+from ietf.name.resources import TimeSlotTypeNameResource
 from ietf.person.resources import PersonResource
 class SessionResource(ModelResource):
     meeting          = ToOneField(MeetingResource, 'meeting')
     type             = ToOneField(TimeSlotTypeNameResource, 'type')
     group            = ToOneField(GroupResource, 'group')
-    requested_by     = ToOneField(PersonResource, 'requested_by')
-    status           = ToOneField(SessionStatusNameResource, 'status')
     materials        = ToManyField(DocumentResource, 'materials', null=True)
     resources        = ToManyField(ResourceAssociationResource, 'resources', null=True)
     assignments      = ToManyField('ietf.meeting.resources.SchedTimeSessAssignmentResource', 'timeslotassignments', null=True)
@@ -202,6 +200,26 @@ class SessionResource(ModelResource):
             "assignments": ALL_WITH_RELATIONS,
         }
 api.meeting.register(SessionResource())
+
+from ietf.name.resources import SessionStatusNameResource
+class SchedulingEventResource(ModelResource):
+    session = ToOneField(SessionResource, 'session')
+    status = ToOneField(SessionStatusNameResource, 'status')
+    by = ToOneField(PersonResource, 'location')
+    class Meta:
+        cache = SimpleCache()
+        queryset = SchedulingEvent.objects.all()
+        serializer = api.Serializer()
+        ordering = ['id', 'time', 'modified', 'meeting',]
+        filtering = { 
+            "id": ALL,
+            "time": ALL,
+            "session": ALL_WITH_RELATIONS,
+            "by": ALL_WITH_RELATIONS,
+        }
+api.meeting.register(SchedulingEventResource())
+
+
 
 from ietf.name.resources import TimeSlotTypeNameResource
 class TimeSlotResource(ModelResource):

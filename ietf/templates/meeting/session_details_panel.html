@@ -9,9 +9,9 @@
     {% if session.agenda_note %}<h3>{{session.agenda_note}}</h3>{% endif %}
 
     {% if can_manage_materials %}
-      {% if session.status.slug == 'sched' or session.status.slug == 'schedw' %}
+      {% if session.current_status == 'sched' or session.current_status == 'schedw' %}
         <div class="buttonlist">
-          {% if meeting.type.slug == 'interim' and user|has_role:"Secretariat" %}
+          {% if meeting.type_id == 'interim' and user|has_role:"Secretariat" %}
             <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">Meeting Details</a>
           {% endif %}
         </div>
