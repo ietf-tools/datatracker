@@ -57,8 +57,13 @@ def get_charter_text(group):
 
     filename = os.path.join(c.get_file_path(), "%s-%s.txt" % (c.canonical_name(), c.rev))
     try:
-        with io.open(filename) as f:
-            return f.read()
+        with io.open(filename, 'rb') as f:
+            text = f.read()
+            try:
+                text = text.decode('utf8')
+            except UnicodeDecodeError:
+                text = text.decode('latin1')
+            return text
     except IOError:
         return 'Error Loading Group Charter'
 
