@@ -25,7 +25,7 @@ from ietf.group.models import Group, GroupEvent
 from ietf.person.models import Person
 from ietf.secr.meetings.blue_sheets import create_blue_sheets
 from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm, MeetingSelectForm,
-    MeetingRoomForm, NonSessionForm, TimeSlotForm, SessionEditForm,
+    MeetingRoomForm, MiscSessionForm, TimeSlotForm, RegularSessionEditForm,
     UploadBlueSheetForm )
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.sreq.views import get_initial_session
@@ -45,16 +45,16 @@ def build_timeslots(meeting,room=None):
     If room is passed pre-create timeslots for the new room.  Call this after saving new rooms
     or adding a room.
     '''
-    slots = meeting.timeslot_set.filter(type='session')
+    slots = meeting.timeslot_set.filter(type='regular')
 
     # Don't do anything if the room is not capable of handling sessions
-    if room and not room.session_types.filter(slug='session'):
+    if room and not room.session_types.filter(slug='regular'):
         return
 
     if room:
         rooms = [room]
     else:
-        rooms = meeting.room_set.filter(session_types__slug='session')
+        rooms = meeting.room_set.filter(session_types__slug='regular')
     if not slots or room:
         # if we are just building timeslots for a new room, the room argument was passed,
         # then we need to use current meeting times as a template, not the last meeting times
@@ -66,23 +66,23 @@ def build_timeslots(meeting,room=None):
         delta = meeting.date - source_meeting.date
         timeslots = []
         time_seen = set()
-        for t in source_meeting.timeslot_set.filter(type='session'):
+        for t in source_meeting.timeslot_set.filter(type='regular'):
             if not t.time in time_seen:
                 time_seen.add(t.time)
                 timeslots.append(t)
         for t in timeslots:
             new_time = t.time + delta
             for room in rooms:
-                TimeSlot.objects.create(type_id='session',
+                TimeSlot.objects.create(type_id='regular',
                                         meeting=meeting,
                                         name=t.name,
                                         time=new_time,
                                         location=room,
                                         duration=t.duration)
 
-def check_nonsession(meeting,schedule):
+def check_misc_sessions(meeting,schedule):
     '''
-    Ensure non-session timeslots exist and have appropriate SchedTimeSessAssignment objects
+    Ensure misc session timeslots exist and have appropriate SchedTimeSessAssignment objects
     for the specified schedule.
     '''
     slots = TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other','plenary','lead','offagenda'))
@@ -370,21 +370,21 @@ def main(request):
     )
 
 @role_required('Secretariat')
-def non_session(request, meeting_id, schedule_name):
+def misc_sessions(request, meeting_id, schedule_name):
     '''
-    Display and add "non-session" time slots, ie. registration, beverage and snack breaks
+    Display and add misc session time slots, e.g. registration, beverage and snack breaks
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
     
-    check_nonsession(meeting,schedule)
+    check_misc_sessions(meeting,schedule)
 
-    non_session_types = ('break','reg','other','plenary','lead')
-    assignments = schedule.assignments.filter(timeslot__type__in=non_session_types)
+    misc_session_types = ['break','reg','other','plenary','lead']
+    assignments = schedule.assignments.filter(timeslot__type__in=misc_session_types)
     assignments = assignments.order_by('-timeslot__type__name','timeslot__time')
     
     if request.method == 'POST':
-        form = NonSessionForm(request.POST, meeting=meeting)
+        form = MiscSessionForm(request.POST, meeting=meeting)
         if form.is_valid():
             time = get_timeslot_time(form, meeting)
             name = form.cleaned_data['name']
@@ -424,13 +424,14 @@ def non_session(request, meeting_id, schedule_name):
                                             session=session,
                                             schedule=schedule)
 
-            messages.success(request, 'Non-Sessions updated successfully')
-            return redirect('ietf.secr.meetings.views.non_session', meeting_id=meeting_id, schedule_name=schedule_name)
+            messages.success(request, 'Misc. sessions updated successfully')
+            return redirect('ietf.secr.meetings.views.misc_sessions', meeting_id=meeting_id, schedule_name=schedule_name)
     else:
-        form = NonSessionForm(initial={'show_location':True}, meeting=meeting)
+        form = MiscSessionForm(initial={'show_location':True}, meeting=meeting)
 
-    if TimeSlot.objects.filter(meeting=meeting,type='other',location__isnull=True):
-        messages.warning(request, 'There are non-session items which do not have a room assigned')
+    no_room = TimeSlot.objects.filter(meeting=meeting,type='other',location__isnull=True)
+    if no_room:
+        messages.warning(request, 'There are misc. session time slots which do not have a room assigned')
 
     session_statuses = {
         e.session_id: e.status_id
@@ -440,18 +441,18 @@ def non_session(request, meeting_id, schedule_name):
     for a in assignments:
         a.current_session_status = session_statuses.get(a.session_id)
 
-    return render(request, 'meetings/non_session.html', {
+    return render(request, 'meetings/misc_sessions.html', {
         'assignments': assignments,
         'form': form,
         'meeting': meeting,
         'schedule': schedule,
-        'selected': 'non-sessions'},
+        'selected': 'misc-sessions'},
     )
 
 @role_required('Secretariat')
-def non_session_cancel(request, meeting_id, schedule_name, slot_id):
+def misc_session_cancel(request, meeting_id, schedule_name, slot_id):
     '''
-    This function cancels the non-session TimeSlot.  Check for uploaded
+    This function cancels the misc session TimeSlot.  Check for uploaded
     material first.  SchedTimeSessAssignment objects get cancelled as well.
     '''
     slot = get_object_or_404(TimeSlot, id=slot_id)
@@ -467,14 +468,14 @@ def non_session_cancel(request, meeting_id, schedule_name, slot_id):
             )
 
         messages.success(request, 'The session was cancelled successfully')
-        return redirect('ietf.secr.meetings.views.non_session', meeting_id=meeting_id, schedule_name=schedule_name)
+        return redirect('ietf.secr.meetings.views.misc_sessions', meeting_id=meeting_id, schedule_name=schedule_name)
 
     return render(request, 'confirm_cancel.html', {'object': slot})
 
 @role_required('Secretariat')
-def non_session_delete(request, meeting_id, schedule_name, slot_id):
+def misc_session_delete(request, meeting_id, schedule_name, slot_id):
     '''
-    This function deletes the non-session TimeSlot.  Check for uploaded
+    This function deletes the misc session TimeSlot.  Check for uploaded
     material first.  SchedTimeSessAssignment objects get deleted as well.
     '''
     slot = get_object_or_404(TimeSlot, id=slot_id)
@@ -486,7 +487,7 @@ def non_session_delete(request, meeting_id, schedule_name, slot_id):
         for session in session_objects:
             if session.materials.exclude(states__slug='deleted'):
                 messages.error(request, 'Materials have already been uploaded for "%s".  You must delete those before deleting the timeslot.' % slot.name)
-                return redirect('ietf.secr.meetings.views.non_session', meeting_id=meeting_id, schedule_name=schedule_name)
+                return redirect('ietf.secr.meetings.views.misc_sessions', meeting_id=meeting_id, schedule_name=schedule_name)
         
         # delete high order assignments, then sessions and slots
         assignments.delete()
@@ -494,14 +495,14 @@ def non_session_delete(request, meeting_id, schedule_name, slot_id):
         slot.delete()
 
         messages.success(request, 'The entry was deleted successfully')
-        return redirect('ietf.secr.meetings.views.non_session', meeting_id=meeting_id, schedule_name=schedule_name)
+        return redirect('ietf.secr.meetings.views.misc_sessions', meeting_id=meeting_id, schedule_name=schedule_name)
 
     return render(request, 'confirm_delete.html', {'object': slot})
 
 @role_required('Secretariat')
-def non_session_edit(request, meeting_id, schedule_name, slot_id):
+def misc_session_edit(request, meeting_id, schedule_name, slot_id):
     '''
-    Allows the user to assign a location to this non-session timeslot
+    Allows the user to assign a location to this misc session timeslot
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     slot = get_object_or_404(TimeSlot, id=slot_id)
@@ -511,9 +512,9 @@ def non_session_edit(request, meeting_id, schedule_name, slot_id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Back':
-            return redirect('ietf.secr.meetings.views.non_session', meeting_id=meeting_id, schedule_name=schedule_name)
+            return redirect('ietf.secr.meetings.views.misc_sessions', meeting_id=meeting_id, schedule_name=schedule_name)
 
-        form = NonSessionForm(request.POST,meeting=meeting,session=session)
+        form = MiscSessionForm(request.POST,meeting=meeting,session=session)
         if form.is_valid():
             location = form.cleaned_data['location']
             group = form.cleaned_data['group']
@@ -537,7 +538,7 @@ def non_session_edit(request, meeting_id, schedule_name, slot_id):
             session.save()
 
             messages.success(request, 'Location saved')
-            return redirect('ietf.secr.meetings.views.non_session', meeting_id=meeting_id, schedule_name=schedule_name)
+            return redirect('ietf.secr.meetings.views.misc_sessions', meeting_id=meeting_id, schedule_name=schedule_name)
 
     else:
         # we need to pass the session to the form in order to disallow changing
@@ -552,9 +553,9 @@ def non_session_edit(request, meeting_id, schedule_name, slot_id):
                    'duration':duration_string(slot.duration),
                    'show_location':slot.show_location,
                    'type':slot.type}
-        form = NonSessionForm(initial=initial, meeting=meeting, session=session)
+        form = MiscSessionForm(initial=initial, meeting=meeting, session=session)
 
-    return render(request, 'meetings/non_session_edit.html', {
+    return render(request, 'meetings/misc_session_edit.html', {
         'meeting': meeting,
         'form': form,
         'schedule': schedule,
@@ -570,7 +571,7 @@ def notifications(request, meeting_id):
     meeting = get_object_or_404(Meeting, number=meeting_id)
     last_notice = GroupEvent.objects.filter(type='sent_notification').first()
     groups = set()
-    for ss in meeting.schedule.assignments.filter(timeslot__type='session'):
+    for ss in meeting.schedule.assignments.filter(timeslot__type='regular'):
         last_notice = ss.session.group.latest_event(type='sent_notification')
         if last_notice and ss.modified > last_notice.time:
             groups.add(ss.session.group)
@@ -643,7 +644,7 @@ def rooms(request, meeting_id, schedule_name):
     )
 
 @role_required('Secretariat')
-def sessions(request, meeting_id, schedule_name):
+def regular_sessions(request, meeting_id, schedule_name):
     '''
     Display and edit Session records for the specified meeting
     '''
@@ -675,11 +676,11 @@ def sessions(request, meeting_id, schedule_name):
         'schedule': schedule,
         'sessions': sessions,
         'formset': None,
-        'selected': 'sessions',},
+        'selected': 'regular-sessions',},
     )
 
 @role_required('Secretariat')
-def session_edit(request, meeting_id, schedule_name, session_id):
+def regular_session_edit(request, meeting_id, schedule_name, session_id):
     '''
     Edit session details
     '''
@@ -689,21 +690,21 @@ def session_edit(request, meeting_id, schedule_name, session_id):
     assignment = SchedTimeSessAssignment.objects.filter(schedule=schedule, session=session).first()
 
     if request.method == 'POST':
-        form = SessionEditForm(request.POST, instance=session)
+        form = RegularSessionEditForm(request.POST, instance=session)
         if form.is_valid():
             form.save()
             messages.success(request, 'Session saved')
-            return redirect('ietf.secr.meetings.views.sessions', meeting_id=meeting_id,schedule_name=schedule_name)
+            return redirect('ietf.secr.meetings.views.regular_sessions', meeting_id=meeting_id,schedule_name=schedule_name)
 
     else:
-        form = SessionEditForm(instance=session)
+        form = RegularSessionEditForm(instance=session)
 
     current_status_name = None
     latest_event = SchedulingEvent.objects.filter(session=session).order_by('-time', '-id').first()
     if latest_event:
         current_status_name = latest_event.status.name
 
-    return render(request, 'meetings/session_edit.html', {
+    return render(request, 'meetings/regular_session_edit.html', {
         'meeting': meeting,
         'schedule': schedule,
         'session': session,
@@ -728,7 +729,7 @@ def times(request, meeting_id, schedule_name):
     slots = []
     timeslots = []
     time_seen = set()
-    for t in meeting.timeslot_set.filter(type='session'):
+    for t in meeting.timeslot_set.filter(type='regular'):
         if not t.time in time_seen:
             time_seen.add(t.time)
             timeslots.append(t)
@@ -752,7 +753,7 @@ def times(request, meeting_id, schedule_name):
                 return redirect('ietf.secr.meetings.views.times', meeting_id=meeting_id,schedule_name=schedule_name)
 
             for room in meeting.room_set.all():
-                TimeSlot.objects.create(type_id='session',
+                TimeSlot.objects.create(type_id='regular',
                                         meeting=meeting,
                                         name=name,
                                         time=time,

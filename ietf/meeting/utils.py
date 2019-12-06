@@ -224,8 +224,8 @@ def add_event_info_to_session_qs(qs, current_status=True, requested_by=False, re
 def only_sessions_that_can_meet(session_qs):
     qs = add_event_info_to_session_qs(session_qs).exclude(current_status__in=['notmeet', 'disappr', 'deleted', 'apprw'])
 
-    # Restrict graphical scheduling to meeting requests (Sessions) of type 'session' for now
-    qs = qs.filter(type__slug='session')
+    # Restrict graphical scheduling to meeting requests (Sessions) of type 'regular' for now
+    qs = qs.filter(type__slug='regular')
 
     return qs
 

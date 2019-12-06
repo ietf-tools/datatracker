@@ -45,7 +45,7 @@
       <div class="button-group">
        <ul>
          <li><button type="submit" name="submit" value="Save">Save</button></li>
-         <li><button type="button" onclick="window.location='{% url "ietf.secr.meetings.views.sessions" meeting_id=meeting.number schedule_name=schedule.name %}'">Back</button></li>
+         <li><button type="button" onclick="window.location='{% url "ietf.secr.meetings.views.regular_sessions" meeting_id=meeting.number schedule_name=schedule.name %}'">Back</button></li>
         </ul>
       </div> <!-- button-group -->
       

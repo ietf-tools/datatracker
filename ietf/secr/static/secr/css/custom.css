@@ -461,7 +461,7 @@ input.draft-file-input {
    Meeting Tool
    ========================================================================== */
 
-#non-session-edit-form input[type="text"] {
+#misc-session-edit-form input[type="text"] {
     width: 30em;
 }
 

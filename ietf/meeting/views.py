@@ -146,11 +146,11 @@ def materials(request, num=None):
     plenaries = sessions.filter(name__icontains='plenary')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
-    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['session', 'other', ])
+    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other', ])
     iab       = sessions.filter(group__parent__acronym = 'iab')
 
     session_pks = [s.pk for ss in [plenaries, ietf, irtf, training, iab] for s in ss]
-    other     = sessions.filter(type_id__in=['session'], group__type__features__has_meetings=True).exclude(pk__in=session_pks)
+    other     = sessions.filter(type__in=['regular'], group__type__features__has_meetings=True).exclude(pk__in=session_pks)
 
     for topic in [plenaries, ietf, training, irtf, iab]:
         for event in topic:
@@ -372,7 +372,7 @@ def edit_schedule(request, num=None, owner=None, name=None):
     meeting_base_url = request.build_absolute_uri(meeting.base_url())
     site_base_url = request.build_absolute_uri('/')[:-1] # skip the trailing slash
 
-    rooms = meeting.room_set.filter(session_types__slug='session').distinct().order_by("capacity")
+    rooms = meeting.room_set.filter(session_types__slug='regular').distinct().order_by("capacity")
     saveas = SaveAsForm()
     saveasurl=reverse(edit_schedule,
                       args=[meeting.number, schedule.owner_email(), schedule.name])
@@ -615,7 +615,7 @@ def agenda_csv(schedule, filtered_assignments):
             row.append(item.session.pk)
             row.append(agenda_field(item))
             row.append(slides_field(item))
-        elif item.timeslot.type_id == "session":
+        elif item.timeslot.type_id == 'regular':
             row.append(item.timeslot.name)
             row.append(item.timeslot.location.name if item.timeslot.location else "")
             row.append(item.session.historic_group.historic_parent.acronym.upper() if item.session.historic_group.historic_parent else "")
@@ -1083,7 +1083,7 @@ def meeting_requests(request, num=None):
     sessions = add_event_info_to_session_qs(
         Session.objects.filter(
             meeting__number=meeting.number,
-            type__slug='session',
+            type__slug='regular',
             group__parent__isnull=False
         ),
         requested_by=True,
@@ -1110,10 +1110,10 @@ def meeting_requests(request, num=None):
 
 def get_sessions(num, acronym):
     meeting = get_meeting(num=num,type_in=None)
-    sessions = Session.objects.filter(meeting=meeting,group__acronym=acronym,type__in=['session','plenary','other'])
+    sessions = Session.objects.filter(meeting=meeting,group__acronym=acronym,type__in=['regular','plenary','other'])
 
     if not sessions:
-        sessions = Session.objects.filter(meeting=meeting,short=acronym,type__in=['session','plenary','other']) 
+        sessions = Session.objects.filter(meeting=meeting,short=acronym,type__in=['regular','plenary','other']) 
 
     sessions = add_event_info_to_session_qs(sessions)
 
@@ -1322,7 +1322,7 @@ def upload_session_minutes(request, session_id, num):
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'session' else False
+    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
@@ -1333,7 +1333,7 @@ def upload_session_minutes(request, session_id, num):
         if form.is_valid():
             file = request.FILES['file']
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == 'session'
+            apply_to_all = session.type_id == 'regular'
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
             if minutes_sp:
@@ -1422,7 +1422,7 @@ def upload_session_agenda(request, session_id, num):
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'session' else False
+    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
@@ -1433,7 +1433,7 @@ def upload_session_agenda(request, session_id, num):
         if form.is_valid():
             file = request.FILES['file']
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == 'session'
+            apply_to_all = session.type_id == 'regular'
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
             if agenda_sp:
@@ -1495,7 +1495,7 @@ def upload_session_agenda(request, session_id, num):
                 doc.save_with_history([e])
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
-        form = UploadAgendaForm(show_apply_to_all_checkbox, initial={'apply_to_all':session.type_id=='session'})
+        form = UploadAgendaForm(show_apply_to_all_checkbox, initial={'apply_to_all':session.type_id=='regular'})
 
     return render(request, "meeting/upload_session_agenda.html", 
                   {'session': session,
@@ -1533,7 +1533,7 @@ def upload_session_slides(request, session_id, num, name):
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'session' else False
+    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
@@ -1550,7 +1550,7 @@ def upload_session_slides(request, session_id, num, name):
         if form.is_valid():
             file = request.FILES['file']
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == 'session'
+            apply_to_all = session.type_id == 'regular'
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
             if slides_sp:
@@ -1627,7 +1627,7 @@ def propose_session_slides(request, session_id, num):
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'session' else False
+    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
@@ -1637,7 +1637,7 @@ def propose_session_slides(request, session_id, num):
         if form.is_valid():
             file = request.FILES['file']
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == 'session'
+            apply_to_all = session.type_id == 'regular'
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
             title = form.cleaned_data['title']
@@ -2244,7 +2244,7 @@ def proceedings(request, num=None):
     plenaries = sessions.filter(name__icontains='plenary').exclude(current_status='notmeet')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
-    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['session', 'other', ]).exclude(current_status='notmeet')
+    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other', ]).exclude(current_status='notmeet')
     iab       = sessions.filter(group__parent__acronym = 'iab').exclude(current_status='notmeet')
 
     cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
@@ -2529,7 +2529,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
     
     session_number = None
     sessions = get_sessions(submission.session.meeting.number,submission.session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if submission.session.type_id == 'session' else False
+    show_apply_to_all_checkbox = len(sessions) > 1 if submission.session.type_id == 'regular' else False
     if len(sessions) > 1:
        session_number = 1 + sessions.index(submission.session)
     name, _ = os.path.splitext(submission.filename)
@@ -2538,7 +2538,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
     if request.method == 'POST':
         form = ApproveSlidesForm(show_apply_to_all_checkbox, request.POST)
         if form.is_valid():
-            apply_to_all = submission.session.type_id == 'session'
+            apply_to_all = submission.session.type_id == 'regular'
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
             if request.POST.get('approve'):

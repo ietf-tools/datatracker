@@ -159,7 +159,7 @@ class GroupMaterialTests(TestCase):
             meeting = Meeting.objects.get(number='42'),
             group = Group.objects.get(acronym='mars'),
             modified = datetime.datetime.now(),
-            type_id="session",
+            type_id='regular',
         )
         SchedulingEvent.objects.create(
             session=session,

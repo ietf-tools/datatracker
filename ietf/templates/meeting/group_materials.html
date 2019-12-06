@@ -57,7 +57,7 @@
           <span class="label label-warning">No minutes</span>
         {% endif %}
       {% endif %}
-      {% if session.type.slug == 'session' and show_agenda == "True" %}
+      {% if session.type_id == 'regular' and show_agenda == "True" %}
         {% if session.all_meeting_bluesheets %}
 	  {% if session.all_meeting_bluesheets|length == 1 %}
 	    <a href="{{ session.all_meeting_bluesheets.0|meeting_href:session.meeting }}">Bluesheets</a><br>

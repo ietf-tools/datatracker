@@ -49,7 +49,7 @@ def get_times(meeting,day):
     The label is [start_time]-[end_time].
     '''
     # pick a random room
-    rooms = Room.objects.filter(meeting=meeting,session_types='session')
+    rooms = Room.objects.filter(meeting=meeting,session_types='regular')
     if rooms:
         room = rooms[0]
     else:
@@ -148,9 +148,9 @@ class TimeSlotForm(forms.Form):
             raise forms.ValidationError('{} value has an invalid format. It must be in HH:MM format'.format(duration))
         return self.cleaned_data['duration']
 
-class NonSessionForm(TimeSlotForm):
+class MiscSessionForm(TimeSlotForm):
     short = forms.CharField(max_length=32,label='Short Name',help_text='Enter an abbreviated session name (used for material file names)',required=False)
-    type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(used=True).exclude(slug__in=('session',)),empty_label=None)
+    type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(used=True).exclude(slug__in=('regular',)),empty_label=None)
     group = forms.ModelChoiceField(
         queryset=Group.objects.filter(type__in=['ietf','team'],state='active'),
         help_text='''Select a group to associate with this session.  For example:<br>
@@ -166,11 +166,11 @@ class NonSessionForm(TimeSlotForm):
             self.meeting = kwargs.pop('meeting')
         if 'session' in kwargs:
             self.session = kwargs.pop('session')
-        super(NonSessionForm, self).__init__(*args,**kwargs)
+        super(MiscSessionForm, self).__init__(*args,**kwargs)
         self.fields['location'].queryset = Room.objects.filter(meeting=self.meeting)
 
     def clean(self):
-        super(NonSessionForm, self).clean()
+        super(MiscSessionForm, self).clean()
         if any(self.errors):
             return
         cleaned_data = self.cleaned_data
@@ -199,7 +199,7 @@ class UploadBlueSheetForm(forms.Form):
             raise forms.ValidationError('Incorrect filename format')
         return file
 
-class SessionEditForm(forms.ModelForm):
+class RegularSessionEditForm(forms.ModelForm):
     class Meta:
         model = Session
         fields = ['agenda_note']

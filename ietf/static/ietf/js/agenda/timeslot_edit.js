@@ -252,7 +252,7 @@ function build_select_box(roomtype, domid, slot_id, select_id) {
     roomtypeclass="";
     roomtypeunavailable="";
 
-    if(roomtype == "session") {
+    if(roomtype == "regular") {
         roomtypesession="selected";
         roomtypeclass="agenda_slot_session";
     } else if(roomtype == "other") {
@@ -270,8 +270,8 @@ function build_select_box(roomtype, domid, slot_id, select_id) {
     }
 
     html = "<form action=\"/some/place\" method=\"post\"><select id='"+select_id+"'>";
-    html = html + "<option value='session'     "+roomtypesession+" id='option_"+domid+"_session'>session</option>";
-    html = html + "<option value='other'       "+roomtypeother+" id='option_"+domid+"_other'>non-session</option>";
+    html = html + "<option value='regular'     "+roomtypesession+" id='option_"+domid+"_session'>regular session</option>";
+    html = html + "<option value='other'       "+roomtypeother+" id='option_"+domid+"_other'>misc</option>";
     html = html + "<option value='reserved'    "+roomtypereserved+" id='option_"+domid+"_reserved'>reserved</option>";
     html = html + "<option value='plenary'     "+roomtypeplenary+" id='option_"+domid+"_plenary'>plenary</option>";
     html = html + "<option value='unavail'     "+roomtypeunavailable+" id='option_"+domid+"_unavail'>unavailable</option>";

@@ -161,8 +161,8 @@ AddSlotForm = modelform_factory(TimeSlot, exclude=('meeting','name','location','
 # no authorization required to list.
 def timeslot_slotlist(request, mtg):
     slots = mtg.timeslot_set.all()
-    # Restrict graphical editing to slots of type 'session' for now
-    slots = slots.filter(type__slug='session')
+    # Restrict graphical editing to slots of type 'regular' for now
+    slots = slots.filter(type__slug='regular')
     json_array=[]
     for slot in slots:
         json_array.append(slot.json_dict(request.build_absolute_uri('/')))
@@ -209,14 +209,14 @@ def timeslot_updslot(request, meeting, slotid):
     slot.save()
 
     # WORKAROUND: Right now, if there are sessions scheduled in this timeslot
-    # when it is marked unavailable (or any other value besides "session") they
+    # when it is marked unavailable (or any other value besides 'regular') they
     # become unreachable from the editing screen. The session is listed in the
     # "unscheduled" block incorrectly, and drag-dropping it onto the a new
     # timeslot produces erroneous results. To avoid this, we will silently
     # unschedule any sessions in the timeslot that has just been made
     # unavailable.
 
-    if slot.type_id != 'session':
+    if slot.type_id != 'regular':
         slot.sessionassignments.all().delete()
 
     # ENDWORKAROUND

@@ -143,10 +143,10 @@ class ApiTests(TestCase):
 
     def test_create_new_room(self):
         meeting = make_meeting_test_data()
-        timeslots_before = meeting.timeslot_set.filter(type='session').count()
+        timeslots_before = meeting.timeslot_set.filter(type='regular').count()
         url = urlreverse("ietf.meeting.ajax.timeslot_roomsurl", kwargs=dict(num=meeting.number))
 
-        post_data = { "name": "new room", "capacity": "50" , "resources": [], "session_types":["session"]}
+        post_data = { "name": "new room", "capacity": "50" , "resources": [], "session_types":['regular']}
 
         # unauthorized post
         r = self.client.post(url, post_data)
@@ -159,7 +159,7 @@ class ApiTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertTrue(meeting.room_set.filter(name="new room"))
 
-        timeslots_after = meeting.timeslot_set.filter(type='session').count()
+        timeslots_after = meeting.timeslot_set.filter(type='regular').count()
         # It's not clear that what that ajax function is doing is the right thing to do,
         # but it currently makes a new timeslot for any existing timeslot.
         # The condition tested below relies on the timeslots before this test all having different start and end times
@@ -212,7 +212,7 @@ class ApiTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         info = r.json()
-        self.assertEqual(set([x['short_name'] for x in info]),set([s.session.short_name for s in meeting.schedule.assignments.filter(session__type_id='session')]))
+        self.assertEqual(set([x['short_name'] for x in info]),set([s.session.short_name for s in meeting.schedule.assignments.filter(session__type_id='regular')]))
 
         schedule = meeting.schedule
         url = urlreverse("ietf.meeting.ajax.assignments_json",
@@ -466,7 +466,7 @@ class TimeSlotEditingApiTests(TestCase):
     def test_manipulate_timeslot(self):
         meeting = make_meeting_test_data()
         slot = meeting.timeslot_set.all()[0]
-        self.assertEqual(TimeSlot.objects.get(pk=slot.pk).type.name,'Session')
+        self.assertEqual(TimeSlot.objects.get(pk=slot.pk).type_id,'regular')
 
         url = urlreverse("ietf.meeting.ajax.timeslot_sloturl",
                          kwargs=dict(num=meeting.number, slotid=slot.pk))
@@ -479,10 +479,12 @@ class TimeSlotEditingApiTests(TestCase):
         self.client.login(username="plain", password="plain+password")
         r = self.client.post(url, modify_post_data)
         self.assertEqual(r.status_code, 403)
-        self.assertEqual(TimeSlot.objects.get(pk=slot.pk).type.name,'Session')
+        slot.refresh_from_db()
+        self.assertEqual(slot.type_id, 'regular')
 
         # Successful change of purpose
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, modify_post_data)
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(TimeSlot.objects.get(pk=slot.pk).type.name,'Plenary')
+        slot.refresh_from_db()
+        self.assertEqual(slot.type_id, 'plenary')

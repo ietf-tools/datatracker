@@ -82,7 +82,7 @@ class SessionFactory(factory.DjangoModelFactory):
         model = Session
 
     meeting = factory.SubFactory(MeetingFactory)
-    type_id='session'
+    type_id='regular'
     group = factory.SubFactory(GroupFactory)
 
     @factory.post_generation
@@ -139,7 +139,7 @@ class TimeSlotFactory(factory.DjangoModelFactory):
         model = TimeSlot
 
     meeting = factory.SubFactory(MeetingFactory)
-    type_id = 'session'
+    type_id = 'regular'
 
     @factory.post_generation
     def location(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument

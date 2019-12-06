@@ -34,7 +34,7 @@
           </td>
           <td>{{ session.agenda_note }}</td>
           <td>{{ session.current_status_name }}</td>
-          <td><a href="{% url 'ietf.secr.meetings.views.session_edit' meeting_id=meeting.number schedule_name=schedule.name session_id=session.id %}">Edit</a></td>
+          <td><a href="{% url 'ietf.secr.meetings.views.regular_session_edit' meeting_id=meeting.number schedule_name=schedule.name session_id=session.id %}">Edit</a></td>
           <td>
             <form method="post">
               {% csrf_token %}

@@ -401,7 +401,7 @@ def edit(request, acronym, num=None):
                             attendees=form.cleaned_data['attendees'],
                             requested_duration=duration,
                             comments=form.cleaned_data['comments'],
-                            type_id='session',
+                            type_id='regular',
                         )
                         SchedulingEvent.objects.create(
                             session=new_session,
@@ -427,7 +427,7 @@ def edit(request, acronym, num=None):
                             attendees=form.cleaned_data['attendees'],
                             requested_duration=duration,
                             comments=form.cleaned_data['comments'],
-                            type_id='session',
+                            type_id='regular',
                         )
                         SchedulingEvent.objects.create(
                             session=new_session,
@@ -638,7 +638,7 @@ def no_session(request, acronym):
         group=group,
         meeting=meeting,
         requested_duration=datetime.timedelta(0),
-        type_id='session',
+        type_id='regular',
     )
     SchedulingEvent.objects.create(
         session=session,

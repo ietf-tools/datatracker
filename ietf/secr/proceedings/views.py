@@ -96,7 +96,7 @@ def get_extras(meeting):
     sessions = Session.objects.filter(meeting=meeting).exclude(group__parent__type__in=('area','irtf'))
     for session in sessions:
         timeslot = get_timeslot(session)
-        if timeslot and timeslot.type.slug == 'session' and session.materials.all():
+        if timeslot and timeslot.type_id == 'regular' and session.materials.all():
             groups.append(session.group)
     return groups
 

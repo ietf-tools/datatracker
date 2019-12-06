@@ -794,7 +794,7 @@ class SchedTimeSessAssignment(models.Model):
                 components.append(g.acronym)
                 components.append(slugify(self.session.name))
 
-            if self.timeslot.type_id in ('session', 'plenary'):
+            if self.timeslot.type_id in ('regular', 'plenary'):
                 if self.timeslot.type_id == "plenary":
                     components.append("1plenary")
                 else:

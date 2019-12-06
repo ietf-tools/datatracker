@@ -245,7 +245,7 @@ class InterimSessionModelForm(forms.ModelForm):
         never gets called"""
         session = super(InterimSessionModelForm, self).save(commit=kwargs.get('commit', True))
         session.group = self.group
-        session.type_id = 'session'
+        session.type_id = 'regular'
         return session
 
     def save_agenda(self):

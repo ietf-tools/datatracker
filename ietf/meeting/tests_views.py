@@ -241,7 +241,7 @@ class MeetingTests(TestCase):
         self.assertTrue(all([x in unicontent(r) for x in ['mars','Test Room',]]))
         self.assertNotContains(r, 'IESG Breakfast')
 
-        url = urlreverse("ietf.meeting.views.agenda_by_type",kwargs=dict(num=meeting.number,type='session'))
+        url = urlreverse("ietf.meeting.views.agenda_by_type",kwargs=dict(num=meeting.number,type='regular'))
         r = self.client.get(url)
         self.assertTrue(all([x in unicontent(r) for x in ['mars','Test Room']]))
         self.assertFalse(any([x in unicontent(r) for x in ['IESG Breakfast','Breakfast Room']]))
@@ -576,7 +576,7 @@ class MeetingTests(TestCase):
         self.assertEqual(response.get('Content-Type'), 'text/calendar')
 
     def test_edit_slide_order(self):
-        session=SessionFactory(meeting__type_id='iestf',type_id='session')
+        session=SessionFactory(meeting__type_id='iestf',type_id='regular')
         slides = DocumentFactory(type_id='slides')
         session.sessionpresentation_set.create(document=slides,order=0)
         url = urlreverse('ietf.meeting.views.set_slide_order',kwargs={'session_id':session.id,'num':session.meeting.number,'name':slides.name})

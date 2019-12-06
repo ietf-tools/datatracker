@@ -28,11 +28,11 @@ def make_interim_meeting(group,date,status='sched'):
         attendees=10,
         requested_duration=datetime.timedelta(minutes=20),
         remote_instructions='http://webex.com',
-        type_id="session")
+        type_id='regular')
     SchedulingEvent.objects.create(session=session, status_id=status, by=system_person)
     slot = TimeSlot.objects.create(
         meeting=meeting,
-        type_id="session",
+        type_id='regular',
         duration=session.requested_duration,
         time=time)
     SchedTimeSessAssignment.objects.create(
@@ -85,7 +85,7 @@ def make_meeting_test_data(meeting=None):
     pname = RoomResourceName.objects.create(name='projector',slug='proj')
     projector = ResourceAssociation.objects.create(name=pname,icon="notfound.png",desc="Basic projector")
     room = Room.objects.create(meeting=meeting, name="Test Room", capacity=123, functional_name="Testing Ground")
-    room.session_types.add("session")
+    room.session_types.add('regular')
     room.resources.add(projector)
     asname = RoomResourceName.objects.get(slug='audiostream')
     UrlResource.objects.create(name=asname, room=room, url='http://ietf{number}streaming.dnsalias.net/ietf/ietf{number}1.m3u'.format(number=meeting.number))
@@ -100,10 +100,10 @@ def make_meeting_test_data(meeting=None):
 
     # slots
     session_date = meeting.date + datetime.timedelta(days=1)
-    slot1 = TimeSlot.objects.create(meeting=meeting, type_id="session", location=room,
+    slot1 = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
                                     duration=datetime.timedelta(minutes=30),
                                     time=datetime.datetime.combine(session_date, datetime.time(9, 30)))
-    slot2 = TimeSlot.objects.create(meeting=meeting, type_id="session", location=room,
+    slot2 = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
                                     duration=datetime.timedelta(minutes=30),
                                     time=datetime.datetime.combine(session_date, datetime.time(10, 30)))
     breakfast_slot = TimeSlot.objects.create(meeting=meeting, type_id="lead", location=breakfast_room,
@@ -119,7 +119,7 @@ def make_meeting_test_data(meeting=None):
     mars = Group.objects.get(acronym='mars')
     mars_session = Session.objects.create(meeting=meeting, group=mars,
                                           attendees=10, requested_duration=datetime.timedelta(minutes=20),
-                                          type_id="session")
+                                          type_id='regular')
     SchedulingEvent.objects.create(session=mars_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=slot1, session=mars_session, schedule=schedule)
     SchedTimeSessAssignment.objects.create(timeslot=slot2, session=mars_session, schedule=unofficial_schedule)
@@ -128,7 +128,7 @@ def make_meeting_test_data(meeting=None):
     ames_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="ames"),
                                           attendees=10,
                                           requested_duration=datetime.timedelta(minutes=20),
-                                          type_id="session")
+                                          type_id='regular')
     SchedulingEvent.objects.create(session=ames_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=slot2, session=ames_session, schedule=schedule)
     SchedTimeSessAssignment.objects.create(timeslot=slot1, session=ames_session, schedule=unofficial_schedule)

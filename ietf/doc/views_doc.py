@@ -1346,7 +1346,7 @@ def all_presentations(request, name):
     doc = get_object_or_404(Document, name=name)
 
     sessions = add_event_info_to_session_qs(
-        doc.session_set.filter(type__in=['session','plenary','other'])
+        doc.session_set.filter(type__in=['regular','plenary','other'])
     ).filter(current_status__in=['sched','schedw','appr','canceled'])
 
     status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}

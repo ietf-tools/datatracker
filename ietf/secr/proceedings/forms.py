@@ -28,7 +28,7 @@ class RecordingForm(forms.Form):
         self.meeting = kwargs.pop('meeting')
         super(RecordingForm, self).__init__(*args,**kwargs)
         self.fields['session'].queryset = add_event_info_to_session_qs(
-            Session.objects.filter(meeting=self.meeting, type__in=('session','plenary','other'))
+            Session.objects.filter(meeting=self.meeting, type__in=['regular','plenary','other'])
         ).filter(current_status='sched').order_by('group__acronym')
 
 class RecordingEditForm(forms.ModelForm):
