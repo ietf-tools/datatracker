@@ -1,3 +1,37 @@
+ietfdb (6.113.0) ietf; urgency=medium
+
+  **Review tool queue management with pluggable policies**
+
+  This release introcudes the ability for review group secretaries to choose
+  between different management policies for the review queue, as it turns
+  out that both the needs and preferences of the groups and group secretaries
+  vary in this regard.  With this release it is possible to choose between
+  two policies: a Rotate Alphabetically policy, and a Least Recently Used
+  policy.  Both policies provides for various exceptions.  There are also
+  some unrelated minor bugfixes.  From the commit log:
+
+  * Merged in work from sasha@dashcare.nl on Review Queue Managemnt: 
+    This abstracts queue management, making it possible to implement different
+    policies for each team. It provides two concrete policies:
+    RotateAlphabeticallyReviewerQueuePolicy, which rotates an alphabetically
+    ordered reviewer list with consideration for skip indications, and is the
+    default policy; and LeastRecentlyUsedReviewerQueuePolicy, a simple
+    least-recently-used policy.  Also see issue #2721, and #2656, which
+    documents various flaws in the old queue code.
+
+  * Added fallback handling from utf-8 to latin1 when reading charter text
+    files.
+
+  * Added normalization of draft title extracted from submitted XML.
+
+  * Removed code under docker/ from test coverage calculation.
+
+  * Fixed a backwards compatibiltiy issue for the factoryboy lib and 
+    updated a dependency requirement.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 Dec 2019 19:28:38 +0000
+
+
 ietfdb (6.112.0) ietf; urgency=medium
 
   **Review tool tickets roundup, part 6; and other fixes**
