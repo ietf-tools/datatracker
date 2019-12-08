@@ -13,8 +13,12 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'USER': 'django',
         'PASSWORD': 'RkTkDPFnKpko',
+        'OPTIONS': {
+            'sql_mode': 'STRICT_TRANS_TABLES',
+            'init_command': 'SET storage_engine=MyISAM; SET names "utf8"',
         },
-    }                                   # type: Dict[str, Dict[str, Collection[str]]]
+    },
+}                                       # type: Dict[str, Dict[str, Collection[str]]]
 
 DATABASE_TEST_OPTIONS = {
     'init_command': 'SET storage_engine=InnoDB',
