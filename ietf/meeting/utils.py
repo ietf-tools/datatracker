@@ -19,6 +19,7 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.meeting.models import Session, Meeting, SchedulingEvent, TimeSlot
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
+from ietf.name.models import SessionStatusName
 from ietf.person.models import Email
 from ietf.secr.proceedings.proc_utils import import_audio_files
 
@@ -51,9 +52,10 @@ def current_session_status(session):
 
 
 def group_sessions(sessions):
-
+    status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
     for s in sessions:
         s.time = session_time_for_sorting(s, use_meeting_date=True)
+        s.current_status_name = status_names.get(s.current_status, s.current_status)
 
     sessions = sorted(sessions,key=lambda s:s.time)
 

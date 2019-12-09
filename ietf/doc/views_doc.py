@@ -1349,10 +1349,6 @@ def all_presentations(request, name):
         doc.session_set.filter(type__in=['regular','plenary','other'])
     ).filter(current_status__in=['sched','schedw','appr','canceled'])
 
-    status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
-    for session in sessions:
-        session.current_status_name = status_names.get(session.current_status, session.current_status)
-
     future, in_progress, past = group_sessions(sessions)
 
     return render(request, 'doc/material/all_presentations.html', {
