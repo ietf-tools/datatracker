@@ -127,14 +127,14 @@ class SubmitRequestCase(TestCase):
         post_data['submit'] = 'Submit'
         r = self.client.post(confirm_url,post_data)
         self.assertRedirects(r, main_url)
-        session_count_after = Session.objects.filter(meeting=meeting, group=group).count()
-        self.assertTrue(session_count_after == session_count_before + 1)
+        session_count_after = Session.objects.filter(meeting=meeting, group=group, type='regular').count()
+        self.assertEqual(session_count_after, session_count_before + 1)
 
         # test that second confirm does not add sessions
         r = self.client.post(confirm_url,post_data)
         self.assertRedirects(r, main_url)
-        session_count_after = Session.objects.filter(meeting=meeting, group=group).count()
-        self.assertTrue(session_count_after == session_count_before + 1)
+        session_count_after = Session.objects.filter(meeting=meeting, group=group, type='regular').count()
+        self.assertEqual(session_count_after, session_count_before + 1)
 
     def test_submit_request_invalid(self):
         MeetingFactory(type_id='ietf', date=datetime.date.today())

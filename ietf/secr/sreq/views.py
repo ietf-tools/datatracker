@@ -288,7 +288,7 @@ def confirm(request, acronym):
                     attendees=form.data['attendees'],
                     requested_duration=datetime.timedelta(0,int(duration)),
                     comments=form.data['comments'],
-                    type_id='session',
+                    type_id='regular',
                 )
                 SchedulingEvent.objects.create(
                     session=new_session,
