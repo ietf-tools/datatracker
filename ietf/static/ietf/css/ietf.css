@@ -75,6 +75,11 @@ body { padding-top: 72px; }
   font-family: "PT Sans", "Trebuchet", "Seravek", sans-serif;
 }
 
+.body-nav {
+  font-family: "PT Sans", "Trebuchet", "Seravek", sans-serif;
+  font-size: 90%;
+}
+
 .nav-stacked>li, .nav-stacked>li+li { margin: 0; line-height: 1.214; }
 .nav-stacked>li>a { padding: 0.125em 0.5em; }
 
