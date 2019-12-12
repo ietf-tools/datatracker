@@ -855,7 +855,20 @@ class DocTestCase(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, e.desc)
-        
+
+    def test_history_bis_00(self):
+        rfcname='rfc9090'
+        rfc = WgRfcFactory(alias2=rfcname)
+        bis_draft = WgDraftFactory(name='draft-ietf-{}-{}bis'.format(rfc.group.acronym,rfcname))
+
+        url = urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=bis_draft.name))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200) 
+        q = PyQuery(unicontent(r))
+        attr1='value="{}"'.format(rfcname)
+        self.assertEqual(len(q('option['+attr1+'][selected="selected"]')), 1)
+
+
     def test_document_feed(self):
         doc = IndividualDraftFactory()
 
