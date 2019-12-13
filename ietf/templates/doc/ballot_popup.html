@@ -25,19 +25,19 @@
 </div>
 
 <div class="modal-footer">
-  {% if editable and user|has_role:"Area Director,Secretariat" %}
-    {% if user|has_role:"Area Director" %}
+  {% if editable and user|has_role:"Area Director,Secretariat,IRSG Member" %}
+    {% if user|can_ballot:doc %}
       <a class="btn btn-default" href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot_id %}">Edit position</a>
     {% endif %}
 
-    {% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
+    {% if user|can_defer:doc %}
       {% if deferred %}
         <a class="btn btn-default" href="{% url 'ietf.doc.views_ballot.undefer_ballot' name=doc.name %}">Undefer ballot</a>
       {% else %}
         <a class="btn btn-warning" href="{% url 'ietf.doc.views_ballot.defer_ballot' name=doc.name %}">Defer ballot</a>
       {% endif %}
 
-      {% if user|has_role:"Secretariat" %}
+      {% if user|has_role:"Secretariat" and ballot_type_slug != "irsg-approve" %}
         <a class="btn btn-danger" href="{% url 'ietf.doc.views_ballot.clear_ballot' name=doc.name ballot_type_slug=ballot_type_slug %}">Clear ballot</a>
       {% endif %}
     {% endif %}

@@ -66,14 +66,14 @@
           <td>{{ doc.ad|default:"" }}</td>
           <td>
 	    {% for p in doc.blocking_positions %}
-	      {% if p.old_ad %}
+	      {% if p.old_pos_by %}
 	        <span class="text-muted">
 	      {% endif %}
-	      {{ p.ad }}
+	      {{ p.pos_by }}
 	      ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }}{% endif %}
 	      days ago{% if doc.get_state_url != "rfc" and p.rev != doc.rev %}
 	        for -{{ p.rev }}{% endif %})<br>
-	      {% if p.old_ad %}
+	      {% if p.old_pos_by %}
 	        </span>
 	      {% endif %}
 	    {% endfor %}

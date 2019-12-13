@@ -59,7 +59,8 @@ class FormalLanguageName(NameModel):
 class DocReminderTypeName(NameModel):
     "Stream state"
 class BallotPositionName(NameModel):
-    """ Yes, No Objection, Abstain, Discuss, Block, Recuse """
+    """ Yes, No Objection, Abstain, Discuss, Block, Recuse, Need More Time,
+    Not Ready """
     blocking = models.BooleanField(default=False)
 class MeetingTypeName(NameModel):
     """IETF, Interim"""

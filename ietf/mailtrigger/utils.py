@@ -68,7 +68,8 @@ def gather_relevant_expansions(**kwargs):
 
         doc = kwargs['doc']
 
-        relevant.update(['doc_state_edited','doc_telechat_details_changed','ballot_deferred','ballot_saved'])
+        # PEY: does this need to include irsg_ballot_saved as well?
+        relevant.update(['doc_state_edited','doc_telechat_details_changed','ballot_deferred','iesg_ballot_saved'])
 
         if doc.type_id in ['draft','statchg']:
             relevant.update(starts_with('last_call_'))

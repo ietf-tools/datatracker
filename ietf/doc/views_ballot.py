@@ -20,8 +20,9 @@ from django.views.decorators.csrf import csrf_exempt
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent, BallotPositionDocEvent,
-    LastCallDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS, RelatedDocument )
+from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent,
+    IRSGBallotDocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent,
+    IESG_SUBSTATE_TAGS, RelatedDocument, BallotType )
 from ietf.doc.utils import ( add_state_change_event, close_ballot, close_open_ballots,
     create_ballot_if_not_open, update_telechat )
 from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred, 
@@ -34,17 +35,20 @@ from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_st
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.mailtrigger.forms import CcSelectForm
 from ietf.message.utils import infer_message
-from ietf.name.models import BallotPositionName
+from ietf.name.models import BallotPositionName, DocTypeName
 from ietf.person.models import Person
 from ietf.utils import log
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.utils.decorators import require_api_key
+from ietf.doc.templatetags.ietf_filters import can_ballot
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
                   ("discuss", "Discuss"),
                   ("abstain", "Abstain"),
                   ("recuse", "Recuse"),
+                  ("moretime", "Need More Time"),
+                  ("notready", "Not Ready"),
                   ("", "No Record"),
                   )
 
@@ -117,17 +121,17 @@ class EditPositionForm(forms.Form):
            raise forms.ValidationError("You must enter a non-empty discuss")
        return entered_discuss
 
-def save_position(form, doc, ballot, ad, login=None, send_email=False):
+def save_position(form, doc, ballot, pos_by, login=None, send_email=False):
     # save the vote
     if login is None:
-        login = ad
+        login = pos_by
     clean = form.cleaned_data
 
-    old_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=ad, ballot=ballot)
+    old_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", pos_by=pos_by, ballot=ballot)
     pos = BallotPositionDocEvent(doc=doc, rev=doc.rev, by=login)
     pos.type = "changed_ballot_position"
     pos.ballot = ballot
-    pos.ad = ad
+    pos.pos_by = pos_by
     pos.pos = clean["position"]
     pos.comment = clean["comment"].rstrip()
     pos.comment_time = old_pos.comment_time if old_pos else None
@@ -147,7 +151,7 @@ def save_position(form, doc, ballot, ad, login=None, send_email=False):
         changes.append("comment")
 
         if pos.comment:
-            e = DocEvent(doc=doc, rev=doc.rev, by=ad)
+            e = DocEvent(doc=doc, rev=doc.rev, by=pos_by)
             e.type = "added_comment"
             e.desc = "[Ballot comment]\n" + pos.comment
 
@@ -159,7 +163,7 @@ def save_position(form, doc, ballot, ad, login=None, send_email=False):
         changes.append("discuss")
 
         if pos.pos.blocking:
-            e = DocEvent(doc=doc, rev=doc.rev, by=ad)
+            e = DocEvent(doc=doc, rev=doc.rev, by=pos_by)
             e.type = "added_comment"
             e.desc = "[Ballot %s]\n" % pos.pos.name.lower()
             e.desc += pos.discuss
@@ -167,16 +171,16 @@ def save_position(form, doc, ballot, ad, login=None, send_email=False):
 
     # figure out a description
     if not old_pos and pos.pos.slug != "norecord":
-        pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
+        pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.pos_by.plain_name())
     elif old_pos and pos.pos != old_pos.pos:
-        pos.desc = "[Ballot Position Update] Position for %s has been changed to %s from %s" % (pos.ad.plain_name(), pos.pos.name, old_pos.pos.name)
+        pos.desc = "[Ballot Position Update] Position for %s has been changed to %s from %s" % (pos.pos_by.plain_name(), pos.pos.name, old_pos.pos.name)
 
     if not pos.desc and changes:
-        pos.desc = "Ballot %s text updated for %s" % (" and ".join(changes), ad.plain_name())
+        pos.desc = "Ballot %s text updated for %s" % (" and ".join(changes), pos_by.plain_name())
 
     # only add new event if we actually got a change
     if pos.desc:
-        if login != ad:
+        if login != pos_by:
             pos.desc += " by %s" % login.plain_name()
 
         pos.save()
@@ -186,13 +190,13 @@ def save_position(form, doc, ballot, ad, login=None, send_email=False):
 
     return pos
 
-@role_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat','IRSG Member')
 def edit_position(request, name, ballot_id):
     """Vote and edit discuss and comment on document as Area Director."""
     doc = get_object_or_404(Document, docalias__name=name)
     ballot = get_object_or_404(BallotDocEvent, type="created_ballot", pk=ballot_id, doc=doc)
 
-    ad = login = request.user.person
+    pos_by = login = request.user.person
 
     if 'ballot_edit_return_point' in request.session:
         return_to_url = request.session['ballot_edit_return_point']
@@ -200,37 +204,39 @@ def edit_position(request, name, ballot_id):
         return_to_url = urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
 
     # if we're in the Secretariat, we can select an AD to act as stand-in for
+    # or we can select an IRSG member
     if has_role(request.user, "Secretariat"):
-        ad_id = request.GET.get('ad')
-        if not ad_id:
+        pos_by_id = request.GET.get('pos_by')
+        if not pos_by_id:
             raise Http404
-        ad = get_object_or_404(Person, pk=ad_id)
+        pos_by = get_object_or_404(Person, pk=pos_by_id)
 
     if request.method == 'POST':
         old_pos = None
-        if not has_role(request.user, "Secretariat") and not ad.role_set.filter(name="ad", group__type="area", group__state="active"):
+        # PEY: if not has_role(request.user, "Secretariat") and not pos_by.role_set.filter(name="ad", group__type="area", group__state="active"):
+        if not has_role(request.user, "Secretariat") and not can_ballot(request.user, doc):
             # prevent pre-ADs from voting
-            return HttpResponseForbidden("Must be a proper Area Director in an active area to cast ballot")
+            return HttpResponseForbidden("Must be a proper Area Director in an active area or IRSG Member to cast ballot")
         
         form = EditPositionForm(request.POST, ballot_type=ballot.ballot_type)
         if form.is_valid():
             send_mail = True if request.POST.get("send_mail") else False
-            save_position(form, doc, ballot, ad, login, send_mail)
-                        
+            save_position(form, doc, ballot, pos_by, login, send_mail)
+
             if send_mail:
                 qstr=""
-                if request.GET.get('ad'):
-                    qstr += "?ad=%s" % request.GET.get('ad')
+                if request.GET.get('pos_by'):
+                    qstr += "?pos_by=%s" % request.GET.get('pos_by')
                 return HttpResponseRedirect(urlreverse('ietf.doc.views_ballot.send_ballot_comment', kwargs=dict(name=doc.name, ballot_id=ballot_id)) + qstr)
-            elif request.POST.get("Defer"):
+            elif request.POST.get("Defer") and doc.stream.slug != "irtf":
                 return redirect('ietf.doc.views_ballot.defer_ballot', name=doc)
-            elif request.POST.get("Undefer"):
+            elif request.POST.get("Undefer") and doc.stream.slug != "irtf":
                 return redirect('ietf.doc.views_ballot.undefer_ballot', name=doc)
             else:
                 return HttpResponseRedirect(return_to_url)
     else:
         initial = {}
-        old_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=ad, ballot=ballot)
+        old_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", pos_by=pos_by, ballot=ballot)
         if old_pos:
             initial['position'] = old_pos.pos.slug
             initial['discuss'] = old_pos.discuss
@@ -245,7 +251,7 @@ def edit_position(request, name, ballot_id):
     return render(request, 'doc/ballot/edit_position.html',
                               dict(doc=doc,
                                    form=form,
-                                   ad=ad,
+                                   pos_by=pos_by,
                                    return_to_url=return_to_url,
                                    old_pos=old_pos,
                                    ballot_deferred=ballot_deferred,
@@ -295,7 +301,7 @@ def api_set_position(request):
     return HttpResponse("Done", status=200, content_type='text/plain')
 
 
-def build_position_email(ad, doc, pos):
+def build_position_email(pos_by, doc, pos):
     subj = []
     d = ""
     blocking_name = "DISCUSS"
@@ -308,32 +314,42 @@ def build_position_email(ad, doc, pos):
         c = pos.comment
         subj.append("COMMENT")
 
-    ad_name_genitive = ad.plain_name() + "'" if ad.plain_name().endswith('s') else ad.plain_name() + "'s"
-    subject = "%s %s on %s" % (ad_name_genitive, pos.pos.name if pos.pos else "No Position", doc.name + "-" + doc.rev)
+    pos_by_name_genitive = pos_by.plain_name() + "'" if pos_by.plain_name().endswith('s') else pos_by.plain_name() + "'s"
+    subject = "%s %s on %s" % (pos_by_name_genitive, pos.pos.name if pos.pos else "No Position", doc.name + "-" + doc.rev)
     if subj:
         subject += ": (with %s)" % " and ".join(subj)
 
     body = render_to_string("doc/ballot/ballot_comment_mail.txt",
                             dict(discuss=d,
                                  comment=c,
-                                 ad=ad.plain_name(),
+                                 pos_by=pos_by.plain_name(),
                                  doc=doc,
                                  pos=pos.pos,
                                  blocking_name=blocking_name,
                                  settings=settings))
-    frm = ad.role_email("ad").formatted_email()
-    
-    addrs = gather_address_lists('ballot_saved',doc=doc)
+    # PEY: This doesn't work properly for IRSG members, since they don't have the "ad" role.  It still manages to get an address so it doesn't have to be fixed as a first priority.
+    frm = pos_by.role_email("ad").formatted_email()
+
+    if doc.stream_id == "irtf":
+        addrs = gather_address_lists('irsg_ballot_saved',doc=doc)
+    else:
+        addrs = gather_address_lists('iesg_ballot_saved',doc=doc)
 
     return addrs, frm, subject, body
 
-@role_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat','IRSG Member')
 def send_ballot_comment(request, name, ballot_id):
     """Email document ballot position discuss/comment for Area Director."""
     doc = get_object_or_404(Document, docalias__name=name)
     ballot = get_object_or_404(BallotDocEvent, type="created_ballot", pk=ballot_id, doc=doc)
 
-    ad = request.user.person
+    if not has_role(request.user, 'Secretariat'):
+        if doc.stream_id == 'irtf' and not has_role(request.user, 'IRSG Member'):
+            raise Http404
+        if doc.stream_id == 'ietf' and not has_role(request.user, 'Area Director'):
+            raise Http404
+
+    pos_by = request.user.person
 
     if 'ballot_edit_return_point' in request.session:
         return_to_url = request.session['ballot_edit_return_point']
@@ -346,21 +362,26 @@ def send_ballot_comment(request, name, ballot_id):
         back_url = urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
 
     # if we're in the Secretariat, we can select an AD to act as stand-in for
-    if not has_role(request.user, "Area Director"):
-        ad_id = request.GET.get('ad')
-        if not ad_id:
+    if has_role(request.user, "Secretariat"):
+        pos_by_id = request.GET.get('pos_by')
+        if not pos_by_id:
             raise Http404
-        ad = get_object_or_404(Person, pk=ad_id)
+        pos_by = get_object_or_404(Person, pk=pos_by_id)
 
-    pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=ad, ballot=ballot)
+    pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", pos_by=pos_by, ballot=ballot)
     if not pos:
         raise Http404
 
-    addrs, frm, subject, body = build_position_email(ad, doc, pos)
+    addrs, frm, subject, body = build_position_email(pos_by, doc, pos)
 
+    if doc.stream_id == 'irtf':
+        mailtrigger_slug='irsg_ballot_saved'
+    else:
+        mailtrigger_slug='iesg_ballot_saved'
+        
     if request.method == 'POST':
         cc = []
-        cc_select_form = CcSelectForm(data=request.POST,mailtrigger_slug='ballot_saved',mailtrigger_context={'doc':doc})
+        cc_select_form = CcSelectForm(data=request.POST,mailtrigger_slug=mailtrigger_slug,mailtrigger_context={'doc':doc})
         if cc_select_form.is_valid():
             cc.extend(cc_select_form.get_selected_addresses())
         extra_cc = [x.strip() for x in request.POST.get("extra_cc","").split(',') if x.strip()]
@@ -373,7 +394,7 @@ def send_ballot_comment(request, name, ballot_id):
 
     else: 
 
-        cc_select_form = CcSelectForm(mailtrigger_slug='ballot_saved',mailtrigger_context={'doc':doc})
+        cc_select_form = CcSelectForm(mailtrigger_slug=mailtrigger_slug,mailtrigger_context={'doc':doc})
   
         return render(request, 'doc/ballot/send_ballot_comment.html',
                       dict(doc=doc,
@@ -381,7 +402,7 @@ def send_ballot_comment(request, name, ballot_id):
                           body=body,
                           frm=frm,
                           to=addrs.as_strings().to,
-                          ad=ad,
+                          pos_by=pos_by,
                           back_url=back_url,
                           cc_select_form = cc_select_form,
                       ))
@@ -599,17 +620,17 @@ def ballot_writeupnotes(request, name):
             if "issue_ballot" in request.POST:
                 e = create_ballot_if_not_open(request, doc, login, "approve") # pyflakes:ignore
                 ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
-                if has_role(request.user, "Area Director") and not doc.latest_event(BallotPositionDocEvent, ad=login, ballot=ballot):
+                if has_role(request.user, "Area Director") and not doc.latest_event(BallotPositionDocEvent, pos_by=login, ballot=ballot):
                     # sending the ballot counts as a yes
                     pos = BallotPositionDocEvent(doc=doc, rev=doc.rev, by=login)
                     pos.ballot = ballot
                     pos.type = "changed_ballot_position"
-                    pos.ad = login
+                    pos.pos_by = login
                     pos.pos_id = "yes"
-                    pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
+                    pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.pos_by.plain_name())
                     pos.save()
 
-                    # Consider mailing this position to 'ballot_saved'
+                    # Consider mailing this position to 'iesg_ballot_saved'
 
                 approval = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
                 if not approval:
@@ -1051,3 +1072,119 @@ def make_last_call(request, name):
                                    form=form,
                                    announcement=announcement,
                                   ))
+
+@role_required('Secretariat', 'IRTF Chair')
+def issue_irsg_ballot(request, name):
+    doc = get_object_or_404(Document, docalias__name=name)
+    if doc.stream.slug != "irtf" or doc.type != DocTypeName.objects.get(slug="draft"):
+        raise Http404
+
+    by = request.user.person
+    fillerdate = datetime.date.today() + datetime.timedelta(weeks=2)
+
+    if request.method == 'POST':
+        button = request.POST.__getitem__("irsg_button")
+        if button == 'Yes':
+            duedate = request.POST.__getitem__("duedate")
+            e = IRSGBallotDocEvent(doc=doc, rev=doc.rev, by=request.user.person)
+            if (duedate == None or duedate==""):
+                duedate = str(fillerdate)
+            e.duedate = datetime.datetime.strptime(duedate, '%Y-%m-%d')
+            # PEY: What's the best thing to do for "unreasonable" dates?
+            e.type = "created_ballot"
+            e.desc = "Created IRSG Ballot"
+            ballot_type = BallotType.objects.get(doc_type=doc.type, slug="irsg-approve")
+            e.ballot_type = ballot_type
+            e.save()
+            # PEY: This is probably not enough state setting/cleanup.  I should review the IESG version more to see what happens.
+            new_state = doc.get_state()
+            prev_tags = []
+            new_tags = []
+
+            if doc.type_id == 'draft':
+                new_state = State.objects.get(used=True, type="draft-stream-irtf", slug='irsgpoll')
+
+            prev_state = doc.get_state(new_state.type_id if new_state else None)
+
+            doc.set_state(new_state)
+            doc.tags.remove(*prev_tags)
+
+            events = []
+            state_change_event = add_state_change_event(doc, by, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
+            if state_change_event:
+                events.append(state_change_event)
+
+            if events:
+                doc.save_with_history(events)
+
+        return HttpResponseRedirect(doc.get_absolute_url())
+    else:
+        templ = 'doc/ballot/irsg_ballot_approve.html'
+
+        question = "Are you sure you really want to issue a ballot for " + name + "?"
+        return render(request, templ, dict(doc=doc,
+                                           question=question, fillerdate=fillerdate))
+
+@role_required('Secretariat', 'IRTF Chair')
+def close_irsg_ballot(request, name):
+    doc = get_object_or_404(Document, docalias__name=name)
+    if doc.stream.slug != "irtf" or doc.type != DocTypeName.objects.get(slug="draft"):
+        raise Http404
+
+    by = request.user.person
+
+    if request.method == 'POST':
+        button = request.POST.__getitem__("irsg_button")
+        if button == 'Yes':
+            e = BallotDocEvent(doc=doc, rev=doc.rev, by=request.user.person)
+            e.type = "closed_ballot"
+            e.desc = "Closed IRSG Ballot"
+            ballot_type = BallotType.objects.get(doc_type=doc.type, slug="irsg-approve")
+            e.ballot_type = ballot_type
+            e.save()
+            # PEY: This is probably not enough state setting/cleanup.  I should review the IESG version more to see what happens.
+            new_state = doc.get_state()
+            prev_tags = []
+            new_tags = []
+
+            # PEY: Need to determine what the correct state to transition to is.
+            if doc.type_id == 'draft':
+                new_state = State.objects.get(used=True, type="draft-stream-irtf", slug='active')
+
+            prev_state = doc.get_state(new_state.type_id if new_state else None)
+
+            doc.set_state(new_state)
+            doc.tags.remove(*prev_tags)
+
+            events = []
+            state_change_event = add_state_change_event(doc, by, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
+            if state_change_event:
+                events.append(state_change_event)
+
+            if events:
+                doc.save_with_history(events)
+
+        return HttpResponseRedirect(doc.get_absolute_url())
+
+    templ = 'doc/ballot/irsg_ballot_close.html'
+
+    question = "Are you sure you really want to close the ballot for " + name + "?"
+    return render(request, templ, dict(doc=doc,
+                                       question=question))
+
+@role_required('Secretariat', 'IRTF Chair')
+def irsg_ballot_status(request):
+    possible_docs = Document.objects.filter(docevent__ballotdocevent__irsgballotdocevent__isnull=False)
+    docs = []
+    for doc in possible_docs:
+        if doc.ballot_open("irsg-approve"):
+            ballot = doc.active_ballot()
+            if ballot:
+                doc.ballot = ballot
+                # PEY: Need to figure how to work the duedate into status_columns.html
+                # PEY: Also, how is it I can add duedate to doc just like that?
+                doc.duedate=datetime.datetime.strftime(ballot.irsgballotdocevent.duedate, '%Y-%m-%d')
+
+            docs.append(doc)
+
+    return render(request, 'doc/irsg_ballot_status.html', {'docs':docs})

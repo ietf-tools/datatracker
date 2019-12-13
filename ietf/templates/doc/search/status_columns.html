@@ -32,15 +32,20 @@
     {% if doc.stream %}
       <br>
       {% if doc|state:"stream" %}
-	{{ doc|state:"stream" }}{% if doc.intended_std_level %}:<wbr>{% endif %}
+	{{ doc|state:"stream" }} {% if doc.intended_std_level %}:<wbr>{% endif %}
       {% else %}
-	{{ doc.stream }} stream{% if doc.intended_std_level %}:<wbr>{% endif %}
+	{{ doc.stream }} stream {% if doc.intended_std_level %}:<wbr>{% endif %}
       {% endif %}
     {% endif %}
 
     {% if doc.intended_std_level %}
       {{ doc.intended_std_level }}
     {% endif %}
+
+    {% if doc.duedate %}
+      <br>
+      Due date: {{ doc.duedate }}
+    {%endif %}
 
     {% if doc.reviewed_by_teams %}
       <br>Reviews:

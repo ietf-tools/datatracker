@@ -14,7 +14,7 @@ if six.PY3:
 
 from django.conf import settings
 
-from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor, StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType
+from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor, StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent
 from ietf.group.models import Group
 
 def draft_name_generator(type_id,group,n):
@@ -192,6 +192,26 @@ class RgDraftFactory(BaseDocumentFactory):
             obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
 
 
+class RgRfcFactory(RgDraftFactory):
+
+    alias2 = factory.RelatedFactory('ietf.doc.factories.DocAliasFactory','document',name=factory.Sequence(lambda n: 'rfc%04d'%(n+1000)))
+
+    std_level_id = 'inf'
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+            if not obj.get_state('draft-stream-irtf'):
+                obj.set_state(State.objects.get(type_id='draft-stream-irtf', slug='pub'))
+        else:
+            obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
+            obj.set_state(State.objects.get(type_id='draft-stream-irtf', slug='pub'))
+
+
 class CharterFactory(BaseDocumentFactory):
 
     type_id = 'charter'
@@ -296,9 +316,10 @@ class StateDocEventFactory(DocEventFactory):
 class BallotTypeFactory(factory.DjangoModelFactory):
     class Meta:
         model = BallotType
+        django_get_or_create = ('slug','doc_type_id')
 
-    doc_type_id = 'draft'
     slug = 'approve'
+    doc_type_id = 'draft'
 
 
 class BallotDocEventFactory(DocEventFactory):
@@ -307,6 +328,13 @@ class BallotDocEventFactory(DocEventFactory):
 
     ballot_type = factory.SubFactory(BallotTypeFactory)
     type = 'created_ballot'
+
+class IRSGBallotDocEventFactory(BallotDocEventFactory):
+    class Meta:
+        model = IRSGBallotDocEvent
+
+    duedate = datetime.datetime.now() + datetime.timedelta(days=14)
+    ballot_type = factory.SubFactory(BallotTypeFactory, slug='irsg-approve')
 
 class BallotPositionDocEventFactory(DocEventFactory):
     class Meta:
@@ -319,6 +347,6 @@ class BallotPositionDocEventFactory(DocEventFactory):
     # separately and passing the same doc into thier factories.
     ballot = factory.SubFactory(BallotDocEventFactory) 
 
-    ad = factory.SubFactory('ietf.person.factories.PersonFactory')
+    pos_by = factory.SubFactory('ietf.person.factories.PersonFactory')
     pos_id = 'discuss'
 

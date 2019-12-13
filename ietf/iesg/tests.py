@@ -42,14 +42,14 @@ class IESGTests(TestCase):
         pos.type = "changed_ballot_position"
         pos.doc = draft
         pos.rev = draft.rev
-        pos.ad = pos.by = Person.objects.get(user__username="ad")
+        pos.pos_by = pos.by = Person.objects.get(user__username="ad")
         pos.save()
 
         r = self.client.get(urlreverse("ietf.iesg.views.discusses"))
         self.assertEqual(r.status_code, 200)
 
         self.assertContains(r, draft.name)
-        self.assertContains(r, pos.ad.plain_name())
+        self.assertContains(r, pos.pos_by.plain_name())
 
     def test_milestones_needing_review(self):
         draft = WgDraftFactory()
