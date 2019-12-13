@@ -180,15 +180,10 @@ class IssueIRSGBallotTests(TestCase):
         # Press the No button - expect nothing but a redirect back to the draft's main page
         r = self.client.post(url,dict(irsg_button="No"))
         self.assertEqual(r.status_code, 302)
-        # PEY: Insert assertion about the redirect URL
 
         # Press the Yes button
         r = self.client.post(url,dict(irsg_button="Yes", duedate="2038-01-19"))
         self.assertEqual(r.status_code, 302)
-        # PEY: Check on whether the ballot is reflected in the BallotDocEvents table
-        # Can't get ballot_type to work in the filter below, so commented out for now
-        # ballot_type = BallotType.objects.get(doc_type=rg_draft.type,slug='irsg-approve')
-        # debug.show("ballot_type")
         ballot_created = list(BallotDocEvent.objects.filter(doc=rg_draft1,
                                                 type="created_ballot"))
         self.assertNotEqual(len(ballot_created), 0)
@@ -392,12 +387,9 @@ class BaseManipulationTests():
 
     def test_view_outstanding_ballots(self):
         draft = RgDraftFactory()
-        # PEY: Commented out RJS' following line.,  Will need this in the future when irsg_ballot_status changes to take a ballot not a doc
-        # ballot = IRSGBallotDocEventFactory(doc=draft)
         IRSGBallotDocEventFactory(doc=draft)
         url = urlreverse('ietf.doc.views_ballot.irsg_ballot_status')
 
-        login_testing_unauthorized(self, self.username, url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertIn(draft.name, unicontent(r))
@@ -439,8 +431,6 @@ class IRSGMemberTests(TestCase):
 
     def test_cant_close_irsg_ballot(self):
         draft = RgDraftFactory()
-        # PEY: Commented out RJS' following line.  Will need this in the future when close_irsg_ballot changes to taking a ballot not a doc
-        # ballot = IRSGBallotDocEventFactory(doc=draft)
         IRSGBallotDocEventFactory(doc=draft)
         url = urlreverse('ietf.doc.views_ballot.close_irsg_ballot', kwargs=dict(name=draft.name))
 

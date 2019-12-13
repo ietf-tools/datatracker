@@ -83,12 +83,9 @@ from ietf.utils.text import maybe_split
 
 
 def render_document_top(request, doc, tab, name):
-    # PEY: Figuring out what tab value is
     tabs = []
     tabs.append(("Status", "status", urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=name)), True, None))
 
-    # ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
-    # ballot_type = BallotType.objects.get(doc_type=doc.type, slug="irsg-approve")
     iesg_ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug='approve')
     irsg_ballot = doc.latest_event(BallotDocEvent, type="created_ballot",ballot_type__slug='irsg-approve')
 
@@ -504,7 +501,6 @@ def document_main(request, name, rev=None):
 
         ballot_summary = None
         if doc.get_state_slug() in ("intrev", "iesgrev"):
-            # PEY: Need to adjust this so that I check draft-stream-irtf state as well and generate an irsg_ballot_summary as needed...
             active_ballot = doc.active_ballot()
             if active_ballot:
                 ballot_summary = needed_ballot_positions(doc, list(active_ballot.active_balloteer_positions().values()))
@@ -548,7 +544,6 @@ def document_main(request, name, rev=None):
             content = markup_txt.markup(content)
 
         ballot_summary = None
-        # PEY: Need to work in irsg_ballot_summary here as well
         if doc.get_state_slug() in ("iesgeval") and doc.active_ballot():
             ballot_summary = needed_ballot_positions(doc, list(doc.active_ballot().active_balloteer_positions().values()))
 
@@ -576,7 +571,6 @@ def document_main(request, name, rev=None):
             content = doc.text_or_error() # pyflakes:ignore
 
         ballot_summary = None
-        # PEY: work in irsg_ballot_summary here too
         if doc.get_state_slug() in ("iesgeval"):
             ballot_summary = needed_ballot_positions(doc, list(doc.active_ballot().active_balloteer_positions().values()))
      
@@ -1032,7 +1026,6 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
         else:
             position_groups.append(g)
 
-    # PEY: Need to integrate irsg_needed_ballot_positions here as well.
     if (ballot.ballot_type.slug == "irsg-approve"):
         summary = irsg_needed_ballot_positions(doc, [p for p in positions if not p.old_pos_by])
     else:
@@ -1068,8 +1061,7 @@ def document_ballot(request, name, ballot_id=None):
         if all_ballots:
             ballot = all_ballots[-1]
         else:
-            # PEY: What should I do if I somehow got here without any ballots existing?  Can that happen?  Passing for now.
-            pass
+            raise Http404("Ballot not found for: %s" % name)
         ballot_id = ballot.id
     else:
         ballot_id = int(ballot_id)
@@ -1079,8 +1071,7 @@ def document_ballot(request, name, ballot_id=None):
                 break
 
     if not ballot_id or not ballot:
-        # PEY: Something bad happened.  How do I gracefully bail out?
-        pass
+        raise Http404("Ballot not found for: %s" % name)
 
     if ballot.ballot_type.slug == "approve":
         ballot_tab = "ballot"

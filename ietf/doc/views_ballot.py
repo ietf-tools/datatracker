@@ -213,7 +213,6 @@ def edit_position(request, name, ballot_id):
 
     if request.method == 'POST':
         old_pos = None
-        # PEY: if not has_role(request.user, "Secretariat") and not pos_by.role_set.filter(name="ad", group__type="area", group__state="active"):
         if not has_role(request.user, "Secretariat") and not can_ballot(request.user, doc):
             # prevent pre-ADs from voting
             return HttpResponseForbidden("Must be a proper Area Director in an active area or IRSG Member to cast ballot")
@@ -327,7 +326,6 @@ def build_position_email(pos_by, doc, pos):
                                  pos=pos.pos,
                                  blocking_name=blocking_name,
                                  settings=settings))
-    # PEY: This doesn't work properly for IRSG members, since they don't have the "ad" role.  It still manages to get an address so it doesn't have to be fixed as a first priority.
     frm = pos_by.role_email("ad").formatted_email()
 
     if doc.stream_id == "irtf":
@@ -1090,13 +1088,11 @@ def issue_irsg_ballot(request, name):
             if (duedate == None or duedate==""):
                 duedate = str(fillerdate)
             e.duedate = datetime.datetime.strptime(duedate, '%Y-%m-%d')
-            # PEY: What's the best thing to do for "unreasonable" dates?
             e.type = "created_ballot"
             e.desc = "Created IRSG Ballot"
             ballot_type = BallotType.objects.get(doc_type=doc.type, slug="irsg-approve")
             e.ballot_type = ballot_type
             e.save()
-            # PEY: This is probably not enough state setting/cleanup.  I should review the IESG version more to see what happens.
             new_state = doc.get_state()
             prev_tags = []
             new_tags = []
@@ -1121,7 +1117,7 @@ def issue_irsg_ballot(request, name):
     else:
         templ = 'doc/ballot/irsg_ballot_approve.html'
 
-        question = "Are you sure you really want to issue a ballot for " + name + "?"
+        question = "Confirm issuing a ballot for " + name + "?"
         return render(request, templ, dict(doc=doc,
                                            question=question, fillerdate=fillerdate))
 
@@ -1136,43 +1132,16 @@ def close_irsg_ballot(request, name):
     if request.method == 'POST':
         button = request.POST.__getitem__("irsg_button")
         if button == 'Yes':
-            e = BallotDocEvent(doc=doc, rev=doc.rev, by=request.user.person)
-            e.type = "closed_ballot"
-            e.desc = "Closed IRSG Ballot"
-            ballot_type = BallotType.objects.get(doc_type=doc.type, slug="irsg-approve")
-            e.ballot_type = ballot_type
-            e.save()
-            # PEY: This is probably not enough state setting/cleanup.  I should review the IESG version more to see what happens.
-            new_state = doc.get_state()
-            prev_tags = []
-            new_tags = []
-
-            # PEY: Need to determine what the correct state to transition to is.
-            if doc.type_id == 'draft':
-                new_state = State.objects.get(used=True, type="draft-stream-irtf", slug='active')
-
-            prev_state = doc.get_state(new_state.type_id if new_state else None)
-
-            doc.set_state(new_state)
-            doc.tags.remove(*prev_tags)
-
-            events = []
-            state_change_event = add_state_change_event(doc, by, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
-            if state_change_event:
-                events.append(state_change_event)
-
-            if events:
-                doc.save_with_history(events)
+            close_ballot(doc, by, "irsg-approve")
 
         return HttpResponseRedirect(doc.get_absolute_url())
 
     templ = 'doc/ballot/irsg_ballot_close.html'
 
-    question = "Are you sure you really want to close the ballot for " + name + "?"
+    question = "Confirm closing the ballot for " + name + "?"
     return render(request, templ, dict(doc=doc,
                                        question=question))
 
-@role_required('Secretariat', 'IRTF Chair')
 def irsg_ballot_status(request):
     possible_docs = Document.objects.filter(docevent__ballotdocevent__irsgballotdocevent__isnull=False)
     docs = []
@@ -1181,7 +1150,6 @@ def irsg_ballot_status(request):
             ballot = doc.active_ballot()
             if ballot:
                 doc.ballot = ballot
-                # PEY: Need to figure how to work the duedate into status_columns.html
                 # PEY: Also, how is it I can add duedate to doc just like that?
                 doc.duedate=datetime.datetime.strftime(ballot.irsgballotdocevent.duedate, '%Y-%m-%d')
 
