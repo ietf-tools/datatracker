@@ -44,7 +44,10 @@ class PlainParser(FileParser):
         if self.parsed_info.charset in ['us-ascii', 'utf-8']:
             while limit:
                 limit -= 1
-                line = self.fd.readline().decode(self.parsed_info.charset)
+                try:
+                    line = self.fd.readline().decode(self.parsed_info.charset)
+                except UnicodeDecodeError:
+                    return
                 match = draftre.search(line)
                 if not match:
                     continue
