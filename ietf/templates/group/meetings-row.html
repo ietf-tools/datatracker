@@ -22,13 +22,13 @@
 	   {% endifchanged %}
 	 </td>
          <td class="text-right">
-           {% if s.name %}{{ s.name }}<br>{% endif %}
-           {% if s.status.slug == "sched" %}
-	   {{s.time|date:"D"}} &nbsp; {{s.time|date:"Y-m-d"}}
+          {% if s.name %}{{ s.name }}<br>{% endif %}
+          {% if s.current_status == "sched" %}
+	     {{s.time|date:"D"}} &nbsp; {{s.time|date:"Y-m-d"}}
           {% else %}
-            {{s.status}}
+             {{s.current_status_name}}
           {% endif %}
-          {% if show_request and s.meeting.type.slug == 'ietf' %}
+          {% if show_request and s.meeting.type_id == 'ietf' %}
              {% if can_edit %}
                <br>
                <a class="btn btn-default btn-xs" href="{% url 'ietf.secr.sreq.views.view' num=s.meeting.number acronym=s.group.acronym %}">Edit Session Request</a>
@@ -37,7 +37,7 @@
          </td>
 	 <td class="text-left padded-left ">
 	   {% if show_ical %}
-	     {% if s.meeting.type.slug == 'ietf' %}
+             {% if s.meeting.type_id == 'ietf' %}
 	     {{s.time|date:"H:i"}}
 	     &nbsp;<a href="{% url 'ietf.meeting.views.ical_agenda' num=s.meeting.number session_id=s.id %}"><span class="fa fa-calendar"></span></a>
 	     {% else %}

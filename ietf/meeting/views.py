@@ -8,6 +8,7 @@ import csv
 import datetime
 import glob
 import io
+import itertools
 import json
 import os
 import pytz
@@ -49,34 +50,36 @@ from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocAlias
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials
+from ietf.person.models import Person
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
+from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission, SessionStatusName, SchedulingEvent, SchedTimeSessAssignment
 from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
 from ietf.meeting.helpers import get_modified_from_assignments
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
-from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, get_ietf_meeting
+from ietf.meeting.helpers import get_meeting, get_schedule, schedule_permissions, get_ietf_meeting
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
 from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
 from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
 from ietf.meeting.helpers import can_edit_interim_request
 from ietf.meeting.helpers import can_request_interim_meeting, get_announcement_initial
-from ietf.meeting.helpers import sessions_post_save, is_meeting_approved
+from ietf.meeting.helpers import sessions_post_save, is_interim_meeting_approved
 from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_announcement_request
-from ietf.meeting.utils import finalize, sort_accept_tuple, condition_slide_order
-from ietf.message.utils import infer_message
+from ietf.meeting.utils import ( add_event_info_to_session_qs, condition_slide_order,
+    current_session_status, data_for_meetings_overview, finalize, infer_message,
+    session_requested_by, session_time_for_sorting, sort_accept_tuple, )
 from ietf.secr.proceedings.utils import handle_upload_file
-from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
-    create_recording)
+from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process,
+    import_audio_files, create_recording)
 from ietf.utils.decorators import require_api_key
 from ietf.utils.log import assertion
 from ietf.utils.mail import send_mail_message, send_mail_text
-from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
+from ietf.utils.pipe import pipe
 from ietf.utils.text import xslugify
 from ietf.utils.validators import get_mime_type
 
@@ -84,7 +87,7 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
     InterimCancelForm, InterimSessionInlineFormSet, FileUploadForm, RequestMinutesForm,)
 
 
-def get_menu_entries(request):
+def get_interim_menu_entries(request):
     '''Setup menu entries for interim meeting view tabs'''
     entries = []
     if has_role(request.user, ('Area Director','Secretariat','IRTF Chair','WG Chair', 'RG Chair')):
@@ -128,22 +131,21 @@ def materials(request, num=None):
 
     past_cutoff_date = datetime.date.today() > meeting.get_submission_correction_date()
 
-    #sessions  = Session.objects.filter(meeting__number=meeting.number, timeslot__isnull=False)
     schedule = get_schedule(meeting, None)
-    sessions  = ( Session.objects
-        .filter(meeting__number=meeting.number, timeslotassignments__schedule=schedule)
-        .select_related('meeting__agenda','status','group__state','group__parent', )
-    )
-    for session in sessions:
-        session.past_cutoff_date = past_cutoff_date
+
+    sessions  = add_event_info_to_session_qs(Session.objects.filter(
+        meeting__number=meeting.number,
+        timeslotassignments__schedule=schedule
+    ).distinct().select_related('meeting__schedule', 'group__state', 'group__parent'))
+
     plenaries = sessions.filter(name__icontains='plenary')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
-    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['session', 'other', ])
+    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other', ])
     iab       = sessions.filter(group__parent__acronym = 'iab')
-    other     = sessions.filter(type_id__in=['session'], group__type__features__has_meetings = True)
-    for ss in [plenaries, ietf, irtf, training, iab]:
-        other = other.exclude(pk__in=[s.pk for s in ss])
+
+    session_pks = [s.pk for ss in [plenaries, ietf, irtf, training, iab] for s in ss]
+    other     = sessions.filter(type__in=['regular'], group__type__features__has_meetings=True).exclude(pk__in=session_pks)
 
     for topic in [plenaries, ietf, training, irtf, iab]:
         for event in topic:
@@ -151,6 +153,10 @@ def materials(request, num=None):
             for slide_event in event.all_meeting_slides(): date_list.append(slide_event.time)
             for agenda_event in event.all_meeting_agendas(): date_list.append(agenda_event.time)
             if date_list: setattr(event, 'last_update', sorted(date_list, reverse=True)[0])
+
+    for session_list in [plenaries, ietf, training, irtf, iab, other]:
+        for session in session_list:
+            session.past_cutoff_date = past_cutoff_date
             
     return render(request, "meeting/materials.html", {
         'meeting': meeting,
@@ -243,7 +249,7 @@ class SaveAsForm(forms.Form):
     savename = forms.CharField(max_length=16)
 
 @role_required('Area Director','Secretariat')
-def agenda_create(request, num=None, owner=None, name=None):
+def schedule_create(request, num=None, owner=None, name=None):
     meeting  = get_meeting(num)
     person   = get_person_by_email(owner)
     schedule = get_schedule_by_name(meeting, person, name)
@@ -251,29 +257,29 @@ def agenda_create(request, num=None, owner=None, name=None):
     if schedule is None:
         # here we have to return some ajax to display an error.
         messages.error("Error: No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name)) # pylint: disable=no-value-for-parameter
-        return redirect(edit_agenda, num=num, owner=owner, name=name)
+        return redirect(edit_schedule, num=num, owner=owner, name=name)
 
     # authorization was enforced by the @group_require decorator above.
 
     saveasform = SaveAsForm(request.POST)
     if not saveasform.is_valid():
         messages.info(request, "This name is not valid. Please choose another one.")
-        return redirect(edit_agenda, num=num, owner=owner, name=name)
+        return redirect(edit_schedule, num=num, owner=owner, name=name)
 
     savedname = saveasform.cleaned_data['savename']
 
     if not ascii_alphanumeric(savedname):
         messages.info(request, "This name contains illegal characters. Please choose another one.")
-        return redirect(edit_agenda, num=num, owner=owner, name=name)
+        return redirect(edit_schedule, num=num, owner=owner, name=name)
 
     # create the new schedule, and copy the assignments
     try:
         sched = meeting.schedule_set.get(name=savedname, owner=request.user.person)
         if sched:
-            return redirect(edit_agenda, num=meeting.number, owner=sched.owner_email(), name=sched.name)
+            return redirect(edit_schedule, num=meeting.number, owner=sched.owner_email(), name=sched.name)
         else:
-            messages.info(request, "Agenda creation failed. Please try again.")
-            return redirect(edit_agenda, num=num, owner=owner, name=name)
+            messages.info(request, "Schedule creation failed. Please try again.")
+            return redirect(edit_schedule, num=num, owner=owner, name=name)
 
     except Schedule.DoesNotExist:
         pass
@@ -312,7 +318,7 @@ def agenda_create(request, num=None, owner=None, name=None):
 
 
     # now redirect to this new schedule.
-    return redirect(edit_agenda, meeting.number, newschedule.owner_email(), newschedule.name)
+    return redirect(edit_schedule, meeting.number, newschedule.owner_email(), newschedule.name)
 
 
 @role_required('Secretariat')
@@ -343,16 +349,16 @@ def edit_timeslots(request, num=None):
 #@role_required('Area Director','Secretariat')
 # disable the above security for now, check it below.
 @ensure_csrf_cookie
-def edit_agenda(request, num=None, owner=None, name=None):
+def edit_schedule(request, num=None, owner=None, name=None):
 
     if request.method == 'POST':
-        return agenda_create(request, num, owner, name)
+        return schedule_create(request, num, owner, name)
 
     user     = request.user
     meeting  = get_meeting(num)
     person   = get_person_by_email(owner)
     if name is None:
-        schedule = meeting.agenda
+        schedule = meeting.schedule
     else:
         schedule = get_schedule_by_name(meeting, person, name)
     if schedule is None:
@@ -361,15 +367,15 @@ def edit_agenda(request, num=None, owner=None, name=None):
     meeting_base_url = request.build_absolute_uri(meeting.base_url())
     site_base_url = request.build_absolute_uri('/')[:-1] # skip the trailing slash
 
-    rooms = meeting.room_set.filter(session_types__slug='session').distinct().order_by("capacity")
+    rooms = meeting.room_set.filter(session_types__slug='regular').distinct().order_by("capacity")
     saveas = SaveAsForm()
-    saveasurl=reverse(edit_agenda,
+    saveasurl=reverse(edit_schedule,
                       args=[meeting.number, schedule.owner_email(), schedule.name])
 
-    can_see, can_edit,secretariat = agenda_permissions(meeting, schedule, user)
+    can_see, can_edit,secretariat = schedule_permissions(meeting, schedule, user)
 
     if not can_see:
-        return render(request, "meeting/private_agenda.html",
+        return render(request, "meeting/private_schedule.html",
                                              {"schedule":schedule,
                                               "meeting": meeting,
                                               "meeting_base_url":meeting_base_url,
@@ -412,32 +418,32 @@ def edit_agenda(request, num=None, owner=None, name=None):
                                       })
 
 ##############################################################################
-#  show the properties associated with an agenda (visible, public)
+#  show the properties associated with a schedule (visible, public)
 #
-AgendaPropertiesForm = modelform_factory(Schedule, fields=('name','visible', 'public'))
+SchedulePropertiesForm = modelform_factory(Schedule, fields=('name','visible', 'public'))
 
 # The meeing urls.py won't allow empy num, owmer, or name values
 
 @role_required('Area Director','Secretariat')
-def edit_agenda_properties(request, num=None, owner=None, name=None):
+def edit_schedule_properties(request, num=None, owner=None, name=None):
     meeting  = get_meeting(num)
     person   = get_person_by_email(owner)
     schedule = get_schedule_by_name(meeting, person, name)
     if schedule is None:
         raise Http404("No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
 
-    cansee, canedit, secretariat = agenda_permissions(meeting, schedule, request.user)
+    cansee, canedit, secretariat = schedule_permissions(meeting, schedule, request.user)
 
     if not (canedit or has_role(request.user,'Secretariat')):
-        return HttpResponseForbidden("You may not edit this agenda")
+        return HttpResponseForbidden("You may not edit this schedule")
     else:
         if request.method == 'POST':
-            form = AgendaPropertiesForm(instance=schedule,data=request.POST)
+            form = SchedulePropertiesForm(instance=schedule,data=request.POST)
             if form.is_valid():
                form.save()
-               return HttpResponseRedirect(reverse('ietf.meeting.views.list_agendas',kwargs={'num': num}))
+               return HttpResponseRedirect(reverse('ietf.meeting.views.list_schedules',kwargs={'num': num}))
         else: 
-            form = AgendaPropertiesForm(instance=schedule)
+            form = SchedulePropertiesForm(instance=schedule)
         return render(request, "meeting/properties_edit.html",
                                              {"schedule":schedule,
                                               "form":form,
@@ -445,11 +451,11 @@ def edit_agenda_properties(request, num=None, owner=None, name=None):
                                           })
 
 ##############################################################################
-# show list of agendas.
+# show list of schedules.
 #
 
 @role_required('Area Director','Secretariat')
-def list_agendas(request, num=None ):
+def list_schedules(request, num=None ):
 
     meeting = get_meeting(num)
     user = request.user
@@ -462,7 +468,7 @@ def list_agendas(request, num=None ):
 
     schedules = sorted(list(schedules),key=lambda x:not x.is_official)
 
-    return render(request, "meeting/agenda_list.html",
+    return render(request, "meeting/schedule_list.html",
                                          {"meeting":   meeting,
                                           "schedules": schedules,
                                           })
@@ -483,7 +489,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     assert num is None or num.isdigit()
 
     meeting = get_ietf_meeting(num)
-    if not meeting or (meeting.number.isdigit() and int(meeting.number) <= 64 and (not meeting.agenda or not meeting.agenda.assignments.exists())):
+    if not meeting or (meeting.number.isdigit() and int(meeting.number) <= 64 and (not meeting.schedule or not meeting.schedule.assignments.exists())):
         if ext == '.html' or (meeting and meeting.number.isdigit() and 0 < int(meeting.number) <= 64):
             return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
         else:
@@ -604,7 +610,7 @@ def agenda_csv(schedule, filtered_assignments):
             row.append(item.session.pk)
             row.append(agenda_field(item))
             row.append(slides_field(item))
-        elif item.timeslot.type_id == "session":
+        elif item.timeslot.type_id == 'regular':
             row.append(item.timeslot.name)
             row.append(item.timeslot.location.name if item.timeslot.location else "")
             row.append(item.session.historic_group.historic_parent.acronym.upper() if item.session.historic_group.historic_parent else "")
@@ -818,7 +824,7 @@ def week_view(request, num=None, name=None, owner=None):
             if a.session and a.session.agenda():
                 item["agenda"] = a.session.agenda().href()
 
-            if a.session.status_id=='canceled':
+            if a.session.current_status == 'canceled':
                 item["name"] = "CANCELLED - " + item["name"]
 
         items.append(item)
@@ -886,6 +892,12 @@ def room_view(request, num=None, name=None, owner=None):
     template = "meeting/room-view.html"
     return render(request, template,{"meeting":meeting,"schedule":schedule,"unavailable":unavailable,"assignments":assignments,"rooms":rooms,"days":days})
 
+def ical_session_status(session_with_current_status):
+    if session_with_current_status == 'canceled':
+        return "CANCELLED"
+    else:
+        return "CONFIRMED"
+
 def ical_agenda(request, num=None, name=None, acronym=None, session_id=None):
     meeting = get_meeting(num, type_in=None)
     schedule = get_schedule(meeting, name)
@@ -932,6 +944,10 @@ def ical_agenda(request, num=None, name=None, acronym=None, session_id=None):
     elif session_id:
         assignments = [ a for a in assignments if a.session_id == int(session_id) ]
 
+    for a in assignments:
+        if a.session:
+            a.session.ical_status = ical_session_status(a.session)
+
     return render(request, "meeting/agenda.ics", {
         "schedule": schedule,
         "assignments": assignments,
@@ -945,7 +961,7 @@ def json_agenda(request, num=None ):
     sessions = []
     locations = set()
     parent_acronyms = set()
-    assignments = meeting.agenda.assignments.exclude(session__type__in=['lead','offagenda','break','reg'])
+    assignments = meeting.schedule.assignments.exclude(session__type__in=['lead','offagenda','break','reg'])
     # Update the assignments with historic information, i.e., valid at the
     # time of the meeting
     assignments = assignments.prefetch_related(
@@ -1010,7 +1026,7 @@ def json_agenda(request, num=None ):
             rev_docevent = doc.latest_event(NewRevisionDocEvent,'new_revision')
             modified = max(modified, (rev_docevent and rev_docevent.time) or modified)
         sessdict['modified'] = modified
-        sessdict['status'] = asgn.session.status_id
+        sessdict['status'] = asgn.session.current_status
         sessions.append(sessdict)
 
     rooms = []
@@ -1063,7 +1079,27 @@ def json_agenda(request, num=None ):
 
 def meeting_requests(request, num=None):
     meeting = get_meeting(num)
-    sessions = Session.objects.filter(meeting__number=meeting.number, type__slug='session', group__parent__isnull = False).exclude(requested_by=0).order_by("group__parent__acronym","status__slug","group__acronym").prefetch_related("group","group__ad_role__person","requested_by")
+    sessions = add_event_info_to_session_qs(
+        Session.objects.filter(
+            meeting__number=meeting.number,
+            type__slug='regular',
+            group__parent__isnull=False
+        ),
+        requested_by=True,
+    ).exclude(
+        requested_by=0
+    ).order_by(
+        "group__parent__acronym", "current_status", "group__acronym"
+    ).prefetch_related(
+        "group","group__ad_role__person"
+    )
+
+    status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
+    session_requesters = {p.pk: p for p in Person.objects.filter(pk__in=[s.requested_by for s in sessions if s.requested_by is not None])}
+
+    for s in sessions:
+        s.current_status_name = status_names.get(s.current_status, s.current_status)
+        s.requested_by_person = session_requesters.get(s.requested_by)
 
     groups_not_meeting = Group.objects.filter(state='Active',type__in=['wg','rg','ag','bof']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym").prefetch_related("parent")
 
@@ -1073,41 +1109,37 @@ def meeting_requests(request, num=None):
 
 def get_sessions(num, acronym):
     meeting = get_meeting(num=num,type_in=None)
-    sessions = Session.objects.filter(meeting=meeting,group__acronym=acronym,type__in=['session','plenary','other'])
+    sessions = Session.objects.filter(meeting=meeting,group__acronym=acronym,type__in=['regular','plenary','other'])
 
     if not sessions:
-        sessions = Session.objects.filter(meeting=meeting,short=acronym,type__in=['session','plenary','other']) 
+        sessions = Session.objects.filter(meeting=meeting,short=acronym,type__in=['regular','plenary','other']) 
 
-    def sort_key(session):
-        official_sessions = session.timeslotassignments.filter(schedule=session.meeting.agenda)
-        if official_sessions:
-            return official_sessions.first().timeslot.time
-        else:
-            return session.requested
+    sessions = add_event_info_to_session_qs(sessions)
 
-    return sorted(sessions,key=sort_key)
+    return sorted(sessions, key=lambda s: session_time_for_sorting(s, use_meeting_date=False))
 
-def session_details(request, num, acronym ):
+def session_details(request, num, acronym):
     meeting = get_meeting(num=num,type_in=None)
     sessions = get_sessions(num, acronym)
 
     if not sessions:
         raise Http404
 
+    status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
     for session in sessions:
 
         session.type_counter = Counter()
-        ss = session.timeslotassignments.filter(schedule=meeting.agenda).order_by('timeslot__time')
+        ss = session.timeslotassignments.filter(schedule=meeting.schedule).order_by('timeslot__time')
         if ss:
             session.time = ', '.join(x.timeslot.time.strftime("%A %b-%d-%Y %H%M") for x in ss) 
-            if session.status.slug == 'canceled':
+            if session.current_status == 'canceled':
                 session.time += " CANCELLED"
         elif session.meeting.type_id=='interim':
             session.time = session.meeting.date.strftime("%A %b-%d-%Y")
-            if session.status.slug == 'canceled':
+            if session.current_status == 'canceled':
                 session.time += " CANCELLED"
         else:
-            session.time = session.status.name
+            session.time = status_names.get(session.current_status, session.current_status)
 
         session.filtered_artifacts = list(session.sessionpresentation_set.filter(document__type__slug__in=['agenda','minutes','bluesheets']))
         session.filtered_artifacts.sort(key=lambda d:['agenda','minutes','bluesheets'].index(d.document.type.slug))
@@ -1118,12 +1150,12 @@ def session_details(request, num, acronym ):
             qs = [p for p in qs if p.document.get_state_slug(p.document.type_id)!='deleted']
             session.type_counter.update([p.document.type.slug for p in qs])
 
-    # we somewhat arbitrarily use the group of the last session wet get from
+    # we somewhat arbitrarily use the group of the last session we get from
     # get_sessions() above when checking can_manage_session_materials()
     can_manage = can_manage_session_materials(request.user, session.group, session)
 
-    scheduled_sessions=[s for s in sessions if s.status_id=='sched']
-    unscheduled_sessions = [s for s in sessions if s.status_id!='sched']
+    scheduled_sessions = [s for s in sessions if s.current_status == 'sched']
+    unscheduled_sessions = [s for s in sessions if s.current_status != 'sched']
 
     pending_suggestions = None
     if request.user.is_authenticated:
@@ -1289,7 +1321,7 @@ def upload_session_minutes(request, session_id, num):
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'session' else False
+    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
@@ -1300,7 +1332,7 @@ def upload_session_minutes(request, session_id, num):
         if form.is_valid():
             file = request.FILES['file']
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == 'session'
+            apply_to_all = session.type_id == 'regular'
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
             if minutes_sp:
@@ -1389,7 +1421,7 @@ def upload_session_agenda(request, session_id, num):
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'session' else False
+    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
@@ -1400,7 +1432,7 @@ def upload_session_agenda(request, session_id, num):
         if form.is_valid():
             file = request.FILES['file']
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == 'session'
+            apply_to_all = session.type_id == 'regular'
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
             if agenda_sp:
@@ -1462,7 +1494,7 @@ def upload_session_agenda(request, session_id, num):
                 doc.save_with_history([e])
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
-        form = UploadAgendaForm(show_apply_to_all_checkbox, initial={'apply_to_all':session.type_id=='session'})
+        form = UploadAgendaForm(show_apply_to_all_checkbox, initial={'apply_to_all':session.type_id=='regular'})
 
     return render(request, "meeting/upload_session_agenda.html", 
                   {'session': session,
@@ -1500,7 +1532,7 @@ def upload_session_slides(request, session_id, num, name):
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'session' else False
+    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
@@ -1517,7 +1549,7 @@ def upload_session_slides(request, session_id, num, name):
         if form.is_valid():
             file = request.FILES['file']
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == 'session'
+            apply_to_all = session.type_id == 'regular'
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
             if slides_sp:
@@ -1594,7 +1626,7 @@ def propose_session_slides(request, session_id, num):
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'session' else False
+    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
@@ -1604,7 +1636,7 @@ def propose_session_slides(request, session_id, num):
         if form.is_valid():
             file = request.FILES['file']
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == 'session'
+            apply_to_all = session.type_id == 'regular'
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
             title = form.cleaned_data['title']
@@ -1795,9 +1827,9 @@ def make_schedule_official(request, num, owner, name):
             schedule.public = True
             schedule.visible = True
             schedule.save()
-        meeting.agenda = schedule
+        meeting.schedule = schedule
         meeting.save()
-        return HttpResponseRedirect(reverse('ietf.meeting.views.list_agendas',kwargs={'num':num}))
+        return HttpResponseRedirect(reverse('ietf.meeting.views.list_schedules',kwargs={'num':num}))
 
     if not schedule.public:
         messages.warning(request,"This schedule will be made public as it is made official.")
@@ -1822,15 +1854,15 @@ def delete_schedule(request, num, owner, name):
     if schedule.name=='Empty-Schedule':
         return HttpResponseForbidden('You may not delete the default empty schedule')
 
-    if schedule == meeting.agenda:
-        return HttpResponseForbidden('You may not delete the official agenda for %s'%meeting)
+    if schedule == meeting.schedule:
+        return HttpResponseForbidden('You may not delete the official schedule for %s'%meeting)
 
     if not ( has_role(request.user, 'Secretariat') or person.user == request.user ):
         return HttpResponseForbidden("You may not delete other user's schedules")
 
     if request.method == 'POST':
         schedule.delete()
-        return HttpResponseRedirect(reverse('ietf.meeting.views.list_agendas',kwargs={'num':num}))
+        return HttpResponseRedirect(reverse('ietf.meeting.views.list_schedules',kwargs={'num':num}))
 
     return render(request, "meeting/delete_schedule.html",
                   { 'schedule' : schedule,
@@ -1881,8 +1913,8 @@ def ajax_get_utc(request):
 @role_required('Secretariat',)
 def interim_announce(request):
     '''View which shows interim meeting requests awaiting announcement'''
-    meetings = Meeting.objects.filter(type='interim', session__status='scheda').distinct()
-    menu_entries = get_menu_entries(request)
+    meetings, _ = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='scheda')
+    menu_entries = get_interim_menu_entries(request)
     selected_menu_entry = 'announce'
 
     return render(request, "meeting/interim_announce.html", {
@@ -1903,7 +1935,12 @@ def interim_send_announcement(request, number):
         if form.is_valid():
             message = form.save(user=request.user)
             message.related_groups.add(group)
-            meeting.session_set.update(status_id='sched')
+            for session in meeting.session_set.all():
+                SchedulingEvent.objects.create(
+                    session=session,
+                    status=SessionStatusName.objects.get(slug='sched'),
+                    by=request.user.person,
+                )
             send_mail_message(request, message)
             messages.success(request, 'Interim meeting announcement sent')
             return redirect(interim_announce)
@@ -1923,7 +1960,12 @@ def interim_skip_announcement(request, number):
     meeting = get_object_or_404(Meeting, number=number)
 
     if request.method == 'POST':
-        meeting.session_set.update(status_id='sched')
+        for session in meeting.session_set.all():
+            SchedulingEvent.objects.create(
+                session=session,
+                status=SessionStatusName.objects.get(slug='sched'),
+                by=request.user.person,
+            )
         messages.success(request, 'Interim meeting scheduled.  No announcement sent.')
         return redirect(interim_announce)
 
@@ -1934,12 +1976,12 @@ def interim_skip_announcement(request, number):
 @role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
 def interim_pending(request):
     '''View which shows interim meeting requests pending approval'''
-    meetings = Meeting.objects.filter(type='interim', session__status='apprw').distinct().order_by('date')
-    menu_entries = get_menu_entries(request)
+    meetings, group_parents = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='apprw')
+
+    menu_entries = get_interim_menu_entries(request)
     selected_menu_entry = 'pending'
 
-    meetings = [m for m in meetings if can_view_interim_request(
-        m, request.user)]
+    meetings = [m for m in meetings if can_view_interim_request(m, request.user)]
     for meeting in meetings:
         if can_approve_interim_request(meeting, request.user):
             meeting.can_approve = True
@@ -1982,7 +2024,7 @@ def interim_request(request):
                 formset = SessionFormset(instance=meeting, data=request.POST)
                 formset.is_valid()
                 formset.save()
-                sessions_post_save(formset)
+                sessions_post_save(request, formset)
 
                 if not (is_approved or is_virtual):
                     send_interim_approval_request(meetings=[meeting])
@@ -2013,7 +2055,7 @@ def interim_request(request):
                     session.meeting = meeting
                     session.save()
                     series.append(meeting)
-                    sessions_post_save([session_form])
+                    sessions_post_save(request, [session_form])
 
                 if not (is_approved or is_virtual):
                     send_interim_approval_request(meetings=series)
@@ -2038,7 +2080,9 @@ def interim_request(request):
 def interim_request_cancel(request, number):
     '''View for cancelling an interim meeting request'''
     meeting = get_object_or_404(Meeting, number=number)
-    group = meeting.session_set.first().group
+    first_session = meeting.session_set.first()
+    session_status = current_session_status(first_session)
+    group = first_session.group
     if not can_view_interim_request(meeting, request.user):
         return HttpResponseForbidden("You do not have permissions to cancel this meeting request")
 
@@ -2047,11 +2091,20 @@ def interim_request_cancel(request, number):
         if form.is_valid():
             if 'comments' in form.changed_data:
                 meeting.session_set.update(agenda_note=form.cleaned_data.get('comments'))
-            if meeting.session_set.first().status.slug == 'sched':
-                meeting.session_set.update(status_id='canceled')
+
+            was_scheduled = session_status.slug == 'sched'
+
+            result_status = SessionStatusName.objects.get(slug='canceled' if was_scheduled else 'canceledpa')
+            for session in meeting.session_set.all():
+                SchedulingEvent.objects.create(
+                    session=first_session,
+                    status=result_status,
+                    by=request.user.person,
+                )
+
+            if was_scheduled:
                 send_interim_cancellation_notice(meeting)
-            else:
-                meeting.session_set.update(status_id='canceledpa')
+
             messages.success(request, 'Interim meeting cancelled')
             return redirect(upcoming)
     else:
@@ -2059,7 +2112,9 @@ def interim_request_cancel(request, number):
 
     return render(request, "meeting/interim_request_cancel.html", {
         "form": form,
-        "meeting": meeting})
+        "meeting": meeting,
+        "session_status": session_status,
+    })
 
 
 @role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
@@ -2072,7 +2127,12 @@ def interim_request_details(request, number):
 
     if request.method == 'POST':
         if request.POST.get('approve') and can_approve_interim_request(meeting, request.user):
-            meeting.session_set.update(status_id='scheda')
+            for session in meeting.session_set.all():
+                SchedulingEvent.objects.create(
+                    session=session,
+                    status=SessionStatusName.objects.get(slug='scheda'),
+                    by=request.user.person,
+                )
             messages.success(request, 'Interim meeting approved')
             if has_role(request.user, 'Secretariat'):
                 return redirect(interim_send_announcement, number=number)
@@ -2080,13 +2140,23 @@ def interim_request_details(request, number):
                 send_interim_announcement_request(meeting)
                 return redirect(interim_pending)
         if request.POST.get('disapprove') and can_approve_interim_request(meeting, request.user):
-            meeting.session_set.update(status_id='disappr')
+            for session in meeting.session_set.all():
+                SchedulingEvent.objects.create(
+                    session=session,
+                    status=SessionStatusName.objects.get(slug='disappr'),
+                    by=request.user.person,
+                )
             messages.success(request, 'Interim meeting disapproved')
             return redirect(interim_pending)
+
+    first_session = sessions.first()
 
     return render(request, "meeting/interim_request_details.html", {
         "meeting": meeting,
         "sessions": sessions,
+        "group": first_session.group,
+        "requester": session_requested_by(first_session),
+        "session_status": current_session_status(first_session),
         "can_edit": can_edit,
         "can_approve": can_approve})
 
@@ -2109,7 +2179,7 @@ def interim_request_edit(request, number):
         form = InterimMeetingModelForm(request=request, instance=meeting,
                                        data=request.POST)
         group = Group.objects.get(pk=form.data['group'])
-        is_approved = is_meeting_approved(meeting)
+        is_approved = is_interim_meeting_approved(meeting)
 
         SessionFormset.form.__init__ = curry(
             InterimSessionModelForm.__init__,
@@ -2122,10 +2192,11 @@ def interim_request_edit(request, number):
         if form.is_valid() and formset.is_valid():
             meeting = form.save(date=get_earliest_session_date(formset))
             formset.save()
-            sessions_post_save(formset)
+            sessions_post_save(request, formset)
 
             message = 'Interim meeting request saved'
-            if (form.has_changed() or formset.has_changed()) and meeting.session_set.filter(status='sched'):
+            meeting_is_scheduled = add_event_info_to_session_qs(meeting.session_set).filter(current_status='sched').exists()
+            if (form.has_changed() or formset.has_changed()) and meeting_is_scheduled:
                 send_interim_change_notice(request, meeting)
                 message = message + ' and change announcement sent'
             messages.success(request, message)
@@ -2144,32 +2215,8 @@ def interim_request_edit(request, number):
 def past(request):
     '''List of past meetings'''
     today = datetime.datetime.today()
-    meetings = ( Meeting.objects.filter(date__lte=today)
-            .exclude(session__status__in=('apprw', 'scheda', 'canceledpa'))
-            .order_by('-date')
-            .select_related('type')
-            .prefetch_related('session_set__status','session_set__group',)
-        )
 
-    # extract groups hierarchy for display filter
-    seen = set()
-    groups = [m.session_set.first().group for m
-              in meetings.filter(type='interim')]
-    group_parents = [ Group.objects.get(acronym='ietf') ]
-    for g in groups:
-        if g.parent and g.parent.acronym not in seen:
-            group_parents.append(g.parent)
-            seen.add(g.parent.acronym)
-
-    seen = set()
-    for p in group_parents:
-        p.group_list = []
-        for g in groups:
-            if g.acronym not in seen and g.parent == p:
-                p.group_list.append(g)
-                seen.add(g.acronym)
-
-        p.group_list.sort(key=lambda g: g.acronym)
+    meetings, group_parents = data_for_meetings_overview(Meeting.objects.filter(date__lte=today).order_by('-date'))
 
     return render(request, 'meeting/past.html', {
                   'meetings': meetings,
@@ -2178,35 +2225,11 @@ def past(request):
 def upcoming(request):
     '''List of upcoming meetings'''
     today = datetime.datetime.today()
-    meetings = Meeting.objects.filter(date__gte=today).exclude(
-        session__status__in=('apprw', 'scheda', 'canceledpa')).order_by('date')
 
-    # extract groups hierarchy for display filter
-    seen = set()
-    groups = [m.session_set.first().group for m
-              in meetings.filter(type='interim')]
-    group_parents = []
-    for g in groups:
-        if g.parent.acronym not in seen:
-            group_parents.append(g.parent)
-            seen.add(g.parent.acronym)
-
-    seen = set()
-    for p in group_parents:
-        p.group_list = []
-        for g in groups:
-            if g.acronym not in seen and g.parent == p:
-                p.group_list.append(g)
-                seen.add(g.acronym)
-
-        p.group_list.sort(key=lambda g: g.acronym)
-
-    meetings = list(meetings)
-    for m in meetings:
-        m.end = m.date+datetime.timedelta(days=m.days)
+    meetings, group_parents = data_for_meetings_overview(Meeting.objects.filter(date__gte=today).order_by('date'))
 
     # add menu entries
-    menu_entries = get_menu_entries(request)
+    menu_entries = get_interim_menu_entries(request)
     selected_menu_entry = 'upcoming'
 
     # add menu actions
@@ -2229,14 +2252,17 @@ def upcoming_ical(request):
     '''Return Upcoming meetings in iCalendar file'''
     filters = request.GET.getlist('filters')
     today = datetime.datetime.today()
-    meetings = Meeting.objects.filter(date__gte=today).exclude(
-        session__status__in=('apprw', 'schedpa')).order_by('date')
 
-    assignments = []
-    for meeting in meetings:
-        items = meeting.agenda.assignments.order_by(
-            'session__type__slug', 'timeslot__time')
-        assignments.extend(items)
+    meetings, _ = data_for_meetings_overview(Meeting.objects.filter(date__gte=today).order_by('date'))
+
+    assignments = list(SchedTimeSessAssignment.objects.filter(
+        schedule__meeting__schedule=F('schedule'),
+        session__in=[s.pk for m in meetings for s in m.sessions]
+    ).order_by(
+        'schedule__meeting__date', 'session__type', 'timeslot__time'
+    ).select_related(
+        'session__group', 'session__group__parent', 'timeslot', 'schedule', 'schedule__meeting'
+    ).distinct())
 
     # apply filters
     if filters:
@@ -2246,6 +2272,14 @@ def upcoming_ical(request):
                                a.session.group.parent and a.session.group.parent.acronym in filters
                            )
                        ) ]
+
+    # we already collected sessions with current_status, so reuse those
+    sessions = {s.pk: s for m in meetings for s in m.sessions}
+    for a in assignments:
+        if a.session_id is not None:
+            a.session = sessions.get(a.session_id) or a.session
+            a.session.ical_status = ical_session_status(a.session.current_status)
+
     # gather vtimezones
     vtimezones = set()
     for meeting in meetings:
@@ -2266,7 +2300,7 @@ def upcoming_ical(request):
 
 def floor_plan(request, num=None, floor=None, ):
     meeting = get_meeting(num)
-    schedule = meeting.agenda
+    schedule = meeting.schedule
     floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
     if floor:
         floors = [ f for f in floors if xslugify(f.name) == floor ]
@@ -2280,7 +2314,7 @@ def proceedings(request, num=None):
 
     meeting = get_meeting(num)
 
-    if (meeting.number.isdigit() and int(meeting.number) <= 64) or not meeting.agenda or not meeting.agenda.assignments.exists():
+    if (meeting.number.isdigit() and int(meeting.number) <= 64) or not meeting.schedule or not meeting.schedule.assignments.exists():
             return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
 
     begin_date = meeting.get_submission_start_date()
@@ -2289,17 +2323,36 @@ def proceedings(request, num=None):
     now = datetime.date.today()
 
     schedule = get_schedule(meeting, None)
-    sessions  = Session.objects.filter(meeting__number=meeting.number).filter(Q(timeslotassignments__schedule=schedule)|Q(status='notmeet')).select_related().order_by('-status_id')
-    plenaries = sessions.filter(name__icontains='plenary').exclude(status='notmeet')
+    sessions  = add_event_info_to_session_qs(
+        Session.objects.filter(meeting__number=meeting.number)
+    ).filter(
+        Q(timeslotassignments__schedule=schedule) | Q(current_status='notmeet')
+    ).select_related().order_by('-current_status')
+    plenaries = sessions.filter(name__icontains='plenary').exclude(current_status='notmeet')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
-    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['session', 'other', ]).exclude(status='notmeet')
-    iab       = sessions.filter(group__parent__acronym = 'iab').exclude(status='notmeet')
+    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other', ]).exclude(current_status='notmeet')
+    iab       = sessions.filter(group__parent__acronym = 'iab').exclude(current_status='notmeet')
 
     cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
+
+    ietf_areas = []
+    for area, sessions in itertools.groupby(sorted(ietf, key=lambda s: (s.group.parent.acronym, s.group.acronym)), key=lambda s: s.group.parent):
+        sessions = list(sessions)
+        meeting_groups = set(s.group_id for s in sessions if s.current_status != 'notmeet')
+        meeting_sessions = []
+        not_meeting_sessions = []
+        for s in sessions:
+            if s.current_status == 'notmeet' and s.group_id not in meeting_groups:
+                not_meeting_sessions.append(s)
+            else:
+                meeting_sessions.append(s)
+        ietf_areas.append((area, meeting_sessions, not_meeting_sessions))
+
     return render(request, "meeting/proceedings.html", {
         'meeting': meeting,
         'plenaries': plenaries, 'ietf': ietf, 'training': training, 'irtf': irtf, 'iab': iab,
+        'ietf_areas': ietf_areas,
         'cut_off_date': cut_off_date,
         'cor_cut_off_date': cor_cut_off_date,
         'submission_started': now > begin_date,
@@ -2311,7 +2364,7 @@ def finalize_proceedings(request, num=None):
 
     meeting = get_meeting(num)
 
-    if (meeting.number.isdigit() and int(meeting.number) <= 64) or not meeting.agenda or not meeting.agenda.assignments.exists() or meeting.proceedings_final:
+    if (meeting.number.isdigit() and int(meeting.number) <= 64) or not meeting.schedule or not meeting.schedule.assignments.exists() or meeting.proceedings_final:
         raise Http404
 
     if request.method=='POST':
@@ -2495,7 +2548,7 @@ def edit_timeslot_type(request, num, slot_id):
     else:
         form = TimeSlotTypeForm(instance=timeslot)
         
-    sessions = timeslot.sessions.filter(timeslotassignments__schedule=meeting.agenda)
+    sessions = timeslot.sessions.filter(timeslotassignments__schedule=meeting.schedule)
 
     return render(request, 'meeting/edit_timeslot_type.html', {'timeslot':timeslot,'form':form,'sessions':sessions})
 
@@ -2515,12 +2568,19 @@ def request_minutes(request, num=None):
                           )
             return HttpResponseRedirect(reverse('ietf.meeting.views.materials',kwargs={'num':num}))
     else:
-        needs_minutes = set() 
-        for a in meeting.agenda.assignments.filter(session__group__type_id__in=('wg','rg','ag')).exclude(session__status='canceled'):
-            if not a.session.all_meeting_minutes():
-                group = a.session.group
+        needs_minutes = set()
+        session_qs = add_event_info_to_session_qs(
+            Session.objects.filter(
+                timeslotassignments__schedule__meeting=meeting,
+                timeslotassignments__schedule__meeting__schedule=F('timeslotassignments__schedule'),
+                group__type__in=['wg','rg','ag'],
+            )
+        ).filter(~Q(current_status='canceled')).select_related('group', 'group__parent')
+        for session in session_qs:
+            if not session.all_meeting_minutes():
+                group = session.group
                 if group.parent and group.parent.type_id in ('area','irtf'):
-                    needs_minutes.add(a.session.group)
+                    needs_minutes.add(group)
         needs_minutes = list(needs_minutes)
         needs_minutes.sort(key=lambda g: ('zzz' if g.parent.acronym == 'irtf' else g.parent.acronym)+":"+g.acronym)
         body_context = {'meeting':meeting, 
@@ -2556,7 +2616,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
     
     session_number = None
     sessions = get_sessions(submission.session.meeting.number,submission.session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if submission.session.type_id == 'session' else False
+    show_apply_to_all_checkbox = len(sessions) > 1 if submission.session.type_id == 'regular' else False
     if len(sessions) > 1:
        session_number = 1 + sessions.index(submission.session)
     name, _ = os.path.splitext(submission.filename)
@@ -2565,7 +2625,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
     if request.method == 'POST':
         form = ApproveSlidesForm(show_apply_to_all_checkbox, request.POST)
         if form.is_valid():
-            apply_to_all = submission.session.type_id == 'session'
+            apply_to_all = submission.session.type_id == 'regular'
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
             if request.POST.get('approve'):

@@ -74,7 +74,7 @@ from ietf.doc.forms import TelechatForm, NotifyForm
 from ietf.doc.mails import email_comment
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session
-from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions
+from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions, add_event_info_to_session_qs
 from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
@@ -1353,9 +1353,9 @@ def add_sessionpresentation(request,name):
 def all_presentations(request, name):
     doc = get_object_or_404(Document, name=name)
 
-
-    sessions = doc.session_set.filter(status__in=['sched','schedw','appr','canceled'],
-                                      type__in=['session','plenary','other'])
+    sessions = add_event_info_to_session_qs(
+        doc.session_set.filter(type__in=['regular','plenary','other'])
+    ).filter(current_status__in=['sched','schedw','appr','canceled'])
 
     future, in_progress, recent, past = group_sessions(sessions)
 

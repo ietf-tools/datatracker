@@ -22,7 +22,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from ietf.doc.models import Document, DocAlias, DocEvent, NewRevisionDocEvent, State
 from ietf.group.models import Group
-from ietf.meeting.models import Meeting, SessionPresentation, TimeSlot, SchedTimeSessAssignment
+from ietf.meeting.models import Meeting, SessionPresentation, TimeSlot, SchedTimeSessAssignment, Session
 from ietf.person.models import Person
 from ietf.utils.log import log
 from ietf.utils.mail import send_mail
@@ -34,7 +34,7 @@ VIDEO_TITLE_RE = re.compile(r'IETF(?P<number>[\d]+)-(?P<name>.*)-(?P<date>\d{8})
 def _get_session(number,name,date,time):
     '''Lookup session using data from video title'''
     meeting = Meeting.objects.get(number=number)
-    schedule = meeting.agenda
+    schedule = meeting.schedule
     timeslot_time = datetime.datetime.strptime(date + time,'%Y%m%d%H%M')
     try:
         assignment = SchedTimeSessAssignment.objects.get(
@@ -65,6 +65,8 @@ def import_audio_files(meeting):
     
     Example: ietf90-salonb-20140721-1710.mp3
     '''
+    from ietf.meeting.utils import add_event_info_to_session_qs
+
     unmatched_files = []
     path = os.path.join(settings.MEETING_RECORDINGS_DIR, meeting.type.slug + meeting.number)
     if not os.path.exists(path):
@@ -72,15 +74,18 @@ def import_audio_files(meeting):
     for filename in os.listdir(path):
         timeslot = get_timeslot_for_filename(filename)
         if timeslot:
-            sessionassignments = timeslot.sessionassignments.filter(
-                schedule=timeslot.meeting.agenda,
-                session__status='sched',
-                ).exclude(session__agenda_note__icontains='canceled').order_by('timeslot__time')
-            if not sessionassignments:
+            sessions = add_event_info_to_session_qs(Session.objects.filter(
+                timeslotassignments__schedule=timeslot.meeting.schedule_id,
+            ).exclude(
+                agenda_note__icontains='canceled'
+            )).filter(
+                current_status='sched',
+            ).order_by('timeslotassignments__timeslot__time')
+            if not sessions:
                 continue
             url = settings.IETF_AUDIO_URL + 'ietf{}/{}'.format(meeting.number, filename)
-            doc = get_or_create_recording_document(url,sessionassignments[0].session)
-            attach_recording(doc, [ x.session for x in sessionassignments ])
+            doc = get_or_create_recording_document(url, sessions[0])
+            attach_recording(doc, sessions)
         else:
             # use for reconciliation email
             unmatched_files.append(filename)
@@ -92,6 +97,8 @@ def get_timeslot_for_filename(filename):
     '''Returns a timeslot matching the filename given.
     NOTE: currently only works with ietfNN prefix (regular meetings)
     '''
+    from ietf.meeting.utils import add_event_info_to_session_qs
+
     basename, _ = os.path.splitext(filename)
     match = AUDIO_FILE_RE.match(basename)
     if match:
@@ -103,10 +110,11 @@ def get_timeslot_for_filename(filename):
                 meeting=meeting,
                 location__name=room_mapping[match.groupdict()['room']],
                 time=time,
-                sessionassignments__schedule=meeting.agenda,
-            ).exclude(sessions__status_id='canceled').distinct()
-            return slots.get()
-        except (ObjectDoesNotExist, KeyError):
+                sessionassignments__schedule=meeting.schedule,
+            ).distinct()
+            uncancelled_slots = [t for t in slots if not add_event_info_to_session_qs(t.sessions.all()).filter(current_status='canceled').exists()]
+            return uncancelled_slots[0]
+        except (ObjectDoesNotExist, KeyError, IndexError):
             return None
 
 def attach_recording(doc, sessions):

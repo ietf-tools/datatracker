@@ -13,8 +13,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
 # Datatracker imports
-from ietf.group.models import Group, GroupFeatures
-from ietf.meeting.models import Session
+from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 
 
@@ -75,35 +74,3 @@ def get_my_groups(user,conclude=False):
             continue
 
     return list(my_groups)
-
-def groups_by_session(user, meeting, types=None):
-    '''
-    Takes a Django User object, Meeting object and optionally string of meeting types to 
-    include.  Returns a tuple scheduled_groups, unscheduled groups.  sorted lists of those
-    groups that the user has access to, secretariat defaults to all groups
-    If user=None than all groups are returned.
-
-    For groups with a session, we must include "concluded" groups because we still want to know
-    who had a session at a particular meeting even if they are concluded after.  This is not true
-    for groups without a session because this function is often used to build select lists (ie.
-    Session Request Tool) and you don't want concluded groups appearing as options.
-    '''
-    groups_session = []
-    groups_no_session = []
-    my_groups = get_my_groups(user,conclude=True)
-    sessions = Session.objects.filter(meeting=meeting,status__in=('schedw','apprw','appr','sched'))
-    groups_with_sessions = [ s.group for s in sessions ]
-    for group in my_groups:
-        if group in groups_with_sessions:
-            groups_session.append(group)
-        else:
-            if group.state_id not in ('conclude','bof-conc'):
-                groups_no_session.append(group)
-
-    if not types:
-        types = GroupFeatures.objects.filter(has_meetings=True).values_list('type', flat=True)
-
-    groups_session = [x for x in groups_session if x.type_id in types]
-    groups_no_session = [x for x in groups_no_session if x.type_id in types]
-        
-    return groups_session, groups_no_session

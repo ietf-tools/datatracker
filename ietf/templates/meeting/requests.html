@@ -52,14 +52,14 @@
 	      {% ifchanged %}
           </tbody>
           <tbody>
-	        <tr><th class="warning" colspan="7">{{session.status|capfirst}}</th></tr>
+            <tr><th class="warning" colspan="7">{{session.current_status_name|capfirst}}</th></tr>
           </tbody>
           <tbody>
 	      {% endifchanged %}
 
 	      <tr>
 	        <th>
-	          <a href="{% url "ietf.secr.sreq.views.edit_mtg" num=meeting.number acronym=session.group.acronym %}">
+	          <a href="{% url "ietf.secr.sreq.views.edit" num=meeting.number acronym=session.group.acronym %}">
 	            {{session.group.acronym}}
 	          </a>
 	        </th>
@@ -73,7 +73,7 @@
 	        <td class="text-right">{{session.attendees|default:""}}</td>
 
 	        <td>
-	          <a href="mailto:{{session.requested_by.email_address}}">{{session.requested_by}}</a>
+                  <a href="mailto:{{session.requested_by_person.email_address}}">{{session.requested_by_person}}</a>
 	        </td>
 
 	        <td>

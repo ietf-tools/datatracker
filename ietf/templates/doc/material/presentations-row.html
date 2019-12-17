@@ -21,10 +21,10 @@
          <td>{% ifchanged s.meeting %}{% if s.meeting.type.slug == 'ietf' %}IETF{% endif %}{{s.meeting.number}}{% endifchanged %}</td>
          <td>
            {% if s.name %}{{ s.name }}<br>{% else %}{{ s.group.acronym }} - {% endif %}
-           {% if s.status.slug == "sched" %}
+           {% if s.current_status == "sched" %}
             {% if s.meeting.type.slug == 'ietf' %}{{s.time|date:"D M d, Y Hi"}}{% else %}{{s.time|date:"D M d, Y"}}{% endif %}
           {% else %}
-            {{s.status}}
+            {{s.current_status_name}}
           {% endif %}
          </td>
          <td>{% if s.agenda %}<a href="{{ s.agenda.get_absolute_url }}">Agenda</a>{% endif %}</td>

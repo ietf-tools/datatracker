@@ -6,7 +6,7 @@
     <h2>TimeSlots</h2>
 
     {% if assignments %}
-    <table id="nonsessions" class="full-width">
+    <table id="misc-sessions" class="full-width">
       <thead>
         <tr>
           <th>Day</th>
@@ -24,7 +24,7 @@
       </thead>
       <tbody>
         {% for assignment in assignments %}
-          <tr class="{% cycle 'row1' 'row2' %}{% ifchanged assignment.session.type %} break{% endifchanged %}{% if assignment.session.status.slug == "canceled" %} cancelled{% endif %}">
+          <tr class="{% cycle 'row1' 'row2' %}{% ifchanged assignment.session.type %} break{% endifchanged %}{% if assignment.current_session_status == "canceled" %} cancelled{% endif %}">
             <td>{{ assignment.timeslot.time|date:"D" }}</td>
             <td>{{ assignment.timeslot.time|date:"H:i" }}-{{ assignment.timeslot.end_time|date:"H:i" }}</td>
             <td>{{ assignment.timeslot.name }}</td>
@@ -33,13 +33,13 @@
             <td>{{ assignment.timeslot.location }}</td>
             <td>{{ assignment.timeslot.show_location }}</td>
             <td>{{ assignment.timeslot.type }}</td>
-            <td><a href="{% url "ietf.secr.meetings.views.non_session_edit" meeting_id=meeting.number schedule_name=schedule.name slot_id=assignment.timeslot.id %}">Edit</a></td>
+            <td><a href="{% url "ietf.secr.meetings.views.misc_session_edit" meeting_id=meeting.number schedule_name=schedule.name slot_id=assignment.timeslot.id %}">Edit</a></td>
             <td>
               {% if not assignment.session.type.slug == "break" %}
-                <a href="{% url "ietf.secr.meetings.views.non_session_cancel" meeting_id=meeting.number schedule_name=schedule.name slot_id=assignment.timeslot.id %}">Cancel</a>
+                <a href="{% url "ietf.secr.meetings.views.misc_session_cancel" meeting_id=meeting.number schedule_name=schedule.name slot_id=assignment.timeslot.id %}">Cancel</a>
               {% endif %}
             </td>
-            <td><a href="{% url "ietf.secr.meetings.views.non_session_delete" meeting_id=meeting.number schedule_name=schedule.name slot_id=assignment.timeslot.id %}">Delete</a></td>
+            <td><a href="{% url "ietf.secr.meetings.views.misc_session_delete" meeting_id=meeting.number schedule_name=schedule.name slot_id=assignment.timeslot.id %}">Delete</a></td>
           </tr>
         {% endfor %}
       </tbody>

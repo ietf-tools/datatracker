@@ -907,7 +907,7 @@ td.ourconflicts, td.theirconflicts {
     background-image: url('images/orange_hatch.png');
 }
 
-.agenda_slot_session {
+.agenda_slot_regular {
     background-color: #E0E0E0;
 }
 

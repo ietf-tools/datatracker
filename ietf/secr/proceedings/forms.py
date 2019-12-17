@@ -1,8 +1,10 @@
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 
 from django import forms
 
 from ietf.doc.models import Document
 from ietf.meeting.models import Session
+from ietf.meeting.utils import add_event_info_to_session_qs
 
 
 # ---------------------------------------------
@@ -25,8 +27,9 @@ class RecordingForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.meeting = kwargs.pop('meeting')
         super(RecordingForm, self).__init__(*args,**kwargs)
-        self.fields['session'].queryset = Session.objects.filter(meeting=self.meeting,
-            type__in=('session','plenary','other'),status='sched').order_by('group__acronym')
+        self.fields['session'].queryset = add_event_info_to_session_qs(
+            Session.objects.filter(meeting=self.meeting, type__in=['regular','plenary','other'])
+        ).filter(current_status='sched').order_by('group__acronym')
 
 class RecordingEditForm(forms.ModelForm):
     class Meta:

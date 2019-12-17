@@ -15,8 +15,9 @@ from django.urls import reverse
 
 from ietf.doc.models import Document
 from ietf.group.factories import RoleFactory
-from ietf.meeting.models import SchedTimeSessAssignment
+from ietf.meeting.models import SchedTimeSessAssignment, SchedulingEvent
 from ietf.meeting.factories import MeetingFactory, SessionFactory
+from ietf.person.models import Person
 from ietf.name.models import SessionStatusName
 from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
@@ -129,12 +130,18 @@ class RecordingTestCase(TestCase):
         mars_session = SessionFactory(meeting=meeting,status_id='sched',group__acronym='mars')
         ames_session = SessionFactory(meeting=meeting,status_id='sched',group__acronym='ames')
         scheduled = SessionStatusName.objects.get(slug='sched')
-        mars_session.status = scheduled
-        mars_session.save()
-        ames_session.status = scheduled
-        ames_session.save()
+        SchedulingEvent.objects.create(
+            session=mars_session,
+            status=scheduled,
+            by=Person.objects.get(name='(System)')
+        )
+        SchedulingEvent.objects.create(
+            session=ames_session,
+            status=scheduled,
+            by=Person.objects.get(name='(System)')
+        )
         timeslot = mars_session.official_timeslotassignment().timeslot
-        SchedTimeSessAssignment.objects.create(timeslot=timeslot,session=ames_session,schedule=meeting.agenda)
+        SchedTimeSessAssignment.objects.create(timeslot=timeslot,session=ames_session,schedule=meeting.schedule)
         self.create_audio_file_for_timeslot(timeslot)
         import_audio_files(meeting)
         doc = mars_session.materials.filter(type='recording').first()

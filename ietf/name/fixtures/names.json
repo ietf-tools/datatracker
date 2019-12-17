@@ -11643,7 +11643,7 @@
       "used": true
     },
     "model": "name.timeslottypename",
-    "pk": "session"
+    "pk": "regular"
   },
   {
     "fields": {

@@ -13,7 +13,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.utils.test_utils import TestCase
 from ietf.group.factories import GroupFactory, RoleFactory
-from ietf.meeting.models import Session, ResourceAssociation
+from ietf.meeting.models import Session, ResourceAssociation, SchedulingEvent
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.person.models import Person
 from ietf.utils.mail import outbox, empty_outbox
@@ -42,16 +42,16 @@ class SessionRequestTestCase(TestCase):
     def test_main(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
         SessionFactory.create_batch(2, meeting=meeting, status_id='sched')
-        SessionFactory.create_batch(2, meeting=meeting, status_id='unsched')
+        SessionFactory.create_batch(2, meeting=meeting, status_id='disappr')
         # An additional unscheduled group comes from make_immutable_base_data
         url = reverse('ietf.secr.sreq.views.main')
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         sched = r.context['scheduled_groups']
+        self.assertEqual(len(sched), 2)
         unsched = r.context['unscheduled_groups']
-        self.assertEqual(len(unsched),8)
-        self.assertEqual(len(sched),2)
+        self.assertEqual(len(unsched), 8)
 
     def test_approve(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
@@ -64,25 +64,23 @@ class SessionRequestTestCase(TestCase):
         self.client.login(username="ad", password="ad+password")
         r = self.client.get(url)
         self.assertRedirects(r,reverse('ietf.secr.sreq.views.view', kwargs={'acronym':'mars'}))
-        session = Session.objects.get(pk=session.pk)
-        self.assertEqual(session.status_id,'appr')
+        self.assertEqual(SchedulingEvent.objects.filter(session=session).order_by('-id')[0].status_id, 'appr')
         
     def test_cancel(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
         ad = Person.objects.get(user__username='ad')
         area = RoleFactory(name_id='ad', person=ad, group__type_id='area').group
-        mars = SessionFactory(meeting=meeting, group__parent=area, group__acronym='mars', status_id='sched').group
+        session = SessionFactory(meeting=meeting, group__parent=area, group__acronym='mars', status_id='sched')
         url = reverse('ietf.secr.sreq.views.cancel', kwargs={'acronym':'mars'})
         self.client.login(username="ad", password="ad+password")
         r = self.client.get(url)
         self.assertRedirects(r,reverse('ietf.secr.sreq.views.main'))
-        sessions = Session.objects.filter(meeting=meeting, group=mars)
-        self.assertEqual(sessions[0].status_id,'deleted')
-    
+        self.assertEqual(SchedulingEvent.objects.filter(session=session).order_by('-id')[0].status_id, 'deleted')
+
     def test_edit(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
         mars = RoleFactory(name_id='chair', person__user__username='marschairman', group__acronym='mars').group
-        SessionFactory(meeting=meeting,group=mars,status_id='sched',scheduled=datetime.datetime.now())
+        SessionFactory(meeting=meeting,group=mars,status_id='sched')
 
         url = reverse('ietf.secr.sreq.views.edit', kwargs={'acronym':'mars'})
         self.client.login(username="marschairman", password="marschairman+password")
@@ -129,14 +127,14 @@ class SubmitRequestCase(TestCase):
         post_data['submit'] = 'Submit'
         r = self.client.post(confirm_url,post_data)
         self.assertRedirects(r, main_url)
-        session_count_after = Session.objects.filter(meeting=meeting, group=group).count()
-        self.assertTrue(session_count_after == session_count_before + 1)
+        session_count_after = Session.objects.filter(meeting=meeting, group=group, type='regular').count()
+        self.assertEqual(session_count_after, session_count_before + 1)
 
         # test that second confirm does not add sessions
         r = self.client.post(confirm_url,post_data)
         self.assertRedirects(r, main_url)
-        session_count_after = Session.objects.filter(meeting=meeting, group=group).count()
-        self.assertTrue(session_count_after == session_count_before + 1)
+        session_count_after = Session.objects.filter(meeting=meeting, group=group, type='regular').count()
+        self.assertEqual(session_count_after, session_count_before + 1)
 
     def test_submit_request_invalid(self):
         MeetingFactory(type_id='ietf', date=datetime.date.today())

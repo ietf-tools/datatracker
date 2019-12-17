@@ -11,28 +11,51 @@ import six.moves.urllib.request
 from six.moves.urllib.error import HTTPError
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.db.models.expressions import Subquery, OuterRef
 
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.meeting.models import Session, Meeting
+from ietf.meeting.models import Session, Meeting, SchedulingEvent, TimeSlot
+from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
+from ietf.name.models import SessionStatusName
 from ietf.person.models import Email
 from ietf.secr.proceedings.proc_utils import import_audio_files
 
-def group_sessions(sessions):
-
-    def sort_key(session):
-        official_sessions = session.timeslotassignments.filter(schedule=session.meeting.agenda)
-        if official_sessions:
-            return official_sessions.first().timeslot.time
-        elif session.meeting.date:
-            return datetime.datetime.combine(session.meeting.date,datetime.datetime.min.time())
+def session_time_for_sorting(session, use_meeting_date):
+    official_timeslot = TimeSlot.objects.filter(sessionassignments__session=session, sessionassignments__schedule=session.meeting.schedule).first()
+    if official_timeslot:
+        return official_timeslot.time
+    elif use_meeting_date and session.meeting.date:
+        return datetime.datetime.combine(session.meeting.date, datetime.time.min)
+    else:
+        first_event = SchedulingEvent.objects.filter(session=session).order_by('time', 'id').first()
+        if first_event:
+            return first_event.time
         else:
-            return session.requested
+            return datetime.datetime.min
 
+def session_requested_by(session):
+    first_event = SchedulingEvent.objects.filter(session=session).order_by('time', 'id').first()
+    if first_event:
+        return first_event.by
+
+    return None
+
+def current_session_status(session):
+    last_event = SchedulingEvent.objects.filter(session=session).order_by('-time', '-id').first()
+    if last_event:
+        return last_event.status
+
+    return None
+
+
+def group_sessions(sessions):
+    status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
     for s in sessions:
-        s.time=sort_key(s)
+        s.time = session_time_for_sorting(s, use_meeting_date=True)
+        s.current_status_name = status_names.get(s.current_status, s.current_status)
 
     sessions = sorted(sessions,key=lambda s:s.time)
 
@@ -68,29 +91,24 @@ def get_upcoming_manageable_sessions(user):
     # This notion of searching by end-of-meeting is also present in Document.future_presentations.
     # It would be nice to make it easier to use querysets to talk about meeting endings wthout a heuristic like this one
 
-    candidate_sessions = Session.objects.exclude(status__in=['canceled','disappr','notmeet','deleted']).filter(meeting__date__gte=datetime.date.today()-datetime.timedelta(days=15))
-    refined_candidates = [ sess for sess in candidate_sessions if sess.meeting.end_date()>=datetime.date.today()]
+    # We can in fact do that with something like
+    # .filter(date__gte=today - F('days')), but unfortunately, it
+    # doesn't work correctly with Django 1.11 and MySQL/SQLite
 
-    return [ sess for sess in refined_candidates if can_manage_materials(user, sess.group) ]
+    today = datetime.date.today()
+
+    candidate_sessions = add_event_info_to_session_qs(
+        Session.objects.filter(meeting__date__gte=today - datetime.timedelta(days=15))
+    ).exclude(
+        current_status__in=['canceled', 'disappr', 'notmeet', 'deleted']
+    ).prefetch_related('meeting')
+
+    return [
+        sess for sess in candidate_sessions if sess.meeting.end_date() >= today and can_manage_materials(user, sess.group)
+    ]
 
 def sort_sessions(sessions):
-
-    # Python sorts are stable since version 2,2, so this series results in a list sorted first
-    # by the meeting 'number', then by session's group acronym, then by scheduled time
-    # (or the time of the session request if the session isn't scheduled).
-
-    def time_sort_key(session):
-        official_sessions = session.timeslotassignments.filter(schedule=session.meeting.agenda)
-        if official_sessions:
-            return official_sessions.first().timeslot.time
-        else:
-            return session.requested
-
-    time_sorted = sorted(sessions,key=time_sort_key)
-    acronym_sorted = sorted(time_sorted,key=lambda x: x.group.acronym)
-    meeting_sorted = sorted(acronym_sorted,key=lambda x: x.meeting.number)
-
-    return meeting_sorted
+    return sorted(sessions, key=lambda s: (s.meeting.number, s.group.acronym, session_time_for_sorting(s, use_meeting_date=False)))
 
 def create_proceedings_templates(meeting):
     '''Create DBTemplates for meeting proceedings'''
@@ -182,8 +200,6 @@ def sort_accept_tuple(accept):
         return sorted(tup, key = lambda x: float(x[1]), reverse = True)
     return tup
 
-
-
 def condition_slide_order(session):
     qs = session.sessionpresentation_set.filter(document__type_id='slides').order_by('order')
     order_list = qs.values_list('order',flat=True)
@@ -191,3 +207,100 @@ def condition_slide_order(session):
         for num, sp in enumerate(qs, start=1):
             sp.order=num
             sp.save()
+
+def add_event_info_to_session_qs(qs, current_status=True, requested_by=False, requested_time=False):
+    """Take a session queryset and add attributes computed from the
+    scheduling events. A queryset is returned and the added attributes
+    can be further filtered on."""
+    from django.db.models import TextField, Value
+    from django.db.models.functions import Coalesce
+    if current_status:
+        qs = qs.annotate(
+            # coalesce with '' to avoid nulls which give funny
+            # results, e.g. .exclude(current_status='canceled') also
+            # skips rows with null in them
+            current_status=Coalesce(Subquery(SchedulingEvent.objects.filter(session=OuterRef('pk')).order_by('-time', '-id').values('status')[:1]), Value(''), output_field=TextField()),
+        )
+
+    if requested_by:
+        qs = qs.annotate(
+            requested_by=Subquery(SchedulingEvent.objects.filter(session=OuterRef('pk')).order_by('time', 'id').values('by')[:1]),
+        )
+
+    if requested_time:
+        qs = qs.annotate(
+            requested_time=Subquery(SchedulingEvent.objects.filter(session=OuterRef('pk')).order_by('time', 'id').values('time')[:1]),
+        )
+
+    return qs
+
+def only_sessions_that_can_meet(session_qs):
+    qs = add_event_info_to_session_qs(session_qs).exclude(current_status__in=['notmeet', 'disappr', 'deleted', 'apprw'])
+
+    # Restrict graphical scheduling to meeting requests (Sessions) of type 'regular' for now
+    qs = qs.filter(type__slug='regular')
+
+    return qs
+
+def data_for_meetings_overview(meetings, interim_status=None):
+    """Return filtered meetings with sessions and group hierarchy (for the
+    interim menu)."""
+
+    # extract sessions
+    for m in meetings:
+        m.sessions = []
+
+    sessions = add_event_info_to_session_qs(
+        Session.objects.filter(meeting__in=meetings).order_by('meeting', 'pk')
+    ).select_related('group', 'group__parent')
+
+    meeting_dict = {m.pk: m for m in meetings}
+    for s in sessions.iterator():
+        meeting_dict[s.meeting_id].sessions.append(s)
+
+    # filter
+    if interim_status == 'apprw':
+        meetings = [
+            m for m in meetings
+            if not m.type_id == 'interim' or any(s.current_status == 'apprw' for s in m.sessions)
+        ]
+
+    elif interim_status == 'scheda':
+        meetings = [
+            m for m in meetings
+            if not m.type_id == 'interim' or any(s.current_status == 'scheda' for s in m.sessions)
+        ]
+
+    else:
+        meetings = [
+            m for m in meetings
+            if not m.type_id == 'interim' or not all(s.current_status in ['apprw', 'scheda', 'canceledpa'] for s in m.sessions)
+        ]
+
+    # group hierarchy
+    ietf_group = Group.objects.get(acronym='ietf')
+
+    group_hierarchy = [ietf_group]
+
+    parents = {}
+    for m in meetings:
+        if m.type_id == 'interim' and m.sessions:
+            for s in m.sessions:
+                parent = parents.get(s.group.parent_id)
+                if not parent:
+                    parent = s.group.parent
+                    parent.group_list = []
+                    group_hierarchy.append(parent)
+
+                parent.group_list.append(s.group)
+
+    for p in parents.values():
+        p.group_list.sort(key=lambda g: g.acronym)
+
+    # set some useful attributes
+    for m in meetings:
+        m.end = m.date + datetime.timedelta(days=m.days)
+        m.responsible_group = (m.sessions[0].group if m.sessions else None) if m.type_id == 'interim' else ietf_group
+        m.interim_meeting_cancelled = m.type_id == 'interim' and all(s.current_status == 'canceled' for s in m.sessions)
+
+    return meetings, group_hierarchy

@@ -378,7 +378,7 @@ function calculate_room_select_box() {
         html=html+"' id='info_location_select_option_";
         html=html+value.timeslot_id+"'>";
         html=html+value.short_string;
-        if(value.roomtype != "session") {
+        if(value.roomtype != "regular") {
             html = html+ "(" + value.roomtype + ")";
         }
         html=html+"</option>";

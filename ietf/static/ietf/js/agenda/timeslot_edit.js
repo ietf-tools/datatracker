@@ -252,9 +252,9 @@ function build_select_box(roomtype, domid, slot_id, select_id) {
     roomtypeclass="";
     roomtypeunavailable="";
 
-    if(roomtype == "session") {
+    if(roomtype == "regular") {
         roomtypesession="selected";
-        roomtypeclass="agenda_slot_session";
+        roomtypeclass="agenda_slot_regular";
     } else if(roomtype == "other") {
         roomtypeother="selected";
         roomtypeclass="agenda_slot_other";
@@ -270,8 +270,8 @@ function build_select_box(roomtype, domid, slot_id, select_id) {
     }
 
     html = "<form action=\"/some/place\" method=\"post\"><select id='"+select_id+"'>";
-    html = html + "<option value='session'     "+roomtypesession+" id='option_"+domid+"_session'>session</option>";
-    html = html + "<option value='other'       "+roomtypeother+" id='option_"+domid+"_other'>non-session</option>";
+    html = html + "<option value='regular'     "+roomtypesession+" id='option_"+domid+"_session'>regular session</option>";
+    html = html + "<option value='other'       "+roomtypeother+" id='option_"+domid+"_other'>misc</option>";
     html = html + "<option value='reserved'    "+roomtypereserved+" id='option_"+domid+"_reserved'>reserved</option>";
     html = html + "<option value='plenary'     "+roomtypeplenary+" id='option_"+domid+"_plenary'>plenary</option>";
     html = html + "<option value='unavail'     "+roomtypeunavailable+" id='option_"+domid+"_unavail'>unavailable</option>";
@@ -290,7 +290,7 @@ function insert_timeslotedit_cell(ts) {
 
     $(slot_id).removeClass("agenda_slot_unavailable")
     $(slot_id).removeClass("agenda_slot_other")
-    $(slot_id).removeClass("agenda_slot_session")
+    $(slot_id).removeClass("agenda_slot_regular")
     $(slot_id).removeClass("agenda_slot_plenary")
     $(slot_id).removeClass("agenda_slot_reserved")
     $(slot_id).removeClass("no_timeslot");
@@ -341,7 +341,7 @@ function create_timeslotedit_cell(slot_id) {
 
     /* $(slot_id).removeClass("agenda_slot_unavailable") */
     $(slot_id).removeClass("agenda_slot_other")
-    $(slot_id).removeClass("agenda_slot_session")
+    $(slot_id).removeClass("agenda_slot_regular")
     $(slot_id).removeClass("agenda_slot_plenary")
     $(slot_id).removeClass("agenda_slot_reserved")
 

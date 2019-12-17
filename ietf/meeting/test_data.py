@@ -14,7 +14,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.factories import DocumentFactory
 from ietf.group.models import Group
 from ietf.meeting.models import (Meeting, Room, TimeSlot, Session, Schedule, SchedTimeSessAssignment,
-    ResourceAssociation, SessionPresentation, UrlResource)
+    ResourceAssociation, SessionPresentation, UrlResource, SchedulingEvent)
 from ietf.meeting.helpers import create_interim_meeting
 from ietf.name.models import RoomResourceName
 from ietf.person.models import Person
@@ -25,19 +25,20 @@ def make_interim_meeting(group,date,status='sched'):
     time = datetime.datetime.combine(date, datetime.time(9))
     meeting = create_interim_meeting(group=group,date=date)
     session = Session.objects.create(meeting=meeting, group=group,
-        attendees=10, requested_by=system_person, status_id=status,
+        attendees=10,
         requested_duration=datetime.timedelta(minutes=20),
         remote_instructions='http://webex.com',
-        scheduled=datetime.datetime.now(),type_id="session")
+        type_id='regular')
+    SchedulingEvent.objects.create(session=session, status_id=status, by=system_person)
     slot = TimeSlot.objects.create(
         meeting=meeting,
-        type_id="session",
+        type_id='regular',
         duration=session.requested_duration,
         time=time)
     SchedTimeSessAssignment.objects.create(
         timeslot=slot,
         session=session,
-        schedule=session.meeting.agenda)
+        schedule=session.meeting.schedule)
     # agenda
     name = "agenda-%s-%s-%s" % (meeting.number, group.acronym, "01")
     rev = '00'
@@ -77,14 +78,14 @@ def make_meeting_test_data(meeting=None):
 
     if not meeting:
         meeting = Meeting.objects.get(number="72", type="ietf")
-    schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-agenda", visible=True, public=True)
-    unofficial_schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-unofficial-agenda", visible=True, public=True)
+    schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-schedule", visible=True, public=True)
+    unofficial_schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-unofficial-schedule", visible=True, public=True)
 
     # test room
     pname = RoomResourceName.objects.create(name='projector',slug='proj')
     projector = ResourceAssociation.objects.create(name=pname,icon="notfound.png",desc="Basic projector")
     room = Room.objects.create(meeting=meeting, name="Test Room", capacity=123, functional_name="Testing Ground")
-    room.session_types.add("session")
+    room.session_types.add('regular')
     room.resources.add(projector)
     asname = RoomResourceName.objects.get(slug='audiostream')
     UrlResource.objects.create(name=asname, room=room, url='http://ietf{number}streaming.dnsalias.net/ietf/ietf{number}1.m3u'.format(number=meeting.number))
@@ -99,10 +100,10 @@ def make_meeting_test_data(meeting=None):
 
     # slots
     session_date = meeting.date + datetime.timedelta(days=1)
-    slot1 = TimeSlot.objects.create(meeting=meeting, type_id="session", location=room,
+    slot1 = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
                                     duration=datetime.timedelta(minutes=30),
                                     time=datetime.datetime.combine(session_date, datetime.time(9, 30)))
-    slot2 = TimeSlot.objects.create(meeting=meeting, type_id="session", location=room,
+    slot2 = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
                                     duration=datetime.timedelta(minutes=30),
                                     time=datetime.datetime.combine(session_date, datetime.time(10, 30)))
     breakfast_slot = TimeSlot.objects.create(meeting=meeting, type_id="lead", location=breakfast_room,
@@ -117,46 +118,47 @@ def make_meeting_test_data(meeting=None):
     # mars WG
     mars = Group.objects.get(acronym='mars')
     mars_session = Session.objects.create(meeting=meeting, group=mars,
-                                          attendees=10, requested_by=system_person, status_id="schedw",
-                                          requested_duration=datetime.timedelta(minutes=20),
-                                          scheduled=datetime.datetime.now(),type_id="session")
+                                          attendees=10, requested_duration=datetime.timedelta(minutes=20),
+                                          type_id='regular')
+    SchedulingEvent.objects.create(session=mars_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=slot1, session=mars_session, schedule=schedule)
     SchedTimeSessAssignment.objects.create(timeslot=slot2, session=mars_session, schedule=unofficial_schedule)
 
     # ames WG
     ames_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="ames"),
-                                          attendees=10, requested_by=system_person, status_id="schedw",
+                                          attendees=10,
                                           requested_duration=datetime.timedelta(minutes=20),
-                                          scheduled=datetime.datetime.now(),type_id="session")
+                                          type_id='regular')
+    SchedulingEvent.objects.create(session=ames_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=slot2, session=ames_session, schedule=schedule)
     SchedTimeSessAssignment.objects.create(timeslot=slot1, session=ames_session, schedule=unofficial_schedule)
 
     # IESG breakfast
     iesg_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="iesg"),
                                           name="IESG Breakfast", attendees=25,
-                                          requested_by=system_person, status_id="schedw",
                                           requested_duration=datetime.timedelta(minutes=20),
-                                          scheduled=datetime.datetime.now(),type_id="lead")
+                                          type_id="lead")
+    SchedulingEvent.objects.create(session=iesg_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=breakfast_slot, session=iesg_session, schedule=schedule)
     # No breakfast on unofficial schedule
 
     # Registration
     reg_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="secretariat"),
                                          name="Registration", attendees=250,
-                                         requested_by=system_person, status_id="schedw",
                                          requested_duration=datetime.timedelta(minutes=480),
-                                         scheduled=datetime.datetime.now(),type_id="reg")
+                                         type_id="reg")
+    SchedulingEvent.objects.create(session=reg_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=reg_slot, session=reg_session, schedule=schedule)
     
     # Break
     break_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="secretariat"),
                                            name="Morning Break", attendees=250,
-                                           requested_by=system_person, status_id="schedw",
                                            requested_duration=datetime.timedelta(minutes=30),
-                                           scheduled=datetime.datetime.now(),type_id="break")
+                                           type_id="break")
+    SchedulingEvent.objects.create(session=break_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=break_slot, session=break_session, schedule=schedule)
 
-    meeting.agenda = schedule
+    meeting.schedule = schedule
     meeting.save()
 
     # Convenience for the tests

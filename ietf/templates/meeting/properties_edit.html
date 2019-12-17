@@ -25,7 +25,7 @@
     {% bootstrap_form form %}
     {% buttons %}
         <input class="btn btn-primary" type="submit" value="Save" name="save">
-        <a href="{% url 'ietf.meeting.views.list_agendas' num=meeting.number %}" class="btn btn-default">Cancel</a>
+        <a href="{% url 'ietf.meeting.views.list_schedules' num=meeting.number %}" class="btn btn-default">Cancel</a>
     {% endbuttons %}
   </form>
 

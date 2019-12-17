@@ -23,19 +23,19 @@
                 <col width="200">
                 <tr>
                   <th>Day:</th>
-                  <td>{{ timeslot.time|date:"l" }}</td>
+                  <td>{% if timeslot %}{{ timeslot.time|date:"l" }}{% endif %}</td>
                 </tr>
                 <tr>
                   <th>Time:</th>
-                  <td>{{ timeslot.time|time:"H:i" }}</td>
+                  <td>{% if timeslot %}{{ timeslot.time|time:"H:i" }}{% endif %}</td>
                 </tr>
                 <tr>
                   <th>Room:</th>
-                  <td>{{ timeslot.location.name }}</td>
+                  <td>{% if timeslot %}{{ timeslot.location.name }}{% endif %}</td>
                 </tr>
                 <tr>
                   <th>Status:</th>
-                  <td>{{ session.status }}</td>
+                  <td>{{ current_status_name }}</td>
                 </tr>
                 {{ form }}
               </table>
@@ -45,7 +45,7 @@
       <div class="button-group">
        <ul>
          <li><button type="submit" name="submit" value="Save">Save</button></li>
-         <li><button type="button" onclick="window.location='{% url "ietf.secr.meetings.views.sessions" meeting_id=meeting.number schedule_name=schedule.name %}'">Back</button></li>
+         <li><button type="button" onclick="window.location='{% url "ietf.secr.meetings.views.regular_sessions" meeting_id=meeting.number schedule_name=schedule.name %}'">Back</button></li>
         </ul>
       </div> <!-- button-group -->
       

@@ -15,18 +15,18 @@
   <h1>Interim Meeting Request Details</h1>
   <dl class="dl-horizontal">
     <dt>Group</dt>
-    <dd>{{ sessions.0.group.acronym }}
+    <dd>{{ group.acronym }}
     <dt>Requested By</dt>
-    <dd>{{ sessions.0.requested_by }}
+    <dd>{{ requester }}
     <dt>Status</dt>
-    <dd>{{ sessions.0.status }}</dd>
+    <dd>{{ session_status.name }}</dd>
     <dt>City</dt>
     <dd>{{ meeting.city }}</dd>
     <dt>Country</dt>
     <dd>{{ meeting.country }}</dd>
     <dt>Timezone</dt>
     <dd>{{ meeting.time_zone }}</dd>
-    {% for assignment in meeting.agenda.assignments.all %}
+    {% for assignment in meeting.schedule.assignments.all %}
       <br>
       <dt>Date</dt>
       <dd>{{ assignment.timeslot.time|date:"Y-m-d" }}
@@ -46,24 +46,24 @@
   {% if can_edit %}
         <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_request_edit' number=meeting.number %}">Edit</a>
   {% endif %}
-  {% if can_approve and sessions.0.status.slug == 'apprw' %}
+  {% if can_approve and session_status.slug == 'apprw' %}
     <input class="btn btn-default" type="submit" value="Approve" name='approve' />
     <input class="btn btn-default" type="submit" value="Disapprove" name='disapprove' />
   {% endif %}
-  {% if user|has_role:"Secretariat" and sessions.0.status.slug == 'scheda' %}
+  {% if user|has_role:"Secretariat" and session_status.slug == 'scheda' %}
         <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_send_announcement' number=meeting.number %}">Announce</a>
         <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_skip_announcement' number=meeting.number %}">Skip Announcement</a>
   {% endif %}
   {% if can_edit %}
-    {% if sessions.0.status.slug == 'apprw' or sessions.0.status.slug == 'scheda' or sessions.0.status.slug == 'sched' %}
+    {% if session_status.slug == 'apprw' or session_status.slug == 'scheda' or session_status.slug == 'sched' %}
         <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_request_cancel' number=meeting.number %}">Cancel Meeting</a>
     {% endif %}
   {% endif %}
-  {% if sessions.0.status.slug == "apprw" %}
+  {% if session_status.slug == "apprw" %}
         <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_pending' %}">Back</a>
-  {% elif sessions.0.status.slug == "scheda" %}
+  {% elif session_status.slug == "scheda" %}
         <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_announce' %}">Back</a>
-  {% elif sessions.0.status.slug == "sched" %}
+  {% elif session_status.slug == "sched" %}
         <a class="btn btn-default" href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.session_set.first.group.acronym %}">Back</a>
   {% else %}
         <a class="btn btn-default" href="{% url 'ietf.meeting.views.upcoming' %}">Back</a>

@@ -10,7 +10,8 @@ import datetime
 
 from django.core.files.base import ContentFile
 
-from ietf.meeting.models import Meeting, Session, Schedule, TimeSlot, SessionPresentation, FloorPlan, Room, SlideSubmission
+from ietf.meeting.models import Meeting, Session, SchedulingEvent, Schedule, TimeSlot, SessionPresentation, FloorPlan, Room, SlideSubmission
+from ietf.name.models import SessionStatusName
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
 
@@ -63,9 +64,9 @@ class MeetingFactory(factory.DjangoModelFactory):
 
 
     @factory.post_generation
-    def populate_agenda(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
+    def populate_schedule(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         '''
-        Create a default agenda, unless the factory is called
+        Create a default schedule, unless the factory is called
         with populate_agenda=False
         '''
         if extracted is None:
@@ -73,7 +74,7 @@ class MeetingFactory(factory.DjangoModelFactory):
         if create and extracted:
             for x in range(3):
                 TimeSlotFactory(meeting=obj)
-            obj.agenda = ScheduleFactory(meeting=obj)
+            obj.schedule = ScheduleFactory(meeting=obj)
             obj.save()
 
 class SessionFactory(factory.DjangoModelFactory):
@@ -81,11 +82,30 @@ class SessionFactory(factory.DjangoModelFactory):
         model = Session
 
     meeting = factory.SubFactory(MeetingFactory)
-    type_id='session'
+    type_id='regular'
     group = factory.SubFactory(GroupFactory)
-    requested_by = factory.SubFactory(PersonFactory) 
-    status_id='sched'
 
+    @factory.post_generation
+    def status_id(obj, create, extracted, **kwargs):
+        if create:
+            if not extracted:
+                extracted = 'sched'
+
+            if extracted not in ['apprw', 'schedw']:
+                # requested event
+                SchedulingEvent.objects.create(
+                    session=obj,
+                    status=SessionStatusName.objects.get(slug='schedw'),
+                    by=PersonFactory(),
+                )
+
+            # actual state event
+            SchedulingEvent.objects.create(
+                session=obj,
+                status=SessionStatusName.objects.get(slug=extracted),
+                by=PersonFactory(),
+            )
+                
     @factory.post_generation
     def add_to_schedule(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         '''
@@ -96,7 +116,7 @@ class SessionFactory(factory.DjangoModelFactory):
             extracted = True
         if create and extracted:
             ts = obj.meeting.timeslot_set.all()
-            obj.timeslotassignments.create(timeslot=ts[random.randrange(len(ts))],schedule=obj.meeting.agenda)
+            obj.timeslotassignments.create(timeslot=ts[random.randrange(len(ts))],schedule=obj.meeting.schedule)
 
 class ScheduleFactory(factory.DjangoModelFactory):
     class Meta:
@@ -119,7 +139,7 @@ class TimeSlotFactory(factory.DjangoModelFactory):
         model = TimeSlot
 
     meeting = factory.SubFactory(MeetingFactory)
-    type_id = 'session'
+    type_id = 'regular'
 
     @factory.post_generation
     def location(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument

@@ -377,7 +377,7 @@ MIDDLEWARE = [
     'django_referrer_policy.middleware.ReferrerPolicyMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'csp.middleware.CSPMiddleware',
+ #   'csp.middleware.CSPMiddleware',
     'ietf.middleware.unicode_nfkc_normalization_middleware',
 ]
 

@@ -13,12 +13,14 @@ from ietf import api
 
 from ietf.meeting.models import ( Meeting, ResourceAssociation, Constraint, Room, Schedule, Session,
                                 TimeSlot, SchedTimeSessAssignment, SessionPresentation, FloorPlan,
-                                UrlResource, ImportantDate, SlideSubmission )
+                                UrlResource, ImportantDate, SlideSubmission, SchedulingEvent )
 
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
     type             = ToOneField(MeetingTypeNameResource, 'type')
-    agenda           = ToOneField('ietf.meeting.resources.ScheduleResource', 'agenda', null=True)
+    schedule         = ToOneField('ietf.meeting.resources.ScheduleResource', 'schedule', null=True)
+    # for backward compatibility:
+    agenda           = ToOneField('ietf.meeting.resources.ScheduleResource', 'schedule', null=True)
     updated          = DateTimeField(attribute='updated')
     class Meta:
         cache = SimpleCache()
@@ -48,6 +50,7 @@ class MeetingResource(ModelResource):
             "agenda_warning_note": ALL,
             "session_request_lock_message": ALL,
             "type": ALL_WITH_RELATIONS,
+            "schedule": ALL_WITH_RELATIONS,
             "agenda": ALL_WITH_RELATIONS,
             "proceedings_final": ALL,
         }
@@ -163,14 +166,12 @@ api.meeting.register(ScheduleResource())
 
 from ietf.group.resources import GroupResource
 from ietf.doc.resources import DocumentResource
-from ietf.name.resources import TimeSlotTypeNameResource, SessionStatusNameResource
+from ietf.name.resources import TimeSlotTypeNameResource
 from ietf.person.resources import PersonResource
 class SessionResource(ModelResource):
     meeting          = ToOneField(MeetingResource, 'meeting')
     type             = ToOneField(TimeSlotTypeNameResource, 'type')
     group            = ToOneField(GroupResource, 'group')
-    requested_by     = ToOneField(PersonResource, 'requested_by')
-    status           = ToOneField(SessionStatusNameResource, 'status')
     materials        = ToManyField(DocumentResource, 'materials', null=True)
     resources        = ToManyField(ResourceAssociationResource, 'resources', null=True)
     assignments      = ToManyField('ietf.meeting.resources.SchedTimeSessAssignmentResource', 'timeslotassignments', null=True)
@@ -203,6 +204,26 @@ class SessionResource(ModelResource):
         }
 api.meeting.register(SessionResource())
 
+from ietf.name.resources import SessionStatusNameResource
+class SchedulingEventResource(ModelResource):
+    session = ToOneField(SessionResource, 'session')
+    status = ToOneField(SessionStatusNameResource, 'status')
+    by = ToOneField(PersonResource, 'location')
+    class Meta:
+        cache = SimpleCache()
+        queryset = SchedulingEvent.objects.all()
+        serializer = api.Serializer()
+        ordering = ['id', 'time', 'modified', 'meeting',]
+        filtering = { 
+            "id": ALL,
+            "time": ALL,
+            "session": ALL_WITH_RELATIONS,
+            "by": ALL_WITH_RELATIONS,
+        }
+api.meeting.register(SchedulingEventResource())
+
+
+
 from ietf.name.resources import TimeSlotTypeNameResource
 class TimeSlotResource(ModelResource):
     meeting = ToOneField(MeetingResource, 'meeting')
@@ -234,6 +255,8 @@ class SchedTimeSessAssignmentResource(ModelResource):
     timeslot = ToOneField(TimeSlotResource, 'timeslot')
     session = ToOneField(SessionResource, 'session', null=True)
     schedule = ToOneField(ScheduleResource, 'schedule')
+    # for backward compatibility:
+    agenda   = ToOneField(ScheduleResource, 'schedule')
     extendedfrom = ToOneField('ietf.meeting.resources.SchedTimeSessAssignmentResource', 'extendedfrom', null=True)
     class Meta:
         cache = SimpleCache()
@@ -250,6 +273,7 @@ class SchedTimeSessAssignmentResource(ModelResource):
             "timeslot": ALL_WITH_RELATIONS,
             "session": ALL_WITH_RELATIONS,
             "schedule": ALL_WITH_RELATIONS,
+            "agenda": ALL_WITH_RELATIONS,
             "extendedfrom": ALL_WITH_RELATIONS,
         }
 api.meeting.register(SchedTimeSessAssignmentResource())

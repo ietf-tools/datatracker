@@ -23,8 +23,8 @@
   <ul class="list-nav">
     <li id="nav-room" class="leftmost{% if selected == 'rooms' %} selected{% endif %}"><a href="{% url "ietf.secr.meetings.views.rooms" meeting_id=meeting.number schedule_name=schedule.name %}">Rooms</a></li>
     <li id="nav-time" class="{% if selected == 'times' %}selected{% endif %}"><a href="{% url "ietf.secr.meetings.views.times" meeting_id=meeting.number schedule_name=schedule.name %}">Times</a></li>
-    <li id="nav-non-session" class="{% if selected == 'non-sessions' %}selected{% endif %}"><a href="{% url "ietf.secr.meetings.views.non_session" meeting_id=meeting.number schedule_name=schedule.name %}">Non-Session</a></li>
-    <li id="nav-session" class="{% if selected == 'sessions' %}selected{% endif %}"><a href="{% url "ietf.secr.meetings.views.sessions" meeting_id=meeting.number schedule_name=schedule.name %}">Sessions</a></li>
+    <li id="nav-misc-session" class="{% if selected == 'misc-sessions' %}selected{% endif %}"><a href="{% url "ietf.secr.meetings.views.misc_sessions" meeting_id=meeting.number schedule_name=schedule.name %}">Misc. Sessions</a></li>
+    <li id="nav-session" class="{% if selected == 'regular-sessions' %}selected{% endif %}"><a href="{% url "ietf.secr.meetings.views.regular_sessions" meeting_id=meeting.number schedule_name=schedule.name %}">Regular Sessions</a></li>
   </ul>
 </div>
 

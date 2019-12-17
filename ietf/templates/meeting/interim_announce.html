@@ -35,17 +35,9 @@
         </thead>
         <tbody>
           {% for meeting in meetings %}
-            {% if meeting.type.slug == 'interim' %}
-              <tr id="row-{{ forloop.counter }}-{{ meeting.session_set.all.0.group.acronym }}">
-            {% else %}
-              <tr id="row-{{ forloop.counter }}-ietf">
-            {% endif %}  
+            <tr id="row-{{ forloop.counter }}{% if meeting.responsible_group.parent %}-{{ meeting.responsible_group.parent.acronym }}{% endif %}-{{ meeting.responsible_group.acronym }}">
               <td>{{ meeting.date }}</td>
-              {% if meeting.type.slug == 'interim' %}
-                <td>{{ meeting.session_set.all.0.group.acronym }}</td>
-              {% else %}
-                <td>ietf</td>
-              {% endif %}
+              <td>{{ meeting.responsible_group.acronym }}</td>
               <td>
                 <a href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">{{ meeting.number }}</a>
               </td>
