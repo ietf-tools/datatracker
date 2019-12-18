@@ -69,17 +69,21 @@ from ietf.meeting.helpers import sessions_post_save, is_interim_meeting_approved
 from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_announcement_request
-from ietf.meeting.utils import ( add_event_info_to_session_qs, condition_slide_order,
-    current_session_status, data_for_meetings_overview, finalize, infer_message,
-    session_requested_by, session_time_for_sorting, sort_accept_tuple, )
+from ietf.meeting.utils import finalize, sort_accept_tuple, condition_slide_order
+from ietf.meeting.utils import add_event_info_to_session_qs
+from ietf.meeting.utils import session_time_for_sorting
+from ietf.meeting.utils import session_requested_by
+from ietf.meeting.utils import current_session_status
+from ietf.meeting.utils import data_for_meetings_overview
+from ietf.message.utils import infer_message
 from ietf.secr.proceedings.utils import handle_upload_file
-from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process,
-    import_audio_files, create_recording)
+from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
+    create_recording)
 from ietf.utils.decorators import require_api_key
 from ietf.utils.log import assertion
 from ietf.utils.mail import send_mail_message, send_mail_text
-from ietf.utils.pdf import pdf_pages
 from ietf.utils.pipe import pipe
+from ietf.utils.pdf import pdf_pages
 from ietf.utils.text import xslugify
 from ietf.utils.validators import get_mime_type
 
