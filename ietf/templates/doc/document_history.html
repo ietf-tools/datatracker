@@ -19,7 +19,7 @@
   {% origin %}
   {{ top|safe }}
 
-  {% if diff_revisions and diff_revisions|length > 1 %}
+  {% if diff_revisions and diff_revisions|length > 1 or doc.name|rfcbis %}
     <h2>Revision differences</h2>
 
     <form class="form-horizontal diff-form" action="{{rfcdiff_base_url}}" method="get" target="_blank">
@@ -31,13 +31,13 @@
         <div class="col-sm-10">
           <select class="form-control" id="url1" name="url1">
 	    {% for name, rev, time, url in diff_revisions %}
-	      <option value="{{ url }}" {% if forloop.counter == 2 %} selected="selected" {% endif %}>
+	      <option value="{{ url }}" {% if diff_revisions|length > 1 and forloop.counter == 2 %} selected="selected" {% endif %}>
 	        {{ name }}{% if rev %}-{{ rev }}{% endif %}
 	        ({{ time|date:"Y-m-d" }})
 	      </option>
 	    {% endfor %}
 	    {% if doc.name|rfcbis %}
-	      <option value="{{ doc.name|rfcbis }}">
+	      <option value="{{ doc.name|rfcbis }}"{% if diff_revisions and diff_revisions|length == 1 %} selected="selected"{% endif %}>
 	        {{ doc.name|rfcbis }}
 	      </option>
 	    {% endif %}
