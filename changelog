@@ -1,3 +1,41 @@
+ietfdb (6.114.0) ietf; urgency=medium
+
+  **Refactoring and renaming of some meetings models and fields**
+
+  * Merged in [17148] from rjsparks@nostrum.com:
+    Only gather addresses instead of name_addrs for the group_secretaries
+    Mailtrigger Recipient. Fixes #2847.  
+
+  * Merged in [17147] from rjsparks@nostrum.com:
+    Show diff controls for a bis -00 document. Fixes #2846.
+
+  * Merged /branch/iola/meeting-improvement-r16992@17152 from olau@iola.dk:
+
+    - Renamed Meeting.agenda to Meeting.schedule together with a bunch of
+      related internal things,
+
+    - Moved Session.status, .requested, and .requested_by to a new
+      SchedulingEvent.
+
+    - Turned sessions into regular sessions and non-sessions into misc.
+      sessions in the UI and code to avoid ambiguity.
+      This doesn't change the data in the DB except for uses of TimeSlotTypeName
+      where 'session' is now 'regular'.
+
+  * Added a requirement limitation for the coverage module.
+
+  * Added handling for a decoding exception during submission processing.
+
+  * Merged in [17120] from rjsparks@nostrum.com:
+    Add links to the main website and the mailarchive to the search page.  
+
+  * Added an OPTIONS settings to the DATABASES setting in 
+    docker/settings_local.py, to make some migration operations work under 
+    docker.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 Dec 2019 20:38:33 +0000
+
+
 ietfdb (6.113.0) ietf; urgency=medium
 
   **Review tool queue management with pluggable policies**
