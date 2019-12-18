@@ -183,7 +183,7 @@ class Recipient(models.Model):
                     addrs = get_email_addresses_from_text(rts.secr_mail_alias)
                 else:
                     for role in group.role_set.filter(name='secr'):
-                        addrs.append(role.person.formatted_email())
+                        addrs.append(role.email.address)
         return addrs
     
     def gather_review_req_reviewers(self, **kwargs):

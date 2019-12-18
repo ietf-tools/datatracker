@@ -229,7 +229,7 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertIn('<reviewer@example.com>', outbox[0]["To"])
         self.assertNotIn("<reviewsecretary@example.com>", outbox[0]["To"])
-        self.assertIn("<reviewsecretary2@example.com>", outbox[0]["CC"])
+        self.assertIn("reviewsecretary2@example.com", outbox[0]["CC"])
         mail_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
         self.assertIn("closed", mail_content)
         self.assertIn("review_request_close_comment", mail_content)
@@ -1055,7 +1055,7 @@ class ReviewTests(TestCase):
         review_req = reload_db_objects(review_req)
         self.assertEqual(review_req.deadline,new_deadline)
         self.assertEqual(len(outbox), 1)
-        self.assertIn('<reviewsecretary@example.com>', outbox[0]["Cc"])
+        self.assertIn('reviewsecretary@example.com', outbox[0]["Cc"])
         self.assertIn('<reviewer@example.com>', outbox[0]["To"])
         self.assertIn('Deadline changed', outbox[0]['Subject'])
 
