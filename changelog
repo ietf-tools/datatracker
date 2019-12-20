@@ -1,3 +1,18 @@
+ietfdb (6.115.0) ietf; urgency=medium
+
+  **IRSG document ballot support**
+
+  * Merged in ^/branch/akayla/irsg/6.113.1.dev0 from peter@akayla.com:
+    This provides support for IRSG ballots, similar to the IESG ballots 
+    support which has been in use for quite some time.  The IRSG ballots differ 
+    from IESG ballots in a number of ways, described in detail in the RFP and 
+    SoW for this work and implemented here.
+
+  * Changed print() statements into syslog logging in a cron-invoked script, 
+    to remove non-error output.  Fixes issue #2849.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Dec 2019 15:44:39 +0000
+
 ietfdb (6.114.0) ietf; urgency=medium
 
   **Refactoring and renaming of some meetings models and fields**
