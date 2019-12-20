@@ -7,9 +7,9 @@
 
     {% for n, positions in position_groups %}
       <h4><span class="label label-{{ n|pos_to_label }}"> {{ n.name }}</span></h4>
-      {% for p in positions|dictsort:"ad.last_name" %}
-        <div class="areadirector-name">
-          {% if p.old_ad %}<span class="text-muted">({% endif %}{% if p.comment or p.discuss %}<a href="#{{ p.ad.plain_name|slugify }}">{% endif %}{{ p.ad.plain_name }}{% if p.comment or p.discuss %}</a>{% endif %}{% if p.old_ad %})</span>{% endif %}
+      {% for p in positions|dictsort:"balloter.last_name" %}
+        <div class="balloter-name">
+          {% if p.is_old_pos %}<span class="text-muted">({% endif %}{% if p.comment or p.discuss %}<a href="#{{ p.balloter.plain_name|slugify }}">{% endif %}{{ p.balloter.plain_name }}{% if p.comment or p.discuss %}</a>{% endif %}{% if p.is_old_pos %})</span>{% endif %}
         </div>
       {% empty %}
         (None)
@@ -48,12 +48,12 @@
       <p class="well"><b>Ballot question:</b> "{{ ballot.ballot_type.question }}"</p>
     {% endif %}
 
-    {% if editable and user|has_role:"Area Director,Secretariat" %}
+    {% if editable and user|has_role:"Area Director,Secretariat,IRSG Member" %}
       <a class="btn btn-default"
 	  href="https://mailarchive.ietf.org/arch/search/?q=subject:{{doc.name}}+AND+subject:(discuss+OR+comment+OR+review)">
 	 Search Mailarchive</a>
 
-      {% if user|has_role:"Area Director" %}
+      {% if user|can_ballot:doc %}
         <a class="btn btn-primary" href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}">Edit position</a>
       {% endif %}
 
@@ -66,23 +66,23 @@
           {% endif %}
         {% endif %}
 
-        {% if user|has_role:"Area Director,Secretariat" %}
+        {% if user|has_role:"Area Director,Secretariat" and ballot.ballot_type.slug != "irsg-approve" %}
           <a class="btn btn-danger" href="{% url 'ietf.doc.views_ballot.clear_ballot' name=doc.name ballot_type_slug=ballot.ballot_type.slug%}">Clear ballot</a>
         {% endif %}
       {% endif %}
     {% endif %}
 
     {% for n, positions in position_groups %}
-      {% for p in positions|dictsort:"ad.last_name" %}
-        <h4 class="anchor-target" id="{{ p.ad.plain_name|slugify }}">
-          {% if p.old_ad %}<span class="text-muted">({% endif %}{{ p.ad.plain_name }}{% if p.old_ad %})</span>{% endif %}
+      {% for p in positions|dictsort:"balloter.last_name" %}
+        <h4 class="anchor-target" id="{{ p.balloter.plain_name|slugify }}">
+          {% if p.is_old_pos %}<span class="text-muted">({% endif %}{{ p.balloter.plain_name }}{% if p.is_old_pos %})</span>{% endif %}
             <span class="pull-right">
               {% if p.old_positions %}
                 <span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>
               {% endif %}
               <span class="label label-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
               {% if user|has_role:"Secretariat" %}
-                <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?ad={{ p.ad.pk }}" title="Click to edit the position of {{ p.ad.plain_name }}" class="btn btn-default btn-xs">
+                <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}" title="Click to edit the position of {{ p.balloter.plain_name }}" class="btn btn-default btn-xs">
 	          Edit</a>
               {% endif %}
             </span>

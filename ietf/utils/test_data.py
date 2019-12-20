@@ -95,6 +95,7 @@ def make_immutable_base_data():
     create_person(rfc_editor, "auth", name="Rfc Editor", username="rfc", email_address="rfc@edit.or")
 
     iesg = create_group(name="Internet Engineering Steering Group", acronym="iesg", type_id="ietf", parent=ietf) # pyflakes:ignore
+    irsg = create_group(name="Internet Research Steering Group", acronym="irsg", type_id="irtf", parent=irtf) # pyflakes:ignore
 
     individ = create_group(name="Individual submissions", acronym="none", type_id="individ") # pyflakes:ignore
 
@@ -133,6 +134,17 @@ def make_immutable_base_data():
                 group=areahist,
                 person=p,
                 email=email)
+
+    # Create some IRSG members (really should add some atlarge and the chair,
+    # but this isn't currently essential)
+    create_person(irsg, "member", name="R. Searcher", username="rsearcher", email_address="rsearcher@example.org")
+
+    # Create a bunch of IRSG members for swarm tests
+    for i in range(1, 5):
+        u = User.objects.create(username="irsgmember%s" % i)
+        p = Person.objects.create(name="IRSG Member No%s" % i, ascii="IRSG Member No%s" % i, user=u)
+        email = Email.objects.create(address="irsgmember%s@example.org" % i, person=p, origin=u.username)
+        Role.objects.create(name_id="member", group=irsg, person=p, email=email)
 
 def make_test_data():
     area = Group.objects.get(acronym="farfut")

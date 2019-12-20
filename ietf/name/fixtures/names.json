@@ -130,6 +130,25 @@
   },
   {
     "fields": {
+      "doc_type": "draft",
+      "name": "IRSG Approve",
+      "order": 0,
+      "positions": [
+        "moretime",
+        "notready",
+        "yes",
+        "noobj",
+        "recuse"
+      ],
+      "question": "Is this draft ready for publication in the IRTF stream?",
+      "slug": "irsg-approve",
+      "used": true
+    },
+    "model": "doc.ballottype",
+    "pk": 7
+  },
+  {
+    "fields": {
       "desc": "",
       "name": "Active",
       "next_states": [],
@@ -2262,6 +2281,19 @@
   },
   {
     "fields": {
+      "desc": "IRSG Review",
+      "name": "IRSG Review",
+      "next_states": [],
+      "order": 0,
+      "slug": "irsg_review",
+      "type": "draft-stream-irtf",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 156
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -3601,6 +3633,27 @@
   {
     "fields": {
       "cc": [
+        "conflict_review_stream_manager",
+        "doc_affecteddoc_authors",
+        "doc_affecteddoc_group_chairs",
+        "doc_affecteddoc_notify",
+        "doc_authors",
+        "doc_group_chairs",
+        "doc_group_mail_list",
+        "doc_notify",
+        "doc_shepherd"
+      ],
+      "desc": "Recipients when a new ballot position (with discusses, other blocking positions, or comments) is saved",
+      "to": [
+        "iesg"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "iesg_ballot_saved"
+  },
+  {
+    "fields": {
+      "cc": [
         "group_mail_list"
       ],
       "desc": "Recipients when an interim meeting is announced",
@@ -3688,6 +3741,26 @@
     },
     "model": "mailtrigger.mailtrigger",
     "pk": "ipr_posting_confirmation"
+  },
+  {
+    "fields": {
+      "cc": [
+        "doc_affecteddoc_authors",
+        "doc_affecteddoc_group_chairs",
+        "doc_affecteddoc_notify",
+        "doc_authors",
+        "doc_group_chairs",
+        "doc_group_mail_list",
+        "doc_notify",
+        "doc_shepherd"
+      ],
+      "desc": "Recipients when a new IRSG ballot position with comments is saved",
+      "to": [
+        "irsg"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "irsg_ballot_saved"
   },
   {
     "fields": {
@@ -5054,6 +5127,14 @@
   },
   {
     "fields": {
+      "desc": "The IRSG",
+      "template": "The IRSG <irsg@irtf.org>"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "irsg"
+  },
+  {
+    "fields": {
       "desc": "Alias for secretariat liaison administration",
       "template": "<statements@ietf.org>"
     },
@@ -5409,6 +5490,17 @@
     "fields": {
       "blocking": false,
       "desc": "",
+      "name": "Need More Time",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.ballotpositionname",
+    "pk": "moretime"
+  },
+  {
+    "fields": {
+      "blocking": false,
+      "desc": "",
       "name": "No Objection",
       "order": 2,
       "used": true
@@ -5426,6 +5518,17 @@
     },
     "model": "name.ballotpositionname",
     "pk": "norecord"
+  },
+  {
+    "fields": {
+      "blocking": false,
+      "desc": "",
+      "name": "Not Ready",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.ballotpositionname",
+    "pk": "notready"
   },
   {
     "fields": {
@@ -10769,7 +10872,7 @@
     "fields": {
       "desc": "",
       "name": "Least recently used",
-      "order": 2,
+      "order": 0,
       "used": true
     },
     "model": "name.reviewerqueuepolicyname",
@@ -10779,7 +10882,7 @@
     "fields": {
       "desc": "",
       "name": "Rotate alphabetically",
-      "order": 1,
+      "order": 0,
       "used": true
     },
     "model": "name.reviewerqueuepolicyname",
@@ -11627,6 +11730,16 @@
   },
   {
     "fields": {
+      "desc": "",
+      "name": "Regular",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.timeslottypename",
+    "pk": "regular"
+  },
+  {
+    "fields": {
       "desc": "A room has been reserved for use by another body the timeslot indicated",
       "name": "Room Reserved",
       "order": 0,
@@ -11634,16 +11747,6 @@
     },
     "model": "name.timeslottypename",
     "pk": "reserved"
-  },
-  {
-    "fields": {
-      "desc": "",
-      "name": "Session",
-      "order": 0,
-      "used": true
-    },
-    "model": "name.timeslottypename",
-    "pk": "regular"
   },
   {
     "fields": {
@@ -14113,7 +14216,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2019-11-20T00:13:04.660",
+      "time": "2019-12-18T00:13:51.087",
       "used": true,
       "version": "xym 0.4"
     },
@@ -14124,7 +14227,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2019-11-20T00:13:05.501",
+      "time": "2019-12-18T00:13:52.218",
       "used": true,
       "version": "pyang 2.1"
     },
@@ -14135,7 +14238,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2019-11-20T00:13:05.643",
+      "time": "2019-12-18T00:13:52.367",
       "used": true,
       "version": "yanglint 0.14.80"
     },
@@ -14146,9 +14249,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2019-11-20T00:13:06.676",
+      "time": "2019-12-18T00:13:53.390",
       "used": true,
-      "version": "xml2rfc 2.35.0"
+      "version": "xml2rfc 2.36.0"
     },
     "model": "utils.versioninfo",
     "pk": 4

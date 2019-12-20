@@ -15,12 +15,12 @@ class EventMailTests(TestCase):
         url = urlreverse('ietf.mailtrigger.views.show_triggers')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, 'ballot_saved')
+        self.assertContains(r, 'iesg_ballot_saved')
    
-        url = urlreverse('ietf.mailtrigger.views.show_triggers',kwargs=dict(mailtrigger_slug='ballot_saved'))
+        url = urlreverse('ietf.mailtrigger.views.show_triggers',kwargs=dict(mailtrigger_slug='iesg_ballot_saved'))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, 'ballot_saved')
+        self.assertContains(r, 'iesg_ballot_saved')
 
     def test_show_recipients(self):
 

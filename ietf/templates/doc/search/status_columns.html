@@ -42,6 +42,11 @@
       {{ doc.intended_std_level }}
     {% endif %}
 
+    {% if doc.duedate %}
+      <br>
+      Due date: {{ doc.duedate }}
+    {%endif %}
+
     {% if doc.reviewed_by_teams %}
       <br>Reviews:
       {% for acronym in doc.reviewed_by_teams %}

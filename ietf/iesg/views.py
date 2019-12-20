@@ -428,7 +428,7 @@ def past_documents(request):
             if blocking_positions:
                 augment_events_with_revision(doc, blocking_positions)
 
-        doc.by_me = bool([p for p in blocking_positions if user_is_person(request.user, p.ad)])
+        doc.by_me = bool([p for p in blocking_positions if user_is_person(request.user, p.balloter)])
         doc.for_me = user_is_person(request.user, doc.ad)
         doc.milestones = doc.groupmilestone_set.filter(state="active").order_by("time").select_related("group")
         doc.blocking_positions = blocking_positions
@@ -506,7 +506,7 @@ def discusses(request):
 
         augment_events_with_revision(doc, blocking_positions)
 
-        doc.by_me = bool([p for p in blocking_positions if user_is_person(request.user, p.ad)])
+        doc.by_me = bool([p for p in blocking_positions if user_is_person(request.user, p.balloter)])
         doc.for_me = user_is_person(request.user, doc.ad)
         doc.milestones = doc.groupmilestone_set.filter(state="active").order_by("time").select_related("group")
         doc.blocking_positions = blocking_positions

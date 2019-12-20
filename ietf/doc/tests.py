@@ -240,7 +240,7 @@ class SearchTests(TestCase):
         ballot_type = BallotType.objects.get(doc_type_id='draft',slug='approve')
         ballot = BallotDocEventFactory(ballot_type=ballot_type, doc__states=[('draft-iesg','iesg-eva')])
         discuss_pos = BallotPositionName.objects.get(slug='discuss')
-        discuss_other = BallotPositionDocEventFactory(ballot=ballot, doc=ballot.doc, ad=ad, pos=discuss_pos)
+        discuss_other = BallotPositionDocEventFactory(ballot=ballot, doc=ballot.doc, balloter=ad, pos=discuss_pos)
 
         r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad', kwargs=dict(name=ad.full_name_as_key())))
         self.assertEqual(r.status_code, 200)
@@ -743,7 +743,7 @@ class DocTestCase(TestCase):
             pos_id="yes",
             comment="Looks fine to me",
             comment_time=datetime.datetime.now(),
-            ad=Person.objects.get(user__username="ad"),
+            balloter=Person.objects.get(user__username="ad"),
             by=Person.objects.get(name="(System)"))
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
@@ -1119,7 +1119,7 @@ expand-draft-ietf-ames-test.all@virtual.ietf.org  ames-author@example.ames, ames
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'draft-ietf-mars-test.all@ietf.org')
-        self.assertContains(r, 'ballot_saved')
+        self.assertContains(r, 'iesg_ballot_saved')
 
 class DocumentMeetingTests(TestCase):
 

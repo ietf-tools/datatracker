@@ -35,7 +35,7 @@ x consolidate views (get rid of get_group_header,group,group_navigate)
 '''
 active_ballot_positions: takes one argument, doc.  returns a dictionary with a key for each ad Person object
 NOTE: this function has been deprecated as of Datatracker 4.34.  Should now use methods on the Document.
-For example: doc.active_ballot().active_ad_positions()
+For example: doc.active_ballot().active_balloter_positions()
 
 agenda_data: takes a date string in the format YYYY-MM-DD.
 '''
@@ -191,7 +191,7 @@ def doc_detail(request, date, name):
     login = request.user.person
 
     if doc.active_ballot():
-        ballots = doc.active_ballot().active_ad_positions()  # returns dict of ad:ballotpositiondocevent
+        ballots = doc.active_ballot().active_balloter_positions()  # returns dict of ad:ballotpositiondocevent
     else:
         ballots = []
 
@@ -246,16 +246,16 @@ def doc_detail(request, date, name):
                 if form.is_valid() and form.changed_data:
                     # create new BallotPositionDocEvent
                     clean = form.cleaned_data
-                    ad = Person.objects.get(id=clean['id'])
+                    balloter = Person.objects.get(id=clean['id'])
                     pos = BallotPositionDocEvent(doc=doc, rev=doc.rev, by=login)
                     pos.type = "changed_ballot_position"
-                    pos.ad = ad
+                    pos.balloter = balloter
                     pos.ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
                     pos.pos = clean['position']
                     if form.initial['position'] == None:
-                        pos.desc = '[Ballot Position Update] New position, %s, has been recorded for %s by %s' % (pos.pos.name, ad.name, login.name)
+                        pos.desc = '[Ballot Position Update] New position, %s, has been recorded for %s by %s' % (pos.pos.name, balloter.name, login.name)
                     else:
-                        pos.desc = '[Ballot Position Update] Position for %s has been changed to %s by %s' % (ad.name, pos.pos.name, login.name)
+                        pos.desc = '[Ballot Position Update] Position for %s has been changed to %s by %s' % (balloter.name, pos.pos.name, login.name)
                     pos.save()
                     has_changed = True
 

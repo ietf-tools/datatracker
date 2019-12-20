@@ -73,15 +73,15 @@ def change_state(request, name, option=None):
                 if new_state.slug == "iesgeval":
                     e = create_ballot_if_not_open(request, status_change, login, "statchg", status_change.time) # pyflakes:ignore
                     ballot = status_change.latest_event(BallotDocEvent, type="created_ballot")
-                    if has_role(request.user, "Area Director") and not status_change.latest_event(BallotPositionDocEvent, ad=login, ballot=ballot, type="changed_ballot_position"):
+                    if has_role(request.user, "Area Director") and not status_change.latest_event(BallotPositionDocEvent, balloter=login, ballot=ballot, type="changed_ballot_position"):
 
                         # The AD putting a status change into iesgeval who doesn't already have a position is saying "yes"
                         pos = BallotPositionDocEvent(doc=status_change, rev=status_change.rev, by=login)
                         pos.ballot = ballot
                         pos.type = "changed_ballot_position"
-                        pos.ad = login
+                        pos.balloter = login
                         pos.pos_id = "yes"
-                        pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
+                        pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.balloter.plain_name())
                         pos.save()
 
                     send_status_change_eval_email(request,status_change)

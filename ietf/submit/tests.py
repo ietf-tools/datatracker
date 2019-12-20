@@ -365,7 +365,7 @@ class SubmitTests(TestCase):
             ballot_position.type = "changed_ballot_position"
             ballot_position.doc = draft
             ballot_position.rev = draft.rev
-            ballot_position.ad = ballot_position.by = Person.objects.get(user__username="ad2")
+            ballot_position.balloter = ballot_position.by = Person.objects.get(user__username="ad2")
             ballot_position.save()
 
         elif stream_type == 'irtf':
@@ -508,7 +508,7 @@ class SubmitTests(TestCase):
         self.assertTrue(interesting_address in force_text(outbox[-2].as_string()))
         if draft.stream_id == 'ietf':
             self.assertTrue(draft.ad.role_email("ad").address in force_text(outbox[-2].as_string()))
-            self.assertTrue(ballot_position.ad.role_email("ad").address in force_text(outbox[-2].as_string()))
+            self.assertTrue(ballot_position.balloter.role_email("ad").address in force_text(outbox[-2].as_string()))
         self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
         self.assertTrue(name in get_payload(outbox[-1]))
         r = self.client.get(urlreverse('ietf.doc.views_search.recent_drafts'))

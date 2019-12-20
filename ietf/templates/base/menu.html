@@ -55,6 +55,9 @@
       <li><a href="{% url 'ietf.doc.views_status_change.rfc_status_changes' %}">RFC status changes</a></li>
     {% endif %}
 
+    {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
+    <li><a href="{% url 'ietf.doc.views_ballot.irsg_ballot_status' %}">IRSG ballot status</a></li>
+
     {% if user|has_role:"WG Chair,RG Chair" %}
       {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
       <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>WG chair</li>

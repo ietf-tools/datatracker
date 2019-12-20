@@ -25,6 +25,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ConsensusDocEvent
 from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped
 from ietf.utils.html import sanitize_fragment
+from ietf.doc.models import BallotDocEvent
 
 register = template.Library()
 
@@ -539,3 +540,20 @@ def charter_major_rev(rev):
 @stringfilter
 def charter_minor_rev(rev):
     return rev[3:5]
+
+@register.filter()
+def can_defer(user,doc):
+    ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
+    if ballot and (doc.type_id == "draft" or doc.type_id == "conflrev") and doc.stream_id == 'ietf' and has_role(user, 'Area Director,Secretariat'):
+        return True
+    else:
+        return False
+
+@register.filter()
+def can_ballot(user,doc):
+    if doc.stream_id == 'ietf' and user.person.role_set.filter(name="ad", group__type="area", group__state="active"):
+        return True
+    elif doc.stream_id == 'irtf' and has_role(user,'IRSG Member'):
+        return True
+    else:
+        return False

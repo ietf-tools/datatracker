@@ -425,7 +425,7 @@ def docs_for_ad(request, name):
                                                 Q(states__type__in=("statchg", "conflrev"),
                                                   states__slug__in=("iesgeval", "defer")),
                                                 docevent__ballotpositiondocevent__pos__blocking=True,
-                                                docevent__ballotpositiondocevent__ad=ad).distinct()
+                                                docevent__ballotpositiondocevent__balloter=ad).distinct()
         for doc in possible_docs:
             ballot = doc.active_ballot()
             if not ballot:
@@ -433,7 +433,7 @@ def docs_for_ad(request, name):
 
             blocking_positions = [p for p in ballot.all_positions() if p.pos.blocking]
 
-            if not blocking_positions or not any( p.ad==ad for p in blocking_positions ):
+            if not blocking_positions or not any( p.balloter==ad for p in blocking_positions ):
                 continue
 
             augment_events_with_revision(doc, blocking_positions)
@@ -445,7 +445,7 @@ def docs_for_ad(request, name):
 
         # latest first
         if blocked_docs:
-            blocked_docs.sort(key=lambda d: min(p.time for p in d.blocking_positions if p.ad==ad), reverse=True)
+            blocked_docs.sort(key=lambda d: min(p.time for p in d.blocking_positions if p.balloter==ad), reverse=True)
 
     return render(request, 'doc/drafts_for_ad.html', {
         'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name(), 'blocked_docs': blocked_docs

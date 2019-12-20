@@ -665,15 +665,15 @@ def ballot_writeupnotes(request, name):
                 existing.save()
 
             if "send_ballot" in request.POST and approval:
-                if has_role(request.user, "Area Director") and not charter.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=by, ballot=ballot):
+                if has_role(request.user, "Area Director") and not charter.latest_event(BallotPositionDocEvent, type="changed_ballot_position", balloter=by, ballot=ballot):
                     # sending the ballot counts as a yes
                     pos = BallotPositionDocEvent(doc=charter, rev=charter.rev, by=by)
                     pos.type = "changed_ballot_position"
-                    pos.ad = by
+                    pos.balloter = by
                     pos.pos_id = "yes"
                     pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
                     pos.save()
-                    # Consider mailing this position to 'ballot_saved'
+                    # Consider mailing this position to 'iesg_ballot_saved'
 
                 msg = generate_issue_ballot_mail(request, charter, ballot)
                 send_mail_preformatted(request, msg)

@@ -63,7 +63,7 @@ from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_wit
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content, build_doc_meta_block,
-    augment_docs_and_user_with_user_info)
+    augment_docs_and_user_with_user_info, irsg_needed_ballot_positions )
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_group_type, can_manage_materials, group_features_role_filter
 from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is_person,
@@ -86,12 +86,16 @@ def render_document_top(request, doc, tab, name):
     tabs = []
     tabs.append(("Status", "status", urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=name)), True, None))
 
-    ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
-    if doc.type_id in ("draft","conflrev", "statchg"):
-        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), ballot,  None if ballot else "IESG Evaluation Ballot has not been created yet"))
-    elif doc.type_id == "charter" and doc.group.type_id == "wg":
-        tabs.append(("IESG Review", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), ballot, None if ballot else "IESG Review Ballot has not been created yet"))
+    iesg_ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug='approve')
+    irsg_ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug='irsg-approve')
 
+    if doc.type_id == "draft" and doc.get_state("draft-stream-irtf"):
+        tabs.append(("IRSG Evaluation Record", "irsgballot", urlreverse("ietf.doc.views_doc.document_irsg_ballot", kwargs=dict(name=name)), irsg_ballot,  None if irsg_ballot else "IRSG Evaluation Ballot has not been created yet"))
+    if doc.type_id in ("draft","conflrev", "statchg"):
+        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), iesg_ballot,  None if iesg_ballot else "IESG Evaluation Ballot has not been created yet"))
+    elif doc.type_id == "charter" and doc.group.type_id == "wg":
+        tabs.append(("IESG Review", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), iesg_ballot, None if iesg_ballot else "IESG Review Ballot has not been created yet"))
+    
     if doc.type_id == "draft" or (doc.type_id == "charter" and doc.group.type_id == "wg"):
         tabs.append(("IESG Writeups", "writeup", urlreverse('ietf.doc.views_doc.document_writeup', kwargs=dict(name=name)), True, None))
 
@@ -170,6 +174,8 @@ def document_main(request, name, rev=None):
 
         iesg_state = doc.get_state("draft-iesg")
         iesg_state_summary = doc.friendly_state()
+        irsg_state = doc.get_state("draft-stream-irtf")
+
         can_edit = has_role(request.user, ("Area Director", "Secretariat"))
         stream_slugs = StreamName.objects.values_list("slug", flat=True)
         # For some reason, AnonymousUser has __iter__, but is not iterable,
@@ -260,11 +266,17 @@ def document_main(request, name, rev=None):
         file_urls.append(("bibtex", "bibtex"))
 
         # ballot
-        ballot_summary = None
-        if iesg_state and iesg_state.slug in IESG_BALLOT_ACTIVE_STATES:
+        iesg_ballot_summary = None
+        irsg_ballot_summary = None
+        due_date = None
+        if (iesg_state and iesg_state.slug in IESG_BALLOT_ACTIVE_STATES) or irsg_state:
             active_ballot = doc.active_ballot()
             if active_ballot:
-                ballot_summary = needed_ballot_positions(doc, list(active_ballot.active_ad_positions().values()))
+                if irsg_state:
+                    irsg_ballot_summary = irsg_needed_ballot_positions(doc, list(active_ballot.active_balloter_positions().values()))
+                    due_date=active_ballot.irsgballotdocevent.duedate
+                else:
+                    iesg_ballot_summary = needed_ballot_positions(doc, list(active_ballot.active_balloter_positions().values()))
 
         # submission
         submission = ""
@@ -365,6 +377,13 @@ def document_main(request, name, rev=None):
 
         if doc.get_state_slug() == "expired" and has_role(request.user, ("Secretariat",)) and not snapshot:
             actions.append(("Resurrect", urlreverse('ietf.doc.views_draft.resurrect', kwargs=dict(name=doc.name))))
+        
+        if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("irtf",) and not snapshot and not doc.ballot_open('irsg-approve') and can_edit_stream_info):
+            label = "Issue IRSG Ballot"
+            actions.append((label, urlreverse('ietf.doc.views_ballot.issue_irsg_ballot', kwargs=dict(name=doc.name))))
+        if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("irtf",) and not snapshot and doc.ballot_open('irsg-approve') and can_edit_stream_info):
+            label = "Close IRSG Ballot"
+            actions.append((label, urlreverse('ietf.doc.views_ballot.close_irsg_ballot', kwargs=dict(name=doc.name))))
 
         if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ise", "irtf")
             and can_edit_stream_info and not conflict_reviews and not snapshot):
@@ -433,7 +452,9 @@ def document_main(request, name, rev=None):
                                        rfc_number=rfc_number,
                                        draft_name=draft_name,
                                        telechat=telechat,
-                                       ballot_summary=ballot_summary,
+                                       iesg_ballot_summary=iesg_ballot_summary,
+                                       # PEY: Currently not using irsg_ballot_summary in the template, but it should be.  That will take a new box for IRSG data.
+                                       irsg_ballot_summary=irsg_ballot_summary,
                                        submission=submission,
                                        resurrected_by=resurrected_by,
 
@@ -471,6 +492,7 @@ def document_main(request, name, rev=None):
                                        presentations=presentations,
                                        review_assignments=review_assignments,
                                        no_review_from_teams=no_review_from_teams,
+                                       due_date=due_date,
                                        ))
 
     if doc.type_id == "charter":
@@ -481,7 +503,7 @@ def document_main(request, name, rev=None):
         if doc.get_state_slug() in ("intrev", "iesgrev"):
             active_ballot = doc.active_ballot()
             if active_ballot:
-                ballot_summary = needed_ballot_positions(doc, list(active_ballot.active_ad_positions().values()))
+                ballot_summary = needed_ballot_positions(doc, list(active_ballot.active_balloter_positions().values()))
             else:
                 ballot_summary = "No active ballot found."
 
@@ -523,7 +545,7 @@ def document_main(request, name, rev=None):
 
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval") and doc.active_ballot():
-            ballot_summary = needed_ballot_positions(doc, list(doc.active_ballot().active_ad_positions().values()))
+            ballot_summary = needed_ballot_positions(doc, list(doc.active_ballot().active_balloter_positions().values()))
 
         return render(request, "doc/document_conflict_review.html",
                                   dict(doc=doc,
@@ -550,7 +572,7 @@ def document_main(request, name, rev=None):
 
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval"):
-            ballot_summary = needed_ballot_positions(doc, list(doc.active_ballot().active_ad_positions().values()))
+            ballot_summary = needed_ballot_positions(doc, list(doc.active_ballot().active_balloter_positions().values()))
      
         if isinstance(doc,Document):
             sorted_relations=doc.relateddocument_set.all().order_by('relationship__name')
@@ -998,16 +1020,19 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
     position_groups = []
     for n in BallotPositionName.objects.filter(slug__in=[p.pos_id for p in positions]).order_by('order'):
         g = (n, [p for p in positions if p.pos_id == n.slug])
-        g[1].sort(key=lambda p: (p.old_ad, p.ad.plain_name()))
+        g[1].sort(key=lambda p: (p.is_old_pos, p.balloter.plain_name()))
         if n.blocking:
             position_groups.insert(0, g)
         else:
             position_groups.append(g)
 
-    summary = needed_ballot_positions(doc, [p for p in positions if not p.old_ad])
+    if (ballot.ballot_type.slug == "irsg-approve"):
+        summary = irsg_needed_ballot_positions(doc, [p for p in positions if not p.is_old_pos])
+    else:
+        summary = needed_ballot_positions(doc, [p for p in positions if not p.is_old_pos])
 
     text_positions = [p for p in positions if p.discuss or p.comment]
-    text_positions.sort(key=lambda p: (p.old_ad, p.ad.plain_name()))
+    text_positions.sort(key=lambda p: (p.is_old_pos, p.balloter.plain_name()))
 
     ballot_open = not BallotDocEvent.objects.filter(doc=doc,
                                                     type__in=("closed_ballot", "created_ballot"),
@@ -1031,7 +1056,49 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
 
 def document_ballot(request, name, ballot_id=None):
     doc = get_object_or_404(Document, docalias__name=name)
-    top = render_document_top(request, doc, "ballot", name)
+    all_ballots = list(BallotDocEvent.objects.filter(doc=doc, type="created_ballot").order_by("time"))
+    if not ballot_id:
+        if all_ballots:
+            ballot = all_ballots[-1]
+        else:
+            raise Http404("Ballot not found for: %s" % name)
+        ballot_id = ballot.id
+    else:
+        ballot_id = int(ballot_id)
+        for b in all_ballots:
+            if b.id == ballot_id:
+                ballot = b
+                break
+
+    if not ballot_id or not ballot:
+        raise Http404("Ballot not found for: %s" % name)
+
+    if ballot.ballot_type.slug == "approve":
+        ballot_tab = "ballot"
+    elif ballot.ballot_type.slug == "irsg-approve":
+        ballot_tab = "irsgballot"
+    else:
+        ballot_tab = None
+
+    top = render_document_top(request, doc, ballot_tab, name)
+
+    c = document_ballot_content(request, doc, ballot_id, editable=True)
+    request.session['ballot_edit_return_point'] = request.path_info
+
+    return render(request, "doc/document_ballot.html",
+                              dict(doc=doc,
+                                   top=top,
+                                   ballot_content=c,
+                                   # ballot_type_slug=ballot.ballot_type.slug,
+                                   ))
+
+def document_irsg_ballot(request, name, ballot_id=None):
+    doc = get_object_or_404(Document, docalias__name=name)
+    top = render_document_top(request, doc, "irsgballot", name)
+    if not ballot_id:
+        ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug='irsg-approve')
+        if ballot:
+            ballot_id = ballot.id
 
     c = document_ballot_content(request, doc, ballot_id, editable=True)
 
@@ -1041,6 +1108,7 @@ def document_ballot(request, name, ballot_id=None):
                               dict(doc=doc,
                                    top=top,
                                    ballot_content=c,
+                                   # ballot_type_slug=ballot.ballot_type.slug,
                                    ))
 
 def ballot_popup(request, name, ballot_id):

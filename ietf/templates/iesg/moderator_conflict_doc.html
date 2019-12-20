@@ -64,7 +64,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
   {% if ballot %}
     <small><pre>
                               Yes  No-Objection  Discuss  Abstain  Recuse
-      {% for pos in ballot.all_positions %}{% if pos.old_ad %}{{pos.ad.plain_name|bracket|ljust:"22"}}{%else%}{{pos.ad.plain_name|ljust:"22"}}{%endif%} {{pos|bracketpos:"yes"}}    {{pos|bracketpos:"noobj"}}       {{pos|bracketpos:"discuss"}}    {{pos|bracketpos:"abstain"}}    {{pos|bracketpos:"recuse"}}
+      {% for pos in ballot.all_positions %}{% if pos.is_old_pos %}{{pos.balloter.plain_name|bracket|ljust:"22"}}{%else%}{{pos.balloter.plain_name|ljust:"22"}}{%endif%} {{pos|bracketpos:"yes"}}    {{pos|bracketpos:"noobj"}}       {{pos|bracketpos:"discuss"}}    {{pos|bracketpos:"abstain"}}    {{pos|bracketpos:"recuse"}}
       {% endfor %}
     </pre></small>
 

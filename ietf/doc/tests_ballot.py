@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+#ad Copyright The IETF Trust 2013-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -28,7 +28,7 @@ from ietf.utils.text import unwrap
 class EditPositionTests(TestCase):
     def test_edit_position(self):
         ad = Person.objects.get(user__username="ad")
-        draft = IndividualDraftFactory(ad=ad)
+        draft = IndividualDraftFactory(ad=ad,stream_id='ietf')
         ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
         url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=draft.name,
                                                           ballot_id=ballot.pk))
@@ -51,7 +51,7 @@ class EditPositionTests(TestCase):
                                        comment=" This is a test. \n "))
         self.assertEqual(r.status_code, 302)
 
-        pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
+        pos = draft.latest_event(BallotPositionDocEvent, balloter=ad)
         self.assertEqual(pos.pos.slug, "discuss")
         self.assertTrue(" This is a discussion test." in pos.discuss)
         self.assertTrue(pos.discuss_time != None)
@@ -66,7 +66,7 @@ class EditPositionTests(TestCase):
         self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
+        pos = draft.latest_event(BallotPositionDocEvent, balloter=ad)
         self.assertEqual(pos.pos.slug, "noobj")
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
         self.assertTrue("Position for" in pos.desc)
@@ -77,7 +77,7 @@ class EditPositionTests(TestCase):
         self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
+        pos = draft.latest_event(BallotPositionDocEvent, balloter=ad)
         self.assertEqual(pos.pos.slug, "norecord")
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
         self.assertTrue("Position for" in pos.desc)
@@ -88,7 +88,7 @@ class EditPositionTests(TestCase):
         self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
+        pos = draft.latest_event(BallotPositionDocEvent, balloter=ad)
         self.assertEqual(pos.pos.slug, "norecord")
         self.assertEqual(draft.docevent_set.count(), events_before + 2)
         self.assertTrue("Ballot comment text updated" in pos.desc)
@@ -115,7 +115,7 @@ class EditPositionTests(TestCase):
             )
         self.assertContains(r, "Done")
 
-        pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
+        pos = draft.latest_event(BallotPositionDocEvent, balloter=ad)
         self.assertEqual(pos.pos.slug, "discuss")
         self.assertTrue(" This is a discussion test." in pos.discuss)
         self.assertTrue(pos.discuss_time != None)
@@ -132,7 +132,7 @@ class EditPositionTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         draft = Document.objects.get(name=draft.name)
-        pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
+        pos = draft.latest_event(BallotPositionDocEvent, balloter=ad)
         self.assertEqual(pos.pos.slug, "noobj")
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
         self.assertTrue("Position for" in pos.desc)
@@ -150,7 +150,7 @@ class EditPositionTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         draft = Document.objects.get(name=draft.name)
-        pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
+        pos = draft.latest_event(BallotPositionDocEvent, balloter=ad)
         self.assertEqual(pos.pos.slug, "norecord")
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
         self.assertTrue("Position for" in pos.desc)
@@ -165,7 +165,7 @@ class EditPositionTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         draft = Document.objects.get(name=draft.name)
-        pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
+        pos = draft.latest_event(BallotPositionDocEvent, balloter=ad)
         self.assertEqual(pos.pos.slug, "norecord")
         self.assertEqual(draft.docevent_set.count(), events_before + 2)
         self.assertTrue("Ballot comment text updated" in pos.desc)
@@ -181,7 +181,7 @@ class EditPositionTests(TestCase):
         ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
         url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=draft.name, ballot_id=ballot.pk))
         ad = Person.objects.get(name="Areað Irector")
-        url += "?ad=%s" % ad.pk
+        url += "?balloter=%s" % ad.pk
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -195,7 +195,7 @@ class EditPositionTests(TestCase):
         r = self.client.post(url, dict(position="discuss", discuss="Test discuss text"))
         self.assertEqual(r.status_code, 302)
 
-        pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
+        pos = draft.latest_event(BallotPositionDocEvent, balloter=ad)
         self.assertEqual(pos.pos.slug, "discuss")
         self.assertEqual(pos.discuss, "Test discuss text")
         self.assertTrue("New position" in pos.desc)
@@ -229,7 +229,7 @@ class EditPositionTests(TestCase):
 
         BallotPositionDocEvent.objects.create(
             doc=draft, rev=draft.rev, type="changed_ballot_position",
-            by=ad, ad=ad, ballot=ballot, pos=BallotPositionName.objects.get(slug="discuss"),
+            by=ad, balloter=ad, ballot=ballot, pos=BallotPositionName.objects.get(slug="discuss"),
             discuss="This draft seems to be lacking a clearer title?",
             discuss_time=datetime.datetime.now(),
             comment="Test!",

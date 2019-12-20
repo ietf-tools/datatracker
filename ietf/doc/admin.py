@@ -12,7 +12,7 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     StateDocEvent, ConsensusDocEvent, BallotType, BallotDocEvent, WriteupDocEvent, LastCallDocEvent,
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
-    ReviewAssignmentDocEvent, IanaExpertDocEvent )
+    ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent )
 
 
 class StateTypeAdmin(admin.ModelAdmin):
@@ -164,8 +164,12 @@ class DeletedEventAdmin(admin.ModelAdmin):
 admin.site.register(DeletedEvent, DeletedEventAdmin)
 
 class BallotPositionDocEventAdmin(DocEventAdmin):
-    raw_id_fields = ["doc", "by", "ad", "ballot"]
+    raw_id_fields = ["doc", "by", "balloter", "ballot"]
 admin.site.register(BallotPositionDocEvent, BallotPositionDocEventAdmin)
+ 
+class IRSGBallotDocEventAdmin(DocEventAdmin):
+    raw_id_fields = ["doc", "by"]
+admin.site.register(IRSGBallotDocEvent, IRSGBallotDocEventAdmin)
     
 class DocumentUrlAdmin(admin.ModelAdmin):
     list_display = ['id', 'doc', 'tag', 'url', 'desc', ]

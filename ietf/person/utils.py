@@ -189,6 +189,13 @@ def determine_merge_order(source,target):
         source,target = sorted([source,target],key=lambda a: a.user.last_login if a.user.last_login else datetime.datetime.min)
     return source,target
 
+def get_active_balloters(ballot_type):
+    if (ballot_type.slug != "irsg-approve"):
+        active_balloters = get_active_ads()
+    else:
+        active_balloters = get_active_irsg()
+    return active_balloters
+
 def get_active_ads():
     from ietf.person.models import Person
     cache_key = "doc:active_ads"
@@ -197,3 +204,13 @@ def get_active_ads():
         active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type="area").distinct())
         cache.set(cache_key, active_ads)
     return active_ads
+
+def get_active_irsg():
+    from ietf.person.models import Person
+    cache_key = "doc:active_irsg_balloters"
+    active_irsg_balloters = cache.get(cache_key)
+    if not active_irsg_balloters:
+        active_irsg_balloters = list(Person.objects.filter(role__group__acronym='irsg',role__name__in=['chair','member','atlarge']).distinct())
+        cache.set(cache_key, active_irsg_balloters)
+    return active_irsg_balloters        
+

@@ -69,17 +69,17 @@ def change_state(request, name, option=None):
                     e = create_ballot_if_not_open(request, review, login, "conflrev") # pyflakes:ignore
                     ballot = review.latest_event(BallotDocEvent, type="created_ballot")
                     log.assertion('ballot == e')
-                    if has_role(request.user, "Area Director") and not review.latest_event(BallotPositionDocEvent, ad=login, ballot=ballot, type="changed_ballot_position"):
+                    if has_role(request.user, "Area Director") and not review.latest_event(BallotPositionDocEvent, balloter=login, ballot=ballot, type="changed_ballot_position"):
 
                         # The AD putting a conflict review into iesgeval who doesn't already have a position is saying "yes"
                         pos = BallotPositionDocEvent(doc=review, rev=review.rev, by=login)
                         pos.ballot = ballot
                         pos.type = "changed_ballot_position"
-                        pos.ad = login
+                        pos.balloter = login
                         pos.pos_id = "yes"
-                        pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
+                        pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.balloter.plain_name())
                         pos.save()
-                        # Consider mailing that position to 'ballot_saved'
+                        # Consider mailing that position to 'iesg_ballot_saved'
                     send_conflict_eval_email(request,review)
 
 

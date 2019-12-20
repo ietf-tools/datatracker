@@ -3,11 +3,11 @@
 {% load origin %}
 {% load bootstrap3 %}
 
-{% block title %}Change position for {{ ad.plain_name }}{% endblock %}
+{% block title %}Change position for {{ balloter.plain_name }}{% endblock %}
 
 {% block content %}
   {% origin %}
-  <h1>Change position for {{ ad.plain_name }} regarding <br><small><a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
+  <h1>Change position for {{ balloter.plain_name }} regarding <br><small><a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
   <div class="question">{{ ballot.ballot_type.question }}</div>
 
@@ -36,10 +36,12 @@
       <input type="submit" class="btn btn-default" value="Save">
 
       {% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
+        {% if doc.stream.slug != "irtf" %}
         {% if ballot_deferred %}
           <input type="submit" class="btn btn-warning" name="Undefer" value="Undefer ballot">
         {% else %}
           <input type="submit" class="btn btn-danger" name="Defer" value="Defer ballot">
+        {% endif %}
         {% endif %}
       {% endif %}
     {% endbuttons %}

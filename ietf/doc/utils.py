@@ -28,7 +28,7 @@ from ietf.community.utils import docs_tracked_by_community_list
 
 from ietf.doc.models import Document, DocHistory, State, DocumentAuthor, DocHistoryAuthor
 from ietf.doc.models import DocAlias, RelatedDocument, RelatedDocHistory, BallotType, DocReminder
-from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, NewRevisionDocEvent, StateDocEvent
+from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBallotDocEvent, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import TelechatDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role, Group
@@ -210,6 +210,34 @@ def needed_ballot_positions(doc, active_positions):
 
     return " ".join(answer)
 
+# Not done yet - modified version of above needed_ballot_positions
+def irsg_needed_ballot_positions(doc, active_positions):
+    '''Returns text answering the question "what does this document
+    need to pass?".  The return value is only useful if the document
+    is currently in IRSG evaluation.'''
+    yes = [p for p in active_positions if p and p.pos_id == "yes"]
+    needmoretime = [p for p in active_positions if p and p.pos_id == "moretime"]
+    notready = [p for p in active_positions if p and p.pos_id == "notready"]
+
+    answer = []
+    needed = 2
+
+    have = len(yes)
+    if len(notready) > 0:
+        answer.append("Has a Not Ready position.")
+    if have < needed:
+        more = needed - have
+        if more == 1:
+            answer.append("Needs one more YES position to pass.")
+        else:
+            answer.append("Needs %d more YES positions to pass." % more)
+    else:
+        answer.append("Has enough positions to pass.")
+    if len(needmoretime) > 0:
+        answer.append("Has a Need More Time position.")
+
+    return " ".join(answer)
+
 def create_ballot(request, doc, by, ballot_slug, time=None):
     closed = close_open_ballots(doc, by)
     for e in closed:
@@ -222,13 +250,19 @@ def create_ballot(request, doc, by, ballot_slug, time=None):
     e.desc = 'Created "%s" ballot' % e.ballot_type.name
     e.save()
 
-def create_ballot_if_not_open(request, doc, by, ballot_slug, time=None):
+def create_ballot_if_not_open(request, doc, by, ballot_slug, time=None, duedate=None):
     ballot_type = BallotType.objects.get(doc_type=doc.type, slug=ballot_slug)
     if not doc.ballot_open(ballot_slug):
         if time:
-            e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev, time=time)
+            if duedate:
+                e = IRSGBallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev, time=time, duedate=duedate)
+            else:
+                e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev, time=time)
         else:
-            e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev)
+            if duedate:
+                e = IRSGBallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev, duedate=duedate)
+            else:
+                e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev)
         e.ballot_type = ballot_type
         e.desc = 'Created "%s" ballot' % e.ballot_type.name
         e.save()

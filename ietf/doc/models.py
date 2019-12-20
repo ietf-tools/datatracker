@@ -27,7 +27,7 @@ from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdL
     DocRelationshipName, DocReminderTypeName, BallotPositionName, ReviewRequestStateName, ReviewAssignmentStateName, FormalLanguageName,
     DocUrlTagName)
 from ietf.person.models import Email, Person
-from ietf.person.utils import get_active_ads
+from ietf.person.utils import get_active_balloters
 from ietf.utils import log
 from ietf.utils.admin import admin_link
 from ietf.utils.decorators import memoize
@@ -656,7 +656,7 @@ class Document(DocumentInfo):
     
     def latest_event(self, *args, **filter_args):
         """Get latest event of optional Python type and with filter
-        arguments, e.g. d.latest_event(type="xyz") returns an DocEvent
+        arguments, e.g. d.latest_event(type="xyz") returns a DocEvent
         while d.latest_event(WriteupDocEvent, type="xyz") returns a
         WriteupDocEvent event."""
         model = args[0] if args else DocEvent
@@ -1082,20 +1082,20 @@ class BallotType(models.Model):
 class BallotDocEvent(DocEvent):
     ballot_type = ForeignKey(BallotType)
 
-    def active_ad_positions(self):
-        """Return dict mapping each active AD to a current ballot position (or None if they haven't voted)."""
+    def active_balloter_positions(self):
+        """Return dict mapping each active AD or IRSG member to a current ballot position (or None if they haven't voted)."""
         res = {}
     
-        active_ads = get_active_ads()
-        positions = BallotPositionDocEvent.objects.filter(type="changed_ballot_position",ad__in=active_ads, ballot=self).select_related('ad', 'pos').order_by("-time", "-id")
+        active_balloters = get_active_balloters(self.ballot_type)
+        positions = BallotPositionDocEvent.objects.filter(type="changed_ballot_position",balloter__in=active_balloters, ballot=self).select_related('balloter', 'pos').order_by("-time", "-id")
 
         for pos in positions:
-            if pos.ad not in res:
-                res[pos.ad] = pos
+            if pos.balloter not in res:
+                res[pos.balloter] = pos
 
-        for ad in active_ads:
-            if ad not in res:
-                res[ad] = None
+        for balloter in active_balloters:
+            if balloter not in res:
+                res[balloter] = None
         return res
 
     def all_positions(self):
@@ -1103,15 +1103,15 @@ class BallotDocEvent(DocEvent):
 
         positions = []
         seen = {}
-        active_ads = get_active_ads()
-        for e in BallotPositionDocEvent.objects.filter(type="changed_ballot_position", ballot=self).select_related('ad', 'pos').order_by("-time", '-id'):
-            if e.ad not in seen:
-                e.old_ad = e.ad not in active_ads
+        active_balloters = get_active_balloters(self.ballot_type)
+        for e in BallotPositionDocEvent.objects.filter(type="changed_ballot_position", ballot=self).select_related('balloter', 'pos').order_by("-time", '-id'):
+            if e.balloter not in seen:
+                e.is_old_pos = e.balloter not in active_balloters
                 e.old_positions = []
                 positions.append(e)
-                seen[e.ad] = e
+                seen[e.balloter] = e
             else:
-                latest = seen[e.ad]
+                latest = seen[e.balloter]
                 if latest.old_positions:
                     prev = latest.old_positions[-1]
                 else:
@@ -1126,25 +1126,27 @@ class BallotDocEvent(DocEvent):
             while p.old_positions and p.old_positions[-1].slug == "norecord":
                 p.old_positions.pop()
 
-        # add any missing ADs through fake No Record events
+        # add any missing ADs/IRSGers through fake No Record events
         if self.doc.active_ballot() == self:
             norecord = BallotPositionName.objects.get(slug="norecord")
-            for ad in active_ads:
-                if ad not in seen:
-                    e = BallotPositionDocEvent(type="changed_ballot_position", doc=self.doc, rev=self.doc.rev, ad=ad)
-                    e.by = ad
+            for balloter in active_balloters:
+                if balloter not in seen:
+                    e = BallotPositionDocEvent(type="changed_ballot_position", doc=self.doc, rev=self.doc.rev, balloter=balloter)
+                    e.by = balloter
                     e.pos = norecord
-                    e.old_ad = False
+                    e.is_old_pos = False
                     e.old_positions = []
                     positions.append(e)
 
-        positions.sort(key=lambda p: (p.old_ad, p.ad.last_name()))
+        positions.sort(key=lambda p: (p.is_old_pos, p.balloter.last_name()))
         return positions
 
+class IRSGBallotDocEvent(BallotDocEvent):
+    duedate = models.DateTimeField(blank=True, null=True)
 
 class BallotPositionDocEvent(DocEvent):
     ballot = ForeignKey(BallotDocEvent, null=True, default=None) # default=None is a temporary migration period fix, should be removed when charter branch is live
-    ad = ForeignKey(Person)
+    balloter = ForeignKey(Person)
     pos = ForeignKey(BallotPositionName, verbose_name="position", default="norecord")
     discuss = models.TextField(help_text="Discuss text if position is discuss", blank=True)
     discuss_time = models.DateTimeField(help_text="Time discuss text was written", blank=True, null=True)

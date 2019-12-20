@@ -158,7 +158,7 @@ class SecrTelechatTestCase(TestCase):
             }
         )
         self.assertEqual(response.status_code,302)
-        self.assertTrue(BallotPositionDocEvent.objects.filter(doc=charter, ad_id=13, pos__slug='noobj').exists())
+        self.assertTrue(BallotPositionDocEvent.objects.filter(doc=charter, balloter_id=13, pos__slug='noobj').exists())
 
     def test_doc_detail_post_update_state(self):
         by=Person.objects.get(name="(System)")

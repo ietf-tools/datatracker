@@ -6,11 +6,11 @@
 
 {% load ietf_filters %}
 
-{% block title %}Send ballot position for {{ ad }}{% endblock %}
+{% block title %}Send ballot position for {{ balloter }}{% endblock %}
 
 {% block content %}
   {% origin %}
-  <h1>Send ballot position for {{ ad }} on <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></h1>
+  <h1>Send ballot position for {{ balloter }} on <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></h1>
 
   <form method="post">
     {% csrf_token %}
