@@ -32,12 +32,12 @@ today = datetime.date.today()
 
 for assignment in review_assignments_needing_reviewer_reminder(today):
     email_reviewer_reminder(assignment)
-    print("Emailed reminder to {} for review of {} in {} (req. id {})".format(assignment.reviewer.address, assignment.review_request.doc_id, assignment.review_request.team.acronym, assignment.review_request.pk))
+    log("Emailed reminder to {} for review of {} in {} (req. id {})".format(assignment.reviewer.address, assignment.review_request.doc_id, assignment.review_request.team.acronym, assignment.review_request.pk))
 
 for assignment, secretary_role in review_assignments_needing_secretary_reminder(today):
     email_secretary_reminder(assignment, secretary_role)
     review_req = assignment.review_request
-    print("Emailed reminder to {} for review of {} in {} (req. id {})".format(secretary_role.email.address, review_req.doc_id, review_req.team.acronym, review_req.pk))
+    log("Emailed reminder to {} for review of {} in {} (req. id {})".format(secretary_role.email.address, review_req.doc_id, review_req.team.acronym, review_req.pk))
 
 period_end_reminders_sent = send_unavaibility_period_ending_reminder(today)
 for msg in period_end_reminders_sent:
