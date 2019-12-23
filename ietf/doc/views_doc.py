@@ -55,7 +55,7 @@ from django import forms
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent,
+from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent, BallotType,
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS )
 from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_with_revision,
@@ -86,7 +86,9 @@ def render_document_top(request, doc, tab, name):
     tabs = []
     tabs.append(("Status", "status", urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=name)), True, None))
 
-    iesg_ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug='approve')
+    iesg_type_slugs = set(BallotType.objects.values_list('slug',flat=True)) 
+    iesg_type_slugs.discard('irsg-approve')
+    iesg_ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug__in=iesg_type_slugs)
     irsg_ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug='irsg-approve')
 
     if doc.type_id == "draft" and doc.get_state("draft-stream-irtf"):
@@ -1073,12 +1075,10 @@ def document_ballot(request, name, ballot_id=None):
     if not ballot_id or not ballot:
         raise Http404("Ballot not found for: %s" % name)
 
-    if ballot.ballot_type.slug == "approve":
-        ballot_tab = "ballot"
-    elif ballot.ballot_type.slug == "irsg-approve":
+    if ballot.ballot_type.slug == "irsg-approve":
         ballot_tab = "irsgballot"
     else:
-        ballot_tab = None
+        ballot_tab = "ballot"
 
     top = render_document_top(request, doc, ballot_tab, name)
 

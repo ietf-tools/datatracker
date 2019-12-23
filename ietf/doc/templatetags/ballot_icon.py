@@ -105,10 +105,10 @@ def ballot_icon(context, doc):
             break
 
     typename = "Unknown"
-    if ballot.ballot_type.slug=='approve':
-        typename = "IESG"
-    elif ballot.ballot_type.slug=='irsg-approve':
+    if ballot.ballot_type.slug=='irsg-approve':
         typename = "IRSG"
+    else:
+        typename = "IESG"
 
     res = ['<a %s href="%s" data-toggle="modal" data-target="#modal-%d" title="%s positions (click to show more)" class="ballot-icon"><table' % (
             right_click_string,
