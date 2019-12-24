@@ -46,6 +46,8 @@ class GroupInfo(models.Model):
     unused_states = models.ManyToManyField('doc.State', help_text="Document states that have been disabled for the group.", blank=True)
     unused_tags = models.ManyToManyField(DocTagName, help_text="Document tags that have been disabled for the group.", blank=True)
 
+    uses_milestone_dates = models.BooleanField(default=False)
+
     def __str__(self):
         return self.name
 
@@ -269,7 +271,8 @@ class GroupMilestoneInfo(models.Model):
     # are stored on the charter document
     state = ForeignKey(GroupMilestoneStateName)
     desc = models.CharField(verbose_name="Description", max_length=500)
-    due = models.DateField()
+    due = models.DateField(blank=True,null=True)
+    order = models.IntegerField(blank=True,null=True)
     resolved = models.CharField(max_length=50, blank=True, help_text="Explanation of why milestone is resolved (usually \"Done\"), or empty if still due.")
 
     docs = models.ManyToManyField('doc.Document', blank=True)
@@ -278,7 +281,7 @@ class GroupMilestoneInfo(models.Model):
         return self.desc[:20] + "..."
     class Meta:
         abstract = True
-        ordering = ['due', 'id']
+        ordering = [ 'order', 'id']
 
 class GroupMilestone(GroupMilestoneInfo):
     time = models.DateTimeField(auto_now=True)

@@ -971,3 +971,10 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   /* same as button-primary */
   background-image: linear-gradient(rgb(107, 91, 173) 0px, rgb(80, 68, 135) 100%)    
 }
+
+/* === Edit Milestones============================================= */
+
+#milestones-form .milestonerow, #milestones-form .extrabuttoncontainer {
+  padding: 8px;
+  border-top: 1px solid #ddd;
+}

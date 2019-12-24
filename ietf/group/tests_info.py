@@ -29,7 +29,8 @@ from ietf.community.utils import reset_name_contains_index_for_rule
 from ietf.doc.factories import WgDraftFactory, CharterFactory
 from ietf.doc.models import Document, DocAlias, DocEvent, State
 from ietf.doc.utils_charter import charter_name_for_group
-from ietf.group.factories import GroupFactory, RoleFactory, GroupEventFactory
+from ietf.group.factories import (GroupFactory, RoleFactory, GroupEventFactory, 
+    DatedGroupMilestoneFactory, DatelessGroupMilestoneFactory)
 from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions, Role
 from ietf.group.utils import save_group_in_history, setup_default_community_list_for_group
 from ietf.meeting.factories import SessionFactory
@@ -1058,6 +1059,110 @@ class MilestoneTests(TestCase):
         self.assertEqual(GroupMilestone.objects.filter(due=m1.due, desc=m1.desc, state="charter").count(), 1)
 
         self.assertEqual(group.charter.docevent_set.count(), events_before + 2) # 1 delete, 1 add
+
+class DatelessMilestoneTests(TestCase):
+    def test_switch_to_dateless(self):
+        ms = DatedGroupMilestoneFactory()
+        chair = RoleFactory(group=ms.group,name_id='chair').person
+
+        url = urlreverse('ietf.group.milestones.edit_milestones;current', kwargs=dict(acronym=ms.group.acronym))
+        login_testing_unauthorized(self, chair.user.username, url)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#uses_milestone_dates')),1)
+
+        r = self.client.post(url, dict(action="switch"))
+        self.assertEqual(r.status_code, 200)
+        ms = GroupMilestone.objects.get(id=ms.id)
+        self.assertFalse(ms.group.uses_milestone_dates)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#uses_milestone_dates')),0)
+
+    def test_switch_to_dated(self):
+        ms = DatelessGroupMilestoneFactory()
+        chair = RoleFactory(group=ms.group,name_id='chair').person
+
+        url = urlreverse('ietf.group.milestones.edit_milestones;current', kwargs=dict(acronym=ms.group.acronym))
+        login_testing_unauthorized(self, chair.user.username, url)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#uses_milestone_dates')),0)
+
+        r = self.client.post(url, dict(action="switch"))
+        self.assertEqual(r.status_code, 200)
+        ms = GroupMilestone.objects.get(id=ms.id)
+        self.assertTrue(ms.group.uses_milestone_dates)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#uses_milestone_dates')),1)
+
+    def test_add_first_milestone(self):
+        role = RoleFactory(name_id='chair',group__uses_milestone_dates=False)
+        group = role.group
+        chair = role.person
+
+        url = urlreverse('ietf.group.milestones.edit_milestones;current', kwargs=dict(acronym=group.acronym))
+        login_testing_unauthorized(self, chair.user.username, url)
+
+        r = self.client.post(url, { 'prefix': "m-1",
+                                    'm-1-id': -1,
+                                    'm-1-desc': "Test 3",
+                                    'm-1-order': 1,
+                                    'm-1-resolved': "",
+                                    'm-1-docs': "",
+                                    'action': "save",
+                                    })
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(group.groupmilestone_set.count(),1)
+
+    def test_edit_and_reorder_milestone(self):
+        role = RoleFactory(name_id='chair',group__uses_milestone_dates=False)
+        group = role.group
+
+        DatelessGroupMilestoneFactory.create_batch(3,group=group)
+
+        url = urlreverse('ietf.group.milestones.edit_milestones;current', kwargs=dict(acronym=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+
+        post_data = dict()
+        prefixes = []
+        for ms in group.groupmilestone_set.order_by('order'):
+            prefix = 'm%d' % ms.id
+            prefixes.append(prefix)
+            post_data['%s-id' % prefix] = ms.id
+            post_data['%s-desc' % prefix] = ms.desc
+            post_data['%s-order' % prefix] = ms.order
+            post_data['%s-docs' % prefix] = ""
+
+        post_data['prefix'] = prefixes
+        post_data['action'] = 'review'
+
+        # Change the second milestone's description
+        post_data['%s-desc' % prefixes[1]] = '2s09dhfbn23tn'
+        # Switch the order of the first and second milestone
+        post_data['%s-order' % prefixes[0]] = 2
+        post_data['%s-order' % prefixes[1]] = 1
+
+        r = self.client.post(url, post_data)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('.label:contains("Changed")')), 2)
+
+        post_data['action'] = 'save'
+        r = self.client.post(url, post_data)
+        self.assertEqual(r.status_code, 302)
+
+        milestones = group.groupmilestone_set.order_by('order')
+        self.assertEqual(milestones[0].desc,'2s09dhfbn23tn')
 
 class CustomizeWorkflowTests(TestCase):
     def test_customize_workflow(self):
