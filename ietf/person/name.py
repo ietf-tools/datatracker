@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# Copyright The IETF Trust 2011-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -63,6 +63,10 @@ def name_parts(name):
         # Handle reverse-order names with uppercase surname correctly
         if re.search("^[A-Z-]+$", first):
             first, last = last, first.capitalize()
+    # Handle exception for RFC Editor
+    if (prefix, first, middle, last, suffix) == ('', 'Editor', '', 'Rfc', ''):
+        first = 'RFC'
+        last = 'Editor'
     return prefix, first, middle, last, suffix
 
 def initials(name):
