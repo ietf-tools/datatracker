@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -551,9 +551,9 @@ def can_defer(user,doc):
 
 @register.filter()
 def can_ballot(user,doc):
-    if doc.stream_id == 'ietf' and user.person.role_set.filter(name="ad", group__type="area", group__state="active"):
-        return True
-    elif doc.stream_id == 'irtf' and has_role(user,'IRSG Member'):
-        return True
+    # Only IRSG memebers (and the secretariat, handled by code separately) can take positions on IRTF documents
+    # Otherwise, an AD can take a position on anything that has a ballot open
+    if doc.type_id == 'draft' and doc.stream_id == 'irtf':
+        return has_role(user,'IRSG Member')
     else:
-        return False
+        return user.person.role_set.filter(name="ad", group__type="area", group__state="active")
