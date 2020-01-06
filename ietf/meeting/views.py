@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -968,16 +968,16 @@ def json_agenda(request, num=None ):
     assignments = meeting.schedule.assignments.exclude(session__type__in=['lead','offagenda','break','reg'])
     # Update the assignments with historic information, i.e., valid at the
     # time of the meeting
-    assignments = assignments.prefetch_related(
+    assignments = preprocess_assignments_for_agenda(assignments, meeting, extra_prefetches=[
+        # sadly, these prefetches aren't enough to get rid of all implicit queries below
         Prefetch("session__materials",
                  queryset=Document.objects.exclude(states__type=F("type"),states__slug='deleted').select_related("group").order_by("sessionpresentation__order"),
                  to_attr="prefetched_active_materials",
-             ),
-             "session__materials__docevent_set",
-             "session__sessionpresentation_set",
-             "timeslot__meeting",
-        )
-    assignments = preprocess_assignments_for_agenda(assignments, meeting)
+        ),
+        "session__materials__docevent_set",
+        "session__sessionpresentation_set",
+        "timeslot__meeting"
+    ])
     for asgn in assignments:
         sessdict = dict()
         sessdict['objtype'] = 'session'

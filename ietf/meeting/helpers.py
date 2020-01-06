@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -11,7 +11,7 @@ import re
 from tempfile import mkstemp
 
 from django.http import HttpRequest, Http404
-from django.db.models import Max, Q
+from django.db.models import Max, Q, Prefetch
 from django.conf import settings
 from django.core.cache import cache
 from django.urls import reverse
@@ -27,7 +27,7 @@ from ietf.ietfauth.utils import has_role, user_is_person
 from ietf.liaisons.utils import get_person_for_user
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.person.models  import Person
-from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment, ImportantDate, SchedulingEvent
+from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment, ImportantDate, SchedulingEvent, Session
 from ietf.meeting.utils import session_requested_by, add_event_info_to_session_qs
 from ietf.name.models import ImportantDateName
 from ietf.utils.history import find_history_active_at, find_history_replacements_active_at
@@ -164,23 +164,19 @@ def get_schedule_by_name(meeting, owner, name):
     else:
         return meeting.schedule_set.filter(name = name).first()
 
-def preprocess_assignments_for_agenda(assignments_queryset, meeting):
-    # prefetch was not improving performance, except for json_agenda, so
-    # it was removed.  Saved in comment in case others find it useful
-    # in the future ...
-    #
-    #.prefetch_related(
-    #       Prefetch("session__materials",
-    #           queryset=Document.objects.exclude(states__type=F("type"),states__slug='deleted').select_related("group").order_by("sessionpresentation__order"),
-    #           to_attr="prefetched_active_materials",
-    #       ),
-    #       "timeslot__meeting",
-    #   )
+def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefetches=()):
     assignments_queryset = assignments_queryset.select_related(
         "timeslot", "timeslot__location", "timeslot__type",
-        "session", "session__group", "session__group__charter",
-        "session__group__charter__group",
-        )  
+        ).prefetch_related(
+            Prefetch(
+                "session",
+                queryset=add_event_info_to_session_qs(Session.objects.all().prefetch_related(
+                    'group', 'group__charter', 'group__charter__group',
+                ))
+            ),
+            *extra_prefetches
+        )
+
 
     # removed list(); it was consuming a very large amount of processor time
     # assignments = list(assignments_queryset) # make sure we're set in stone
@@ -216,11 +212,6 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting):
     for a in assignments:
         if a.session and a.session.historic_group and a.session.historic_group.parent_id:
             a.session.historic_group.historic_parent = parent_replacements.get(a.session.historic_group.parent_id)
-
-    # add current session status
-    sessions = {a.session_id: a.session for a in assignments if a.session}
-    for e in SchedulingEvent.objects.filter(session__in=sessions.keys()).order_by('time', 'id').iterator():
-        sessions[e.session_id].current_status = e.status_id
 
     return assignments
 
