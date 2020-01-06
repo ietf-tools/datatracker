@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -22,7 +22,7 @@ from ietf.utils.models import ForeignKey, OneToOneField
 @python_2_unicode_compatible
 class ReviewerSettings(models.Model):
     """Keeps track of admin data associated with a reviewer in a team."""
-    history     = HistoricalRecords()
+    history     = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
     team        = ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     person      = ForeignKey(Person)
     INTERVALS = [
