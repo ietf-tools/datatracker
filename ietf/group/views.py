@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2020, All Rights Reserved
 #
 # Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -168,7 +168,11 @@ def fill_in_charter_info(group, include_drafts=False):
     group.personnel.sort(key=lambda t: t[2][0].name.order)
 
     milestone_state = "charter" if group.state_id == "proposed" else "active"
-    group.milestones = group.groupmilestone_set.filter(state=milestone_state).order_by('due')
+    group.milestones = group.groupmilestone_set.filter(state=milestone_state)
+    if group.uses_milestone_dates:
+        group.milestones = group.milestones.order_by('resolved', 'due')
+    else:
+        group.milestones = group.milestones.order_by('resolved', 'order')
 
     if group.charter:
         group.charter_text = get_charter_text(group)

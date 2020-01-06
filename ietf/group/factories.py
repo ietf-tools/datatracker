@@ -1,7 +1,9 @@
+# Copyright The IETF Trust 2015-2020, All Rights Reserved
+import datetime
 import debug # pyflakes:ignore
 import factory
 
-from ietf.group.models import Group, Role, GroupEvent
+from ietf.group.models import Group, Role, GroupEvent, GroupMilestone
 from ietf.review.factories import ReviewTeamSettingsFactory
 
 class GroupFactory(factory.DjangoModelFactory):
@@ -14,6 +16,7 @@ class GroupFactory(factory.DjangoModelFactory):
     state_id = 'active'
     type_id = 'wg'
     list_email = factory.LazyAttribute(lambda a: '%s@ietf.org'% a.acronym)
+    uses_milestone_dates = True
 
 class ReviewTeamFactory(factory.DjangoModelFactory):
     class Meta:
@@ -44,3 +47,20 @@ class GroupEventFactory(factory.DjangoModelFactory):
     by = factory.SubFactory('ietf.person.factories.PersonFactory')
     type = 'comment'
     desc = factory.Faker('paragraph')
+
+class BaseGroupMilestoneFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = GroupMilestone
+
+    group = factory.SubFactory(GroupFactory)
+    state_id = 'active'
+    desc = factory.Faker('sentence')
+
+class DatedGroupMilestoneFactory(BaseGroupMilestoneFactory):
+    group = factory.SubFactory(GroupFactory, uses_milestone_dates=True)
+    due = datetime.datetime.today()+datetime.timedelta(days=180)
+
+class DatelessGroupMilestoneFactory(BaseGroupMilestoneFactory):
+    group = factory.SubFactory(GroupFactory, uses_milestone_dates=False)
+    order = factory.Sequence(lambda n: n)
+

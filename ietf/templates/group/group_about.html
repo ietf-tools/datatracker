@@ -249,13 +249,7 @@
   {% endif %}
 
   {% if group.features.has_milestones %}
-    <h2>
-      {% if group.state_id == "proposed" %}
-        Proposed milestones
-      {% else %}
-        Milestones
-      {% endif %}
-    </h2>
+
     {% include "group/milestones.html" with milestones=group.milestones %}
 
     {% if milestones_in_review %}

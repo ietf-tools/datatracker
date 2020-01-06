@@ -1,29 +1,45 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
-{# assumes milestones is in context #}
-<table class="table table-condensed table-striped tablesorter">
-  <thead>
-    <tr>
-      <th>Date</th>
-      <th>Milestone</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for milestone in milestones reversed %}
+{# assumes group and milestones is in context #}
+{% regroup milestones by resolved as milestonegroups %}
+
+{% for milestoneset in milestonegroups %}
+  <h2>
+    {% if milestoneset.grouper %}
+      {{milestoneset.grouper}} milestones
+    {% else %}
+      {% if group.state_id == "proposed" %}Proposed milestones{% else %}Milestones{% endif %}
+    {% endif %}
+  </h2>
+  <table class="table table-condensed table-striped{% if group.uses_milestone_dates %} tablesorter{% endif %}">
+    <thead>
       <tr>
-        <td class="text-nowrap">
-	  {% if milestone.resolved %}
-	    <span class="label label-success">{{ milestone.resolved }}</span>
-	  {% else %}
-	    {{ milestone.due|date:"M Y" }}
-	  {% endif %}
-        </td>
-        <td>
-	  {{ milestone.desc }}
-	  {% for d in milestone.docs.all %}
-	    <br><a href="{% url "ietf.doc.views_doc.document_main" name=d.name %}">{{ d.name }}</a>
-	  {% endfor %}
-        </td>
+        <th>{% if group.uses_milestone_dates %}Date{% else %}Order{% endif %}</th>
+        <th>Milestone</th>
       </tr>
-    {% endfor %}
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      {% for milestone in milestoneset.list reversed %}
+        <tr>
+          <td class="text-nowrap">
+  	  {% if milestone.resolved %}
+  	    <span class="label label-success">{{ milestone.resolved }}</span>
+  	  {% else %}
+        {% if group.uses_milestone_dates %}
+  	      {{ milestone.due|date:"M Y" }}
+        {% else %}
+          {% if forloop.first %}Last{% endif %}
+          {% if forloop.last %}Next{% endif %}
+        {% endif %}
+  	  {% endif %}
+          </td>
+          <td>
+  	  {{ milestone.desc }}
+  	  {% for d in milestone.docs.all %}
+  	    <br><a href="{% url "ietf.doc.views_doc.document_main" name=d.name %}">{{ d.name }}</a>
+  	  {% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endfor %}
