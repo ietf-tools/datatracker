@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -84,8 +84,8 @@ class DraftIdnitsChecker(object):
 
         cmd = "%s %s %s" % (settings.IDSUBMIT_IDNITS_BINARY, self.options, path)
         code, out, err = pipe(cmd)
-        out = out.decode()
-        err = err.decode()
+        out = out.decode('utf-8')
+        err = err.decode('utf-8')
         if code != 0 or out == "":
             message = "idnits error: %s:\n  Error %s: %s" %( cmd, code, err)
             log(message)
@@ -214,8 +214,8 @@ class DraftYangChecker(object):
                 cmd_version = VersionInfo.objects.get(command=command).version
                 cmd = cmd_template.format(libs=modpath, model=path)
                 code, out, err = pipe(cmd)
-                out = out.decode()
-                err = err.decode()
+                out = out.decode('utf-8')
+                err = err.decode('utf-8')
                 if code > 0 or len(err.strip()) > 0 :
                     error_lines = err.splitlines()
                     assertion('len(error_lines) > 0')
@@ -247,8 +247,8 @@ class DraftYangChecker(object):
                     cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, tmplib=workdir,
                         draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, ianalib=settings.SUBMIT_YANG_IANA_MODEL_DIR, )
                     code, out, err = pipe(cmd)
-                    out = out.decode()
-                    err = err.decode()
+                    out = out.decode('utf-8')
+                    err = err.decode('utf-8')
                     if code > 0 or len(err.strip()) > 0:
                         err_lines = err.splitlines()
                         for line in err_lines:
