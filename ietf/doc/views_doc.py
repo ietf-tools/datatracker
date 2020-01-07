@@ -976,12 +976,12 @@ def document_shepherd_writeup(request, name):
 
 def document_references(request, name):
     doc = get_object_or_404(Document,docalias__name=name)
-    refs = doc.relations_that_doc(('refnorm','refinfo','refunk','refold'))
+    refs = doc.references()
     return render(request, "doc/document_references.html",dict(doc=doc,refs=sorted(refs,key=lambda x:x.target.name),))
 
 def document_referenced_by(request, name):
     doc = get_object_or_404(Document,docalias__name=name)
-    refs = doc.relations_that(('refnorm','refinfo','refunk','refold')).filter(source__states__type__slug='draft',source__states__slug__in=['rfc','active'])
+    refs = doc.referenced_by()
     full = ( request.GET.get('full') != None )
     numdocs = refs.count()
     if not full and numdocs>250:

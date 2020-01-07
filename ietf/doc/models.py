@@ -524,6 +524,15 @@ class DocumentInfo(models.Model):
                     cache.set(cache_key, html, settings.HTMLIZER_CACHE_TIME)
         return html
 
+    def references(self):
+        return self.relations_that_doc(('refnorm','refinfo','refunk','refold'))
+
+    def referenced_by(self):
+        return self.relations_that(('refnorm','refinfo','refunk','refold')).filter(source__states__type__slug='draft',source__states__slug__in=['rfc','active'])
+
+    def referenced_by_rfcs(self):
+        return self.relations_that(('refnorm','refinfo','refunk','refold')).filter(source__states__type__slug='draft',source__states__slug='rfc')
+
     class Meta:
         abstract = True
 
@@ -845,7 +854,6 @@ class Document(DocumentInfo):
                              stream=self.stream, group=self.group)
 
         return dh
-
 
 class DocumentURL(models.Model):
     doc  = ForeignKey(Document)
