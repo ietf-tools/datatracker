@@ -156,6 +156,7 @@ read -p "Continue with diff? [Y/n] "
 [ "$REPLY" = "Y" -o  "$REPLY" = "y" -o  "$REPLY" = "" ] || exit
 
 note "Diff:"
+note "svn diff -c $rev $repo/$branch"
 svn diff -c $rev $repo/$branch | less
 
 echo ""
