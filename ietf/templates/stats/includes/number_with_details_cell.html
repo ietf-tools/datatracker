@@ -1,6 +1,6 @@
 {% if content_limit and count <= content_limit %}
   {% for n in names %}
-    {{ n }}<br>
+    <a href="{% url 'ietf.person.views.profile' email_or_name=n %}">{{ n }}</a><br>
   {% endfor %}
 {% else %}
   {# <a class="popover-details" href="" data-elements="{% for n in names|slice:":20" %}{{ n }}{% if not forloop.last %}|{% endif %}{% endfor %}" data-sliced="{% if count > 20 %}1{% endif %}">{{ count }}</a>  #}
