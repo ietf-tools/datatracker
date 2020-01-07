@@ -65,7 +65,7 @@
              <td>{{ session.group.acronym }}</td>
              <td>{{ session.official_timeslotassignment.timeslot.time|date:"m-d H:i" }}</td>
              <td class="document-name" >{{ recording.name }}</td>
-             <td><a href="{{ recording.href }}">{{ recording.href }}</a></td>
+             <td><a href="{{ recording.get_href }}">{{ recording.get_href }}</a></td>
              <td><a href="{% url 'ietf.secr.proceedings.views.recording_edit' meeting_num=meeting.number name=recording.name %}">Edit</a></td>
              </tr>
              {% endfor %}

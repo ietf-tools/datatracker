@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# Copyright The IETF Trust 2011-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -877,7 +877,7 @@ def build_doc_meta_block(doc, path):
                 # make current draft rev bold
                 line = re.sub(r'>(%s)<'%rev, r'><b>\g<1></b><', line)
             line = re.sub(r'IPR declarations', r'<a class="text-warning" href="%s">IPR declarations</a>'%(ipr_url, ), line)
-            line = line.replace(r'[txt]', r'[<a href="%s">txt</a>]' % doc.href())
+            line = line.replace(r'[txt]', r'[<a href="%s">txt</a>]' % doc.get_href())
             lines[i] = line
         return lines
     #

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2014-2019, All Rights Reserved
+# Copyright The IETF Trust 2014-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -10,6 +10,7 @@ import six
 from pyquery import PyQuery
 from io import StringIO
 from django.urls import reverse as urlreverse
+from django.utils.encoding import iri_to_uri
 
 import debug                            # pyflakes:ignore
 
@@ -126,6 +127,10 @@ class PersonTests(TestCase):
         self.assertRedirects(r, expected_url)
         self.assertContains(r, 'Merged', status_code=200)
         self.assertFalse(Person.objects.filter(pk=p1.pk))
+
+    def test_absolute_url(self):
+        p = PersonFactory()
+        self.assertEqual(p.get_absolute_url(), iri_to_uri('/person/%s' % p.name))
 
 class PersonUtilsTests(TestCase):
     def test_determine_merge_order(self):

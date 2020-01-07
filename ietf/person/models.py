@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -19,6 +19,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import validate_email
 from django.db import models
 from django.template.loader import render_to_string
+from django.urls import reverse as urlreverse
 from django.utils.encoding import python_2_unicode_compatible, smart_bytes
 from django.utils.text import slugify
 
@@ -55,6 +56,8 @@ class Person(models.Model):
 
     def __str__(self):
         return self.plain_name()
+    def get_absolute_url(self):
+        return urlreverse('ietf.person.views.profile', kwargs={'email_or_name': self.name})
     def name_parts(self):
         return name_parts(self.name)
     def ascii_parts(self):

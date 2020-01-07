@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -826,7 +826,7 @@ def week_view(request, num=None, name=None, owner=None):
                 item["room"] = a.timeslot.get_location()
 
             if a.session and a.session.agenda():
-                item["agenda"] = a.session.agenda().href()
+                item["agenda"] = a.session.agenda().get_href()
 
             if a.session.current_status == 'canceled':
                 item["name"] = "CANCELLED - " + item["name"]
@@ -1007,10 +1007,10 @@ def json_agenda(request, num=None ):
         if asgn.timeslot.location:      # Some socials have an assignment but no location
             locations.add(asgn.timeslot.location)
         if asgn.session.agenda():
-            sessdict['agenda'] = asgn.session.agenda().href()
+            sessdict['agenda'] = asgn.session.agenda().get_href()
 
         if asgn.session.minutes():
-            sessdict['minutes'] = asgn.session.minutes().href()
+            sessdict['minutes'] = asgn.session.minutes().get_href()
         if asgn.session.slides():
             sessdict['presentations'] = []
             presentations = SessionPresentation.objects.filter(session=asgn.session, document__type__slug='slides')

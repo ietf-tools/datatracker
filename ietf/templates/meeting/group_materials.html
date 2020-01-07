@@ -90,7 +90,7 @@
          {% if draft.time > old %}
 	   <span class="small fa fa-bell-o" title="Last Update: {{ draft.time|utc|date:"Y-m-d H:i:s" }}&nbsp;UTC" ></span>
 	 {% endif %}
-	 <a href="{{ draft.href }}">{{ draft.name }}</a><br>
+	 <a href="{{ draft.get_href }}">{{ draft.name }}</a><br>
        {% empty %} 
          <span class="label label-warning">No drafts</span>
        {% endfor %}

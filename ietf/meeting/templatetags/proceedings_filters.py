@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 from django import template
 
 import debug       # pyflakes:ignore
@@ -21,4 +22,4 @@ def status_for_meeting(group,meeting):
 
 @register.filter
 def meeting_href(doc,meeting):
-    return doc.href(meeting)
+    return doc.get_href(meeting)

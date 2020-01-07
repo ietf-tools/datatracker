@@ -15,7 +15,7 @@
       {% if rfc_number %}
         <a href="https://www.rfc-editor.org/rfc/rfc{{rfc_number}}/">
       {% else %}
-          <a href="{{doc.href}}">
+          <a href="{{doc.get_href}}">
       {% endif %}
       <span class="fa fa-file"></span></a>
     {% endwith %}

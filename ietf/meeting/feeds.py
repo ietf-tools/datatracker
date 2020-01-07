@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -27,7 +27,7 @@ class LatestMeetingMaterialFeed(Feed):
                 title=doc.type_id,
                 group_acronym=doc.name.split("-")[2],
                 date=doc.time,
-                # FIXME: why isn't this using gref or href?
+                # FIXME: why isn't this using get_versionless_href or get_href?
                 link=self.base_url + os.path.join(doc.get_file_path(), doc.uploaded_filename)[len(settings.AGENDA_PATH):],
                 author=""
                 )

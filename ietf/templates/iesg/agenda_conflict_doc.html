@@ -7,7 +7,7 @@
     {% with doc.conflictdoc as conflictdoc %}
       <dt>Conflict review</dt>
       <dd>
-        <a href="{{doc.href}}">
+        <a href="{{doc.get_href}}">
 	  <span class="fa fa-file"></span>
         </a>
         <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>

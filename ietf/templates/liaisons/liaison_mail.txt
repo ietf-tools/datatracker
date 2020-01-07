@@ -15,7 +15,7 @@ Body: {{ liaison.body }}
 Attachments:
 {% for doc in liaison.attachments.all %}
     {{ doc.title }}
-    {{ doc.href }}
+    {{ doc.get_href }}
 {% empty %}
 No document has been attached
 {% endfor %}{% endautoescape %}

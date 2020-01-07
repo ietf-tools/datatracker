@@ -29,7 +29,7 @@
             <tr>
               {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
               <td>
-                <a href="{{pres.document.href}}">{{pres.document.title}}</a>
+                <a href="{{pres.document.get_href}}">{{pres.document.title}}</a>
                 <a href="{{url}}">({{ pres.document.name }})</a>
               </td>
               {% if user|has_role:"Secretariat" or can_manage_materials %}
@@ -71,7 +71,7 @@
             <tr name="{{pres.document.name}}">
               {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
               <td>
-                <a href="{{pres.document.href}}">{{pres.document.title}} </a>
+                <a href="{{pres.document.get_href}}">{{pres.document.title}} </a>
                 <a href="{{url}}">({{ pres.document.name }}) </a>
               </td>
               {% if can_manage_materials %}

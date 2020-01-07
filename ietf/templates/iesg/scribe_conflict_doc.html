@@ -3,12 +3,12 @@
   {{ doc.title }}
 
   <br><a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{doc.canonical_name}}</a>
-  <a href="{{doc.href}}">[txt]</a>
+  <a href="{{doc.get_href}}">[txt]</a>
 
   <div style="padding-left:20px">
     {{ doc.conflictdoc.title }} ({{ doc.conflictdoc.stream }}: {{ doc.conflictdoc.intended_std_level }})
     <br><a href="{% url "ietf.doc.views_doc.document_main" name=doc.conflictdoc.canonical_name %}">{{ doc.conflictdoc.canonical_name }}</a>
-    <a href="{{doc.conflictdoc.href}}">[txt]</a>
+    <a href="{{doc.conflictdoc.get_href}}">[txt]</a>
     {% if doc.conflictdoc.note %}
       <br>Note: {{ doc.conflictdoc.note|linebreaksbr }}
     {% endif %}

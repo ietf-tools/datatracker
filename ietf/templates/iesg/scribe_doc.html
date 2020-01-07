@@ -6,7 +6,7 @@
     {% if rfc_number %}
       <a href="http://www.rfc-editor.org/rfc/rfc{{ rfc_number }}/">[txt]</a>
     {% else %}
-      <a href="{{doc.href}}">[txt]</a>
+      <a href="{{doc.get_href}}">[txt]</a>
     {% endif %}
   {% endwith %}
 

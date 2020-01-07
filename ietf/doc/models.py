@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -189,11 +189,11 @@ class DocumentInfo(models.Model):
         return revisions
 
 
-    def href(self, meeting=None):
+    def get_href(self, meeting=None):
         return self._get_ref(meeting=meeting,meeting_doc_refs=settings.MEETING_DOC_HREFS)
 
 
-    def gref(self, meeting=None):
+    def get_versionless_href(self, meeting=None):
         return self._get_ref(meeting=meeting,meeting_doc_refs=settings.MEETING_DOC_GREFS)
 
 
@@ -626,7 +626,7 @@ class Document(DocumentInfo):
 
     def get_absolute_url(self):
         """
-        Returns an url to the document view.  This differs from .href(),
+        Returns an url to the document view.  This differs from .get_href(),
         which returns an url to the document content.
         """
         if not hasattr(self, '_cached_absolute_url'):

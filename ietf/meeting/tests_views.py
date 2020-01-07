@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -136,7 +136,7 @@ class MeetingTests(TestCase):
         self.assertIn(time_interval, agenda_content)
 
         # Make sure there's a frame for the agenda and it points to the right place
-        self.assertTrue(any([session.materials.get(type='agenda').href() in x.attrib["data-src"] for x in q('tr div.modal-body  div.frame')])) 
+        self.assertTrue(any([session.materials.get(type='agenda').get_href() in x.attrib["data-src"] for x in q('tr div.modal-body  div.frame')])) 
 
         # Make sure undeleted slides are present and deleted slides are not
         self.assertTrue(any([session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().title in x.text for x in q('tr div.modal-body ul a')]))
@@ -187,8 +187,8 @@ class MeetingTests(TestCase):
         self.assertContains(r, "BEGIN:VTIMEZONE")
         self.assertContains(r, "END:VTIMEZONE")        
 
-        self.assertContains(r, session.agenda().href())
-        self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().href())
+        self.assertContains(r, session.agenda().get_href())
+        self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().get_href())
         # TODO - the ics view uses .all on a queryset in a view so it's showing the deleted slides.
         #self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().get_absolute_url())
 

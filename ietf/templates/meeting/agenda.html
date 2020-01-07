@@ -216,7 +216,7 @@
 	          </td>
                   <td>
 		    {% if item.session.agenda %}
-		      <a href="{{ item.session.agenda.href }}">
+		      <a href="{{ item.session.agenda.get_href }}">
 			{{item.timeslot.name}}
 		      </a>
 		    {% else %}
@@ -238,7 +238,7 @@
 			  {% include "meeting/session_buttons_include.html" %}
 			{% else %}
 			  {% for slide in item.session.slides %}
-			    <a href="{{slide.href}}">{{ slide.title|clean_whitespace }}</a>
+			    <a href="{{slide.get_href}}">{{ slide.title|clean_whitespace }}</a>
 			    <br>
 			  {% endfor %}
 			{% endif %}
@@ -301,7 +301,7 @@
 
                   <td>
                     {% if item.session.agenda %}
-		      <a href="{{ item.session.agenda.href }}">
+		      <a href="{{ item.session.agenda.get_href }}">
                     {% endif %}
                     {% if item.timeslot.type.slug == 'plenary' %}
                       {{item.timeslot.name}}

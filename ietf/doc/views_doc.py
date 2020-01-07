@@ -523,7 +523,7 @@ def document_main(request, name, rev=None):
                                        top=top,
                                        chartering=chartering,
                                        content=content,
-                                       txt_url=doc.href(),
+                                       txt_url=doc.get_href(),
                                        revisions=revisions,
                                        latest_rev=latest_rev,
                                        snapshot=snapshot,
@@ -612,7 +612,7 @@ def document_main(request, name, rev=None):
         content = None
         other_types = []
         globs = glob.glob(pathname + ".*")
-        url = doc.href()
+        url = doc.get_href()
         urlbase, urlext = os.path.splitext(url) 
         for g in globs:
             extension = os.path.splitext(g)[1]
@@ -782,9 +782,9 @@ def document_history(request, name):
             if name.startswith("charter"):
                 url = request.build_absolute_uri(urlreverse('ietf.doc.views_charter.charter_with_milestones_txt', kwargs=dict(name=e.doc.name, rev=e.rev)))
             elif name.startswith("conflict-review"):
-                url = find_history_active_at(e.doc, e.time).href()
+                url = find_history_active_at(e.doc, e.time).get_href()
             elif name.startswith("status-change"):
-                url = find_history_active_at(e.doc, e.time).href()
+                url = find_history_active_at(e.doc, e.time).get_href()
             elif name.startswith("draft") or name.startswith("rfc"):
                 # rfcdiff tool has special support for IDs
                 url = e.doc.name + "-" + e.rev

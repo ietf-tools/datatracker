@@ -141,7 +141,7 @@
       <th class="text-nowrap">Attachments</th>
       <td>
         {% for doc in liaison.active_attachments.all %}
-          <a href="{{ doc.href }}">{{ doc.title }}</a>
+          <a href="{{ doc.get_href }}">{{ doc.title }}</a>
           {% if not forloop.last %}<br>{% endif %}
         {% empty %}
           (None)
