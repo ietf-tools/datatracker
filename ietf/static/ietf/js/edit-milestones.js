@@ -1,6 +1,8 @@
 $(document).ready(function () {
     var idCounter = -1;
     var milestonesForm = $('#milestones-form');
+    var group_uses_milestone_dates = ( $('#uses_milestone_dates').length > 0 );
+    var milestone_order_has_changed = false;
 
     // make sure we got the lowest number for idCounter
     milestonesForm.find('.edit-milestone input[name$="-id"]').each(function () {
@@ -12,6 +14,7 @@ $(document).ready(function () {
     function setChanged() {
         $(this).closest(".edit-milestone").addClass("changed");
         setSubmitButtonState();
+        $("#switch-date-use-form").hide();
     }
 
     milestonesForm.on("change", '.edit-milestone select,.edit-milestone input,.edit-milestone textarea', setChanged);
@@ -23,7 +26,7 @@ $(document).ready(function () {
 
     function setSubmitButtonState() {
         var action, label;
-        if (milestonesForm.find("input[name$=delete]:visible").length > 0)
+        if ( milestonesForm.find("input[name$=delete]:visible").length > 0 || milestone_order_has_changed )
             action = "review";
         else
             action = "save";
@@ -58,18 +61,25 @@ $(document).ready(function () {
     });
 
     milestonesForm.find(".add-milestone").click(function() {
-        // move Add milestone row and duplicate hidden template
-        var row = $(this).closest("tr"), editRow = row.next(".edit-milestone");
-        row.closest("table").append(row).append(editRow.clone());
+        var template = $("#extratemplatecontainer .extratemplate");
+        var templateclone = template.clone();
+        $("#dragdropcontainer").append(templateclone);
+        var new_milestone = $("#dragdropcontainer > div:last")
+        var new_edit_milestone = new_milestone.find(".edit-milestone");
+        var new_edit_milestone_order = $("#dragdropcontainer > div").length
 
-        // fixup template
+        new_milestone.removeClass("extratemplate")
+        new_milestone.addClass("draggable")
+        new_milestone.addClass("milestonerow")
+
         var newId = idCounter;
         --idCounter;
 
         var prefix = "m" + newId;
-        editRow.find('input[name="prefix"]').val(prefix);
+        new_edit_milestone.find('input[name="prefix"]').val(prefix);
+        new_edit_milestone.find('input[name="order"]').val(new_edit_milestone_order);
 
-        editRow.find("input,select,textarea").each(function () {
+        new_edit_milestone.find("input,select,textarea").each(function () {
             if (this.name == "prefix")
                 return;
 
@@ -79,17 +89,21 @@ $(document).ready(function () {
             this.name = prefix + "-" + this.name;
             this.id = prefix + "-" + this.id;
         });
-        editRow.find("label").each(function () {
+        new_edit_milestone.find("label").each(function () {
             if (this.htmlFor)
                 this.htmlFor = prefix + "-" + this.htmlFor;
         });
 
-        editRow.removeClass("template");
-        editRow.show();
+        new_edit_milestone.removeClass("template");
+        new_edit_milestone.show();
 
-        editRow.find(".select2-field").each(function () {
+        new_edit_milestone.find(".select2-field").each(function () {
             window.setupSelect2Field($(this)); // from ietf.js
         });
+
+        if ( ! group_uses_milestone_dates ) {
+            setOrderControlValue();
+        }
     });
 
     function setResolvedState() {
@@ -129,6 +143,13 @@ $(document).ready(function () {
         }
     }
 
+    function setOrderControlValue() {
+        $("#dragdropcontainer > div").each(function(index){
+            var prefix = $(this).find('input[name="prefix"]').val();
+            $(this).find('input[name="'+prefix+'-order"]').val(index)
+        })
+    }
+
     milestonesForm.find(".edit-milestone [name$=delete]").each(setDeleteState);
     milestonesForm.on("change", ".edit-milestone input[name$=delete]", setDeleteState);
 
@@ -137,4 +158,25 @@ $(document).ready(function () {
     });
 
     setSubmitButtonState();
+
+    if ( ! group_uses_milestone_dates) {
+        setOrderControlValue();
+
+        function onEnd(event) {
+            milestone_order_has_changed = true;
+            setSubmitButtonState();
+            setOrderControlValue();
+            $("#switch-date-use-form").hide();
+
+        }
+
+        var options = {
+            animation: 150,
+            draggable: ".draggable",
+            onEnd: function(event) {onEnd(event)}
+        };
+
+        var el = document.getElementById('dragdropcontainer');
+        var sortable = new Sortable(el, options);
+    }
 });

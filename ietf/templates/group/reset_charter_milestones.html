@@ -24,7 +24,7 @@
         <label>
           <input type="checkbox" name="milestone" value="{{ milestone.id }}" {% if not milestone.resolved %}checked="checked"{% endif %} />
 
-          <span class="date">{% if milestone.resolved %}{{ milestone.resolved }}{% else %}{{ milestone.due|date:"M Y" }}{% endif %}</span>
+          <span class="date">{% if milestone.resolved %}{{ milestone.resolved }}{% else %}{% if group.uses_milestone_dates %}{{ milestone.due|date:"M Y" }}{% endif %}{% endif %}</span>
 
           {{ milestone.desc }}
         </label>
