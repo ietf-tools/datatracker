@@ -193,6 +193,13 @@ G=$(svn st | cut -c 1-7 | grep -oh 'G' | head -n 1)
 ##cp cicmd/commit-${rev}-merge.sh merged@$rev/commit
 ##cd -
 
+# Potentially run flake8 at this point
+# read -p "Run flake8? [y/N] "
+# if [ "$REPLY" = "Y" -o  "$REPLY" = "y"]; then
+#     mod=$(svn st | cut -c 9- | grep '\.py$')
+#     flake8 $mod | less
+# fi
+
 read -p "Continue with tests? [Y/n] "
 [ "$REPLY" = "Y" -o  "$REPLY" = "y" -o  "$REPLY" = "" ] || exit
 
