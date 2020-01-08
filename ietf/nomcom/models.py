@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -202,6 +202,7 @@ class Position(models.Model):
     is_open = models.BooleanField(verbose_name='Is open', default=False, help_text="Set is_open when the nomcom is working on a position. Clear it when an appointment is confirmed.")
     accepting_nominations = models.BooleanField(verbose_name='Is accepting nominations', default=False)
     accepting_feedback = models.BooleanField(verbose_name='Is accepting feedback', default=False)
+    is_iesg_position = models.BooleanField(verbose_name='Is IESG Position', default=False)
 
     objects = PositionManager()
 
@@ -235,10 +236,19 @@ class Position(models.Model):
         return render_to_string(self.questionnaire.path, {'position': self})
 
     def get_requirement(self):
-        rendered = render_to_string(self.requirement.path, {'position': self})
+        specific_reqs = render_to_string(self.requirement.path, {'position': self})
         if self.requirement.type_id=='plain':
-            rendered = linebreaks(rendered)
-        return rendered
+            specific_reqs = linebreaks(specific_reqs)
+
+        generic_iesg_template = DBTemplate.objects.filter(group=self.nomcom.group,path__endswith='iesg_requirements').first()
+
+        if self.is_iesg_position and generic_iesg_template:
+            generic_iesg_reqs = render_to_string(generic_iesg_template.path, {})
+            if generic_iesg_template.type_id=='plain':
+                generic_iesg_reqs = linebreaks(generic_iesg_reqs)
+            return render_to_string("nomcom/iesg_position_requirements.html", dict(position=self, generic_iesg_reqs=generic_iesg_reqs, specific_reqs=specific_reqs))
+        else:
+            return specific_reqs
 
 @python_2_unicode_compatible
 class Topic(models.Model):

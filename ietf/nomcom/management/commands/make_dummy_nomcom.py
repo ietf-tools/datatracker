@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2017-2019, All Rights Reserved
+# Copyright The IETF Trust 2017-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -56,7 +56,7 @@ class Command(BaseCommand):
                 e.person.user.set_password('password')
                 e.person.user.save()
                 NomineePositionFactory(nominee__nomcom=nc, nominee__person=e.person,
-                                       position__nomcom=nc, position__name='Dummy Area Director',
+                                       position__nomcom=nc, position__name='Dummy Area Director', position__is_iesg_position=True,
                                       )
 
                 self.stdout.write("%s\n" % key)

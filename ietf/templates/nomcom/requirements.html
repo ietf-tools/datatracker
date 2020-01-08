@@ -32,3 +32,14 @@
   </div>
 
 {% endblock %}
+
+{% block js %}
+<script>
+  $('.collapse').collapse()
+  var header = $('#generic_iesg_reqs_header')
+  header.addClass('fa')
+  header.addClass('fa-caret-right')
+  header.text(' '+header.text()+' (click to expand)')
+</script>
+{% endblock %}
+
