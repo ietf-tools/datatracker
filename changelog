@@ -1,3 +1,53 @@
+ietfdb (6.116.0) ietf; urgency=medium
+
+  **Dateless group milestones, improved author stats, and bugfixes**
+
+  * Merged in [17196] from rcross@amsl.com:
+    Removed agenda@ietf.org from audio import notification To: list.  
+
+  * Merged in [17195] from rcross@amsl.com:
+    Updated admin permissions to grant secretariat access to
+    LiaisonStatementGroupContacts.  
+
+  * Merged in [17185] from rjsparks@nostrum.com:
+    Added support for dateless milestones. Fixes issue #2799.
+
+  * Specified explicit UTF-8 decoding of submission checker output, in
+    order to avoid issues when reporting errors due to UTF-8 content.
+
+  * Merged in [17181] from olau@iola.dk:
+    Fixed a problem with assignments to the same session causing a crash. 
+
+  * Merged in [17179] from housley@vigilsec.com:
+    Added references and referened-by buttons to each RFC listed on the person
+    profile page.  In addition, changed the buttons on the document references
+    and document referenced-by pages to match the buttons on the main document
+    page (the buttons with the long arrows). Fixes #2854, although it does not
+    include the number of references in the button.
+
+  * Merged in [17178] from housley@vigilsec.com:
+    Turned text names into links on the stats pages. Fixes issue #2854.
+
+  * Refactored some document methods to align better with Django's
+    get_absolute_url(), and added Person.get_absolute_uri()
+
+  * Merged in [17177] from rjsparks@nostrum.com:
+    Improve can_ballot. Fixes #2856.
+
+  * Limited the permitted versions of mypy and related django-slugs, to avoid
+    issues related to using Django-1.11.  We should update to latest versions
+    when we've moved to Django 2.2.x
+
+  * Changed ReviewerSettings history change-reason field to be a TextField, in
+    order to accomodate longer change descriptions.
+
+  * Merged in [17173] from rjsparks@nostrum.com:
+    Worked around a problem with displaying IESG evaluation information for 
+    non-approve ballot types. Partially addresses #2851.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Jan 2020 18:31:03 +0000
+
+
 ietfdb (6.115.0) ietf; urgency=medium
 
   **IRSG document ballot support**
