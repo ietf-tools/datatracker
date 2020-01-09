@@ -45,7 +45,7 @@ ietfdb (6.116.0) ietf; urgency=medium
     Worked around a problem with displaying IESG evaluation information for 
     non-approve ballot types. Partially addresses #2851.  
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  09 Jan 2020 18:31:03 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Jan 2020 21:58:16 +0000
 
 
 ietfdb (6.115.0) ietf; urgency=medium
