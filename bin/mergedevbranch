@@ -153,7 +153,7 @@ $do svn st | grep "^[AMGRD] " && {
 note "Extract who and what:"
 info=$(svn log ${repo}/ -r $rev --incremental)
 set $(echo "$info" | tail -n +2 | head -n 1 | tr "|" "\t")
-who=$2; echo -e "\n$who"
+who=$2; echo -e "$who"
 comment=$(echo "$info" | tail -n +3); echo -e "$comment\n"
 comment=$(echo "$comment" | sed -r -e 's/(commit )?ready (for|to) merge\.?//i' -e '/^$/d')
 files=$(svn diff ${repo}/ -c $rev --summarize | awk '{$1=""; print;}' | while read file; do echo "${file/$repo\/$branch\//}"; done)
