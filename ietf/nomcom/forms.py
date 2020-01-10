@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -603,7 +603,7 @@ class PositionForm(forms.ModelForm):
 
     class Meta:
         model = Position
-        fields = ('name', 'is_open', 'accepting_nominations', 'accepting_feedback')
+        fields = ('name', 'is_iesg_position', 'is_open', 'accepting_nominations', 'accepting_feedback')
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)

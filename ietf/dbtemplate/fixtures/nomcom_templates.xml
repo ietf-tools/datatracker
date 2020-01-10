@@ -181,4 +181,10 @@ The questionaire is repeated below for your convenience.
 Describe the topic and add any information/instructions for the responder here.
 </field>
     </object>
+    <object pk="13" model="dbtemplate.dbtemplate">
+        <field type="CharField" name="path">/nomcom/defaults/iesg_requirements</field>
+        <field type="CharField" name="title">Generic IESG Requirements</field>
+        <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">rst</field>
+        <field type="TextField" name="content">Generic IESG Requirements Yo!</field>
+    </object>
 </django-objects>

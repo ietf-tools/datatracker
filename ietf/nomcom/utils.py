@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -47,6 +47,7 @@ NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE = 'email/questionnaire_reminder.txt'
 NOMINATION_RECEIPT_TEMPLATE = 'email/nomination_receipt.txt'
 FEEDBACK_RECEIPT_TEMPLATE = 'email/feedback_receipt.txt'
 DESCRIPTION_TEMPLATE = 'topic/description'
+IESG_GENERIC_REQUIREMENTS_TEMPLATE = 'iesg_requirements'
 
 DEFAULT_NOMCOM_TEMPLATES = [HOME_TEMPLATE,
                             INEXISTENT_PERSON_TEMPLATE,
@@ -55,7 +56,9 @@ DEFAULT_NOMCOM_TEMPLATES = [HOME_TEMPLATE,
                             NOMINEE_ACCEPT_REMINDER_TEMPLATE,
                             NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE,
                             NOMINATION_RECEIPT_TEMPLATE,
-                            FEEDBACK_RECEIPT_TEMPLATE]
+                            FEEDBACK_RECEIPT_TEMPLATE,
+                            IESG_GENERIC_REQUIREMENTS_TEMPLATE,
+                        ]
 
 
 def get_nomcom_by_year(year):

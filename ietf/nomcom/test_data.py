@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -141,7 +141,8 @@ def nomcom_test_data():
                                                            name=name,
                                                            is_open=True,
                                                            accepting_nominations=True,
-                                                           accepting_feedback=True)
+                                                           accepting_feedback=True,
+                                                           is_iesg_position=POSITIONS.index(name) < 9)
 
     ChangeStateGroupEvent.objects.get_or_create(group=group,
                                                 type="changed_state",
