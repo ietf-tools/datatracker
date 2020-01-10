@@ -229,7 +229,7 @@ def document_main(request, name, rev=None):
 
             if "txt" in found_types:
                 file_urls.append(("htmlized", settings.TOOLS_ID_HTML_URL + name))
-                if doc.tags.filter(slug="errata"):
+                if doc.tags.filter(slug="verified-errata").exists():
                     file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=rfc_number)))
 
             if not found_types:

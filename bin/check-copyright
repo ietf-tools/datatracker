@@ -35,6 +35,7 @@ COPYRIGHT
 """
 from __future__ import print_function
 
+import datetime
 import os
 import sys
 import time
@@ -150,15 +151,18 @@ def get_first_commit(path):
     cmd = 'svn log %s' % path
     if opt_verbose > 1:
         note("Running '%s' ..." % cmd)
-    commit_log = pipe(cmd)
-    commit_log = commit_log.splitlines()
-    commit_log.reverse()
-    for line in commit_log:
-        if re.search(loginfo_format, line):
-            rev, who, when = split_loginfo(line)
-            break
-        else:
-            pass
+    try:
+        commit_log = pipe(cmd)
+        commit_log = commit_log.splitlines()
+        commit_log.reverse()
+        for line in commit_log:
+            if re.search(loginfo_format, line):
+                rev, who, when = split_loginfo(line)
+                break
+            else:
+                pass
+    except OSError:
+        rev, who, when = None, None, datetime.datetime.now()
     return { path: { 'rev': rev, 'who': who, 'date': when.strftime('%Y-%m-%d %H:%M:%S'), }, }
 
 

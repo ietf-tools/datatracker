@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -315,6 +315,22 @@ class RFCSyncTests(TestCase):
                        area=doc.group.parent.acronym,
                        group=doc.group.acronym)
 
+        errata = [{
+                "errata_id":1,
+                "doc-id":"RFC123",
+                "errata_status_code":"Verified",
+                "errata_type_code":"Editorial",
+                "section": "4.1",
+                "orig_text":"   S: 220-smtp.example.com ESMTP Server",
+                "correct_text":"   S: 220 smtp.example.com ESMTP Server",
+                "notes":"There are 3 instances of this (one on p. 7 and two on p. 8). \n",
+                "submit_date":"2007-07-19",
+                "submitter_name":"Rob Siemborski",
+                "verifier_id":99,
+                "verifier_name":None,
+                "update_date":"2019-09-10 09:09:03"},
+        ]
+
         data = rfceditor.parse_index(io.StringIO(t))
         self.assertEqual(len(data), 1)
 
@@ -339,7 +355,7 @@ class RFCSyncTests(TestCase):
         self.write_draft_file(draft_filename, 5000)
 
         changes = []
-        for cs, d, rfc_published in rfceditor.update_docs_from_rfc_index(data, today - datetime.timedelta(days=30)):
+        for cs, d, rfc_published in rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)):
             changes.append(cs)
 
         doc = Document.objects.get(name=doc.name)
@@ -364,7 +380,7 @@ class RFCSyncTests(TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, draft_filename)))
 
         # make sure we can apply it again with no changes
-        changed = list(rfceditor.update_docs_from_rfc_index(data, today - datetime.timedelta(days=30)))
+        changed = list(rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)))
         self.assertEqual(len(changed), 0)
 
 

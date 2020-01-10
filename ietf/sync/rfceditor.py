@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -32,8 +32,9 @@ from ietf.utils.mail import send_mail_text
 #INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
 #POST_APPROVED_DRAFT_URL = "https://www.rfc-editor.org/sdev/jsonexp/jsonparser.php"
 
+MIN_ERRATA_RESULTS = 5000
+MIN_INDEX_RESULTS = 8000
 MIN_QUEUE_RESULTS = 10
-MIN_INDEX_RESULTS = 5000
 
 def get_child_text(parent_node, tag_name):
     text = []
@@ -330,10 +331,17 @@ def parse_index(response):
     return data
 
 
-def update_docs_from_rfc_index(data, skip_older_than_date=None):
+def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=None):
     """Given parsed data from the RFC Editor index, update the documents
     in the database. Yields a list of change descriptions for each
     document, if any."""
+
+    errata = {}
+    for item in errata_data:
+        name = item['doc-id']
+        if not name in errata:
+            errata[name] = []
+        errata[name].append(item)
 
     std_level_mapping = {
         "Standard": StdLevelName.objects.get(slug="std"),
@@ -356,12 +364,13 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
     }
 
     tag_has_errata = DocTagName.objects.get(slug='errata')
+    tag_has_verified_errata = DocTagName.objects.get(slug='verified-errata')
     relationship_obsoletes = DocRelationshipName.objects.get(slug="obs")
     relationship_updates = DocRelationshipName.objects.get(slug="updates")
 
     system = Person.objects.get(name="(System)")
 
-    for rfc_number, title, authors, rfc_published_date, current_status, updates, updated_by, obsoletes, obsoleted_by, also, draft, has_errata, stream, wg, file_formats, pages, abstract in data:
+    for rfc_number, title, authors, rfc_published_date, current_status, updates, updated_by, obsoletes, obsoleted_by, also, draft, has_errata, stream, wg, file_formats, pages, abstract in index_data:
 
         if skip_older_than_date and rfc_published_date < skip_older_than_date:
             # speed up the process by skipping old entries
@@ -493,13 +502,20 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
                     changes.append("created alias %s" % prettify_std_name(a))
 
         if has_errata:
-            if not doc.tags.filter(pk=tag_has_errata.pk):
+            if not doc.tags.filter(pk=tag_has_errata.pk).exists():
                 doc.tags.add(tag_has_errata)
                 changes.append("added Errata tag")
+            has_verified_errata = name.upper() in errata and any([ e['errata_status_code']=='Verified' for e in errata[name.upper()] ])
+            if has_verified_errata and not doc.tags.filter(pk=tag_has_verified_errata.pk).exists():
+                doc.tags.add(tag_has_verified_errata)
+                changes.append("added Verified Errata tag")
         else:
             if doc.tags.filter(pk=tag_has_errata.pk):
                 doc.tags.remove(tag_has_errata)
                 changes.append("removed Errata tag")
+            if doc.tags.filter(pk=tag_has_verified_errata.pk):
+                doc.tags.remove(tag_has_verified_errata)
+                changes.append("removed Verified Errata tag")
 
         if changes:
             events.append(DocEvent.objects.create(

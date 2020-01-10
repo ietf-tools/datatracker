@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 
-import os, sys, datetime
+import datetime
+import json
+import os
+import sys
 import traceback
+
+from six.moves.urllib.request import urlopen
 
 # boilerplate
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -38,15 +43,22 @@ if options.skip_date:
 
 log("Updating document metadata from RFC index from %s" % settings.RFC_EDITOR_INDEX_URL)
 
-response = ietf.sync.rfceditor.fetch_index_xml(settings.RFC_EDITOR_INDEX_URL)
-data = ietf.sync.rfceditor.parse_index(response)
+rfc_index_xml = ietf.sync.rfceditor.fetch_index_xml(settings.RFC_EDITOR_INDEX_URL)
+index_data = ietf.sync.rfceditor.parse_index(rfc_index_xml)
 
-if len(data) < ietf.sync.rfceditor.MIN_INDEX_RESULTS:
-    log("Not enough results, only %s" % len(data))
+rfc_errata_json = urlopen(settings.RFC_EDITOR_ERRATA_JSON_URL)
+errata_data = json.load(rfc_errata_json)
+
+if len(index_data) < ietf.sync.rfceditor.MIN_INDEX_RESULTS:
+    log("Not enough index entries, only %s" % len(index_data))
+    sys.exit(1)
+
+if len(errata_data) < ietf.sync.rfceditor.MIN_ERRATA_RESULTS:
+    log("Not enough errata entries, only %s" % len(errata_data))
     sys.exit(1)
 
 new_rfcs = []
-for changes, doc, rfc_published in ietf.sync.rfceditor.update_docs_from_rfc_index(data, skip_older_than_date=skip_date):
+for changes, doc, rfc_published in ietf.sync.rfceditor.update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=skip_date):
     if rfc_published:
         new_rfcs.append(doc)
 
