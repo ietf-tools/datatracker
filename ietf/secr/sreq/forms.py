@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -20,20 +20,24 @@ from ietf.person.fields import SearchablePersonsField
 NUM_SESSION_CHOICES = (('','--Please select'),('1','1'),('2','2'))
 # LENGTH_SESSION_CHOICES = (('','--Please select'),('1800','30 minutes'),('3600','1 hour'),('5400','1.5 hours'), ('7200','2 hours'),('9000','2.5 hours'))
 LENGTH_SESSION_CHOICES = (('','--Please select'),('1800','30 minutes'),('3600','1 hour'),('5400','1.5 hours'), ('7200','2 hours'))
-WG_CHOICES = list( Group.objects.filter(type__in=('wg','rg','ag'),state__in=('bof','proposed','active')).values_list('acronym','acronym').order_by('acronym')) # type:ignore
-WG_CHOICES.insert(0,('','--Select WG(s)')) # type:ignore
 
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
-def check_conflict(groups):
+def allowed_conflicting_groups():
+    return Group.objects.filter(type__in=['wg', 'ag', 'rg'], state__in=['bof', 'proposed', 'active'])
+
+def check_conflict(groups, source_group):
     '''
     Takes a string which is a list of group acronyms.  Checks that they are all active groups
     '''
     # convert to python list (allow space or comma separated lists)
     items = groups.replace(',',' ').split()
-    active_groups = Group.objects.filter(type__in=('wg','ag','rg'), state__in=('bof','proposed','active'))
+    active_groups = allowed_conflicting_groups()
     for group in items:
+        if group == source_group.acronym:
+            raise forms.ValidationError("Cannot declare a conflict with the same group: %s" % group)
+
         if not active_groups.filter(acronym=group):
             raise forms.ValidationError("Invalid or inactive group acronym: %s" % group)
             
@@ -67,28 +71,39 @@ class SessionForm(forms.Form):
     length_session2 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES,required=False)
     length_session3 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES,required=False)
     attendees = forms.IntegerField()
+    # FIXME: it would cleaner to have these be
+    # ModelMultipleChoiceField, and just customize the widgetry, that
+    # way validation comes for free
     conflict1 = forms.CharField(max_length=255,required=False)
     conflict2 = forms.CharField(max_length=255,required=False)
     conflict3 = forms.CharField(max_length=255,required=False)
     comments = forms.CharField(max_length=200,required=False)
-    wg_selector1 = forms.ChoiceField(choices=WG_CHOICES,required=False)
-    wg_selector2 = forms.ChoiceField(choices=WG_CHOICES,required=False)
-    wg_selector3 = forms.ChoiceField(choices=WG_CHOICES,required=False)
+    wg_selector1 = forms.ChoiceField(choices=[],required=False)
+    wg_selector2 = forms.ChoiceField(choices=[],required=False)
+    wg_selector3 = forms.ChoiceField(choices=[],required=False)
     third_session = forms.BooleanField(required=False)
     resources     = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
     bethere       = SearchablePersonsField(label="Must be present", required=False)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, group, *args, **kwargs):
         if 'hidden' in kwargs:
             self.hidden = kwargs.pop('hidden')
         else:
             self.hidden = False
+
+        self.group = group
+
         super(SessionForm, self).__init__(*args, **kwargs)
         self.fields['num_session'].widget.attrs['onChange'] = "stat_ls(this.selectedIndex);"
         self.fields['length_session1'].widget.attrs['onClick'] = "if (check_num_session(1)) this.disabled=true;"
         self.fields['length_session2'].widget.attrs['onClick'] = "if (check_num_session(2)) this.disabled=true;"
         self.fields['length_session3'].widget.attrs['onClick'] = "if (check_third_session()) { this.disabled=true;}"
         self.fields['comments'].widget = forms.Textarea(attrs={'rows':'6','cols':'65'})
+
+        group_acronym_choices = [('','--Select WG(s)')] + list(allowed_conflicting_groups().exclude(pk=group.pk).values_list('acronym','acronym').order_by('acronym'))
+        for i in range(1, 4):
+            self.fields['wg_selector{}'.format(i)].choices = group_acronym_choices
+
         # disabling handleconflictfield (which only enables or disables form elements) while we're hacking the meaning of the three constraints currently in use:
         #self.fields['wg_selector1'].widget.attrs['onChange'] = "document.form_post.conflict1.value=document.form_post.conflict1.value + ' ' + this.options[this.selectedIndex].value; return handleconflictfield(1);"
         #self.fields['wg_selector2'].widget.attrs['onChange'] = "document.form_post.conflict2.value=document.form_post.conflict2.value + ' ' + this.options[this.selectedIndex].value; return handleconflictfield(2);"
@@ -117,17 +132,17 @@ class SessionForm(forms.Form):
 
     def clean_conflict1(self):
         conflict = self.cleaned_data['conflict1']
-        check_conflict(conflict)
+        check_conflict(conflict, self.group)
         return conflict
     
     def clean_conflict2(self):
         conflict = self.cleaned_data['conflict2']
-        check_conflict(conflict)
+        check_conflict(conflict, self.group)
         return conflict
     
     def clean_conflict3(self):
         conflict = self.cleaned_data['conflict3']
-        check_conflict(conflict)
+        check_conflict(conflict, self.group)
         return conflict
     
     def clean(self):

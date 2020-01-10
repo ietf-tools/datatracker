@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -21,7 +21,7 @@ from ietf.meeting.models import Meeting, Session, Constraint, ResourceAssociatio
 from ietf.meeting.helpers import get_meeting
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.name.models import SessionStatusName, ConstraintName
-from ietf.secr.sreq.forms import SessionForm, ToolStatusForm
+from ietf.secr.sreq.forms import SessionForm, ToolStatusForm, allowed_conflicting_groups
 from ietf.secr.utils.decorators import check_permissions
 from ietf.secr.utils.group import get_my_groups
 from ietf.utils.mail import send_mail
@@ -45,13 +45,13 @@ def check_app_locked(meeting=None):
         meeting = get_meeting()
     return bool(meeting.session_request_lock_message)
 
-def get_initial_session(sessions):
+def get_initial_session(sessions, clean_conflicts=False):
     '''
     This function takes a queryset of sessions ordered by 'id' for consistency.  It returns
     a dictionary to be used as the initial for a legacy session form
     '''
     initial = {}
-    if(len(sessions) == 0):
+    if len(sessions) == 0:
         return initial
 
     meeting = sessions[0].meeting
@@ -70,9 +70,13 @@ def get_initial_session(sessions):
     except IndexError:
         pass
     initial['attendees'] = sessions[0].attendees
-    initial['conflict1'] = ' '.join([ c.target.acronym for c in conflicts.filter(name__slug='conflict') ])
-    initial['conflict2'] = ' '.join([ c.target.acronym for c in conflicts.filter(name__slug='conflic2') ])
-    initial['conflict3'] = ' '.join([ c.target.acronym for c in conflicts.filter(name__slug='conflic3') ])
+
+    def valid_conflict(conflict):
+        return conflict.target != sessions[0].group and allowed_conflicting_groups().filter(pk=conflict.target_id).exists()
+
+    initial['conflict1'] = ' '.join(c.target.acronym for c in conflicts.filter(name__slug='conflict') if not clean_conflicts or valid_conflict(c))
+    initial['conflict2'] = ' '.join(c.target.acronym for c in conflicts.filter(name__slug='conflic2') if not clean_conflicts or valid_conflict(c))
+    initial['conflict3'] = ' '.join(c.target.acronym for c in conflicts.filter(name__slug='conflic3') if not clean_conflicts or valid_conflict(c))
     initial['comments'] = sessions[0].comments
     initial['resources'] = sessions[0].resources.all()
     initial['bethere'] = [x.person for x in sessions[0].constraints().filter(name='bethere').select_related("person")]
@@ -243,10 +247,10 @@ def confirm(request, acronym):
     to confirm for submission.
     '''
     # FIXME: this should be using form.is_valid/form.cleaned_data - invalid input will make it crash
-    form = SessionForm(request.POST, hidden=True)
+    group = get_object_or_404(Group,acronym=acronym)
+    form = SessionForm(group, request.POST, hidden=True)
     form.is_valid()
     meeting = get_meeting()
-    group = get_object_or_404(Group,acronym=acronym)
     login = request.user.person
 
     # check if request already exists for this group
@@ -376,7 +380,7 @@ def edit(request, acronym, num=None):
         if button_text == 'Cancel':
             return redirect('ietf.secr.sreq.views.view', acronym=acronym)
 
-        form = SessionForm(request.POST,initial=initial)
+        form = SessionForm(group, request.POST,initial=initial)
         if form.is_valid():
             if form.has_changed():
                 # might be cleaner to simply delete and rewrite all records (but maintain submitter?)
@@ -485,7 +489,7 @@ def edit(request, acronym, num=None):
     else:
         if not sessions:
             return redirect('ietf.secr.sreq.views.new', acronym=acronym)
-        form = SessionForm(initial=initial)
+        form = SessionForm(group, initial=initial)
 
     return render(request, 'sreq/edit.html', {
         'is_locked': is_locked,
@@ -583,7 +587,7 @@ def new(request, acronym):
         if button_text == 'Cancel':
             return redirect('ietf.secr.sreq.views.main')
 
-        form = SessionForm(request.POST)
+        form = SessionForm(group, request.POST)
         if form.is_valid():
             return confirm(request, acronym)
 
@@ -596,16 +600,16 @@ def new(request, acronym):
             messages.warning(request, 'This group did not meet at %s' % previous_meeting)
             return redirect('ietf.secr.sreq.views.new', acronym=acronym)
 
-        initial = get_initial_session(previous_sessions)
+        initial = get_initial_session(previous_sessions, clean_conflicts=True)
         add_essential_people(group,initial)
         if 'resources' in initial:
             initial['resources'] = [x.pk for x in initial['resources']]
-        form = SessionForm(initial=initial)
+        form = SessionForm(group, initial=initial)
 
     else:
         initial={}
         add_essential_people(group,initial)
-        form = SessionForm(initial=initial)
+        form = SessionForm(group, initial=initial)
 
     return render(request, 'sreq/new.html', {
         'meeting': meeting,
