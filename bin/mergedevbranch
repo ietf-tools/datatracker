@@ -142,6 +142,14 @@ if grep "@$rev $branch" $mergelog; then die "Changeset $branch@$rev is already i
 
 note "Will attempt merge from $branch@$rev"
 
+# "Check there's no uncommitted changes ..."
+echo ""
+$do svn st | grep "^[AMGRD] " && {
+    echo ""
+    read -p "There are uncommitted changes.  Really do merge? [y/N] "
+    [ "$REPLY" = "Y" -o  "$REPLY" = "y" ] || exit
+}
+
 note "Extract who and what:"
 info=$(svn log ${repo}/ -r $rev --incremental)
 set $(echo "$info" | tail -n +2 | head -n 1 | tr "|" "\t")
