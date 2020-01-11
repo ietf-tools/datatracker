@@ -505,7 +505,7 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
             if not doc.tags.filter(pk=tag_has_errata.pk).exists():
                 doc.tags.add(tag_has_errata)
                 changes.append("added Errata tag")
-            has_verified_errata = name.upper() in errata and any([ e['errata_status_code']=='Verified' for e in errata[name.upper()] ])
+            has_verified_errata = name.upper() in errata and any([ er['errata_status_code']=='Verified' for er in errata[name.upper()] ])
             if has_verified_errata and not doc.tags.filter(pk=tag_has_verified_errata.pk).exists():
                 doc.tags.add(tag_has_verified_errata)
                 changes.append("added Verified Errata tag")
