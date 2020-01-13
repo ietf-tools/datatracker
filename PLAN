@@ -7,16 +7,9 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Polish the htmlization pages, making the style identical with tools.ietf.org.
-
 * Wrap Trac in a docker container, in preparation for transition to running
   the datatracker under Python 3.  It doesn't look like Trac will be available
   for Python 3 until January 2020 at the earliest.
-
-* Investigate making RFCs first-class document objects to faciliate being
-  able to model BCPs that represent groups of RFCs properly. Then fix the rfc sync
-  script to update BCP aliases when changes occur changes (a BCP points to new
-  RFC numbers)
 
 * Complete the transition to Python 3.  This will make it easier to add add
   support for internationalsed email, and also other i18n enhancements.  The
@@ -24,6 +17,13 @@ Planned work in rough order
   16 July 2019), but has not been deployed under Python 3 yet.  The natural
   point for changing the deployment seems to be just after the next OS upgrade,
   which we think will make Python 3.6 the default mod_wsgi python.
+
+* Polish the htmlization pages, making the style identical with tools.ietf.org.
+
+* Investigate making RFCs first-class document objects to faciliate being
+  able to model BCPs that represent groups of RFCs properly. Then fix the rfc sync
+  script to update BCP aliases when changes occur changes (a BCP points to new
+  RFC numbers)
 
 * Rework email sending so that all emails sent by the datatracker, except for
   logging and failure emails sent to ADMINS, are captured as a Message object.
@@ -35,9 +35,6 @@ Planned work in rough order
   open() which should be io.open() with the appropriate encoding.  In general,
   there are about 100 file open() which should be reviewed and changed to
   io.open() unless that's clearly not right.
-
-* Add generation of bibxml reference library entries to the datatracker, in order
-  to be able to transition away from the old TCL code.
 
 * Add django pagination to selected pages with long lists of results in order
   return results to the user faster.
