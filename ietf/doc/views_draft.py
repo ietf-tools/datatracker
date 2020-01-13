@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -1188,8 +1188,8 @@ def edit_document_urls(request, name):
         def clean_urls(self):
             lines = [x.strip() for x in self.cleaned_data["urls"].splitlines() if x.strip()]
             url_validator = URLValidator()
+            errors = []
             for l in lines:
-                errors = []
                 parts = l.split()
                 if len(parts) == 1:
                     errors.append("Too few fields: Expected at least url and tag: '%s'" % l)
