@@ -10,8 +10,8 @@
     "fullcalendar": "~4",
     "highcharts": "~6",
     "html5shiv": "~3",
+    "js-cookie": "~2",
     "jquery": "~1",
-    "jquery.cookie": "~1",
     "jquery.tablesorter": "~2",
     "respond": "~1",
     "select2": "~3",
@@ -56,6 +56,9 @@
 	  "modules/offline-exporting.js",
 	  "modules/map.js"
 	]
+    },
+    "js-cookie": {
+      "main": "src/js.cookie.js"
     }
   }
 }

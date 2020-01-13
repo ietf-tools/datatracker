@@ -7,7 +7,7 @@ jQuery.ajaxSetup({
     crossDomain: false, // obviates need for sameOrigin test
     beforeSend: function(xhr, settings) {
         if (!csrfSafeMethod(settings.type)) {
-            xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken'));
+            xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
         }
     }
 });
@@ -15,10 +15,10 @@ jQuery.ajaxSetup({
 // Remember the state of the "browsehappy" alert
 $('#browsehappy .close').click(function(e) {
     e.preventDefault();
-    $.cookie('browsehappy', 'closed', { path: '/' });
+    Cookies.set('browsehappy', 'closed');
 });
 
-if(typeof $.cookie('browsehappy') === 'undefined') {
+if(typeof Cookies.get('browsehappy') === 'undefined') {
     $('#browsehappy').show();
 }
 
