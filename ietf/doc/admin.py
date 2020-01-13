@@ -1,10 +1,11 @@
-# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 from __future__ import absolute_import, print_function, unicode_literals
 
 from django.contrib import admin
+from django.db import models
 from django import forms
 
 from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document, RelatedDocHistory,
@@ -43,6 +44,14 @@ class RelatedDocumentInline(admin.TabularInline):
     raw_id_fields = ['target']
     extra = 1
 
+class AdditionalUrlInLine(admin.TabularInline):
+    model = DocumentURL
+    fields = ['tag','desc','url',]
+    extra = 1
+    formfield_overrides = {
+        models.CharField: {'widget': forms.TextInput(attrs={'size':'50'})},
+    }
+
 class DocumentForm(forms.ModelForm):
     comment_about_changes = forms.CharField(
         widget=forms.Textarea(attrs={'rows':10,'cols':40,'class':'vLargeTextField'}), strip=False,
@@ -64,7 +73,7 @@ class DocumentAdmin(admin.ModelAdmin):
     search_fields = ['name']
     list_filter = ['type']
     raw_id_fields = ['group', 'shepherd', 'ad']
-    inlines = [DocAuthorInline, RelatedDocumentInline, ]
+    inlines = [DocAuthorInline, RelatedDocumentInline, AdditionalUrlInLine]
     form = DocumentForm
 
     def save_model(self, request, obj, form, change):
@@ -173,5 +182,6 @@ admin.site.register(IRSGBallotDocEvent, IRSGBallotDocEventAdmin)
     
 class DocumentUrlAdmin(admin.ModelAdmin):
     list_display = ['id', 'doc', 'tag', 'url', 'desc', ]
+    search_fields = ['doc__name', 'url', ]
     raw_id_fields = ['doc', ]
 admin.site.register(DocumentURL, DocumentUrlAdmin)
