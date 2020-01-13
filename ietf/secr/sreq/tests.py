@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -13,7 +13,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.utils.test_utils import TestCase
 from ietf.group.factories import GroupFactory, RoleFactory
-from ietf.meeting.models import Session, ResourceAssociation, SchedulingEvent
+from ietf.meeting.models import Session, ResourceAssociation, SchedulingEvent, Constraint
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.person.models import Person
 from ietf.utils.mail import outbox, empty_outbox
@@ -154,6 +154,51 @@ class SubmitRequestCase(TestCase):
         self.assertEqual(len(q('#session-request-form')),1)
         self.assertContains(r, 'You must enter a length for all sessions')
 
+    def test_submit_request_check_constraints(self):
+        m1 = MeetingFactory(type_id='ietf', date=datetime.date.today() - datetime.timedelta(days=100))
+        MeetingFactory(type_id='ietf', date=datetime.date.today())
+        ad = Person.objects.get(user__username='ad')
+        area = RoleFactory(name_id='ad', person=ad, group__type_id='area').group
+        group = GroupFactory(parent=area)
+        still_active_group = GroupFactory(parent=area)
+        Constraint.objects.create(
+            meeting=m1,
+            source=group,
+            target=still_active_group,
+            name_id='conflict',
+        )
+        inactive_group = GroupFactory(parent=area, state_id='conclude')
+        inactive_group.save()
+        Constraint.objects.create(
+            meeting=m1,
+            source=group,
+            target=inactive_group,
+            name_id='conflict',
+        )
+        SessionFactory(group=group, meeting=m1)
+
+        self.client.login(username="secretary", password="secretary+password")
+
+        url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
+        r = self.client.get(url + '?previous')
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        conflict1 = q('[name="conflict1"]').val()
+        self.assertIn(still_active_group.acronym, conflict1)
+        self.assertNotIn(inactive_group.acronym, conflict1)
+
+        post_data = {'num_session':'1',
+                     'length_session1':'3600',
+                     'attendees':'10',
+                     'conflict1': group.acronym,
+                     'comments':'need projector',
+                     'submit': 'Continue'}
+        r = self.client.post(url,post_data)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#session-request-form')),1)
+        self.assertContains(r, "Cannot declare a conflict with the same group")
+        
     def test_request_notification(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
         ad = Person.objects.get(user__username='ad')
