@@ -919,6 +919,12 @@ class DocHistory(DocumentInfo):
     def related_ipr(self):
         return self.doc.related_ipr()
 
+    def documenturl_set(self):
+        return self.doc.documenturl_set
+
+    def filename_with_rev(self):
+        return self.doc.filename_with_rev()
+    
     class Meta:
         verbose_name = "document history"
         verbose_name_plural = "document histories"

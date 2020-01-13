@@ -148,10 +148,12 @@
 	        {% endif %}
 		Report a bug:
 	        <a href="https://tools.ietf.org/tools/ietfdb/newticket">Tracker:<span class="fa fa-bug"></span></a>
+                {% if bugreport_email %}
 	        <a href="mailto:{{ bugreport_email }}">Email:<span class="fa fa-envelope"></span></a>
+                {% endif %}
 		<br>
-		  Python {{ python_version }} |
-		  Django {{ django_version }}
+                {% if python_version %}Python {{ python_version }}{% endif %} |
+		{% if django_version %}Django {{ django_version }}{% endif %}
 	      </p>
 	    </div>
 	  </div>

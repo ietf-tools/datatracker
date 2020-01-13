@@ -92,7 +92,11 @@
 	  {% endif %}
 	</td>
 	<td>
-	  <span title="{{ doc.get_state.desc }}">{{ doc.get_state.name }}</span>
+          {% if doc.get_state %}
+            <span title="{{ doc.get_state.desc }}">{{ doc.get_state.name }}</span>
+          {% else %}
+            No document state
+          {% endif %}
 
 	  {% if chartering == "initial" %}
 	    <span class="label label-info">Initial chartering</span>

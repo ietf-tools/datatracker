@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Portion Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
@@ -489,6 +489,12 @@ class CoverageTest(unittest.TestCase):
                 ' please see if they can be re-ordered with all data migrations before the schema migrations:\n'
                 +('\n'.join(['    %-6s:  %-12s, %s (%s)'% (op, node.key[0], node.key[1], nm) for (node, op, nm) in unreleased ])))
 
+class InvalidString(str):
+    def __mod__(self, other):
+        from django.template.base import TemplateSyntaxError
+        raise TemplateSyntaxError(
+            "Undefined variable or unknown value for: \"%s\"" % other)
+
 class IetfTestRunner(DiscoverRunner):
 
     @classmethod
@@ -587,9 +593,15 @@ class IetfTestRunner(DiscoverRunner):
             print("     Changing SITE_ID to '1' during testing.")
             settings.SITE_ID = 1
 
-        if settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] != '':
-            print("     Changing TEMPLATES[0]['OPTIONS']['string_if_invalid'] to '' during testing")
-            settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] = ''
+        if True:
+            if settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] != '':
+                print("     Changing TEMPLATES[0]['OPTIONS']['string_if_invalid'] to '' during testing")
+                settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] = ''
+        else:
+            # Alternative code to trigger test exceptions on failure to
+            # resolve variables in templates.
+            print("     Changing TEMPLATES[0]['OPTIONS']['string_if_invalid'] during testing")
+            settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] = InvalidString('%s')
 
         if settings.INTERNAL_IPS:
             print("     Changing INTERNAL_IPS to '[]' during testing.")
