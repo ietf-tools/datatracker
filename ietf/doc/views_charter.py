@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# Copyright The IETF Trust 2011-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -671,7 +671,7 @@ def ballot_writeupnotes(request, name):
                     pos.type = "changed_ballot_position"
                     pos.balloter = by
                     pos.pos_id = "yes"
-                    pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
+                    pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.balloter.plain_name())
                     pos.save()
                     # Consider mailing this position to 'iesg_ballot_saved'
 
