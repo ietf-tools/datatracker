@@ -627,6 +627,7 @@ class GroupEditTests(TestCase):
         self.assertTrue('Personnel change' in outbox[0]['Subject'])
         for prefix in ['ad1','ad2','aread','marschairman','marsdelegate']:
             self.assertTrue(prefix+'@' in outbox[0]['To'])
+        self.assertTrue(outbox[0].get_payload(decode=True).decode(str(outbox[0].get_charset())).startswith('Sec Retary'))
 
 
     def test_edit_field(self):
