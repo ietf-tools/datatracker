@@ -26,13 +26,15 @@
   </p>
 
   <div class="container-fluid">
-    <div class="col-sm-12">
-      <form method="post" id="switch-date-use-form">{% csrf_token %}
-        <button class="btn btn-default" type="submit" name="action" value="switch"{% if milestone_set == 'charter' %} style="display:none;"{% endif %}>
-          {% if group.uses_milestone_dates %}Stop{% else %}Start{% endif %} using milestone dates
-        </button>
-      </form>
-    </div>
+    {% if can_change_uses_milestone_dates %}
+      <div class="col-sm-12">
+        <form method="post" id="switch-date-use-form">{% csrf_token %}
+          <button class="btn btn-default" type="submit" name="action" value="switch"{% if milestone_set == 'charter' %} style="display:none;"{% endif %}>
+            {% if group.uses_milestone_dates %}Stop{% else %}Start{% endif %} using milestone dates
+          </button>
+        </form>
+      </div>
+    {% endif %}
 
 
     <div class="col-sm-12">

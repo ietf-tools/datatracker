@@ -6,6 +6,7 @@ import calendar
 
 from django import forms
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseForbidden, HttpResponseBadRequest, HttpResponseRedirect, Http404
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
@@ -107,8 +108,10 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
 
     needs_review = False
     if can_manage_group(request.user, group):
+        can_change_uses_milestone_dates = True
         if not can_manage_group_type(request.user, group):
             # The user is chair or similar, not AD:
+            can_change_uses_milestone_dates = False
             if milestone_set == "current":
                 needs_review = True
     else:
@@ -299,17 +302,20 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
         action = request.POST.get("action", "review")
 
         if action == "switch":
-            if group.uses_milestone_dates:
-                group.uses_milestone_dates=False
-                group.save()
-                for order, milestone in enumerate(group.groupmilestone_set.filter(state_id='active').order_by('due','id')):
-                    milestone.order = order
-                    milestone.save()
+            if can_change_uses_milestone_dates: 
+                if group.uses_milestone_dates:
+                    group.uses_milestone_dates=False
+                    group.save()
+                    for order, milestone in enumerate(group.groupmilestone_set.filter(state_id='active').order_by('due','id')):
+                        milestone.order = order
+                        milestone.save()
+                else:
+                    group.uses_milestone_dates=True
+                    group.save()
+                for m in milestones:
+                    forms.append(MilestoneForm(needs_review, reviewer, instance=m, uses_dates=group.uses_milestone_dates))
             else:
-                group.uses_milestone_dates=True
-                group.save()
-            for m in milestones:
-                forms.append(MilestoneForm(needs_review, reviewer, instance=m, uses_dates=group.uses_milestone_dates))
+                raise PermissionDenied
         else:
             # parse out individual milestone forms
             for prefix in request.POST.getlist("prefix"):
@@ -383,7 +389,8 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                        milestone_set=milestone_set,
                        needs_review=needs_review,
                        reviewer=reviewer,
-                       can_reset=can_reset))
+                       can_reset=can_reset,
+                       can_change_uses_milestone_dates=can_change_uses_milestone_dates))
 
 @login_required
 def reset_charter_milestones(request, group_type, acronym):
