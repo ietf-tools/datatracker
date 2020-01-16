@@ -1063,7 +1063,9 @@ class MilestoneTests(TestCase):
 
 class DatelessMilestoneTests(TestCase):
     def test_switch_to_dateless(self):
-        ms = DatedGroupMilestoneFactory()
+        ad_role = RoleFactory(group__type_id='area',name_id='ad')
+        ms = DatedGroupMilestoneFactory(group__parent=ad_role.group)
+        ad = ad_role.person
         chair = RoleFactory(group=ms.group,name_id='chair').person
 
         url = urlreverse('ietf.group.milestones.edit_milestones;current', kwargs=dict(acronym=ms.group.acronym))
@@ -1072,6 +1074,18 @@ class DatelessMilestoneTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
+        self.assertEqual(len(q('#switch-date-use-form')),0)
+
+        r = self.client.post(url, dict(action="switch"))
+        self.assertEqual(r.status_code, 403)
+
+        self.client.logout()
+        self.client.login(username=ad.user.username, password='%s+password' % ad.user.username)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#switch-date-use-form')),1)
         self.assertEqual(len(q('#uses_milestone_dates')),1)
 
         r = self.client.post(url, dict(action="switch"))
@@ -1085,11 +1099,12 @@ class DatelessMilestoneTests(TestCase):
         self.assertEqual(len(q('#uses_milestone_dates')),0)
 
     def test_switch_to_dated(self):
-        ms = DatelessGroupMilestoneFactory()
-        chair = RoleFactory(group=ms.group,name_id='chair').person
+        ad_role = RoleFactory(group__type_id='area',name_id='ad')
+        ms = DatelessGroupMilestoneFactory(group__parent=ad_role.group)
+        ad = ad_role.person
 
         url = urlreverse('ietf.group.milestones.edit_milestones;current', kwargs=dict(acronym=ms.group.acronym))
-        login_testing_unauthorized(self, chair.user.username, url)
+        login_testing_unauthorized(self, ad.user.username, url)
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)

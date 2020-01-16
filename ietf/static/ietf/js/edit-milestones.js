@@ -3,6 +3,7 @@ $(document).ready(function () {
     var milestonesForm = $('#milestones-form');
     var group_uses_milestone_dates = ( $('#uses_milestone_dates').length > 0 );
     var milestone_order_has_changed = false;
+    var switch_date_use_form = $("#switch-date-use-form")
 
     // make sure we got the lowest number for idCounter
     milestonesForm.find('.edit-milestone input[name$="-id"]').each(function () {
@@ -14,7 +15,9 @@ $(document).ready(function () {
     function setChanged() {
         $(this).closest(".edit-milestone").addClass("changed");
         setSubmitButtonState();
-        $("#switch-date-use-form").hide();
+        if (switch_date_use_form) {
+            switch_date_use_form.hide();
+        }
     }
 
     milestonesForm.on("change", '.edit-milestone select,.edit-milestone input,.edit-milestone textarea', setChanged);
@@ -166,7 +169,9 @@ $(document).ready(function () {
             milestone_order_has_changed = true;
             setSubmitButtonState();
             setOrderControlValue();
-            $("#switch-date-use-form").hide();
+            if (switch_date_use_form) {
+                switch_date_use_form.hide();
+            }            
 
         }
 
