@@ -180,6 +180,11 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, "Charter new RG")
         self.assertNotContains(r, "Charter new WG")
 
+        self.client.logout()
+        replaced_group = CharterFactory(group__state_id='replaced',group__type_id='wg',group__parent=GroupFactory(type_id='area'),states=[('charter','intrev')]).group
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#content a:contains("%s")' % replaced_group.acronym)), 0)
 
     def test_concluded_groups(self):
         group = GroupFactory(state_id='conclude')

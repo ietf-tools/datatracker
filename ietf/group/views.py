@@ -401,7 +401,7 @@ def chartering_groups(request):
     group_types = GroupTypeName.objects.filter(slug__in=group_type_slugs)
 
     for t in group_types:
-        t.chartering_groups = Group.objects.filter(type=t, charter__states__in=charter_states).select_related("state", "charter").order_by("acronym")
+        t.chartering_groups = Group.objects.filter(type=t, charter__states__in=charter_states,state_id__in=('active','bof','proposed','dormant')).select_related("state", "charter").order_by("acronym")
         t.can_manage = can_manage_group_type(request.user, None, t.slug)
 
         for g in t.chartering_groups:
