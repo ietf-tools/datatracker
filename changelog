@@ -1,3 +1,59 @@
+ietfdb (6.116.1) ietf; urgency=medium
+
+  * Refined the links from document stats pages to author pages so as to 
+    not link to non-existent pages.  Fixes 404 errors for a number of stats
+    page links.
+
+  * Merged in [17234] from rjsparks@nostrum.com:
+    Restrict the ability to change whether a group uses milestone dates to 
+    the ADs and the secretariat. Fixes #2869.  
+
+  * Merged in [17233] from rjsparks@nostrum.com:
+    Be clear about who changed a group's personnel in the resulting email 
+    message. Fixes #2868.  
+
+  * Merged in [17228] from rjsparks@nostrum.com:
+    Improved admin handling of DocumentURL. Fixes #2865.  
+
+  * Merged in [17227] from rjsparks@nostrum.com:
+    Allow document Additional URLs to become empty. Fixes #2864.  
+
+  * Added (currently inactive) code to trigger exceptions on failure to 
+    resolve template variables during tests, and added fixes for a couple of 
+    places that triggered such exceptions.
+
+  * Merged in [17219] from rjsparks@nostrum.com:
+    Update some uses of pos.ad in templates to pos.balloter. Fixes #2863.  
+
+  * Merged in [17217] from olau@iola.dk:
+    Tighten validation of session conflicts in the session request tool,
+    preventing conflicts where source = target. Make sure the 'use
+    previous session' button doesn't carry forward conflicts that are no
+    longer valid.
+    Also fix a bug with the group list in the dropdowns being computed
+    statically at module import time instead of being queried dynamically
+    upon each page request. 
+
+  * Merged in [17211] from rjsparks@nostrum.com:
+    Upgrade to the newer js-cookie library that replaced jquery.cookie. 
+    Fixes #2832.  
+
+  * Fixed a Py2/3 compatibility issue with the verified errata code.
+
+  * Merged in [17201] from rjsparks@nostrum.com:
+    Make it easier for the nomcom chair to manage generic IESG 
+    requirements. Fixes #2794.  
+
+  * Added a check for uncomitted changes to bin/mergedevbranch.
+
+  * Added fetch and use of the RFC-Editor's errata.json file in order to set a
+    new 'verified-errata' document tag, and use that to show the link to
+    inline-errata documents only when there is verified errata.
+    Fixes issue #2861.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  17 Jan 2020 18:20:00 +0000
+
+
 ietfdb (6.116.0) ietf; urgency=medium
 
   **Dateless group milestones, improved author stats, and bugfixes**
