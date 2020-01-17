@@ -7,7 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 from . import checks                           # pyflakes:ignore
 
 # Don't add patch number here:
-__version__ = "6.116.1.dev0"
+__version__ = "6.116.1"
 
 # set this to ".p1", ".p2", etc. after patching
 __patch__   = ""
