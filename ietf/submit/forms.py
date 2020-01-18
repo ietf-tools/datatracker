@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# Copyright The IETF Trust 2011-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -160,7 +160,8 @@ class SubmissionBaseUploadForm(forms.Form):
                 continue
             self.file_types.append('.%s' % ext)
         if not ('.txt' in self.file_types or '.xml' in self.file_types):
-            raise forms.ValidationError('Unexpected submission file types; found %s, but %s is required' % (', '.join(self.file_types), ' or '.join(self.base_formats)))
+            if not self.errors:
+                raise forms.ValidationError('Unexpected submission file types; found %s, but %s is required' % (', '.join(self.file_types), ' or '.join(self.base_formats)))
 
         #debug.show('self.cleaned_data["xml"]')
         if self.cleaned_data.get('xml'):
@@ -187,14 +188,14 @@ class SubmissionBaseUploadForm(forms.Form):
                     self.xmlroot = self.xmltree.getroot()
                     xml_version = self.xmlroot.get('version', '2')
                 except Exception as e:
-                    raise forms.ValidationError("An exception occurred when trying to [arse the XML file: %s" % e)
+                    self.add_error('xml', "An exception occurred when trying to parse the XML file: %s" % e)
 
                 draftname = self.xmlroot.attrib.get('docName')
                 if draftname is None:
-                    raise forms.ValidationError("No docName attribute found in the xml root element")
+                    self.add_error('xml', "No docName attribute found in the xml root element")
                 name_error = validate_submission_name(draftname)
                 if name_error:
-                    raise forms.ValidationError(name_error)
+                    self.add_error('xml', name_error)
                 revmatch = re.search("-[0-9][0-9]$", draftname)
                 if revmatch:
                     self.revision = draftname[-2:]
@@ -230,10 +231,10 @@ class SubmissionBaseUploadForm(forms.Form):
                         prep.options.accept_prepped = True
                         self.xmltree.tree = prep.prep()
                         if self.xmltree.tree == None:
-                            raise forms.ValidationError("Error from xml2rfc (prep): %s" % prep.errors)
+                            self.add_error('xml', "Error from xml2rfc (prep): %s" % prep.errors)
                 except Exception as e:
                         msgs = format_messages('prep', e, xml2rfc.log)
-                        raise forms.ValidationError(msgs)
+                        self.add_error('xml', msgs)
 
                 # --- Convert to txt ---
                 if not ('txt' in self.cleaned_data and self.cleaned_data['txt']):
@@ -255,9 +256,9 @@ class SubmissionBaseUploadForm(forms.Form):
                     except Exception as e:
                         msgs = format_messages('txt', e, xml2rfc.log)
                         log.log('\n'.join(msgs))
-                        raise forms.ValidationError(msgs)
+                        self.add_error('xml', msgs)
 
-                # --- Convert to xml ---
+                # --- Convert to html ---
                 if xml_version == '3':
                     try:
                         file_name['html'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.html' % (self.filename, self.revision))
@@ -272,7 +273,7 @@ class SubmissionBaseUploadForm(forms.Form):
                                 xml_version))
                     except Exception as e:
                         msgs = format_messages('html', e, xml2rfc.log)
-                        raise forms.ValidationError(msgs)
+                        self.add_error('xml', msgs)
 
                 if xml_version == '2':
                     ok, errors = self.xmltree.validate()
@@ -289,7 +290,7 @@ class SubmissionBaseUploadForm(forms.Form):
                     #     line:     the line at which the message originated (if applicable)
                     #     column:   the character column at which the message originated (if applicable)
                     #     filename: the name of the file in which the message originated (if applicable)
-                    raise forms.ValidationError(
+                    self.add_error('xml', 
                             [ forms.ValidationError("One or more XML validation errors occurred when processing the XML file:") ] +
                             [ forms.ValidationError("%s: Line %s: %s" % (xml_file.name, r.line, r.message), code="%s"%r.type) for r in errors ] 
                         )
@@ -306,24 +307,29 @@ class SubmissionBaseUploadForm(forms.Form):
             try:
                 text = bytes.decode(self.file_info['txt'].charset)
             except (UnicodeDecodeError, LookupError) as e:
-                raise forms.ValidationError('Failed decoding the uploaded file: "%s"' % str(e))
+                self.add_error('txt', 'Failed decoding the uploaded file: "%s"' % str(e))
             #
             self.parsed_draft = Draft(text, txt_file.name)
             if self.filename == None:
                 self.filename = self.parsed_draft.filename
             elif self.filename != self.parsed_draft.filename:
-                raise forms.ValidationError("Inconsistent name information: xml:%s, txt:%s" % (self.filename, self.parsed_draft.filename))
+                self.add_error('txt', "Inconsistent name information: xml:%s, txt:%s" % (self.filename, self.parsed_draft.filename))
             if self.revision == None:
                 self.revision = self.parsed_draft.revision
             elif self.revision != self.parsed_draft.revision:
-                raise forms.ValidationError("Inconsistent revision information: xml:%s, txt:%s" % (self.revision, self.parsed_draft.revision))
+                self.add_error('txt', "Inconsistent revision information: xml:%s, txt:%s" % (self.revision, self.parsed_draft.revision))
             if self.title == None:
                 self.title = self.parsed_draft.get_title()
             elif self.title != self.parsed_draft.get_title():
-                raise forms.ValidationError("Inconsistent title information: xml:%s, txt:%s" % (self.title, self.parsed_draft.get_title()))
+                self.add_error('txt', "Inconsistent title information: xml:%s, txt:%s" % (self.title, self.parsed_draft.get_title()))
+
+        # The following errors are likely noise if we have previous field
+        # errors:
+        if self.errors:
+            raise forms.ValidationError('')
 
         if not self.filename:
-            raise forms.ValidationError("Could not extract a valid draft name from the upload"
+            raise forms.ValidationError("Could not extract a valid draft name from the upload.  "
                 "To fix this in a text upload, please make sure that the full draft name including "
                 "revision number appears centered on its own line below the document title on the "
                 "first page.  In an xml upload, please make sure that the top-level <rfc/> "
