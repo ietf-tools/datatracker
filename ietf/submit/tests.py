@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# Copyright The IETF Trust 2011-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -1035,12 +1035,38 @@ class SubmitTests(TestCase):
 
         return r, q, m
         
+    def submit_bad_doc_name_with_ext(self, name, formats):
+        group = None
+        url = urlreverse('ietf.submit.views.upload_submission')
+
+        # submit
+        files = {}
+        for format in formats:
+            rev = '00.%s' % format
+            files[format], author = submission_file(name, rev, group, format, "test_submission.%s" % format)
+            files[format].name = "%s-%s.%s" % (name, 00, format)
+
+        r = self.client.post(url, files)
+
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q("form .has-error")) > 0)
+        m = q('div.has-error div.alert').text()
+
+        return r, q, m
+        
     def test_submit_bad_file_txt(self):
         r, q, m = self.submit_bad_file("some name", ["txt"])
         self.assertIn('Invalid characters were found in the name', m)
         self.assertIn('Expected the TXT file to have extension ".txt"', m)
         self.assertIn('Expected an TXT file of type "text/plain"', m)
         self.assertIn('document does not contain a legitimate name', m)
+
+    def test_submit_bad_doc_name_txt(self):
+        r, q, m = self.submit_bad_doc_name_with_ext("draft-foo.dot-bar", ["txt"])
+        self.assertIn('contains a disallowed character with byte code: 46', m)
+        r, q, m = self.submit_bad_doc_name_with_ext("draft-foo-bar", ["xml"])
+        self.assertIn('Did you include a filename extension in the name by mistake?', m)
 
     def test_submit_bad_file_xml(self):
         r, q, m = self.submit_bad_file("some name", ["xml"])
