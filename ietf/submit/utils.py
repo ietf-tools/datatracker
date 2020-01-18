@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# Copyright The IETF Trust 2011-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -116,7 +116,10 @@ def validate_submission_name(name):
         if len(name) > 50:
             return "Expected the draft name to be at most 50 ascii characters long; found %d." % len(name)
         else:
-            return "Expected name 'draft-...' using lowercase ascii letters, digits, and hyphen; found '%s'." % name
+            msg = "Expected name 'draft-...' using lowercase ascii letters, digits, and hyphen; found '%s'." % name
+            if '.' in name:
+                msg += "  Did you include a filename extension in the name by mistake?"
+            return msg
 
 def validate_submission_rev(name, rev):
     if not rev:
