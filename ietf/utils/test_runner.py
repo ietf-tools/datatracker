@@ -117,6 +117,7 @@ def safe_create_test_db(self, verbosity, *args, **kwargs):
     return test_database_name
 
 def safe_destroy_test_db(*args, **kwargs):
+    sys.stdout.write('\n')
     global test_database_name, old_destroy
     keepdb = kwargs.get('keepdb', False)
     if not keepdb:
