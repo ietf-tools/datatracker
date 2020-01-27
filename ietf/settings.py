@@ -784,10 +784,12 @@ SUBMIT_YANG_CATALOG_IMPACT_DESC = "Yang impact analysis for {draft}"
 SUBMIT_YANG_CATALOG_MODULE_URL = "https://www.yangcatalog.org/yang-search/module_details.php?module={module}"
 SUBMIT_YANG_CATALOG_MODULE_DESC = "Yang catalog entry for {module}"
 
+SUBMIT_YANG_CATALOG_CHECKER_URL = "https://yangcatalog.org/yangvalidator/api/v1/datatracker/{type}"
 
 IDSUBMIT_CHECKER_CLASSES = (
     "ietf.submit.checkers.DraftIdnitsChecker",
     "ietf.submit.checkers.DraftYangChecker",
+#    "ietf.submit.checkers.DraftYangvalidatorChecker",    
 )
 
 
