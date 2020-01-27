@@ -15,6 +15,7 @@ from six.moves.urllib.parse import urlencode
 from xml.dom import pulldom, Node
 
 from django.conf import settings
+from django.utils.encoding import smart_bytes, force_str
 
 import debug                            # pyflakes:ignore
 
@@ -543,7 +544,7 @@ def post_approved_draft(url, name):
     # HTTP basic auth
     username = "dtracksync"
     password = settings.RFC_EDITOR_SYNC_PASSWORD
-    request.add_header("Authorization", "Basic %s" % base64.encodestring("%s:%s" % (username, password)).replace("\n", ""))
+    request.add_header("Authorization", "Basic %s" % force_str(base64.encodestring(smart_bytes("%s:%s" % (username, password)))).replace("\n", ""))
 
     if settings.SERVER_MODE != "production":
         return ("OK", "")
