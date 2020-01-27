@@ -39,9 +39,10 @@ from django.db.models import F, Min, Max, Prefetch, Q
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
+from django.utils.encoding import force_str
 from django.utils.functional import curry
-from django.views.decorators.cache import cache_page
 from django.utils.text import slugify
+from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
 
@@ -686,6 +687,7 @@ def session_draft_list(num, acronym):
 
     result = []
     for draft in drafts:
+        draft = force_str(draft)
         try:
             if re.search('-[0-9]{2}$', draft):
                 doc_name = draft
