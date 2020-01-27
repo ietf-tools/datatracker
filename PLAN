@@ -18,23 +18,6 @@ Planned work in rough order
   point for changing the deployment seems to be just after the next OS upgrade,
   which we think will make Python 3.6 the default mod_wsgi python.
 
-* Polish the htmlization pages, making the style identical with tools.ietf.org.
-
-* Rework email sending so that all emails sent by the datatracker, except for
-  logging and failure emails sent to ADMINS, are captured as a Message object.
-
-* Investigate adding code to trigger test exceptions for template variables
-  that don't successfully resolve.  A small trial run of this has indicated
-  that most instances that trigger such exceptions would benefit from better
-  resulution -- i.e., in the trial, it didn't seem that we to any greater
-  extent have template code that is written to rely on failure to resolve
-  rendering as nothing.
-
-* Investigate making RFCs first-class document objects to faciliate being
-  able to model BCPs that represent groups of RFCs properly. Then fix the rfc sync
-  script to update BCP aliases when changes occur changes (a BCP points to new
-  RFC numbers)
-
 * Review and change the draft submission and handling code to deal with UTF-8
   instead of ascii before upload of utf-8 drafts should be permitted.  
   (This may fall out for free with the Python 3 transition).
@@ -42,6 +25,26 @@ Planned work in rough order
   open() which should be io.open() with the appropriate encoding.  In general,
   there are about 100 file open() which should be reviewed and changed to
   io.open() unless that's clearly not right.
+
+* Rework email sending so that all emails sent by the datatracker, except for
+  logging and failure emails sent to ADMINS, are captured as a Message object.
+
+* Transition to Django 2.x (depends on Python 3.x).  Security updates to
+  Django 1.11 will cease around April 2020.
+
+* Investigate making RFCs first-class document objects to faciliate being
+  able to model BCPs that represent groups of RFCs properly. Then fix the rfc sync
+  script to update BCP aliases when changes occur changes (a BCP points to new
+  RFC numbers)
+
+* Polish the htmlization pages, making the style identical with tools.ietf.org.
+
+* Investigate adding code to trigger test exceptions for template variables
+  that don't successfully resolve.  A small trial run of this has indicated
+  that most instances that trigger such exceptions would benefit from better
+  resulution -- i.e., in the trial, it didn't seem that we to any greater
+  extent have template code that is written to rely on failure to resolve
+  rendering as nothing.
 
 * Add django pagination to selected pages with long lists of results in order
   return results to the user faster.
@@ -69,9 +72,6 @@ Planned work in rough order
 
 * Revisit photo uploads: Add photo upload for people with roles.  Add
   photos to wg pages and group overview pages.
-
-* Transition to Django 2.x (depends on Python 3.x).  Security updates to
-  Django 1.11 will cease around April 2020.
 
 * Revisit floorplans: Add room coordinate input tool (javascript).
   Add NOC object annotation possibilities.  Add support for break areas
