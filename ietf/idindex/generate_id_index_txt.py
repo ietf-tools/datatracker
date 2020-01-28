@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 # Portions Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -38,10 +38,15 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import six
+import sys
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 import django
 django.setup()
 
 from ietf.idindex.index import id_index_txt
-six.print_(id_index_txt().encode('utf-8'), end=' ')
+if six.PY3:
+    sys.stdout.write(id_index_txt())
+else:
+    sys.stdout.write(id_index_txt().encode('utf-8'))
+
