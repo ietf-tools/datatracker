@@ -6,6 +6,7 @@
 # /etc/cron.d/datatracker
 
 # Make sure we stop if something goes wrong:
+program=${0##*/}
 trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; exit 1' ERR
 
 # Run the hourly jobs first
