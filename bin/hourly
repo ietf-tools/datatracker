@@ -5,6 +5,10 @@
 # This script is expected to be triggered by cron from
 # /etc/cron.d/datatracker
 
+# Make sure we stop if something goes wrong:
+program=${0##*/}
+trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; exit 1' ERR
+
 DTDIR=/a/www/ietf-datatracker/web
 cd $DTDIR/
 

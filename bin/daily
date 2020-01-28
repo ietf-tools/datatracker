@@ -5,6 +5,9 @@
 # This script is expected to be triggered by cron from
 # /etc/cron.d/datatracker
 
+# Make sure we stop if something goes wrong:
+trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; exit 1' ERR
+
 # Run the hourly jobs first
 $DTDIR/bin/hourly
 
@@ -22,8 +25,9 @@ source $DTDIR/env/bin/activate
 $DTDIR/ietf/manage.py update_external_command_info
 
 # Get IANA-registered yang models
-YANG_IANA_DIR=$(python -c 'import ietf.settings; print ietf.settings.SUBMIT_YANG_IANA_MODEL_DIR')
-rsync -avzq --delete rsync.ietf.org::iana/yang-parameters/ ${YANG_IANA_DIR%/}/
+#YANG_IANA_DIR=$(python -c 'import ietf.settings; print ietf.settings.SUBMIT_YANG_IANA_MODEL_DIR')
+# Hardcode the rsync target to avoid any unwanted deletes:
+rsync -avzq --delete rsync.ietf.org::iana/yang-parameters/ /a/www/ietf-ftp/yang/ianamod/
 
 # Populate the yang repositories
 $DTDIR/ietf/manage.py populate_yang_model_dirs -v0
