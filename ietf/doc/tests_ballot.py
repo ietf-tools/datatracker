@@ -1,8 +1,10 @@
-#ad Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 import datetime
+import mock
+
 from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
@@ -617,7 +619,11 @@ class BallotWriteupsTests(TestCase):
             verify_can_see(username, url)
 
 class ApproveBallotTests(TestCase):
-    def test_approve_ballot(self):
+    @mock.patch('ietf.sync.rfceditor.urlopen', autospec=True)
+    def test_approve_ballot(self, mock_urlopen):
+        mock_urlopen.return_value.read = lambda :'OK'
+        mock_urlopen.return_value.getcode = lambda :200
+        #
         ad = Person.objects.get(name="Areað Irector")
         draft = IndividualDraftFactory(ad=ad, intended_std_level_id='ps')
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva")) # make sure it's approvable
@@ -651,7 +657,7 @@ class ApproveBallotTests(TestCase):
         # approve
         mailbox_before = len(outbox)
 
-        r = self.client.post(url, dict(skiprfceditorpost="1"))
+        r = self.client.post(url)
         self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)

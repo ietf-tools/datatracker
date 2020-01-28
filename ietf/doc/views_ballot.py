@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 # ballot management (voting, commenting, writeups, ...) for Area
 # Directors and Secretariat
@@ -851,7 +851,7 @@ def approve_ballot(request, name):
         if ballot_writeup_event.pk == None:
             ballot_writeup_event.save()
 
-        if new_state.slug == "ann" and new_state.slug != prev_state.slug and not request.POST.get("skiprfceditorpost"):
+        if new_state.slug == "ann" and new_state.slug != prev_state.slug:
             # start by notifying the RFC Editor
             import ietf.sync.rfceditor
             response, error = ietf.sync.rfceditor.post_approved_draft(settings.RFC_EDITOR_SYNC_NOTIFICATION_URL, doc.name)

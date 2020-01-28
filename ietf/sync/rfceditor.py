@@ -546,13 +546,10 @@ def post_approved_draft(url, name):
     password = settings.RFC_EDITOR_SYNC_PASSWORD
     request.add_header("Authorization", "Basic %s" % force_str(base64.encodestring(smart_bytes("%s:%s" % (username, password)))).replace("\n", ""))
 
-    if settings.SERVER_MODE != "production":
-        return ("OK", "")
-
     log("Posting RFC-Editor notifcation of approved draft '%s' to '%s'" % (name, url))
     text = error = ""
     try:
-        f = urlopen(request, data=urlencode({ 'draft': name }), timeout=20)
+        f = urlopen(request, data=smart_bytes(urlencode({ 'draft': name })), timeout=20)
         text = f.read()
         status_code = f.getcode()
         f.close()
@@ -567,7 +564,10 @@ def post_approved_draft(url, name):
     except Exception as e:
         # catch everything so we don't leak exceptions, convert them
         # into string instead
-        log("Exception on RFC-Editor notification for draft '%s': '%s'" % (name, e))
+        msg = "Exception on RFC-Editor notification for draft '%s': '%s'" % (name, e)
+        log(msg)
+        if settings.SERVER_MODE == 'test':
+            debug.say(msg)
         error = six.text_type(e)
 
     return text, error

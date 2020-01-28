@@ -1282,15 +1282,14 @@ def request_publication(request, name):
         if form.is_valid():
             events = []
 
-            if not request.POST.get("skiprfceditorpost"):
-                # start by notifying the RFC Editor
-                import ietf.sync.rfceditor
-                response, error = ietf.sync.rfceditor.post_approved_draft(settings.RFC_EDITOR_SYNC_NOTIFICATION_URL, doc.name)
-                if error:
-                    return render(request, 'doc/draft/rfceditor_post_approved_draft_failed.html',
-                                      dict(name=doc.name,
-                                           response=response,
-                                           error=error))
+            # start by notifying the RFC Editor
+            import ietf.sync.rfceditor
+            response, error = ietf.sync.rfceditor.post_approved_draft(settings.RFC_EDITOR_SYNC_NOTIFICATION_URL, doc.name)
+            if error:
+                return render(request, 'doc/draft/rfceditor_post_approved_draft_failed.html',
+                                  dict(name=doc.name,
+                                       response=response,
+                                       error=error))
 
             m.subject = form.cleaned_data["subject"]
             m.body = form.cleaned_data["body"]

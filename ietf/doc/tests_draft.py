@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# Copyright The IETF Trust 2011-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -8,8 +8,10 @@ import os
 import shutil
 import datetime
 import io
-from pyquery import PyQuery
+import mock
+
 from collections import Counter
+from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -1197,7 +1199,11 @@ class SubmitToIesgTests(TestCase):
 
 
 class RequestPublicationTests(TestCase):
-    def test_request_publication(self):
+    @mock.patch('ietf.sync.rfceditor.urlopen', autospec=True)
+    def test_request_publication(self, mock_urlopen):
+        mock_urlopen.return_value.read = lambda :'OK'
+        mock_urlopen.return_value.getcode = lambda :200
+        #
         draft = IndividualDraftFactory(stream_id='iab',group__acronym='iab',intended_std_level_id='inf',states=[('draft-stream-iab','approved')])
 
         url = urlreverse('ietf.doc.views_draft.request_publication', kwargs=dict(name=draft.name))
@@ -1216,7 +1222,7 @@ class RequestPublicationTests(TestCase):
         # approve
         mailbox_before = len(outbox)
 
-        r = self.client.post(url, dict(subject=subject, body=body, skiprfceditorpost="1"))
+        r = self.client.post(url, dict(subject=subject, body=body))
         self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
