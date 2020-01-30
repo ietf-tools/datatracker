@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
+# This script requires that the proper virtual python environment has been
+# invoked before start
+
 import datetime
 import json
 import os
 import sys
+import syslog
 import traceback
 
 from six.moves.urllib.request import urlopen
@@ -13,9 +17,8 @@ basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
 os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
 
-virtualenv_activation = os.path.join(basedir, "env", "bin", "activate_this.py")
-if os.path.exists(virtualenv_activation):
-    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
+# Before invoking django
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 
 import django
 django.setup()

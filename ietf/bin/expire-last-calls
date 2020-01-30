@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
-import datetime, os, sys
+# This script requires that the proper virtual python environment has been
+# invoked before start
+
+import os
+import sys
 import syslog
 
 # boilerplate
@@ -17,7 +21,9 @@ syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 import django
 django.setup()
 
-from ietf.doc.lastcall import *
+# ----------------------------------------------------------------------
+
+from ietf.doc.lastcall import get_expired_last_calls, expire_last_call
 
 drafts = get_expired_last_calls()
 for doc in drafts:

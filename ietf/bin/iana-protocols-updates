@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
-import os, sys, re, json, datetime
+# This script requires that the proper virtual python environment has been
+# invoked before start
+
+import os
+import sys
+import datetime
 import syslog
 
 # boilerplate
@@ -8,17 +13,13 @@ basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
 os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
 
-virtualenv_activation = os.path.join(basedir, "env", "bin", "activate_this.py")
-if os.path.exists(virtualenv_activation):
-    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
-
 syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 
 import django
 django.setup()
 
 from django.conf import settings
-from ietf.sync.iana import *
+from ietf.sync.iana import fetch_protocol_page, parse_protocol_page, update_rfc_log_from_protocol_page
 
 def chunks(l, n):
     """Split list l up in chunks of max size n."""
