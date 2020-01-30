@@ -7,6 +7,9 @@
 # Author: Markus Stenberg <markus.stenberg@iki.fi>
 #
 """
+This script requires that the proper virtual python environment has been
+invoked before start.
+
 
 This code dumps Django model IETFWG's contents as two sets of postfix
 mail lists: -ads, and -chairs
@@ -20,10 +23,6 @@ filename = os.path.abspath(__file__)
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
 os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
-
-virtualenv_activation = os.path.join(basedir, "env", "bin", "activate_this.py")
-if os.path.exists(virtualenv_activation):
-    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
 
 import django
 django.setup()
