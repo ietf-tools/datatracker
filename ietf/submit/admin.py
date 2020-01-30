@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# Copyright The IETF Trust 2011-2020, All Rights Reserved
 from django.urls import reverse as urlreverse
 from django.contrib import admin
 
@@ -29,6 +29,7 @@ admin.site.register(Submission, SubmissionAdmin)
 
 class SubmissionEventAdmin(admin.ModelAdmin):
     list_display = ['id', 'submission', 'rev', 'time', 'by', 'desc', ]
+    raw_id_fields = ['submission', 'by']
     search_fields = ['submission__name']
     def rev(self, instance):
         return instance.submission.rev
