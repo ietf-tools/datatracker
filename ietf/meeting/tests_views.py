@@ -39,6 +39,7 @@ from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.utils import finalize, condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.meeting.utils import current_session_status
+from ietf.meeting.views import session_draft_list
 from ietf.name.models import SessionStatusName, ImportantDateName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox
@@ -49,7 +50,7 @@ from ietf.person.factories import PersonFactory
 from ietf.group.factories import GroupFactory, GroupEventFactory, RoleFactory
 from ietf.meeting.factories import ( SessionFactory, SessionPresentationFactory, ScheduleFactory,
     MeetingFactory, FloorPlanFactory, TimeSlotFactory, SlideSubmissionFactory )
-from ietf.doc.factories import DocumentFactory
+from ietf.doc.factories import DocumentFactory, WgDraftFactory
 from ietf.submit.tests import submission_file
 
 
@@ -504,37 +505,46 @@ class MeetingTests(TestCase):
         self.assertNotContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
         self.assertContains(r, 'END:VEVENT')
 
-    def test_session_draft_tarfile(self):
+    def build_session_setup(self):
+        # This setup is intentionally unusual - the session has one draft attached as a session presentation,
+        # but lists a different on in its agenda. The expectation is that the pdf and tgz views will return both.
         session = SessionFactory(group__type_id='wg',meeting__type_id='ietf')
-        doc = DocumentFactory(type_id='draft')
-        session.sessionpresentation_set.create(document=doc)
-        file,_ = submission_file(name=doc.name,format='txt',templatename='test_submission.txt',group=session.group,rev="00")
-        filename = os.path.join(doc.get_file_path(),file.name)
-        with io.open(filename,'w') as draftbits:
-            draftbits.write(file.getvalue())
-        
+        draft1 = WgDraftFactory(group=session.group)
+        session.sessionpresentation_set.create(document=draft1)
+        draft2 = WgDraftFactory(group=session.group)
+        agenda = DocumentFactory(type_id='agenda',group=session.group, uploaded_filename='agenda-%s-%s' % (session.meeting.number,session.group.acronym), states=[('agenda','active')])
+        session.sessionpresentation_set.create(document=agenda)
+        self.write_materials_file(session.meeting, session.materials.get(type="agenda"),
+                                  "1. WG status (15 minutes)\n\n2. Status of %s\n\n" % draft2.name)
+        filenames = []
+        for d in (draft1, draft2):
+            file,_ = submission_file(name=d.name,format='txt',templatename='test_submission.txt',group=session.group,rev="00")
+            filename = os.path.join(d.get_file_path(),file.name)
+            with io.open(filename,'w') as draftbits:
+                draftbits.write(file.getvalue())
+            filenames.append(filename)
+        self.assertEqual( len(session_draft_list(session.meeting.number,session.group.acronym)), 2)
+        return (session, filenames)
+
+    def test_session_draft_tarfile(self):
+        session, filenames = self.build_session_setup()
         url = urlreverse('ietf.meeting.views.session_draft_tarfile', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get('Content-Type'), 'application/octet-stream')
-        os.unlink(filename)
+        for filename in filenames:
+            os.unlink(filename)
 
     @skipIf(skip_pdf_tests, skip_message)
     @skip_coverage
     def test_session_draft_pdf(self):
-        session = SessionFactory(group__type_id='wg',meeting__type_id='ietf')
-        doc = DocumentFactory(type_id='draft')
-        session.sessionpresentation_set.create(document=doc)
-        file,_ = submission_file(name=doc.name,format='txt',templatename='test_submission.txt',group=session.group,rev="00")
-        filename = os.path.join(doc.get_file_path(),file.name)
-        with io.open(filename,'w') as draftbits:
-            draftbits.write(file.getvalue())
-        
+        session, filenames = self.build_session_setup()
         url = urlreverse('ietf.meeting.views.session_draft_pdf', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get('Content-Type'), 'application/pdf')
-        os.unlink(filename)
+        for filename in filenames:
+            os.unlink(filename)
 
     def test_current_materials(self):
         url = urlreverse('ietf.meeting.views.current_materials')
