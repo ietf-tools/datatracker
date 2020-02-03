@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -166,7 +166,7 @@ def make_meeting_test_data(meeting=None):
     
 
     doc = DocumentFactory.create(name='agenda-72-mars', type_id='agenda', title="Agenda",
-        uploaded_filename="agenda-72-mars.txt", group=mars, rev='00', states=[('draft','active')])
+        uploaded_filename="agenda-72-mars.txt", group=mars, rev='00', states=[('agenda','active')])
     pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
     mars_session.sessionpresentation_set.add(pres) # 
 
