@@ -1,3 +1,69 @@
+ietfdb (6.117.0) ietf; urgency=medium
+
+  **Python 2/3 transition fixes, sumbmission and chartering improvements**
+
+  * Merged in [17268] from rjsparks@nostrum.com: Set a meaningful state in a
+    test fixture. Tests surprisingly were not broken by this though.  
+
+  * Merged in [17266] from rjsparks@nostrum.com: Improve the tests for session
+    draft bundles to exercise the code that extracts draftnames from agendas.
+
+  * Removed exec of activate_this.py from 2 more scripts that are in 
+    activbe use.
+
+  * Ran scripts invoked from bin/hourly and bin/daily through pyflakes3 and
+    trial invocation, and tweaked the code (with an added comment) to
+    consistently require virtualenv to be set up before script invocation.
+
+  * Added some raw_id fields to avoid long page load times for admin pages.
+
+  * Fixed a py2/py3 issue in sync.rfceditor.post_approved_draft(), and
+    enhanced tests to execute the failing code (with Mock functions) instead
+    of skipping the code.
+
+  * Hardcoded an rsync target path, and added a bash trap for errors in hourly
+    and daily cron scripts.
+
+  * Fixed some py2/py3 issues in ID index generation modules.
+
+  * Fixed a py2/py3 issue in building meeting materials bundles.
+
+  * Added a setting for a coming yang-catalog submission checker url.
+
+  * Did some re-ordering of PLAN items after a priority discussion.
+
+  * Fixed a py2/py3 issue in post_approved_draft()
+
+  * Changed the location of the file cache for htmlized documents so it will
+    be handled by backup rsync of the /a/ file system.
+
+  * Added a newline to test run command output, to separate dot progress
+    indication from teardown messages.
+
+  * Added a test case for draft submission errors due to periods in document
+    names.
+
+  * Added a suggestion to the error message issued for invalid characters in
+    document names found in draft submission XML files, when the invalid
+    character is a period.  In this particular case, the problem most likely
+    is inclusion of the filename extension in the document name.  Fixes issue
+    #2874.
+
+  * Changed draft submission field validation taking place in clean() to
+    associate the errors with the field in question, rather than raising them
+    as general form errors.
+
+  * Fixed a Py3 issue trying run .decode() on (already decoded) string
+    instances.
+
+  * Merged in [17246] from rjsparks@nostrum.com: Only show groups in
+    reasonable states when showing current chartering efforts (otherwise
+    crufty charter states can would lead to abandoned or replaced groups
+    showing here). Fixes #2872.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Feb 2020 22:28:38 +0000
+
+
 ietfdb (6.116.1) ietf; urgency=medium
 
   * Refined the links from document stats pages to author pages so as to 
