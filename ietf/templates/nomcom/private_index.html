@@ -1,5 +1,5 @@
 {% extends "nomcom/nomcom_private_base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
 {% load origin static %}
 
 {% block subtitle %} - Administration {% endblock %}
@@ -116,11 +116,12 @@
   {% endif %}
 
 
-  <table class="table table-condensed table-striped table-hover tablesorter">
+  <table class="table table-condensed table-striped table-hover tablesorter"
+         id="nominee-position-table">
     <thead>
       <tr>
 	{% if is_chair and nomcom.group.state_id == 'active' %}<th colspan="2"><span class="fa fa-check"></span></th>{% endif %}
-	<th>Nominee</th>
+	<th colspan="2">Nominee</th>
 	<th>Position</th>
 	<th>State</th>
 	<th>Questionnaire response</th>
@@ -135,7 +136,10 @@
 	  {% endif %}
 
 	  <td>
-	    <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=np.nominee.id %}#comment">{{ np.nominee }}</a>
+	      <a href="{% url 'ietf.person.views.profile' email_or_name=np.nominee.name %}">{{ np.nominee }}</a>
+	  </td>
+	  <td>
+	      <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=np.nominee.id %}#comment">View feedback</a>
 	  </td>
 	  <td>{{ np.position.name }}</td>
 	  <td>{{ np.state }}</td>

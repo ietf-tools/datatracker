@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -124,22 +124,37 @@ class NomcomViewsTest(TestCase):
     def test_private_index_view(self):
         """Verify private home view"""
         self.access_member_url(self.private_index_url)
+
+        # Verify that nominee table has links to person and feedback pages
+        nom_pos = self.create_nominee('accepted', COMMUNITY_USER, 'APP')
+        person_url = reverse('ietf.person.views.profile', 
+                             kwargs={'email_or_name': nom_pos.nominee.name()})
+        feedback_url = reverse('ietf.nomcom.views.view_feedback_nominee', 
+                               kwargs={'year': self.year, 'nominee_id': nom_pos.nominee.pk})
+
+        # With a single nominee, the first row will have our data.
+        # Require that the row have at least one link to the person URL
+        # and one to the feedback URL.
+        response = self.client.get(self.private_index_url)
+        q = PyQuery(response.content)
+        row_q = q('#nominee-position-table tbody tr').eq(0)
+        self.assertTrue(row_q('a[href="%s"]' % (person_url)), 
+                        'Nominee table does not link to nominee profile page')
+        self.assertTrue(row_q('a[href="%s#comment"]' % (feedback_url)), 
+                        'Nominee table does not link to nominee feedback page')
         self.client.logout()
 
+    def create_nominee(self, base_state, username, pos_name):
+        cnominee = Nominee.objects.get(email__person__user__username=username)
+        position = Position.objects.get(name=pos_name)
+        return NomineePosition.objects.create(position=position,
+                                              nominee=cnominee,
+                                              state=NomineePositionStateName.objects.get(slug=base_state))
+
     def create_nominees_for_states(self, base_state):
-        cnominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
-        position = Position.objects.get(name='APP')
-        nom_pos = NomineePosition.objects.create(position=position,
-                                                          nominee=cnominee,
-                                                          state=NomineePositionStateName.objects.get(slug=base_state))
-        position = Position.objects.get(name='INT')
-        NomineePosition.objects.create(position=position,
-                                                          nominee=cnominee,
-                                                          state=NomineePositionStateName.objects.get(slug=base_state))
-        position = Position.objects.get(name='OAM')
-        NomineePosition.objects.create(position=position,
-                                                          nominee=cnominee,
-                                                          state=NomineePositionStateName.objects.get(slug=base_state))
+        nom_pos = self.create_nominee(base_state, COMMUNITY_USER, 'APP')
+        self.create_nominee(base_state, COMMUNITY_USER, 'INT')
+        self.create_nominee(base_state, COMMUNITY_USER, 'OAM')
         return nom_pos
 
     def test_private_index_post_accept(self):
@@ -872,7 +887,12 @@ class NomcomViewsTest(TestCase):
         response = self.client.get(feedback_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "feedbackform")
-
+        # Test for a link to the nominee's profile page
+        q = PyQuery(response.content)
+        person_url = reverse('ietf.person.views.profile', kwargs={'email_or_name': nominee.name()})
+        self.assertTrue(q('a[href="%s"]' % (person_url)), 
+                        'Nominee feedback page does not link to profile page')                            
+        
         comments = 'Test feedback view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
 
         test_data = {'comment_text': comments,

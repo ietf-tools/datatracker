@@ -1,5 +1,5 @@
 {% extends base_template %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
 {% load origin %}
 
 {% load bootstrap3 %}
@@ -91,7 +91,10 @@
       <div class="col-sm-8 col-sm-pull-4">
         {% if form %}
           {% if form.position %}
-            <h3> Provide feedback about {{form.nominee.email.person.name}} ({{form.nominee.email.address}}) for the {{form.position.name}} position.
+            <h3> Provide feedback about 
+                <a href="{% url 'ietf.person.views.profile' email_or_name=form.nominee.name %}">
+                    {{form.nominee.email.person.name}}
+                </a> ({{form.nominee.email.address}}) for the {{form.position.name}} position.
             {% if nomcom.show_nominee_pictures and form.nominee.email.person.photo_thumb %}
               <span class="feedbackphoto"><img src="{{form.nominee.email.person.photo_thumb.url}}" width=100 /></span>
             {% endif %}
