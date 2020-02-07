@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -11,7 +11,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils.encoding import python_2_unicode_compatible
 
-from ietf.doc.models import DocAlias
+from ietf.doc.models import DocAlias, DocEvent
 from ietf.name.models import DocRelationshipName,IprDisclosureStateName,IprLicenseTypeName,IprEventTypeName
 from ietf.person.models import Person
 from ietf.message.models import Message
@@ -214,6 +214,12 @@ class IprEvent(models.Model):
     def __str__(self):
         return "%s %s by %s at %s" % (self.disclosure.title, self.type.name.lower(), self.by.plain_name(), self.time)
 
+    def save(self, *args, **kwargs):
+        created = not self.pk
+        super(IprEvent, self).save(*args, **kwargs)
+        if created:
+            self.create_doc_events()
+        
     def response_past_due(self):
         """Returns true if it's beyond the response_due date and no response has been
         received"""
@@ -223,6 +229,29 @@ class IprEvent(models.Model):
         else:
             return False
         
+    def create_doc_events(self):
+        """Create DocEvents for documents affected by an IprEvent"""
+        # Map from self.type_id to DocEvent.EVENT_TYPES for types that
+        # should be logged as DocEvents
+        event_type_map = {
+            'posted': 'posted_related_ipr',
+            'removed': 'removed_related_ipr',
+        }
+        if self.type_id in event_type_map:
+            related_docs = set()  # related docs, no duplicates
+            for alias in self.disclosure.docs.all():
+                related_docs.update(alias.docs.all())
+            for doc in related_docs:
+                DocEvent.objects.create(
+                    type=event_type_map[self.type_id],
+                    time=self.time,
+                    by=self.by,
+                    doc=doc,
+                    rev='',
+                    desc='%s related IPR disclosure <b>%s</b>' % (self.type.name, 
+                                                                  self.disclosure.title),
+                )
+                    
     class Meta:
         ordering = ['-time', '-id']
 

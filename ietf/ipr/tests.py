@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -681,3 +681,33 @@ Subject: test
         self.assertEqual(response.status_code,302)
         disclosure = HolderIprDisclosure.objects.get(pk=disclosure.pk)
         self.assertEqual(disclosure.compliant,False)
+
+    def test_docevent_creation(self):
+        """Test that IprEvent creation triggers DocEvent creation"""
+        doc = DocumentFactory()
+        ipr = HolderIprDisclosureFactory(docs=[doc])
+        # Document starts with no ipr-related events
+        self.assertEqual(0, doc.docevent_set.filter(type='posted_related_ipr').count(),
+                         'New Document already has a "posted_related_ipr" DocEvent')
+        self.assertEqual(0, doc.docevent_set.filter(type='removed_related_ipr').count(),
+                         'New Document already has a "removed_related_ipr" DocEvent')
+        # A 'posted' IprEvent must create a corresponding DocEvent  
+        IprEventFactory(type_id='posted', disclosure=ipr)
+        self.assertEqual(1, doc.docevent_set.filter(type='posted_related_ipr').count(),
+                         'Creating "posted" IprEvent did not create a "posted_related_ipr" DocEvent')
+        self.assertEqual(0, doc.docevent_set.filter(type='removed_related_ipr').count(),
+                         'Creating "posted" IprEvent created a "removed_related_ipr" DocEvent')
+        # A 'removed' IprEvent must create a corresponding DocEvent
+        IprEventFactory(type_id='removed', disclosure=ipr)
+        self.assertEqual(1, doc.docevent_set.filter(type='posted_related_ipr').count(),
+                         'Creating "removed" IprEvent created a "posted_related_ipr" DocEvent')
+        self.assertEqual(1, doc.docevent_set.filter(type='removed_related_ipr').count(),
+                         'Creating "removed" IprEvent did not create a "removed_related_ipr" DocEvent')
+        # The DocEvent descriptions must refer to the IprEvents
+        posted_docevent = doc.docevent_set.filter(type='posted_related_ipr').first()
+        self.assertIn(ipr.title, posted_docevent.desc, 
+                      'IprDisclosure title does not appear in DocEvent desc when posted')
+        removed_docevent = doc.docevent_set.filter(type='removed_related_ipr').first()
+        self.assertIn(ipr.title, removed_docevent.desc,
+                      'IprDisclosure title does not appear in DocEvent desc when removed')
+        

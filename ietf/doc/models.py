@@ -1031,6 +1031,10 @@ EVENT_TYPES = [
 
     # downref
     ("downref_approved", "Downref approved"),
+    
+    # IPR events
+    ("posted_related_ipr", "Posted related IPR"),
+    ("removed_related_ipr", "Removed related IPR"),
     ]
 
 @python_2_unicode_compatible
