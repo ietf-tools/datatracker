@@ -46,7 +46,7 @@ class GroupInfo(models.Model):
     unused_states = models.ManyToManyField('doc.State', help_text="Document states that have been disabled for the group.", blank=True)
     unused_tags = models.ManyToManyField(DocTagName, help_text="Document tags that have been disabled for the group.", blank=True)
 
-    uses_milestone_dates = models.BooleanField(default=False)
+    uses_milestone_dates = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
