@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# Copyright The IETF Trust 2011-2020, All Rights Reserved
 
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -534,6 +534,10 @@ class EditCharterTests(TestCase):
         self.assertTrue('ietf-announce@' in outbox[0]['To'])
         self.assertTrue('mars-wg@' in outbox[0]['Cc'])
         self.assertTrue('new-work@' in outbox[1]['To'])
+        self.assertIsNotNone(outbox[0]['Reply-To'])
+        self.assertIsNotNone(outbox[1]['Reply-To'])
+        self.assertTrue('iesg@ietf.org' in outbox[0]['Reply-To'])
+        self.assertTrue('iesg@ietf.org' in outbox[1]['Reply-To'])
 
         empty_outbox()
         r = self.client.post(url, dict(
