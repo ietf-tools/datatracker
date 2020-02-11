@@ -228,6 +228,44 @@ class EditCharterTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertTrue("A new charter" in get_payload(outbox[-3]))
 
+    def test_change_rg_state(self):
+
+        irtf = Group.objects.get(acronym='irtf')
+
+        group = GroupFactory(acronym='somerg', type_id='rg', state_id='proposed',list_email='somerg@ietf.org',parent=irtf)
+        charter = CharterFactory(group=group)
+
+        url = urlreverse('ietf.doc.views_charter.change_state', kwargs=dict(name=charter.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        s = State.objects.get(used=True, type="charter", slug="intrev")
+        empty_outbox()
+    
+        r = self.client.post(url, dict(charter_state=str(s.pk), message="test message"))
+        self.assertEqual(r.status_code, 302)
+    
+        self.assertIn("Internal RG Review", outbox[-3]['Subject'])
+        self.assertIn("iab@", outbox[-3]['To'])
+        self.assertIn("irsg@", outbox[-3]['To'])
+        body = get_payload(outbox[-3])
+        for word in ["A new IRTF RG", 
+            "Mailing list", "somerg@ietf.org",
+            "Charter", "Milestones"]:
+
+                self.assertIn(word, body)
+
+        self.assertIn("state changed", outbox[-2]['Subject'].lower())
+        self.assertIn("iesg-secretary@", outbox[-2]['To'])
+        body = get_payload(outbox[-2])
+        for word in ["RG", "Charter", ]:
+            self.assertIn(word, body)
+
+        self.assertIn("State Update Notice", outbox[-1]['Subject'])
+        self.assertIn("somerg-chairs@", outbox[-1]['To'])
+        body = get_payload(outbox[-1])
+        for word in ["State changed", "Datatracker URL", ]:
+            self.assertIn(word, body)
+
     def test_abandon_bof(self):
         charter = CharterFactory(group__state_id='bof',group__type_id='wg')
         url = urlreverse('ietf.doc.views_charter.change_state',kwargs={'name':charter.name,'option':'abandon'})
@@ -574,6 +612,41 @@ class EditCharterTests(TestCase):
         charter = Document.objects.get(name=charter.name)
         self.assertTrue(group.name in charter.latest_event(WriteupDocEvent, type="changed_review_announcement").text)
         self.assertTrue(charter.group.name in charter.latest_event(WriteupDocEvent, type="changed_new_work_text").text)
+
+    def test_rg_edit_review_announcement_text(self):
+        irtf = Group.objects.get(acronym='irtf')
+        charter = CharterFactory(
+            group__acronym = 'somerg',
+            group__type_id = 'rg',
+            group__list_email = 'somerg@ietf.org',
+            group__parent = irtf,
+        )
+        group = charter.group
+
+        url = urlreverse('ietf.doc.views_charter.review_announcement_text', kwargs=dict(name=charter.name))
+        self.client.logout()
+        login_testing_unauthorized(self, "secretary", url)
+
+        by = Person.objects.get(user__username="secretary")
+        (e1, e2) = default_review_text(group, charter, by)
+        announcement_text = e1.text
+        new_work_text = e2.text
+
+        empty_outbox()
+        r = self.client.post(url, dict(
+                announcement_text=announcement_text,
+                new_work_text=new_work_text,
+                send_both="1"))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(len(outbox), 2)
+        self.assertTrue(all(['RG Review' in m['Subject'] for m in outbox]))
+        self.assertTrue('ietf-announce@' in outbox[0]['To'])
+        self.assertTrue('somerg@' in outbox[0]['Cc'])
+        self.assertTrue('new-work@' in outbox[1]['To'])
+        self.assertIsNotNone(outbox[0]['Reply-To'])
+        self.assertIsNotNone(outbox[1]['Reply-To'])
+        self.assertTrue('irsg@irtf.org' in outbox[0]['Reply-To'])
+        self.assertTrue('irsg@irtf.org' in outbox[1]['Reply-To'])
 
     def test_edit_action_announcement_text(self):
         area = GroupFactory(type_id='area')

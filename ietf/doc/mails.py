@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 # generation of mails 
 
@@ -542,5 +542,5 @@ def email_charter_internal_review(request, charter):
                    milestones=charter.group.groupmilestone_set.filter(state="charter"),
               ),
               cc=addrs.cc,
-              extra={'Reply-To': ["iesg@ietf.org", ]},
+              extra={'Reply-To': ["irsg@irtf.org" if charter.group.type_id == 'rg' else "iesg@ietf.org", ]},
              )
