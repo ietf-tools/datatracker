@@ -36,6 +36,7 @@ class GroupInfo(models.Model):
     name = models.CharField(max_length=80)
     state = ForeignKey(GroupStateName, null=True)
     type = ForeignKey(GroupTypeName, null=True)
+    meeting_seen_as_area = models.BooleanField(default=False, help_text='For meeting scheduling, should be considered an area meeting, even if the type is WG')
     parent = ForeignKey('Group', blank=True, null=True)
     description = models.TextField(blank=True)
     list_email = models.CharField(max_length=64, blank=True)
