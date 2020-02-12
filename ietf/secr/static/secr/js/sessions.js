@@ -16,22 +16,27 @@ function stat_ls (val){
     document.form_post.length_session1.disabled = true;
     document.form_post.length_session2.disabled = true;
     document.form_post.length_session3.disabled = true;
+    document.form_post.session_time_relation.disabled = true;
     document.form_post.length_session1.value = 0;
     document.form_post.length_session2.value = 0;
     document.form_post.length_session3.value = 0;
+    document.form_post.session_time_relation.value = '';
     document.form_post.third_session.checked=false;
   }
   if (val == 1) {
     document.form_post.length_session1.disabled = false;
     document.form_post.length_session2.disabled = true;
     document.form_post.length_session3.disabled = true;
+    document.form_post.session_time_relation.disabled = true;
     document.form_post.length_session2.value = 0;
     document.form_post.length_session3.value = 0;
+    document.form_post.session_time_relation.value = '';
     document.form_post.third_session.checked=false;
   }
   if (val == 2) {
     document.form_post.length_session1.disabled = false;
     document.form_post.length_session2.disabled = false;
+    document.form_post.session_time_relation.disabled = false;
   }
 }
 

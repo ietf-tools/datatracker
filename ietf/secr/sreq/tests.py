@@ -15,6 +15,7 @@ from ietf.utils.test_utils import TestCase
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.meeting.models import Session, ResourceAssociation, SchedulingEvent, Constraint
 from ietf.meeting.factories import MeetingFactory, SessionFactory
+from ietf.name.models import TimerangeName
 from ietf.person.models import Person
 from ietf.utils.mail import outbox, empty_outbox
 
@@ -80,6 +81,7 @@ class SessionRequestTestCase(TestCase):
     def test_edit(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
         mars = RoleFactory(name_id='chair', person__user__username='marschairman', group__acronym='mars').group
+        group2 = GroupFactory()
         SessionFactory(meeting=meeting,group=mars,status_id='sched')
 
         url = reverse('ietf.secr.sreq.views.edit', kwargs={'acronym':'mars'})
@@ -92,10 +94,31 @@ class SessionRequestTestCase(TestCase):
                      'attendees':'10',
                      'conflict1':'',
                      'comments':'need lights',
+                     'session_time_relation': 'subsequent-days',
+                     'adjacent_with_wg': group2.acronym,
+                     'timeranges': ['thursday-afternoon-early', 'thursday-afternoon-late'],
                      'submit': 'Continue'}
         r = self.client.post(url, post_data, HTTP_HOST='example.com')
-        self.assertRedirects(r,reverse('ietf.secr.sreq.views.view', kwargs={'acronym':'mars'}))
-                   
+        redirect_url = reverse('ietf.secr.sreq.views.view', kwargs={'acronym': 'mars'})
+        self.assertRedirects(r, redirect_url)
+
+        # Check whether updates were stored in the database
+        sessions = Session.objects.filter(meeting=meeting, group=mars)
+        self.assertEqual(len(sessions), 2)
+        session = sessions[0]
+        self.assertEqual(session.constraints().get(name='time_relation').time_relation, 'subsequent-days')
+        self.assertEqual(session.constraints().get(name='wg_adjacent').target.acronym, group2.acronym)
+        self.assertEqual(
+            list(session.constraints().get(name='timerange').timeranges.all().values('name')),
+            list(TimerangeName.objects.filter(name__in=['thursday-afternoon-early', 'thursday-afternoon-late']).values('name'))
+        )
+        
+        # Check whether the updated data is visible on the view page
+        r = self.client.get(redirect_url)
+        self.assertContains(r, 'Schedule the sessions on subsequent days')
+        self.assertContains(r, 'Thursday early afternoon, Thursday late afternoon')
+        self.assertContains(r, group2.acronym)
+
     def test_tool_status(self):
         MeetingFactory(type_id='ietf', date=datetime.date.today())
         url = reverse('ietf.secr.sreq.views.tool_status')
@@ -111,6 +134,7 @@ class SubmitRequestCase(TestCase):
         ad = Person.objects.get(user__username='ad')
         area = RoleFactory(name_id='ad', person=ad, group__type_id='area').group
         group = GroupFactory(parent=area)
+        group2 = GroupFactory(parent=area)
         session_count_before = Session.objects.filter(meeting=meeting, group=group).count()
         url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
         confirm_url = reverse('ietf.secr.sreq.views.confirm',kwargs={'acronym':group.acronym})
@@ -120,10 +144,17 @@ class SubmitRequestCase(TestCase):
                      'attendees':'10',
                      'conflict1':'',
                      'comments':'need projector',
+                     'adjacent_with_wg': group2.acronym,
+                     'timeranges': ['thursday-afternoon-early', 'thursday-afternoon-late'],
                      'submit': 'Continue'}
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url,post_data)
         self.assertEqual(r.status_code, 200)
+
+        # Verify the contents of the confirm view
+        self.assertContains(r, 'Thursday early afternoon, Thursday late afternoon')
+        self.assertContains(r, group2.acronym)
+
         post_data['submit'] = 'Submit'
         r = self.client.post(confirm_url,post_data)
         self.assertRedirects(r, main_url)
@@ -205,6 +236,7 @@ class SubmitRequestCase(TestCase):
         area = GroupFactory(type_id='area')
         RoleFactory(name_id='ad', person=ad, group=area)
         group = GroupFactory(acronym='ames', parent=area)
+        group2 = GroupFactory(acronym='ames2', parent=area)
         RoleFactory(name_id='chair', group=group, person__user__username='ameschairman')
         resource = ResourceAssociation.objects.create(name_id='project')
         # Bit of a test data hack - the fixture now has no used resources to pick from
@@ -214,20 +246,24 @@ class SubmitRequestCase(TestCase):
         url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
         confirm_url = reverse('ietf.secr.sreq.views.confirm',kwargs={'acronym':group.acronym})
         len_before = len(outbox)
-        post_data = {'num_session':'1',
+        post_data = {'num_session':'2',
                      'length_session1':'3600',
+                     'length_session2':'3600',
                      'attendees':'10',
                      'bethere':str(ad.pk),
                      'conflict1':'',
                      'comments':'',
                      'resources': resource.pk,
+                     'session_time_relation': 'subsequent-days',
+                     'adjacent_with_wg': group2.acronym,
+                     'timeranges': ['thursday-afternoon-early', 'thursday-afternoon-late'],
                      'submit': 'Continue'}
         self.client.login(username="ameschairman", password="ameschairman+password")
         # submit
         r = self.client.post(url,post_data)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue('Confirm' in six.text_type(q("title")))
+        self.assertTrue('Confirm' in six.text_type(q("title")), r.context['form'].errors)
         # confirm
         post_data['submit'] = 'Submit'
         r = self.client.post(confirm_url,post_data)
@@ -235,10 +271,22 @@ class SubmitRequestCase(TestCase):
         self.assertEqual(len(outbox),len_before+1)
         notification = outbox[-1]
         notification_payload = six.text_type(notification.get_payload(decode=True),"utf-8","replace")
-        session = Session.objects.get(meeting=meeting,group=group)
+        sessions = Session.objects.filter(meeting=meeting,group=group)
+        self.assertEqual(len(sessions), 2)
+        session = sessions[0]
+        
         self.assertEqual(session.resources.count(),1)
         self.assertEqual(session.people_constraints.count(),1)
+        self.assertEqual(session.constraints().get(name='time_relation').time_relation, 'subsequent-days')
+        self.assertEqual(session.constraints().get(name='wg_adjacent').target.acronym, group2.acronym)
+        self.assertEqual(
+            list(session.constraints().get(name='timerange').timeranges.all().values('name')),
+            list(TimerangeName.objects.filter(name__in=['thursday-afternoon-early', 'thursday-afternoon-late']).values('name'))
+        )
         resource = session.resources.first()
+        self.assertTrue('Schedule the sessions on subsequent days' in notification_payload)
+        self.assertTrue(group2.acronym in notification_payload)
+        self.assertTrue("Can't meet: Thursday early afternoon, Thursday late" in notification_payload)
         self.assertTrue(resource.desc in notification_payload)
         self.assertTrue(ad.ascii_name() in notification_payload)
 

@@ -8,6 +8,7 @@
            <tr class="bg1"><td>Number of Sessions:<span class="required">*</span></td><td>{{ form.num_session.errors }}{{ form.num_session }}</td></tr>
            <tr class="bg2"><td>Length of Session 1:<span class="required">*</span></td><td>{{ form.length_session1.errors }}{{ form.length_session1 }}</td></tr>
            <tr class="bg2"><td>Length of Session 2:<span class="required">*</span></td><td>{{ form.length_session2.errors }}{{ form.length_session2 }}</td></tr>
+           <tr class="bg2"><td>Time between two sessions:</td><td>{{ form.session_time_relation.errors }}{{ form.session_time_relation }}</td></tr>
            {% if group.type.slug == "wg" %}
              <tr class="bg2"><td>Additional Session Request:</td><td>{{ form.third_session }} Check this box to request an additional session.<br>
              Additional slot may be available after agenda scheduling has closed and with the approval of an Area Director.<br>
@@ -58,6 +59,17 @@
             <td>
              {{ form.resources.errors }} {{ form.resources }}
             </td>
+           </tr>
+           <tr class="bg1">
+             <td valign="top">Times during which this WG can <strong>not</strong> meet:</td>
+             <td>{{ form.timeranges.errors }}{{ form.timeranges }}</td>
+           </tr>
+           <tr class="bg2">
+             <td valign="top">
+                 Plan session adjacent with another WG:<br />
+                 (Immediately before or after another WG, no break in between, in the same room.)
+             </td>
+             <td>{{ form.adjacent_with_wg.errors }}{{ form.adjacent_with_wg }}</td>
            </tr>
            <tr class="bg1">
              <td valign="top">Special Requests:<br />&nbsp;<br />i.e. restrictions on meeting times / days, etc.</td>

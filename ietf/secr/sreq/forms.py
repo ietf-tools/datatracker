@@ -8,8 +8,9 @@ from django import forms
 
 import debug                            # pyflakes:ignore
 
+from ietf.name.models import TimerangeName
 from ietf.group.models import Group
-from ietf.meeting.models import ResourceAssociation
+from ietf.meeting.models import ResourceAssociation, Constraint
 from ietf.person.fields import SearchablePersonsField
 
 
@@ -20,6 +21,7 @@ from ietf.person.fields import SearchablePersonsField
 NUM_SESSION_CHOICES = (('','--Please select'),('1','1'),('2','2'))
 # LENGTH_SESSION_CHOICES = (('','--Please select'),('1800','30 minutes'),('3600','1 hour'),('5400','1.5 hours'), ('7200','2 hours'),('9000','2.5 hours'))
 LENGTH_SESSION_CHOICES = (('','--Please select'),('1800','30 minutes'),('3600','1 hour'),('5400','1.5 hours'), ('7200','2 hours'))
+SESSION_TIME_RELATION_CHOICES = (('', 'No preference'),) + Constraint.TIME_RELATION_CHOICES
 
 # -------------------------------------------------
 # Helper Functions
@@ -65,10 +67,17 @@ class GroupSelectForm(forms.Form):
         super(GroupSelectForm, self).__init__(*args,**kwargs)
         self.fields['group'].widget.choices = choices
 
+
+class NameModelMultipleChoiceField(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, name):
+        return name.desc
+
+    
 class SessionForm(forms.Form):
     num_session = forms.ChoiceField(choices=NUM_SESSION_CHOICES)
     length_session1 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES)
     length_session2 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES,required=False)
+    session_time_relation = forms.ChoiceField(choices=SESSION_TIME_RELATION_CHOICES, required=False)
     length_session3 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES,required=False)
     attendees = forms.IntegerField()
     # FIXME: it would cleaner to have these be
@@ -84,6 +93,9 @@ class SessionForm(forms.Form):
     third_session = forms.BooleanField(required=False)
     resources     = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
     bethere       = SearchablePersonsField(label="Must be present", required=False)
+    timeranges    = NameModelMultipleChoiceField(widget=forms.CheckboxSelectMultiple, required=False,
+                                                 queryset=TimerangeName.objects.all())
+    adjacent_with_wg = forms.ChoiceField(required=False)
 
     def __init__(self, group, *args, **kwargs):
         if 'hidden' in kwargs:
@@ -100,7 +112,9 @@ class SessionForm(forms.Form):
         self.fields['length_session3'].widget.attrs['onClick'] = "if (check_third_session()) { this.disabled=true;}"
         self.fields['comments'].widget = forms.Textarea(attrs={'rows':'6','cols':'65'})
 
-        group_acronym_choices = [('','--Select WG(s)')] + list(allowed_conflicting_groups().exclude(pk=group.pk).values_list('acronym','acronym').order_by('acronym'))
+        other_groups = list(allowed_conflicting_groups().exclude(pk=group.pk).values_list('acronym', 'acronym').order_by('acronym'))
+        self.fields['adjacent_with_wg'].choices = [('', '--No preference')] + other_groups
+        group_acronym_choices = [('','--Select WG(s)')] + other_groups
         for i in range(1, 4):
             self.fields['wg_selector{}'.format(i)].choices = group_acronym_choices
 
@@ -129,6 +143,7 @@ class SessionForm(forms.Form):
             for key in list(self.fields.keys()):
                 self.fields[key].widget = forms.HiddenInput()
             self.fields['resources'].widget = forms.MultipleHiddenInput()
+            self.fields['timeranges'].widget = forms.MultipleHiddenInput()
 
     def clean_conflict1(self):
         conflict = self.cleaned_data['conflict1']
@@ -165,6 +180,8 @@ class SessionForm(forms.Form):
         if data.get('num_session','') == '2':
             if not data['length_session2']:
                 raise forms.ValidationError('You must enter a length for all sessions')
+        elif data.get('session_time_relation'):
+            raise forms.ValidationError('Time between sessions can only be used when two sessions are requested.')
         
         if data.get('third_session',False):
             if not data['length_session2'] or not data.get('length_session3',None):

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -28,7 +28,7 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
-from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName, ImportantDateName
+from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName, ImportantDateName, TimerangeName
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
@@ -810,19 +810,27 @@ class SchedTimeSessAssignment(models.Model):
 class Constraint(models.Model):
     """
     Specifies a constraint on the scheduling.
-    One type (name=conflic?) of constraint is between source WG and target WG,
-           e.g. some kind of conflict.
-    Another type (name=bethere) of constraint is between source WG and
-           availability of a particular Person, usually an AD.
-    A third type (name=avoidday) of constraint is between source WG and
-           a particular day of the week, specified in day.
+    Available types are:
+    - conflict/conflic2/conflic3: a conflict between source and target WG/session,
+      with varying priority. The first is used for a chair conflict, the second for
+      technology overlap, third for key person conflict
+    - bethere: a constraint between source WG and a particular person
+    - timerange: can not meet during these times
+    - time_relation: preference for a time difference between sessions
+    - wg_adjacent: request for source WG to be adjacent (directly before or after,
+      no breaks, same room) the target WG
     """
+    TIME_RELATION_CHOICES = (
+        ('subsequent-days', 'Schedule the sessions on subsequent days'),
+        ('one-day-seperation', 'Leave at least one free day in between the two sessions'),
+    )
     meeting = ForeignKey(Meeting)
     source = ForeignKey(Group, related_name="constraint_source_set")
     target = ForeignKey(Group, related_name="constraint_target_set", null=True)
     person = ForeignKey(Person, null=True, blank=True)
-    day    = models.DateTimeField(null=True, blank=True)
     name   = ForeignKey(ConstraintName)
+    time_relation = models.CharField(max_length=200, choices=TIME_RELATION_CHOICES, blank=True)
+    timeranges = models.ManyToManyField(TimerangeName)
 
     active_status = None
 
@@ -830,7 +838,14 @@ class Constraint(models.Model):
         return u"%s %s target=%s person=%s" % (self.source, self.name.name.lower(), self.target, self.person)
 
     def brief_display(self):
-        if self.target and self.person:
+        if self.name.slug == "wg_adjacent":
+            return "Adjacent with %s" % self.target.acronym
+        elif self.name.slug == "time_relation":
+            return self.get_time_relation_display()
+        elif self.name.slug == "timerange":
+            timeranges_str = ", ".join([t.desc for t in self.timeranges.all()])
+            return "Can't meet %s" % timeranges_str
+        elif self.target and self.person:
             return "%s ; %s" % (self.target.acronym, self.person)
         elif self.target and not self.person:
             return "%s " % (self.target.acronym)
@@ -838,7 +853,7 @@ class Constraint(models.Model):
             return "%s " % (self.person)
 
     def json_url(self):
-        return "/meeting/%s/constraint/%s.json" % (self.meeting.number, self.id)
+        return "/meeting/%s/constrai.nt/%s.json" % (self.meeting.number, self.id)
 
     def json_dict(self, host_scheme):
         ct1 = dict()

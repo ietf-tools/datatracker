@@ -80,6 +80,14 @@ def get_initial_session(sessions, prune_conflicts=False):
     initial['comments'] = sessions[0].comments
     initial['resources'] = sessions[0].resources.all()
     initial['bethere'] = [x.person for x in sessions[0].constraints().filter(name='bethere').select_related("person")]
+    wg_adjacent = conflicts.filter(name__slug='wg_adjacent')
+    initial['adjacent_with_wg'] = wg_adjacent[0].target.acronym if wg_adjacent else None
+    time_relation = conflicts.filter(name__slug='time_relation')
+    initial['session_time_relation'] = time_relation[0].time_relation if time_relation else None
+    initial['session_time_relation_display'] = time_relation[0].get_time_relation_display if time_relation else None
+    timeranges = conflicts.filter(name__slug='timerange')
+    initial['timeranges'] = timeranges[0].timeranges.all() if timeranges else []
+    initial['timeranges_display'] = [t.desc for t in initial['timeranges']]
     return initial
 
 def get_lock_message(meeting=None):
@@ -262,6 +270,10 @@ def confirm(request, acronym):
     if 'bethere' in session_data:
         person_id_list = [ id for id in form.data['bethere'].split(',') if id ]
         session_data['bethere'] = Person.objects.filter(pk__in=person_id_list)
+    if session_data.get('session_time_relation'):
+        session_data['session_time_relation_display'] = dict(Constraint.TIME_RELATION_CHOICES)[session_data['session_time_relation']]
+    if form.cleaned_data.get('timeranges'):
+        session_data['timeranges_display'] = [t.desc for t in form.cleaned_data['timeranges']]
     session_data['resources'] = [ ResourceAssociation.objects.get(pk=pk) for pk in request.POST.getlist('resources') ]
     
     button_text = request.POST.get('submit', '')
@@ -307,6 +319,17 @@ def confirm(request, acronym):
         save_conflicts(group,meeting,form.data.get('conflict1',''),'conflict')
         save_conflicts(group,meeting,form.data.get('conflict2',''),'conflic2')
         save_conflicts(group,meeting,form.data.get('conflict3',''),'conflic3')
+        save_conflicts(group, meeting, form.data.get('adjacent_with_wg', ''), 'wg_adjacent')
+
+        if form.cleaned_data.get('session_time_relation'):
+            cn = ConstraintName.objects.get(slug='time_relation')
+            Constraint.objects.create(source=group, meeting=meeting, name=cn,
+                                      time_relation=form.cleaned_data['session_time_relation'])
+
+        if form.cleaned_data.get('timeranges'):
+            cn = ConstraintName.objects.get(slug='timerange')
+            constraint = Constraint.objects.create(source=group, meeting=meeting, name=cn)
+            constraint.timeranges.set(form.cleaned_data['timeranges'])
 
         if 'bethere' in form.data:
             bethere_cn = ConstraintName.objects.get(slug='bethere')
@@ -459,6 +482,9 @@ def edit(request, acronym, num=None):
                 if 'conflict3' in form.changed_data:
                     Constraint.objects.filter(meeting=meeting,source=group,name='conflic3').delete()
                     save_conflicts(group,meeting,form.cleaned_data['conflict3'],'conflic3')
+                if 'adjacent_with_wg' in form.changed_data:
+                    Constraint.objects.filter(meeting=meeting, source=group, name='wg_adjacent').delete()
+                    save_conflicts(group, meeting, form.cleaned_data['adjacent_with_wg'], 'wg_adjacent')
 
                 if 'resources' in form.changed_data:
                     new_resource_ids = form.cleaned_data['resources']
@@ -471,6 +497,20 @@ def edit(request, acronym, num=None):
                     bethere_cn = ConstraintName.objects.get(slug='bethere')
                     for p in form.cleaned_data['bethere']:
                         Constraint.objects.create(name=bethere_cn, source=group, person=p, meeting=session.meeting)
+
+                if 'session_time_relation' in form.changed_data:
+                    Constraint.objects.filter(meeting=meeting, source=group, name='time_relation').delete()
+                    if form.cleaned_data['session_time_relation']:
+                        cn = ConstraintName.objects.get(slug='time_relation')
+                        Constraint.objects.create(source=group, meeting=meeting, name=cn,
+                                                  time_relation=form.cleaned_data['session_time_relation'])
+
+                if 'timeranges' in form.changed_data:
+                    Constraint.objects.filter(meeting=meeting, source=group, name='timerange').delete()
+                    if form.cleaned_data['timeranges']:
+                        cn = ConstraintName.objects.get(slug='timerange')
+                        constraint = Constraint.objects.create(source=group, meeting=meeting, name=cn)
+                        constraint.timeranges.set(form.cleaned_data['timeranges'])
 
                 # deprecated
                 # log activity
