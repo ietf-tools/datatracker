@@ -173,7 +173,8 @@ def session_conflicts_as_string(group, meeting):
     Takes a Group object and Meeting object and returns a string of other groups which have
     a conflict with this one
     '''
-    group_list = [ g.source.acronym for g in group.constraint_target_set.filter(meeting=meeting) ]
+    groups = group.constraint_target_set.filter(meeting=meeting, name__in=['conflict', 'conflic2', 'conflic3'])
+    group_list = [g.source.acronym for g in groups]
     return ', '.join(group_list)
 
 # -------------------------------------------------
