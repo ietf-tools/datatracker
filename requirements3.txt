@@ -31,7 +31,8 @@ Faker>=0.8.8,!=0.8.9,!=0.8.10		# from factory-boy # Faker 0.8.9,0.8.10 sometimes
 hashids>=1.1.0
 html5lib>=1.0.1
 httplib2>=0.10.3
-jsonfield>=1.0.3		# for SubmissionCheck.  This is https://github.com/bradjasper/django-jsonfield/.
+# jsonfield 3.x and higher requires Django 2.2 or higher
+jsonfield>=1.0.3,<3.0		# for SubmissionCheck.  This is https://github.com/bradjasper/django-jsonfield/.
 jwcrypto>=0.4.0			# for signed notifications
 #lxml>=3.4.0                    # from PyQuery; 
 markdown2>=2.3.8
