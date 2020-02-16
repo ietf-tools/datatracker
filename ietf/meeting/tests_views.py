@@ -67,12 +67,31 @@ else:
 class MeetingTests(TestCase):
     def setUp(self):
         self.materials_dir = self.tempdir('materials')
+        self.id_dir = self.tempdir('id')
+        self.archive_dir = self.tempdir('id-archive')
+        #
+        os.mkdir(os.path.join(self.archive_dir, "unknown_ids"))
+        os.mkdir(os.path.join(self.archive_dir, "deleted_tombstones"))
+        os.mkdir(os.path.join(self.archive_dir, "expired_without_tombstone"))
+        #
         self.saved_agenda_path = settings.AGENDA_PATH
+        self.saved_id_dir = settings.INTERNET_DRAFT_PATH
+        self.saved_archive_dir = settings.INTERNET_DRAFT_ARCHIVE_DIR
+        #
         settings.AGENDA_PATH = self.materials_dir
+        settings.INTERNET_DRAFT_PATH = self.id_dir
+        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
+
 
     def tearDown(self):
-        settings.AGENDA_PATH = self.saved_agenda_path
+        shutil.rmtree(self.id_dir)
+        shutil.rmtree(self.archive_dir)
         shutil.rmtree(self.materials_dir)
+        #
+        settings.AGENDA_PATH = self.saved_agenda_path
+        settings.INTERNET_DRAFT_PATH = self.saved_id_dir
+        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
+
 
     def write_materials_file(self, meeting, doc, content):
         path = os.path.join(self.materials_dir, "%s/%s/%s" % (meeting.number, doc.type_id, doc.uploaded_filename))
