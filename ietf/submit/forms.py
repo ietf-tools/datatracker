@@ -241,6 +241,8 @@ class SubmissionBaseUploadForm(forms.Form):
                     file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (self.filename, self.revision))
                     try:
                         if xml_version != '3':
+                            self.xmltree = parser.parse(remove_comments=True, quiet=True)
+                            self.xmlroot = self.xmltree.getroot()
                             pagedwriter = xml2rfc.PaginatedTextRfcWriter(self.xmltree, quiet=True)
                             pagedwriter.write(file_name['txt'])
                         else:
