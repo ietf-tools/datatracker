@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -344,6 +344,10 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     # and EMAIL_PORT=2025 in settings_local.py
     debugging = getattr(settings, "USING_DEBUG_EMAIL_SERVER", False) and settings.EMAIL_HOST == 'localhost' and settings.EMAIL_PORT == 2025
     production = settings.SERVER_MODE == 'production'
+
+    if settings.SERVER_MODE == 'repair':
+        log("\nIn repair mode: Skipped email from '%s' to %s id %s subject '%s'" % (frm, to, msg.get('Message-ID', ''), subject))
+        return msg
 
     if settings.SERVER_MODE == 'development':
         show_that_mail_was_sent(request,'In production, email would have been sent',msg,bcc)
