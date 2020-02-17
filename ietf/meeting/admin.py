@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -121,6 +121,7 @@ admin.site.register(Session, SessionAdmin)
 class SchedulingEventAdmin(admin.ModelAdmin):
     list_display = ["session", "status", "time", "by"]
     raw_id_fields = ["session", "by"]
+    search_fields = ['session__name', 'session__meeting__number', 'session__group__acronym']
     ordering = ["-id"]
 
 admin.site.register(SchedulingEvent, SchedulingEventAdmin)
