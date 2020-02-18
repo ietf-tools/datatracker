@@ -3,42 +3,22 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import glob
-import gzip
 import os
 import warnings
-import zipfile
 
-from collections import defaultdict
-from itertools import product, chain
+from itertools import chain
 
 import debug                            # pyflakes:ignore
 
-from django.apps import apps
 from django.conf import settings
-from django.contrib.admin.utils import NestedObjects
 from django.core import serializers
-from django.core.exceptions import ImproperlyConfigured
-from django.core.management.base import BaseCommand, CommandError
-from django.core.management.color import no_style
-from django.core.management.commands.loaddata import Command as LoadCommand, SingleZipReader, humanize
-from django.core.management.utils import parse_apps_and_model_labels
-from django.db import DEFAULT_DB_ALIAS, DatabaseError, IntegrityError, connections, router, transaction
+from django.core.management.base import CommandError
+from django.core.management.commands.loaddata import Command as LoadCommand, humanize
+from django.db import DatabaseError, IntegrityError, router, transaction
 from django.db.models import ManyToManyField
-from django.utils import lru_cache
-from django.utils._os import upath
 from django.utils.encoding import force_text
-from django.utils.functional import cached_property
-from django.utils.glob import glob_escape
 
 from ietf.utils.models import ForeignKey
-
-
-try:
-    import bz2
-    has_bz2 = True
-except ImportError:
-    has_bz2 = False
 
 
 def flatten(l):

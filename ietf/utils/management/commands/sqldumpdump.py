@@ -6,7 +6,7 @@ import collections
 import io
 import re
 import sys
-import warnings
+
 
 from django.apps import apps
 from django.core import serializers
@@ -110,7 +110,7 @@ class Command(DumpdataCommand):
                             if not table in pks:
                                 pks[table] = []
                             fields = match.group('fields')
-                            fields = [ f.strip("`") for f in re.split(r"(`[^`]+`)", fields) if f and not re.match(r'\s*,\s*', f)]
+                            fields = [ f.strip("`") for f in re.split(r"(`[^`]+`)", fields) if f and not re.match(r'\s*,\s*', f)] # pyflakes:ignore
                             values = match.group('values')
                             values = [ v.strip("'") for v in re.split(r"(\d+|'[^']*'|NULL)", values) if v and not re.match(r'\s*,\s*', v) ]
                             try:
@@ -119,7 +119,7 @@ class Command(DumpdataCommand):
                                 pk = values[ididx]
                                 pks[table].append(pk)
                                 count += 1
-                            except (KeyError, ValueError) as e:
+                            except (KeyError, ValueError):
                                 pass
         return pks, count
         
