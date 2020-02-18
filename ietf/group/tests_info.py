@@ -1145,6 +1145,28 @@ class DatelessMilestoneTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(group.groupmilestone_set.count(),1)
 
+    def test_can_switch_date_types_for_initial_charter(self):
+        ad_role = RoleFactory(group__type_id='area',name_id='ad')
+        ms = DatedGroupMilestoneFactory(group__parent=ad_role.group)
+        ad = ad_role.person   
+        ms.group.charter = CharterFactory(group=ms.group)
+        
+        url = urlreverse('ietf.group.milestones.edit_milestones;charter', kwargs=dict(acronym=ms.group.acronym))
+        login_testing_unauthorized(self, ad.user.username, url)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(q('#switch-date-use-form button').attr('style'), 'display:none;')     
+
+        ms.group.charter.rev='00-00'
+        ms.group.charter.save()
+        
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(q('#switch-date-use-form button').attr('style'), None)          
+
     def test_edit_and_reorder_milestone(self):
         role = RoleFactory(name_id='chair',group__uses_milestone_dates=False)
         group = role.group
