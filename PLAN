@@ -7,24 +7,12 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Wrap Trac in a docker container, in preparation for transition to running
-  the datatracker under Python 3.  It doesn't look like Trac will be available
-  for Python 3 until January 2020 at the earliest.
-
 * Complete the transition to Python 3.  This will make it easier to add add
-  support for internationalsed email, and also other i18n enhancements.  The
+  support for internationalised email, and also other i18n enhancements.  The
   code has now been made Python 2 / Python 3 compatible (as of release 6.99.0,
   16 July 2019), but has not been deployed under Python 3 yet.  The natural
   point for changing the deployment seems to be just after the next OS upgrade,
   which we think will make Python 3.6 the default mod_wsgi python.
-
-* Review and change the draft submission and handling code to deal with UTF-8
-  instead of ascii before upload of utf-8 drafts should be permitted.  
-  (This may fall out for free with the Python 3 transition).
-  In ietf.submit.views.upload_submission(), for instance, there's a file
-  open() which should be io.open() with the appropriate encoding.  In general,
-  there are about 100 file open() which should be reviewed and changed to
-  io.open() unless that's clearly not right.
 
 * Rework email sending so that all emails sent by the datatracker, except for
   logging and failure emails sent to ADMINS, are captured as a Message object.
