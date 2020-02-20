@@ -84,7 +84,7 @@ for log in logfiles:
         import gzip
         logfile = gzip.open(log)
     else:
-        logfile = open(log)
+        logfile = io.open(log)
     queue_ids = []
     for line in logfile:
         if from_email in line and "Confirmation for Auto-Post of I-D "+draft in line:

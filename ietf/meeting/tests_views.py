@@ -2530,7 +2530,7 @@ class MaterialsTests(TestCase):
         path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
         filename = os.path.join(path,session.sessionpresentation_set.first().document.name+'-01.txt')
         self.assertTrue(os.path.exists(filename))
-        contents = open(filename,'r').read()
+        contents = io.open(filename,'r').read()
         self.assertIn('third version', contents)
 
 
