@@ -450,6 +450,12 @@ INSTALLED_APPS = [
     'ietf.secr.telechat',
 ]
 
+try:
+    import django_extensions            # pyflakes:ignore
+    INSTALLED_APPS.append('django_extensions')
+except ImportError:
+    pass
+
 # Settings for django-bootstrap3
 # See http://django-bootstrap3.readthedocs.org/en/latest/settings.html
 BOOTSTRAP3 = {
