@@ -90,7 +90,7 @@ from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.helpers import get_meeting
 from ietf.meeting.utils import group_sessions, add_event_info_to_session_qs
 from ietf.name.models import GroupTypeName, StreamName
-from ietf.person.models import Email
+from ietf.person.models import Email, Person
 from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewerSettings, 
                                 ReviewSecretarySettings, UnavailablePeriod )
 from ietf.review.policies import get_reviewer_queue_policy
@@ -1405,6 +1405,8 @@ def reviewer_overview(request, acronym, group_type=None):
 
     can_manage = can_manage_review_requests_for_team(request.user, group)
 
+    can_reset_next_reviewer = can_manage and group.reviewteamsettings.reviewer_queue_policy_id == 'RotateAlphabetically'
+
     reviewers = get_reviewer_queue_policy(group).default_reviewer_rotation_list(include_unavailable=True)
 
     reviewer_settings = { s.person_id: s for s in ReviewerSettings.objects.filter(team=group) }
@@ -1478,7 +1480,8 @@ def reviewer_overview(request, acronym, group_type=None):
     return render(request, 'group/reviewer_overview.html',
                   construct_group_menu_context(request, group, "reviewers", group_type, {
                       "reviewers": reviewers,
-                      "can_access_stats": can_access_review_stats_for_team(request.user, group)
+                      "can_access_stats": can_access_review_stats_for_team(request.user, group),
+                      "can_reset_next_reviewer": can_reset_next_reviewer,
                   }))
 
 
@@ -1933,3 +1936,42 @@ def add_comment(request, acronym, group_type=None):
         form = AddCommentForm()
 
     return render(request, 'group/add_comment.html', { 'group':group, 'form':form, })
+
+class ResetNextReviewerForm(forms.Form):
+    next_reviewer = forms.ChoiceField()
+
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.pop('instance')
+        super(ResetNextReviewerForm, self).__init__(*args, **kwargs)
+        self.fields['next_reviewer'].choices = [ (p.pk, p.plain_name()) for p in get_reviewer_queue_policy(instance.team).default_reviewer_rotation_list(include_unavailable=True)]
+
+@login_required
+def reset_next_reviewer(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+    if group.reviewteamsettings.reviewer_queue_policy_id != 'RotateAlphabetically':
+        raise Http404
+
+    if not Role.objects.filter(name="secr", group=group, person__user=request.user).exists() and not has_role(request.user, "Secretariat"):
+        return HttpResponseForbidden("You don't have permission to access this view")
+
+    instance = group.nextreviewerinteam_set.first()
+    if not instance:
+        raise Http404
+
+    if request.method == 'POST':
+        form = ResetNextReviewerForm(request.POST,instance=instance)
+        if form.is_valid():
+            instance.next_reviewer = Person.objects.get(pk=form.cleaned_data['next_reviewer'])
+            instance.save()
+            return redirect('ietf.group.views.reviewer_overview', acronym = group.acronym )
+    else:
+        form = ResetNextReviewerForm(instance=instance)
+
+    return render(request, 'group/reset_next_reviewer.html', { 'group':group, 'form': form,})
+
+
+
+
+

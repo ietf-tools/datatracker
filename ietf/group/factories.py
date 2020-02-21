@@ -18,14 +18,9 @@ class GroupFactory(factory.DjangoModelFactory):
     list_email = factory.LazyAttribute(lambda a: '%s@ietf.org'% a.acronym)
     uses_milestone_dates = True
 
-class ReviewTeamFactory(factory.DjangoModelFactory):
-    class Meta:
-        model = Group
+class ReviewTeamFactory(GroupFactory):
 
     type_id = 'review'
-    name = factory.Faker('sentence',nb_words=6)
-    acronym = factory.Sequence(lambda n: 'acronym%d' %n)
-    state_id = 'active'
 
     @factory.post_generation
     def settings(obj, create, extracted, **kwargs):

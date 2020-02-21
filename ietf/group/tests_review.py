@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -19,7 +19,7 @@ from ietf.group.models import Role
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.review.models import ( ReviewerSettings, UnavailablePeriod, ReviewSecretarySettings, 
-    ReviewTeamSettings )
+    ReviewTeamSettings, NextReviewerInTeam )
 from ietf.review.utils import (
     suggested_review_requests_for_team,
     review_assignments_needing_reviewer_reminder, email_reviewer_reminder,
@@ -33,7 +33,7 @@ from ietf.utils.mail import outbox, empty_outbox
 from ietf.dbtemplate.factories import DBTemplateFactory
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.doc.factories import DocumentFactory
-from ietf.group.factories import RoleFactory, ReviewTeamFactory
+from ietf.group.factories import RoleFactory, ReviewTeamFactory, GroupFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
 
 class ReviewTests(TestCase):
@@ -929,4 +929,58 @@ class BulkAssignmentTests(TestCase):
         self.assertEqual(r.status_code,302)
         self.assertEqual(expected_ending_head_of_rotation, policy.default_reviewer_rotation_list()[0])
         self.assertMailboxContains(outbox, subject='Last Call assignment', text='Requested by', count=4)
-        
+     
+class ResetNextReviewerInTeamTests(TestCase):
+
+    def test_reviewer_overview_navigation(self):
+        group = ReviewTeamFactory(settings__reviewer_queue_policy_id = 'RotateAlphabetically')
+        url = urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym })
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertFalse(q('#reset_next_reviewer'))
+
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('#reset_next_reviewer'))
+
+        group.reviewteamsettings.reviewer_queue_policy_id='LeastRecentlyUsed'
+        group.reviewteamsettings.save()
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertFalse(q('#reset_next_reviewer'))
+
+
+    def test_reset_next_reviewer(self):
+        PersonFactory(user__username='plain')
+        for group in (GroupFactory(), ReviewTeamFactory(settings__reviewer_queue_policy_id='LeastRecentlyUsed')):
+            url = urlreverse('ietf.group.views.reset_next_reviewer', kwargs=dict(acronym=group.acronym))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 302)
+            self.client.login(username='plain',password='plain+password')
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404)
+            self.client.logout()
+
+        group = ReviewTeamFactory(settings__reviewer_queue_policy_id='RotateAlphabetically')
+        secr = RoleFactory(name_id='secr',group=group).person
+        reviewers = RoleFactory.create_batch(10, name_id='reviewer',group=group)
+        NextReviewerInTeam.objects.create(team = group, next_reviewer=reviewers[4].person)
+
+        target_index = 6
+        url = urlreverse('ietf.group.views.reset_next_reviewer', kwargs=dict(acronym=group.acronym))
+        for user in (secr.user.username, 'secretary'):
+            login_testing_unauthorized(self,user,url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code,200)
+            r = self.client.post(url,{'next_reviewer':reviewers[target_index].person.pk})
+            self.assertEqual(r.status_code,302)
+            self.assertEqual(NextReviewerInTeam.objects.get(team=group).next_reviewer, reviewers[target_index].person)
+            self.client.logout()
+            target_index += 2
+
