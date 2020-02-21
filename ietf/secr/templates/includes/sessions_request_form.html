@@ -72,6 +72,22 @@
              <td>{{ form.adjacent_with_wg.errors }}{{ form.adjacent_with_wg }}</td>
            </tr>
            <tr class="bg1">
+             <td>
+                 Joint session with:<br />
+                 (To request one session for multiple WGs together.)
+             </td>
+             <td>{{ form.wg_selector4 }}
+                 <input type="button" value="Delete the last entry" onClick="delete_last_joint_with_groups(); return 1;"><br>
+                 {{ form.joint_with_groups.errors }}{{ form.joint_with_groups }}
+             </td>
+           </tr>
+           <tr class="bg1">
+             <td>
+                 Of the sessions requested by this WG, the joint session, if applicable, is:
+             </td>
+             <td>{{ form.joint_for_session.errors }}{{ form.joint_for_session }}</td>
+           </tr>
+           <tr class="bg2">
              <td valign="top">Special Requests:<br />&nbsp;<br />i.e. restrictions on meeting times / days, etc.</td>
              <td>{{ form.comments.errors }}{{ form.comments }}</td>
            </tr>

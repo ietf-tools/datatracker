@@ -7,7 +7,7 @@
         <tr class="row2"><td>Length of Session 1:</td><td>{{ session.length_session1|display_duration }}</td></tr>
         {% if session.length_session2 %}
           <tr class="row2"><td>Length of Session 2:</td><td>{{ session.length_session2|display_duration }}</td></tr>
-          <tr class="row2"><td>Time between sessions:</td><td>{{ session.session_time_relation_display|default:"No preference" }}</td></tr>
+          <tr class="row2"><td>Time between sessions:</td><td>{% if session.session_time_relation_display %}{{ session.session_time_relation_display }}{% else %}No preference{% endif %}</td></tr>
         {% endif %}
         {% if session.length_session3 %}
           <tr class="row2"><td>Length of Session 3:</td><td>{{ session.length_session3|display_duration }}</td></tr>
@@ -42,7 +42,17 @@
           <td>Adjacent with WG:</td>
           <td>{{ session.adjacent_with_wg|default:'No preference' }}</td>
         </tr>
+        <tr class="row2">
+          <td>Joint session:</td>
+          <td>
+              {% if session.joint_with_groups %}
+                {{ session.joint_for_session_display }} with: {{ session.joint_with_groups }}
+              {% else %}
+                Not a joint session
+              {% endif %}
+          </td>
+        </tr>
         {% autoescape off %}
-        <tr class="row2"><td>Special Requests:</td><td>{{ session.comments }}</td></tr>
+        <tr class="row1"><td>Special Requests:</td><td>{{ session.comments }}</td></tr>
         {% endautoescape %}
       </table>

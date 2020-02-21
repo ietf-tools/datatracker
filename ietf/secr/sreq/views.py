@@ -21,7 +21,7 @@ from ietf.meeting.models import Meeting, Session, Constraint, ResourceAssociatio
 from ietf.meeting.helpers import get_meeting
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.name.models import SessionStatusName, ConstraintName
-from ietf.secr.sreq.forms import SessionForm, ToolStatusForm, allowed_conflicting_groups
+from ietf.secr.sreq.forms import SessionForm, ToolStatusForm, allowed_conflicting_groups, JOINT_FOR_SESSION_CHOICES
 from ietf.secr.utils.decorators import check_permissions
 from ietf.secr.utils.group import get_my_groups
 from ietf.utils.mail import send_mail
@@ -88,6 +88,11 @@ def get_initial_session(sessions, prune_conflicts=False):
     timeranges = conflicts.filter(name__slug='timerange')
     initial['timeranges'] = timeranges[0].timeranges.all() if timeranges else []
     initial['timeranges_display'] = [t.desc for t in initial['timeranges']]
+    for idx, session in enumerate(sessions):
+        if session.joint_with_groups.count():
+            initial['joint_with_groups'] = ' '.join(session.joint_with_groups_acronyms())
+            initial['joint_for_session'] = str(idx + 1)
+            initial['joint_for_session_display'] = dict(JOINT_FOR_SESSION_CHOICES)[initial['joint_for_session']]
     return initial
 
 def get_lock_message(meeting=None):
@@ -273,6 +278,8 @@ def confirm(request, acronym):
         session_data['bethere'] = Person.objects.filter(pk__in=person_id_list)
     if session_data.get('session_time_relation'):
         session_data['session_time_relation_display'] = dict(Constraint.TIME_RELATION_CHOICES)[session_data['session_time_relation']]
+    if session_data.get('joint_for_session'):
+        session_data['joint_for_session_display'] = dict(JOINT_FOR_SESSION_CHOICES)[session_data['joint_for_session']]
     if form.cleaned_data.get('timeranges'):
         session_data['timeranges_display'] = [t.desc for t in form.cleaned_data['timeranges']]
     session_data['resources'] = [ ResourceAssociation.objects.get(pk=pk) for pk in request.POST.getlist('resources') ]
@@ -314,6 +321,10 @@ def confirm(request, acronym):
                 )
                 if 'resources' in form.data:
                     new_session.resources.set(session_data['resources'])
+                if int(form.data.get('joint_for_session', '-1')) == count:
+                    groups_split = form.cleaned_data.get('joint_with_groups').replace(',',' ').split()
+                    joint = Group.objects.filter(acronym__in=groups_split)
+                    new_session.joint_with_groups.set(joint)
                 session_changed(new_session)
 
         # write constraint records
@@ -469,7 +480,30 @@ def edit(request, acronym, num=None):
                         session.save()
                         session_changed(session)
 
+                # New sessions may have been created, refresh the sessions list
+                sessions = add_event_info_to_session_qs(
+                    Session.objects.filter(group=group, meeting=meeting)).filter(
+                    Q(current_status__isnull=True) | ~Q(
+                        current_status__in=['canceled', 'notmeet'])).order_by('id')
 
+                if 'joint_with_groups' in form.changed_data or 'joint_for_session' in form.changed_data:
+                    joint_with_groups_list = form.cleaned_data.get('joint_with_groups').replace(',', ' ').split()
+                    new_joint_with_groups = Group.objects.filter(acronym__in=joint_with_groups_list)
+                    new_joint_for_session_idx = int(form.data.get('joint_for_session', '-1')) - 1
+                    current_joint_for_session_idx = None
+                    current_joint_with_groups = None
+                    for idx, session in enumerate(sessions):
+                        if session.joint_with_groups.count():
+                            current_joint_for_session_idx = idx
+                            current_joint_with_groups = session.joint_with_groups.all()
+
+                    if current_joint_with_groups != new_joint_with_groups or current_joint_for_session_idx != new_joint_for_session_idx:
+                        if current_joint_for_session_idx is not None:
+                            sessions[current_joint_for_session_idx].joint_with_groups.clear()
+                            session_changed(sessions[current_joint_for_session_idx])
+                        sessions[new_joint_for_session_idx].joint_with_groups.set(new_joint_with_groups)
+                        session_changed(sessions[new_joint_for_session_idx])
+                            
                 if 'attendees' in form.changed_data:
                     sessions.update(attendees=form.cleaned_data['attendees'])
                 if 'comments' in form.changed_data:

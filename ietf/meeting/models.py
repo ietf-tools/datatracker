@@ -900,6 +900,7 @@ class Session(models.Model):
     short = models.CharField(blank=True, max_length=32, help_text="Short version of 'name' above, for use in filenames.")
     type = ForeignKey(TimeSlotTypeName)
     group = ForeignKey(Group)    # The group type historically determined the session type.  BOFs also need to be added as a group. Note that not all meeting requests have a natural group to associate with.
+    joint_with_groups = models.ManyToManyField(Group, related_name='sessions_joint_in')
     attendees = models.IntegerField(null=True, blank=True)
     agenda_note = models.CharField(blank=True, max_length=255)
     requested_duration = models.DurationField(default=datetime.timedelta(0))
@@ -1023,6 +1024,9 @@ class Session(models.Model):
 
     def is_material_submission_cutoff(self):
         return datetime.date.today() > self.meeting.get_submission_correction_date()
+    
+    def joint_with_groups_acronyms(self):
+        return [group.acronym for group in self.joint_with_groups.all()]
 
     def __str__(self):
         if self.meeting.type_id == "interim":
