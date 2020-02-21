@@ -289,9 +289,9 @@ def confirm(request, acronym):
                 new_session = Session.objects.create(
                     meeting=meeting,
                     group=group,
-                    attendees=form.data['attendees'],
+                    attendees=form.cleaned_data['attendees'],
                     requested_duration=datetime.timedelta(0,int(duration)),
-                    comments=form.data['comments'],
+                    comments=form.cleaned_data['comments'],
                     type_id='regular',
                 )
                 SchedulingEvent.objects.create(

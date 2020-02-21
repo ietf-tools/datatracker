@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 # Taken from http://code.google.com/p/soclone/source/browse/trunk/soclone/utils/html.py
 """Utilities for working with HTML."""
@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import bleach
 import copy
+import html2text
 import lxml.etree
 import lxml.html
 import lxml.html.clean
@@ -15,7 +16,10 @@ import six
 
 import debug                            # pyflakes:ignore
 
+from django import forms
 from django.utils.functional import keep_lazy
+
+from ietf.utils.mime import get_mime_type
 
 acceptable_tags = ('a', 'abbr', 'acronym', 'address', 'b', 'big',
     'blockquote', 'body', 'br', 'caption', 'center', 'cite', 'code', 'col',
@@ -76,3 +80,18 @@ lxml_cleaner = Cleaner(allow_tags=acceptable_tags, remove_unknown_tags=None, sty
 
 def sanitize_document(html):
     return lxml_cleaner.clean_html(html)
+
+
+# ----------------------------------------------------------------------
+# Text field cleaning
+
+def clean_text_field(text):
+    mime_type, encoding = get_mime_type(text.encode('utf8'))
+    if   mime_type == 'text/html': #  or re.search(r'<\w+>', text):
+        text = html2text.html2text(text)
+    elif mime_type in ['text/plain', 'application/x-empty', ]:
+        pass
+    else:
+        raise forms.ValidationError("Unexpected text field mime type: %s" % mime_type)
+    return text
+    

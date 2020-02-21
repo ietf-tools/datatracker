@@ -11,7 +11,7 @@ import debug                            # pyflakes:ignore
 from ietf.group.models import Group
 from ietf.meeting.models import ResourceAssociation
 from ietf.person.fields import SearchablePersonsField
-
+from ietf.utils.html import clean_text_field
 
 # -------------------------------------------------
 # Globals
@@ -145,6 +145,9 @@ class SessionForm(forms.Form):
         check_conflict(conflict, self.group)
         return conflict
     
+    def clean_comments(self):
+        return clean_text_field(self.cleaned_data['comments'])
+
     def clean(self):
         super(SessionForm, self).clean()
         data = self.cleaned_data

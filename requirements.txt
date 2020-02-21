@@ -28,6 +28,7 @@ factory-boy>=2.9.0
 google-api-python-client
 Faker>=0.8.8,!=0.8.9,!=0.8.10		# from factory-boy # Faker 0.8.9,0.8.10 sometimes return string names instead of unicode.
 hashids>=1.1.0
+html2text>=2019.8.11
 html5lib>=1.0.1
 httplib2>=0.10.3
 # jsonfield 3.x and higher requires Django 2.2 or higher

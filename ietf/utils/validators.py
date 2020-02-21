@@ -1,12 +1,10 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
-
 
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import re
-import magic
 from pyquery import PyQuery
 
 from django.conf import settings
@@ -16,6 +14,8 @@ from django.template.defaultfilters import filesizeformat
 from django.utils.deconstruct import deconstructible
 
 import debug                            # pyflakes:ignore
+
+from ietf.utils.mime import get_mime_type
 
 # Note that this is an instantiation of the regex validator, _not_ the
 # regex-string validator defined right below
@@ -54,20 +54,6 @@ class RegexStringValidator(object):
         return not (self == other)
 
 validate_regular_expression_string = RegexStringValidator()
-
-def get_mime_type(content):
-    # try to fixup encoding
-    if hasattr(magic, "open"):
-        m = magic.open(magic.MAGIC_MIME)
-        m.load()
-        filetype = m.buffer(content)
-    else:
-        m = magic.Magic()
-        m.cookie = magic.magic_open(magic.MAGIC_NONE | magic.MAGIC_MIME | magic.MAGIC_MIME_ENCODING)
-        magic.magic_load(m.cookie, None)
-        filetype = m.from_buffer(content)
-        
-    return filetype.split('; ', 1)
 
 def validate_file_size(file):
     if file._size > settings.SECR_MAX_UPLOAD_SIZE:
