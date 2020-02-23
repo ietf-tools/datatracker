@@ -7,15 +7,15 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Complete the transition to Python 3.  This will make it easier to add add
-  support for internationalised email, and also other i18n enhancements.  The
-  code has now been made Python 2 / Python 3 compatible (as of release 6.99.0,
-  16 July 2019), but has not been deployed under Python 3 yet.  The natural
-  point for changing the deployment seems to be just after the next OS upgrade,
-  which we think will make Python 3.6 the default mod_wsgi python.
-
 * Rework email sending so that all emails sent by the datatracker, except for
   logging and failure emails sent to ADMINS, are captured as a Message object.
+
+* Refactor the use of urlopen().  This is triggered by the transition to
+  python 3: All instances of .read() from urlopen() objects return byte
+  streams under Python 3, while the code wants to deal with str objects, which
+  are unicode under Python 3.  Instead of building our own adapter to extract
+  the charset and do the decoding, we should transition to the 'requests'
+  module, which provides decoded unicode text directly from the response.
 
 * Transition to Django 2.x (depends on Python 3.x).  Security updates to
   Django 1.11 will cease around April 2020.
