@@ -4,19 +4,21 @@
 # 
 # This script is expected to be triggered by cron from
 # /etc/cron.d/datatracker
+export LANG=en_US.UTF-8
+export PYTHONIOENCODING=utf-8
 
 # Make sure we stop if something goes wrong:
 program=${0##*/}
 trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; exit 1' ERR
-
-# Run the hourly jobs first
-$DTDIR/bin/hourly
 
 # Datatracker directory
 DTDIR=/a/www/ietf-datatracker/web
 cd $DTDIR/
 
 logger -p user.info -t cron "Running $DTDIR/bin/daily"
+
+# Run the hourly jobs first
+$DTDIR/bin/hourly
 
 # Set up the virtual environment
 source $DTDIR/env/bin/activate

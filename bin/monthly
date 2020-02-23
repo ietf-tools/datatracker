@@ -4,6 +4,8 @@
 # 
 # This script is expected to be triggered by cron from
 # /etc/cron.d/datatracker
+export LANG=en_US.UTF-8
+export PYTHONIOENCODING=utf-8
 
 DTDIR=/a/www/ietf-datatracker/web
 cd $DTDIR/
