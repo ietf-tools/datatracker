@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2017-2019, All Rights Reserved
+# Copyright The IETF Trust 2017-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -30,6 +30,8 @@ class Command(BaseCommand):
         for c in VersionInfo.objects.filter(used=True):
             cmd = "%s %s" % (c.command, c.switch)
             code, out, err = pipe(cmd)
+            out = out.decode('utf-8')
+            err = err.decode('utf-8')
             if code != 0:
                 sys.stderr.write("Command '%s' retuned %s: \n%s\n%s\n" % (cmd, code, out, err))
             else:

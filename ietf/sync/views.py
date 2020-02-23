@@ -1,3 +1,7 @@
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
 import datetime
 import subprocess
 import os
@@ -73,10 +77,13 @@ def notify(request, org, notification):
 
     if request.method == "POST":
         def runscript(name):
-            cmd = ["python", os.path.join(SYNC_BIN_PATH, name)]
+            python = os.path.join(settings.BASE_DIR, "env", "bin", "python")
+            cmd = [python, os.path.join(SYNC_BIN_PATH, name)]
             cmdstring = " ".join(cmd)
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, err = p.communicate()
+            out = out.decode('utf-8')
+            err = err.decode('utf-8')
             if p.returncode:
                 log("Subprocess error %s when running '%s': %s %s" % (p.returncode, cmd, err, out))
                 raise subprocess.CalledProcessError(p.returncode, cmdstring, "\n".join([err, out]))

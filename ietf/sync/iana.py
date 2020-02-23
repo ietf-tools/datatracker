@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -13,7 +13,7 @@ import re
 from six.moves.urllib.request import Request, urlopen
 
 from django.conf import settings
-from django.utils.encoding import force_str
+from django.utils.encoding import smart_bytes, force_str
 from django.utils.http import urlquote
 
 import debug                            # pyflakes:ignore
@@ -31,14 +31,14 @@ from ietf.utils.timezone import local_timezone_to_utc, email_time_to_local_timez
 
 def fetch_protocol_page(url):
     f = urlopen(settings.IANA_SYNC_PROTOCOLS_URL)
-    text = f.read()
+    text = force_str(f.read())
     f.close()
     return text
     
 def parse_protocol_page(text):
     """Parse IANA protocols page to extract referenced RFCs (as
     rfcXXXX document names)."""
-    matches = re.findall('RFC [0-9]+', text)
+    matches = re.findall('RFC [0-9]+', force_str(text))
     res = set()
     for m in matches:
         res.add("rfc" + m[len("RFC "):])
@@ -78,7 +78,7 @@ def fetch_changes_json(url, start, end):
     # HTTP basic auth
     username = "ietfsync"
     password = settings.IANA_SYNC_PASSWORD
-    request.add_header("Authorization", "Basic %s" % base64.encodestring("%s:%s" % (username, password)).replace("\n", ""))
+    request.add_header("Authorization", "Basic %s" % force_str(base64.encodestring(smart_bytes("%s:%s" % (username, password)))).replace("\n", ""))
     f = urlopen(request)
     text = f.read()
     f.close()

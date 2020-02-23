@@ -23,7 +23,7 @@ from ietf.sync.iana import fetch_protocol_page, parse_protocol_page, update_rfc_
 
 def chunks(l, n):
     """Split list l up in chunks of max size n."""
-    return (l[i:i+n] for i in xrange(0, len(l), n))
+    return (l[i:i+n] for i in range(0, len(l), n))
 
 syslog.syslog("Updating history log with new RFC entries from IANA protocols page %s" % settings.IANA_SYNC_PROTOCOLS_URL)
 
