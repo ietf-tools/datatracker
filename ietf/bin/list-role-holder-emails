@@ -18,6 +18,7 @@ syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 import django
 django.setup()
 
+from django.utils.encoding import force_str
 from ietf.group.models import Role
 
 addresses = set()
@@ -32,5 +33,4 @@ for role in Role.objects.filter(
 addresses = list(addresses)
 addresses.sort()
 for a in addresses:
-    print(a.encode('utf8'))
-        
+    print(force_str(a))
