@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -55,7 +55,7 @@ def log(msg, e=None):
     elif settings.DEBUG == True:
         _logfunc = debug.say
         _flushfunc = sys.stdout.flush   # pyflakes:ignore (intentional redefinition)
-    if isinstance(msg, six.text_type):
+    if not isinstance(msg, str):
         msg = msg.encode('unicode_escape')
     try:
         mod, cls, func, file, line = getcaller()
