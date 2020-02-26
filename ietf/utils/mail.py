@@ -192,10 +192,10 @@ def encode_message(txt):
     assert isinstance(txt, six.text_type)
     return MIMEText(txt.encode('utf-8'), 'plain', 'UTF-8')
 
-def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=False, bcc=None, copy=True):
+def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=False, bcc=None, copy=True, save=True):
     """Send plain text message."""
     msg = encode_message(txt)
-    return send_mail_mime(request, to, frm, subject, msg, cc, extra, toUser, bcc, copy=copy)
+    return send_mail_mime(request, to, frm, subject, msg, cc, extra, toUser, bcc, copy=copy, save=save)
         
 def on_behalf_of(frm):
     if isinstance(frm, tuple):
@@ -320,6 +320,9 @@ def condition_message(to, frm, subject, msg, cc, extra):
                     msg[k] = ", ".join(v)
                 except Exception:
                     raise
+    if not msg.get('Message-ID', None):
+        msg['Message-ID'] = make_msgid()
+
 
 def show_that_mail_was_sent(request,leadline,msg,bcc):
         if request and request.user:
@@ -334,11 +337,29 @@ def show_that_mail_was_sent(request,leadline,msg,bcc):
                     info += "Bcc: %s\n" % bcc
                 messages.info(request,info,extra_tags='preformatted',fail_silently=True)
 
-def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=False, bcc=None, copy=True):
+def save_as_message(request, msg, bcc):
+    by = ((request and request.user and not request.user.is_anonymous and request.user.person)
+            or ietf.person.models.Person.objects.get(name="(System)"))
+    headers, body = force_text(str(msg)).split('\n\n', 1)
+    kwargs = {'by': by, 'body': body, 'content_type': msg.get_content_type(), 'bcc': bcc or '' }
+    for (arg, field) in [
+            ('cc',              'Cc'),
+            ('frm',             'From'),
+            ('msgid',           'Message-ID'),
+            ('reply_to',        'Reply-To'),
+            ('subject',         'Subject'),
+            ('to',              'To'),
+        ]:
+        kwargs[arg] = msg.get(field, '')
+    m = ietf.message.models.Message.objects.create(**kwargs)
+    log("Saved outgoing email from '%s' to %s id %s subject '%s as Message[%s]'" % (m.frm, m.to, m.msgid, m.subject, m.pk))
+    return m
+
+def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=False, bcc=None, copy=True, save=True):
     """Send MIME message with content already filled in."""
     
     condition_message(to, frm, subject, msg, cc, extra)
-    
+
     # start debug server with python -m smtpd -n -c DebuggingServer localhost:2025
     # then put USING_DEBUG_EMAIL_SERVER=True and EMAIL_HOST='localhost'
     # and EMAIL_PORT=2025 in settings_local.py
@@ -352,16 +373,24 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     if settings.SERVER_MODE == 'development':
         show_that_mail_was_sent(request,'In production, email would have been sent',msg,bcc)
 
+    # Maybe save in the database as a Message object
+    if save:
+        message = save_as_message(request, msg, bcc)
+    else:
+        message = None
+
     if test_mode or debugging or production:
         try:
             send_smtp(msg, bcc)
+            if save:
+                message.sent = datetime.datetime.now()
+                message.save()
+            show_that_mail_was_sent(request,'Email was sent',msg,bcc)
         except smtplib.SMTPException as e:
             log_smtp_exception(e)
             build_warning_message(request, e)
             send_error_email(e)
 
-        show_that_mail_was_sent(request,'Email was sent',msg,bcc)
-            
     elif settings.SERVER_MODE == 'test':
         if toUser:
             copy_email(msg, to, toUser=True, originalBcc=bcc)
@@ -448,6 +477,7 @@ def send_mail_preformatted(request, preformatted, extra={}, override={}):
 def send_mail_message(request, message, extra={}):
     """Send a Message object."""
     # note that this doesn't handle MIME messages at the moment
+    assertion('isinstance(message.to, six.string_types) and isinstance(message.cc, six.string_types) and isinstance(message.bcc, six.string_types)')
 
     e = extra.copy()
     if message.reply_to:
@@ -455,8 +485,21 @@ def send_mail_message(request, message, extra={}):
     if message.msgid:
         e['Message-ID'] = [ message.msgid, ]
 
-    return send_mail_text(request, message.to, message.frm, message.subject,
-                          message.body, cc=message.cc, bcc=message.bcc, extra=e)
+    content_type = message.content_type or 'text/plain'
+    if 'multipart' in content_type:
+        body = ("MIME-Version: 1.0\r\nContent-Type: %s\r\n\r\n" % content_type) + message.body
+        msg = message_from_string(force_str(body))
+    else:
+        msg = encode_message(message.body)
+
+    msg = send_mail_mime(request, message.to, message.frm, message.subject,
+                          msg, cc=message.cc, bcc=message.bcc, extra=e, save=False)
+
+#     msg = send_mail_text(request, message.to, message.frm, message.subject,
+#                           message.body, cc=message.cc, bcc=message.bcc, extra=e, save=False)
+    message.sent = datetime.datetime.now()
+    message.save()
+    return msg
 
 def exception_components(e):
     # See if it's a non-smtplib exception that we faked

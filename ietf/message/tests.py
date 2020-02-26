@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -8,13 +8,14 @@ import datetime
 
 from django.urls import reverse as urlreverse
 
-from ietf.utils.test_utils import TestCase
-from ietf.utils.mail import outbox
+import debug                            # pyflakes:ignore
 
-from ietf.message.models import Message, SendQueue
-from ietf.person.models import Person
 from ietf.group.factories import GroupFactory
+from ietf.message.models import Message, SendQueue
 from ietf.message.utils import send_scheduled_message_from_send_queue
+from ietf.person.models import Person
+from ietf.utils.mail import outbox, send_mail_text, send_mail_message, get_payload
+from ietf.utils.test_utils import TestCase
 
 class MessageTests(TestCase):
     def test_message_view(self):
@@ -25,7 +26,7 @@ class MessageTests(TestCase):
             to="test@example.com",
             frm="nomcomchair@example.com",
             body="Hello World!",
-            content_type="",
+            content_type="text/plain",
             )
         msg.related_groups.add(nomcom)
 
@@ -35,6 +36,41 @@ class MessageTests(TestCase):
         self.assertContains(r, msg.to)
         self.assertContains(r, msg.frm)
         self.assertContains(r, "Hello World!")
+
+    def test_capture_send_mail_text(self):
+        def cmp(e1, e2):
+            e1keys = set(e1.keys())
+            e2keys = set(e2.keys())
+            self.assertEqual(e1keys, e2keys)
+            self.longMessage = True
+            for k in e1keys:
+                if k in ['Date', ]:
+                    continue
+                self.assertEqual(e1.get_all(k), e2.get_all(k), "Header field: %s" % k)
+            self.longMessage = False
+            self.assertEqual(get_payload(e1), get_payload(e2))
+
+        #
+        self.assertEqual(Message.objects.count(), 0)
+        to = "<iesg-secretary@ietf.org>"
+        subj = "Dummy subject"
+        cc="cc.a@example.com, cc.b@example.com"
+        body = "Dummy message text"
+        bcc="bcc@example.com"
+        msg1 = send_mail_text(None, to, None, subj, body, cc=cc, bcc=bcc)
+        self.assertEqual(Message.objects.count(), 1)
+        message = Message.objects.last()
+        self.assertEqual(message.by.name, '(System)')
+        self.assertEqual(message.to, to)
+        self.assertEqual(message.subject, subj)
+        self.assertEqual(message.body, body)
+        self.assertEqual(message.cc, cc)
+        self.assertEqual(message.bcc, bcc)
+        self.assertEqual(message.content_type, 'text/plain')
+        # Check round-trip msg --> message --> msg
+        msg2 = send_mail_message(None, message)
+        cmp(msg1, msg2)
+        cmp(msg1, outbox[-1])
 
 
 class SendScheduledAnnouncementsTests(TestCase):
@@ -47,7 +83,7 @@ class SendScheduledAnnouncementsTests(TestCase):
             cc="cc.a@example.com, cc.b@example.com",
             bcc="bcc@example.com",
             body="Hello World!",
-            content_type="",
+            content_type="text/plain",
             )
 
         q = SendQueue.objects.create(
