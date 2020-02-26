@@ -11,6 +11,7 @@ from django.core.management.base import BaseCommand
 import debug                            # pyflakes:ignore
 
 from ietf.message.models import Message
+from ietf.utils.mail import parseaddr
 
 class Command(BaseCommand):
     help = 'Show messages, by default unsent messages'
@@ -55,16 +56,20 @@ class Command(BaseCommand):
         messages = messages.filter(time__gte=options['start'])
         if options['stop']:
             messages = messages.filter(sent__lte=options['stop'])
-            self.stdout.write("\nShowimg %s messages between %s and %s:\n\n" % (options['state'], options['start'], options['stop']))
+            selection_str = "%s messages between %s and %s" % (options['state'], options['start'], options['stop'])
+
         else:
-            self.stdout.write("\nShowimg %s messages since %s:\n\n" % (options['state'], options['start']))
+            selection_str = "%s messages since %s" % (options['state'], options['start'])
+        self.stdout.write("\nShowimg %s:\n\n" % selection_str)
 
         if options['pk']:
             self.stdout.write(','.join([ str(pk) for pk in messages.values_list('pk', flat=True)] ))
         else:
             for m in messages:
+                def addr(f):
+                    return parseaddr(f)[1]
                 to = ','.join( a[1] for a in email.utils.getaddresses([m.to]) )
-                self.stdout.write('%s  %16s  %16s  %72s  %s -> %s  "%s"\n' %
+                self.stdout.write('%s  %16s  %16s  %56s  %s -> %s  "%s"\n' %
                     (m.pk, m.time.strftime('%Y-%m-%d %H:%M'), m.sent and m.sent.strftime('%Y-%m-%d %H:%M') or '',
-                        m.msgid.strip('<>'), m.frm, to, m.subject.strip()))
-            
+                        m.msgid.strip('<>'), addr(m.frm), to, m.subject.strip()))
+            self.stdout.write("\n%s messages (%s)\n" % (messages.count(), selection_str))
