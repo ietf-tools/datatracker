@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 from django import forms
 
 from ietf.group.models import Group, Role
+from ietf.utils.html import unescape
 from ietf.ietfauth.utils import has_role
 from ietf.message.models import Message, AnnouncementFrom
 from ietf.utils.fields import MultiEmailField
@@ -112,6 +113,8 @@ class AnnounceForm(forms.ModelForm):
             return self.cleaned_data
         if data['to'] == 'Other...' and not data['to_custom']:
             raise forms.ValidationError('You must enter a "To" email address')
+        for k in ['to', 'frm', 'cc',]:
+            data[k] = unescape(data[k])
 
         return data
 
