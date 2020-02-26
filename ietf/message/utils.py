@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -16,19 +16,21 @@ first_dot_on_line_re = re.compile(r'^\.', re.MULTILINE)
 def infer_message(s):
     parsed = email.message_from_string(force_str(s))
 
-    m = Message()
-    m.subject = parsed.get("Subject", "")
-    m.frm = parsed.get("From", "")
-    m.to = parsed.get("To", "")
-    m.cc = parsed.get("Cc", "")
-    m.bcc = parsed.get("Bcc", "")
-    m.reply_to = parsed.get("Reply-To", "")
-    m.body = get_payload(parsed)
+    m = Message(
+        subject = parsed.get("Subject", ""),
+        frm = parsed.get("From", ""),
+        to = parsed.get("To", ""),
+        cc = parsed.get("Cc", ""),
+        bcc = parsed.get("Bcc", ""),
+        reply_to = parsed.get("Reply-To", ""),
+        body = get_payload(parsed),
+        content_type = parsed.get_content_type(),
+    )
 
     return m
 
-def send_scheduled_message_from_send_queue(send_queue):
-    message = send_queue.message
+def send_scheduled_message_from_send_queue(queue_item):
+    message = queue_item.message
 
     # for some reason, the old Perl code base substituted away . on line starts
     body = first_dot_on_line_re.sub("", message.body)
@@ -52,6 +54,8 @@ def send_scheduled_message_from_send_queue(send_queue):
         send_mail_mime(None, message.to, message.frm, message.subject,
                        msg, cc=message.cc, bcc=message.bcc)
 
-    send_queue.sent_at = datetime.datetime.now()
-    send_queue.save()
+    queue_item.sent_at = datetime.datetime.now()
+    queue_item.save()
 
+    queue_item.message.sent = queue_item.sent_at
+    queue_item.message.save()
