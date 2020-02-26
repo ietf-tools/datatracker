@@ -214,8 +214,12 @@ class SubmissionBaseUploadForm(forms.Form):
                             "name": author.attrib.get('fullname'),
                             "email": author.findtext('address/email'),
                             "affiliation": author.findtext('organization'),
-                            "country": author.findtext('address/postal/country'),
                         }
+                        elem = author.find('address/postal/country')
+                        if elem != None:
+                            ascii_country = elem.get('ascii', None)
+                            info['country'] = ascii_country if ascii_country else elem.text
+
                         for item in info:
                             if info[item]:
                                 info[item] = info[item].strip()
