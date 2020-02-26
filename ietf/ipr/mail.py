@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2014-2019, All Rights Reserved
+# Copyright The IETF Trust 2014-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -165,7 +165,8 @@ def message_from_message(message,by=None):
         bcc = message.get('bcc',''),
         reply_to = message.get('reply_to',''),
         body = get_body(message),
-        time = utc_from_string(message['date'])
+        time = utc_from_string(message['date']),
+        content_type = message.get('content_type', 'text/plain'),
     )
     return msg
 

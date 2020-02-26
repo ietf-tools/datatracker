@@ -502,7 +502,7 @@ class NomcomViewsTest(TestCase):
             to="test@example.com",
             frm="nomcomchair@example.com",
             body="Hello World!",
-            content_type="",
+            content_type="text/plain",
             )
         msg.related_groups.add(nomcom)
         

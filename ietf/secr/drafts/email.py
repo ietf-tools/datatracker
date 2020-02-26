@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 import datetime
 import glob
 import os
@@ -20,7 +21,7 @@ def announcement_from_form(data, **kwargs):
     # possible overrides
     by = kwargs.get('by',Person.objects.get(name='(System)'))
     from_val = kwargs.get('from_val','Datatracker <internet-drafts-reply@ietf.org>')
-    content_type = kwargs.get('content_type','')
+    content_type = kwargs.get('content_type','text/plain')
     
     # from the form
     subject = data['subject']
