@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -36,6 +36,8 @@ class Message(models.Model):
 
     related_groups = models.ManyToManyField(Group, blank=True)
     related_docs = models.ManyToManyField(Document, blank=True)
+
+    sent = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         ordering = ['time']
