@@ -555,6 +555,7 @@ TEST_CODE_COVERAGE_EXCLUDE_FILES = [
     "ietf/name/generate_fixtures.py",
     "ietf/review/import_from_review_tool.py",
     "ietf/stats/backfill_data.py",
+    "ietf/utils/patch.py",
     "ietf/utils/test_data.py",
 ]
 
