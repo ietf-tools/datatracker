@@ -1,12 +1,14 @@
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from pyquery import PyQuery
+
 from django.urls import reverse
 
-from pyquery import PyQuery
+import debug                            # pyflakes:ignore
 
 from ietf.utils.test_utils import TestCase
 from ietf.group.factories import RoleFactory
@@ -106,6 +108,6 @@ class SubmitAnnouncementCase(TestCase):
         self.assertEqual(len(outbox),1)
         self.assertEqual(outbox[0]['subject'],'Test Subject')
         self.assertEqual(outbox[0]['to'],'<rcross@amsl.com>')
-        message = Message.objects.last()
+        message = Message.objects.filter(by__user__username='secretary').last()
         self.assertEqual(message.subject,'Test Subject')
         self.assertTrue(nomcom in message.related_groups.all())
