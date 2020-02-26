@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -841,12 +841,13 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                 related_groups = [ assignment.review_request.team, ]
                 if assignment.review_request.doc.group:
                     related_groups.append(assignment.review_request.doc.group)
+                cc = form.cleaned_data["cc"]
                 msg = Message.objects.create(
                         by=request.user.person,
                         subject=subject,
                         frm=frm,
                         to=", ".join(to),
-                        cc=form.cleaned_data["cc"],
+                        cc=", ".join(cc),
                         body = render_to_string("review/completed_review.txt", {
                             "assignment": assignment,
                             "content": content,
