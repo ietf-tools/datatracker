@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -17,6 +17,7 @@ from ietf.utils.fields import MultiEmailField
 
 TO_LIST = ('IETF Announcement List <ietf-announce@ietf.org>',
            'I-D Announcement List <i-d-announce@ietf.org>',
+           'RFP Announcement List <rfp-announce@ietf.org>',
            'The IESG <iesg@ietf.org>',
            'Working Group Chairs <wgchairs@ietf.org>',
            'BoF Chairs <bofchairs@ietf.org>',
