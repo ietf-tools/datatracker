@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -111,7 +111,7 @@ def announce_to_lists(request, submission):
             pass
     m.subject = 'I-D Action: %s-%s.txt' % (submission.name, submission.rev)
     m.frm = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
-    (m.to, m.cc) = gather_address_lists('sub_announced',submission=submission)
+    (m.to, m.cc) = gather_address_lists('sub_announced',submission=submission).as_strings()
     if m.cc:
         m.reply_to = m.cc
     m.body = render_to_string('submit/announce_to_lists.txt',
@@ -133,7 +133,7 @@ def announce_new_wg_00(request, submission):
             pass
     m.subject = 'I-D Action: %s-%s.txt' % (submission.name, submission.rev)
     m.frm = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
-    (m.to, m.cc) = gather_address_lists('sub_new_wg_00',submission=submission)
+    (m.to, m.cc) = gather_address_lists('sub_new_wg_00',submission=submission).as_strings()
     if m.cc:
         m.reply_to = m.cc
     m.body = render_to_string('submit/announce_to_lists.txt',
@@ -323,7 +323,8 @@ def submit_message_from_message(message,body,by=None):
             bcc = message.get('bcc',''),
             reply_to = message.get('reply_to',''),
             body = body,
-            time = utc_from_string(message.get('date', ''))
+            time = utc_from_string(message.get('date', '')),
+            content_type = message.get('content_type', 'text/plain'),
     )
     return msg
 

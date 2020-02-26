@@ -1272,7 +1272,7 @@ def request_publication(request, name):
 
     m = Message()
     m.frm = request.user.person.formatted_email()
-    (m.to, m.cc) = gather_address_lists('pubreq_rfced',doc=doc)
+    (m.to, m.cc) = gather_address_lists('pubreq_rfced',doc=doc).as_strings()
     m.by = request.user.person
 
     next_state = State.objects.get(used=True, type="draft-stream-%s" % doc.stream.slug, slug="rfc-edit")
@@ -1302,7 +1302,7 @@ def request_publication(request, name):
             send_mail_message(request, m)
 
             # IANA copy
-            (m.to, m.cc) = gather_address_lists('pubreq_rfced_iana',doc=doc)
+            (m.to, m.cc) = gather_address_lists('pubreq_rfced_iana',doc=doc).as_strings()
             send_mail_message(request, m, extra=extra_automation_headers(doc))
 
             e = DocEvent(doc=doc, type="requested_publication", rev=doc.rev, by=request.user.person)
