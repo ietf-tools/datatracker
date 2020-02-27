@@ -61,7 +61,7 @@ def empty_outbox():
 
 def add_headers(msg):
     if not('Message-ID' in msg):
-        msg['Message-ID'] = make_msgid('idtracker')
+        msg['Message-ID'] = make_msgid()
     if not('Date' in msg):
         msg['Date'] = formatdate(time.time(), True)
     if not('From' in msg):
