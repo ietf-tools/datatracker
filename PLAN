@@ -7,9 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Rework email sending so that all emails sent by the datatracker, except for
-  logging and failure emails sent to ADMINS, are captured as a Message object.
-
 * Refactor the use of urlopen().  This is triggered by the transition to
   python 3: All instances of .read() from urlopen() objects return byte
   streams under Python 3, while the code wants to deal with str objects, which
