@@ -6,6 +6,7 @@
 import datetime
 import json
 import os
+import socket
 import sys
 import syslog
 import traceback
@@ -46,7 +47,9 @@ if options.skip_date:
 
 log("Updating document metadata from RFC index from %s" % settings.RFC_EDITOR_INDEX_URL)
 
-rfc_index_xml = ietf.sync.rfceditor.fetch_index_xml(settings.RFC_EDITOR_INDEX_URL)
+
+socket.setdefaulttimeout(30)
+rfc_index_xml = urlopen(settings.RFC_EDITOR_INDEX_URL)
 index_data = ietf.sync.rfceditor.parse_index(rfc_index_xml)
 
 rfc_errata_json = urlopen(settings.RFC_EDITOR_ERRATA_JSON_URL)

@@ -1,27 +1,27 @@
 #!/usr/bin/env python
 
-import os, sys
+import os
+import socket
+import sys
+from six.moves.urllib.request import urlopen
 
 # boilerplate
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
 os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
 
-virtualenv_activation = os.path.join(basedir, "env", "bin", "activate_this.py")
-if os.path.exists(virtualenv_activation):
-    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
-
 import django
 django.setup()
 
 from django.conf import settings
 
-from ietf.sync.rfceditor import fetch_queue_xml, parse_queue, MIN_QUEUE_RESULTS, update_drafts_from_queue
+from ietf.sync.rfceditor import parse_queue, MIN_QUEUE_RESULTS, update_drafts_from_queue
 from ietf.utils.log import log
 
 log("Updating RFC Editor queue states from %s" % settings.RFC_EDITOR_QUEUE_URL)
 
-response = fetch_queue_xml(settings.RFC_EDITOR_QUEUE_URL)
+socket.setdefaulttimeout(30)
+response = urlopen(settings.RFC_EDITOR_QUEUE_URL)
 drafts, warnings = parse_queue(response)
 for w in warnings:
     log(u"Warning: %s" % w)
