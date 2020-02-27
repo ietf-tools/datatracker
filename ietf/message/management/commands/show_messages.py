@@ -14,7 +14,16 @@ from ietf.message.models import Message
 from ietf.utils.mail import parseaddr
 
 class Command(BaseCommand):
-    help = 'Show messages, by default unsent messages'
+    help = """
+
+    Show outgoing messages that have been saved as Message objects.  By default
+    all messages from the last 2 weeks are shown.  Selection can be made based
+    on date and sent/unsent state.  With the --pk option, only a list of primary
+    keys are shown, otherwise, creation and send date, message-id, sender and
+    primary recipients, and subject line is shown.  The list of primary keys is
+    suitable for input to the send_messages management command.
+
+    """
 
     def add_arguments(self, parser):
         default_start = datetime.datetime.now() - datetime.timedelta(days=14)

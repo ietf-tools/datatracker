@@ -15,7 +15,18 @@ from ietf.message.models import Message
 from ietf.utils.mail import send_mail_message
 
 class Command(BaseCommand):
-    help = 'Show messages, by default unsent messages'
+    help = """
+
+    Send (or re-send) messages saved as Message objects as outgoing emails.  To
+    show existing Message objects, use the show_messages management command.
+    Messages to send can be indicateb by date ranges, a list of primary keys, or
+    a list of Message-IDs.  Unless the --resend switch is given, the inclusion
+    of already sent messages in the date range or message lists will result in
+    an error exit, in order to prevent inadvertent re-sending of message.
+    Alternatively, the --unsent switch can be used to send only messages marked
+    as not already sent from a date range or message list.
+    
+    """
 
     def add_arguments(self, parser):
         parser.add_argument(
