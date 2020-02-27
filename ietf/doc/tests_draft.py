@@ -1201,7 +1201,7 @@ class SubmitToIesgTests(TestCase):
 class RequestPublicationTests(TestCase):
     @mock.patch('ietf.sync.rfceditor.urlopen', autospec=True)
     def test_request_publication(self, mock_urlopen):
-        mock_urlopen.return_value.read = lambda :'OK'
+        mock_urlopen.return_value.read = lambda : b'OK'
         mock_urlopen.return_value.getcode = lambda :200
         #
         draft = IndividualDraftFactory(stream_id='iab',group__acronym='iab',intended_std_level_id='inf',states=[('draft-stream-iab','approved')])

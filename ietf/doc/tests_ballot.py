@@ -621,7 +621,7 @@ class BallotWriteupsTests(TestCase):
 class ApproveBallotTests(TestCase):
     @mock.patch('ietf.sync.rfceditor.urlopen', autospec=True)
     def test_approve_ballot(self, mock_urlopen):
-        mock_urlopen.return_value.read = lambda :'OK'
+        mock_urlopen.return_value.read = lambda : b'OK'
         mock_urlopen.return_value.getcode = lambda :200
         #
         ad = Person.objects.get(name="Areað Irector")

@@ -548,15 +548,15 @@ def post_approved_draft(url, name):
         log("RFC-Editor notification result for draft '%s': %s:'%s'" % (name, status_code, text))
 
         if status_code != 200:
-            raise Exception("Status code is not 200 OK (it's %s)." % status_code)
+            raise RuntimeError("Status code is not 200 OK (it's %s)." % status_code)
 
         if text != "OK":
-            raise Exception("Response is not \"OK\".")
+            raise RuntimeError("Response is not \"OK\".")
 
     except Exception as e:
         # catch everything so we don't leak exceptions, convert them
         # into string instead
-        msg = "Exception on RFC-Editor notification for draft '%s': '%s'" % (name, e)
+        msg = "Exception on RFC-Editor notification for draft '%s': %s: %s" % (name, type(e), str(e))
         log(msg)
         if settings.SERVER_MODE == 'test':
             debug.say(msg)
