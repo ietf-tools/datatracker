@@ -1,5 +1,5 @@
 {% extends "group/group_base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
 {% load origin %}{% origin %}
 
 {% load ietf_filters staticfiles bootstrap3 %}
@@ -27,6 +27,11 @@
     <p class="skip-next">Will be skipped the next time at the top of rotation.</p>
     <p class="completely-unavailable">Is not available to do reviews at this time.</p>
   </div>
+  {% if can_reset_next_reviewer %}
+    <div>
+      <a href="{% url 'ietf.group.views.reset_next_reviewer' acronym=group.acronym %}" class="btn btn-default" id="reset_next_reviewer">Reset head of queue</a>
+    </div>
+  {% endif %}
 
   {% if reviewers %}
     <table class="table reviewer-overview tablesorter">

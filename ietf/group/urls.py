@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 
 from django.conf import settings
 from django.conf.urls import include
@@ -45,6 +45,7 @@ info_detail_urls = [
     url(r'^reviewers/$', views.reviewer_overview),
     url(r'^reviewers/(?P<reviewer_email>[\w%+-.@]+)/settings/$', views.change_reviewer_settings),
     url(r'^secretarysettings/$', views.change_review_secretary_settings),
+    url(r'^reset_next_reviewer/$', views.reset_next_reviewer),
     url(r'^email-aliases/$', RedirectView.as_view(pattern_name=views.email,permanent=False),name='ietf.group.urls_info_details.redirect.email'),
 ]
 
