@@ -23,6 +23,7 @@ from ietf.doc.models import Document, DocEvent, State, StateDocEvent, StateType
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person
 from ietf.utils.mail import parseaddr
+from ietf.utils.text import decode
 from ietf.utils.timezone import local_timezone_to_utc, email_time_to_local_timezone, utc_to_local_timezone
 
 
@@ -31,7 +32,7 @@ from ietf.utils.timezone import local_timezone_to_utc, email_time_to_local_timez
 
 def fetch_protocol_page(url):
     f = urlopen(settings.IANA_SYNC_PROTOCOLS_URL)
-    text = force_str(f.read())
+    text = decode(f.read())
     f.close()
     return text
     
@@ -80,7 +81,7 @@ def fetch_changes_json(url, start, end):
     password = settings.IANA_SYNC_PASSWORD
     request.add_header("Authorization", "Basic %s" % force_str(base64.encodestring(smart_bytes("%s:%s" % (username, password)))).replace("\n", ""))
     f = urlopen(request)
-    text = f.read()
+    text = decode(f.read())
     f.close()
     return text
 

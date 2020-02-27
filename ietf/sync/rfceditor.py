@@ -7,7 +7,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 import base64
 import datetime
 import re
-import socket
 import six
 
 from six.moves.urllib.request import Request, urlopen
@@ -28,6 +27,7 @@ from ietf.name.models import StdLevelName, StreamName
 from ietf.person.models import Person
 from ietf.utils.log import log
 from ietf.utils.mail import send_mail_text
+from ietf.utils.text import decode
 
 #QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
 #INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
@@ -44,10 +44,6 @@ def get_child_text(parent_node, tag_name):
             text.append(node.firstChild.data)
     return '\n\n'.join(text)
 
-
-def fetch_queue_xml(url):
-    socket.setdefaulttimeout(30)
-    return urlopen(url)
 
 def parse_queue(response):
     """Parse RFC Editor queue XML into a bunch of tuples + warnings."""
@@ -233,10 +229,6 @@ def update_drafts_from_queue(drafts):
 
     return changed, warnings
 
-
-def fetch_index_xml(url):
-    socket.setdefaulttimeout(30)
-    return urlopen(url)
 
 def parse_index(response):
     """Parse RFC Editor index XML into a bunch of tuples."""
@@ -550,7 +542,7 @@ def post_approved_draft(url, name):
     text = error = ""
     try:
         f = urlopen(request, data=smart_bytes(urlencode({ 'draft': name })), timeout=20)
-        text = f.read()
+        text = decode(f.read())
         status_code = f.getcode()
         f.close()
         log("RFC-Editor notification result for draft '%s': %s:'%s'" % (name, status_code, text))
