@@ -1,3 +1,135 @@
+ietfdb (6.119.0) ietf; urgency=medium
+
+  **Improved email handling, and roundup of Py2/3 conversion issues**
+
+  This release provides a reworked email sending infrastructure so that all
+  emails sent by the datatracker, except for logging and failure emails sent
+  to ADMINS, are captured as a Message objects.  Together with two new
+  management commands, this makes it possible to recover from email delivery
+  failures by re-sending any emails from the datatracker that would otherwise
+  have been lost.
+
+  This release also includes backporting Python 2/3 tranistion issues that
+  were initially patched in the production code during the recent server
+  transition, and a number of additional unrelated bugfixes.
+
+  From the commit log:
+
+  * Merged in [17336] from rcross@amsl.com: Add rfp-announce@ietf.org to
+    Announcement app To: address list.  Changed name of secr dashboard from WG
+    Chair Dahsboard to IETF Dashboard.  
+
+  * Merged in [17325] from rjsparks@nostrum.com: Allow review team secretaries
+    and the secretariat to reset the next reviewer in queue for review teams
+    using the RotateAlphabetically policy.  Partially addresses #2879.  
+
+  * Fixed an issue with some tests that mocked urlopen() responses, and
+    tweaked error messages on bad results in sync/rfceditor.py
+
+  * Added charset decoding of data read from an urlopen() object in a few
+    places, and removed some use-once functions that were now dead code.
+
+  * Moved code from a couple of simple urlopen() wrappers used only once into
+    the calling scripts. Removed a case of Py2 virtualenv activation.
+
+  * Added management commands to show saved messages (unsent and otherwise)
+    and to send or re-send saved messages as needed:
+
+    - show_messages:
+
+      Show outgoing messages that have been saved as Message objects. By
+      default all messages from the last 2 weeks are shown. Selection can be
+      made based on date and sent/unsent state. With the --pk option, only a
+      list of primary keys are shown, otherwise, creation and send date,
+      message-id, sender and primary recipients, and subject line is shown.
+
+    - send_messages:
+
+      Send (or re-send) messages saved as Message objects as outgoing emails.
+      To show existing Message objects, use the show_messages management
+      command.  Messages to send can be indicateb by date ranges, a list of
+      primary keys, or a list of Message-IDs. Unless the --resend switch is
+      given, the inclusion of already sent messages in the date range or
+      message lists will result in an error exit, in order to prevent
+      inadvertent re-sending of message.  Alternatively, the --unsent switch
+      can be used to send only messages marked as not already sent from a date
+      range or message list.
+
+  * Added a migration to set an explicit content-type for Message objects
+    where missing.
+
+  * Added a migration to correct Message fields containing strings that were
+    repr() of list instances instead of comma-separated email addresses.
+
+  * Added saving of outgoing emails as Message instances, with accompanying
+    test.
+
+  * Did a slight refactoring of infer_message() and
+    send_scheduled_message_from_send_queue(), and added setting of a
+    Message.sent date when sent.
+
+  * Fixed an issue where the lookup of recognized country names during draft
+    submission grabbed the unicode name instead of the ascii name for
+    non-ascii country strings in XML submissions.
+
+  * Updated the list of utility python files that should be ignored by
+    code coverage measurements.
+
+  * Fixed log.log() to hand on the right type (str) to underlying functions,
+    irrespective of Python version.
+
+  * Fixed a test to be more specific when looking for a generated Message
+    object, to make sure to get the right one.
+
+  * Added html unescape for email addresses from form data that might use html
+    entities for angle brackets.
+
+  * Added a 'sent' field to Message, to be able to track sent status for
+    captured outgoing messages (which don't have a SendQueue instance).
+
+  * Fixed a number of bad Message.content_type settings when creating Message
+  * objects.
+
+  * Fixed a string vs list issue for a Message from form case.
+
+  * Added missing .as_strings() to some gather_address_lists() calls, in order
+    to assign strings rather than lists to Message CharField instances.  Fixed
+    a Message content_type setting.
+
+  * More Py2/3 adaptations fetched from production.
+
+  * Converted send-scheduled-mail to py3
+
+  * Added a cron script to be called every 15 minutes, to have a place where
+    send-scheduled-mail can live and be invoked with the right environment.
+
+  * Moved patch.py into our project tree -- it's not being maintained by the
+    external maintainers any more.
+
+  * Merged in Python 2/3 changes pulled from the production server after the
+    switch to python 3.
+
+  * Merged in cronjob script changes pulled from the production server after
+    the switch to python 3.
+
+  * Added cleaning of the session request form's 'comments' field, to convert
+    any html entered to text.  Related to [17322].
+
+  * Removed an instance of 'autoescape off' for submitted meeting session
+    comments in a template, since it is not needed in practice; in order to
+    avoid an XSS injection opportunity.
+
+  * Updated the PLAN file, removing some completed actions.
+
+  * Changed some remaining cases of open() to io.open(), for Py2/Py3
+    consistency.
+
+  * Tweaked settings.py to make django_extension commands available if
+    installed.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com> 27 Feb 2020 19:56:12 +0000
+
+
 ietfdb (6.118.0) ietf; urgency=medium
 
   **RG and NomCom support refinements, new data merge management commands, bug fixes**
