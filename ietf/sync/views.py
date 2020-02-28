@@ -77,7 +77,7 @@ def notify(request, org, notification):
 
     if request.method == "POST":
         def runscript(name):
-            python = os.path.join(settings.BASE_DIR, "env", "bin", "python")
+            python = os.path.join(os.path.dirname(settings.BASE_DIR), "env", "bin", "python")
             cmd = [python, os.path.join(SYNC_BIN_PATH, name)]
             cmdstring = " ".join(cmd)
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

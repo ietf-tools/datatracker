@@ -28,7 +28,7 @@ TODO:
 """
 
 # boilerplate (from various other ietf/bin scripts)
-import os, sys, re
+import io, os, sys, re
 
 filename = os.path.abspath(__file__)
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
