@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -185,7 +185,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
         else:
             res.append(d.type_id);
             res.append("-");
-            res.append(d.get_state_slug());
+            res.append(d.get_state_slug() or '');
             res.append("-");
 
         if sort_key == "title":
