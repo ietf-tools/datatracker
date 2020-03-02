@@ -11,8 +11,6 @@ import sys
 import syslog
 import traceback
 
-from six.moves.urllib.request import urlopen
-
 # boilerplate
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
@@ -49,11 +47,10 @@ log("Updating document metadata from RFC index from %s" % settings.RFC_EDITOR_IN
 
 
 socket.setdefaulttimeout(30)
-rfc_index_xml = urlopen(settings.RFC_EDITOR_INDEX_URL)
+rfc_index_xml = requests.get(settings.RFC_EDITOR_INDEX_URL).text
 index_data = ietf.sync.rfceditor.parse_index(rfc_index_xml)
 
-rfc_errata_json = urlopen(settings.RFC_EDITOR_ERRATA_JSON_URL)
-errata_data = json.load(rfc_errata_json)
+errata_data = requests.get(settings.RFC_EDITOR_ERRATA_JSON_URL).json()
 
 if len(index_data) < ietf.sync.rfceditor.MIN_INDEX_RESULTS:
     log("Not enough index entries, only %s" % len(index_data))
