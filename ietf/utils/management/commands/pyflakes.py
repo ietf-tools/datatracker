@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import
 
 import ast
+import io
 import os
 from pyflakes import checker, messages
 import sys
@@ -33,8 +34,9 @@ class PySyntaxError(messages.Message):
         try:
             super(PySyntaxError, self).__init__(filename, lineno)
         except Exception:
-            sys.stderr.write("\nAn exception occurred while processing file %s\n"+
+            sys.stderr.write("\nAn exception occurred while processing file %s\n"
                 "The file could contain syntax errors.\n\n" % filename)
+            raise
 
         self.message_args = (col, message)
 
@@ -64,10 +66,10 @@ def check(codeString, filename, verbosity=1):
         # it.
         w = checker.Checker(tree, filename)
 
-        lines = codeString.split('\n')
+        lines = codeString.split(b'\n')
         # honour pyflakes:ignore comments
         messages = [message for message in w.messages
-                    if (lines[message.lineno-1].find('pyflakes:ignore') < 0 and lines[message.lineno-1].find('pyflakes: ignore')) ]
+                    if (lines[message.lineno-1].find(b'pyflakes:ignore') < 0 and lines[message.lineno-1].find(b'pyflakes: ignore') < 0) ]
         # honour pyflakes:
 
         messages.sort(key=lambda x: x.lineno)
@@ -77,6 +79,8 @@ def check(codeString, filename, verbosity=1):
             else:
                 sys.stderr.write('.')
             sys.stderr.flush()
+        if verbosity > 1:
+            sys.stderr.write("  %s\n" % filename)
         return messages
 
 
@@ -90,7 +94,9 @@ def checkPath(filename, verbosity):
         sys.stderr.write("\n  %-78s " % filename)
         sys.stderr.flush()
     try:
-        return check(open(filename, encoding='utf-8').read() + '\n', filename, verbosity)
+        with io.open(filename, 'br') as f:
+            text = f.read()
+        return check(text + b'\n', filename, verbosity)
     except IOError as msg:
         return ["%s: %s" % (filename, msg.args[1])]
     except TypeError:
