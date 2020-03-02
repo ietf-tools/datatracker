@@ -1,8 +1,8 @@
-# Copyright The IETF Trust 2014-2019, All Rights Reserved
+# Copyright The IETF Trust 2014-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import ast
 import os
@@ -77,8 +77,6 @@ def check(codeString, filename, verbosity=1):
             else:
                 sys.stderr.write('.')
             sys.stderr.flush()
-        if verbosity > 1:
-            sys.stderr.write("  %s\n" % filename)
         return messages
 
 
@@ -88,8 +86,11 @@ def checkPath(filename, verbosity):
 
     @return: the number of warnings printed
     """
+    if verbosity > 1:
+        sys.stderr.write("\n  %-78s " % filename)
+        sys.stderr.flush()
     try:
-        return check(open(filename).read() + '\n', filename, verbosity)
+        return check(open(filename, encoding='utf-8').read() + '\n', filename, verbosity)
     except IOError as msg:
         return ["%s: %s" % (filename, msg.args[1])]
     except TypeError:
