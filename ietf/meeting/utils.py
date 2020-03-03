@@ -1,12 +1,11 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
-import json
-import six.moves.urllib.request
+import requests
 
 from six.moves.urllib.error import HTTPError
 from django.conf import settings
@@ -115,7 +114,7 @@ def create_proceedings_templates(meeting):
     # Get meeting attendees from registration system
     url = settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number)
     try:
-        attendees = json.load(six.moves.urllib.request.urlopen(url))
+        attendees = requests.get(url).json()
     except (ValueError, HTTPError):
         attendees = []
 

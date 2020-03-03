@@ -6,6 +6,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 import io
+import json
 import os
 import random
 import re
@@ -436,9 +437,10 @@ class MeetingTests(TestCase):
         response = self.client.get(url)
         self.assertContains(response, 'test acknowledgements')
 
-    @patch('six.moves.urllib.request.urlopen')
-    def test_proceedings_attendees(self, mock_urlopen):
-        mock_urlopen.return_value = six.BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
+    @patch('ietf.meeting.utils.requests.get')
+    def test_proceedings_attendees(self, mockobj):
+        mockobj.return_value.text = b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]'
+        mockobj.return_value.json = lambda: json.loads(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
         finalize(meeting)

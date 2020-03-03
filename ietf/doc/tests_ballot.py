@@ -619,10 +619,10 @@ class BallotWriteupsTests(TestCase):
             verify_can_see(username, url)
 
 class ApproveBallotTests(TestCase):
-    @mock.patch('ietf.sync.rfceditor.urlopen', autospec=True)
+    @mock.patch('ietf.sync.rfceditor.requests.post', autospec=True)
     def test_approve_ballot(self, mock_urlopen):
-        mock_urlopen.return_value.read = lambda : b'OK'
-        mock_urlopen.return_value.getcode = lambda :200
+        mock_urlopen.return_value.text = b'OK'
+        mock_urlopen.return_value.status_code = 200
         #
         ad = Person.objects.get(name="Areað Irector")
         draft = IndividualDraftFactory(ad=ad, intended_std_level_id='ps')

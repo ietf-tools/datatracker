@@ -7,13 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Refactor the use of urlopen().  This is triggered by the transition to
-  python 3: All instances of .read() from urlopen() objects return byte
-  streams under Python 3, while the code wants to deal with str objects, which
-  are unicode under Python 3.  Instead of building our own adapter to extract
-  the charset and do the decoding, we should transition to the 'requests'
-  module, which provides decoded unicode text directly from the response.
-
 * Transition to Django 2.x (depends on Python 3.x).  Security updates to
   Django 1.11 will cease around April 2020.
 
