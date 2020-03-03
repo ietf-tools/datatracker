@@ -867,6 +867,13 @@ class Constraint(models.Model):
         if self.target is not None:
             ct1['target_href'] = urljoin(host_scheme, self.target.json_url())
         ct1['meeting_href'] = urljoin(host_scheme, self.meeting.json_url())
+        if self.time_relation:
+            ct1['time_relation'] = self.time_relation
+            ct1['time_relation_display'] = self.get_time_relation_display()
+        if self.timeranges.count():
+            ct1['timeranges_cant_meet'] = [t.slug for t in self.timeranges.all()]
+            timeranges_str = ", ".join([t.desc for t in self.timeranges.all()])
+            ct1['timeranges_display'] = "Can't meet %s" % timeranges_str
         return ct1
 
 
@@ -1122,6 +1129,7 @@ class Session(models.Model):
         sess1['bof']            = str(self.group.is_bof())
         sess1['agenda_note']    = self.agenda_note
         sess1['attendees']      = str(self.attendees)
+        sess1['joint_with_groups'] = self.joint_with_groups_acronyms()
 
         # fish out scheduling information - eventually, we should pick
         # this out in the caller instead
