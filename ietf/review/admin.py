@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -71,7 +71,7 @@ class ReviewAssignmentAdmin(simple_history.admin.SimpleHistoryAdmin):
     list_display = ["review_request", "reviewer", "assigned_on", "result"]
     list_filter = ["result", "state"]
     ordering = ["-id"]
-    raw_id_fields = ["reviewer", "result", "review"]
+    raw_id_fields = ["review_request", "reviewer", "result", "review"]
     search_fields = ["review_request__doc__name"]
 
 admin.site.register(ReviewAssignment, ReviewAssignmentAdmin)
