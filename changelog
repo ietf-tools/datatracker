@@ -1,3 +1,27 @@
+ietfdb (6.119.1) ietf; urgency=medium
+
+  **Py2/3 fixes, Change to use the "requests" lib instead of urlopen()**
+
+  * Py2/3 compatibility tweaks for pyflakes.
+
+  * Changed some cases of urlopen() to use requests.get()
+
+  * Python3 is more ticklish about comparing strings to None than Py2.  
+    Fixed an issue with this in generate_sort_key() for document searches.
+
+  * Fixed a Py2/3 issue in the pyflakes management command, and tweaked the 
+    verbose output format.
+
+  * Merged back production changes to two scripts indirectly called by 
+    /a/www/www6s/scripts/run-ietf-report, through 
+    /a/www/www6s/scripts/run-report.
+
+  * Changed the release script to not pick up other email addresses than 
+    those of contributors from the release notes.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Mar 2020 11:23:46 +0000
+
+
 ietfdb (6.119.0) ietf; urgency=medium
 
   **Improved email handling, and roundup of Py2/3 conversion issues**

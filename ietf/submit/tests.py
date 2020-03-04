@@ -35,7 +35,7 @@ from ietf.meeting.factories import MeetingFactory
 from ietf.message.models import Message
 from ietf.name.models import FormalLanguageName
 from ietf.person.models import Person
-from ietf.person.factories import UserFactory, PersonFactory
+from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
 from ietf.submit.models import Submission, Preapproval
 from ietf.submit.mail import add_submission_email, process_response_email
 from ietf.utils.mail import outbox, empty_outbox, get_payload
@@ -1772,6 +1772,26 @@ class ApiSubmitTests(TestCase):
         r, author, name = self.post_submission('00')
         expected = "Upload of %s OK, confirmation requests sent to:\n  %s" % (name, author.formatted_email().replace('\n',''))
         self.assertContains(r, expected, status_code=200)
+
+    def test_api_submit_secondary_email_active(self):
+        person = PersonFactory()
+        email = EmailFactory(person=person)
+        r, author, name = self.post_submission('00', author=person, email=email.address)
+        for expected in [
+                "Upload of %s OK, confirmation requests sent to:" % (name, ),
+                author.formatted_email().replace('\n',''),
+            ]:
+            self.assertContains(r, expected, status_code=200)
+
+    def test_api_submit_secondary_email_inactive(self):
+        person = PersonFactory()
+        prim = person.email()
+        prim.primary = True
+        prim.save()
+        email = EmailFactory(person=person, active=False)
+        r, author, name = self.post_submission('00', author=person, email=email.address)
+        expected = "No such user: %s" % email.address
+        self.assertContains(r, expected, status_code=400)
 
     def test_api_submit_no_user(self):
         email='nonexistant.user@example.org'
