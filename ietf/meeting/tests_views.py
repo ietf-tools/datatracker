@@ -10,14 +10,13 @@ import os
 import random
 import re
 import shutil
-import six
 
 from unittest import skipIf
 from mock import patch
 from pyquery import PyQuery
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -438,7 +437,7 @@ class MeetingTests(TestCase):
 
     @patch('urllib.request.urlopen')
     def test_proceedings_attendees(self, mock_urlopen):
-        mock_urlopen.return_value = six.BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
+        mock_urlopen.return_value = BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
         finalize(meeting)
@@ -453,7 +452,7 @@ class MeetingTests(TestCase):
         '''Test proceedings IETF Overview page.
         Note: old meetings aren't supported so need to add a new meeting then test.
         '''
-        mock_urlopen.return_value = six.BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
+        mock_urlopen.return_value = BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
         finalize(meeting)

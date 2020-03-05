@@ -9,10 +9,9 @@ import sys
 import os
 import os.path
 import argparse
-import six
 import time
-if six.PY3:
-    from typing import Set, Optional    # pyflakes:ignore
+
+from typing import Set, Optional    # pyflakes:ignore
 
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path

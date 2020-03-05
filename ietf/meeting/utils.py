@@ -8,7 +8,7 @@ import datetime
 import json
 import urllib.request
 
-from six.moves.urllib.error import HTTPError
+from urllib.error import HTTPError
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.db.models.expressions import Subquery, OuterRef

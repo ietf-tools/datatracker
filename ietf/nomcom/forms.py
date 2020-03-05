@@ -4,9 +4,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import six
-if six.PY3:
-    from typing import List, Tuple      # pyflakes:ignore
+from typing import List, Tuple      # pyflakes:ignore
 
 from django.conf import settings
 from django import forms

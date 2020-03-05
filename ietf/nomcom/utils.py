@@ -8,7 +8,6 @@ import datetime
 import hashlib
 import os
 import re
-import six
 import tempfile
 
 from email import message_from_string
@@ -409,7 +408,7 @@ def getheader(header_text, default="ascii"):
     """Decode the specified header"""
 
     tuples = decode_header(header_text)
-    header_sections = [ text.decode(charset or default) if isinstance(text, six.binary_type) else text for text, charset in tuples]
+    header_sections = [ text.decode(charset or default) if isinstance(text, bytes) else text for text, charset in tuples]
     return "".join(header_sections)
 
 
