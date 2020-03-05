@@ -45,12 +45,11 @@ import io
 import os
 import os.path
 import re
-import six
 import stat
 import sys
 import time
-if six.PY3:
-    from typing import Dict, List       # pyflakes:ignore
+
+from typing import Dict, List       # pyflakes:ignore
 
 version = "0.35"
 program = os.path.basename(sys.argv[0])

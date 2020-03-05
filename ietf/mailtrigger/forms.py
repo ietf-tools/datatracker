@@ -1,7 +1,8 @@
 # Copyright The IETF Trust 2015-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function, unicode_literals
 
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 from typing import Dict, List       # pyflakes:ignore
 

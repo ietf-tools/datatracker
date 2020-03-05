@@ -96,7 +96,7 @@ class Group(GroupInfo):
         return e[0] if e else None
 
     def has_role(self, user, role_names):
-        if isinstance(role_names, str):
+        if not isinstance(role_names, (list, tuple)):
             role_names = [role_names]
         return user.is_authenticated and self.role_set.filter(name__in=role_names, person__user=user).exists()
 

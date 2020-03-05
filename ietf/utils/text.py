@@ -5,7 +5,6 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import re
-import six
 import textwrap
 import unicodedata
 
@@ -60,7 +59,7 @@ def fill(text, width):
 def wordwrap(text, width=80):
     """Wraps long lines without loosing the formatting and indentation
        of short lines"""
-    if not isinstance(text, six.string_types):
+    if not isinstance(text, str):
         return text
     def block_separator(s):
         "Look for lines of identical symbols, at least three long"
@@ -142,7 +141,7 @@ def maybe_split(text, split=True, pos=5000):
     return text
 
 def decode(raw):
-    assert isinstance(raw, six.binary_type)
+    assert isinstance(raw, bytes)
     try:
         text = raw.decode('utf-8')
     except UnicodeDecodeError:
