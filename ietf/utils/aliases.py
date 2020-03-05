@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 # -*- Python -*-
 #
@@ -8,8 +8,6 @@
 # Author: Markus Stenberg <mstenber@cisco.com>
 #
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 """
 

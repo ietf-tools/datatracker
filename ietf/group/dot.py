@@ -1,9 +1,7 @@
-# Copyright The IETF Trust 2017-2019, All Rights Reserved
+# Copyright The IETF Trust 2017-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 # -*- check-flake8 -*-
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 from django.db.models import Q
 from django.template.loader import render_to_string

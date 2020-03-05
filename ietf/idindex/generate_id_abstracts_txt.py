@@ -34,10 +34,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
-import six
 import sys
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
@@ -45,8 +42,6 @@ import django
 django.setup()
 
 from ietf.idindex.index import id_index_txt
-if six.PY3:
-    sys.stdout.write(id_index_txt(with_abstracts=True))
-else:
-    sys.stdout.write(id_index_txt(with_abstracts=True).encode('utf-8'))
+
+sys.stdout.write(id_index_txt(with_abstracts=True))
 

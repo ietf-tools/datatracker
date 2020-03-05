@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 # Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -32,8 +32,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 from ietf.utils.test_utils import split_url, TestCase
 

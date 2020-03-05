@@ -2,14 +2,11 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import io
 import datetime, os
 import operator
-import six
-if six.PY3:
-    from typing import Union            # pyflakes:ignore
+
+from typing import Union            # pyflakes:ignore
 
 from email.utils import parseaddr
 from form_utils.forms import BetterModelForm

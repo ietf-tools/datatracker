@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 # code to generate plain-text index files that are placed on
 # www.ietf.org in the same directory as the I-Ds
 

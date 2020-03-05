@@ -2,27 +2,18 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import io
 import os
 import re
 import datetime
 import email
 import pytz
-import six
 import sys
 import tempfile
 import xml2rfc
 
 from email.utils import formataddr
 from unidecode import unidecode
-
-if six.PY2:
-    from StringIO import StringIO
-else:
-    from io import StringIO
-
 
 from django import forms
 from django.conf import settings
@@ -170,8 +161,8 @@ class SubmissionBaseUploadForm(forms.Form):
             name, ext = os.path.splitext(os.path.basename(xml_file.name))
             tfh, tfn = tempfile.mkstemp(prefix=name+'-', suffix='.xml')
             file_name = {}
-            xml2rfc.log.write_out = StringIO()   # open(os.devnull, "w")
-            xml2rfc.log.write_err = StringIO()   # open(os.devnull, "w")
+            xml2rfc.log.write_out = io.StringIO()   # open(os.devnull, "w")
+            xml2rfc.log.write_err = io.StringIO()   # open(os.devnull, "w")
             try:
                 # We need to write the xml file to disk in order to hand it
                 # over to the xml parser.  XXX FIXME: investigate updating

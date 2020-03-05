@@ -2,15 +2,12 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
 import email
 import io
 import os
 import re
 import shutil
-import six
 import sys
 
 
@@ -160,7 +157,7 @@ class SubmitTests(TestCase):
         submission = Submission.objects.get(name=name)
         if len(submission.authors) != 1:
             sys.stderr.write("\nAuthor extraction failure.\n")
-            sys.stderr.write(six.ensure_text("Author name used in test: %s\n"%author))
+            sys.stderr.write(force_str("Author name used in test: %s\n"%author))
             sys.stderr.write("Author ascii name: %s\n" % author.ascii)
             sys.stderr.write("Author initials: %s\n" % author.initials())
         self.assertEqual(len(submission.authors), 1)

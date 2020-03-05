@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
-
 # various utilities for working with the mailarch mail archive at
 # mailarchive.ietf.org
 

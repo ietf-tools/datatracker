@@ -1,8 +1,6 @@
-# Copyright The IETF Trust 2014-2019, All Rights Reserved
+# Copyright The IETF Trust 2014-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 def insert_after_in_ordered_dict(dictionary, key, value, after):
     """There's no "insert" in ordered dict so simulate it instead by

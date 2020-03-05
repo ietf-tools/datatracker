@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2019-2020, All Rights Reserved
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import re
 

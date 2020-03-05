@@ -2,7 +2,6 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import io
 import sys

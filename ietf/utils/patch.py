@@ -11,7 +11,7 @@
     https://github.com/techtonik/python-patch/
 
 """
-from __future__ import print_function
+
 
 __author__ = "anatoly techtonik <techtonik@gmail.com>"
 __version__ = "1.16"

@@ -33,7 +33,7 @@ COPYRIGHT
         Open Source Initiative at http://opensource.org/licenses/BSD-2-Clause.
 
 """
-from __future__ import print_function
+
 
 import datetime
 import os

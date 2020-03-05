@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import io
 import os.path
 import shutil
@@ -52,7 +50,6 @@ skip_message = ""
 try:
     import svn                          # pyflakes:ignore
 except ImportError as e:
-    import sys
     skip_wiki_glue_testing = True
     skip_message = "Skipping trac tests: %s" % e
     sys.stderr.write("     "+skip_message+'\n')

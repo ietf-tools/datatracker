@@ -2,12 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
 import email.utils
 import email.header
-import six
 import uuid
 
 from hashids import Hashids
@@ -350,7 +347,7 @@ class PersonalApiKey(models.Model):
     @classmethod
     def validate_key(cls, s):
         import struct, hashlib, base64
-        assert isinstance(s, six.binary_type)
+        assert isinstance(s, bytes)
         key = base64.urlsafe_b64decode(s)
         id, salt, hash = struct.unpack(KEY_STRUCT, key)
         k = cls.objects.filter(id=id)

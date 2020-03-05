@@ -4,15 +4,12 @@
 """Utilities for working with HTML."""
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import bleach
 import copy
 import html2text
 import lxml.etree
 import lxml.html
 import lxml.html.clean
-import six
 
 import debug                            # pyflakes:ignore
 
@@ -63,7 +60,7 @@ class Cleaner(lxml.html.clean.Cleaner):
     # Copied from lxml 4.2.0 and modified to insert charset meta:
     def clean_html(self, html):
         result_type = type(html)
-        if isinstance(html, six.string_types):
+        if isinstance(html, (str, bytes)):
             doc = lxml.html.fromstring(html)
         else:
             doc = copy.deepcopy(html)

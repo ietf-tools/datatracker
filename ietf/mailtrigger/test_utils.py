@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from ietf.doc.factories import WgDraftFactory
 from ietf.mailtrigger.models import MailTrigger
 from .utils import gather_address_lists

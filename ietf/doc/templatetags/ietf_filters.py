@@ -2,12 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import bleach
 import datetime
 import re
-import six
 
 from email.utils import parseaddr
 
@@ -118,8 +115,10 @@ def make_one_per_line(value):
     >>> make_one_per_line(None)
 
     """
-    if value and isinstance(value, (six.binary_type, six.text_type)):
+    if value and isinstance(value, str):
         return re.sub(", ?", "\n", value)
+    elif value and isinstance(value, bytes):
+        log.assertion('isinstance(value, str)')
     else:
         return value
 

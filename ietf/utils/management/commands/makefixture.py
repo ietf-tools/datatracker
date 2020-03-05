@@ -3,8 +3,6 @@
 # From https://github.com/ericholscher/django-test-utils/blob/master/test_utils/management/commands/makefixture.py
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 """
 "Make fixture" command.
 

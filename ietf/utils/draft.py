@@ -4,8 +4,6 @@
 # -*- python -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 """
 NAME
         %(program)s - Extract meta-information from an IETF draft.

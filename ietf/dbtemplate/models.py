@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
-from __future__ import absolute_import, print_function, unicode_literals
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
+
 
 from django.db import models
 from django.core.exceptions import ValidationError

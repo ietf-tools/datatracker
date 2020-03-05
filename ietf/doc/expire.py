@@ -3,8 +3,6 @@
 # expiry of Internet Drafts
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from django.conf import settings
 
 import datetime, os, shutil, glob, re

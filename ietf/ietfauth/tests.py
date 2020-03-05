@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import io
 import os, shutil, time, datetime
 from urllib.parse import urlsplit

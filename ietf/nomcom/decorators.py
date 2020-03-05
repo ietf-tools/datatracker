@@ -1,8 +1,6 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 import functools
 

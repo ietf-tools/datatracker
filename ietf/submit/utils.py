@@ -2,15 +2,12 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
 import io
 import os
 import re
-import six                              # pyflakes:ignore
-if six.PY3:
-    from typing import Callable, Optional # pyflakes:ignore
+
+from typing import Callable, Optional # pyflakes:ignore
 
 from django.conf import settings
 from django.core.validators import validate_email, ValidationError
