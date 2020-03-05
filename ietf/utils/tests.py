@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2014-2019, All Rights Reserved
+# Copyright The IETF Trust 2014-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -7,10 +7,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 import io
 import os.path
 import shutil
-import six
+import sys
 import types
-if six.PY3:
-    from typing import Dict, List       # pyflakes:ignore
+
+from typing import Dict, List       # pyflakes:ignore
 
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
@@ -282,7 +282,7 @@ class TemplateChecksTestCase(TestCase):
         r = self.client.get(url)        
         self.assertTemplateUsed(r, '500.html')
 
-@skipIf(six.PY3, "Trac not available for Python3 as of 14 Jul 2019")
+@skipIf(sys.version_info.major==3, "Trac not available for Python3 as of 14 Jul 2019")
 @skipIf(skip_wiki_glue_testing, skip_message)
 class TestWikiGlueManagementCommand(TestCase):
 
@@ -311,8 +311,8 @@ class TestWikiGlueManagementCommand(TestCase):
                         type__slug__in=['wg','rg','ag','area'],
                         state__slug='active'
                     ).order_by('acronym')
-        out = six.StringIO()
-        err = six.StringIO()
+        out = io.StringIO()
+        err = io.StringIO()
         call_command('create_group_wikis', stdout=out, stderr=err, verbosity=2,
             wiki_dir_pattern=self.wiki_dir_pattern,
             svn_dir_pattern=self.svn_dir_pattern,

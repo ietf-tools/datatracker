@@ -8,10 +8,9 @@ import sys
 import logging
 import inspect
 import os.path
-import six
 import traceback
-if six.PY3:
-    from typing import Callable         # pyflakes:ignore
+
+from typing import Callable         # pyflakes:ignore
 
 try:
     import syslog

@@ -11,10 +11,9 @@ import json
 import math
 import os
 import re
-import six
 
 from collections import defaultdict
-from six.moves.urllib.parse import quote
+from urllib.parse import quote
 
 from django.conf import settings
 from django.contrib import messages
@@ -705,7 +704,7 @@ def get_initial_notify(doc,extra=None):
     receivers = []
 
     if extra:
-        if isinstance(extra, six.string_types):
+        if isinstance(extra, str):
             extra = extra.split(', ')
         receivers.extend(extra)
 

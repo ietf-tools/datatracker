@@ -11,7 +11,7 @@ import six
 import uuid
 
 from hashids import Hashids
-from six.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -108,7 +108,7 @@ class Person(models.Model):
         may be an object or the group acronym."""
         if group:
             from ietf.group.models import Group
-            if isinstance(group, six.string_types):
+            if isinstance(group, str):
                 group = Group.objects.get(acronym=group)
             e = Email.objects.filter(person=self, role__group=group, role__name=role_name)
         else:

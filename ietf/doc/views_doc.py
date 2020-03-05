@@ -43,7 +43,7 @@ import json
 import os
 import re
 
-from six.moves.urllib.parse import quote
+from urllib.parse import quote
 
 from django.http import HttpResponse, Http404 , HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect

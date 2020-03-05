@@ -5,7 +5,6 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import json
-import six
 
 from django.utils.html import escape
 from django import forms
@@ -57,9 +56,9 @@ class SearchableDocumentsField(forms.CharField):
     def prepare_value(self, value):
         if not value:
             value = ""
-        if isinstance(value, six.integer_types):
+        if isinstance(value, int):
             value = str(value)
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             items = self.parse_select2_value(value)
             # accept both names and pks here
             names = [ i for i in items if not i.isdigit() ]

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -19,7 +19,7 @@ else:
 
 from six.moves.http_cookies import SimpleCookie
 from pyquery import PyQuery
-from six.moves.urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs
 from tempfile import NamedTemporaryFile
 
 from django.urls import reverse as urlreverse

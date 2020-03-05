@@ -17,7 +17,7 @@ import hashlib
 import base64
 import email.utils
 
-from six.moves.urllib.parse import urlencode
+from urllib.parse import urlencode
 from urllib.request import urlopen
 
 import debug                            # pyflakes:ignore

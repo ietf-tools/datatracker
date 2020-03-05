@@ -5,10 +5,9 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import json
-import six
 
 from collections import Counter
-from six.moves.urllib.parse import urlencode
+from urllib.parse import urlencode
 
 from django import forms
 from django.core.validators import validate_email
@@ -90,7 +89,7 @@ class SearchablePersonsField(forms.CharField):
     def prepare_value(self, value):
         if not value:
             value = ""
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             pks = self.parse_select2_value(value)
             if self.model == Person:
                 value = self.model.objects.filter(pk__in=pks)

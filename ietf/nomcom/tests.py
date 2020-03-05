@@ -10,7 +10,7 @@ import random
 import shutil
 
 from pyquery import PyQuery
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from django.db import IntegrityError
 from django.db.models import Max

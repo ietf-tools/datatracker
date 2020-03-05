@@ -42,7 +42,7 @@ import email
 import html5lib
 import sys
 
-from six.moves.urllib.parse import unquote
+from urllib.parse import unquote
 
 from unittest.util import strclass
 from bs4 import BeautifulSoup

@@ -9,7 +9,7 @@ import datetime
 import re
 
 from urllib.request import Request, urlopen
-from six.moves.urllib.parse import urlencode
+from urllib.parse import urlencode
 from xml.dom import pulldom, Node
 
 from django.conf import settings

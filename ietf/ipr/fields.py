@@ -5,7 +5,6 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import json
-import six
 
 from django.utils.html import escape
 from django import forms
@@ -54,7 +53,7 @@ class SearchableIprDisclosuresField(forms.CharField):
     def prepare_value(self, value):
         if not value:
             value = ""
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             pks = self.parse_select2_value(value)
             # if the user posted a non integer value we need to remove it
             for key in pks:
