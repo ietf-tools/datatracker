@@ -10,7 +10,7 @@ import email
 import json
 import re
 
-from six.moves.urllib.request import Request, urlopen
+from urllib.request import Request, urlopen
 
 from django.conf import settings
 from django.utils.encoding import smart_bytes, force_str

@@ -44,7 +44,6 @@ import json
 import math
 import os
 import re
-import six
 
 from tempfile import mkstemp
 from collections import OrderedDict, defaultdict
@@ -1539,7 +1538,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
         saving = form_action.startswith("save")
 
         # check for conflicts
-        review_requests_dict = { six.text_type(r.pk): r for r in review_requests if r.pk}
+        review_requests_dict = { str(r.pk): r for r in review_requests if r.pk}
         posted_reqs = set(request.POST.getlist("reviewrequest", []))
         posted_reqs.discard(u'None')
         current_reqs = set(review_requests_dict.keys())

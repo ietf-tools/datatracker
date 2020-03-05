@@ -7,9 +7,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 import base64
 import datetime
 import re
-import six
 
-from six.moves.urllib.request import Request, urlopen
+from urllib.request import Request, urlopen
 from six.moves.urllib.parse import urlencode
 from xml.dom import pulldom, Node
 
@@ -560,6 +559,6 @@ def post_approved_draft(url, name):
         log(msg)
         if settings.SERVER_MODE == 'test':
             debug.say(msg)
-        error = six.text_type(e)
+        error = str(e)
 
     return text, error

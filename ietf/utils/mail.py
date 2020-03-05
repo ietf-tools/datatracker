@@ -189,7 +189,7 @@ def send_mail(request, to, frm, subject, template, context, *args, **kwargs):
     return send_mail_text(request, to, frm, subject, txt, *args, **kwargs)
 
 def encode_message(txt):
-    assert isinstance(txt, six.text_type)
+    assert isinstance(txt, str)
     return MIMEText(txt.encode('utf-8'), 'plain', 'UTF-8')
 
 def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=False, bcc=None, copy=True, save=True):

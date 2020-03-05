@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2014-2019, All Rights Reserved
+# Copyright The IETF Trust 2014-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -70,7 +70,7 @@ class SearchableIprDisclosuresField(forms.CharField):
         # patterns may not have been fully constructed there yet
         self.widget.attrs["data-ajax-url"] = urlreverse('ietf.ipr.views.ajax_search')
 
-        return ",".join(six.text_type(e.pk) for e in value)
+        return ",".join(str(e.pk) for e in value)
 
     def clean(self, value):
         value = super(SearchableIprDisclosuresField, self).clean(value)

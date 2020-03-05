@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -18,7 +18,7 @@ import base64
 import email.utils
 
 from six.moves.urllib.parse import urlencode
-from six.moves.urllib.request import urlopen
+from urllib.request import urlopen
 
 import debug                            # pyflakes:ignore
 

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Portion Copyright (C) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
@@ -41,7 +41,6 @@ import io
 import itertools
 import json
 import os
-import six
 import tarfile
 import time
 
@@ -317,9 +316,9 @@ def agenda_documents_txt(request):
         row = (
             d.computed_telechat_date.isoformat(),
             d.name,
-            six.text_type(d.intended_std_level),
+            str(d.intended_std_level),
             "1" if d.stream_id in ("ise", "irtf") else "0",
-            six.text_type(d.area_acronym()).lower(),
+            (d.area_acronym() or 'none').lower(),
             d.ad.plain_name() if d.ad else "None Assigned",
             d.rev,
             )

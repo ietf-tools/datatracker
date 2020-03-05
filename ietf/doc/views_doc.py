@@ -42,7 +42,6 @@ import io
 import json
 import os
 import re
-import six
 
 from six.moves.urllib.parse import quote
 
@@ -1397,7 +1396,7 @@ def add_sessionpresentation(request,name):
     if doc.group:
         sessions = sorted(sessions,key=lambda x:0 if x.group==doc.group else 1)
 
-    session_choices = [(s.pk, six.text_type(s)) for s in sessions]
+    session_choices = [(s.pk, str(s)) for s in sessions]
 
     if request.method == 'POST':
         version_form = VersionForm(request.POST,choices=version_choices)

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2014-2019, All Rights Reserved
+# Copyright The IETF Trust 2014-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -83,7 +83,7 @@ class SearchableDocumentsField(forms.CharField):
             "model_name": self.model.__name__.lower()
         })
 
-        return ",".join(six.text_type(o.pk) for o in value)
+        return ",".join(str(o.pk) for o in value)
 
     def clean(self, value):
         value = super(SearchableDocumentsField, self).clean(value)

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2020, All Rights Reserved
+# Some parts Copyright The IETF Trust 2020, All Rights Reserved
 #!/usr/bin/env python
 """
     Patch utility to apply unified diffs

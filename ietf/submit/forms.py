@@ -202,11 +202,11 @@ class SubmissionBaseUploadForm(forms.Form):
                         self.revision = None
                         self.filename = draftname
                     self.title = self.xmlroot.findtext('front/title').strip()
-                    if type(self.title) is six.text_type:
+                    if type(self.title) is str:
                         self.title = unidecode(self.title)
                     self.title = normalize_text(self.title)
                     self.abstract = (self.xmlroot.findtext('front/abstract') or '').strip()
-                    if type(self.abstract) is six.text_type:
+                    if type(self.abstract) is str:
                         self.abstract = unidecode(self.abstract)
                     author_info = self.xmlroot.findall('front/author')
                     for author in author_info:

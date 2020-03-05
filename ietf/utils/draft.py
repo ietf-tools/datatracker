@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 # -*- python -*-
 
@@ -136,7 +136,7 @@ def acronym_match(s, l):
 class Draft():
 
     def __init__(self, text, source, name_from_source=False):
-        assert isinstance(text, six.text_type)
+        assert isinstance(text, str)
         self.source = source
         self.rawtext = text
         self.name_from_source = name_from_source

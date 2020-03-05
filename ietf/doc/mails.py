@@ -6,7 +6,6 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
-import six
 import textwrap
 
 from django.template.loader import render_to_string
@@ -288,7 +287,7 @@ def generate_publication_request(request, doc):
         approving_body = "IRSG"
         consensus_body = doc.group.acronym.upper()
     else:
-        approving_body = six.text_type(doc.stream)
+        approving_body = str(doc.stream)
         consensus_body = approving_body
 
     e = doc.latest_event(WriteupDocEvent, type="changed_rfc_editor_note_text")

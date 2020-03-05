@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -179,7 +179,7 @@ class PersonEmailChoiceField(forms.ModelChoiceField):
 
     def label_from_instance(self, email):
         if self.label_with == "person":
-            return six.text_type(email.person)
+            return str(email.person)
         elif self.label_with == "email":
             return email.address
         else:

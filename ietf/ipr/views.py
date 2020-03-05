@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -6,7 +6,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 import itertools
-import six
 
 from django.conf import settings
 from django.contrib import messages
@@ -456,7 +455,7 @@ def by_draft_txt(request):
 
     lines = [ "# Machine-readable list of IPR disclosures by draft name" ]
     for name, iprs in docipr.items():
-        lines.append(name + "\t" + "\t".join(six.text_type(ipr_id) for ipr_id in sorted(iprs)))
+        lines.append(name + "\t" + "\t".join(str(ipr_id) for ipr_id in sorted(iprs)))
 
     return HttpResponse("\n".join(lines), content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
@@ -478,7 +477,7 @@ def by_draft_recursive_txt(request):
 
     lines = [ "# Machine-readable list of IPR disclosures by draft name" ]
     for name, iprs in docipr.items():
-        lines.append(name + "\t" + "\t".join(six.text_type(ipr_id) for ipr_id in sorted(iprs)))
+        lines.append(name + "\t" + "\t".join(str(ipr_id) for ipr_id in sorted(iprs)))
 
     return HttpResponse("\n".join(lines), content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 

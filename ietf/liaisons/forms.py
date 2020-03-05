@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# Copyright The IETF Trust 2011-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -206,7 +206,7 @@ class CustomModelMultipleChoiceField(forms.ModelMultipleChoiceField):
         if isinstance(value, QuerySet):
             return value
         if (hasattr(value, '__iter__') and
-                not isinstance(value, six.text_type) and
+                not isinstance(value, str) and
                 not hasattr(value, '_meta')):
             return [super(CustomModelMultipleChoiceField, self).prepare_value(v) for v in value]
         return super(CustomModelMultipleChoiceField, self).prepare_value(value)
@@ -454,7 +454,7 @@ class IncomingLiaisonForm(LiaisonModelForm):
             self.fields['from_contact'].initial = self.person.role_set.filter(group=queryset[0]).first().email.address
             self.fields['from_contact'].widget.attrs['readonly'] = True
         self.fields['from_groups'].queryset = queryset
-        self.fields['from_groups'].widget.submitter = six.text_type(self.person)
+        self.fields['from_groups'].widget.submitter = str(self.person)
 
         # if there's only one possibility make it the default
         if len(queryset) == 1:

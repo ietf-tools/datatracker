@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -154,7 +154,7 @@ def decode(raw):
 def text_to_dict(t):
     "Converts text with RFC2822-formatted header fields into a dictionary-like object."
     # ensure we're handed a unicode parameter
-    assert isinstance(t, six.text_type)
+    assert isinstance(t, str)
     d = {}
     # Return {} for malformed input
     if not len(t.lstrip()) == len(t):

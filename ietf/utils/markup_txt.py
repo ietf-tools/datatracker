@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
@@ -45,7 +45,7 @@ from ietf.utils import log
 from ietf.utils.text import wordwrap
 
 def markup(content, width=None):
-    log.assertion('isinstance(content, six.text_type)')
+    log.assertion('isinstance(content, str)')
     # normalize line endings to LF only
     content = content.replace("\r\n", "\n")
     content = content.replace("\r", "\n")

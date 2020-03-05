@@ -9,12 +9,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 # http://code.djangoproject.com/wiki/SplitSettings
 
 import os
-import six
 import sys
 import datetime
 import warnings
-if six.PY3:
-    from typing import Any, Dict, List, Tuple # pyflakes:ignore
+from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
 warnings.simplefilter("always", DeprecationWarning)
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
