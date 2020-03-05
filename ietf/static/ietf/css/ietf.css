@@ -983,3 +983,80 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   padding: 8px;
   border-top: 1px solid #ddd;
 }
+
+/* === Edit Meeting Schedule ====================================== */
+
+.edit-meeting-schedule {
+  padding-bottom: 10em; /* ensure there's room for the scheduling panel */
+}
+
+.edit-meeting-schedule .session {
+  background-color: #fff;
+  padding: 0 0.4em;
+  margin: 0.2em 0.4em;
+  border-radius: 0.3em;
+  text-align: center;
+}
+
+.edit-meeting-schedule .session[draggable] {
+  cursor: grabbing;
+}
+
+.edit-meeting-schedule .session.dragging {
+  opacity: 0.3;
+  transition: opacity 0.4s;
+}
+
+.edit-meeting-schedule .session i.fa-comment-o {
+  width: 0; /* prevent icon from participating in text centering */
+}
+
+.edit-meeting-schedule .edit-meeting-grid th {
+  text-align: center;
+}
+
+.edit-meeting-schedule .edit-meeting-grid td.day {
+  padding-top: 1em;
+}
+
+.edit-meeting-schedule .edit-meeting-grid td.timeslot {
+  border: 2px solid #fff;
+  background-color: #f6f6f6;
+  padding: 1px;
+}
+
+.edit-meeting-schedule .edit-meeting-grid td.timeslot.disabled {
+  background-color: #fff;
+}
+
+.edit-meeting-schedule .edit-meeting-grid td.timeslot.dropping {
+  background-color: #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.edit-meeting-schedule .scheduling-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  margin: 0;
+  padding: 0 1em;
+  width: 100%;
+  background-color: #fff;
+  opacity: 0.95;
+  z-index: 1;
+}
+
+.edit-meeting-schedule .unassigned-sessions {
+  min-height: 4em;
+  background-color: #f6f6f6;
+}
+
+.edit-meeting-schedule .unassigned-sessions.dropping {
+  background-color: #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.edit-meeting-schedule .unassigned-sessions .session {
+  display: inline-block;
+  min-width: 6em;
+}

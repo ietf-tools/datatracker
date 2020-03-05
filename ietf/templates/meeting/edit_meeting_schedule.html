@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles %}
+{% load ietf_filters %}
+
+{% block morecss %}
+  {# FIXME #}
+  {% for area in area_list %}
+    .group-colored-{{ area.upcase_acronym}} {
+    border-color: {{ area.fg_color}};
+    color:{{ area.fg_color }};
+    background-color: {{ area.bg_color }}
+    }
+  {% endfor %}
+{% endblock morecss %}
+
+{% block title %}{{ schedule.name }}: IETF {{ meeting.number }} meeting schedule{% endblock %}
+
+{% block js %}
+  <script>
+   jQuery.ajaxSetup({
+       crossDomain: false, // obviates need for sameOrigin test
+       beforeSend: function(xhr, settings) {
+           if (!csrfSafeMethod(settings.type)) {
+               xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken'));
+           }
+       }
+   });
+  </script>
+  <script type="text/javascript" src="{% static 'ietf/js/edit-meeting-schedule.js' %}"></script>
+  <script type='text/javascript'>
+    var ietfScheduleData = {{ schedule_data|safe }};
+  </script>
+{% endblock js %}
+
+
+{% block content %}
+  {% origin %}
+  <div class="edit-meeting-schedule">
+
+    <p class="pull-right">
+      <a href="{% url "ietf.meeting.views.copy_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">Copy schedule</a>
+      &middot;
+
+      <a href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">All schedules for meeting</a>
+    </p>
+
+    <p>
+      Schedule name: {{ schedule.name }}
+
+      &middot;
+
+      Owner: {{ schedule.owner }}
+
+      {% if not can_edit %}
+        &middot;
+
+        <em>You can't edit this schedule. Take a copy first.</em>
+      {% endif %}
+    </p>
+
+    <table class="table edit-meeting-grid">
+      <thead>
+        <tr>
+          <th></th>
+          {% for r in rooms %}
+            <th>{{ r.name }}{% if r.capacity %} - {{ r.capacity }} <i class="fa fa-user-o"></i>{% endif %}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for start_time, end_time, hours, room_timeslots in timeslot_matrix %}
+          {% ifchanged %}
+            <tr>
+              <td class="day" colspan="1000">
+                <strong>{{ start_time|date:"l, F j, Y" }}</strong>
+              </td>
+            </tr>
+          {% endifchanged %}
+
+          <tr>
+            <td>
+              <div class="period" style="min-height:{{ hours }}em;">{{ start_time|date:"G:i" }}-{{ end_time|date:"G:i" }}</div>
+            </td>
+
+            {% for r, timeslot in room_timeslots %}
+              <td class="timeslot {% if not timeslot %}disabled{% endif %}" {% if timeslot %}data-timeslot="{{ timeslot.pk }}"{% endif %} style="width:{{ timeslot_width }}%">
+                {% for assignment, session in timeslot.session_assignments %}
+                  {% include "meeting/edit_meeting_schedule_session.html" %}
+                {% endfor %}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="scheduling-panel">
+      <h4>Unscheduled</h4>
+      <div class="unassigned-sessions">
+        {% for session in unassigned_sessions %}
+          {% include "meeting/edit_meeting_schedule_session.html" %}
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+{% endblock %}

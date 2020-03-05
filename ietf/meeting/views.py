@@ -4,6 +4,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from collections import defaultdict
 import csv
 import datetime
 import glob
@@ -42,6 +43,7 @@ from django.template.loader import render_to_string
 from django.utils.functional import curry
 from django.views.decorators.cache import cache_page
 from django.utils.text import slugify
+from django.utils.html import escape
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
 
@@ -349,6 +351,266 @@ def edit_timeslots(request, num=None):
                                           "ts_list":ts_list,
                                       })
 
+class CopyScheduleForm(forms.ModelForm):
+    class Meta:
+        model = Schedule
+        fields = ['name', 'visible', 'public']
+
+    def __init__(self, schedule, new_owner, *args, **kwargs):
+        super(CopyScheduleForm, self).__init__(*args, **kwargs)
+
+        self.schedule = schedule
+        self.new_owner = new_owner
+
+        username = new_owner.user.username
+
+        name_suggestion = username
+        counter = 2
+
+        existing_names = set(Schedule.objects.filter(meeting=schedule.meeting_id, owner=new_owner).values_list('name', flat=True))
+        while name_suggestion in existing_names:
+            name_suggestion = username + str(counter)
+            counter += 1
+
+        self.fields['name'].initial = name_suggestion
+        self.fields['name'].label = "Name of new schedule"
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name and Schedule.objects.filter(meeting=self.schedule.meeting_id, owner=self.new_owner, name=name):
+            raise forms.ValidationError("Schedule with this name already exists.")
+        return name
+
+@role_required('Area Director','Secretariat')
+def copy_meeting_schedule(request, num, owner, name):
+    meeting  = get_meeting(num)
+    schedule = get_object_or_404(meeting.schedule_set, owner__email__address=owner, name=name)
+
+    if request.method == 'POST':
+        form = CopyScheduleForm(schedule, request.user.person, request.POST)
+
+        if form.is_valid():
+            new_schedule = form.save(commit=False)
+            new_schedule.meeting = schedule.meeting
+            new_schedule.owner = request.user.person
+            new_schedule.save()
+
+            # keep a mapping so that extendedfrom references can be chased
+            old_pk_to_new_pk = {}
+            extendedfroms = {}
+            for assignment in schedule.assignments.all():
+                extendedfrom_id = assignment.extendedfrom_id
+
+                # clone by resetting primary key
+                old_pk = assignment.pk
+                assignment.pk = None
+                assignment.schedule = new_schedule
+                assignment.extendedfrom = None
+                assignment.save()
+
+                old_pk_to_new_pk[old_pk] = assignment.pk
+                if extendedfrom_id is not None:
+                    extendedfroms[assignment.pk] = extendedfrom_id
+
+            for pk, extendedfrom_id in extendedfroms.values():
+                if extendedfrom_id in old_pk_to_new_pk:
+                    SchedTimeSessAssignment.objects.filter(pk=pk).update(extendedfrom=old_pk_to_new_pk[extendedfrom_id])
+
+            # now redirect to this new schedule
+            return redirect(edit_meeting_schedule, meeting.number, new_schedule.owner_email(), new_schedule.name)
+            
+    else:
+        form = CopyScheduleForm(schedule, request.user.person)
+
+    return render(request, "meeting/copy_meeting_schedule.html", {
+        'meeting': meeting,
+        'schedule': schedule,
+        'form': form,
+    })
+
+
+@ensure_csrf_cookie
+def edit_meeting_schedule(request, num=None, owner=None, name=None):
+    meeting = get_meeting(num)
+    if name is None:
+        schedule = meeting.schedule
+    else:
+        schedule = get_schedule_by_name(meeting, get_person_by_email(owner), name)
+
+    if schedule is None:
+        raise Http404("No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
+
+    can_see, can_edit, secretariat = schedule_permissions(meeting, schedule, request.user)
+
+    if not can_see:
+        if request.method == 'POST':
+            return HttpResponseForbidden("Can't view this schedule")
+
+        # FIXME: check this
+        return render(request, "meeting/private_schedule.html",
+                                             {"schedule":schedule,
+                                              "meeting": meeting,
+                                              "meeting_base_url": request.build_absolute_uri(meeting.base_url()),
+                                              "hide_menu": True
+                                          }, status=403, content_type="text/html")
+
+    assignments = get_all_assignments_from_schedule(schedule)
+
+    # FIXME
+    #areas = get_areas()
+    #ads = find_ads_for_meeting(meeting)
+
+    css_ems_per_hour = 1.5
+
+    rooms = meeting.room_set.filter(session_types__slug='regular').distinct().order_by("capacity")
+    timeslots_qs = meeting.timeslot_set.filter(type='regular').prefetch_related('type', 'sessions').order_by('time', 'location', 'name')
+
+    sessions = add_event_info_to_session_qs(
+        Session.objects.filter(
+            meeting=meeting,
+            # Restrict graphical scheduling to regular meeting requests (Sessions) for now
+            type='regular',
+        ),
+        requested_time=True,
+        requested_by=True,
+    ).exclude(current_status__in=['notmeet', 'disappr', 'deleted', 'apprw']).prefetch_related(
+        'resources', 'group', 'group__parent',
+    )
+
+    if request.method == 'POST':
+        if not can_edit:
+            return HttpResponseForbidden("Can't edit this schedule")
+
+        action = request.POST.get('action')
+
+        if action == 'assign' and request.POST.get('session', '').isdigit() and request.POST.get('timeslot', '').isdigit():
+            session = get_object_or_404(sessions, pk=request.POST['session'])
+            timeslot = get_object_or_404(timeslots_qs, pk=request.POST['timeslot'])
+
+            existing_assignments = SchedTimeSessAssignment.objects.filter(session=session, schedule=schedule)
+            if existing_assignments:
+                existing_assignments.update(timeslot=timeslot, modified=datetime.datetime.now())
+            else:
+                SchedTimeSessAssignment.objects.create(
+                    session=session,
+                    schedule=schedule,
+                    timeslot=timeslot,
+                )
+
+            return HttpResponse("OK")
+
+        elif action == 'unassign' and request.POST.get('session', '').isdigit():
+            session = get_object_or_404(sessions, pk=request.POST['session'])
+            SchedTimeSessAssignment.objects.filter(session=session, schedule=schedule).delete()
+
+            return HttpResponse("OK")
+
+        return HttpResponse("Invalid parameters", status_code=400)
+
+    assignments_by_session = defaultdict(list)
+    for a in assignments:
+        assignments_by_session[a.session_id].append(a)
+
+    # prepare timeslot matrix
+    times = {} # start time -> end time
+    timeslots = {}
+    timeslots_by_pk = {}
+    for ts in timeslots_qs:
+        ts_end_time = ts.end_time()
+        if ts_end_time < times.get(ts.time, datetime.datetime.max):
+            times[ts.time] = ts_end_time
+
+        timeslots[(ts.location_id, ts.time)] = ts
+        timeslots_by_pk[ts.pk] = ts
+        ts.session_assignments = []
+
+    timeslot_matrix = [
+        (start_time, end_time, (end_time - start_time).seconds / 60.0 / 60.0 * css_ems_per_hour, [(r, timeslots.get((r.pk, start_time))) for r in rooms])
+        for start_time, end_time in sorted(times.items())
+    ]
+
+    # prepare sessions
+    unassigned_sessions = []
+    session_data = []
+    for s in sessions:
+        d = {
+            'id': s.pk,
+        }
+
+        if s.requested_by:
+            d['requested_by'] = s.requested_by
+        if s.requested_time:
+            d['requested_time'] = s.requested_time.isoformat()
+
+        room_resources = s.resources.all()
+        if room_resources:
+            d['room_resources'] = [
+                {
+                    'name': escape(r.name.name),
+                }
+                for r in room_resources
+            ]
+
+        if s.group:
+            label = escape(s.group.acronym)
+        elif s.name:
+            label = escape(s.name)
+        else:
+            label = "???"
+
+        s.scheduling_label = label
+
+        if s.attendees is not None:
+            d['attendees'] = s.attendees
+
+        if s.group and s.group.is_bof():
+            d['bof'] = True
+
+        if s.group and s.group.parent:
+            d['group_parent'] = escape(s.group.parent.acronym.upper())
+
+        if s.comments:
+            d['comments'] = s.comments
+
+        s.requested_duration_in_hours = s.requested_duration.seconds / 60.0 / 60.0
+        s.scheduling_height = s.requested_duration_in_hours * css_ems_per_hour
+
+        scheduled = False
+
+        for a in assignments_by_session.get(s.pk, []):
+            timeslot = timeslots_by_pk.get(a.timeslot_id)
+            if timeslot:
+                timeslot.session_assignments.append((a, s))
+                scheduled = True
+
+        session_data.append(d)
+
+        if not scheduled:
+            unassigned_sessions.append(s)
+
+    schedule_data = {
+        'schedule': schedule.id,
+        'sessions': session_data,
+        'can_edit': can_edit,
+        'urls': {
+            'assign': request.get_full_path()
+        }
+    }
+
+    return render(request, "meeting/edit_meeting_schedule.html", {
+        'meeting': meeting,
+        'schedule': schedule,
+        'can_edit': can_edit,
+        'schedule_data': json.dumps(schedule_data, indent=2),
+        'rooms': rooms,
+        'timeslot_matrix': timeslot_matrix,
+        'unassigned_sessions': unassigned_sessions,
+        'timeslot_width': (100.0 - 10) / len(rooms),
+        #'areas': areas,
+        'hide_menu': True,
+    })
+
+
 ##############################################################################
 #@role_required('Area Director','Secretariat')
 # disable the above security for now, check it below.
@@ -421,6 +683,7 @@ def edit_schedule(request, num=None, owner=None, name=None):
                                           "hide_menu": True,
                                       })
 
+
 ##############################################################################
 #  show the properties associated with a schedule (visible, public)
 #
@@ -446,7 +709,7 @@ def edit_schedule_properties(request, num=None, owner=None, name=None):
             if form.is_valid():
                form.save()
                return HttpResponseRedirect(reverse('ietf.meeting.views.list_schedules',kwargs={'num': num}))
-        else: 
+        else:
             form = SchedulePropertiesForm(instance=schedule)
         return render(request, "meeting/properties_edit.html",
                                              {"schedule":schedule,

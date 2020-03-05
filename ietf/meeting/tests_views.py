@@ -34,7 +34,7 @@ from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_r
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates, update_important_dates
-from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission, SchedulingEvent
+from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission, SchedulingEvent, Room
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.utils import finalize, condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs
@@ -911,10 +911,104 @@ class EditTests(TestCase):
 
     def test_edit_schedule(self):
         meeting = make_meeting_test_data()
-
+ 
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(urlreverse("ietf.meeting.views.edit_schedule", kwargs=dict(num=meeting.number)))
         self.assertContains(r, "load_assignments")
+ 
+    def test_edit_meeting_schedule(self):
+        meeting = make_meeting_test_data()
+
+        self.client.login(username="secretary", password="secretary+password")
+
+        # check we have the grid and everything set up
+        url = urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs=dict(num=meeting.number))
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+
+        room = Room.objects.get(meeting=meeting, session_types='regular')
+        self.assertTrue(q("th:contains(\"{}\")".format(room.name)))
+        self.assertTrue(q("th:contains(\"{}\")".format(room.capacity)))
+
+        timeslots = TimeSlot.objects.filter(meeting=meeting, type='regular')
+        self.assertTrue(q("td:contains(\"{}\")".format(timeslots[0].time.strftime("%H:%M"))))
+        self.assertTrue(q("td.timeslot[data-timeslot=\"{}\"]".format(timeslots[0].pk)))
+
+        sessions = Session.objects.filter(meeting=meeting, type='regular')
+        for s in sessions:
+            self.assertIn(s.group.acronym, q("#session{}".format(s.pk)).text())
+
+        self.assertIn("You can't edit this schedule", r.content)
+
+        # can't change anything
+        r = self.client.post(url, {
+            'action': 'assign',
+            'timeslot': timeslots[0].pk,
+            'session': sessions[0].pk,
+        })
+        self.assertEqual(r.status_code, 403)
+        
+        # turn us into owner
+        meeting.schedule.owner = Person.objects.get(user__username="secretary")
+        meeting.schedule.save()
+
+        url = urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs=dict(num=meeting.number, owner=meeting.schedule.owner_email(), name=meeting.schedule.name))
+        r = self.client.get(url)
+        self.assertNotIn("You can't edit this schedule", r.content)
+
+        SchedTimeSessAssignment.objects.filter(session=sessions[0]).delete()
+
+        # assign
+        r = self.client.post(url, {
+            'action': 'assign',
+            'timeslot': timeslots[0].pk,
+            'session': sessions[0].pk,
+        })
+        self.assertEqual(r.content, "OK")
+        self.assertEqual(SchedTimeSessAssignment.objects.get(schedule=meeting.schedule, session=sessions[0]).timeslot, timeslots[0])
+
+        # move assignment
+        r = self.client.post(url, {
+            'action': 'assign',
+            'timeslot': timeslots[1].pk,
+            'session': sessions[0].pk,
+        })
+        self.assertEqual(r.content, "OK")
+        self.assertEqual(SchedTimeSessAssignment.objects.get(schedule=meeting.schedule, session=sessions[0]).timeslot, timeslots[1])
+
+        # unassign
+        r = self.client.post(url, {
+            'action': 'unassign',
+            'session': sessions[0].pk,
+        })
+        self.assertEqual(r.content, "OK")
+        self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=meeting.schedule, session=sessions[0])), [])
+
+
+    def test_copy_meeting_schedule(self):
+        meeting = make_meeting_test_data()
+
+        self.client.login(username="secretary", password="secretary+password")
+
+        url = urlreverse("ietf.meeting.views.copy_meeting_schedule", kwargs=dict(num=meeting.number, owner=meeting.schedule.owner_email(), name=meeting.schedule.name))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        # copy
+        r = self.client.post(url, {
+            'name': "newtest",
+            'public': "on",
+        })
+        self.assertNoFormPostErrors(r)
+
+        new_schedule = Schedule.objects.get(meeting=meeting, owner__user__username='secretary', name='newtest')
+        self.assertEqual(new_schedule.public, True)
+        self.assertEqual(new_schedule.visible, False)
+
+        old_assignments = {(a.session_id, a.timeslot_id) for a in SchedTimeSessAssignment.objects.filter(schedule=meeting.schedule)}
+        for a in SchedTimeSessAssignment.objects.filter(schedule=new_schedule):
+            self.assertIn((a.session_id, a.timeslot_id), old_assignments)
+            # FIXME: test extendedfrom is copied correctly
 
     def test_save_agenda_as_and_read_permissions(self):
         meeting = make_meeting_test_data()
