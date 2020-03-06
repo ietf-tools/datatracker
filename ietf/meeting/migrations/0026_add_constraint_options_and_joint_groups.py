@@ -43,5 +43,10 @@ class Migration(migrations.Migration):
             name='timeranges',
             field=models.ManyToManyField(to='name.TimerangeName'),
         ),
+        migrations.AddField(
+            model_name='session',
+            name='joint_with_groups',
+            field=models.ManyToManyField(related_name='sessions_joint_in', to='group.Group'),
+        ),
         migrations.RunPython(forward, reverse),
     ]
