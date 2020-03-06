@@ -853,7 +853,7 @@ class Constraint(models.Model):
             return "%s " % (self.person)
 
     def json_url(self):
-        return "/meeting/%s/constrai.nt/%s.json" % (self.meeting.number, self.id)
+        return "/meeting/%s/constraint/%s.json" % (self.meeting.number, self.id)
 
     def json_dict(self, host_scheme):
         ct1 = dict()
