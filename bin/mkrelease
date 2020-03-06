@@ -212,6 +212,7 @@ if [ -z "$IGNORE_RESOURCES" ]; then
     $do svn commit ietf/externals/static -m "Updated bower-managed static web assets"
     # Get rid of bower-installed files which we don't use:
     $do rm -rf ietf/externals/static/datatracker/
+    $do rm -rf ietf/externals/static/jquery.cookie/
     $do rm -f $(svn st ietf/externals/ | grep '^\?' | awk '{print $2}')
 fi
 
