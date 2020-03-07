@@ -1,3 +1,44 @@
+ietfdb (6.120.0) ietf; urgency=medium
+
+  **Submission API changes, Py2/3 transition fixes**
+
+  * Added the ability to use the submission API with active secondary account
+    email addresses.  Fixes issue #2639.
+
+  * Tweaked the ReviewAssignmentAdmin, adding a raw_id_field.
+
+  * Replaced most cases of using of urlopen(), instead using the higher-level
+    'requests' module where it simplifies the code.
+
+  * Added a data migration to fix up incorrect external URLs to mailarchive.
+
+  * Fixed a Py2/3 issue with review.mailarchive.construct_query_url().
+
+  * Renamed a migration to conform to migration naming conventions, using
+    underscores instead of dashes in the name.
+
+  * Py2/3 compatibility tweaks for pyflakes.
+
+  * Changed some cases of urlopen() to use requests.get()
+
+  * Python3 is more ticklish about comparing strings to None than Py2.  Fixed
+    an issue with this in generate_sort_key() for document searches.
+
+  * Fixed a Py2/3 issue in the pyflakes management command, and tweaked the
+    verbose output format.
+
+  * Merged back production changes to two scripts indirectly called by
+    /a/www/www6s/scripts/run-ietf-report, through
+    /a/www/www6s/scripts/run-report.
+
+  * Changed the release script to not pick up other email addresses than those
+    of contributors from the release notes.
+
+  * Tweaked the check_referential_integrity management command verbose output.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 Mar 2020 22:55:58 +0000
+
+
 ietfdb (6.119.1) ietf; urgency=medium
 
   **Py2/3 fixes, Change to use the "requests" lib instead of urlopen()**
