@@ -662,7 +662,7 @@ def document_main(request, name, rev=None):
                            revisions=revisions,
                            latest_rev=latest_rev,
                            snapshot=snapshot,
-                           review_req=review_assignment.review_request,
+                           review_req=review_assignment.review_request if review_assignment else None,
                            other_reviews=other_reviews,
                            assignments=assignments,
                       ))
