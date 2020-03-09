@@ -3,9 +3,10 @@
 # This script requires that the proper virtual python environment has been
 # invoked before start
 
-import os
-import sys
 import datetime
+import os
+import requests
+import sys
 import syslog
 
 # boilerplate
@@ -19,7 +20,7 @@ import django
 django.setup()
 
 from django.conf import settings
-from ietf.sync.iana import fetch_protocol_page, parse_protocol_page, update_rfc_log_from_protocol_page
+from ietf.sync.iana import parse_protocol_page, update_rfc_log_from_protocol_page
 
 def chunks(l, n):
     """Split list l up in chunks of max size n."""

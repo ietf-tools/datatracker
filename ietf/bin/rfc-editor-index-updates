@@ -47,7 +47,7 @@ log("Updating document metadata from RFC index from %s" % settings.RFC_EDITOR_IN
 
 
 socket.setdefaulttimeout(30)
-rfc_index_xml = requests.get(settings.RFC_EDITOR_INDEX_URL).text
+rfc_index_xml = requests.get(settings.RFC_EDITOR_INDEX_URL).raw
 index_data = ietf.sync.rfceditor.parse_index(rfc_index_xml)
 
 errata_data = requests.get(settings.RFC_EDITOR_ERRATA_JSON_URL).json()
