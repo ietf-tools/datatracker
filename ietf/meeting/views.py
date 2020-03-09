@@ -11,6 +11,7 @@ import glob
 import io
 import itertools
 import json
+import math
 import os
 import pytz
 import re
@@ -456,14 +457,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     assignments = get_all_assignments_from_schedule(schedule)
 
-    # FIXME
-    #areas = get_areas()
-    #ads = find_ads_for_meeting(meeting)
-
-    css_ems_per_hour = 1.5
-
     rooms = meeting.room_set.filter(session_types__slug='regular').distinct().order_by("capacity")
-    timeslots_qs = meeting.timeslot_set.filter(type='regular').prefetch_related('type', 'sessions').order_by('time', 'location', 'name')
+    timeslots_qs = meeting.timeslot_set.filter(type='regular').prefetch_related('type', 'sessions').order_by('location', 'time', 'name')
 
     sessions = add_event_info_to_session_qs(
         Session.objects.filter(
@@ -511,25 +506,106 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     for a in assignments:
         assignments_by_session[a.session_id].append(a)
 
-    # prepare timeslot matrix
-    times = {} # start time -> end time
-    timeslots = {}
-    timeslots_by_pk = {}
-    for ts in timeslots_qs:
-        ts_end_time = ts.end_time()
-        if ts_end_time < times.get(ts.time, datetime.datetime.max):
-            times[ts.time] = ts_end_time
+    # Prepare timeslot layout. We arrange time slots in columns per
+    # room where everything inside is grouped by day. Things inside
+    # the days are then layouted proportionally to the actual time of
+    # day, to ensure that everything lines up, even if the time slots
+    # are not the same in the different rooms.
 
-        timeslots[(ts.location_id, ts.time)] = ts
-        timeslots_by_pk[ts.pk] = ts
-        ts.session_assignments = []
+    def timedelta_to_css_ems(timedelta):
+        css_ems_per_hour = 1.8
+        return timedelta.seconds / 60.0 / 60.0 * css_ems_per_hour
 
-    timeslot_matrix = [
-        (start_time, end_time, (end_time - start_time).seconds / 60.0 / 60.0 * css_ems_per_hour, [(r, timeslots.get((r.pk, start_time))) for r in rooms])
-        for start_time, end_time in sorted(times.items())
-    ]
+    # time labels column
+    timeslots_by_day = defaultdict(list)
+    for t in timeslots_qs:
+        timeslots_by_day[t.time.date()].append(t)
+
+    day_min_max = []
+    for day, timeslots in sorted(timeslots_by_day.iteritems()):
+        day_min_max.append((day, min(t.time for t in timeslots), max(t.end_time() for t in timeslots)))
+        
+    time_labels = []
+    for day, day_min_time, day_max_time in day_min_max:
+        day_labels = []
+
+        hourly_delta = 2
+
+        first_hour = int(math.ceil((day_min_time.hour + day_min_time.minute / 60.0) / hourly_delta) * hourly_delta)
+        t = day_min_time.replace(hour=first_hour, minute=0, second=0, microsecond=0)
+
+        last_hour = int(math.floor((day_max_time.hour + day_max_time.minute / 60.0) / hourly_delta) * hourly_delta)
+        end = day_max_time.replace(hour=last_hour, minute=0, second=0, microsecond=0)
+
+        while t <= end:
+            day_labels.append((t, 'top', timedelta_to_css_ems(t - day_min_time), 'left'))
+            t += datetime.timedelta(seconds=hourly_delta * 60 * 60)
+
+        if not day_labels:
+            day_labels.append((day_min_time, 'top', 0, 'left'))
+
+        time_labels.append({
+            'day': day,
+            'height': timedelta_to_css_ems(day_max_time - day_min_time),
+            'labels': day_labels,
+        })
+
+    # room columns
+    timeslots_by_room_and_day = defaultdict(list)
+    for t in timeslots_qs:
+        timeslots_by_room_and_day[(t.location_id, t.time.date())].append(t)
+
+    room_columns = []
+    for r in rooms:
+        room_days = []
+
+        for day, day_min_time, day_max_time in day_min_max:
+            day_timeslots = []
+            for t in timeslots_by_room_and_day.get((r.pk, day), []):
+                day_timeslots.append({
+                    'timeslot': t,
+                    'offset': timedelta_to_css_ems(t.time - day_min_time),
+                    'height': timedelta_to_css_ems(t.end_time() - t.time),
+                })
+
+            room_days.append({
+                'day': day,
+                'timeslots': day_timeslots,
+                'height': timedelta_to_css_ems(day_max_time - day_min_time),
+            })
+
+        if any(d['timeslots'] for d in room_days):
+            room_columns.append({
+                'room': r,
+                'days': room_days,
+            })
 
     # prepare sessions
+    for ts in timeslots_qs:
+        ts.session_assignments = []
+    timeslots_by_pk = {ts.pk: ts for ts in timeslots_qs}
+
+    def cubehelix(i, total, hue=1.2, start_angle=0.5):
+        # https://arxiv.org/pdf/1108.5083.pdf
+        rotations = total // 4
+        x = float(i + 1) / (total + 1)
+        phi = 2 * math.pi * (start_angle / 3 + rotations * x)
+        a = hue * x * (1 - x) / 2.0
+
+        return (
+            max(0, min(x + a * (-0.14861 * math.cos(phi) + 1.78277 * math.sin(phi)), 1)),
+            max(0, min(x + a * (-0.29227 * math.cos(phi) + -0.90649 * math.sin(phi)), 1)),
+            max(0, min(x + a * (1.97294 * math.cos(phi)), 1)),
+        )
+
+    session_parents = sorted(set(
+        s.group.parent for s in sessions
+        if s.group and s.group.parent and s.group.parent.type_id == 'area' or s.group.parent.acronym == 'irtf'
+    ), key=lambda p: p.acronym)
+    for i, p in enumerate(session_parents):
+        rgb_color = cubehelix(i, len(session_parents))
+        p.scheduling_color = "#" + "".join(chr(int(round(x * 255))).encode('hex') for x in rgb_color)
+
     unassigned_sessions = []
     session_data = []
     for s in sessions:
@@ -573,7 +649,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             d['comments'] = s.comments
 
         s.requested_duration_in_hours = s.requested_duration.seconds / 60.0 / 60.0
-        s.scheduling_height = s.requested_duration_in_hours * css_ems_per_hour
+        s.layout_height = timedelta_to_css_ems(s.requested_duration)
+        s.parent_acronym = s.group.parent.acronym if s.group and s.group.parent else ""
 
         scheduled = False
 
@@ -602,11 +679,11 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'schedule': schedule,
         'can_edit': can_edit,
         'schedule_data': json.dumps(schedule_data, indent=2),
+        'time_labels': time_labels,
         'rooms': rooms,
-        'timeslot_matrix': timeslot_matrix,
+        'room_columns': room_columns,
         'unassigned_sessions': unassigned_sessions,
-        'timeslot_width': (100.0 - 10) / len(rooms),
-        #'areas': areas,
+        'session_parents': session_parents,
         'hide_menu': True,
     })
 

@@ -5,12 +5,9 @@
 {% load ietf_filters %}
 
 {% block morecss %}
-  {# FIXME #}
-  {% for area in area_list %}
-    .group-colored-{{ area.upcase_acronym}} {
-    border-color: {{ area.fg_color}};
-    color:{{ area.fg_color }};
-    background-color: {{ area.bg_color }}
+  {% for parent in session_parents %}
+    .parent-{{ parent.acronym }} {
+       background: linear-gradient(to right, {{ parent.scheduling_color }} 0.4em, #fff 0.5em);
     }
   {% endfor %}
 {% endblock morecss %}
@@ -60,48 +57,65 @@
       {% endif %}
     </p>
 
-    <table class="table edit-meeting-grid">
-      <thead>
-        <tr>
-          <th></th>
-          {% for r in rooms %}
-            <th>{{ r.name }}{% if r.capacity %} - {{ r.capacity }} <i class="fa fa-user-o"></i>{% endif %}</th>
-          {% endfor %}
-        </tr>
-      </thead>
+    <div class="edit-grid">
+      {# note: in order for all this to align properly, make sure there's the same markup in all columns #}
 
-      <tbody>
-        {% for start_time, end_time, hours, room_timeslots in timeslot_matrix %}
-          {% ifchanged %}
-            <tr>
-              <td class="day" colspan="1000">
-                <strong>{{ start_time|date:"l, F j, Y" }}</strong>
-              </td>
-            </tr>
-          {% endifchanged %}
+      <div class="time-labels-column schedule-column">
+        <h5>&nbsp;</h5>
 
-          <tr>
-            <td>
-              <div class="period" style="min-height:{{ hours }}em;">{{ start_time|date:"G:i" }}-{{ end_time|date:"G:i" }}</div>
-            </td>
+        {% for d in time_labels %}
+          <div class="day-label">
+            <strong>{{ d.day|date:"D" }}</strong><br>
+            <i>{{ d.day|date:"Y-m-d" }}</i>
+          </div>
 
-            {% for r, timeslot in room_timeslots %}
-              <td class="timeslot {% if not timeslot %}disabled{% endif %}" {% if timeslot %}data-timeslot="{{ timeslot.pk }}"{% endif %} style="width:{{ timeslot_width }}%">
-                {% for assignment, session in timeslot.session_assignments %}
-                  {% include "meeting/edit_meeting_schedule_session.html" %}
-                {% endfor %}
-              </td>
+          <div class="day" style="height: {{ d.height }}em;">
+            {% for t, vertical_alignment, vertical_offset, horizontal_alignment in d.labels %}
+              <div class="time-label {{ vertical_alignment }}-aligned text-{{ horizontal_alignment }}" style="{{ vertical_alignment }}: {{ vertical_offset }}em;">
+                <span>{{ t|date:"H:i" }}</span>
+              </div>
             {% endfor %}
-          </tr>
+          </div>
         {% endfor %}
-      </tbody>
-    </table>
+      </div>
+
+      {% for r in room_columns %}
+        <div class="room-column schedule-column">
+          <h5>{{ r.room.name }}{% if r.room.capacity %} ({{ r.room.capacity }} <i class="fa fa-user-o"></i>{% endif %})</h5>
+
+          {% for d in r.days %}
+            <div class="day-label">
+              <strong>{{ d.day|date:"D" }}</strong><br>
+              <i>{{ d.day|date:"Y-m-d" }}</i>
+            </div>
+
+            <div class="day" style="height: {{ d.height }}em;">
+              {% for t in d.timeslots %}
+                <div class="timeslot" data-timeslot="{{ t.timeslot.pk }}" data-duration="{{ t.timeslot.duration.total_seconds }}" style="top: {{ t.offset }}em; height: {{ t.height }}em;">
+                  {% for assignment, session in t.timeslot.session_assignments %}
+                    {% include "meeting/edit_meeting_schedule_session.html" %}
+                  {% endfor %}
+                </div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
 
     <div class="scheduling-panel">
-      <h4>Unscheduled</h4>
+      <h5>Not yet assigned</h5>
+
       <div class="unassigned-sessions">
         {% for session in unassigned_sessions %}
           {% include "meeting/edit_meeting_schedule_session.html" %}
+        {% endfor %}
+      </div>
+
+      <div class="session-parent-toggles">
+        Show:
+        {% for p in session_parents %}
+          <label class="parent-{{ p.acronym }}"><input type="checkbox" checked value="{{ p.acronym }}"> {{ p.acronym }}</label>
         {% endfor %}
       </div>
     </div>

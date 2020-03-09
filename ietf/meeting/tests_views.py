@@ -927,12 +927,11 @@ class EditTests(TestCase):
         q = PyQuery(r.content)
 
         room = Room.objects.get(meeting=meeting, session_types='regular')
-        self.assertTrue(q("th:contains(\"{}\")".format(room.name)))
-        self.assertTrue(q("th:contains(\"{}\")".format(room.capacity)))
+        self.assertTrue(q("h5:contains(\"{}\")".format(room.name)))
+        self.assertTrue(q("h5:contains(\"{}\")".format(room.capacity)))
 
         timeslots = TimeSlot.objects.filter(meeting=meeting, type='regular')
-        self.assertTrue(q("td:contains(\"{}\")".format(timeslots[0].time.strftime("%H:%M"))))
-        self.assertTrue(q("td.timeslot[data-timeslot=\"{}\"]".format(timeslots[0].pk)))
+        self.assertTrue(q("div.timeslot[data-timeslot=\"{}\"]".format(timeslots[0].pk)))
 
         sessions = Session.objects.filter(meeting=meeting, type='regular')
         for s in sessions:

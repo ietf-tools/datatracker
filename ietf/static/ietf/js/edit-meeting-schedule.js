@@ -9,6 +9,7 @@ jQuery(document).ready(function () {
     }
 
     var sessions = content.find(".session");
+    var timeslots = content.find(".timeslot");
 
     // dragging
     sessions.on("dragstart", function (event) {
@@ -66,6 +67,7 @@ jQuery(document).ready(function () {
 
         function done() {
             dropElement.append(sessionElement); // move element
+            maintainTimeSlotHints();
         }
 
         if (dropElement.hasClass("unassigned-sessions")) {
@@ -90,5 +92,37 @@ jQuery(document).ready(function () {
             }).fail(failHandler).done(done);
         }
     });
+
+
+    // hints
+    function maintainTimeSlotHints() {
+        timeslots.each(function () {
+            var total = 0;
+            jQuery(this).find(".session").each(function () {
+                total += +jQuery(this).data("duration");
+            });
+
+            jQuery(this).toggleClass("overfull", total > +jQuery(this).data("duration"));
+        });
+    }
+
+    maintainTimeSlotHints();
+
+    // toggling of parents
+    var sessionParentInputs = content.find(".session-parent-toggles input");
+
+    function maintainSessionParentToggling() {
+        var checked = [];
+        sessionParentInputs.filter(":checked").each(function () {
+            checked.push(".parent-" + this.value);
+        });
+
+        sessions.filter(".toggleable").filter(checked.join(",")).show();
+        sessions.filter(".toggleable").not(checked.join(",")).hide();
+    }
+
+    sessionParentInputs.on("click", maintainSessionParentToggling);
+
+    maintainSessionParentToggling();
 });
 

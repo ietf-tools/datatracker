@@ -1,3 +1,3 @@
-<div id="session{{ session.pk }}" class="session" style="min-height:{{ session.scheduling_height }}em;">
+<div id="session{{ session.pk }}" class="session {% if session.group.parent.scheduling_color %}toggleable {% if session.parent_acronym %}parent-{{ session.parent_acronym }}{% endif %}{% endif %}" style="height:{{ session.layout_height }}em;" data-duration="{{ session.requested_duration.total_seconds }}">
   {{ session.scheduling_label }} {% if session.comments %}<i class="fa fa-comment-o"></i>{% endif %}
 </div>
