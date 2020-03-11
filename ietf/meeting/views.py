@@ -952,7 +952,7 @@ def ical_agenda(request, num=None, name=None, acronym=None, session_id=None):
 
     for a in assignments:
         if a.session:
-            a.session.ical_status = ical_session_status(a.session)
+            a.session.ical_status = ical_session_status(a.session.current_status)
 
     return render(request, "meeting/agenda.ics", {
         "schedule": schedule,
