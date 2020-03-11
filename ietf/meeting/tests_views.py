@@ -607,6 +607,14 @@ class MeetingTests(TestCase):
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.get('Content-Type'), 'text/calendar')
 
+    def test_cancelled_ics(self):
+        session=SessionFactory(meeting__type_id='ietf',status_id='canceled')
+        url = urlreverse('ietf.meeting.views.ical_agenda', kwargs=dict(num=session.meeting.number))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        self.assertIn('STATUS:CANCELLED',unicontent(r))
+        self.assertNotIn('STATUS:CONFIRMED',unicontent(r))
+
 class ReorderSlidesTests(TestCase):
 
     def test_add_slides_to_session(self):
