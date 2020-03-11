@@ -1008,6 +1008,40 @@ class SubmitTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('input[type=file][name=txt]')), 1)
 
+    def test_no_blackout_at_all(self):
+        url = urlreverse('ietf.submit.views.upload_submission')
+
+        meeting = Meeting.get_current_meeting()
+        meeting.date = datetime.date.today()+datetime.timedelta(days=7)
+        meeting.save()
+        meeting.importantdate_set.filter(name_id='idcutoff').delete()
+        meeting.importantdate_set.create(name_id='idcutoff', date=datetime.date.today()+datetime.timedelta(days=7))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('input[type=file][name=txt]')), 1)        
+
+        meeting = Meeting.get_current_meeting()
+        meeting.date = datetime.date.today()
+        meeting.save()
+        meeting.importantdate_set.filter(name_id='idcutoff').delete()
+        meeting.importantdate_set.create(name_id='idcutoff', date=datetime.date.today())
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('input[type=file][name=txt]')), 1)        
+
+        meeting = Meeting.get_current_meeting()
+        meeting.date = datetime.date.today()-datetime.timedelta(days=1)
+        meeting.save()
+        meeting.importantdate_set.filter(name_id='idcutoff').delete()
+        meeting.importantdate_set.create(name_id='idcutoff', date=datetime.date.today()-datetime.timedelta(days=1))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('input[type=file][name=txt]')), 1)        
+
+        
     def submit_bad_file(self, name, formats):
         rev = ""
         group = None

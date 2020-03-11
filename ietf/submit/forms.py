@@ -93,6 +93,11 @@ class SubmissionBaseUploadForm(forms.Form):
         cutoff_00_str = cutoff_00.strftime("%Y-%m-%d %H:%M %Z")
         cutoff_01_str = cutoff_01.strftime("%Y-%m-%d %H:%M %Z")
         reopen_str    = reopen.strftime("%Y-%m-%d %H:%M %Z")
+
+        # Workaround for IETF107. This would be better handled by a refactor that allowed meetings to have no cutoff period.
+        if cutoff_01 >= reopen:
+            return
+
         if cutoff_00 == cutoff_01:
             if now.date() >= (cutoff_00.date() - meeting.idsubmit_cutoff_warning_days) and now.date() < cutoff_00.date():
                 self.cutoff_warning = ( 'The last submission time for Internet-Drafts before %s is %s.<br/><br/>' % (meeting, cutoff_00_str))
