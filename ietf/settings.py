@@ -764,6 +764,7 @@ IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
 
 # Interim Meeting Tool settings
 INTERIM_ANNOUNCE_FROM_EMAIL = 'IESG Secretary <iesg-secretary@ietf.org>'
+VIRTUAL_INTERIMS_REQUIRE_APPROVAL = True
 
 # Days from meeting to day of cut off dates on submit -- cutoff_time_utc is added to this
 IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_00 = 13

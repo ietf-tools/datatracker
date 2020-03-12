@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -218,8 +218,8 @@ class InterimSessionModelForm(forms.ModelForm):
             self.user = kwargs.pop('user')
         if 'group' in kwargs:
             self.group = kwargs.pop('group')
-        if 'is_approved_or_virtual' in kwargs:
-            self.is_approved_or_virtual = kwargs.pop('is_approved_or_virtual')
+        if 'requires_approval' in kwargs:
+            self.requires_approval = kwargs.pop('requires_approval')
         super(InterimSessionModelForm, self).__init__(*args, **kwargs)
         self.is_edit = bool(self.instance.pk)
         # setup fields that aren't intrinsic to the Session object

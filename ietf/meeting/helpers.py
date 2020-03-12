@@ -602,7 +602,7 @@ def sessions_post_save(request, forms):
             continue
 
         if form.instance.pk is not None and not SchedulingEvent.objects.filter(session=form.instance).exists():
-            if form.is_approved_or_virtual:
+            if not form.requires_approval:
                 status_id = 'scheda'
             else:
                 status_id = 'apprw'

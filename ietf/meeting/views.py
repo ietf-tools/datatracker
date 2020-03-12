@@ -2017,6 +2017,8 @@ def interim_request(request):
             is_virtual = form.is_virtual()
             meeting_type = form.cleaned_data.get('meeting_type')
 
+            requires_approval = not ( is_approved or ( is_virtual and not settings.VIRTUAL_INTERIMS_REQUIRE_APPROVAL ))
+
             # pre create meeting
             if meeting_type in ('single', 'multi-day'):
                 meeting = form.save(date=get_earliest_session_date(formset))
@@ -2026,13 +2028,13 @@ def interim_request(request):
                     InterimSessionModelForm.__init__,
                     user=request.user,
                     group=group,
-                    is_approved_or_virtual=(is_approved or is_virtual))
+                    requires_approval=requires_approval)
                 formset = SessionFormset(instance=meeting, data=request.POST)
                 formset.is_valid()
                 formset.save()
                 sessions_post_save(request, formset)
 
-                if not (is_approved or is_virtual):
+                if requires_approval:
                     send_interim_approval_request(meetings=[meeting])
                 elif not has_role(request.user, 'Secretariat'):
                     send_interim_announcement_request(meeting=meeting)
@@ -2046,7 +2048,7 @@ def interim_request(request):
                     InterimSessionModelForm.__init__,
                     user=request.user,
                     group=group,
-                    is_approved_or_virtual=(is_approved or is_virtual))
+                    requires_approval=requires_approval)
                 formset = SessionFormset(instance=Meeting(), data=request.POST)
                 formset.is_valid()  # re-validate
                 for session_form in formset.forms:
@@ -2063,7 +2065,7 @@ def interim_request(request):
                     series.append(meeting)
                     sessions_post_save(request, [session_form])
 
-                if not (is_approved or is_virtual):
+                if requires_approval:
                     send_interim_approval_request(meetings=series)
                 elif not has_role(request.user, 'Secretariat'):
                     send_interim_announcement_request(meeting=meeting)
@@ -2191,7 +2193,7 @@ def interim_request_edit(request, number):
             InterimSessionModelForm.__init__,
             user=request.user,
             group=group,
-            is_approved_or_virtual=is_approved)
+            requires_approval= not is_approved)
 
         formset = SessionFormset(instance=meeting, data=request.POST)
 
