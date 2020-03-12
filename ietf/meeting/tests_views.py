@@ -23,7 +23,7 @@ from six.moves.urllib.parse import urlparse
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.test import Client
+from django.test import Client, override_settings
 from django.db.models import F
 
 import debug           # pyflakes:ignore
@@ -39,7 +39,6 @@ from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignm
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.utils import finalize, condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs
-from ietf.meeting.utils import current_session_status
 from ietf.meeting.views import session_draft_list
 from ietf.name.models import SessionStatusName, ImportantDateName
 from ietf.utils.decorators import skip_coverage
@@ -1398,7 +1397,7 @@ class InterimTests(TestCase):
         count = person.role_set.filter(name='chair',group__type__in=('wg', 'rg'), group__state__in=('active', 'proposed')).count()
         self.assertEqual(count, len(q("#id_group option")) - 1)  # -1 for options placeholder
 
-    def test_interim_request_single_virtual(self):
+    def do_interim_request_single_virtual(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
         date = datetime.date.today() + datetime.timedelta(days=30)
@@ -1440,7 +1439,6 @@ class InterimTests(TestCase):
         session = meeting.session_set.first()
         self.assertEqual(session.remote_instructions,remote_instructions)
         self.assertEqual(session.agenda_note,agenda_note)
-        self.assertEqual(current_session_status(session).slug,'scheda')
         timeslot = session.official_timeslotassignment().timeslot
         self.assertEqual(timeslot.time,dt)
         self.assertEqual(timeslot.duration,duration)
@@ -1451,8 +1449,22 @@ class InterimTests(TestCase):
         self.assertTrue(os.path.exists(path))
         # check notice to secretariat
         self.assertEqual(len(outbox), length_before + 1)
-        self.assertIn('interim meeting ready for announcement', outbox[-1]['Subject'])
+        return meeting
+
+    @override_settings(VIRTUAL_INTERIMS_REQUIRE_APPROVAL = True)
+    def test_interim_request_single_virtual_settings_approval_required(self):
+        meeting = self.do_interim_request_single_virtual()
+        self.assertEqual(meeting.session_set.last().schedulingevent_set.last().status_id,'apprw')
+        self.assertIn('New Interim Meeting Request', outbox[-1]['Subject'])
+        self.assertIn('session-request@ietf.org', outbox[-1]['To'])
+        self.assertIn('aread@example.org', outbox[-1]['Cc'])
+
+    @override_settings(VIRTUAL_INTERIMS_REQUIRE_APPROVAL = False)
+    def test_interim_request_single_virtual_settings_approval_not_required(self):
+        meeting = self.do_interim_request_single_virtual()
+        self.assertEqual(meeting.session_set.last().schedulingevent_set.last().status_id,'scheda')
         self.assertIn('iesg-secretary@ietf.org', outbox[-1]['To'])
+        self.assertIn('interim meeting ready for announcement', outbox[-1]['Subject'])
 
     def test_interim_request_single_in_person(self):
         make_meeting_test_data()
