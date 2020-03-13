@@ -1,9 +1,10 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import re
 import bleach
 
 from django import template
@@ -78,3 +79,10 @@ def texescape_filter(value):
 def linkify(value):
     text = mark_safe(bleach.linkify(escape(value)))
     return text
+
+@register.filter
+@stringfilter
+def first_url(value):
+    urls = re.findall(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+", value)
+    url = urls[0] if urls else None
+    return url
