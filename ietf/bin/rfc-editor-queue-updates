@@ -22,7 +22,6 @@ log("Updating RFC Editor queue states from %s" % settings.RFC_EDITOR_QUEUE_URL)
 
 socket.setdefaulttimeout(30)
 response = requests.get(settings.RFC_EDITOR_QUEUE_URL).raw
-debug.type('response')
 drafts, warnings = parse_queue(response)
 for w in warnings:
     log(u"Warning: %s" % w)
