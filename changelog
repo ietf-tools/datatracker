@@ -1,3 +1,42 @@
+ietfdb (6.121.0) ietf; urgency=medium
+
+  **Tweaks for wholly virtual meeting, for IETF-107 **
+
+  * Added code to show a webex call-in button on the agenda page if the session
+    agenda-note contains and IETF webex URL.
+
+  * Merged in [17425] from rjsparks@nostrum.com: Make required AD approval of
+    virtual interims configurable. Fixes #2912.  
+
+  * Added a management command to check draft event revision numbers.  To be
+    extended for other checks.
+
+  * Merged in [17419] from rjsparks@nostrum.com: Don't warn about idcutoff
+    when the cutoff is after the meeting starts.  Fixes #2907.  
+
+  * Merged in [17418] from rjsparks@nostrum.com: Correctly represent cancelled
+    sessions in ics files. Fixes #2905.  
+
+  * Merged in [17396] from rjsparks@nostrum.com: Move charters for replaced
+    groups to a new replaced state. Close any outstanding ballots on them.
+    Fixes #2889, #2873, and #1286.  
+
+  * Avoid trying to open meeting documents with empty .uploaded_filename.
+
+  * Added a progress bar for verbosity=1 of the community list index update
+    command.
+
+  * Merged back fixes from production
+
+  * Corrected the extent of a try/except block, moving more code inside the
+    block.  Fixes a submission exception that should just be a document error
+    reported back to the user.
+
+  * Added a guard against accessing attributes of None.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Mar 2020 14:48:11 +0000
+
+
 ietfdb (6.120.0) ietf; urgency=medium
 
   **Submission API changes, Py2/3 transition fixes**
