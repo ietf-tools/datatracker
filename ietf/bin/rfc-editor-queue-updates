@@ -21,8 +21,8 @@ from ietf.utils.log import log
 log("Updating RFC Editor queue states from %s" % settings.RFC_EDITOR_QUEUE_URL)
 
 socket.setdefaulttimeout(30)
-response = requests.get(settings.RFC_EDITOR_QUEUE_URL).raw
-drafts, warnings = parse_queue(response)
+response = requests.get(settings.RFC_EDITOR_QUEUE_URL).text
+drafts, warnings = parse_queue(io.StringIO(response))
 for w in warnings:
     log(u"Warning: %s" % w)
 
