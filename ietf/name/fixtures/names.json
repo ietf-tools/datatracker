@@ -11463,6 +11463,16 @@
   },
   {
     "fields": {
+      "desc": "WebEx support",
+      "name": "WebEx session",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.roomresourcename",
+    "pk": "webex"
+  },
+  {
+    "fields": {
       "desc": "",
       "name": "Approved",
       "order": 0,

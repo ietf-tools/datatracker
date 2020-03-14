@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -398,6 +398,9 @@ class Room(models.Model):
         return urlresource.url if urlresource else None
     def video_stream_url(self):
         urlresource = self.urlresource_set.filter(name_id__in=['meetecho', ]).first()
+        return urlresource.url if urlresource else None
+    def webex_url(self):
+        urlresource = self.urlresource_set.filter(name_id__in=['webex', ]).first()
         return urlresource.url if urlresource else None
     #
     class Meta:

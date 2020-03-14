@@ -24,12 +24,7 @@
     href="xmpp:{{item.session.jabber_room_name}}@jabber.ietf.org?join"
     title="Jabber room for {{item.session.jabber_room_name}}"><span class="fa fa-lightbulb-o"></span>
   </a>
-    {% if "https://ietf.webex.com" in item.session.agenda_note|first_url %}
-	  <a class="btn btn-default btn-xs"
-	    href="{{ item.session.agenda_note|first_url }}"
-	    title="Webex session"><span class="fa fa-phone"></span>
-	  </a>
-    {% else  %}
+
 	<!-- Video stream (meetecho) -->
 	{% if item.timeslot.location.video_stream_url %}
 	  <a class="btn btn-default btn-xs"
@@ -44,7 +39,21 @@
 	    title="Audio stream"><span class="glyphicon glyphicon-headphones"></span>
 	  </a>
 	{% endif %}
-    {% endif %}	
+        <!-- WebEx -->
+        {% if "https://ietf.webex.com" in item.session.agenda_note|first_url %}
+          <a class="btn btn-default btn-xs"
+            href="{{ item.session.agenda_note|first_url }}"
+            title="Webex session"><span class="fa fa-phone"></span>
+          </a>
+        {% else  %}
+          {% if item.timeslot.location.webex_url %}
+            <a class="btn btn-default btn-xs"
+              href="{{item.timeslot.location.webex_url|format:item.session }}"
+              title="Webex session"><span class="fa fa-phone"></span>
+            </a>
+          {% endif %}
+        {% endif %}
+
 {% else %}
 
   <!-- Jabber logs -->
