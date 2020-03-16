@@ -103,7 +103,7 @@ class InterimSessionInlineFormSet(BaseInlineFormSet):
 
 class InterimMeetingModelForm(forms.ModelForm):
     # TODO: Should area groups get to schedule Interims?
-    group = GroupModelChoiceField(queryset=Group.objects.filter(type__in=('wg', 'rg'), state__in=('active', 'proposed', 'bof')).order_by('acronym'), required=False)
+    group = GroupModelChoiceField(queryset=Group.objects.filter(type__in=('wg', 'rg', 'ag'), state__in=('active', 'proposed', 'bof')).order_by('acronym'), required=False)
     in_person = forms.BooleanField(required=False)
     meeting_type = forms.ChoiceField(choices=(
         ("single", "Single"),

@@ -1374,7 +1374,7 @@ class InterimTests(TestCase):
         r = self.client.get("/meeting/interim/request/")
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(Group.objects.filter(type__in=('wg', 'rg'), state__in=('active', 'proposed')).count(),
+        self.assertEqual(Group.objects.filter(type__in=('wg', 'rg', 'ag'), state__in=('active', 'proposed')).count(),
             len(q("#id_group option")) - 1)  # -1 for options placeholder
         self.client.logout()
 
