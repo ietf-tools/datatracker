@@ -16,6 +16,7 @@ from django.core.management.base import BaseCommand #, CommandError
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import NewRevisionDocEvent
+from ietf.submit.models import Submission, SubmissionEvent
 
 RevInfo = collections.namedtuple('RevInfo', ['doc', 'event', 'rev'])
 
@@ -35,26 +36,44 @@ class Command(BaseCommand):
         parser.add_argument('documents', nargs='*',
             help="One or more files to process")
 
+    def check_objects(self, queryset, timeattr, docattr):
+        revs = {}
+        self.stdout.write("  Checking %s ..." % queryset.model.__name__)
+        for obj in queryset:
+            doc =  getattr(obj, docattr)
+            time = getattr(obj, timeattr)
+            if not obj.rev:
+                self.stdout.write("Bad revision number: %s %-52s: '%s'" % (time, doc.name, obj.rev))
+                continue
+            rev = int(obj.rev.lstrip('0') or '0')
+            #self.stdout.write("%s %-52s %02s" % (time, doc.name, obj.rev))
+            if doc.name in revs:
+                if rev <= revs[doc.name].rev:
+                    self.stderr.write("%s %-50s %02d -> %02d" % (time, doc.name, revs[doc.name].rev, rev))
+            revs[doc.name] = RevInfo(doc, obj, rev)
+        for doc, obj, rev in revs.values():
+            if not doc.rev == obj.rev:
+                self.stderr.write("%-50s: doc.rev: %s != %s.rev: %s" % (doc.name, doc.rev, obj._meta.model_name, obj.rev))
+
+
     def handle(self, *args, **options):
         #verbosity = options.get("verbosity", 1)
 
         self.stdout.write("Checking submissions from %s" % options['from'])
 
-        doc_rev = {}
-        events = NewRevisionDocEvent.objects.filter(time__gte=options['from'], doc__type_id='draft').order_by('time')
-        if options['documents']:
-            events = events.filter(doc__name__in=options['documents'])
-        for event in events:
-            if not event.rev:
-                self.stdout.write("Bad revision number: %s %-52s: '%s'" % (event.time, event.doc.name, event.rev))
-                continue
-            rev = int(event.rev.lstrip('0') or '0')
-            doc = event.doc
-            #self.stdout.write("%s %-52s %02s" % (event.time, event.doc.name, event.rev))
-            if doc.name in doc_rev:
-                if rev <= doc_rev[doc.name].rev:
-                    self.stderr.write("%s %-50s %02d -> %02d" % (event.time, event.doc.name, doc_rev[doc.name].rev, rev))
-            doc_rev[doc.name] = RevInfo(doc, event, rev)
-        for doc, event, rev in doc_rev.values():
-            if not doc.rev == event.rev:
-                self.stderr.write("%-50s: doc.rev: %s != event.rev: %s" % (doc.name, doc.rev, event.rev))
+        for model, timeattr, docattr in [
+                (NewRevisionDocEvent, 'time', 'doc'),
+                (Submission, 'submission_date', 'draft'),
+            ]:
+            filter = {
+                '%s__gte'%timeattr:     options['from'],
+                '%s__type_id' %docattr: 'draft',           
+                }
+            qs = model.objects.filter(**filter).order_by(timeattr)
+            if options['documents']:
+                docfilter = {
+                    '%s__name__in' % docattr: options['documents'],
+                    }
+                qs = qs.filter(**docfilter)
+
+            self.check_objects(qs, timeattr, docattr)
