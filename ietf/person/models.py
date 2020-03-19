@@ -27,6 +27,7 @@ from simple_history.models import HistoricalRecords
 
 import debug                            # pyflakes:ignore
 
+from ietf.extresource.models import ExtResource
 from ietf.person.name import name_parts, initials, plain_name
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
@@ -237,6 +238,10 @@ class Person(models.Model):
         ct1['name']      = self.name
         ct1['ascii']     = self.ascii
         return ct1
+
+class PersonExtResource(models.Model):
+    person = ForeignKey(Person) 
+    extresource = ForeignKey(ExtResource)
 
 @python_2_unicode_compatible
 class Alias(models.Model):

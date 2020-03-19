@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -126,4 +126,8 @@ class ImportantDateName(NameModel):
     default_offset_days = models.SmallIntegerField()
 class DocUrlTagName(NameModel):
     "Repository, Wiki, Issue Tracker, ..."
-    
+class ExtResourceTypeName(NameModel):
+    """Url, Email, String"""
+class ExtResourceName(NameModel):
+    """GitHub Repository URL, GitHub Username, ..."""
+    type = ForeignKey(ExtResourceTypeName)

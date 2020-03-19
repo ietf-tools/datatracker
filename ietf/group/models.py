@@ -22,6 +22,7 @@ from simple_history.models import HistoricalRecords
 
 import debug                            # pyflakes:ignore
 
+from ietf.extresource.models import ExtResource
 from ietf.group.colors import fg_group_colors, bg_group_colors
 from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName, AgendaTypeName
 from ietf.person.models import Email, Person
@@ -42,6 +43,7 @@ class GroupInfo(models.Model):
     list_subscribe = models.CharField(max_length=255, blank=True)
     list_archive = models.CharField(max_length=255, blank=True)
     comments = models.TextField(blank=True)
+
 
     unused_states = models.ManyToManyField('doc.State', help_text="Document states that have been disabled for the group.", blank=True)
     unused_tags = models.ManyToManyField(DocTagName, help_text="Document tags that have been disabled for the group.", blank=True)
@@ -261,6 +263,10 @@ class GroupURL(models.Model):
 
     def __str__(self):
         return u"%s (%s)" % (self.url, self.name)
+
+class GroupExtResource(models.Model):
+    group = ForeignKey(Group) # Should this really be to GroupInfo?
+    extresource = ForeignKey(ExtResource)
 
 @python_2_unicode_compatible
 class GroupMilestoneInfo(models.Model):

@@ -22,6 +22,7 @@ from django.utils.html import mark_safe # type:ignore
 
 import debug                            # pyflakes:ignore
 
+from ietf.extresource.models import ExtResource
 from ietf.group.models import Group
 from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdLevelName, StdLevelName,
     DocRelationshipName, DocReminderTypeName, BallotPositionName, ReviewRequestStateName, ReviewAssignmentStateName, FormalLanguageName,
@@ -107,6 +108,7 @@ class DocumentInfo(models.Model):
     uploaded_filename = models.TextField(blank=True)
     note = models.TextField(blank=True)
     internal_comments = models.TextField(blank=True)
+
 
     def file_extension(self):
         if not hasattr(self, '_cached_extension'):
@@ -860,6 +862,10 @@ class DocumentURL(models.Model):
     tag  = ForeignKey(DocUrlTagName)
     desc = models.CharField(max_length=255, default='', blank=True)
     url  = models.URLField(max_length=2083) # 2083 is the legal max for URLs
+
+class DocExtResource(models.Model):
+    doc = ForeignKey(Document) # Should this really be to DocumentInfo rather than Document?
+    extresource = ForeignKey(ExtResource)
 
 @python_2_unicode_compatible
 class RelatedDocHistory(models.Model):
