@@ -1,6 +1,48 @@
+ietfdb (6.122.0) ietf; urgency=medium
+
+  **Added agenda webex URL support, and meeting-related tweaks and bugfixes**
+
+  * Added webex URL to agenda.ics if Room.webex_url is non-empty.  Fixes issue
+    #2926.
+
+  * Added another check to the check_draft_event_revision_integrity management
+    command, and refined it somewhat.
+
+  * Added a utility function to convert objects to dictionaries (for
+    comparisons, for instance).
+
+  * Added a --dry-run option to bin/mkdevbranch, and added some exception
+    handling.
+
+  * Help tablesorter see 'Month Year' dates as dates with a hidden day digit.
+    Fixes issue #2921.
+
+  * Refactored and extended check_draft_event_revision_integrity a bit.
+
+  * Tweaked bin/mkpatch some for -c handling
+
+  * Merged in [17442] from rjsparks@nostrum.com: Allow area groups to request
+    interim meetings. Fixed #2919.  
+
+  * Additional tweaks to bin/mkpatch; removing buggy -r option.
+
+  * Added automatic naming to bin/mkpatch when changeset or revision range is
+    given.
+
+  * Added WebEx room resource name, query method and template logic to show
+    WebEx room resources.
+
+  * Removed a debug statement
+
+  * Made links from agenda room names to floorplans conditional on the room
+    having a floor plan set.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Mar 2020 19:50:12 +0000
+
+
 ietfdb (6.121.0) ietf; urgency=medium
 
-  **Tweaks for wholly virtual meeting, for IETF-107 **
+  **Tweaks for wholly virtual meeting, for IETF-107**
 
   * Added code to show a webex call-in button on the agenda page if the session
     agenda-note contains and IETF webex URL.
