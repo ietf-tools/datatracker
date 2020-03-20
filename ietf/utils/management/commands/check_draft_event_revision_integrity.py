@@ -17,7 +17,7 @@ from django.core.management.base import BaseCommand #, CommandError
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocHistory, NewRevisionDocEvent
-from ietf.submit.models import Submission, SubmissionEvent
+from ietf.submit.models import Submission
 
 RevInfo = collections.namedtuple('RevInfo', ['doc', 'event', 'rev'])
 
