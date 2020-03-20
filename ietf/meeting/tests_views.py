@@ -42,7 +42,7 @@ from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.meeting.views import session_draft_list
 from ietf.name.models import SessionStatusName, ImportantDateName
 from ietf.utils.decorators import skip_coverage
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import outbox, empty_outbox, get_payload
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.text import xslugify
 
@@ -1260,6 +1260,8 @@ class InterimTests(TestCase):
     def test_interim_send_announcement(self):
         make_meeting_test_data()
         meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
+        meeting.time_zone = 'America/Los_Angeles'
+        meeting.save()
         url = urlreverse("ietf.meeting.views.interim_send_announcement", kwargs={'number': meeting.number})
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
@@ -1271,6 +1273,8 @@ class InterimTests(TestCase):
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_announce'))
         self.assertEqual(len(outbox), len_before + 1)
         self.assertIn('WG Virtual Meeting', outbox[-1]['Subject'])
+        self.assertIn('09:00 to 09:20 America/Los_Angeles', get_payload(outbox[-1]))
+        self.assertIn('(17:00 to 17:20 UTC)', get_payload(outbox[-1]))
 
     def test_interim_approve_by_ad(self):
         make_meeting_test_data()
