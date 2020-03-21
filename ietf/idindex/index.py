@@ -157,7 +157,6 @@ def all_id2_txt():
         # 3
         if state == "active":
             s = "I-D Exists"
-            log.assertion('iesg_state')
             if iesg_state:
                 s = iesg_state.name
                 tags = d.tags.filter(slug__in=IESG_SUBSTATE_TAGS).values_list("name", flat=True)

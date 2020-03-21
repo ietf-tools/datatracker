@@ -168,7 +168,6 @@ def state_age_colored(doc):
             # Don't show anything for expired/withdrawn/replaced drafts
             return ""
         iesg_state = doc.get_state_slug('draft-iesg')
-        log.assertion('iesg_state')
         if not iesg_state:
             return ""
 
