@@ -28,7 +28,6 @@ def expirable_draft(draft):
     two functions need to be kept in sync."""
     if draft.type_id != 'draft':
         return False
-    log.assertion('draft.get_state_slug("draft-iesg")')
     return bool(expirable_drafts(Document.objects.filter(pk=draft.pk)))
 
 nonexpirable_states = []                # type: List[State]
