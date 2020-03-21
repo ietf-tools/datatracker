@@ -339,6 +339,10 @@ class SubmissionBaseUploadForm(forms.Form):
             except (UnicodeDecodeError, LookupError) as e:
                 self.add_error('txt', 'Failed decoding the uploaded file: "%s"' % str(e))
 
+        rev_error = validate_submission_rev(self.filename, self.revision)
+        if rev_error:
+            raise forms.ValidationError(rev_error)
+
         # The following errors are likely noise if we have previous field
         # errors:
         if self.errors:

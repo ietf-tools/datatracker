@@ -1120,6 +1120,38 @@ class SubmitTests(TestCase):
         self.assertIn('Expected the PS file to have extension ".ps"', m)
         self.assertIn('Expected an PS file of type "application/postscript"', m)
 
+    def test_submit_file_in_archive(self):
+        name = "draft-authorname-testing-file-exists"
+        rev = '00'
+        formats = ['txt', 'xml']
+        group = None
+
+        # break early in case of missing configuration
+        self.assertTrue(os.path.exists(settings.IDSUBMIT_IDNITS_BINARY))
+
+        # get
+        url = urlreverse('ietf.submit.views.upload_submission')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        # submit
+        for dir in [self.repository_dir, self.archive_dir, ]:
+            files = {}
+            for format in formats:
+                fn = os.path.join(dir, "%s-%s.%s" % (name, rev, format))
+                with io.open(fn, 'w') as f:
+                    f.write("a" * 2000)
+                files[format], author = submission_file(name, rev, group, format, "test_submission.%s" % format)
+
+            r = self.client.post(url, files)
+
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            m = q('div.alert-danger').text()
+
+            self.assertIn('Unexpected files already in the archive', m)
+
     def test_submit_nonascii_name(self):
         name = "draft-authorname-testing-nonascii"
         rev = "00"

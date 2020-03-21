@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import datetime
 import io
 import os
+import pathlib
 import re
 import six                              # pyflakes:ignore
 if six.PY3:
@@ -141,6 +142,15 @@ def validate_submission_rev(name, rev):
 
         if rev != expected:
             return 'Invalid revision (revision %02d is expected)' % expected
+
+        for dirname in [settings.INTERNET_DRAFT_PATH, settings.INTERNET_DRAFT_ARCHIVE_DIR, ]:
+            dir = pathlib.Path(dirname)
+            pattern = '%s-%02d.*' % (name, rev)
+            existing = list(dir.glob(pattern))
+            if existing:
+                plural = '' if len(existing) == 1 else 's'
+                files  = ', '.join([ f.name for f in existing ])
+                return 'Unexpected file%s already in the archive: %s' % (plural, files)
 
     replaced_by=has_been_replaced_by(name)
     if replaced_by:
