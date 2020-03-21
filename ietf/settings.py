@@ -440,7 +440,6 @@ INSTALLED_APPS = [
     # IETF Secretariat apps
     'ietf.secr.announcement',
     'ietf.secr.areas',
-    'ietf.secr.drafts',
     'ietf.secr.groups',
     'ietf.secr.meetings',
     'ietf.secr.proceedings',

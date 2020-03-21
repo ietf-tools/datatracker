@@ -86,7 +86,7 @@ def report_id_activity(start,end):
                'ff_update_count':ff_update_count,
                'ff_update_percent':ff_update_percent}
     
-    report = render_to_string('drafts/report_id_activity.txt', context)
+    report = render_to_string('proceedings/report_id_activity.txt', context)
     
     return report
     
@@ -98,6 +98,6 @@ def report_progress_report(start_date,end_date):
     
     context = get_progress_stats(sdate,edate)
     
-    report = render_to_string('drafts/report_progress_report.txt', context)
+    report = render_to_string('proceedings/report_progress_report.txt', context)
     
     return report
