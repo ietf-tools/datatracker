@@ -1093,6 +1093,24 @@ class SessionDetailsTests(TestCase):
         r = self.client.get(url)
         self.assertTrue(all([x in unicontent(r) for x in ('slides','agenda','minutes','draft')]))
         self.assertNotContains(r, 'deleted')
+
+    def test_session_details_past_interim(self):
+        group = GroupFactory.create(type_id='wg',state_id='active')
+        chair = RoleFactory(name_id='chair',group=group)
+        session = SessionFactory.create(meeting__type_id='interim',group=group, meeting__date=datetime.date.today()-datetime.timedelta(days=90))
+        SessionPresentationFactory.create(session=session,document__type_id='draft',rev=None)
+        SessionPresentationFactory.create(session=session,document__type_id='minutes')
+        SessionPresentationFactory.create(session=session,document__type_id='slides')
+        SessionPresentationFactory.create(session=session,document__type_id='agenda')
+
+        url = urlreverse('ietf.meeting.views.session_details', kwargs=dict(num=session.meeting.number, acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        self.assertNotIn('The materials upload cutoff date for this session has passed', unicontent(r))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        self.client.login(username=chair.person.user.username,password=chair.person.user.username+'+password')
+        self.assertTrue(all([x in unicontent(r) for x in ('slides','agenda','minutes','draft')]))
         
     def test_add_session_drafts(self):
         group = GroupFactory.create(type_id='wg',state_id='active')

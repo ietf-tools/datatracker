@@ -21,6 +21,12 @@
     {% endif %}
   </h1>
 
+  {% if is_materials_manager and not can_manage_materials %}
+  <div class="alert alert-warning">
+    The materials upload cutoff date for this session has passed. If you need to change the materials, contact the Secretariat.
+  </div>
+  {% endif %}
+
 
   {% with use_panels=unscheduled_sessions %}
     {% if use_panels %}
