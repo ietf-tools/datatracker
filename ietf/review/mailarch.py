@@ -97,8 +97,8 @@ def retrieve_messages_from_mbox(mbox_fileobj):
                 "splitfrom": email.utils.parseaddr(msg["From"]),
                 "subject": msg["Subject"],
                 "content": content.replace("\r\n", "\n").replace("\r", "\n").strip("\n"),
-                "message_id": email.utils.unquote(msg["Message-ID"]),
-                "url": email.utils.unquote(msg["Archived-At"]),
+                "message_id": email.utils.unquote(msg["Message-ID"].strip()),
+                "url": email.utils.unquote(msg["Archived-At"].strip()),
                 "date": msg["Date"],
                 "utcdate": (utcdate.date().isoformat(), utcdate.time().isoformat()) if utcdate else ("", ""),
             })

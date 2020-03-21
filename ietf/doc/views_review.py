@@ -860,7 +860,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
 
                 list_name = mailarch.list_name_from_email(assignment.review_request.team.list_email)
                 if list_name:
-                    review.external_url = mailarch.construct_message_url(list_name, email.utils.unquote(msg["Message-ID"]))
+                    review.external_url = mailarch.construct_message_url(list_name, email.utils.unquote(msg["Message-ID"].strip()))
                     review.save_with_history([close_event])
 
             if form.cleaned_data['email_ad'] or assignment.result in assignment.review_request.team.reviewteamsettings.notify_ad_when.all(): 
