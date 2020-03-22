@@ -377,7 +377,14 @@ class DocumentInfo(models.Model):
         return self.rfc_number()
 
     def author_list(self):
-        return ", ".join(author.email_id for author in self.documentauthor_set.all() if author.email_id)
+        best_addresses = []
+        for author in self.documentauthor_set.all():
+            if author.email:
+                if author.email.active:
+                    best_addresses.append(author.email.address)
+                else:
+                    best_addresses.append(author.email.person.email_address())
+        return ", ".join(best_addresses)
 
     def authors(self):
         return [ a.person for a in self.documentauthor_set.all() ]
