@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2015-2019, All Rights Reserved
+# Copyright The IETF Trust 2015-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -77,7 +77,7 @@ def nomcom_kwargs_for_year(year=None, *args, **kwargs):
     if 'group__acronym' not in kwargs:
         kwargs['group__acronym'] = 'nomcom%d'%year
     if 'group__name' not in kwargs:
-        kwargs['group__name'] = 'TEST VERSION of IAB/IESG Nominating Committee %d/%d'%(year,year+1)
+        kwargs['group__name'] = 'TEST VERSION of NomCom %d/%d'%(year,year+1)
     return kwargs
 
 
