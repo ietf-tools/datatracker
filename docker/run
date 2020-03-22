@@ -133,6 +133,12 @@ if   [ "$(uname)" = "Darwin" ]; then
     CMD="open -a"
 elif [ "$(uname)" = "Linux" ]; then
     echo "Running on Linux."
+elif [[ $(uname) =~ CYGWIN.* ]]; then
+    echo "Running under Cygwin."
+    APP="Don't know how to start Docker when running under Cygwin"
+    CMD="echo"
+    MYSQLDIR=$(echo $MYSQLDIR | sed -e 's/^\/cygdrive\/\(.\)/\1:/')
+    WHO=$(echo $WHO | sed -e 's/^.*\\//' | tr -d \\r)
 else
     die "This script does not have support for your architecture ($(uname)); sorry :-("
 fi
@@ -183,7 +189,6 @@ else
 	URL="http://$ip:$PORT/"
     fi
 fi
-
 
 image=$(docker ps | grep "$REPO:$TAG" | awk '{ print $1 }')
 if [ "$image" ]; then
