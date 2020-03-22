@@ -2,7 +2,7 @@ import datetime
 import debug    # pyflakes:ignore
 
 from ietf.doc.factories import DocumentFactory,NewRevisionDocEventFactory
-from ietf.secr.drafts.reports import report_id_activity, report_progress_report
+from ietf.secr.proceedings.reports import report_id_activity, report_progress_report
 from ietf.utils.test_utils import TestCase
 from ietf.meeting.factories import MeetingFactory
 
