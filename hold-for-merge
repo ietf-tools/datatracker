@@ -1,5 +1,6 @@
 # -*- conf-mode -*-
 
+^/personal/mahoney/6.121.1.dev0@17473   # Test commit
 /personal/kivinen/6.94.2.dev0@16091	# Replaced by later commit
 /personal/rjs/6.104.1.dev0@16809	# Local changes, not for merge
 /personal/rjs/6.103.1.dev0@16761	# Fixed in a different manner in [16757]
