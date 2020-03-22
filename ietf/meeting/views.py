@@ -1176,6 +1176,7 @@ def session_details(request, num, acronym):
                     'pending_suggestions' : pending_suggestions,
                     'meeting' :meeting ,
                     'acronym' :acronym,
+                    'is_materials_manager' : session.group.has_role(request.user, session.group.features.matman_roles),
                     'can_manage_materials' : can_manage,
                     'thisweek': datetime.date.today()-datetime.timedelta(days=7),
                   })
