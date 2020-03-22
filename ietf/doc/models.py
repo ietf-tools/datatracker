@@ -22,11 +22,10 @@ from django.utils.html import mark_safe # type:ignore
 
 import debug                            # pyflakes:ignore
 
-from ietf.extresource.models import ExtResource
 from ietf.group.models import Group
 from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdLevelName, StdLevelName,
     DocRelationshipName, DocReminderTypeName, BallotPositionName, ReviewRequestStateName, ReviewAssignmentStateName, FormalLanguageName,
-    DocUrlTagName)
+    DocUrlTagName, ExtResourceName)
 from ietf.person.models import Email, Person
 from ietf.person.utils import get_active_balloters
 from ietf.utils import log
@@ -865,7 +864,8 @@ class DocumentURL(models.Model):
 
 class DocExtResource(models.Model):
     doc = ForeignKey(Document) # Should this really be to DocumentInfo rather than Document?
-    extresource = ForeignKey(ExtResource)
+    name = models.ForeignKey(ExtResourceName, on_delete=models.CASCADE)
+    value = models.CharField(max_length=2083) # 2083 is the maximum legal URL length
 
 @python_2_unicode_compatible
 class RelatedDocHistory(models.Model):

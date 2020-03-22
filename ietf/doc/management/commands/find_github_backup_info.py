@@ -2,7 +2,6 @@
 import json
 
 from django.core.management.base import BaseCommand
-from django.db.models import Q
 
 from ietf.extresource.models import ExtResource
 from ietf.doc.models import DocExtResource

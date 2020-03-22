@@ -22,9 +22,8 @@ from simple_history.models import HistoricalRecords
 
 import debug                            # pyflakes:ignore
 
-from ietf.extresource.models import ExtResource
 from ietf.group.colors import fg_group_colors, bg_group_colors
-from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName, AgendaTypeName
+from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName, AgendaTypeName, ExtResourceName
 from ietf.person.models import Email, Person
 from ietf.utils.mail import formataddr, send_mail_text
 from ietf.utils import log
@@ -266,7 +265,8 @@ class GroupURL(models.Model):
 
 class GroupExtResource(models.Model):
     group = ForeignKey(Group) # Should this really be to GroupInfo?
-    extresource = ForeignKey(ExtResource)
+    name = models.ForeignKey(ExtResourceName, on_delete=models.CASCADE)
+    value = models.CharField(max_length=2083) # 2083 is the maximum legal URL length
 
 @python_2_unicode_compatible
 class GroupMilestoneInfo(models.Model):

@@ -417,7 +417,6 @@ INSTALLED_APPS = [
     'ietf.community',
     'ietf.dbtemplate',
     'ietf.doc',
-    'ietf.extresource',
     'ietf.group',
     'ietf.idindex',
     'ietf.iesg',

@@ -7,6 +7,8 @@ import re
 
 import debug
 
+from collections import OrderedDict
+
 from django.db import migrations
 
 """
@@ -41,14 +43,31 @@ name_map = {
     "GitLab User Name":       "gitlab_username",
 }
 
+# TODO: Review all the None values below and make sure ignoring the URLs they match is really the right thing to do.
+url_map = OrderedDict({
+   "https?://github\\.com": "github_repo",
+   "https?://trac\\.ietf\\.org/.*/wiki": "wiki",
+   "ietf\\.org.*/trac/wiki": "wiki",
+   "trac.*wiki": "wiki",
+   "www\\.ietf\\.org/mailman" : None,
+   "www\\.ietf\\.org/mail-archive" : None,
+   "mailarchive\\.ietf\\.org" : None,
+   "ietf\\.org/logs": "jabber_log",
+   "ietf\\.org/jabber/logs": "jabber_log",
+   "xmpp:.*?join": "jabber_room",
+   "bell-labs\\.com": None,
+   "html\\.charters": None,
+   "datatracker\\.ietf\\.org": None,
+})
+
 def forward(apps, schema_editor):
     DocExtResource = apps.get_model('doc', 'DocExtResource')
-    ExtResource = apps.get_model('extresource', 'ExtResource')
     ExtResourceName = apps.get_model('name', 'ExtResourceName')
     DocumentUrl = apps.get_model('doc', 'DocumentUrl')
 
     mapped = 0
     not_mapped = 0
+    ignored = 0
 
     for doc_url in DocumentUrl.objects.all():
         match_found = False
@@ -57,13 +76,31 @@ def forward(apps, schema_editor):
                 match_found = True
                 mapped += 1
                 name = ExtResourceName.objects.get(slug=slug)
-                ext_res = ExtResource.objects.create(name_id=slug, value= doc_url.url) # TODO: validate this value against name.type
-                DocExtResource.objects.create(doc=doc_url.doc, extresource=ext_res)
+                DocExtResource.objects.create(doc=doc_url.doc, name_id=slug, value=doc_url.url) # TODO: validate this value against name.type
                 break
+        if not match_found:
+            for regext, slug in url_map.items():
+                if re.search(regext, doc_url.url):
+                    match_found = True
+                    if slug:
+                        mapped +=1
+                        name = ExtResourceName.objects.get(slug=slug)
+                        # Munge the URL if it's the first github repo match
+                        #  Remove "/tree/master" substring if it exists
+                        #  Remove trailing "/issues" substring if it exists
+                        #  Remove "/blob/master/.*" pattern if present
+                        if regext == "https?://github\\.com":
+                            doc_url.url = doc_url.url.replace("/tree/master","")
+                            doc_url.url = re.sub('/issues$', '', doc_url.url)
+                            doc_url.url = re.sub('/blob/master.*$', '', doc_url.url)
+                        DocExtResource.objects.create(doc=doc_url.doc, name_id=slug, value=doc_url.url) # TODO: validate this value against name.type
+                    else:
+                        ignored +=1
+                    break
         if not match_found:
             debug.show('("Not Mapped:",doc_url.desc, doc_url.tag.slug, doc_url.doc.name, doc_url.url)')
             not_mapped += 1
-    debug.show('(mapped, not_mapped)')
+    debug.show('(mapped, ignored, not_mapped)')
 
 def reverse(apps, schema_editor):
     DocExtResource = apps.get_model('doc', 'DocExtResource')
@@ -73,7 +110,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('doc', '0032_extres'),
-        ('extresource', '0001_extres'),
         ('name', '0011_populate_extres'),
     ]
 

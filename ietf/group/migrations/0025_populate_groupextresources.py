@@ -7,6 +7,8 @@ import re
 
 import debug
 
+from collections import OrderedDict
+
 from django.db import migrations
 
 
@@ -32,14 +34,32 @@ name_map = {
     "GitLab User Name":       "gitlab_username",
 }
 
+# TODO: Review all the None values below and make sure ignoring the URLs they match is really the right thing to do.
+url_map = OrderedDict({
+   "https?://github\\.com": "github_repo",
+   "https?://trac\\.ietf\\.org/.*/wiki": "wiki",
+   "ietf\\.org.*/trac/wiki": "wiki",
+   "trac.*wiki": "wiki",
+   "www\\.ietf\\.org/mailman" : None,
+   "www\\.ietf\\.org/mail-archive" : None,
+   "mailarchive\\.ietf\\.org" : None,
+   "ietf\\.org/logs": "jabber_log",
+   "ietf\\.org/jabber/logs": "jabber_log",
+   "xmpp:.*?join": "jabber_room",
+   "bell-labs\\.com": None,
+   "html\\.charters": None,
+   "datatracker\\.ietf\\.org": None,
+})
+
 def forward(apps, schema_editor):
     GroupExtResource = apps.get_model('group', 'GroupExtResource')
-    ExtResource = apps.get_model('extresource', 'ExtResource')
     ExtResourceName = apps.get_model('name', 'ExtResourceName')
     GroupUrl = apps.get_model('group', 'GroupUrl')
 
     mapped = 0
     not_mapped = 0
+    ignored = 0
+
     for group_url in GroupUrl.objects.all():
         match_found = False
         for regext,slug in name_map.items():
@@ -47,14 +67,31 @@ def forward(apps, schema_editor):
                 match_found = True
                 mapped += 1
                 name = ExtResourceName.objects.get(slug=slug)
-                # This should probably be a get_or_create if there's any value to having a single ExtResource class
-                ext_res = ExtResource.objects.create(name_id=slug, value= group_url.url) # TODO: validate this value against name.type
-                GroupExtResource.objects.create(group=group_url.group, extresource=ext_res)
+                GroupExtResource.objects.create(group=group_url.group, name_id=slug, value=group_url.url) # TODO: validate this value against name.type
                 break
+        if not match_found:
+            for regext, slug in url_map.items():
+                if re.search(regext, group_url.url):
+                    match_found = True
+                    if slug:
+                        mapped +=1
+                        name = ExtResourceName.objects.get(slug=slug)
+                        # Munge the URL if it's the first github repo match
+                        #  Remove "/tree/master" substring if it exists
+                        #  Remove trailing "/issues" substring if it exists
+                        #  Remove "/blob/master/.*" pattern if present
+                        if regext == "https?://github\\.com":
+                            group_url.url = group_url.url.replace("/tree/master","")
+                            group_url.url = re.sub('/issues$', '', group_url.url)
+                            group_url.url = re.sub('/blob/master.*$', '', group_url.url)
+                        GroupExtResource.objects.create(group=group_url.group, name_id=slug, value=group_url.url) # TODO: validate this value against name.type
+                    else:
+                        ignored +=1
+                    break
         if not match_found:
             debug.show('("Not Mapped:",group_url.group.acronym, group_url.name, group_url.url)')
             not_mapped += 1
-    debug.show('(mapped, not_mapped)')
+    debug.show('(mapped, ignored, not_mapped)')
 
 def reverse(apps, schema_editor):
     GroupExtResource = apps.get_model('group', 'GroupExtResource')
@@ -64,9 +101,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('group', '0024_extres'),
-        ('extresource', '0001_extres'),
         ('name', '0011_populate_extres'),
-        ('doc', '0033_populate_docextresources'),
     ]
 
     operations = [
