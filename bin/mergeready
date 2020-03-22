@@ -328,7 +328,9 @@ for entry in ready:
         else:
             raise
     # 
-    merge_path = os.path.join(*path.split(os.path.sep)[:4])
+    dirs = path.split(os.path.sep)
+    dirs = dirs[:dirs.index('ietf')] if 'ietf' in dirs else dirs[:4]
+    merge_path = os.path.join(*dirs)
     if not (rev, repo, merge_path) in hold:
         output_line = "%s  %-24s ^/%s@%s" % (when.strftime("%Y-%m-%d_%H:%MZ"), who+":", merge_path, rev)
         all_commits[when] = (rev, repo, branch, who, merge_path)
