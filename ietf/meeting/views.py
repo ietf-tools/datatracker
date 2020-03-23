@@ -2233,9 +2233,12 @@ def past(request):
 
 def upcoming(request):
     '''List of upcoming meetings'''
-    today = datetime.datetime.today() - datetime.timedelta(days=7)
+    today = datetime.date.today()
 
-    meetings, group_parents = data_for_meetings_overview(Meeting.objects.filter(date__gte=today).order_by('date'))
+    # Get ietf meetings starting 7 days ago, and interim meetings starting today
+    query = Q(type_id='ietf', date__gte=today-datetime.timedelta(days=7)) | Q(type_id='interim', date__gte=today)
+    meetings = Meeting.objects.filter(query).order_by('date')
+    meetings, group_parents = data_for_meetings_overview(meetings)
 
     # add menu entries
     menu_entries = get_interim_menu_entries(request)
@@ -2260,13 +2263,15 @@ def upcoming(request):
 def upcoming_ical(request):
     '''Return Upcoming meetings in iCalendar file'''
     filters = request.GET.getlist('filters')
-    today = datetime.datetime.today() - datetime.timedelta(days=7)
+    today = datetime.date.today()
 
-    meetings, _ = data_for_meetings_overview(Meeting.objects.filter(date__gte=today).order_by('date'))
+    # get meetings starting 7 days ago -- we'll filter out sessions in the past further down
+    meetings, _ = data_for_meetings_overview(Meeting.objects.filter(date__gte=today-datetime.timedelta(days=7)).order_by('date'))
 
     assignments = list(SchedTimeSessAssignment.objects.filter(
         schedule__meeting__schedule=F('schedule'),
-        session__in=[s.pk for m in meetings for s in m.sessions]
+        session__in=[s.pk for m in meetings for s in m.sessions],
+        timeslot__time__gte=today,
     ).order_by(
         'schedule__meeting__date', 'session__type', 'timeslot__time'
     ).select_related(
