@@ -2233,7 +2233,7 @@ def past(request):
 
 def upcoming(request):
     '''List of upcoming meetings'''
-    today = datetime.datetime.today()
+    today = datetime.datetime.today() - datetime.timedelta(days=7)
 
     meetings, group_parents = data_for_meetings_overview(Meeting.objects.filter(date__gte=today).order_by('date'))
 
@@ -2260,7 +2260,7 @@ def upcoming(request):
 def upcoming_ical(request):
     '''Return Upcoming meetings in iCalendar file'''
     filters = request.GET.getlist('filters')
-    today = datetime.datetime.today()
+    today = datetime.datetime.today() - datetime.timedelta(days=7)
 
     meetings, _ = data_for_meetings_overview(Meeting.objects.filter(date__gte=today).order_by('date'))
 
