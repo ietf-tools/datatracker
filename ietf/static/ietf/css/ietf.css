@@ -986,36 +986,38 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 
 /* === Edit Meeting Schedule ====================================== */
 
-.edit-meeting-schedule {
-  padding-bottom: 10em; /* ensure there's room for the scheduling panel */
-}
-
 .edit-meeting-schedule .edit-grid {
   display: flex;
 }
 
-.edit-meeting-schedule .schedule-column h5 {
+.edit-meeting-schedule .schedule-column .room-name {
+  height: 2em;
+  font-weight: bold;
   text-align: center;
   margin: 0;
   white-space: nowrap;
 }
 
-.edit-meeting-schedule .schedule-column .day {
-  position: relative;
-  margin-bottom: 3em;
+.edit-meeting-schedule .schedule-column .day-label {
+  height: 2.5em;
+  max-width: 5em; /* let it stick out and overlap the other columns */
+  white-space: nowrap;
+  font-style: italic;
+  margin-top: 1em;
 }
 
-.edit-meeting-schedule .schedule-column .day > div {
+.edit-meeting-schedule .schedule-column > .day {
+  position: relative;
+  margin-bottom: 2em;
+}
+
+.edit-meeting-schedule .schedule-column > .day > div {
   position: absolute;
 }
 
 .edit-meeting-schedule .time-labels-column > div {
   min-width: 5em;
   padding-right: 0.5em;
-}
-
-.edit-meeting-schedule .time-labels-column .time-label {
-  width: 100%;
 }
 
 .edit-meeting-schedule .time-labels-column .time-label.top-aligned {
@@ -1035,51 +1037,75 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   flex-grow: 1;
 }
 
-.edit-meeting-schedule .room-column .day-label {
-  visibility: hidden; /* it's there to take up the space, but not shown */
-}
-
 .edit-meeting-schedule .timeslot {
   display: flex;
   flex-direction: column;
-  background-color: #f6f6f6;
+  background-color: #eee;
   width: 100%;
-  border-right: 0.2em solid #fff;
-  border-left: 0.2em solid #fff;
+  border-left: 0.15em solid #fff;
   overflow: hidden;
 }
 
 .edit-meeting-schedule .timeslot.dropping {
-  background-color: #f0f0f0;
+  background-color: #ccc;
   transition: background-color 0.2s;
 }
 
 .edit-meeting-schedule .timeslot.overfull {
-  border-bottom: 2px dashed #ddd;
+  border-bottom: 2px dashed #fff; /* cut-off illusion */
+}
+
+.edit-meeting-schedule {
+  /* this is backwards-compatible measure - if the browser doesn't
+   support position: sticky but only position: fixed, we ensure there's room for the scheduling
+   panel */
+  padding-bottom: 5em;
 }
 
 .edit-meeting-schedule .scheduling-panel {
   position: fixed; /* backwards compatibility */
+  z-index: 1;
+
   position: sticky;
+  display: flex;
   bottom: 0;
   left: 0;
-  margin: 0;
-  padding: 0 1em;
   width: 100%;
-  border-top: 0.2em solid #eee;
+  border-top: 0.2em solid #ccc;
   background-color: #fff;
   opacity: 0.95;
-  z-index: 1;
+}
+
+.edit-meeting-schedule .scheduling-panel .unassigned-container {
+  flex-grow: 1;
 }
 
 .edit-meeting-schedule .unassigned-sessions {
   min-height: 4em;
-  background-color: #f6f6f6;
+  max-height: 13em;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  background-color: #eee;
+  margin-top: 0.5em;
 }
 
 .edit-meeting-schedule .unassigned-sessions.dropping {
-  background-color: #f0f0f0;
+  background-color: #e5e5e5;
   transition: background-color 0.2s;
+}
+
+.edit-meeting-schedule .scheduling-panel .preferences {
+  margin: 0.5em 0;
+}
+
+.edit-meeting-schedule .scheduling-panel .preferences > span {
+  margin-right: 1em;
+}
+
+.edit-meeting-schedule .sort-unassigned select {
+  width: auto;
+  display: inline-block;
 }
 
 .edit-meeting-schedule .session-parent-toggles {
@@ -1094,19 +1120,34 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   cursor: pointer;
 }
 
+.edit-meeting-schedule .scheduling-panel .session-info-container {
+  padding-left: 0.5em;
+  flex: 0 0 20em;
+  max-height: 15em;
+  overflow-y: auto;
+}
+
+.edit-meeting-schedule .scheduling-panel .session-info-container .comments {
+  font-style: italic;
+}
+
 /* sessions */
 .edit-meeting-schedule .session {
+  display: flex;
   background-color: #fff;
   padding: 0 0.2em;
   padding-left: 0.5em;
-  border: 0.2em solid #f6f6f6; /* this compensates for sessions being relatively smaller than they should */
+  margin: 0.2em;
   border-radius: 0.4em;
-  text-align: center;
   overflow: hidden;
 }
 
+.edit-meeting-schedule .session.selected {
+  border: 1px solid #bbb;
+}
+
 .edit-meeting-schedule .session[draggable] {
-  cursor: grabbing;
+  cursor: pointer;
 }
 
 .edit-meeting-schedule .session.dragging {
@@ -1114,20 +1155,68 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   transition: opacity 0.4s;
 }
 
-.edit-meeting-schedule .session .color {
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  vertical-align: middle;
-}
-
-.edit-meeting-schedule .session i.fa-comment-o {
-  width: 0; /* prevent icon from participating in text centering */
+.edit-meeting-schedule .timeslot.overfull .session {
+  border-radius: 0.4em 0.4em 0 0; /* remove bottom rounding to illude to being cut off */
+  margin-bottom: 0;
 }
 
 .edit-meeting-schedule .unassigned-sessions .session {
-  vertical-align: top;
-  display: inline-block;
   min-width: 6em;
-  margin-right: 0.4em;
+  margin-right: 0.3em;
+}
+
+.edit-meeting-schedule .session .session-label {
+  flex-grow: 1;
+  margin-left: 0.1em;
+}
+
+.edit-meeting-schedule .session.too-many-attendees .attendees {
+  color: #f33;
+}
+
+.edit-meeting-schedule .session .constraints {
+  margin-right: 0.2em;
+  text-align: right;
+  flex-shrink: 1;
+}
+
+.edit-meeting-schedule .session .constraints > span {
+  display: none;
+  font-size: smaller;
+}
+
+.edit-meeting-schedule .session .constraints > span .encircled {
+  border: 1px solid #fdd;
+  border-radius: 1em;
+  min-width: 1.3em;
+  text-align: center;
+  display: inline-block;
+}
+
+.edit-meeting-schedule .session .constraints > span.violated-hint {
+  display: inline-block;
+  color: #f99;
+}
+
+.edit-meeting-schedule .session .constraints > span.selected-hint {
+  display: inline-block;
+  color: #f33;
+}
+
+.edit-meeting-schedule .session .constraints > span.selected-hint .encircled {
+  border: 1px solid #fbb;
+}
+
+.edit-meeting-schedule .unassigned-sessions .session .constraints > span {
+  display: none;
+}
+
+
+.edit-meeting-schedule .session .comments {
+  font-size: smaller;
+  margin-right: 0.1em;
+}
+
+.edit-meeting-schedule .session .session-info {
+  display: none;
 }

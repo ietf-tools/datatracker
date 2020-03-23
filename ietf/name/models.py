@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -73,6 +73,7 @@ class TimeSlotTypeName(NameModel):
 class ConstraintName(NameModel):
     """Conflict"""
     penalty = models.IntegerField(default=0, help_text="The penalty for violating this kind of constraint; for instance 10 (small penalty) or 10000 (large penalty)")
+    editor_label = models.CharField(max_length=32, blank=True, help_text="Very short label for producing warnings inline in the sessions in the schedule editor.")
 class LiaisonStatementPurposeName(NameModel):
     """For action, For comment, For information, In response, Other"""
 class NomineePositionStateName(NameModel):

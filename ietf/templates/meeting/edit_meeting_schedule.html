@@ -7,7 +7,7 @@
 {% block morecss %}
   {% for parent in session_parents %}
     .parent-{{ parent.acronym }} {
-       background: linear-gradient(to right, {{ parent.scheduling_color }} 0.4em, #fff 0.5em);
+       background: linear-gradient(to right, {{ parent.scheduling_color }} 0.4em, transparent 0.5em);
     }
   {% endfor %}
 {% endblock morecss %}
@@ -15,20 +15,10 @@
 {% block title %}{{ schedule.name }}: IETF {{ meeting.number }} meeting schedule{% endblock %}
 
 {% block js %}
-  <script>
-   jQuery.ajaxSetup({
-       crossDomain: false, // obviates need for sameOrigin test
-       beforeSend: function(xhr, settings) {
-           if (!csrfSafeMethod(settings.type)) {
-               xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken'));
-           }
-       }
-   });
+  <script type='text/javascript'>
+   var ietfData = {{ js_data|safe }};
   </script>
   <script type="text/javascript" src="{% static 'ietf/js/edit-meeting-schedule.js' %}"></script>
-  <script type='text/javascript'>
-    var ietfScheduleData = {{ schedule_data|safe }};
-  </script>
 {% endblock js %}
 
 
@@ -58,16 +48,13 @@
     </p>
 
     <div class="edit-grid">
-      {# note: in order for all this to align properly, make sure there's the same markup in all columns #}
+      {# in order for all this to align properly vertically, we have the same structure in all columns #}
 
       <div class="time-labels-column schedule-column">
-        <h5>&nbsp;</h5>
+        <div class="room-name"></div>
 
         {% for d in time_labels %}
-          <div class="day-label">
-            <strong>{{ d.day|date:"D" }}</strong><br>
-            <i>{{ d.day|date:"Y-m-d" }}</i>
-          </div>
+          <div class="day-label">{{ d.day|date:"l, F j, Y" }}</div>
 
           <div class="day" style="height: {{ d.height }}em;">
             {% for t, vertical_alignment, vertical_offset, horizontal_alignment in d.labels %}
@@ -80,18 +67,15 @@
       </div>
 
       {% for r in room_columns %}
-        <div class="room-column schedule-column">
-          <h5>{{ r.room.name }}{% if r.room.capacity %} ({{ r.room.capacity }} <i class="fa fa-user-o"></i>{% endif %})</h5>
+        <div class="room-column schedule-column" data-roomcapacity="{{ r.room.capacity }}">
+          <div class="room-name">{{ r.room.name }}{% if r.room.capacity %} ({{ r.room.capacity }} <i class="fa fa-user-o"></i>{% endif %})</div>
 
           {% for d in r.days %}
-            <div class="day-label">
-              <strong>{{ d.day|date:"D" }}</strong><br>
-              <i>{{ d.day|date:"Y-m-d" }}</i>
-            </div>
+            <div class="day-label"></div> {# for spacing purposes #}
 
             <div class="day" style="height: {{ d.height }}em;">
               {% for t in d.timeslots %}
-                <div class="timeslot" data-timeslot="{{ t.timeslot.pk }}" data-duration="{{ t.timeslot.duration.total_seconds }}" style="top: {{ t.offset }}em; height: {{ t.height }}em;">
+                <div id="timeslot{{ t.timeslot.pk }}" class="timeslot" data-start="{{ t.timeslot.time.isoformat }}" data-end="{{ t.timeslot.end_time.isoformat }}" data-duration="{{ t.timeslot.duration.total_seconds }}" style="top: {{ t.offset }}em; height: {{ t.height }}em;">
                   {% for assignment, session in t.timeslot.session_assignments %}
                     {% include "meeting/edit_meeting_schedule_session.html" %}
                   {% endfor %}
@@ -104,20 +88,34 @@
     </div>
 
     <div class="scheduling-panel">
-      <h5>Not yet assigned</h5>
+      <div class="unassigned-container">
+        <div class="unassigned-sessions">
+          {% for session in unassigned_sessions %}
+            {% include "meeting/edit_meeting_schedule_session.html" %}
+          {% endfor %}
+        </div>
 
-      <div class="unassigned-sessions">
-        {% for session in unassigned_sessions %}
-          {% include "meeting/edit_meeting_schedule_session.html" %}
-        {% endfor %}
+        <div class="preferences">
+          <span class="sort-unassigned">
+            Sort unassigned:
+            <select name="sort_unassigned" class="form-control">
+              <option value="name" selected="selected">By name</option>
+              <option value="parent">By area</option>
+              <option value="duration">By duration</option>
+              <option value="comments">Special requests</option>
+            </select>
+          </span>
+
+          <span class="session-parent-toggles">
+            Show:
+            {% for p in session_parents %}
+              <label class="parent-{{ p.acronym }}"><input type="checkbox" checked value="{{ p.acronym }}"> {{ p.acronym }}</label>
+            {% endfor %}
+          </span>
+        </div>
       </div>
 
-      <div class="session-parent-toggles">
-        Show:
-        {% for p in session_parents %}
-          <label class="parent-{{ p.acronym }}"><input type="checkbox" checked value="{{ p.acronym }}"> {{ p.acronym }}</label>
-        {% endfor %}
-      </div>
+      <div class="session-info-container"></div>
     </div>
 
   </div>

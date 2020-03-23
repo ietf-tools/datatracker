@@ -44,7 +44,7 @@ from django.template.loader import render_to_string
 from django.utils.functional import curry
 from django.views.decorators.cache import cache_page
 from django.utils.text import slugify
-from django.utils.html import escape
+from django.utils.html import format_html
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
 
@@ -54,9 +54,11 @@ from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocA
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials
 from ietf.person.models import Person
+from ietf.person.name import plain_name
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission, SessionStatusName, SchedulingEvent, SchedTimeSessAssignment
+from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
+from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Constraint, ConstraintName
 from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
@@ -469,7 +471,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         requested_time=True,
         requested_by=True,
     ).exclude(current_status__in=['notmeet', 'disappr', 'deleted', 'apprw']).prefetch_related(
-        'resources', 'group', 'group__parent',
+        'resources', 'group', 'group__parent', 'group__type',
     )
 
     if request.method == 'POST':
@@ -585,8 +587,9 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         ts.session_assignments = []
     timeslots_by_pk = {ts.pk: ts for ts in timeslots_qs}
 
+    # group parent colors
     def cubehelix(i, total, hue=1.2, start_angle=0.5):
-        # https://arxiv.org/pdf/1108.5083.pdf
+        # theory in https://arxiv.org/pdf/1108.5083.pdf
         rotations = total // 4
         x = float(i + 1) / (total + 1)
         phi = 2 * math.pi * (start_angle / 3 + rotations * x)
@@ -606,68 +609,127 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         rgb_color = cubehelix(i, len(session_parents))
         p.scheduling_color = "#" + "".join(chr(int(round(x * 255))).encode('hex') for x in rgb_color)
 
-    unassigned_sessions = []
-    session_data = []
+    # dig out historic AD names
+    ad_names = {}
+    session_groups = set(s.group for s in sessions if s.group and s.group.parent.type_id == 'area')
+    meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
+
+    for group_id, history_time, name in Person.objects.filter(rolehistory__name='ad', rolehistory__group__group__in=session_groups, rolehistory__group__time__lte=meeting_time).values_list('rolehistory__group__group', 'rolehistory__group__time', 'name').order_by('rolehistory__group__time'):
+        ad_names[group_id] = plain_name(name)
+
+    for group_id, name in Person.objects.filter(role__name='ad', role__group__in=session_groups, role__group__time__lte=meeting_time).values_list('role__group', 'name'):
+        ad_names[group_id] = plain_name(name)
+
+    # requesters
+    requested_by_lookup = {p.pk: p for p in Person.objects.filter(pk__in=set(s.requested_by for s in sessions if s.requested_by))}
+
+    # constraints
+    constraints = Constraint.objects.filter(meeting=meeting)
+    person_needed_for_groups = defaultdict(set)
+    for c in constraints:
+        if c.name_id == 'bethere' and c.person_id is not None:
+            person_needed_for_groups[c.person_id].add(c.source_id)
+
+    sessions_for_group = defaultdict(list)
     for s in sessions:
-        d = {
-            'id': s.pk,
-        }
+        if s.group_id is not None:
+            sessions_for_group[s.group_id].append(s.pk)
 
-        if s.requested_by:
-            d['requested_by'] = s.requested_by
-        if s.requested_time:
-            d['requested_time'] = s.requested_time.isoformat()
+    constraint_names = {n.pk: n for n in ConstraintName.objects.all()}
+    constraint_names_with_count = set()
+    constraint_label_replacements = [
+        (re.compile(r"\(person\)"), lambda match_groups: format_html("<i class=\"fa fa-user-o\"></i>")),
+        (re.compile(r"\(([^()])\)"), lambda match_groups: format_html("<span class=\"encircled\">{}</span>", match_groups[0])),
+    ]
+    for n in list(constraint_names.itervalues()):
+        # spiff up the labels a bit
+        for pattern, replacer in constraint_label_replacements:
+            m = pattern.match(n.editor_label)
+            if m:
+                n.editor_label = replacer(m.groups())
 
-        room_resources = s.resources.all()
-        if room_resources:
-            d['room_resources'] = [
-                {
-                    'name': escape(r.name.name),
-                }
-                for r in room_resources
-            ]
+        # add reversed version of the name
+        reverse_n = ConstraintName(
+            slug=n.slug + "-reversed",
+            name="{} - reversed".format(n.name),
+        )
+        reverse_n.editor_label = format_html("<i>{}</i>", n.editor_label)
+        constraint_names[reverse_n.slug] = reverse_n
 
+    constraints_for_sessions = defaultdict(list)
+
+    def add_group_constraints(g1_pk, g2_pk, name_id, person_id):
+        if g1_pk != g2_pk:
+            for s1_pk in sessions_for_group.get(g1_pk, []):
+                for s2_pk in sessions_for_group.get(g2_pk, []):
+                    if s1_pk != s2_pk:
+                        constraints_for_sessions[s1_pk].append((name_id, s2_pk, person_id))
+
+    reverse_constraints = []
+    seen_forward_constraints_for_groups = set()
+
+    for c in constraints:
+        if c.target_id:
+            add_group_constraints(c.source_id, c.target_id, c.name_id, c.person_id)
+            seen_forward_constraints_for_groups.add((c.source_id, c.target_id, c.name_id))
+            reverse_constraints.append(c)
+
+        elif c.person_id:
+            constraint_names_with_count.add(c.name_id)
+
+            for g in person_needed_for_groups.get(c.person_id):
+                add_group_constraints(c.source_id, g, c.name_id, c.person_id)
+
+    for c in reverse_constraints:
+        # suppress reverse constraints in case we have a forward one already
+        if (c.target_id, c.source_id, c.name_id) not in seen_forward_constraints_for_groups:
+            add_group_constraints(c.target_id, c.source_id, c.name_id + "-reversed", c.person_id)
+
+    unassigned_sessions = []
+    for s in sessions:
+        s.requested_by_person = requested_by_lookup.get(s.requested_by)
+
+        s.scheduling_label = "???"
         if s.group:
-            label = escape(s.group.acronym)
+            s.scheduling_label = s.group.acronym
         elif s.name:
-            label = escape(s.name)
-        else:
-            label = "???"
-
-        s.scheduling_label = label
-
-        if s.attendees is not None:
-            d['attendees'] = s.attendees
-
-        if s.group and s.group.is_bof():
-            d['bof'] = True
-
-        if s.group and s.group.parent:
-            d['group_parent'] = escape(s.group.parent.acronym.upper())
-
-        if s.comments:
-            d['comments'] = s.comments
+            s.scheduling_label = s.name
 
         s.requested_duration_in_hours = s.requested_duration.seconds / 60.0 / 60.0
-        s.layout_height = timedelta_to_css_ems(s.requested_duration)
+
+        session_layout_margin = 0.2
+        s.layout_height = timedelta_to_css_ems(s.requested_duration) - 2 * session_layout_margin
         s.parent_acronym = s.group.parent.acronym if s.group and s.group.parent else ""
+        s.historic_group_ad_name = ad_names.get(s.group_id)
 
-        scheduled = False
+        # compress the constraints, so similar constraint explanations
+        # are shared between the conflicting sessions they cover
+        constrained_sessions_grouped_by_explanation = defaultdict(set)
+        for name_id, ts in itertools.groupby(sorted(constraints_for_sessions.get(s.pk, [])), key=lambda t: t[0]):
+            ts = list(ts)
+            session_pks = (t[1] for t in ts)
+            constraint_name = constraint_names[name_id]
+            if name_id in constraint_names_with_count:
+                for session_pk, grouped_session_pks in itertools.groupby(session_pks):
+                    count = sum(1 for i in grouped_session_pks)
+                    constrained_sessions_grouped_by_explanation[format_html("{}{}", constraint_name.editor_label, count)].add(session_pk)
 
+            else:
+                constrained_sessions_grouped_by_explanation[constraint_name.editor_label].update(session_pks)
+
+        s.constrained_sessions = list(constrained_sessions_grouped_by_explanation.iteritems())
+
+        assigned = False
         for a in assignments_by_session.get(s.pk, []):
             timeslot = timeslots_by_pk.get(a.timeslot_id)
             if timeslot:
                 timeslot.session_assignments.append((a, s))
-                scheduled = True
+                assigned = True
 
-        session_data.append(d)
-
-        if not scheduled:
+        if not assigned:
             unassigned_sessions.append(s)
 
-    schedule_data = {
-        'schedule': schedule.id,
-        'sessions': session_data,
+    js_data = {
         'can_edit': can_edit,
         'urls': {
             'assign': request.get_full_path()
@@ -678,7 +740,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'meeting': meeting,
         'schedule': schedule,
         'can_edit': can_edit,
-        'schedule_data': json.dumps(schedule_data, indent=2),
+        'js_data': json.dumps(js_data, indent=2),
         'time_labels': time_labels,
         'rooms': rooms,
         'room_columns': room_columns,

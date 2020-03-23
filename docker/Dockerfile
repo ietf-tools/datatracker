@@ -54,6 +54,7 @@ RUN apt-get install -qy \
 	build-essential \
 	bzip2 \
 	ca-certificates \
+	chromium-driver \
 	colordiff \
 	gawk \
 	gcc \
@@ -138,15 +139,6 @@ WORKDIR /usr/src
 RUN wget -q https://bootstrap.pypa.io/get-pip.py && python get-pip.py && rm get-pip.py
 RUN pip install certifi
 RUN pip install virtualenv
-
-# Phantomjs
-WORKDIR /usr/local
-
-RUN wget -qN https://tools.ietf.org/tar/phantomjs-1.9.8-linux-x86_64.tar.bz2
-RUN tar xjf phantomjs-1.9.8-linux-x86_64.tar.bz2
-
-WORKDIR /usr/local/bin
-RUN ln -s /usr/local/phantomjs-1.9.8-linux-x86_64/bin/phantomjs .
 
 # idnits and dependencies
 ADD https://tools.ietf.org/tools/idnits/idnits /usr/local/bin/
