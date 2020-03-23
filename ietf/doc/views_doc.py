@@ -78,7 +78,7 @@ from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions,
 from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
-from ietf.utils import markup_txt, log
+from ietf.utils import markup_txt
 from ietf.utils.text import maybe_split
 
 
@@ -405,7 +405,6 @@ def document_main(request, name, rev=None):
                 actions.append((label, urlreverse('ietf.doc.views_draft.request_publication', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ietf",) and not snapshot:
-            log.assertion('iesg_state')
             if iesg_state.slug == 'idexists' and can_edit:
                 actions.append(("Begin IESG Processing", urlreverse('ietf.doc.views_draft.edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
             elif can_edit_stream_info and (iesg_state.slug in ('idexists','watching')):

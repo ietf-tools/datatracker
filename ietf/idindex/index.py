@@ -23,7 +23,6 @@ from ietf.doc.models import IESG_SUBSTATE_TAGS
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
-from ietf.utils import log
 
 def all_id_txt():
     # this returns a lot of data so try to be efficient
@@ -157,7 +156,6 @@ def all_id2_txt():
         # 3
         if state == "active":
             s = "I-D Exists"
-            log.assertion('iesg_state')
             if iesg_state:
                 s = iesg_state.name
                 tags = d.tags.filter(slug__in=IESG_SUBSTATE_TAGS).values_list("name", flat=True)
