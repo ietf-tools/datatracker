@@ -1,3 +1,94 @@
+ietfdb (6.123.0) ietf; urgency=medium
+
+  **IETF 107 code sprint**
+
+  This release contains datatracker bug fixes and enhancements from the
+  IETF-107 Code Sprint, our first virtual code sprint.  It was a different
+  experience, and enjoyable despite not getting to sit down with a beer
+  together afterwards.  A lot of good contributions were made; Thanks to
+  everyone who contributed!
+
+  * Merged in [17496] from rjsparks@nostrum.com:
+    Remove the rest of the log.assertions checking that iesg_state existed in
+    places we expected it to.  Removed unnecessary imports.
+
+  * Changed the page for upcoming meetings to show the current IETF meeting 
+    for 7 days from its start date, while interims are shown for today and 
+    forward.  Also changed the upcoming.ics calendar to show future sessions, 
+    even if the meeting to which they belong started in the past.  This 
+    improves on [17518].
+
+  * Changed the starting point of display of upcoming meetings to be 7 days 
+    before today, rather than today, to let meetings linger a bit in the 
+    listing and iCalendar file after the meeting has started.  Triggered by an 
+    observation from resnick@episteme.net about IETF 107 sessions disappearing 
+    from 'upcoming.ics' on meeting week Monday.
+
+  * Merged in [17495] from rjsparks@nostrum.com:
+    Removes a log.assertion() that was checking that we covered the edges when
+    we changed documents to always have an iesg state.  
+
+  * Merged in [17494] from rjsparks@nostrum.com:
+    Use current email addresses when we have them when listing document
+    authors. Fixes #1902.  
+
+  * Merged in [17493] from mahoney@nostrum.com:
+    Changed awkward IESG/IAB Nominating Committee names to just NomCom,
+    updated a ref. Fixes #2860.  
+
+  * Merged in [17492] from rcross@amsl.com:
+    On session request form, made the Special Requests field smaller and
+    display 200 character limit. Fixes #2875.  
+
+  * Merged in [17491] from rcross@amsl.com:
+    Prevent use of capital letters in group acronym. Fixes #2709.  
+
+  * Merged in [17490] from rjsparks@nostrum.com:
+    Basic regex validation on community rule entry form. Fixes #2928.  
+
+  * Merged in [17489] from rcross@amsl.com:
+    Removed redundant URL secr/groups/search because search page is 
+    available here secr/groups. Resolves issue with Add link. Fixes #2708.  
+
+  * Merged in [17488] from rcross@amsl.com:
+    Removed the drafts secretariat tool because this functionality is now 
+    provided by the core Datatracker. Moved ID reports to proceedings tool. 
+    Fixes #1655.  
+
+  * Merged in [17487] from rjsparks@nostrum.com:
+    Let chairs know what to do after material submission uploads have been 
+    cut off. Fixes #2887.  
+
+  * Merged in [17486] from valery@smyslov.net:
+    Added docker/run modifications to support Cygwin.
+
+  * Merged in [17484] from valery@smyslov.net:
+    When requesting a new WG session, and retrieving information about the
+    previous session, look back to the previous time the group met, instead of
+    simply checking the previous IETF meeting and maybe not finding any
+    information to retrieve.
+
+  * Merged in [17483] from peter@akayla.com:
+    Changed things so that only WGs/RGs can be closed, per RJS.  Fixes #1578.   
+
+  * Merged in [17466] from rcross@amsl.com:
+    Added a migration to cancel 107 sessions 
+
+  * Added a check to see if any files matching the submitted draft name and
+    revision already exists on disk in the active drafts or archived drafts
+    directories, and if so reject the submission.  Fixes issue #2908
+
+  * Made sure to strip possible mail header field values of whitespace 
+    before applying email.utils.unquite().  Resolution by kivinen@iki.fi,  
+    Fixes issue #2899.
+
+  * Merged in [17480] from rjsparks@nostrum.com:
+    Show UTC times in interim announcements if the interim has a non-UTC 
+    timzone. Fixes #2922.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 Mar 2020 15:16:27 +0000
+
+
 ietfdb (6.122.0) ietf; urgency=medium
 
   **Added agenda webex URL support, and meeting-related tweaks and bugfixes**
