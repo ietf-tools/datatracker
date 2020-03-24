@@ -108,17 +108,15 @@ def assertion(statement, state=True):
     """
     This acts like an assertion.  It uses the django logger in order to send
     the failed assertion and a backtrace as for an internal server error.
-
     """
-    stack = inspect.stack()[1:]
-    frame = stack[0][0]
+    frame = inspect.currentframe().f_back
     value = eval(statement, frame.f_globals, frame.f_locals)
     if bool(value) != bool(state):
         if (settings.DEBUG is True) or (settings.SERVER_MODE == 'test') :
             raise AssertionError("Assertion failed: '%s': %s != %s." % (statement, repr(value), state))
         else:
             # build a simulated traceback object
-            tb = build_traceback(stack)
+            tb = build_traceback(inspect.stack()[1:])
             # provide extra info if available
             extra = {}
             for key in [ 'request', 'status_code', ]:
@@ -128,13 +126,12 @@ def assertion(statement, state=True):
 
 def unreachable(date="(unknown)"):
     "Raises an assertion or sends traceback to admins if executed."
-    stack = inspect.stack()[1:]
-    frame = stack[0][0]
+    frame = inspect.currentframe().f_back
     if settings.DEBUG is True or settings.SERVER_MODE == 'test':
         raise AssertionError("Arrived at code in %s() which was marked unreachable on %s." % (frame.f_code.co_name, date))
     else:
         # build a simulated traceback object
-        tb = build_traceback(stack)
+        tb = build_traceback(inspect.stack()[1:])
         # provide extra info if available
         extra = {}
         for key in [ 'request', 'status_code', ]:
@@ -142,4 +139,3 @@ def unreachable(date="(unknown)"):
                 extra[key] = frame.f_locals[key]
         logger.error("Arrived at code in %s() which was marked unreachable on %s." % (frame.f_code.co_name, date),
                         exc_info=(AssertionError, frame.f_code.co_name, tb), extra=extra)
-    
