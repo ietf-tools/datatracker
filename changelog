@@ -86,7 +86,7 @@ ietfdb (6.123.0) ietf; urgency=medium
     Show UTC times in interim announcements if the interim has a non-UTC 
     timzone. Fixes #2922.  
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  24 Mar 2020 16:13:19 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 Mar 2020 17:53:45 +0000
 
 
 ietfdb (6.122.0) ietf; urgency=medium
