@@ -98,10 +98,13 @@
 					{% endif %}
 	      {% endfor %}
 	    {% endif %}
-	    <a class="btn btn-default btn-xs"
-	       href="http://www.meetecho.com/ietf{{schedule.meeting.number}}/recordings#{{item.session.historic_group.acronym.upper}}"
-	       title="Meetecho session recording"><img src="{% static 'ietf/images/meetecho-icon.svg' %}" alt="Meetecho Stream" width="12px">
-	    </a>
+            {% if item.timeslot.location.video_stream_url %}
+              <a class="btn btn-default btn-xs"
+                 href="http://www.meetecho.com/ietf{{schedule.meeting.number}}/recordings#{{item.session.historic_group.acronym.upper}}"
+                 title="Meetecho session recording"><img src="{% static 'ietf/images/meetecho-icon.svg' %}" alt="Meetecho Stream" width="12px">
+              </a>
+            {% endif %}
+
 	  {% endwith %}
 	{% endif %}
 
