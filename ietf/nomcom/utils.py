@@ -169,7 +169,7 @@ def retrieve_nomcom_private_key(request, year):
 
     command = "%s bf -d -in /dev/stdin -k \"%s\" -a"
     code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
-                                       settings.SECRET_KEY), private_key.encode('utf-8'))
+                                       settings.SECRET_KEY), private_key)
     if code != 0:
         log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
     return out
@@ -181,7 +181,7 @@ def store_nomcom_private_key(request, year, private_key):
     else:
         command = "%s bf -e -in /dev/stdin -k \"%s\" -a"
         code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
-                                           settings.SECRET_KEY), private_key.encode('utf-8'))
+                                           settings.SECRET_KEY), private_key)
         if code != 0:
             log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
         if error:

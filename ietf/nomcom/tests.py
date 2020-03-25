@@ -18,7 +18,7 @@ from django.conf import settings
 from django.core.files import File
 from django.contrib.auth.models import User
 from django.urls import reverse
-from django.utils.encoding import force_text
+from django.utils.encoding import force_text, force_str
 
 import debug                            # pyflakes:ignore
 
@@ -52,12 +52,12 @@ def get_cert_files():
         client_test_cert_files = generate_cert()
     return client_test_cert_files
 
-def build_test_public_keys_dir(obj):
+def setup_test_public_keys_dir(obj):
     obj.saved_nomcom_public_keys_dir = settings.NOMCOM_PUBLIC_KEYS_DIR
     obj.nomcom_public_keys_dir = obj.tempdir('nomcom-public-keys')
     settings.NOMCOM_PUBLIC_KEYS_DIR = obj.nomcom_public_keys_dir
 
-def clean_test_public_keys_dir(obj):
+def teardown_test_public_keys_dir(obj):
     settings.NOMCOM_PUBLIC_KEYS_DIR = obj.saved_nomcom_public_keys_dir
     shutil.rmtree(obj.nomcom_public_keys_dir)
 
@@ -70,7 +70,7 @@ class NomcomViewsTest(TestCase):
         return response
 
     def setUp(self):
-        build_test_public_keys_dir(self)
+        setup_test_public_keys_dir(self)
         nomcom_test_data()
         self.cert_file, self.privatekey_file = get_cert_files()
         self.year = NOMCOM_YEAR
@@ -99,7 +99,7 @@ class NomcomViewsTest(TestCase):
         self.public_nominate_newperson_url = reverse('ietf.nomcom.views.public_nominate_newperson', kwargs={'year': self.year})
 
     def tearDown(self):
-        clean_test_public_keys_dir(self)
+        teardown_test_public_keys_dir(self)
 
     def access_member_url(self, url):
         login_testing_unauthorized(self, COMMUNITY_USER, url)
@@ -943,12 +943,12 @@ class NomineePositionStateSaveTest(TestCase):
     """Tests for the NomineePosition save override method"""
 
     def setUp(self):
-        build_test_public_keys_dir(self)
+        setup_test_public_keys_dir(self)
         nomcom_test_data()
         self.nominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
 
     def tearDown(self):
-        clean_test_public_keys_dir(self)
+        teardown_test_public_keys_dir(self)
 
     def test_state_autoset(self):
         """Verify state is autoset correctly"""
@@ -978,13 +978,13 @@ class NomineePositionStateSaveTest(TestCase):
 class FeedbackTest(TestCase):
 
     def setUp(self):
-        build_test_public_keys_dir(self)
+        setup_test_public_keys_dir(self)
 
         nomcom_test_data()
         self.cert_file, self.privatekey_file = get_cert_files()
 
     def tearDown(self):
-        clean_test_public_keys_dir(self)
+        teardown_test_public_keys_dir(self)
 
     def test_encrypted_comments(self):
 
@@ -1011,7 +1011,7 @@ class FeedbackTest(TestCase):
 class ReminderTest(TestCase):
 
     def setUp(self):
-        build_test_public_keys_dir(self)
+        setup_test_public_keys_dir(self)
         nomcom_test_data()
         self.nomcom = get_nomcom_by_year(NOMCOM_YEAR)
         self.cert_file, self.privatekey_file = get_cert_files()
@@ -1053,7 +1053,7 @@ class ReminderTest(TestCase):
         feedback.nominees.add(n)
 
     def tearDown(self):
-        clean_test_public_keys_dir(self)
+        teardown_test_public_keys_dir(self)
 
     def test_is_time_to_send(self):
         self.nomcom.reminder_interval = 4
@@ -1109,14 +1109,14 @@ class ReminderTest(TestCase):
 class InactiveNomcomTests(TestCase):
 
     def setUp(self):
-        build_test_public_keys_dir(self)
+        setup_test_public_keys_dir(self)
         self.nc = NomComFactory.create(**nomcom_kwargs_for_year(group__state_id='conclude'))
         self.plain_person = PersonFactory.create()
         self.chair = self.nc.group.role_set.filter(name='chair').first().person
         self.member = self.nc.group.role_set.filter(name='member').first().person
 
     def tearDown(self):
-        clean_test_public_keys_dir(self)
+        teardown_test_public_keys_dir(self)
 
     def test_feedback_closed(self):
         for view in ['ietf.nomcom.views.public_feedback', 'ietf.nomcom.views.private_feedback']:
@@ -1303,7 +1303,7 @@ class InactiveNomcomTests(TestCase):
 class FeedbackLastSeenTests(TestCase):
 
     def setUp(self):
-        build_test_public_keys_dir(self)
+        setup_test_public_keys_dir(self)
         self.nc = NomComFactory.create(**nomcom_kwargs_for_year())
         self.author = PersonFactory.create().email_set.first().address
         self.member = self.nc.group.role_set.filter(name='member').first().person
@@ -1322,7 +1322,7 @@ class FeedbackLastSeenTests(TestCase):
         self.second_from_now = now + datetime.timedelta(seconds=1)
 
     def tearDown(self):
-        clean_test_public_keys_dir(self)
+        teardown_test_public_keys_dir(self)
 
     def test_feedback_index_badges(self):
         url = reverse('ietf.nomcom.views.view_feedback',kwargs={'year':self.nc.year()})
@@ -1409,13 +1409,13 @@ class FeedbackLastSeenTests(TestCase):
 class NewActiveNomComTests(TestCase):
 
     def setUp(self):
-        build_test_public_keys_dir(self)
+        setup_test_public_keys_dir(self)
         self.nc = NomComFactory.create(**nomcom_kwargs_for_year())
         self.chair = self.nc.group.role_set.filter(name='chair').first().person
         self.saved_days_to_expire_nomination_link = settings.DAYS_TO_EXPIRE_NOMINATION_LINK
 
     def tearDown(self):
-        clean_test_public_keys_dir(self)
+        teardown_test_public_keys_dir(self)
         settings.DAYS_TO_EXPIRE_NOMINATION_LINK = self.saved_days_to_expire_nomination_link
 
     def test_help(self):
@@ -1485,7 +1485,7 @@ class NewActiveNomComTests(TestCase):
         login_testing_unauthorized(self,self.chair.user.username,url)
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
-        response = self.client.post(url,{'key':key})
+        response = self.client.post(url,{'key': force_str(key)})
         self.assertEqual(response.status_code,302)
 
     def test_email_pasting(self):
@@ -1872,13 +1872,13 @@ class NoPublicKeyTests(TestCase):
         
 class AcceptingTests(TestCase):
     def setUp(self):
-        build_test_public_keys_dir(self)
+        setup_test_public_keys_dir(self)
         self.nc = NomComFactory(**nomcom_kwargs_for_year())
         self.plain_person = PersonFactory.create()
         self.member = self.nc.group.role_set.filter(name='member').first().person
 
     def tearDown(self):
-        clean_test_public_keys_dir(self)
+        teardown_test_public_keys_dir(self)
 
     def test_public_accepting_nominations(self):
         url = reverse('ietf.nomcom.views.public_nominate',kwargs={'year':self.nc.year()})
@@ -1979,12 +1979,12 @@ class AcceptingTests(TestCase):
 
 class ShowNomineeTests(TestCase):
     def setUp(self):
-        build_test_public_keys_dir(self)
+        setup_test_public_keys_dir(self)
         self.nc = NomComFactory(**nomcom_kwargs_for_year())
         self.plain_person = PersonFactory.create()
 
     def tearDown(self):
-        clean_test_public_keys_dir(self)
+        teardown_test_public_keys_dir(self)
 
     def test_feedback_pictures(self):
         url = reverse('ietf.nomcom.views.public_nominate',kwargs={'year':self.nc.year()})
@@ -2000,13 +2000,13 @@ class ShowNomineeTests(TestCase):
 
 class TopicTests(TestCase):
     def setUp(self):
-        build_test_public_keys_dir(self)
+        setup_test_public_keys_dir(self)
         self.nc = NomComFactory(**nomcom_kwargs_for_year(populate_topics=False))
         self.plain_person = PersonFactory.create()
         self.chair = self.nc.group.role_set.filter(name='chair').first().person
 
     def tearDown(self):
-        clean_test_public_keys_dir(self)
+        teardown_test_public_keys_dir(self)
     
     def testAddEditListRemoveTopic(self):
         self.assertFalse(self.nc.topic_set.exists())
