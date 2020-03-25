@@ -326,8 +326,9 @@ def can_approve_interim_request(meeting, user):
     if not session:
         return False
     group = session.group
-    if group.type.slug == 'wg' and group.parent.role_set.filter(name='ad', person=person):
-        return True
+    if group.type.slug == 'wg':
+        if group.parent.role_set.filter(name='ad', person=person) or group.role_set.filter(name='ad', person=person):
+            return True
     if group.type.slug == 'rg' and group.parent.role_set.filter(name='chair', person=person):
         return True
     return False

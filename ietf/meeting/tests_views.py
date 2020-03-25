@@ -1747,9 +1747,12 @@ class InterimTests(TestCase):
         # related AD
         user = User.objects.get(username='ad')
         self.assertTrue(can_approve_interim_request(meeting=meeting,user=user))
-        # other AD
+        # AD from other area
         user = User.objects.get(username='ops-ad')
         self.assertFalse(can_approve_interim_request(meeting=meeting,user=user))
+        # AD from other area assigned as the WG AD anyhow (cross-area AD)
+        user = RoleFactory(name_id='ad',group=group).person.user
+        self.assertTrue(can_approve_interim_request(meeting=meeting,user=user))
         # WG Chair
         user = User.objects.get(username='marschairman')
         self.assertFalse(can_approve_interim_request(meeting=meeting,user=user))
