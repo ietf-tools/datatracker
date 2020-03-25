@@ -8,6 +8,10 @@ if [ "$progdir" = "." ]; then progdir="$PWD"; fi
 parent=$(dirname $progdir)
 if [ "$parent" = "." ]; then parent="$PWD"; fi
 
+if [[ $(uname) =~ CYGWIN.* ]]; then
+    parent=$(echo $parent | sed -e 's/^\/cygdrive\/\(.\)/\1:/')
+fi
+
 # ----------------------------------------------------------------------
 function usage() {
     cat <<EOF
@@ -79,19 +83,11 @@ longopts=download-data,help,ietfdb-url=,mysqldata=,no-mysqldir,port=,docker-repo
 
 # Default values
 MYSQLDIR=$parent/data/mysql
-MYSQLDIR=$(echo $MYSQLDIR | sed -e 's/^\/cygdrive\/\(.\)/\1:/')
-
-#FILEDIR=$parent/../data/
-FILEDIR=$parent/data/
-
+FILEDIR=$parent/../data/
 PORT=8000
 REPO="ietf/datatracker-environment"
 DBURL=https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2
 WHO=$(whoami)
-WHO=$(echo $WHO | sed -e 's/^.*\\//' | tr -d \\r)
-
-WHOUID=$(id -u $WHO)
-WHOGID=$(id -g $WHO)
 
 if   [ "$(uname)" = "Linux" ]; then
     args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
@@ -125,12 +121,6 @@ while true ; do
     shift
 done
 
-if [ -z "$TAG" ]; then
-#  TAG=$(basename $(svn info $parent | grep ^URL | awk '{print $2}'))
-  TAG=$(basename $(svn info | grep ^URL | awk '{print $2}'))
-  TAG=$(echo $TAG | tr -d \\r)
-fi
-
 # ----------------------------------------------------------------------
 # The program itself
 
@@ -141,17 +131,38 @@ if   [ "$(uname)" = "Darwin" ]; then
     CMD="open -a"
 elif [ "$(uname)" = "Linux" ]; then
     echo "Running on Linux."
-elif [ "$(uname)" = "CYGWIN_NT-10.0" ]; then
-    echo "Running on Cygwin."
-    HOME=$(echo $USERPROFILE | sed -e 's/\\/\//g')
+elif [[ $(uname) =~ CYGWIN.* ]]; then
+    echo "Running under Cygwin."
+    CMD="echo"
+    WHO=$(echo $WHO | sed -e 's/^.*\\//' | tr -d \\r)
+    drive=$(echo $USERPROFILE | sed -e 's/\(.\).*/\1/' -e 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefdhijklmnopqartuvwxyz/')
+    HOME=$drive$(echo $USERPROFILE | sed -e 's/\\/\//g' -e's/.\(.*\)/\1/')
     echo "Using home dir $HOME"
+    PWD=$(echo $PWD | sed -e 's/^\/cygdrive\/\(.\)/\1:/')
+    if [ "${PWD#$HOME}" = "$PWD" ]; then
+        die "You must work inside your home directory ($HOME)"
+    fi
 else
     die "This script does not have support for your architecture ($(uname)); sorry :-("
 fi
 
+WHOUID=$(id -u $WHO)
+WHOGID=$(id -g $WHO)
+
+if [ -z "$TAG" ]; then
+  TAG=$(basename $(svn info $parent | grep ^URL | awk '{print $2}'))
+fi
+
 if   [ "$(uname)" = "Linux" ]; then
     echo "Not trying to start a virtual docker machine on Linux"
-elif [ -e "$APP" -o "$(uname)" = "CYGWIN_NT-10.0" ]; then
+elif [[ $(uname) =~ CYGWIN.* ]]; then
+    if ! docker info 1> /dev/null 2>&1; then
+	    echo -e "The docker VM doesn't seem to be running; docker info gave:\n  $info"
+        die "Don't know how to start docker when running under Cygwin"
+    fi
+    TAG=$(echo $TAG | tr -d \\r)
+    URL="http://localhost:$PORT/"
+elif [ -e "$APP" ]; then
     info=$(docker info 2>&1 || true)
     if ! docker info 1> /dev/null 2>&1; then
 	echo -e "The docker VM doesn't seem to be running; docker info gave:\n  $info"
@@ -195,7 +206,6 @@ else
 	URL="http://$ip:$PORT/"
     fi
 fi
-
 
 image=$(docker ps | grep "$REPO:$TAG" | awk '{ print $1 }')
 if [ "$image" ]; then
