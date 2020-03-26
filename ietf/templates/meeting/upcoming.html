@@ -150,11 +150,12 @@
         var calendar = new FullCalendar.Calendar(calendarEl, {
           aspectRatio: 1.35,
           plugins: [ 'dayGrid' ],
+          displayEventTime: false,
           events: [
           {% for meeting in meetings %}
             {% if meeting.type_id == 'ietf' %}
               {
-                title: 'IETF - {{ meeting.number }}',
+                title: 'IETF {{ meeting.number }}',
                 start: '{{meeting.date}}',
                 end: '{{meeting.end}}',
                 url: '{% url 'ietf.meeting.views.agenda' num=meeting.number %}'
@@ -163,9 +164,9 @@
               {% for session in meeting.session_set.all %}
                 {% for tsa in session.timeslotassignments.all %}
                   {
-                    title: '{{session.group.acronym}} - {{tsa.timeslot.time|date:"H:i"}} {{meeting.time_zone}}',
-                    start: '{{meeting.date}}',
-                    end: '{{meeting.end}}',
+                    title: '{{session.group.acronym}} : {{tsa.timeslot.utc_start_time|date:"H:i"}} - {{tsa.timeslot.utc_end_time|date:"H:i"}} UTC',
+                    start: '{{tsa.timeslot.utc_start_time | date:"Y-m-d H:i"}}',
+                    end: '{{tsa.timeslot.utc_end_time | date:"Y-m-d H:i"}}',
                     url: '{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=session.group.acronym %}'
                   }{% if not forloop.last %}, {% endif %}
                 {% endfor %}
