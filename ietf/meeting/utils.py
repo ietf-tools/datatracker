@@ -288,12 +288,14 @@ def data_for_meetings_overview(meetings, interim_status=None):
                 parent = parents.get(s.group.parent_id)
                 if not parent:
                     parent = s.group.parent
-                    parent.group_list = []
+                    parent.group_list = set()
                     group_hierarchy.append(parent)
+                    parents[s.group.parent_id] = parent
 
-                parent.group_list.append(s.group)
+                parent.group_list.add(s.group)
 
     for p in parents.values():
+        p.group_list = list(p.group_list)
         p.group_list.sort(key=lambda g: g.acronym)
 
     # set some useful attributes
