@@ -379,7 +379,7 @@ class DocumentInfo(models.Model):
         best_addresses = []
         for author in self.documentauthor_set.all():
             if author.email:
-                if author.email.active:
+                if author.email.active or not author.email.person:
                     best_addresses.append(author.email.address)
                 else:
                     best_addresses.append(author.email.person.email_address())
