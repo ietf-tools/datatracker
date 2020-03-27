@@ -1,3 +1,37 @@
+ietfdb (6.123.1) ietf; urgency=medium
+
+  **Fixes for meeting-related issues**
+
+  * Merged in [17543] from rjsparks@nostrum.com:
+    Repaired construction of group_hierarchy used for the customisation 
+    controls at /meeting/upcoming. Fixes #2940.  
+
+  * Merged in [17542] from rjsparks@nostrum.com:
+    Show calendar entries on /meeting/upcoming in utc. Show end times. 
+    Partially addresses #2936.  
+
+  * Don't show agenda buttons for Meetecho recordings (after the session 
+    concludes) if there isn't a Meetecho UrlResource.  Fixes issue #2934
+
+  * Merged in [17538] from rjsparks@nostrum.com:
+    Allow an out-of-area AD assigned as the AD for a WG to approve interim 
+    requests for that WG. Fixes #2930.  
+
+  * Changed the object factory instances of nomcom private key and cert to 
+    be byte objects (matching the production settings), and fixed the issue 
+    with nomcom key handling under Py3 found by fenton@bluepopcorn.net.  Did 
+    some renaming in nomcom/tests.py to better match setup/teardown function 
+    names to functionality.
+
+  * Merged in [17521] from housley@vigilsec.com:
+    Improve performance of log.assertion() and log.unreachable() 
+
+  * Merged in [17505] from housley@vigilsec.com:
+    Improve performance of many document list pages 
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Mar 2020 14:27:24 +0000
+
+
 ietfdb (6.123.0) ietf; urgency=medium
 
   **IETF 107 code sprint**
