@@ -1920,7 +1920,7 @@ def ajax_get_utc(request):
 @role_required('Secretariat',)
 def interim_announce(request):
     '''View which shows interim meeting requests awaiting announcement'''
-    meetings, _ = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='scheda')
+    meetings = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='scheda')
     menu_entries = get_interim_menu_entries(request)
     selected_menu_entry = 'announce'
 
@@ -1983,7 +1983,7 @@ def interim_skip_announcement(request, number):
 @role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
 def interim_pending(request):
     '''View which shows interim meeting requests pending approval'''
-    meetings, group_parents = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='apprw')
+    meetings = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='apprw')
 
     menu_entries = get_interim_menu_entries(request)
     selected_menu_entry = 'pending'
@@ -2225,20 +2225,31 @@ def past(request):
     '''List of past meetings'''
     today = datetime.datetime.today()
 
-    meetings, group_parents = data_for_meetings_overview(Meeting.objects.filter(date__lte=today).order_by('-date'))
+    meetings = data_for_meetings_overview(Meeting.objects.filter(date__lte=today).order_by('-date'))
 
     return render(request, 'meeting/past.html', {
                   'meetings': meetings,
-                  'group_parents': group_parents})
+                  })
 
 def upcoming(request):
     '''List of upcoming meetings'''
     today = datetime.date.today()
 
     # Get ietf meetings starting 7 days ago, and interim meetings starting today
-    query = Q(type_id='ietf', date__gte=today-datetime.timedelta(days=7)) | Q(type_id='interim', date__gte=today)
-    meetings = Meeting.objects.filter(query).order_by('date')
-    meetings, group_parents = data_for_meetings_overview(meetings)
+    ietf_meetings = Meeting.objects.filter(type_id='ietf', date__gte=today-datetime.timedelta(days=7))
+    for m in ietf_meetings:
+        m.end = m.date+datetime.timedelta(days=m.days)
+    interim_sessions = add_event_info_to_session_qs(
+        Session.objects.filter(
+            meeting__type_id='interim', 
+            timeslotassignments__schedule=F('meeting__schedule'),
+            timeslotassignments__timeslot__time__gte=today
+        )
+    ).filter(current_status__in=('sched','canceled'))
+
+    entries = list(ietf_meetings)
+    entries.extend(list(interim_sessions))
+    entries.sort(key = lambda o: pytz.utc.localize(datetime.datetime.combine(o.date, datetime.datetime.min.time())) if isinstance(o,Meeting) else o.official_timeslotassignment().timeslot.utc_start_time())
 
     # add menu entries
     menu_entries = get_interim_menu_entries(request)
@@ -2253,11 +2264,11 @@ def upcoming(request):
                     reverse('ietf.meeting.views.upcoming_ical')))
 
     return render(request, 'meeting/upcoming.html', {
-                  'meetings': meetings,
+                  'entries': entries,
                   'menu_actions': actions,
                   'menu_entries': menu_entries,
                   'selected_menu_entry': selected_menu_entry,
-                  'group_parents': group_parents})
+                  })
 
 
 def upcoming_ical(request):
@@ -2266,7 +2277,7 @@ def upcoming_ical(request):
     today = datetime.date.today()
 
     # get meetings starting 7 days ago -- we'll filter out sessions in the past further down
-    meetings, _ = data_for_meetings_overview(Meeting.objects.filter(date__gte=today-datetime.timedelta(days=7)).order_by('date'))
+    meetings = data_for_meetings_overview(Meeting.objects.filter(date__gte=today-datetime.timedelta(days=7)).order_by('date'))
 
     assignments = list(SchedTimeSessAssignment.objects.filter(
         schedule__meeting__schedule=F('schedule'),

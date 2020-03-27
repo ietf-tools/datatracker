@@ -1321,13 +1321,14 @@ class InterimTests(TestCase):
         today = datetime.date.today()
         last_week = today - datetime.timedelta(days=7)
         ietf = SessionFactory(meeting__type_id='ietf',meeting__date=last_week,group__state_id='active',group__parent=GroupFactory(state_id='active'))
-        interim = SessionFactory(meeting__type_id='interim',meeting__date=last_week,status_id='canceled',group__state_id='active',group__parent=GroupFactory(state_id='active'))
+        SessionFactory(meeting__type_id='interim',meeting__date=last_week,status_id='canceled',group__state_id='active',group__parent=GroupFactory(state_id='active'))
         url = urlreverse('ietf.meeting.views.past')
         r = self.client.get(url)
         self.assertContains(r, 'IETF - %02d'%int(ietf.meeting.number))
         q = PyQuery(r.content)
-        id="-%s" % interim.group.acronym
-        self.assertIn('CANCELLED', q('[id*="'+id+'"]').text())
+        #id="-%s" % interim.group.acronym
+        #self.assertIn('CANCELLED', q('[id*="'+id+'"]').text())
+        self.assertIn('CANCELLED', q('tr>td>a>span').text())
 
     def test_upcoming(self):
         make_meeting_test_data()
@@ -1339,10 +1340,11 @@ class InterimTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, mars_interim.number)
         self.assertContains(r, ames_interim.number)
-        self.assertContains(r, 'IETF - 72')
+        self.assertContains(r, 'IETF 72')
         # cancelled session
         q = PyQuery(r.content)
-        self.assertIn('CANCELLED', q('[id*="-ames"]').text())
+#        self.assertIn('CANCELLED', q('[id*="-ames"]').text())
+        self.assertIn('CANCELLED', q('tr>td>a>span').text())
         self.check_interim_tabs(url)
 
     def test_upcoming_ical(self):
