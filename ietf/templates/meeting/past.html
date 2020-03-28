@@ -19,68 +19,6 @@
 
       <h1>Past Meetings</h1>
 
-      <div class="panel-group" id="accordion">
-        <div class="panel panel-default">
-          <div class="panel-heading">
-            <h4 class="panel-title">
-              <a data-toggle="collapse" data-parent="#accordion" href="#customize">
-                <span class="fa fa-caret-down"></span> Customize the meeting list...
-              </a>
-            </h4>
-          </div> <!-- panel-heading -->
-
-          <div id="customize" class="panel-collapse collapse">
-            <div class="panel-body">
-              <p>
-                You can customize the list to show only selected groups
-                by clicking on groups and areas in the table below.
-                To be able to return to the customized view later, bookmark the resulting URL.
-              </p>
-
-              {% if group_parents|length %}
-                <p>Groups displayed in <b><i>italics</i></b> are BOFs.</p>
-
-                <table class="table table-condensed">
-                  <thead>
-                    <tr>
-                      {% for p in group_parents %}
-                        <th style="width:{% widthratio 1 group_parents|length 100 %}%">
-                          <button class="btn btn-default btn-block pickview {{p.acronym|lower}}">{{p.acronym|upper}}</button>
-                        </th>
-                      {% endfor %}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      {% for p in group_parents %}
-                        <td class="view {{p.acronym|lower}}">
-                          <div class="btn-group-vertical btn-block">
-                            {% for group in p.group_list %}
-                              <div class="btn-group btn-group-xs btn-group-justified">
-                                <button class="btn btn-default pickview {{group.acronym}}">
-                                  {% if group.is_bof %}
-                                    <i>{{group.acronym}}</i>
-                                  {% else %}
-                                    {{group.acronym}}
-                                  {% endif %}
-                                </button>
-                              </div> <!-- button-group -->
-                            {% endfor %}
-                          </div> <!-- button-group-vertical -->
-                        </td>
-                      {% endfor %}
-                    </tr>
-                  </tbody>
-                </table>
-              {% else %}
-                <blockquote><i>No past meetings are available.</i></blockquote>
-              {% endif %}
-              
-            </div> <!-- panel-body -->
-          </div> <!-- panel-collapse -->
-        </div> <!-- panel -->
-      </div> <!-- panel-group -->
-
       {% if meetings %}
         <h3></h3>
         <table class="table table-condensed table-striped tablesorter">
@@ -93,7 +31,7 @@
           </thead>
           <tbody>
             {% for meeting in meetings %}
-              <tr id="row-{{ forloop.counter }}{% if meeting.responsible_group.parent %}-{{ meeting.responsible_group.parent.acronym }}{% endif %}-{{ meeting.responsible_group.acronym }}">
+              <tr>
                 <td>{{ meeting.date }}</td>
                 <td>
                   {% if meeting.responsible_group.type_id != 'ietf' %}
