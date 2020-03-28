@@ -25,3 +25,22 @@ def active_nomcoms(user):
         state__slug='active').distinct().select_related("type"))
 
     return groups
+
+@register.inclusion_tag('person_link.html')
+def person_link(linkee, **kwargs):
+    title = ""
+    if 'title' in kwargs:
+        title = kwargs['title']
+    if title == "Area Director":
+        name = linkee.name
+        plain_name = name
+        email = linkee.email_address
+    elif title == "Shepherd":
+        name = linkee.person.name
+        plain_name = name
+        email = linkee
+    else:
+        name = linkee.person.name
+        plain_name = linkee.person.plain_name
+        email = linkee.email.address
+    return {'name': name, 'plain_name': plain_name, 'email': email, 'title': title}
