@@ -2,6 +2,7 @@
 {% load widget_tweaks %}
 {% load ietf_filters %}
 {% load ballot_icon %}
+{% load person_filters %}
 
 <tr {% spaceless %}
     {% if color_row_positions %}
@@ -120,9 +121,9 @@
   {% if ad_name == None or ad_name != doc.ad.plain_name %}
     <td class="area-director">
       {% if doc.ad %}
-        <a title="Area Director" href="mailto:{{ doc.ad.email_address|urlencode }}">{{ doc.ad }}</a><br>
+        {% person_link doc.ad title="Area Director" %}<br>
       {% endif %}
-      {% if doc.shepherd %}<a title="Shepherd" href="mailto:{{doc.shepherd}}"><small class="text-muted">{{doc.shepherd.person.name}}</small></a>{% endif %}
+      {% if doc.shepherd %}{% email_person_link doc.shepherd title="Shepherd" class="small text-muted" %}{% endif %}
     </td>
   {% endif %}
 
