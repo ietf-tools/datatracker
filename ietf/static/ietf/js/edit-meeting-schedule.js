@@ -1,7 +1,4 @@
 jQuery(document).ready(function () {
-    if (!ietfData.can_edit)
-        return;
-
     let content = jQuery(".edit-meeting-schedule");
 
     function failHandler(xhr, textStatus, error) {
@@ -49,92 +46,94 @@ jQuery(document).ready(function () {
     });
 
 
-    // dragging
-    sessions.on("dragstart", function (event) {
-        event.originalEvent.dataTransfer.setData("text/plain", this.id);
-        jQuery(this).addClass("dragging");
+    if (ietfData.can_edit) {
+        // dragging
+        sessions.on("dragstart", function (event) {
+            event.originalEvent.dataTransfer.setData("text/plain", this.id);
+            jQuery(this).addClass("dragging");
 
-        selectSessionElement(this);
-    });
-    sessions.on("dragend", function () {
-        jQuery(this).removeClass("dragging");
+            selectSessionElement(this);
+        });
+        sessions.on("dragend", function () {
+            jQuery(this).removeClass("dragging");
 
-    });
+        });
 
-    sessions.prop('draggable', true);
+        sessions.prop('draggable', true);
 
-    // dropping
-    let dropElements = content.find(".timeslot,.unassigned-sessions");
-    dropElements.on('dragenter', function (event) {
-        if ((event.originalEvent.dataTransfer.getData("text/plain") || "").slice(0, "session".length) != "session")
-            return;
+        // dropping
+        let dropElements = content.find(".timeslot,.unassigned-sessions");
+        dropElements.on('dragenter', function (event) {
+            if ((event.originalEvent.dataTransfer.getData("text/plain") || "").slice(0, "session".length) != "session")
+                return;
 
-        event.preventDefault(); // default action is signalling that this is not a valid target
-        jQuery(this).addClass("dropping");
-    });
+            event.preventDefault(); // default action is signalling that this is not a valid target
+            jQuery(this).addClass("dropping");
+        });
 
-    dropElements.on('dragover', function (event) {
-        // we don't actually need this event, except we need to signal
-        // that this is a valid drop target, by cancelling the default
-        // action
-        event.preventDefault();
-    });
-    
-    dropElements.on('dragleave', function (event) {
-        // skip dragleave events if they are to children
-        if (event.originalEvent.currentTarget.contains(event.originalEvent.relatedTarget))
-            return;
+        dropElements.on('dragover', function (event) {
+            // we don't actually need this event, except we need to signal
+            // that this is a valid drop target, by cancelling the default
+            // action
+            event.preventDefault();
+        });
 
-        jQuery(this).removeClass("dropping");
-    });
-    
-    dropElements.on('drop', function (event) {
-        jQuery(this).removeClass("dropping");
+        dropElements.on('dragleave', function (event) {
+            // skip dragleave events if they are to children
+            if (event.originalEvent.currentTarget.contains(event.originalEvent.relatedTarget))
+                return;
 
-        let sessionId = event.originalEvent.dataTransfer.getData("text/plain");
-        if ((event.originalEvent.dataTransfer.getData("text/plain") || "").slice(0, "session".length) != "session")
-            return;
+            jQuery(this).removeClass("dropping");
+        });
 
-        let sessionElement = sessions.filter("#" + sessionId);
-        if (sessionElement.length == 0)
-            return;
+        dropElements.on('drop', function (event) {
+            jQuery(this).removeClass("dropping");
 
-        event.preventDefault(); // prevent opening as link
+            let sessionId = event.originalEvent.dataTransfer.getData("text/plain");
+            if ((event.originalEvent.dataTransfer.getData("text/plain") || "").slice(0, "session".length) != "session")
+                return;
 
-        if (sessionElement.parent().is(this))
-            return;
+            let sessionElement = sessions.filter("#" + sessionId);
+            if (sessionElement.length == 0)
+                return;
 
-        let dropElement = jQuery(this);
+            event.preventDefault(); // prevent opening as link
 
-        function done() {
-            dropElement.append(sessionElement); // move element
-            updateCurrentSchedulingHints();
-            if (dropElement.hasClass("unassigned-sessions"))
-                sortUnassigned();
-        }
+            if (sessionElement.parent().is(this))
+                return;
 
-        if (dropElement.hasClass("unassigned-sessions")) {
-            jQuery.ajax({
-                url: ietfData.urls.assign,
-                method: "post",
-                data: {
-                    action: "unassign",
-                    session: sessionId.slice("session".length)
-                }
-            }).fail(failHandler).done(done);
-        }
-        else {
-            jQuery.ajax({
-                url: ietfData.urls.assign,
-                method: "post",
-                data: {
-                    action: "assign",
-                    session: sessionId.slice("session".length),
-                    timeslot: dropElement.attr("id").slice("timeslot".length)
-                }
-            }).fail(failHandler).done(done);
-        }
-    });
+            let dropElement = jQuery(this);
+
+            function done() {
+                dropElement.append(sessionElement); // move element
+                updateCurrentSchedulingHints();
+                if (dropElement.hasClass("unassigned-sessions"))
+                    sortUnassigned();
+            }
+
+            if (dropElement.hasClass("unassigned-sessions")) {
+                jQuery.ajax({
+                    url: ietfData.urls.assign,
+                    method: "post",
+                    data: {
+                        action: "unassign",
+                        session: sessionId.slice("session".length)
+                    }
+                }).fail(failHandler).done(done);
+            }
+            else {
+                jQuery.ajax({
+                    url: ietfData.urls.assign,
+                    method: "post",
+                    data: {
+                        action: "assign",
+                        session: sessionId.slice("session".length),
+                        timeslot: dropElement.attr("id").slice("timeslot".length)
+                    }
+                }).fail(failHandler).done(done);
+            }
+        });
+    }
 
     // hints for the current schedule
 

@@ -1140,14 +1140,11 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   margin: 0.2em;
   border-radius: 0.4em;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .edit-meeting-schedule .session.selected {
   border: 1px solid #bbb;
-}
-
-.edit-meeting-schedule .session[draggable] {
-  cursor: pointer;
 }
 
 .edit-meeting-schedule .session.dragging {

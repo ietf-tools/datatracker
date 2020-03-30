@@ -623,7 +623,10 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     # requesters
     requested_by_lookup = {p.pk: p for p in Person.objects.filter(pk__in=set(s.requested_by for s in sessions if s.requested_by))}
 
-    # constraints
+    # constraints - convert the human-readable rules in the database
+    # to constraints on the actual sessions, compress them and output
+    # them, so that the JS simply has to detect violations and show
+    # the relevant preprocessed label
     constraints = Constraint.objects.filter(meeting=meeting)
     person_needed_for_groups = defaultdict(set)
     for c in constraints:
