@@ -83,7 +83,7 @@
 
     </div>
   </div>
-  <div id="calendar" style="width:60%; margin:auto;"></div>
+  <div id="calendar" class="col-md-10" ></div>
 {% endblock %}
 
 {% block js %}
@@ -94,9 +94,9 @@
 
       document.addEventListener('DOMContentLoaded', function() {
         var calendarEl = document.getElementById('calendar');
+        var glue = calendarEl.clientWidth > 720 ? ' ' : '\n';
 
         var calendar = new FullCalendar.Calendar(calendarEl, {
-          aspectRatio: 1.35,
           plugins: [ 'dayGrid' ],
           displayEventTime: false,
           events: [
@@ -113,7 +113,7 @@
             {% else %} {# if it's not a Meeting, it's a Session #}
               {% with session=entry %}
                 {
-                  title: '{{session.group.acronym}} : {{session.official_timeslotassignment.timeslot.utc_start_time|date:"H:i"}} - {{session.official_timeslotassignment.timeslot.utc_end_time|date:"H:i"}} UTC',
+                  title: '{{session.official_timeslotassignment.timeslot.utc_start_time|date:"H:i"}}-{{session.official_timeslotassignment.timeslot.utc_end_time|date:"H:i"}}'+glue+'{{session.group.acronym}}',
                   start: '{{session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}}',
                   end: '{{session.official_timeslotassignment.timeslot.utc_end_time | date:"Y-m-d H:i"}}',
                   url: '{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}'
