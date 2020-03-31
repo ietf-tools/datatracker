@@ -245,8 +245,9 @@ if [ -d ../coverage ]; then
     rsync -a static/coverage/ ../coverage/$VER/
 fi
 
-contributors=$(echo "$changes" | gawk '/^  \* Merged in \[[0-9]+\] from [^: ]+/ {sub(":",""); print $6;}' )
-note "Contributors: $contributors"
+contributors=$(echo "$changes" | gawk '/^  \* Merged in \[[0-9]+\] from [^: ]+/ {sub(":",""); print $6;}' | sort | uniq)
+note "Contributors:
+$contributors"
 
 note "Setting the current time on the release notes in the changelog file ..."
 $do sed -r -i -e "1,/^ -- /s/([A-Za-z-]+ <[a-z0-9.-]+@[a-z0-9.-]+>  ).*$/\1$(TZ=UTC date +'%d %b %Y %H:%M:%S %z')/" changelog
