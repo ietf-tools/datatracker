@@ -66,6 +66,10 @@ function note() {
 	if [ -n "$VERBOSE" ]; then echo -e "\n$*"; fi
 }
 
+function check() {
+  [ "$(which $1)" ] || die "could not find the '$1' command.  $2"
+}
+
 # ----------------------------------------------------------------------
 function version() {
 	echo -e "$program $version"
@@ -118,6 +122,11 @@ while true ; do
     esac
     shift
 done
+
+# ----------------------------------------------------------------------
+# Check some requirements
+
+check bower "It is required to update web resources.  Install with npm."
 
 # ----------------------------------------------------------------------
 # The program itself
