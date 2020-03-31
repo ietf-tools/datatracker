@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -516,8 +516,19 @@ Man                    Expires September 22, 2015               [Page 3]
     def test_document_draft(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01')
         HolderIprDisclosureFactory(docs=[draft])
+        
+        # Docs for testing relationships. Does not test 'possibly-replaces'. The 'replaced_by' direction
+        # is tested separately below.
         replaced = IndividualDraftFactory()
         draft.relateddocument_set.create(relationship_id='replaces',source=draft,target=replaced.docalias.first())
+        obsoleted = IndividualDraftFactory()
+        draft.relateddocument_set.create(relationship_id='obs',source=draft,target=obsoleted.docalias.first())
+        obsoleted_by = IndividualDraftFactory()
+        obsoleted_by.relateddocument_set.create(relationship_id='obs',source=obsoleted_by,target=draft.docalias.first())
+        updated = IndividualDraftFactory()
+        draft.relateddocument_set.create(relationship_id='updates',source=draft,target=updated.docalias.first())
+        updated_by = IndividualDraftFactory()
+        updated_by.relateddocument_set.create(relationship_id='updates',source=obsoleted_by,target=draft.docalias.first())
 
         # these tests aren't testing all attributes yet, feel free to
         # expand them
@@ -527,24 +538,68 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, "Active Internet-Draft")
         self.assertContains(r, "Show full document text")
         self.assertNotContains(r, "Deimos street")
+        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.title)
+        # obs/updates not included until draft is RFC
+        self.assertNotContains(r, obsoleted.canonical_name())
+        self.assertNotContains(r, obsoleted.title)
+        self.assertNotContains(r, obsoleted_by.canonical_name())
+        self.assertNotContains(r, obsoleted_by.title)
+        self.assertNotContains(r, updated.canonical_name())
+        self.assertNotContains(r, updated.title)
+        self.assertNotContains(r, updated_by.canonical_name())
+        self.assertNotContains(r, updated_by.title)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=0")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
         self.assertNotContains(r, "Show full document text")
         self.assertContains(r, "Deimos street")
+        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.title)
+        # obs/updates not included until draft is RFC
+        self.assertNotContains(r, obsoleted.canonical_name())
+        self.assertNotContains(r, obsoleted.title)
+        self.assertNotContains(r, obsoleted_by.canonical_name())
+        self.assertNotContains(r, obsoleted_by.title)
+        self.assertNotContains(r, updated.canonical_name())
+        self.assertNotContains(r, updated.title)
+        self.assertNotContains(r, updated_by.canonical_name())
+        self.assertNotContains(r, updated_by.title)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=foo")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
         self.assertNotContains(r, "Show full document text")
         self.assertContains(r, "Deimos street")
+        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.title)
+        # obs/updates not included until draft is RFC
+        self.assertNotContains(r, obsoleted.canonical_name())
+        self.assertNotContains(r, obsoleted.title)
+        self.assertNotContains(r, obsoleted_by.canonical_name())
+        self.assertNotContains(r, obsoleted_by.title)
+        self.assertNotContains(r, updated.canonical_name())
+        self.assertNotContains(r, updated.title)
+        self.assertNotContains(r, updated_by.canonical_name())
+        self.assertNotContains(r, updated_by.title)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=1")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
         self.assertNotContains(r, "Show full document text")
         self.assertContains(r, "Deimos street")
+        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.title)
+        # obs/updates not included until draft is RFC
+        self.assertNotContains(r, obsoleted.canonical_name())
+        self.assertNotContains(r, obsoleted.title)
+        self.assertNotContains(r, obsoleted_by.canonical_name())
+        self.assertNotContains(r, obsoleted_by.title)
+        self.assertNotContains(r, updated.canonical_name())
+        self.assertNotContains(r, updated.title)
+        self.assertNotContains(r, updated_by.canonical_name())
+        self.assertNotContains(r, updated_by.title)
 
         self.client.cookies = SimpleCookie({str('full_draft'): str('on')})
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
@@ -552,6 +607,17 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, "Active Internet-Draft")
         self.assertNotContains(r, "Show full document text")
         self.assertContains(r, "Deimos street")
+        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.title)
+        # obs/updates not included until draft is RFC
+        self.assertNotContains(r, obsoleted.canonical_name())
+        self.assertNotContains(r, obsoleted.title)
+        self.assertNotContains(r, obsoleted_by.canonical_name())
+        self.assertNotContains(r, obsoleted_by.title)
+        self.assertNotContains(r, updated.canonical_name())
+        self.assertNotContains(r, updated.title)
+        self.assertNotContains(r, updated_by.canonical_name())
+        self.assertNotContains(r, updated_by.title)
 
         self.client.cookies = SimpleCookie({str('full_draft'): str('off')})
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
@@ -559,6 +625,17 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, "Active Internet-Draft")
         self.assertContains(r, "Show full document text")
         self.assertNotContains(r, "Deimos street")
+        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.title)
+        # obs/updates not included until draft is RFC
+        self.assertNotContains(r, obsoleted.canonical_name())
+        self.assertNotContains(r, obsoleted.title)
+        self.assertNotContains(r, obsoleted_by.canonical_name())
+        self.assertNotContains(r, obsoleted_by.title)
+        self.assertNotContains(r, updated.canonical_name())
+        self.assertNotContains(r, updated.title)
+        self.assertNotContains(r, updated_by.canonical_name())
+        self.assertNotContains(r, updated_by.title)
 
         self.client.cookies = SimpleCookie({str('full_draft'): str('foo')})
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
@@ -566,6 +643,17 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, "Active Internet-Draft")
         self.assertContains(r, "Show full document text")
         self.assertNotContains(r, "Deimos street")
+        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.title)
+        # obs/updates not included until draft is RFC
+        self.assertNotContains(r, obsoleted.canonical_name())
+        self.assertNotContains(r, obsoleted.title)
+        self.assertNotContains(r, obsoleted_by.canonical_name())
+        self.assertNotContains(r, obsoleted_by.title)
+        self.assertNotContains(r, updated.canonical_name())
+        self.assertNotContains(r, updated.title)
+        self.assertNotContains(r, updated_by.canonical_name())
+        self.assertNotContains(r, updated_by.title)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
@@ -604,7 +692,8 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Replaced Internet-Draft")
-        self.assertContains(r, replacement.name)
+        self.assertContains(r, replacement.canonical_name())
+        self.assertContains(r, replacement.title)
         rel.delete()
 
         # draft published as RFC
@@ -627,6 +716,17 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "RFC 123456")
         self.assertContains(r, draft.name)
+        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.title)
+        # obs/updates included with RFC
+        self.assertContains(r, obsoleted.canonical_name())
+        self.assertContains(r, obsoleted.title)
+        self.assertContains(r, obsoleted_by.canonical_name())
+        self.assertContains(r, obsoleted_by.title)
+        self.assertContains(r, updated.canonical_name())
+        self.assertContains(r, updated.title)
+        self.assertContains(r, updated_by.canonical_name())
+        self.assertContains(r, updated_by.title)
 
         # naked RFC - also wierd that we test a PS from the ISE
         rfc = IndividualDraftFactory(
