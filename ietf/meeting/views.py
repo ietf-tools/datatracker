@@ -962,7 +962,7 @@ def ical_agenda(request, num=None, name=None, acronym=None, session_id=None):
 
 @cache_page(15 * 60)
 def json_agenda(request, num=None ):
-    meeting = get_meeting(num)
+    meeting = get_meeting(num, type_in=['ietf','interim'])
 
     sessions = []
     locations = set()
