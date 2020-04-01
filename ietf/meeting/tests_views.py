@@ -2074,6 +2074,13 @@ class IphoneAppJsonTests(TestCase):
     def tearDown(self):
         pass
 
+    def test_iphone_app_json_interim(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type_id='interim').order_by('id').last()
+        url = urlreverse('ietf.meeting.views.json_agenda',kwargs={'num':meeting.number})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+
     def test_iphone_app_json(self):
         make_meeting_test_data()
         meeting = Meeting.objects.filter(type_id='ietf').order_by('id').last()
