@@ -2080,6 +2080,13 @@ class IphoneAppJsonTests(TestCase):
         url = urlreverse('ietf.meeting.views.json_agenda',kwargs={'num':meeting.number})
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
+        data = r.json()
+        self.assertIn(meeting.number, data.keys())
+        jsessions = [ s for s in data[meeting.number] if s['objtype'] == 'session' ]
+        msessions = meeting.session_set.exclude(type__in=['lead','offagenda','break','reg'])
+        self.assertEqual(len(jsessions), msessions.count())
+        for s in jsessions:
+            self.assertTrue(msessions.filter(group__acronym=s['group']['acronym']).exists())
 
     def test_iphone_app_json(self):
         make_meeting_test_data()
@@ -2095,6 +2102,13 @@ class IphoneAppJsonTests(TestCase):
         url = urlreverse('ietf.meeting.views.json_agenda',kwargs={'num':meeting.number})
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
+        data = r.json()
+        self.assertIn(meeting.number, data.keys())
+        jsessions = [ s for s in data[meeting.number] if s['objtype'] == 'session' ]
+        msessions = meeting.session_set.exclude(type__in=['lead','offagenda','break','reg'])
+        self.assertEqual(len(jsessions), msessions.count())
+        for s in jsessions:
+            self.assertTrue(msessions.filter(group__acronym=s['group']['acronym']).exists())
 
 class FinalizeProceedingsTests(TestCase):
     @patch('six.moves.urllib.request.urlopen')
