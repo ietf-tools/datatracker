@@ -26,6 +26,7 @@
 /attic
 /bin
 /etc
+/env
 /ghostdriver.log
 /htmlcov
 /include
