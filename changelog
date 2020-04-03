@@ -1,3 +1,52 @@
+ietfdb (6.124.0) ietf; urgency=medium
+
+  **Enhanced 'Upcoming Meetings' page, and more**
+
+  * Added links to agenda/materials pop-up, materials download, etherpad, 
+    jabber room, and webex call-in session for interims on the upcoming 
+    meetings page.  With the earlier changes from [17555], this fixes issue 
+    #2937.
+
+  * Changed the IPR patent number regex to permit space between country 
+    code and serial number, and expanded on the help text for the IPR patent 
+    number field.
+
+  * Added verification of response data to IphoneAppJsonTests
+
+  * Merged in [17564] from pusateri@bangj.com:
+    Added interim meetings to agenda.json API. Fixes #2946.
+
+  * Merged in [17562] from jennifer@painless-security.com:
+    Add tooltips with doc name to 'updates' and 'obsoletes' links. Fixes 
+    #2866;  
+
+  * Fixed a Py2/3 issue in the djangobwr's bower_install command
+
+  * Added a check for availability of 'bower' in bin/mkrelease.
+
+  * Cleaned up the contributors list in bin/mkrelease a bit.
+
+  * Merged in [17557] from fenton@bluepopcorn.net:
+    Provide more consistent links to people pages. Fixes #2918.  
+
+  * Changed an obsolete document.href() to document.get_href().  Fixes 
+    issue #2945.
+
+  * Tweaked the upcoming calendar and calendar entries slightly, to render 
+    with times first and on two lines on narrow screens.
+
+  * Merged in [17555] from rjsparks@nostrum.com:
+    Remove the not-quite-working customization widgets from 
+    /meeting/upcoming and /meeting/past. Simplify those views. Correct the list 
+    of sessions on those pages when one interim has more than one session. 
+    Fixes #2938. Partially addresses #2937.  
+
+  * Prevent an exception on missing author.email.person when listing author 
+    emails.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Apr 2020 10:04:43 +0000
+
+
 ietfdb (6.123.1) ietf; urgency=medium
 
   **Fixes for meeting-related issues**
