@@ -2246,6 +2246,8 @@ def upcoming(request):
             timeslotassignments__timeslot__time__gte=today
         )
     ).filter(current_status__in=('sched','canceled'))
+    for session in interim_sessions:
+        session.historic_group = session.group
 
     entries = list(ietf_meetings)
     entries.extend(list(interim_sessions))

@@ -48,7 +48,8 @@
               <tr>
                 <th>Date</th>
                 <th>Group</th>
-                <th>Name</th>
+                <th>Meeting</th>
+                <th class="sorter-false text-right">&nbsp;</th>
               </tr>
             </thead>
             <tbody>
@@ -59,17 +60,22 @@
                       <td>{{ meeting.date }} - {{ meeting.end }}</td>
                       <td>ietf</td>
                       <td><a href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">IETF {{ meeting.number }}</a></td>
+                      <td></td>
                     {% endwith %}
                   {% elif entry|classname == 'Session' %}
-                    {% with session=entry %}
+                    {% with session=entry meeting=entry.meeting%}
                       <td>{{ session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}} - {{ session.official_timeslotassignment.timeslot.utc_end_time | date:"H:i e" }}</td>
-                      <td>{{ session.group.acronym }}</td>
+                      <td><a href="{% url 'ietf.group.views.group_about' acronym=session.group.acronym %}">{{ session.group.acronym }}</a></td>
                       <td>
                         <a href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">{{ session.meeting.number }}{% if session.current_status == 'canceled' %}&nbsp;&nbsp;<span class="label label-warning">CANCELLED</span>{% endif %}</a>
+                      </td>
+                      <td class='text-right'>
+                         {% include "meeting/interim_session_buttons.html" %}
                       </td>
                     {% endwith %}
                   {% else %}
                       <td><span class="label-warning">Unexpected entry type: {{entry|classname}}</span></td>
+                      <td></td>
                       <td></td>
                       <td></td>
                   {% endif %}
@@ -132,5 +138,35 @@
         calendar.render();
       });
 
+      $(".modal").on("show.bs.modal", function () {
+	  var i = $(this).find(".frame");
+	  if ($(i).data("src")) {
+	      $.get($(i).data("src"), function (data, status, xhr) {
+		  var t = xhr.getResponseHeader("content-type");
+		  if (t.indexOf("text/plain") > -1) {
+		      data = "<pre class='agenda'>" + data + "</pre>";
+		  } else if(t.indexOf("text/html") > -1) {
+		      // nothing to do here
+		  } else {
+		      data = "<p>Unknown type: " + xhr.getResponseHeader("content-type") + "</p>";
+		  }
+		  $(i).html(data);
+	      });
+	  }
+	  var j = $(this).find(".frame2");
+	  if ($(j).data("src")) {
+	      $.get($(j).data("src"), function (data, status, xhr) {
+		  var t = xhr.getResponseHeader("content-type");
+		  if (t.indexOf("text/plain") > -1) {
+		      data = "<pre class='agenda'>" + data + "</pre>";
+		  } else if(t.indexOf("text/html") > -1) {
+		      // nothing to do here
+		  } else {
+		      data = "<p>Unknown type: " + xhr.getResponseHeader("content-type") + "</p>";
+		  }
+		  $(j).html(data);
+	      });
+	  }
+      });
     </script>
 {% endblock %}
