@@ -86,7 +86,7 @@ from ietf.utils.mail import send_mail_message, send_mail_text
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 from ietf.utils.text import xslugify
-from ietf.utils.validators import get_mime_type
+from ietf.utils.mime import get_mime_type
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
     InterimCancelForm, InterimSessionInlineFormSet, FileUploadForm, RequestMinutesForm,)
@@ -221,7 +221,7 @@ def materials_document(request, document, num=None, ext=None):
         bytes = file.read()
     
     mtype, chset = get_mime_type(bytes)
-    content_type = "%s; %s" % (mtype, chset)
+    content_type = "%s; charset=%s" % (mtype, chset)
 
     file_ext = os.path.splitext(filename)
     if len(file_ext) == 2 and file_ext[1] == '.md' and mtype == 'text/plain':

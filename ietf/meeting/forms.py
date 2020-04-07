@@ -341,7 +341,7 @@ class FileUploadForm(forms.Form):
         mime_type, encoding = validate_mime_type(file, self.mime_types)
         if not hasattr(self, 'file_encoding'):
             self.file_encoding = {}
-        self.file_encoding[file.name] = encoding.replace('charset=','') if encoding else None
+        self.file_encoding[file.name] = encoding or None
         if self.mime_types:
             if not file.content_type in settings.MEETING_VALID_UPLOAD_MIME_FOR_OBSERVED_MIME[mime_type]:
                 raise ValidationError('Upload Content-Type (%s) is different from the observed mime-type (%s)' % (file.content_type, mime_type))
