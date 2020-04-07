@@ -240,6 +240,14 @@ class InterimSessionModelForm(forms.ModelForm):
             raise forms.ValidationError('Required field')
         return date
 
+    def clean_requested_duration(self):
+        min_minutes = settings.INTERIM_SESSION_MINIMUM_MINUTES
+        max_minutes = settings.INTERIM_SESSION_MAXIMUM_MINUTES
+        duration = self.cleaned_data.get('requested_duration')
+        if not duration or duration < datetime.timedelta(minutes=min_minutes) or duration > datetime.timedelta(minutes=max_minutes):
+            raise forms.ValidationError('Provide a duration, %s-%smin.' % (min_minutes, max_minutes))
+        return duration
+
     def save(self, *args, **kwargs):
         """NOTE: as the baseform of an inlineformset self.save(commit=True)
         never gets called"""

@@ -1888,7 +1888,7 @@ class InterimTests(TestCase):
                 'session_set-0-id':meeting.session_set.first().id,
                 'session_set-0-date':formset_initial['date'].strftime('%Y-%m-%d'),
                 'session_set-0-time':new_time.strftime('%H:%M'),
-                'session_set-0-requested_duration':formset_initial['requested_duration'],
+                'session_set-0-requested_duration': '00:30',
                 'session_set-0-remote_instructions':formset_initial['remote_instructions'],
                 #'session_set-0-agenda':formset_initial['agenda'],
                 'session_set-0-agenda_note':formset_initial['agenda_note'],
