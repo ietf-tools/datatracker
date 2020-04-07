@@ -82,6 +82,22 @@ class GroupsTest(TestCase):
         response = self.client.post(url,post_data)
         self.assertEqual(response.status_code, 200)
 
+    def test_add_group_capital_acronym(self):
+        area = GroupFactory(type_id='area')
+        url = reverse('ietf.secr.groups.views.add')
+        post_data = {'acronym':'TEST',
+                     'name':'Test Group',
+                     'type':'wg',
+                     'status':'active',
+                     'parent':area.id,
+                     'awp-TOTAL_FORMS':'2',
+                     'awp-INITIAL_FORMS':'0',
+                     'submit':'Save'}
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.post(url,post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Capital letters not allowed in group acronym')
+
     # ------- Test View -------- #
     def test_view(self):
         MeetingFactory(type_id='ietf')

@@ -59,12 +59,9 @@ class Command(BaseCommand):
             if dangling and options.get('delete'):
                 if verbosity > 1:
                     self.stdout.write("Removing dangling values: %s.%s.%s\n" % (model.__module__, model.__name__, field.name, ))
-                for value in dangling:
+                for value in tqdm(dangling):
                     kwargs = { field.name: value }
                     for obj in field.model.objects.filter(**kwargs):
-                        if verbosity > 1:
-                            self.stdout.write('.', ending=None)
-                            self.stdout.flush()
                         try:
                             if   isinstance(field, (ForeignKey, OneToOneField)):
                                 setattr(obj, field.name, None)

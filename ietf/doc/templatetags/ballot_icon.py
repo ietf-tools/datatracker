@@ -43,7 +43,6 @@ from django.utils.safestring import mark_safe
 from ietf.ietfauth.utils import user_is_person, has_role
 from ietf.doc.models import BallotPositionDocEvent, IESG_BALLOT_ACTIVE_STATES
 from ietf.name.models import BallotPositionName
-from ietf.utils import log
 
 
 register = template.Library()
@@ -168,7 +167,6 @@ def state_age_colored(doc):
             # Don't show anything for expired/withdrawn/replaced drafts
             return ""
         iesg_state = doc.get_state_slug('draft-iesg')
-        log.assertion('iesg_state')
         if not iesg_state:
             return ""
 

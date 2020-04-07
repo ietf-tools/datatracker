@@ -2294,6 +2294,19 @@
   },
   {
     "fields": {
+      "desc": "This charter's group was replaced.",
+      "name": "Replaced",
+      "next_states": [],
+      "order": 0,
+      "slug": "replaced",
+      "type": "charter",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 157
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -9681,7 +9694,7 @@
   {
     "fields": {
       "desc": "Formation of the group (most likely a BoF or Proposed WG) was abandoned",
-      "name": "Abandonded",
+      "name": "Abandoned",
       "order": 0,
       "used": true
     },
@@ -9750,7 +9763,7 @@
   },
   {
     "fields": {
-      "desc": "Replaced by dnssd",
+      "desc": "Replaced by a group with a different acronym",
       "name": "Replaced",
       "order": 0,
       "used": true
@@ -11447,6 +11460,16 @@
     },
     "model": "name.roomresourcename",
     "pk": "u-shape"
+  },
+  {
+    "fields": {
+      "desc": "WebEx support",
+      "name": "WebEx session",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.roomresourcename",
+    "pk": "webex"
   },
   {
     "fields": {
@@ -14226,7 +14249,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2020-01-16T00:12:27.984",
+      "time": "2020-02-19T00:13:43.554",
       "used": true,
       "version": "xym 0.4"
     },
@@ -14237,7 +14260,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2020-01-16T00:12:29.007",
+      "time": "2020-02-19T00:13:44.450",
       "used": true,
       "version": "pyang 2.1.1"
     },
@@ -14248,7 +14271,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2020-01-16T00:12:29.206",
+      "time": "2020-02-19T00:13:44.597",
       "used": true,
       "version": "yanglint 0.14.80"
     },
@@ -14259,9 +14282,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2020-01-16T00:12:30.657",
+      "time": "2020-02-19T00:13:45.481",
       "used": true,
-      "version": "xml2rfc 2.37.3"
+      "version": "xml2rfc 2.40.0"
     },
     "model": "utils.versioninfo",
     "pk": 4

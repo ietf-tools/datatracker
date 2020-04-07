@@ -3,8 +3,7 @@
 
 
 import datetime
-import json
-import urllib.request
+import requests
 
 from urllib.error import HTTPError
 from django.conf import settings
@@ -113,7 +112,7 @@ def create_proceedings_templates(meeting):
     # Get meeting attendees from registration system
     url = settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number)
     try:
-        attendees = json.load(urllib.request.urlopen(url))
+        attendees = requests.get(url).json()
     except (ValueError, HTTPError):
         attendees = []
 
@@ -240,6 +239,26 @@ def only_sessions_that_can_meet(session_qs):
 
     return qs
 
+
+# Keeping this as a note that might help when returning Customization to the /meetings/upcoming page
+#def group_parents_from_sessions(sessions):
+#    group_parents = list()
+#    parents = {}
+#    for s in sessions:
+#        if s.group.parent_id not in parents:
+#            parent = s.group.parent
+#            parent.group_list = set()
+#            group_parents.append(parent)
+#            parents[s.group.parent_id] = parent
+#        parent.group_list.add(s.group)
+#
+#    for p in parents.values():
+#        p.group_list = list(p.group_list)
+#        p.group_list.sort(key=lambda g: g.acronym)
+#
+#    return group_parents
+
+
 def data_for_meetings_overview(meetings, interim_status=None):
     """Return filtered meetings with sessions and group hierarchy (for the
     interim menu)."""
@@ -275,25 +294,7 @@ def data_for_meetings_overview(meetings, interim_status=None):
             if not m.type_id == 'interim' or not all(s.current_status in ['apprw', 'scheda', 'canceledpa'] for s in m.sessions)
         ]
 
-    # group hierarchy
     ietf_group = Group.objects.get(acronym='ietf')
-
-    group_hierarchy = [ietf_group]
-
-    parents = {}
-    for m in meetings:
-        if m.type_id == 'interim' and m.sessions:
-            for s in m.sessions:
-                parent = parents.get(s.group.parent_id)
-                if not parent:
-                    parent = s.group.parent
-                    parent.group_list = []
-                    group_hierarchy.append(parent)
-
-                parent.group_list.append(s.group)
-
-    for p in parents.values():
-        p.group_list.sort(key=lambda g: g.acronym)
 
     # set some useful attributes
     for m in meetings:
@@ -301,4 +302,4 @@ def data_for_meetings_overview(meetings, interim_status=None):
         m.responsible_group = (m.sessions[0].group if m.sessions else None) if m.type_id == 'interim' else ietf_group
         m.interim_meeting_cancelled = m.type_id == 'interim' and all(s.current_status == 'canceled' for s in m.sessions)
 
-    return meetings, group_hierarchy
+    return meetings

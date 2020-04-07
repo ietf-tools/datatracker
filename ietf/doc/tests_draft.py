@@ -1197,10 +1197,10 @@ class SubmitToIesgTests(TestCase):
 
 
 class RequestPublicationTests(TestCase):
-    @mock.patch('ietf.sync.rfceditor.urlopen', autospec=True)
-    def test_request_publication(self, mock_urlopen):
-        mock_urlopen.return_value.read = lambda : b'OK'
-        mock_urlopen.return_value.getcode = lambda :200
+    @mock.patch('ietf.sync.rfceditor.requests.post', autospec=True)
+    def test_request_publication(self, mockobj):
+        mockobj.return_value.text = b'OK'
+        mockobj.return_value.status_code = 200
         #
         draft = IndividualDraftFactory(stream_id='iab',group__acronym='iab',intended_std_level_id='inf',states=[('draft-stream-iab','approved')])
 

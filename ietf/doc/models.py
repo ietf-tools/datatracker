@@ -332,7 +332,6 @@ class DocumentInfo(models.Model):
                 else:
                     return "Replaced"
             elif state.slug == "active":
-                log.assertion('iesg_state')
                 if iesg_state:
                     if iesg_state.slug == "dead":
                         # Many drafts in the draft-iesg "Dead" state are not dead
@@ -376,7 +375,14 @@ class DocumentInfo(models.Model):
         return self.rfc_number()
 
     def author_list(self):
-        return ", ".join(author.email_id for author in self.documentauthor_set.all() if author.email_id)
+        best_addresses = []
+        for author in self.documentauthor_set.all():
+            if author.email:
+                if author.email.active or not author.email.person:
+                    best_addresses.append(author.email.address)
+                else:
+                    best_addresses.append(author.email.person.email_address())
+        return ", ".join(best_addresses)
 
     def authors(self):
         return [ a.person for a in self.documentauthor_set.all() ]

@@ -1,3 +1,323 @@
+ietfdb (6.124.0) ietf; urgency=medium
+
+  **Enhanced 'Upcoming Meetings' page, and more**
+
+  * Added links to agenda/materials pop-up, materials download, etherpad, 
+    jabber room, and webex call-in session for interims on the upcoming 
+    meetings page.  With the earlier changes from [17555], this fixes issue 
+    #2937.
+
+  * Changed the IPR patent number regex to permit space between country 
+    code and serial number, and expanded on the help text for the IPR patent 
+    number field.
+
+  * Added verification of response data to IphoneAppJsonTests
+
+  * Merged in [17564] from pusateri@bangj.com:
+    Added interim meetings to agenda.json API. Fixes #2946.
+
+  * Merged in [17562] from jennifer@painless-security.com:
+    Add tooltips with doc name to 'updates' and 'obsoletes' links. Fixes 
+    #2866;  
+
+  * Fixed a Py2/3 issue in the djangobwr's bower_install command
+
+  * Added a check for availability of 'bower' in bin/mkrelease.
+
+  * Cleaned up the contributors list in bin/mkrelease a bit.
+
+  * Merged in [17557] from fenton@bluepopcorn.net:
+    Provide more consistent links to people pages. Fixes #2918.  
+
+  * Changed an obsolete document.href() to document.get_href().  Fixes 
+    issue #2945.
+
+  * Tweaked the upcoming calendar and calendar entries slightly, to render 
+    with times first and on two lines on narrow screens.
+
+  * Merged in [17555] from rjsparks@nostrum.com:
+    Remove the not-quite-working customization widgets from 
+    /meeting/upcoming and /meeting/past. Simplify those views. Correct the list 
+    of sessions on those pages when one interim has more than one session. 
+    Fixes #2938. Partially addresses #2937.  
+
+  * Prevent an exception on missing author.email.person when listing author 
+    emails.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Apr 2020 10:04:43 +0000
+
+
+ietfdb (6.123.1) ietf; urgency=medium
+
+  **Fixes for meeting-related issues**
+
+  * Merged in [17543] from rjsparks@nostrum.com:
+    Repaired construction of group_hierarchy used for the customisation 
+    controls at /meeting/upcoming. Fixes #2940.  
+
+  * Merged in [17542] from rjsparks@nostrum.com:
+    Show calendar entries on /meeting/upcoming in utc. Show end times. 
+    Partially addresses #2936.  
+
+  * Don't show agenda buttons for Meetecho recordings (after the session 
+    concludes) if there isn't a Meetecho UrlResource.  Fixes issue #2934
+
+  * Merged in [17538] from rjsparks@nostrum.com:
+    Allow an out-of-area AD assigned as the AD for a WG to approve interim 
+    requests for that WG. Fixes #2930.  
+
+  * Changed the object factory instances of nomcom private key and cert to 
+    be byte objects (matching the production settings), and fixed the issue 
+    with nomcom key handling under Py3 found by fenton@bluepopcorn.net.  Did 
+    some renaming in nomcom/tests.py to better match setup/teardown function 
+    names to functionality.
+
+  * Merged in [17521] from housley@vigilsec.com:
+    Improve performance of log.assertion() and log.unreachable() 
+
+  * Merged in [17505] from housley@vigilsec.com:
+    Improve performance of many document list pages 
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Mar 2020 14:27:24 +0000
+
+
+ietfdb (6.123.0) ietf; urgency=medium
+
+  **IETF 107 code sprint**
+
+  This release contains datatracker bug fixes and enhancements from the
+  IETF-107 Code Sprint, our first virtual code sprint.  It was a different
+  experience, and enjoyable despite not getting to sit down with a beer
+  together afterwards.  A lot of good contributions were made; Thanks to
+  everyone who contributed!
+
+  * Merged in [17496] from rjsparks@nostrum.com:
+    Remove the rest of the log.assertions checking that iesg_state existed in
+    places we expected it to.  Removed unnecessary imports.
+
+  * Changed the page for upcoming meetings to show the current IETF meeting 
+    for 7 days from its start date, while interims are shown for today and 
+    forward.  Also changed the upcoming.ics calendar to show future sessions, 
+    even if the meeting to which they belong started in the past.  This 
+    improves on [17518].
+
+  * Changed the starting point of display of upcoming meetings to be 7 days 
+    before today, rather than today, to let meetings linger a bit in the 
+    listing and iCalendar file after the meeting has started.  Triggered by an 
+    observation from resnick@episteme.net about IETF 107 sessions disappearing 
+    from 'upcoming.ics' on meeting week Monday.
+
+  * Merged in [17495] from rjsparks@nostrum.com:
+    Removes a log.assertion() that was checking that we covered the edges when
+    we changed documents to always have an iesg state.  
+
+  * Merged in [17494] from rjsparks@nostrum.com:
+    Use current email addresses when we have them when listing document
+    authors. Fixes #1902.  
+
+  * Merged in [17493] from mahoney@nostrum.com:
+    Changed awkward IESG/IAB Nominating Committee names to just NomCom,
+    updated a ref. Fixes #2860.  
+
+  * Merged in [17492] from rcross@amsl.com:
+    On session request form, made the Special Requests field smaller and
+    display 200 character limit. Fixes #2875.  
+
+  * Merged in [17491] from rcross@amsl.com:
+    Prevent use of capital letters in group acronym. Fixes #2709.  
+
+  * Merged in [17490] from rjsparks@nostrum.com:
+    Basic regex validation on community rule entry form. Fixes #2928.  
+
+  * Merged in [17489] from rcross@amsl.com:
+    Removed redundant URL secr/groups/search because search page is 
+    available here secr/groups. Resolves issue with Add link. Fixes #2708.  
+
+  * Merged in [17488] from rcross@amsl.com:
+    Removed the drafts secretariat tool because this functionality is now 
+    provided by the core Datatracker. Moved ID reports to proceedings tool. 
+    Fixes #1655.  
+
+  * Merged in [17487] from rjsparks@nostrum.com:
+    Let chairs know what to do after material submission uploads have been 
+    cut off. Fixes #2887.  
+
+  * Merged in [17486] from valery@smyslov.net:
+    Added docker/run modifications to support Cygwin.
+
+  * Merged in [17484] from valery@smyslov.net:
+    When requesting a new WG session, and retrieving information about the
+    previous session, look back to the previous time the group met, instead of
+    simply checking the previous IETF meeting and maybe not finding any
+    information to retrieve.
+
+  * Merged in [17483] from peter@akayla.com:
+    Changed things so that only WGs/RGs can be closed, per RJS.  Fixes #1578.   
+
+  * Merged in [17466] from rcross@amsl.com:
+    Added a migration to cancel 107 sessions 
+
+  * Added a check to see if any files matching the submitted draft name and
+    revision already exists on disk in the active drafts or archived drafts
+    directories, and if so reject the submission.  Fixes issue #2908
+
+  * Made sure to strip possible mail header field values of whitespace 
+    before applying email.utils.unquite().  Resolution by kivinen@iki.fi,  
+    Fixes issue #2899.
+
+  * Merged in [17480] from rjsparks@nostrum.com:
+    Show UTC times in interim announcements if the interim has a non-UTC 
+    timzone. Fixes #2922.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 Mar 2020 17:53:45 +0000
+
+
+ietfdb (6.122.0) ietf; urgency=medium
+
+  **Added agenda webex URL support, and meeting-related tweaks and bugfixes**
+
+  * Added webex URL to agenda.ics if Room.webex_url is non-empty.  Fixes issue
+    #2926.
+
+  * Added another check to the check_draft_event_revision_integrity management
+    command, and refined it somewhat.
+
+  * Added a utility function to convert objects to dictionaries (for
+    comparisons, for instance).
+
+  * Added a --dry-run option to bin/mkdevbranch, and added some exception
+    handling.
+
+  * Help tablesorter see 'Month Year' dates as dates with a hidden day digit.
+    Fixes issue #2921.
+
+  * Refactored and extended check_draft_event_revision_integrity a bit.
+
+  * Tweaked bin/mkpatch some for -c handling
+
+  * Merged in [17442] from rjsparks@nostrum.com: Allow area groups to request
+    interim meetings. Fixed #2919.  
+
+  * Additional tweaks to bin/mkpatch; removing buggy -r option.
+
+  * Added automatic naming to bin/mkpatch when changeset or revision range is
+    given.
+
+  * Added WebEx room resource name, query method and template logic to show
+    WebEx room resources.
+
+  * Removed a debug statement
+
+  * Made links from agenda room names to floorplans conditional on the room
+    having a floor plan set.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Mar 2020 19:50:12 +0000
+
+
+ietfdb (6.121.0) ietf; urgency=medium
+
+  **Tweaks for wholly virtual meeting, for IETF-107**
+
+  * Added code to show a webex call-in button on the agenda page if the session
+    agenda-note contains and IETF webex URL.
+
+  * Merged in [17425] from rjsparks@nostrum.com: Make required AD approval of
+    virtual interims configurable. Fixes #2912.  
+
+  * Added a management command to check draft event revision numbers.  To be
+    extended for other checks.
+
+  * Merged in [17419] from rjsparks@nostrum.com: Don't warn about idcutoff
+    when the cutoff is after the meeting starts.  Fixes #2907.  
+
+  * Merged in [17418] from rjsparks@nostrum.com: Correctly represent cancelled
+    sessions in ics files. Fixes #2905.  
+
+  * Merged in [17396] from rjsparks@nostrum.com: Move charters for replaced
+    groups to a new replaced state. Close any outstanding ballots on them.
+    Fixes #2889, #2873, and #1286.  
+
+  * Avoid trying to open meeting documents with empty .uploaded_filename.
+
+  * Added a progress bar for verbosity=1 of the community list index update
+    command.
+
+  * Merged back fixes from production
+
+  * Corrected the extent of a try/except block, moving more code inside the
+    block.  Fixes a submission exception that should just be a document error
+    reported back to the user.
+
+  * Added a guard against accessing attributes of None.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Mar 2020 14:48:11 +0000
+
+
+ietfdb (6.120.0) ietf; urgency=medium
+
+  **Submission API changes, Py2/3 transition fixes**
+
+  * Added the ability to use the submission API with active secondary account
+    email addresses.  Fixes issue #2639.
+
+  * Tweaked the ReviewAssignmentAdmin, adding a raw_id_field.
+
+  * Replaced most cases of using of urlopen(), instead using the higher-level
+    'requests' module where it simplifies the code.
+
+  * Added a data migration to fix up incorrect external URLs to mailarchive.
+
+  * Fixed a Py2/3 issue with review.mailarchive.construct_query_url().
+
+  * Renamed a migration to conform to migration naming conventions, using
+    underscores instead of dashes in the name.
+
+  * Py2/3 compatibility tweaks for pyflakes.
+
+  * Changed some cases of urlopen() to use requests.get()
+
+  * Python3 is more ticklish about comparing strings to None than Py2.  Fixed
+    an issue with this in generate_sort_key() for document searches.
+
+  * Fixed a Py2/3 issue in the pyflakes management command, and tweaked the
+    verbose output format.
+
+  * Merged back production changes to two scripts indirectly called by
+    /a/www/www6s/scripts/run-ietf-report, through
+    /a/www/www6s/scripts/run-report.
+
+  * Changed the release script to not pick up other email addresses than those
+    of contributors from the release notes.
+
+  * Tweaked the check_referential_integrity management command verbose output.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 Mar 2020 22:55:58 +0000
+
+
+ietfdb (6.119.1) ietf; urgency=medium
+
+  **Py2/3 fixes, Change to use the "requests" lib instead of urlopen()**
+
+  * Py2/3 compatibility tweaks for pyflakes.
+
+  * Changed some cases of urlopen() to use requests.get()
+
+  * Python3 is more ticklish about comparing strings to None than Py2.  
+    Fixed an issue with this in generate_sort_key() for document searches.
+
+  * Fixed a Py2/3 issue in the pyflakes management command, and tweaked the 
+    verbose output format.
+
+  * Merged back production changes to two scripts indirectly called by 
+    /a/www/www6s/scripts/run-ietf-report, through 
+    /a/www/www6s/scripts/run-report.
+
+  * Changed the release script to not pick up other email addresses than 
+    those of contributors from the release notes.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Mar 2020 11:23:46 +0000
+
+
 ietfdb (6.119.0) ietf; urgency=medium
 
   **Improved email handling, and roundup of Py2/3 conversion issues**

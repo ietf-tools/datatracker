@@ -26,6 +26,7 @@
 /attic
 /bin
 /etc
+/env
 /ghostdriver.log
 /htmlcov
 /include
@@ -48,3 +49,5 @@
 /trunk37
 /unix.tag
 /tmp-nomcom-public-keys-dir
+*.pyc
+__pycache__

@@ -96,7 +96,7 @@ class SessionForm(forms.Form):
         self.fields['length_session1'].widget.attrs['onClick'] = "if (check_num_session(1)) this.disabled=true;"
         self.fields['length_session2'].widget.attrs['onClick'] = "if (check_num_session(2)) this.disabled=true;"
         self.fields['length_session3'].widget.attrs['onClick'] = "if (check_third_session()) { this.disabled=true;}"
-        self.fields['comments'].widget = forms.Textarea(attrs={'rows':'6','cols':'65'})
+        self.fields['comments'].widget = forms.Textarea(attrs={'rows':'3','cols':'65'})
 
         group_acronym_choices = [('','--Select WG(s)')] + list(allowed_conflicting_groups().exclude(pk=group.pk).values_list('acronym','acronym').order_by('acronym'))
         for i in range(1, 4):

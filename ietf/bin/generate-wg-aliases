@@ -17,7 +17,7 @@ mail lists: -ads, and -chairs
 """
 
 # boilerplate (from various other ietf/bin scripts)
-import os, sys
+import io, os, sys
 
 filename = os.path.abspath(__file__)
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))

@@ -75,7 +75,7 @@ from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions,
 from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
-from ietf.utils import markup_txt, log
+from ietf.utils import markup_txt
 from ietf.utils.text import maybe_split
 
 
@@ -402,7 +402,6 @@ def document_main(request, name, rev=None):
                 actions.append((label, urlreverse('ietf.doc.views_draft.request_publication', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ietf",) and not snapshot:
-            log.assertion('iesg_state')
             if iesg_state.slug == 'idexists' and can_edit:
                 actions.append(("Begin IESG Processing", urlreverse('ietf.doc.views_draft.edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
             elif can_edit_stream_info and (iesg_state.slug in ('idexists','watching')):
@@ -410,10 +409,6 @@ def document_main(request, name, rev=None):
 
         augment_docs_and_user_with_user_info([doc], request.user)
 
-        replaces = [d.name for d in doc.related_that_doc("replaces")]
-        replaced_by = [d.name for d in doc.related_that("replaces")]
-        possibly_replaces = [d.name for d in doc.related_that_doc("possibly-replaces")]
-        possibly_replaced_by = [d.name for d in doc.related_that("possibly-replaces")]
         published = doc.latest_event(type="published_rfc")
         started_iesg_process = doc.latest_event(type="started_iesg_process")
 
@@ -457,14 +452,14 @@ def document_main(request, name, rev=None):
                                        submission=submission,
                                        resurrected_by=resurrected_by,
 
-                                       replaces=replaces,
-                                       replaced_by=replaced_by,
-                                       possibly_replaces=possibly_replaces,
-                                       possibly_replaced_by=possibly_replaced_by,
-                                       updates=[prettify_std_name(d.name) for d in doc.related_that_doc("updates")],
-                                       updated_by=[prettify_std_name(d.document.canonical_name()) for d in doc.related_that("updates")],
-                                       obsoletes=[prettify_std_name(d.name) for d in doc.related_that_doc("obs")],
-                                       obsoleted_by=[prettify_std_name(d.document.canonical_name()) for d in doc.related_that("obs")],
+                                       replaces=doc.related_that_doc("replaces"),
+                                       replaced_by=doc.related_that("replaces"),
+                                       possibly_replaces=doc.related_that_doc("possibly_replaces"),
+                                       possibly_replaced_by=doc.related_that("possibly_replaces"),
+                                       updates=doc.related_that_doc("updates"),
+                                       updated_by=doc.related_that("updates"),
+                                       obsoletes=doc.related_that_doc("obs"),
+                                       obsoleted_by=doc.related_that("obs"),
                                        conflict_reviews=conflict_reviews,
                                        status_changes=status_changes,
                                        proposed_status_changes=proposed_status_changes,
@@ -659,7 +654,7 @@ def document_main(request, name, rev=None):
                            revisions=revisions,
                            latest_rev=latest_rev,
                            snapshot=snapshot,
-                           review_req=review_assignment.review_request,
+                           review_req=review_assignment.review_request if review_assignment else None,
                            other_reviews=other_reviews,
                            assignments=assignments,
                       ))

@@ -65,7 +65,7 @@ from ietf.community.utils import docs_tracked_by_community_list
 from ietf.doc.models import DocTagName, State, DocAlias, RelatedDocument, Document
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.doc.utils import get_chartering_type, get_tags_for_stream_id
-from ietf.doc.utils_charter import charter_name_for_group
+from ietf.doc.utils_charter import charter_name_for_group, replace_charter_of_replaced_group
 from ietf.doc.utils_search import prepare_document_table
 #
 from ietf.group.dot import make_dot
@@ -1026,6 +1026,8 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                 for attr, new, desc in changes:
                     if attr == 'state':
                         ChangeStateGroupEvent.objects.create(group=group, time=group.time, state=new, by=request.user.person, type="changed_state", desc=desc)
+                        if new.slug == 'replaced':
+                            replace_charter_of_replaced_group(group=group, by=request.user.person)
                     else:
                         GroupEvent.objects.create(group=group, time=group.time, by=request.user.person, type="info_changed", desc=desc)
 

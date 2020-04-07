@@ -15,7 +15,8 @@ from django.utils.encoding import smart_text, force_text
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import NewRevisionDocEvent, WriteupDocEvent 
+from ietf.doc.models import NewRevisionDocEvent, WriteupDocEvent, State, StateDocEvent
+from ietf.doc.utils import close_open_ballots
 from ietf.group.models import ChangeStateGroupEvent
 from ietf.name.models import GroupStateName
 from ietf.utils.history import find_history_active_at
@@ -244,4 +245,18 @@ def generate_issue_ballot_mail(request, doc, ballot):
                                  )
                             )
 
-        
+def replace_charter_of_replaced_group(group, by):
+
+    assert group.state_id == 'replaced'
+
+    charter = group.charter
+
+    if charter:
+
+        close_open_ballots(charter, by)
+
+        replaced_state = State.objects.get(type_id='charter', slug='replaced')
+        charter.set_state(replaced_state)
+        state_change_event = StateDocEvent.objects.create(state_type_id='charter', state=replaced_state, doc=charter, rev=charter.rev, by=by, type="changed_state", desc="Charter's group has been replaced")
+    
+        charter.save_with_history([state_change_event])  

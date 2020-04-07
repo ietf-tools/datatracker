@@ -5,14 +5,14 @@
 # various utilities for working with the mailarch mail archive at
 # mailarchive.ietf.org
 
+import base64
 import contextlib
 import datetime
-import tarfile
-import mailbox
-import tempfile
-import hashlib
-import base64
 import email.utils
+import hashlib
+import mailbox
+import tarfile
+import tempfile
 
 from urllib.parse import urlencode
 from urllib.request import urlopen
@@ -22,7 +22,7 @@ import debug                            # pyflakes:ignore
 from pyquery import PyQuery
 
 from django.conf import settings
-from django.utils.encoding import force_bytes
+from django.utils.encoding import force_bytes, force_str
 
 def list_name_from_email(list_email):
     if not list_email.endswith("@ietf.org"):
@@ -37,7 +37,7 @@ def hash_list_message_id(list_name, msgid):
     # and rightmost "=" signs are (optionally) stripped
     sha = hashlib.sha1(force_bytes(msgid))
     sha.update(force_bytes(list_name))
-    return base64.urlsafe_b64encode(sha.digest()).rstrip(b"=")
+    return force_str(base64.urlsafe_b64encode(sha.digest()).rstrip(b"="))
 
 def construct_query_urls(doc, team, query=None):
     list_name = list_name_from_email(team.list_email)
@@ -94,8 +94,8 @@ def retrieve_messages_from_mbox(mbox_fileobj):
                 "splitfrom": email.utils.parseaddr(msg["From"]),
                 "subject": msg["Subject"],
                 "content": content.replace("\r\n", "\n").replace("\r", "\n").strip("\n"),
-                "message_id": email.utils.unquote(msg["Message-ID"]),
-                "url": email.utils.unquote(msg["Archived-At"]),
+                "message_id": email.utils.unquote(msg["Message-ID"].strip()),
+                "url": email.utils.unquote(msg["Archived-At"].strip()),
                 "date": msg["Date"],
                 "utcdate": (utcdate.date().isoformat(), utcdate.time().isoformat()) if utcdate else ("", ""),
             })
@@ -106,6 +106,8 @@ def retrieve_messages(query_data_url):
     """Retrieve and return selected content from mailarch."""
     res = []
 
+    # This has not been rewritten to use requests.get() because get() does
+    # not handle file URLs out of the box, which we need for tesing
     with contextlib.closing(urlopen(query_data_url, timeout=15)) as fileobj:
         content_type = fileobj.info()["Content-type"]
         if not content_type.startswith("application/x-tar"):

@@ -101,7 +101,7 @@ class InterimSessionInlineFormSet(BaseInlineFormSet):
 
 class InterimMeetingModelForm(forms.ModelForm):
     # TODO: Should area groups get to schedule Interims?
-    group = GroupModelChoiceField(queryset=Group.objects.filter(type__in=('wg', 'rg'), state__in=('active', 'proposed', 'bof')).order_by('acronym'), required=False)
+    group = GroupModelChoiceField(queryset=Group.objects.filter(type__in=('wg', 'rg', 'ag'), state__in=('active', 'proposed', 'bof')).order_by('acronym'), required=False)
     in_person = forms.BooleanField(required=False)
     meeting_type = forms.ChoiceField(choices=(
         ("single", "Single"),
@@ -216,8 +216,8 @@ class InterimSessionModelForm(forms.ModelForm):
             self.user = kwargs.pop('user')
         if 'group' in kwargs:
             self.group = kwargs.pop('group')
-        if 'is_approved_or_virtual' in kwargs:
-            self.is_approved_or_virtual = kwargs.pop('is_approved_or_virtual')
+        if 'requires_approval' in kwargs:
+            self.requires_approval = kwargs.pop('requires_approval')
         super(InterimSessionModelForm, self).__init__(*args, **kwargs)
         self.is_edit = bool(self.instance.pk)
         # setup fields that aren't intrinsic to the Session object
@@ -237,6 +237,14 @@ class InterimSessionModelForm(forms.ModelForm):
         if not date:
             raise forms.ValidationError('Required field')
         return date
+
+    def clean_requested_duration(self):
+        min_minutes = settings.INTERIM_SESSION_MINIMUM_MINUTES
+        max_minutes = settings.INTERIM_SESSION_MAXIMUM_MINUTES
+        duration = self.cleaned_data.get('requested_duration')
+        if not duration or duration < datetime.timedelta(minutes=min_minutes) or duration > datetime.timedelta(minutes=max_minutes):
+            raise forms.ValidationError('Provide a duration, %s-%smin.' % (min_minutes, max_minutes))
+        return duration
 
     def save(self, *args, **kwargs):
         """NOTE: as the baseform of an inlineformset self.save(commit=True)

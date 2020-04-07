@@ -87,15 +87,16 @@ for opt, value in opts:
     if   opt in ["-h", "--help"]: # Output this help, then exit
         print( __doc__ % locals() )
         sys.exit(1)
-    elif opt in ["-v", "--version"]: # Output version information, then exit
+    elif opt in ["-V", "--version"]: # Output version information, then exit
         print( program, version )
         sys.exit(0)
-    elif opt in ["-V", "--verbose"]: # Output version information, then exit
+    elif opt in ["-v", "--verbose"]: # Output version information, then exit
         opt_verbose += 1
 
 # ----------------------------------------------------------------------
 def say(s):
     sys.stderr.write("%s\n" % (s))
+
 
 # ----------------------------------------------------------------------
 def note(s):
@@ -204,6 +205,7 @@ for line in pipe('svn propget svn:mergeinfo .').splitlines():
                 write_cache = True
         mergeinfo[line] = merged
     merged_revs.update(merged)
+note('')
 
 if write_cache:
     cache[repo] = mergeinfo
@@ -227,7 +229,7 @@ def get_changeset_list_from_file(repo, filename):
             if line.startswith('#') or line == "":
                 continue
             try:
-                note("   '%s'" % line)
+                #note("   '%s'" % line)
                 parts = line.split()
                 if len(parts) >1 and parts[1] == '@':
                     branch, rev = parts[0], parts[2]
@@ -253,7 +255,7 @@ def get_changeset_list_from_file(repo, filename):
 def get_ready_commits(repo, tree):
     list = []
     note("Getting ready commits from '%s'" % tree)
-    cmd = 'svn log -v -r %s:HEAD %s/%s/' % ((head-500), repo, tree)
+    cmd = 'svn log -v -r %s:HEAD %s/%s/' % ((head-200), repo, tree)
     if opt_verbose > 1:
         note("Running '%s' ..." % cmd)
     commit_log = pipe(cmd)
@@ -273,7 +275,7 @@ def get_ready_commits(repo, tree):
                 note("   %s  %s: %s@%s" % (when.strftime("%Y-%m-%d %H:%MZ"), who, branch, rev))
                 list += [(rev, repo, branch),]
             elif rev in merged_revs and not branch == merged_revs[rev]:
-                sys.stderr.write('Rev %s: %s != %s' % (rev, branch, merged_revs[rev]))                
+                sys.stderr.write('Rev %s: %s != %s\n' % (rev, branch, merged_revs[rev]))                
             else:
                 pass
         else:
@@ -286,10 +288,8 @@ ready += get_changeset_list_from_file(repo, '../ready-for-merge')
 hold   = get_changeset_list_from_file(repo, 'hold-for-merge')
 hold  += get_changeset_list_from_file(repo, '../hold-for-merge')
 ready += get_ready_commits(repo, 'personal')
-ready += get_ready_commits(repo, 'branch/amsl')
 ready += get_ready_commits(repo, 'branch/iola')
 ready += get_ready_commits(repo, 'branch/dash')
-ready += get_ready_commits(repo, 'branch/proceedings')
 
 ready_commits = {}
 all_commits = {}
@@ -328,7 +328,9 @@ for entry in ready:
         else:
             raise
     # 
-    merge_path = os.path.join(*path.split(os.path.sep)[:4])
+    dirs = path.split(os.path.sep)
+    dirs = dirs[:dirs.index('ietf')] if 'ietf' in dirs else dirs[:4]
+    merge_path = os.path.join(*dirs)
     if not (rev, repo, merge_path) in hold:
         output_line = "%s  %-24s ^/%s@%s" % (when.strftime("%Y-%m-%d_%H:%MZ"), who+":", merge_path, rev)
         all_commits[when] = (rev, repo, branch, who, merge_path)
@@ -388,10 +390,11 @@ for key in keys:
 keys = list(not_passed.keys())
 keys.sort()
 if len(keys) > 0:
-    sys.stderr.write("Commits marked ready which haven't passed the test suite:\n")
+    print("")
+    print("Commits marked ready which haven't passed the test suite:\n")
     for key in keys:
-        sys.stderr.write(not_passed[key]+'\n')
-    sys.stderr.write('\n')
+        print(not_passed[key])
+    print('')
 
 keys = list(ready_commits.keys())
 keys.sort()

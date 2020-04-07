@@ -22,4 +22,22 @@ def person_by_name(name):
         return None
     alias = Alias.objects.filter(name=name).first()
     return alias.person if alias else None
-    
+
+@register.inclusion_tag('person/person_link.html')
+def person_link(person, **kwargs):
+    title = kwargs.get('title', '')
+    cls = kwargs.get('class', '')
+    name = person.name
+    plain_name = person.plain_name()
+    email = person.email_address()
+    return {'name': name, 'plain_name': plain_name, 'email': email, 'title': title, 'class': cls}
+
+
+@register.inclusion_tag('person/person_link.html')
+def email_person_link(email, **kwargs):
+    title = kwargs.get('title', '')
+    cls = kwargs.get('class', '')
+    name = email.person.name
+    plain_name = email.person.plain_name()
+    email = email.address
+    return {'name': name, 'plain_name': plain_name, 'email': email, 'title': title, 'class': cls}

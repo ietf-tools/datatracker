@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2019-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+from tqdm import tqdm
 
 from django.core.management.base import BaseCommand
 
@@ -20,7 +21,8 @@ class Command(BaseCommand):
          
 
     def handle(self, *args, **options):
-        for rule in SearchRule.objects.filter(rule_type='name_contains'):
+        verbosity = options.get('verbosity', 1)
+        for rule in tqdm(SearchRule.objects.filter(rule_type='name_contains'), disable=(verbosity!=1)):
             count1 = rule.name_contains_index.count()
             if not options['dry_run']:
                 reset_name_contains_index_for_rule(rule)

@@ -5,7 +5,7 @@ from ietf.message.models import Message, MessageAttachment, SendQueue, Announcem
 class MessageAdmin(admin.ModelAdmin):
     list_display = ["subject", "by", "time", "groups"]
     search_fields = ["subject", "body"]
-    raw_id_fields = ["by"]
+    raw_id_fields = ["by", "related_groups", "related_docs"]
     ordering = ["-time"]
 
     def groups(self, instance):

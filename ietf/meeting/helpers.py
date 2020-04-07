@@ -221,7 +221,7 @@ def read_session_file(type, num, doc):
     #
     # FIXME: uploaded_filename should be replaced with a function call that computes names that are fixed
     path = os.path.join(settings.AGENDA_PATH, "%s/%s/%s" % (num, type, doc.uploaded_filename))
-    if os.path.exists(path):
+    if doc.uploaded_filename and os.path.exists(path):
         with io.open(path, 'rb') as f:
             return f.read(), path
     else:
@@ -324,8 +324,9 @@ def can_approve_interim_request(meeting, user):
     if not session:
         return False
     group = session.group
-    if group.type.slug == 'wg' and group.parent.role_set.filter(name='ad', person=person):
-        return True
+    if group.type.slug == 'wg':
+        if group.parent.role_set.filter(name='ad', person=person) or group.role_set.filter(name='ad', person=person):
+            return True
     if group.type.slug == 'rg' and group.parent.role_set.filter(name='chair', person=person):
         return True
     return False
@@ -600,7 +601,7 @@ def sessions_post_save(request, forms):
             continue
 
         if form.instance.pk is not None and not SchedulingEvent.objects.filter(session=form.instance).exists():
-            if form.is_approved_or_virtual:
+            if not form.requires_approval:
                 status_id = 'scheda'
             else:
                 status_id = 'apprw'

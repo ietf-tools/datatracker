@@ -5,13 +5,13 @@
 import base64
 import datetime
 import re
+import requests
 
-from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 from xml.dom import pulldom, Node
 
 from django.conf import settings
-from django.utils.encoding import smart_bytes, force_str
+from django.utils.encoding import smart_bytes, force_str, force_text
 
 import debug                            # pyflakes:ignore
 
@@ -24,7 +24,6 @@ from ietf.name.models import StdLevelName, StreamName
 from ietf.person.models import Person
 from ietf.utils.log import log
 from ietf.utils.mail import send_mail_text
-from ietf.utils.text import decode
 
 #QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
 #INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
@@ -527,28 +526,28 @@ def post_approved_draft(url, name):
     the data from the Datatracker and start processing it. Returns
     response and error (empty string if no error)."""
 
-    request = Request(url)
-    request.add_header("Content-type", "application/x-www-form-urlencoded")
-    request.add_header("Accept", "text/plain")
     # HTTP basic auth
     username = "dtracksync"
     password = settings.RFC_EDITOR_SYNC_PASSWORD
-    request.add_header("Authorization", "Basic %s" % force_str(base64.encodestring(smart_bytes("%s:%s" % (username, password)))).replace("\n", ""))
+    headers = {
+            "Content-type": "application/x-www-form-urlencoded",
+            "Accept": "text/plain",
+            "Authorization": "Basic %s" % force_str(base64.encodestring(smart_bytes("%s:%s" % (username, password)))).replace("\n", ""),
+        }
 
     log("Posting RFC-Editor notifcation of approved draft '%s' to '%s'" % (name, url))
     text = error = ""
+
     try:
-        f = urlopen(request, data=smart_bytes(urlencode({ 'draft': name })), timeout=20)
-        text = decode(f.read())
-        status_code = f.getcode()
-        f.close()
-        log("RFC-Editor notification result for draft '%s': %s:'%s'" % (name, status_code, text))
+        r = requests.post(url, headers=headers, data=smart_bytes(urlencode({ 'draft': name })), timeout=20)
 
-        if status_code != 200:
-            raise RuntimeError("Status code is not 200 OK (it's %s)." % status_code)
+        log("RFC-Editor notification result for draft '%s': %s:'%s'" % (name, r.status_code, r.text))
 
-        if text != "OK":
-            raise RuntimeError("Response is not \"OK\".")
+        if r.status_code != 200:
+            raise RuntimeError("Status code is not 200 OK (it's %s)." % r.status_code)
+
+        if force_text(r.text) != "OK":
+            raise RuntimeError('Response is not "OK" (it\'s "%s").' % r.text)
 
     except Exception as e:
         # catch everything so we don't leak exceptions, convert them

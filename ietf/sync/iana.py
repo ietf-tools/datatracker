@@ -7,8 +7,7 @@ import datetime
 import email
 import json
 import re
-
-from urllib.request import Request, urlopen
+import requests
 
 from django.conf import settings
 from django.utils.encoding import smart_bytes, force_str
@@ -21,19 +20,12 @@ from ietf.doc.models import Document, DocEvent, State, StateDocEvent, StateType
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person
 from ietf.utils.mail import parseaddr
-from ietf.utils.text import decode
 from ietf.utils.timezone import local_timezone_to_utc, email_time_to_local_timezone, utc_to_local_timezone
 
 
 #PROTOCOLS_URL = "https://www.iana.org/protocols/"
 #CHANGES_URL = "https://datatracker.dev.icann.org:8080/data-tracker/changes"
 
-def fetch_protocol_page(url):
-    f = urlopen(settings.IANA_SYNC_PROTOCOLS_URL)
-    text = decode(f.read())
-    f.close()
-    return text
-    
 def parse_protocol_page(text):
     """Parse IANA protocols page to extract referenced RFCs (as
     rfcXXXX document names)."""
@@ -73,14 +65,11 @@ def update_rfc_log_from_protocol_page(rfc_names, rfc_must_published_later_than):
 def fetch_changes_json(url, start, end):
     url += "?start=%s&end=%s" % (urlquote(local_timezone_to_utc(start).strftime("%Y-%m-%d %H:%M:%S")),
                                  urlquote(local_timezone_to_utc(end).strftime("%Y-%m-%d %H:%M:%S")))
-    request = Request(url)
     # HTTP basic auth
     username = "ietfsync"
     password = settings.IANA_SYNC_PASSWORD
-    request.add_header("Authorization", "Basic %s" % force_str(base64.encodestring(smart_bytes("%s:%s" % (username, password)))).replace("\n", ""))
-    f = urlopen(request)
-    text = decode(f.read())
-    f.close()
+    headers = { "Authorization": "Basic %s" % force_str(base64.encodestring(smart_bytes("%s:%s" % (username, password)))).replace("\n", "") }
+    text = requests.get(url, headers=headers).text
     return text
 
 def parse_changes_json(text):

@@ -400,6 +400,9 @@ class Room(models.Model):
     def video_stream_url(self):
         urlresource = self.urlresource_set.filter(name_id__in=['meetecho', ]).first()
         return urlresource.url if urlresource else None
+    def webex_url(self):
+        urlresource = self.urlresource_set.filter(name_id__in=['webex', ]).first()
+        return urlresource.url if urlresource else None
     #
     class Meta:
         ordering = ["-id"]
@@ -781,13 +784,15 @@ class SchedTimeSessAssignment(models.Model):
         """Return sensible id string for session, e.g. suitable for use as HTML anchor."""
         components = []
 
+        components.append(self.schedule.meeting.number)
+
         if not self.timeslot:
             components.append("unknown")
 
         if not self.session or not (getattr(self.session, "historic_group") or self.session.group):
             components.append("unknown")
         else:
-            components.append(self.timeslot.time.strftime("%a-%H%M"))
+            components.append(self.timeslot.time.strftime("%Y-%m-%d-%a-%H%M"))
 
             g = getattr(self.session, "historic_group", None) or self.session.group
 

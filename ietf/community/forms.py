@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 
+import re
+
 from django import forms
 from django.db.models import Q
 
@@ -92,7 +94,12 @@ class SearchRuleForm(forms.ModelForm):
             f.required = True
 
     def clean_text(self):
-        return self.cleaned_data["text"].strip().lower() # names are always lower case
+        candidate_text = self.cleaned_data["text"].strip().lower() # names are always lower case
+        try:
+            re.compile(candidate_text)
+        except re.error as e:
+            raise forms.ValidationError(str(e))
+        return candidate_text
 
 
 class SubscriptionForm(forms.ModelForm):

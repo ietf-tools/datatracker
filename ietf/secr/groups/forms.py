@@ -74,6 +74,12 @@ class GroupModelForm(forms.ModelForm):
             if lsgc:
                 self.fields['liaison_contacts'].initial = lsgc.contacts
         
+    def clean_acronym(self):
+        acronym = self.cleaned_data['acronym']
+        if any(x.isupper() for x in acronym):
+            raise forms.ValidationError('Capital letters not allowed in group acronym')
+        return acronym
+
     def clean_parent(self):
         parent = self.cleaned_data['parent']
         type = self.cleaned_data['type']

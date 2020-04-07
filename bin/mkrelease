@@ -66,6 +66,10 @@ function note() {
 	if [ -n "$VERBOSE" ]; then echo -e "\n$*"; fi
 }
 
+function check() {
+  [ "$(which $1)" ] || die "could not find the '$1' command.  $2"
+}
+
 # ----------------------------------------------------------------------
 function version() {
 	echo -e "$program $version"
@@ -118,6 +122,11 @@ while true ; do
     esac
     shift
 done
+
+# ----------------------------------------------------------------------
+# Check some requirements
+
+check bower "It is required to update web resources.  Install with npm."
 
 # ----------------------------------------------------------------------
 # The program itself
@@ -212,6 +221,7 @@ if [ -z "$IGNORE_RESOURCES" ]; then
     $do svn commit ietf/externals/static -m "Updated bower-managed static web assets"
     # Get rid of bower-installed files which we don't use:
     $do rm -rf ietf/externals/static/datatracker/
+    $do rm -rf ietf/externals/static/jquery.cookie/
     $do rm -f $(svn st ietf/externals/ | grep '^\?' | awk '{print $2}')
 fi
 
@@ -244,7 +254,9 @@ if [ -d ../coverage ]; then
     rsync -a static/coverage/ ../coverage/$VER/
 fi
 
-contributors=$(echo "$changes" | sed 's/\.[ \t\n]/ /'| tr -c "a-z0-9.@-" "\n" | sort | uniq | grep '@' | sed -r -e 's/^\.+//' -e 's/\.+$//' -e 's/^/-c /' || true)
+contributors=$(echo "$changes" | gawk '/^  \* Merged in \[[0-9]+\] from [^: ]+/ {sub(":",""); print $6;}' | sort | uniq)
+note "Contributors:
+$contributors"
 
 note "Setting the current time on the release notes in the changelog file ..."
 $do sed -r -i -e "1,/^ -- /s/([A-Za-z-]+ <[a-z0-9.-]+@[a-z0-9.-]+>  ).*$/\1$(TZ=UTC date +'%d %b %Y %H:%M:%S %z')/" changelog

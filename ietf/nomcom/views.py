@@ -7,15 +7,16 @@ import re
 from collections import OrderedDict, Counter
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
-from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.urls import reverse
+from django.forms.models import modelformset_factory, inlineformset_factory
 from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
-from django.forms.models import modelformset_factory, inlineformset_factory
+from django.urls import reverse
+from django.utils.encoding import force_bytes
 
 
 from ietf.dbtemplate.models import DBTemplate
@@ -117,7 +118,7 @@ def private_key(request, year):
     if request.method == 'POST':
         form = PrivateKeyForm(data=request.POST)
         if form.is_valid():
-            store_nomcom_private_key(request, year, form.cleaned_data.get('key', ''))
+            store_nomcom_private_key(request, year, force_bytes(form.cleaned_data.get('key', '')))
             return HttpResponseRedirect(back_url)
     else:
         form = PrivateKeyForm()

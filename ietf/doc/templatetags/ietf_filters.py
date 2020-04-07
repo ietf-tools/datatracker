@@ -16,6 +16,7 @@ from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
 from django.utils.encoding import force_text
 from django.utils.encoding import force_str # pyflakes:ignore force_str is used in the doctests
+from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
@@ -23,6 +24,7 @@ from ietf.doc.models import BallotDocEvent
 from ietf.doc.models import ConsensusDocEvent
 from ietf.utils.html import sanitize_fragment
 from ietf.utils import log
+from ietf.doc.utils import prettify_std_name
 from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped
 
 register = template.Library()
@@ -233,6 +235,24 @@ def urlize_ietf_docs(string, autoescape=None):
     return mark_safe(string)
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
+@register.filter(name='urlize_doc_list', is_safe=True, needs_autoescape=True)
+def urlize_doc_list(docs, autoescape=None):
+    """Convert a list of DocAliases into list of links using canonical name"""
+    links = []
+    for doc in docs:
+        name=doc.document.canonical_name()
+        title = doc.document.title
+        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=name))
+        if autoescape:
+            name = escape(name)
+            title = escape(title)
+        links.append(mark_safe(
+            '<a href="%(url)s" title="%(title)s">%(name)s</a>' % dict(name=prettify_std_name(name),
+                                                                      title=title,
+                                                                      url=url)
+        ))
+    return links
+        
 @register.filter(name='dashify')
 def dashify(string):
     """

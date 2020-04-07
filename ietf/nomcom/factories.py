@@ -11,7 +11,7 @@ from ietf.person.factories import PersonFactory, UserFactory
 
 import debug                            # pyflakes:ignore
 
-cert = '''-----BEGIN CERTIFICATE-----
+cert = b'''-----BEGIN CERTIFICATE-----
 MIIDHjCCAgagAwIBAgIJAKDCCjbQboJzMA0GCSqGSIb3DQEBCwUAMBMxETAPBgNV
 BAMMCE5vbUNvbTE1MB4XDTE0MDQwNDIxMTQxNFoXDTE2MDQwMzIxMTQxNFowEzER
 MA8GA1UEAwwITm9tQ29tMTUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIB
@@ -32,7 +32,7 @@ toX3j+FUe2UiUak3ACXdrOPSsFP0KRrFwuMnuHHXkGj/Uw==
 -----END CERTIFICATE-----
 '''
 
-key = '''-----BEGIN PRIVATE KEY-----
+key = b'''-----BEGIN PRIVATE KEY-----
 MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC2QXCsAitYSOgP
 Yor77zQnEeHuVqlcuhpH1wpKB+N6WcScA5N3AnX9uZEFOt6McJ+MCiHECdqDlH6n
 pQTJlpCpIVgAD4B6xzjRBRww8d3lClA/kKwsKzuX93RS0Uv30hAD6q9wjqK/m6vR
@@ -75,7 +75,7 @@ def nomcom_kwargs_for_year(year=None, *args, **kwargs):
     if 'group__acronym' not in kwargs:
         kwargs['group__acronym'] = 'nomcom%d'%year
     if 'group__name' not in kwargs:
-        kwargs['group__name'] = 'TEST VERSION of IAB/IESG Nominating Committee %d/%d'%(year,year+1)
+        kwargs['group__name'] = 'TEST VERSION of NomCom %d/%d'%(year,year+1)
     return kwargs
 
 

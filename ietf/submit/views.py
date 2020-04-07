@@ -27,7 +27,7 @@ from ietf.group.utils import group_features_group_filter
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message, MessageAttachment
-from ietf.person.models import Person
+from ietf.person.models import Person, Email
 from ietf.submit.forms import ( SubmissionManualUploadForm, SubmissionAutoUploadForm, AuthorForm,
     SubmitterForm, EditSubmissionForm, PreapprovalForm, ReplacesForm, SubmissionEmailForm, MessageModelForm )
 from ietf.submit.mail import ( send_full_url, send_manual_post_request, add_submission_email, get_reply_to )
@@ -103,10 +103,25 @@ def api_submit(request):
                 username = form.cleaned_data['user']
                 user = User.objects.filter(username=username)
                 if user.count() == 0:
-                    return err(400, "No such user: %s" % username)
-                if user.count() > 1:
+                    # See if a secondary login was being used
+                    email = Email.objects.filter(address=username, active=True)
+                    # The error messages don't talk about 'email', as the field we're
+                    # looking at is still the 'username' field.
+                    if email.count() == 0:
+                        return err(400, "No such user: %s" % username)
+                    elif email.count() > 1:
+                        return err(500, "Multiple matching accounts for %s" % username)
+                    email = email.first()
+                    if not hasattr(email, 'person'):
+                        return err(400, "No person matches %s" % username)
+                    person = email.person
+                    if not hasattr(person, 'user'):
+                        return err(400, "No user matches: %s" % username)
+                    user = person.user
+                elif user.count() > 1:
                     return err(500, "Multiple matching accounts for %s" % username)
-                user = user.first()
+                else:
+                    user = user.first()
                 if not hasattr(user, 'person'):
                     return err(400, "No person with username %s" % username)
 
@@ -130,7 +145,7 @@ def api_submit(request):
                 if errors:
                     raise ValidationError(errors)
 
-                if not user.username.lower() in [ a['email'].lower() for a in authors ]:
+                if not username.lower() in [ a['email'].lower() for a in authors ]:
                     raise ValidationError('Submitter %s is not one of the document authors' % user.username)
 
                 submission.submitter = user.person.formatted_email()

@@ -1,4 +1,4 @@
-{% load origin ietf_filters %}{% origin %}
+{% load origin ietf_filters textfilters %}{% origin %}
 
   {% for session in sessions %}
     <h2 class="anchor-target" id="session_{{session.pk}}">{% if sessions|length > 1 %}Session {{ forloop.counter }} : {% endif %}{{ session.time }}{% if session.name %} : {{ session.name }}{% endif %}
@@ -11,7 +11,7 @@
     {% if can_manage_materials %}
       {% if session.current_status == 'sched' or session.current_status == 'schedw' %}
         <div class="buttonlist">
-          {% if meeting.type_id == 'interim' and user|has_role:"Secretariat" %}
+          {% if can_view_request %}
             <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">Meeting Details</a>
           {% endif %}
         </div>
@@ -19,6 +19,24 @@
           <span class="label label-warning">This session does not yet have an agenda</span>
         {% endif %}
       {% endif %}
+    {% endif %}
+
+    {% if meeting.type.slug == 'interim' and session.remote_instructions %}
+    <div>
+       <b>Remote instructions:</b>
+       {% if "https://ietf.webex.com" in session.agenda_note|first_url %}
+         <a class=""
+           href="{{ session.agenda_note|first_url }}"
+           title="Webex session"><span class="fa fa-fw fa-phone"></span>
+         </a>
+       {% elif "https://ietf.webex.com" in session.remote_instructions|first_url %}
+         <a class=""
+           href="{{ session.remote_instructions|first_url }}"
+           title="Webex session"><span class="fa fa-fw fa-phone"></span>
+         </a>
+       {% endif %}
+       {{ session.remote_instructions }}
+    </div>
     {% endif %}
 
     <div class="panel panel-default">

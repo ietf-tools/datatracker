@@ -3,7 +3,7 @@
 {% load origin %}
 {% load ietf_filters %}
 {% load markup_tags %}
-{% load textfilters %}
+{% load textfilters group_filters %}
 
 {% block group_content %}
   {% origin %}
@@ -155,11 +155,8 @@
 	    {% endif %}
 	  </td>
 	  <td>
-
-
 	    {% for r in roles %}
-	      <span class="fa fa-envelope-o"></span>
-	      <a href="mailto:{{ r.email.address }}">{{ r.person.plain_name }}</a>
+	      {% role_person_link r %}
 	      <br>
 	    {% endfor %}
 	  </td>

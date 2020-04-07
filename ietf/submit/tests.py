@@ -32,7 +32,7 @@ from ietf.meeting.factories import MeetingFactory
 from ietf.message.models import Message
 from ietf.name.models import FormalLanguageName
 from ietf.person.models import Person
-from ietf.person.factories import UserFactory, PersonFactory
+from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
 from ietf.submit.models import Submission, Preapproval
 from ietf.submit.mail import add_submission_email, process_response_email
 from ietf.utils.mail import outbox, empty_outbox, get_payload
@@ -1005,6 +1005,40 @@ class SubmitTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('input[type=file][name=txt]')), 1)
 
+    def test_no_blackout_at_all(self):
+        url = urlreverse('ietf.submit.views.upload_submission')
+
+        meeting = Meeting.get_current_meeting()
+        meeting.date = datetime.date.today()+datetime.timedelta(days=7)
+        meeting.save()
+        meeting.importantdate_set.filter(name_id='idcutoff').delete()
+        meeting.importantdate_set.create(name_id='idcutoff', date=datetime.date.today()+datetime.timedelta(days=7))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('input[type=file][name=txt]')), 1)        
+
+        meeting = Meeting.get_current_meeting()
+        meeting.date = datetime.date.today()
+        meeting.save()
+        meeting.importantdate_set.filter(name_id='idcutoff').delete()
+        meeting.importantdate_set.create(name_id='idcutoff', date=datetime.date.today())
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('input[type=file][name=txt]')), 1)        
+
+        meeting = Meeting.get_current_meeting()
+        meeting.date = datetime.date.today()-datetime.timedelta(days=1)
+        meeting.save()
+        meeting.importantdate_set.filter(name_id='idcutoff').delete()
+        meeting.importantdate_set.create(name_id='idcutoff', date=datetime.date.today()-datetime.timedelta(days=1))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('input[type=file][name=txt]')), 1)        
+
+        
     def submit_bad_file(self, name, formats):
         rev = ""
         group = None
@@ -1082,6 +1116,38 @@ class SubmitTests(TestCase):
         self.assertIn('Invalid characters were found in the name', m)
         self.assertIn('Expected the PS file to have extension ".ps"', m)
         self.assertIn('Expected an PS file of type "application/postscript"', m)
+
+    def test_submit_file_in_archive(self):
+        name = "draft-authorname-testing-file-exists"
+        rev = '00'
+        formats = ['txt', 'xml']
+        group = None
+
+        # break early in case of missing configuration
+        self.assertTrue(os.path.exists(settings.IDSUBMIT_IDNITS_BINARY))
+
+        # get
+        url = urlreverse('ietf.submit.views.upload_submission')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        # submit
+        for dir in [self.repository_dir, self.archive_dir, ]:
+            files = {}
+            for format in formats:
+                fn = os.path.join(dir, "%s-%s.%s" % (name, rev, format))
+                with io.open(fn, 'w') as f:
+                    f.write("a" * 2000)
+                files[format], author = submission_file(name, rev, group, format, "test_submission.%s" % format)
+
+            r = self.client.post(url, files)
+
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            m = q('div.alert-danger').text()
+
+            self.assertIn('Unexpected files already in the archive', m)
 
     def test_submit_nonascii_name(self):
         name = "draft-authorname-testing-nonascii"
@@ -1769,6 +1835,26 @@ class ApiSubmitTests(TestCase):
         r, author, name = self.post_submission('00')
         expected = "Upload of %s OK, confirmation requests sent to:\n  %s" % (name, author.formatted_email().replace('\n',''))
         self.assertContains(r, expected, status_code=200)
+
+    def test_api_submit_secondary_email_active(self):
+        person = PersonFactory()
+        email = EmailFactory(person=person)
+        r, author, name = self.post_submission('00', author=person, email=email.address)
+        for expected in [
+                "Upload of %s OK, confirmation requests sent to:" % (name, ),
+                author.formatted_email().replace('\n',''),
+            ]:
+            self.assertContains(r, expected, status_code=200)
+
+    def test_api_submit_secondary_email_inactive(self):
+        person = PersonFactory()
+        prim = person.email()
+        prim.primary = True
+        prim.save()
+        email = EmailFactory(person=person, active=False)
+        r, author, name = self.post_submission('00', author=person, email=email.address)
+        expected = "No such user: %s" % email.address
+        self.assertContains(r, expected, status_code=400)
 
     def test_api_submit_no_user(self):
         email='nonexistant.user@example.org'

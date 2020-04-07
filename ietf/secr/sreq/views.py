@@ -592,10 +592,17 @@ def new(request, acronym):
     # the "previous" querystring causes the form to be returned
     # pre-populated with data from last meeeting's session request
     elif request.method == 'GET' and 'previous' in request.GET:
-        previous_meeting = Meeting.objects.get(number=str(int(meeting.number) - 1))
-        previous_sessions = add_event_info_to_session_qs(Session.objects.filter(meeting=previous_meeting, group=group)).exclude(current_status__in=['notmeet', 'deleted']).order_by('id')
-        if not previous_sessions:
-            messages.warning(request, 'This group did not meet at %s' % previous_meeting)
+        latest_session = add_event_info_to_session_qs(Session.objects.filter(meeting__type_id='ietf', group=group)).exclude(current_status__in=['notmeet', 'deleted', 'canceled',]).order_by('-meeting__date').first()
+        if latest_session:
+            previous_meeting = Meeting.objects.get(number=latest_session.meeting.number)
+            previous_sessions = add_event_info_to_session_qs(Session.objects.filter(meeting=previous_meeting, group=group)).exclude(current_status__in=['notmeet', 'deleted']).order_by('id')
+            if not previous_sessions:
+                messages.warning(request, 'This group did not meet at %s' % previous_meeting)
+                return redirect('ietf.secr.sreq.views.new', acronym=acronym)
+            else:
+                messages.info(request, 'Fetched session info from %s' % previous_meeting)
+        else:
+            messages.warning(request, 'Did not find any previous meeting')
             return redirect('ietf.secr.sreq.views.new', acronym=acronym)
 
         initial = get_initial_session(previous_sessions, prune_conflicts=True)

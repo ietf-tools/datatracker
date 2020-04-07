@@ -158,9 +158,9 @@ class Command(BaseCommand):
 
                             # Check if we need to copy the file at all.
                             if os.path.exists(dst_path):
-                                with open(src_path) as src:
+                                with open(src_path, 'br') as src:
                                     src_hash = hashlib.sha1(src.read()).hexdigest()
-                                with open(dst_path) as dst:
+                                with open(dst_path, 'br') as dst:
                                     dst_hash = hashlib.sha1(dst.read()).hexdigest()
                                 if src_hash == dst_hash:
                                     #print('{0} = {1}'.format(src_path, dst_path))

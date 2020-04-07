@@ -71,8 +71,8 @@ trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; 
 # Option parsing
 
 # Options
-shortopts=c:r:hvV
-longopts=change=,revision=,help,verbose,version
+shortopts=c:or:hvV
+longopts=change=,overwrite,revision=,help,verbose,version
 
 # Default values
 
@@ -92,7 +92,7 @@ fi
 while true ; do
     case "$1" in
 	-c| --change)	CHG="$2"; shift;;	# the change made by revision ARG
-	-r| --revision)	REV="$2"; shift;;	# the change made between revisions REV
+        -o| --overwrite) OVER=1;;                # overwrite any existing patch file
 	-h| --help)	usage; exit;;		# Show this help, then exit
 	-v| --verbose)	VERBOSE=1;;	# Be more talkative
 	-V| --version)	version; exit;;		# Show program version, then exit
@@ -105,16 +105,19 @@ done
 # ----------------------------------------------------------------------
 # The program itself
 
-if [ $# -lt 2 ]; then die "Expected patch name and file list on the command line."; fi
-if [[ $1 =~ / ]]; then die "Expected a patch name, but the first argument to $program seems to be a file path: '$1'"; fi
-
-name=$1; shift;
-if [ "$CHG" ]; then name="$name-c$CHG"; fi
+if   [ "$CHG" ]; then
+  name=$(echo $(svn log -c $CHG | sed -r -e '/^---/d' -e '/^r[0-9]+/d' -e '/^$/d' -e 's/Merged in \[[0-9]+\] from [^:]+..//' ) | sed -r -e 's/(.*)/\L\1/' -e 's/[^[:alnum:]]/-/g' -e 's/-+/-/g' | cut -c 1-40)
+  name="$name-c$CHG"
+else
+  if [ $# -lt 2 ]; then die "Expected patch name and file list on the command line."; fi
+  if [[ $1 =~ / ]]; then die "Expected a patch name, but the first argument to $program seems to be a file path: '$1'"; fi
+  name=$1; shift;
+fi
 
 patchfile=$progdir/../../patches/$(date +%Y-%m-%d)-$name.patch
-if [ -e $patchfile ]; then die "Patchfile $patchfile already exists"; fi
+if [ -e $patchfile -a ! -n "$OVER" ]; then die "Patchfile $patchfile already exists"; fi
 svn diff ${CHG:+ -c $CHG} ${REV:+ -r $REV} "$@" > $patchfile
 less $patchfile
 echo ""
 echo ""
-echo "Patch is in $patchfile."
+echo "Patch is in $patchfile"

@@ -7,7 +7,6 @@ urlpatterns = [
     url(r'^$', views.search),
     url(r'^add/$', views.add),
     url(r'^blue-dot-report/$', views.blue_dot),
-    url(r'^search/$', views.search),
     #(r'^ajax/get_ads/$', views.get_ads),
     url(r'^%(acronym)s/$' % settings.URL_REGEXPS, views.view),
     url(r'^%(acronym)s/delete/(?P<id>\d{1,6})/$' % settings.URL_REGEXPS, views.delete_role),

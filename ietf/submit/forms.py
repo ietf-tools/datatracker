@@ -84,6 +84,11 @@ class SubmissionBaseUploadForm(forms.Form):
         cutoff_00_str = cutoff_00.strftime("%Y-%m-%d %H:%M %Z")
         cutoff_01_str = cutoff_01.strftime("%Y-%m-%d %H:%M %Z")
         reopen_str    = reopen.strftime("%Y-%m-%d %H:%M %Z")
+
+        # Workaround for IETF107. This would be better handled by a refactor that allowed meetings to have no cutoff period.
+        if cutoff_01 >= reopen:
+            return
+
         if cutoff_00 == cutoff_01:
             if now.date() >= (cutoff_00.date() - meeting.idsubmit_cutoff_warning_days) and now.date() < cutoff_00.date():
                 self.cutoff_warning = ( 'The last submission time for Internet-Drafts before %s is %s.<br/><br/>' % (meeting, cutoff_00_str))
@@ -308,22 +313,26 @@ class SubmissionBaseUploadForm(forms.Form):
             txt_file.seek(0)
             try:
                 text = bytes.decode(self.file_info['txt'].charset)
+            #
+                self.parsed_draft = Draft(text, txt_file.name)
+                if self.filename == None:
+                    self.filename = self.parsed_draft.filename
+                elif self.filename != self.parsed_draft.filename:
+                    self.add_error('txt', "Inconsistent name information: xml:%s, txt:%s" % (self.filename, self.parsed_draft.filename))
+                if self.revision == None:
+                    self.revision = self.parsed_draft.revision
+                elif self.revision != self.parsed_draft.revision:
+                    self.add_error('txt', "Inconsistent revision information: xml:%s, txt:%s" % (self.revision, self.parsed_draft.revision))
+                if self.title == None:
+                    self.title = self.parsed_draft.get_title()
+                elif self.title != self.parsed_draft.get_title():
+                    self.add_error('txt', "Inconsistent title information: xml:%s, txt:%s" % (self.title, self.parsed_draft.get_title()))
             except (UnicodeDecodeError, LookupError) as e:
                 self.add_error('txt', 'Failed decoding the uploaded file: "%s"' % str(e))
-            #
-            self.parsed_draft = Draft(text, txt_file.name)
-            if self.filename == None:
-                self.filename = self.parsed_draft.filename
-            elif self.filename != self.parsed_draft.filename:
-                self.add_error('txt', "Inconsistent name information: xml:%s, txt:%s" % (self.filename, self.parsed_draft.filename))
-            if self.revision == None:
-                self.revision = self.parsed_draft.revision
-            elif self.revision != self.parsed_draft.revision:
-                self.add_error('txt', "Inconsistent revision information: xml:%s, txt:%s" % (self.revision, self.parsed_draft.revision))
-            if self.title == None:
-                self.title = self.parsed_draft.get_title()
-            elif self.title != self.parsed_draft.get_title():
-                self.add_error('txt', "Inconsistent title information: xml:%s, txt:%s" % (self.title, self.parsed_draft.get_title()))
+
+        rev_error = validate_submission_rev(self.filename, self.revision)
+        if rev_error:
+            raise forms.ValidationError(rev_error)
 
         # The following errors are likely noise if we have previous field
         # errors:

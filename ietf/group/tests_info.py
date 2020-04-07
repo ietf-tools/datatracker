@@ -23,7 +23,7 @@ from django.utils.html import escape
 
 from ietf.community.models import CommunityList
 from ietf.community.utils import reset_name_contains_index_for_rule
-from ietf.doc.factories import WgDraftFactory, CharterFactory
+from ietf.doc.factories import WgDraftFactory, CharterFactory, BallotDocEventFactory
 from ietf.doc.models import Document, DocAlias, DocEvent, State
 from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.factories import (GroupFactory, RoleFactory, GroupEventFactory, 
@@ -754,6 +754,19 @@ class GroupEditTests(TestCase):
         # the WG remains active until the Secretariat takes action
         group = Group.objects.get(acronym=group.acronym)
         self.assertEqual(group.state_id, "active")
+
+    def test_replace(self):
+        group = GroupFactory(state_id='bof')
+        charter = CharterFactory(group=group, states=[('charter','intrev')])
+        BallotDocEventFactory(doc=charter, ballot_type__doc_type_id='draft', ballot_type__slug='r-extrev')
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit", field="state"))
+        self.client.login(username='secretary',password='secretary+password')
+        self.client.post(url, dict(state='replaced'))
+        group = Group.objects.get(pk=group.pk)       
+        self.assertEqual(group.state_id, 'replaced')
+        self.assertEqual(group.charter.get_state_slug('charter'), 'replaced')
+        self.assertEqual(group.charter.active_ballot(), None)
+
 
     def test_add_comment(self):
         group = GroupFactory(acronym="mars",parent=GroupFactory(type_id='area'))

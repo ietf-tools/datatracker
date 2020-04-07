@@ -1,5 +1,7 @@
 from django import template
 
+import debug                            # pyflakes:ignore
+
 from ietf.group.models import Group
 
 register = template.Library()
@@ -25,3 +27,12 @@ def active_nomcoms(user):
         state__slug='active').distinct().select_related("type"))
 
     return groups
+
+@register.inclusion_tag('person/person_link.html')
+def role_person_link(role, **kwargs):
+    title = kwargs.get('title', '')
+    cls = kwargs.get('class', '')
+    name = role.person.name
+    plain_name = role.person.plain_name()
+    email = role.email.address
+    return {'name': name, 'plain_name': plain_name, 'email': email, 'title': title, 'class': cls}

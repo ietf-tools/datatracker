@@ -111,18 +111,21 @@ class DraftForm(forms.ModelForm):
         }
         help_texts = { 'sections': 'Sections' }
 
+patent_number_help_text = "Enter one or more comma-separated patent publication or application numbers as two-letter country code and serial number, e.g.: US62/123456 or WO2017123456. Do not include thousands-separator commas in serial numbers.  It is preferable to use individual disclosures for each patent, even if this field permits multiple patents to be listed, in order to get inventor, title, and date information below correct." 
 validate_patent_number = RegexValidator(
                                     regex=(r"^("
-                                             r"([A-Z][A-Z]\d\d/\d{6}"
-                                             r"|[A-Z][A-Z]\d{6,12}([A-Z]\d?)?"
-                                             r"|[A-Z][A-Z]\d{4}(\w{1,2}\d{5,7})?"
-                                             r"|[A-Z][A-Z]\d{15}"
-                                             r"|[A-Z][A-Z][A-Z]\d{1,5}/\d{4}" 
-                                             r"|[A-Z][A-Z]\d{1,4}/\d{1,4}" 
-                                             r"|PCT/[A-Z][A-Z]\d{2}/\d{5}" # WO application, old
-                                             r"|PCT/[A-Z][A-Z]\d{4}/\d{6}" # WO application, new
+                                             r"([A-Z][A-Z] *\d\d/\d{6}"
+                                             r"|[A-Z][A-Z] *\d{6,12}([A-Z]\d?)?"
+                                             r"|[A-Z][A-Z] *\d{4}(\w{1,2}\d{5,7})?"
+                                             r"|[A-Z][A-Z] *\d{15}"
+                                             r"|[A-Z][A-Z][A-Z] *\d{1,5}/\d{4}" 
+                                             r"|[A-Z][A-Z] *\d{1,4}/\d{1,4}" 
+                                             r"|PCT/[A-Z][A-Z]*\d{2}/\d{5}" # WO application, old
+                                             r"|PCT/[A-Z][A-Z]*\d{4}/\d{6}" # WO application, new
                                              r")[, ]*)+$"),
-                                    message="Please enter one or more patent publication or application numbers as country code and serial number, e.g.: US62/123456 or WO2017123456." )
+                                    message=patent_number_help_text)
+
+
 
 """
 Patent application number formats by country
@@ -206,7 +209,7 @@ class GenericDisclosureForm(forms.Form):
     submitter_email = forms.EmailField(required=False)
     #patent_info = forms.CharField(max_length=255,widget=forms.Textarea, required=False, help_text="Patent, Serial, Publication, Registration, or Application/File number(s), Date(s) granted or applied for, Country, and any additional notes.", strip=False)
     patent_number = forms.CharField(max_length=127, required=False, validators=[ validate_patent_number ],
-        help_text = "Patent publication or application number (2-letter country code followed by serial number)")
+        help_text = patent_number_help_text)
     patent_inventor =  forms.CharField(max_length=63, required=False, validators=[ validate_name ], help_text="Inventor name")
     patent_title =  forms.CharField(max_length=255, required=False, validators=[ validate_title ], help_text="Title of invention")
     patent_date =  forms.DateField(required=False, help_text="Date granted or applied for")
@@ -275,7 +278,7 @@ class IprDisclosureFormBase(forms.ModelForm):
     updates = SearchableIprDisclosuresField(required=False, help_text=mark_safe("If this disclosure <strong>updates</strong> other disclosures identify here which ones. Leave this field blank if this disclosure does not update any prior disclosures. Note: Updates to IPR disclosures must only be made by authorized representatives of the original submitters. Updates will automatically be forwarded to the current Patent Holder's Contact and to the Submitter of the original IPR disclosure."))
     same_as_ii_above = forms.BooleanField(required=False)
     patent_number = forms.CharField(max_length=127, required=True, validators=[ validate_patent_number ],
-        help_text = "Patent publication or application number (2-letter country code followed by serial number)")
+        help_text = patent_number_help_text)
     patent_inventor =  forms.CharField(max_length=63, required=True, validators=[ validate_name ], help_text="Inventor name")
     patent_title =  forms.CharField(max_length=255, required=True, validators=[ validate_title ], help_text="Title of invention")
     patent_date =  forms.DateField(required=True, help_text="Date granted or applied for")

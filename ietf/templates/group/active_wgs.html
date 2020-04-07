@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin staticfiles %}
+{% load origin staticfiles group_filters %}
 
 {% block pagehead %}
 <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
@@ -69,11 +69,9 @@
 	          </td>
 	          <td>{{ group.name }}</td>
 	          <td>
-	            {% for chair in group.chairs %}
-		      <a href="{% url 'ietf.person.views.profile' email_or_name=chair.person.name %}">{{ chair.person.plain_name }}</a>
-		      <a href="mailto:{{ chair.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>{% if not forloop.last %} , {% endif %}
-                    {% endfor %}
-                    {% if group.ad_out_of_area %}(Assigned AD: <a href="mailto:{{ group.ad_role.email.address }}">{{ group.ad_role.person.plain_name }}</a>){% endif %}
+                   {% for chair in group.chairs %}{% role_person_link chair %}{% if not forloop.last %} , {% endif %}
+                   {% endfor %}
+                   {% if group.ad_out_of_area %}(Assigned AD: {% role_person_link group.ad_role %}){% endif %}
 	          </td>
 	        </tr>
 	      {% endfor %}

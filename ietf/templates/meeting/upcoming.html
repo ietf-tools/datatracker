@@ -2,7 +2,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 
-{% load ietf_filters staticfiles %}
+{% load ietf_filters staticfiles classname %}
 
 {% block pagehead %}
 <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
@@ -23,67 +23,6 @@
       <h1>Upcoming Meetings</h1>
 
       <p>For more on regular IETF meetings see <a href="https://www.ietf.org/meeting/upcoming.html">here</a></p>
-      <div class="panel-group" id="accordion">
-        <div class="panel panel-default">
-          <div class="panel-heading">
-            <h4 class="panel-title">
-              <a data-toggle="collapse" data-parent="#accordion" href="#customize">
-                <span class="fa fa-caret-down"></span> Customize the meeting list...
-              </a>
-            </h4>
-          </div> <!-- panel-heading -->
-
-          <div id="customize" class="panel-collapse collapse">
-            <div class="panel-body">
-              <p>
-                You can customize the list to show only selected groups
-                by clicking on groups and areas in the table below.
-                To be able to return to the customized view later, bookmark the resulting URL.
-              </p>
-
-              {% if group_parents|length %}
-                <p>Groups displayed in <b><i>italics</i></b> are BOFs.</p>
-
-                <table class="table table-condensed">
-                  <thead>
-                    <tr>
-                      {% for p in group_parents %}
-                        <th style="width:{% widthratio 1 group_parents|length 100 %}%">
-                          <button class="btn btn-default btn-block pickview {{p.acronym|lower}}">{{p.acronym|upper}}</button>
-                        </th>
-                      {% endfor %}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      {% for p in group_parents %}
-                        <td class="view {{p.acronym|lower}}">
-                          <div class="btn-group-vertical btn-block">
-                            {% for group in p.group_list %}
-                              <div class="btn-group btn-group-xs btn-group-justified">
-                                <button class="btn btn-default pickview {{group.acronym}}">
-                                  {% if group.is_bof %}
-                                    <i>{{group.acronym}}</i>
-                                  {% else %}
-                                    {{group.acronym}}
-                                  {% endif %}
-                                </button>
-                              </div> <!-- button-group -->
-                            {% endfor %}
-                          </div> <!-- button-group-vertical -->
-                        </td>
-                      {% endfor %}
-                    </tr>
-                  </tbody>
-                </table>
-              {% else %}
-                <blockquote><i>No meetings have been scheduled yet.</i></blockquote>
-              {% endif %}
-            
-            </div> <!-- panel-body -->
-          </div> <!-- panel-collapse -->
-        </div> <!-- panel -->
-      </div> <!-- panel-group -->
 
       {% if menu_entries %}
       <ul class="nav nav-tabs" role="tablist">
@@ -103,27 +42,43 @@
         </div>
       {% endif %}
   
-        {% if meetings %}
+        {% if entries %}
           <table class="table table-condensed table-striped tablesorter">
             <thead>
               <tr>
                 <th>Date</th>
                 <th>Group</th>
-                <th>Name</th>
+                <th>Meeting</th>
+                <th class="sorter-false text-right">&nbsp;</th>
               </tr>
             </thead>
             <tbody>
-              {% for meeting in meetings %}
-                <tr id="row-{{ forloop.counter }}{% if meeting.responsible_group.parent %}-{{ meeting.responsible_group.parent.acronym }}{% endif %}-{{ meeting.responsible_group.acronym }}">
-                  <td>{{ meeting.date }}</td>
-                  <td>{{ meeting.responsible_group.acronym }}</td>
-                  <td>
-                  {% if meeting.type_id == "interim" %}
-                    <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.session_set.all.0.group.acronym %}">{{ meeting.number }}{% if meeting.interim_meeting_cancelled %}&nbsp;&nbsp;<span class="label label-warning">CANCELLED</span>{% endif %}</a>
+              {% for entry in entries %}
+                <tr>
+                  {% if entry|classname == 'Meeting' %}
+                    {% with meeting=entry %}
+                      <td>{{ meeting.date }} - {{ meeting.end }}</td>
+                      <td>ietf</td>
+                      <td><a href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">IETF {{ meeting.number }}</a></td>
+                      <td></td>
+                    {% endwith %}
+                  {% elif entry|classname == 'Session' %}
+                    {% with session=entry meeting=entry.meeting%}
+                      <td>{{ session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}} - {{ session.official_timeslotassignment.timeslot.utc_end_time | date:"H:i e" }}</td>
+                      <td><a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{ session.group.acronym }}</a></td>
+                      <td>
+                        <a href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">{{ session.meeting.number }}{% if session.current_status == 'canceled' %}&nbsp;&nbsp;<span class="label label-warning">CANCELLED</span>{% endif %}</a>
+                      </td>
+                      <td class='text-right'>
+                         {% include "meeting/interim_session_buttons.html" %}
+                      </td>
+                    {% endwith %}
                   {% else %}
-                    <a href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">IETF - {{ meeting.number }}</a>
+                      <td><span class="label-warning">Unexpected entry type: {{entry|classname}}</span></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
                   {% endif %}
-                  </td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -134,43 +89,42 @@
 
     </div>
   </div>
-  <div id="calendar" style="width:60%; margin:auto;"></div>
+  <div id="calendar" class="col-md-10" ></div>
 {% endblock %}
 
 {% block js %}
 <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
-<script src="{% static 'ietf/js/toggle-visibility.js' %}"></script>
 <script src="{% static 'fullcalendar/core/main.js' %}"></script>
 <script src="{% static 'fullcalendar/daygrid/main.js' %}"></script>
     <script>
 
       document.addEventListener('DOMContentLoaded', function() {
         var calendarEl = document.getElementById('calendar');
+        var glue = calendarEl.clientWidth > 720 ? ' ' : '\n';
 
         var calendar = new FullCalendar.Calendar(calendarEl, {
-          aspectRatio: 1.35,
           plugins: [ 'dayGrid' ],
+          displayEventTime: false,
           events: [
-          {% for meeting in meetings %}
-            {% if meeting.type_id == 'ietf' %}
-              {
-                title: 'IETF - {{ meeting.number }}',
-                start: '{{meeting.date}}',
-                end: '{{meeting.end}}',
-                url: '{% url 'ietf.meeting.views.agenda' num=meeting.number %}'
-              }{% if not forloop.last %}, {% endif %}
-            {% else %}
-              {% for session in meeting.session_set.all %}
-                {% for tsa in session.timeslotassignments.all %}
-                  {
-                    title: '{{session.group.acronym}} - {{tsa.timeslot.time|date:"H:i"}} {{meeting.time_zone}}',
-                    start: '{{meeting.date}}',
-                    end: '{{meeting.end}}',
-                    url: '{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=session.group.acronym %}'
-                  }{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-                {% if not forloop.last %}, {% endif %}
-              {% endfor %}
+          {% for entry in entries %}
+            {% if entry|classname == 'Meeting' %}
+              {% with meeting=entry %}
+                {
+                  title: 'IETF {{ meeting.number }}',
+                  start: '{{meeting.date}}',
+                  end: '{{meeting.end}}',
+                  url: '{% url 'ietf.meeting.views.agenda' num=meeting.number %}'
+                }{% if not forloop.last %}, {% endif %}
+              {% endwith %}
+            {% else %} {# if it's not a Meeting, it's a Session #}
+              {% with session=entry %}
+                {
+                  title: '{{session.official_timeslotassignment.timeslot.utc_start_time|date:"H:i"}}-{{session.official_timeslotassignment.timeslot.utc_end_time|date:"H:i"}}'+glue+'{{session.group.acronym}}',
+                  start: '{{session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}}',
+                  end: '{{session.official_timeslotassignment.timeslot.utc_end_time | date:"Y-m-d H:i"}}',
+                  url: '{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}'
+                }
+              {% endwith %}
               {% if not forloop.last %}, {% endif %}
             {% endif %}
           {% endfor %}
@@ -184,5 +138,35 @@
         calendar.render();
       });
 
+      $(".modal").on("show.bs.modal", function () {
+	  var i = $(this).find(".frame");
+	  if ($(i).data("src")) {
+	      $.get($(i).data("src"), function (data, status, xhr) {
+		  var t = xhr.getResponseHeader("content-type");
+		  if (t.indexOf("text/plain") > -1) {
+		      data = "<pre class='agenda'>" + data + "</pre>";
+		  } else if(t.indexOf("text/html") > -1) {
+		      // nothing to do here
+		  } else {
+		      data = "<p>Unknown type: " + xhr.getResponseHeader("content-type") + "</p>";
+		  }
+		  $(i).html(data);
+	      });
+	  }
+	  var j = $(this).find(".frame2");
+	  if ($(j).data("src")) {
+	      $.get($(j).data("src"), function (data, status, xhr) {
+		  var t = xhr.getResponseHeader("content-type");
+		  if (t.indexOf("text/plain") > -1) {
+		      data = "<pre class='agenda'>" + data + "</pre>";
+		  } else if(t.indexOf("text/html") > -1) {
+		      // nothing to do here
+		  } else {
+		      data = "<p>Unknown type: " + xhr.getResponseHeader("content-type") + "</p>";
+		  }
+		  $(j).html(data);
+	      });
+	  }
+      });
     </script>
 {% endblock %}

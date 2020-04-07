@@ -352,7 +352,7 @@ def ad_dashboard_sort_key(doc):
         state = State.objects.get(type__slug='draft-iesg',slug='ad-eval')
         return "1%d%s" % (state.order,seed)
 
-    if doc.type.slug=='charter':
+    if doc.type.slug=='charter' and doc.get_state_slug('charter') != 'replaced':
         if doc.get_state_slug('charter') in ('notrev','infrev'):
             return "100%s" % seed
         elif  doc.get_state_slug('charter') == 'intrev':
