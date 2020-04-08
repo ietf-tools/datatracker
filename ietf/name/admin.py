@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2010-2020, All Rights Reserved
 from django.contrib import admin
 
 from ietf.name.models import (
@@ -10,7 +10,7 @@ from ietf.name.models import (
     LiaisonStatementState, LiaisonStatementTagName, MeetingTypeName, NomineePositionStateName,
     ReviewRequestStateName, ReviewResultName, ReviewTypeName, RoleName, RoomResourceName,
     SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName, TopicAudienceName,
-    DocUrlTagName, ReviewAssignmentStateName, ReviewerQueuePolicyName)
+    DocUrlTagName, ReviewAssignmentStateName, ReviewerQueuePolicyName, TimerangeName)
 
 from ietf.stats.models import CountryAlias
 
@@ -79,5 +79,6 @@ admin.site.register(SessionStatusName, NameAdmin)
 admin.site.register(StdLevelName, NameAdmin)
 admin.site.register(StreamName, NameAdmin)
 admin.site.register(TimeSlotTypeName, NameAdmin)
+admin.site.register(TimerangeName, NameAdmin)
 admin.site.register(TopicAudienceName, NameAdmin)
 admin.site.register(DocUrlTagName, NameAdmin)

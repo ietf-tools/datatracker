@@ -28,7 +28,7 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
-from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName, ImportantDateName
+from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName, ImportantDateName, TimerangeName
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
@@ -815,19 +815,27 @@ class SchedTimeSessAssignment(models.Model):
 class Constraint(models.Model):
     """
     Specifies a constraint on the scheduling.
-    One type (name=conflic?) of constraint is between source WG and target WG,
-           e.g. some kind of conflict.
-    Another type (name=bethere) of constraint is between source WG and
-           availability of a particular Person, usually an AD.
-    A third type (name=avoidday) of constraint is between source WG and
-           a particular day of the week, specified in day.
+    Available types are:
+    - conflict/conflic2/conflic3: a conflict between source and target WG/session,
+      with varying priority. The first is used for a chair conflict, the second for
+      technology overlap, third for key person conflict
+    - bethere: a constraint between source WG and a particular person
+    - timerange: can not meet during these times
+    - time_relation: preference for a time difference between sessions
+    - wg_adjacent: request for source WG to be adjacent (directly before or after,
+      no breaks, same room) the target WG
     """
+    TIME_RELATION_CHOICES = (
+        ('subsequent-days', 'Schedule the sessions on subsequent days'),
+        ('one-day-seperation', 'Leave at least one free day in between the two sessions'),
+    )
     meeting = ForeignKey(Meeting)
     source = ForeignKey(Group, related_name="constraint_source_set")
     target = ForeignKey(Group, related_name="constraint_target_set", null=True)
     person = ForeignKey(Person, null=True, blank=True)
-    day    = models.DateTimeField(null=True, blank=True)
     name   = ForeignKey(ConstraintName)
+    time_relation = models.CharField(max_length=200, choices=TIME_RELATION_CHOICES, blank=True)
+    timeranges = models.ManyToManyField(TimerangeName)
 
     active_status = None
 
@@ -835,7 +843,14 @@ class Constraint(models.Model):
         return u"%s %s target=%s person=%s" % (self.source, self.name.name.lower(), self.target, self.person)
 
     def brief_display(self):
-        if self.target and self.person:
+        if self.name.slug == "wg_adjacent":
+            return "Adjacent with %s" % self.target.acronym
+        elif self.name.slug == "time_relation":
+            return self.get_time_relation_display()
+        elif self.name.slug == "timerange":
+            timeranges_str = ", ".join([t.desc for t in self.timeranges.all()])
+            return "Can't meet %s" % timeranges_str
+        elif self.target and self.person:
             return "%s ; %s" % (self.target.acronym, self.person)
         elif self.target and not self.person:
             return "%s " % (self.target.acronym)
@@ -857,6 +872,13 @@ class Constraint(models.Model):
         if self.target is not None:
             ct1['target_href'] = urljoin(host_scheme, self.target.json_url())
         ct1['meeting_href'] = urljoin(host_scheme, self.meeting.json_url())
+        if self.time_relation:
+            ct1['time_relation'] = self.time_relation
+            ct1['time_relation_display'] = self.get_time_relation_display()
+        if self.timeranges.count():
+            ct1['timeranges_cant_meet'] = [t.slug for t in self.timeranges.all()]
+            timeranges_str = ", ".join([t.desc for t in self.timeranges.all()])
+            ct1['timeranges_display'] = "Can't meet %s" % timeranges_str
         return ct1
 
 
@@ -890,6 +912,7 @@ class Session(models.Model):
     short = models.CharField(blank=True, max_length=32, help_text="Short version of 'name' above, for use in filenames.")
     type = ForeignKey(TimeSlotTypeName)
     group = ForeignKey(Group)    # The group type historically determined the session type.  BOFs also need to be added as a group. Note that not all meeting requests have a natural group to associate with.
+    joint_with_groups = models.ManyToManyField(Group, related_name='sessions_joint_in')
     attendees = models.IntegerField(null=True, blank=True)
     agenda_note = models.CharField(blank=True, max_length=255)
     requested_duration = models.DurationField(default=datetime.timedelta(0))
@@ -1013,6 +1036,9 @@ class Session(models.Model):
 
     def is_material_submission_cutoff(self):
         return datetime.date.today() > self.meeting.get_submission_correction_date()
+    
+    def joint_with_groups_acronyms(self):
+        return [group.acronym for group in self.joint_with_groups.all()]
 
     def __str__(self):
         if self.meeting.type_id == "interim":
@@ -1108,6 +1134,7 @@ class Session(models.Model):
         sess1['bof']            = str(self.group.is_bof())
         sess1['agenda_note']    = self.agenda_note
         sess1['attendees']      = str(self.attendees)
+        sess1['joint_with_groups'] = self.joint_with_groups_acronyms()
 
         # fish out scheduling information - eventually, we should pick
         # this out in the caller instead

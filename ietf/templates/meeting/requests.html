@@ -43,7 +43,7 @@
 	      <th>Size</th>
 	      <th>Requester</th>
 	      <th>AD</th>
-	      <th>Conflicts</th>
+	      <th>Constraints</th>
 	      <th>Special requests</th>
 	    </tr>
           </thead>
@@ -62,6 +62,9 @@
 	          <a href="{% url "ietf.secr.sreq.views.edit" num=meeting.number acronym=session.group.acronym %}">
 	            {{session.group.acronym}}
 	          </a>
+              {% if session.joint_with_groups.count %}
+                  joint with {{ session.joint_with_groups_acronyms|join:' ' }}
+              {% endif %}
 	        </th>
 
 	        <td class="text-right">
