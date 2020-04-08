@@ -1,3 +1,37 @@
+ietfdb (6.125.0) ietf; urgency=medium
+
+  **Various meeting-related fixes and improvements**
+
+  * Merged in [17590] from rcross@amsl.com:
+    Added support for variable length meetings to secr/meetings app.  
+
+  * Changed the handling of some exceptions during draft submission to give 
+    user feedback rather than server 500 responses, in order to deal better 
+    with severely malformed drafts.
+
+  * Added a workaround for the current libmagic on OpenSUSE, which quite
+    easily can mischaracterise text/plain documents as text/x-Algol68.  Fixes
+    issues #2941 and #2956.
+
+  * Added validation of the session duration in interim meeting requests, with
+    added values in settings.py for min and max duration.
+
+  * Clarified the standalone XML draft submission requirements, and 
+    mentioned the xml2rfc switch to use for v3 sources.
+
+  * Changes to accept a wider range of URLs when displaying call-in links from
+    the Session agenda_note and remote_instructions fields.
+
+  * Changed some fields to raw_id_fields in the MessageAdmin, for improved
+    admin page load times.
+
+  * Added 'Remote instructions' at the top of interim sesssion pages, and 
+    made the 'Meeting Details' button available to the group chairs, not only 
+    secretariat.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Apr 2020 16:51:46 +0000
+
+
 ietfdb (6.124.0) ietf; urgency=medium
 
   **Enhanced 'Upcoming Meetings' page, and more**
