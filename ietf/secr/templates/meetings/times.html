@@ -19,7 +19,7 @@
       <tbody>
         {% for item in times %}
           <tr class="{% cycle 'row1' 'row2' %}">
-            <td>{{ item.time|date:"D" }}</td>
+            <td>{{ item.time|date:"D M d" }}</td>
             <td>{{ item.time|date:"H:i" }} - {{ item.end_time|date:"H:i" }}</td>
             <td>{{ item.name }}</td>
             <td><a href="{% url "ietf.secr.meetings.views.times_edit" meeting_id=meeting.number schedule_name=schedule.name time=item.time|date:"Y:m:d:H:i" %}">Edit</a></td>
