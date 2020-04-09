@@ -10,8 +10,13 @@ Planned work in rough order
 * Remove Python 2.7 compatibility code.  This includes cleaning up 'from future'
   imports and usages of 'six' 2/3 compatibility modules.
 
-* Transition to Django 2.x (depends on Python 3.x).  Security updates to
-  Django 1.11 will cease around April 2020.
+* Transition to Django 2.2 (via 2.0 and 2.1).  This depends on Python 3.x.
+  Security updates to Django 1.11 will cease around April 2020.
+
+* Transition to PostgreSQL.  This will make it easier to start using
+  timezone-aware timestamps throughout the code, which will make it easy
+  to present localized times on web-pages.  It will also provide additional
+  tools for performance analysis
 
 * Investigate making RFCs first-class document objects to faciliate being
   able to model BCPs that represent groups of RFCs properly. Then fix the rfc sync
@@ -68,11 +73,6 @@ Planned work in rough order
 
 * Add support for document shepherding reports, possibly re-using or
   generalising some of the review plumbing.  Check with IESG for details.
-
-* Transition to PostgreSQL.  This will make it easier to start using
-  timezone-aware timestamps throughout the code, which will make it easy
-  to present localized times on web-pages.  It will also provide additional
-  tools for performance analysis
 
 * Performance analysis of database table and index setup
 
