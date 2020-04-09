@@ -1019,6 +1019,13 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   justify-content: space-between;
 }
 
+@media only screen and (max-width: 120em) {
+  /* if there's only room for two days, it looks a bit odd with space-between */
+  .edit-meeting-schedule .edit-grid .day-flow {
+    justify-content: flex-start;
+  }
+}
+
 .edit-meeting-schedule .edit-grid .day-flow .day-label {
   border-bottom: 2px solid #eee;
 }
