@@ -1183,7 +1183,7 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 }
 
 .edit-meeting-schedule .session .constraints > span .encircled {
-  border: 1px solid #fdd;
+  border: 1px solid #f99;
   border-radius: 1em;
   min-width: 1.3em;
   text-align: center;
@@ -1192,16 +1192,16 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 
 .edit-meeting-schedule .session .constraints > span.violated-hint {
   display: inline-block;
-  color: #f99;
+  color: #f55;
 }
 
 .edit-meeting-schedule .session .constraints > span.selected-hint {
   display: inline-block;
-  color: #f33;
+  color: #8432d4;
 }
 
 .edit-meeting-schedule .session .constraints > span.selected-hint .encircled {
-  border: 1px solid #fbb;
+  border: 1px solid #b35eff;
 }
 
 .edit-meeting-schedule .unassigned-sessions .session .constraints > span {
