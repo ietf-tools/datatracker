@@ -11,6 +11,12 @@ jQuery(document).ready(function () {
     let sessions = content.find(".session");
     let timeslots = content.find(".timeslot");
 
+    // hack to work around lack of position sticky support in old browsers, see https://caniuse.com/#feat=css-sticky
+    if (content.find(".scheduling-panel").css("position") != "sticky") {
+        content.find(".scheduling-panel").css("position", "fixed");
+        content.css("padding-bottom", "14em");
+    }
+
     // selecting
     function selectSessionElement(element) {
         if (element) {
@@ -220,7 +226,7 @@ jQuery(document).ready(function () {
 
     function updateAttendeesViolations() {
         sessions.each(function () {
-            let roomCapacity = jQuery(this).closest(".room-column").data("roomcapacity");
+            let roomCapacity = jQuery(this).closest(".timeline").data("roomcapacity");
             if (roomCapacity && this.dataset.attendees)
                 jQuery(this).toggleClass("too-many-attendees", +this.dataset.attendees > +roomCapacity);
         });

@@ -508,17 +508,14 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     for a in assignments:
         assignments_by_session[a.session_id].append(a)
 
-    # Prepare timeslot layout. We arrange time slots in columns per
-    # room where everything inside is grouped by day. Things inside
-    # the days are then layouted proportionally to the actual time of
-    # day, to ensure that everything lines up, even if the time slots
-    # are not the same in the different rooms.
+    # Prepare timeslot layout, making a timeline per day scaled in
+    # browser em units to ensure that everything lines up even if the
+    # timeslots are not the same in the different rooms
 
     def timedelta_to_css_ems(timedelta):
-        css_ems_per_hour = 1.8
+        css_ems_per_hour = 5
         return timedelta.seconds / 60.0 / 60.0 * css_ems_per_hour
 
-    # time labels column
     timeslots_by_day = defaultdict(list)
     for t in timeslots_qs:
         timeslots_by_day[t.time.date()].append(t)
@@ -526,10 +523,19 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     day_min_max = []
     for day, timeslots in sorted(timeslots_by_day.iteritems()):
         day_min_max.append((day, min(t.time for t in timeslots), max(t.end_time() for t in timeslots)))
-        
-    time_labels = []
+
+    timeslots_by_room_and_day = defaultdict(list)
+    room_has_timeslots = set()
+    for t in timeslots_qs:
+        room_has_timeslots.add(t.location_id)
+        timeslots_by_room_and_day[(t.location_id, t.time.date())].append(t)
+
+    days = []
     for day, day_min_time, day_max_time in day_min_max:
         day_labels = []
+        day_width = timedelta_to_css_ems(day_max_time - day_min_time)
+
+        label_width = 4 # em
 
         hourly_delta = 2
 
@@ -540,47 +546,42 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         end = day_max_time.replace(hour=last_hour, minute=0, second=0, microsecond=0)
 
         while t <= end:
-            day_labels.append((t, 'top', timedelta_to_css_ems(t - day_min_time), 'left'))
+            left_offset = timedelta_to_css_ems(t - day_min_time)
+            right_offset = day_width - left_offset
+            if right_offset > label_width:
+                # there's room for the label
+                day_labels.append((t, 'left', left_offset))
+            else:
+                day_labels.append((t, 'right', right_offset))
+
             t += datetime.timedelta(seconds=hourly_delta * 60 * 60)
 
         if not day_labels:
-            day_labels.append((day_min_time, 'top', 0, 'left'))
+            day_labels.append((day_min_time, 'left', 0))
 
-        time_labels.append({
-            'day': day,
-            'height': timedelta_to_css_ems(day_max_time - day_min_time),
-            'labels': day_labels,
-        })
+        room_timeslots = []
+        for r in rooms:
+            if r.pk not in room_has_timeslots:
+                continue
 
-    # room columns
-    timeslots_by_room_and_day = defaultdict(list)
-    for t in timeslots_qs:
-        timeslots_by_room_and_day[(t.location_id, t.time.date())].append(t)
-
-    room_columns = []
-    for r in rooms:
-        room_days = []
-
-        for day, day_min_time, day_max_time in day_min_max:
-            day_timeslots = []
+            timeslots = []
             for t in timeslots_by_room_and_day.get((r.pk, day), []):
-                day_timeslots.append({
+                timeslots.append({
                     'timeslot': t,
                     'offset': timedelta_to_css_ems(t.time - day_min_time),
-                    'height': timedelta_to_css_ems(t.end_time() - t.time),
+                    'width': timedelta_to_css_ems(t.end_time() - t.time),
                 })
 
-            room_days.append({
-                'day': day,
-                'timeslots': day_timeslots,
-                'height': timedelta_to_css_ems(day_max_time - day_min_time),
-            })
+            room_timeslots.append((r, timeslots))
 
-        if any(d['timeslots'] for d in room_days):
-            room_columns.append({
-                'room': r,
-                'days': room_days,
-            })
+        days.append({
+            'day': day,
+            'width': day_width,
+            'time_labels': day_labels,
+            'room_timeslots': room_timeslots,
+        })
+
+    room_labels = [[r for r in rooms if r.pk in room_has_timeslots] for i in range(len(days))]
 
     # prepare sessions
     for ts in timeslots_qs:
@@ -701,7 +702,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         s.requested_duration_in_hours = s.requested_duration.seconds / 60.0 / 60.0
 
         session_layout_margin = 0.2
-        s.layout_height = timedelta_to_css_ems(s.requested_duration) - 2 * session_layout_margin
+        s.layout_width = timedelta_to_css_ems(s.requested_duration) - 2 * session_layout_margin
         s.parent_acronym = s.group.parent.acronym if s.group and s.group.parent else ""
         s.historic_group_ad_name = ad_names.get(s.group_id)
 
@@ -744,9 +745,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'schedule': schedule,
         'can_edit': can_edit,
         'js_data': json.dumps(js_data, indent=2),
-        'time_labels': time_labels,
-        'rooms': rooms,
-        'room_columns': room_columns,
+        'days': days,
+        'room_labels': room_labels,
         'unassigned_sessions': unassigned_sessions,
         'session_parents': session_parents,
         'hide_menu': True,

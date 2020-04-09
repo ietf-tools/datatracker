@@ -48,43 +48,59 @@
     </p>
 
     <div class="edit-grid">
-      {# in order for all this to align properly vertically, we have the same structure in all columns #}
 
-      <div class="time-labels-column schedule-column">
-        <div class="room-name"></div>
+      {# using the same markup in both room labels and the actual days ensures they are aligned #}
+      <div class="room-label-column">
+        {% for labels in room_labels %}
+          <div class="day">
+            <div class="day-label">
+              <strong>&nbsp;</strong><br>
+              &nbsp;
+            </div>
 
-        {% for d in time_labels %}
-          <div class="day-label">{{ d.day|date:"l, F j, Y" }}</div>
+            <div class="timeline"></div>
 
-          <div class="day" style="height: {{ d.height }}em;">
-            {% for t, vertical_alignment, vertical_offset, horizontal_alignment in d.labels %}
-              <div class="time-label {{ vertical_alignment }}-aligned text-{{ horizontal_alignment }}" style="{{ vertical_alignment }}: {{ vertical_offset }}em;">
-                <span>{{ t|date:"H:i" }}</span>
+            {% for room in labels %}
+              <div class="timeline timeslots">
+                <div class="room-name">
+                  <strong>{{ room.name }}</strong><br>
+                  {% if room.capacity %}{{ room.capacity }} <i class="fa fa-user-o"></i>{% endif %}
+                </div>
               </div>
             {% endfor %}
           </div>
         {% endfor %}
       </div>
 
-      {% for r in room_columns %}
-        <div class="room-column schedule-column" data-roomcapacity="{{ r.room.capacity }}">
-          <div class="room-name">{{ r.room.name }}{% if r.room.capacity %} ({{ r.room.capacity }} <i class="fa fa-user-o"></i>{% endif %})</div>
+      <div class="day-flow">
+        {% for day in days %}
+          <div class="day" style="width: {{ day.width }}em;">
+            <div class="day-label">
+              <strong>{{ day.day|date:"l" }}</strong><br>
+              {{ day.day|date:"N j, Y" }}
+            </div>
 
-          {% for d in r.days %}
-            <div class="day-label"></div> {# for spacing purposes #}
-
-            <div class="day" style="height: {{ d.height }}em;">
-              {% for t in d.timeslots %}
-                <div id="timeslot{{ t.timeslot.pk }}" class="timeslot" data-start="{{ t.timeslot.time.isoformat }}" data-end="{{ t.timeslot.end_time.isoformat }}" data-duration="{{ t.timeslot.duration.total_seconds }}" style="top: {{ t.offset }}em; height: {{ t.height }}em;">
-                  {% for assignment, session in t.timeslot.session_assignments %}
-                    {% include "meeting/edit_meeting_schedule_session.html" %}
-                  {% endfor %}
-                </div>
+            <div class="timeline">
+              {% for t, left_or_right, offset in day.time_labels %}
+                <div class="time-label text-{{ left_or_right }}" style="{{ left_or_right }}: {{ offset }}em;">{{ t|date:"H:i" }}</div>
               {% endfor %}
             </div>
-          {% endfor %}
-        </div>
-      {% endfor %}
+
+            {% for room, timeslots in day.room_timeslots %}
+              <div class="timeline timeslots" data-roomcapacity="{{ room.capacity }}">
+
+                {% for t in timeslots %}
+                  <div id="timeslot{{ t.timeslot.pk }}" class="timeslot" data-start="{{ t.timeslot.time.isoformat }}" data-end="{{ t.timeslot.end_time.isoformat }}" data-duration="{{ t.timeslot.duration.total_seconds }}" style="left: {{ t.offset }}em; width: {{ t.width }}em;">
+                    {% for assignment, session in t.timeslot.session_assignments %}
+                      {% include "meeting/edit_meeting_schedule_session.html" %}
+                    {% endfor %}
+                  </div>
+                {% endfor %}
+              </div>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </div>
     </div>
 
     <div class="scheduling-panel">

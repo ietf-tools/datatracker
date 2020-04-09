@@ -1,25 +1,27 @@
-<div id="session{{ session.pk }}" class="session {% if not session.group.parent.scheduling_color %}untoggleable{% endif %} {% if session.parent_acronym %}parent-{{ session.parent_acronym }}{% endif %}" style="height:{{ session.layout_height }}em;" data-duration="{{ session.requested_duration.total_seconds }}" {% if session.attendees != None %}data-attendees="{{ session.attendees }}"{% endif %}>
+<div id="session{{ session.pk }}" class="session {% if not session.group.parent.scheduling_color %}untoggleable{% endif %} {% if session.parent_acronym %}parent-{{ session.parent_acronym }}{% endif %}" style="width:{{ session.layout_width }}em;" data-duration="{{ session.requested_duration.total_seconds }}" {% if session.attendees != None %}data-attendees="{{ session.attendees }}"{% endif %}>
   <div class="session-label">
     {{ session.scheduling_label }}
   </div>
 
-  {% if session.constrained_sessions %}
-    <div class="constraints">
-      {% for explanation, sessions in session.constrained_sessions %}
-        <span data-sessions="{{ sessions|join:"," }}">{{ explanation }}</span>
-      {% endfor %}
-    </div>
-  {% endif %}
+  <div>
+    {% if session.attendees != None %}
+      <span class="attendees">{{ session.attendees }}</span>
+    {% endif %}
 
-  {% if session.comments %}
-    <div class="comments"><i class="fa fa-comment-o"></i></div>
-  {% endif %}
+    {% if session.comments %}
+      <span class="comments"><i class="fa fa-comment-o"></i></span>
+    {% endif %}
 
-  {% if session.attendees != None %}
-    <div class="attendees">{{ session.attendees }}</div>
-  {% endif %}
+    {% if session.constrained_sessions %}
+      <span class="constraints">
+        {% for explanation, sessions in session.constrained_sessions %}
+          <span data-sessions="{{ sessions|join:"," }}">{{ explanation }}</span>
+        {% endfor %}
+      </span>
+    {% endif %}
+  </div>
 
-
+  {# this is shown elsewhere on the page with JS - we just include it here for convenience #}
   <div class="session-info">
     <label>
       {{ session.scheduling_label }}
