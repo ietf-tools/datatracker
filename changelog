@@ -1,3 +1,44 @@
+ietfdb (6.126.0) ietf; urgency=medium
+
+  **Groundwork for upcoming automatic scheduling assistance**
+
+  * Merged in ^/branch/dash/automatic-scheduler@17395 from sasha@dashcare.nl,
+    which adds groundwork for upcoming automatic scheduling assistance:
+
+    ~ Added a management command to create a dummy IETF 999 meeting.
+
+    ~ Added display of new constraints and joint sessions to agenda builder
+      interface.
+
+    ~ The new timerange, time_relation and wg_adjacent constraints, along with
+      the joint_with_groups option, are now reflected in the special requests
+      field.  This allows them to be taken into account while scheduling
+      sessions.
+
+    ~ Clarified the wording in the session request form regarding conflicts
+      with BOFs.
+
+    ~ Added support for structured entry and storage of joint sessions in
+      meetings:
+
+      - Also adds additional tests for the SessionForm
+      - Fixes a javascript error in session requests for non-WG groups,
+        that could cause incorrect form behaviour.
+      - Expands the tests added in [17289] a bit.
+
+    ~ Added support for the timerange, wg_adjacent and time_relation
+      constraints.  This adds three new constraints to the database and
+      relevant UIs:
+
+      - timerange: "This WG can't meet during these timeframes"
+      - wg_adjacent: "Schedule adjacent to another WG (directly following,
+        no breaks, same room)"
+      - time_relation: schedule the two sessions of one WG on subsequent
+        days or with at least one day seperation
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Apr 2020 16:25:23 +0000
+
+
 ietfdb (6.125.0) ietf; urgency=medium
 
   **Various meeting-related fixes and improvements**
