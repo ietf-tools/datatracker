@@ -2,7 +2,10 @@ jQuery(document).ready(function () {
     let content = jQuery(".edit-meeting-schedule");
 
     function failHandler(xhr, textStatus, error) {
-        alert("Error: " + error);
+        let errorText = error;
+        if (xhr && xhr.responseText)
+            errorText += "\n\n" + xhr.responseText;
+        alert("Error: " + errorText);
     }
 
     let sessions = content.find(".session");
@@ -104,7 +107,12 @@ jQuery(document).ready(function () {
 
             let dropElement = jQuery(this);
 
-            function done() {
+            function done(response) {
+                if (response != "OK") {
+                    failHandler(null, null, response);
+                    return;
+                }
+
                 dropElement.append(sessionElement); // move element
                 updateCurrentSchedulingHints();
                 if (dropElement.hasClass("unassigned-sessions"))
@@ -115,6 +123,7 @@ jQuery(document).ready(function () {
                 jQuery.ajax({
                     url: ietfData.urls.assign,
                     method: "post",
+                    timeout: 5 * 1000,
                     data: {
                         action: "unassign",
                         session: sessionId.slice("session".length)
@@ -129,7 +138,8 @@ jQuery(document).ready(function () {
                         action: "assign",
                         session: sessionId.slice("session".length),
                         timeslot: dropElement.attr("id").slice("timeslot".length)
-                    }
+                    },
+                    timeout: 5 * 1000
                 }).fail(failHandler).done(done);
             }
         });
