@@ -1,0 +1,33 @@
+{% autoescape off %}
+Hi,
+
+Chair approval is needed for posting of {{ submission.name }}-{{ submission.rev }}.
+
+To approve the draft, go to this URL (note: you need to login to be able to approve):
+  https://{{ domain }}{% url "ietf.submit.views.submission_status" submission_id=submission.pk access_token=submission.access_token %}
+
+  File name       : {{ submission.name }}
+  Revision        : {{ submission.rev }}
+  Submission date : {{ submission.submission_date }}
+  Group           : {{ submission.group|default:"Individual Submission" }}
+
+  Title           : {{ submission.title }}
+  Document date   : {{ submission.document_date }}
+  Pages           : {{ submission.pages }}
+  File size       : {{ submission.file_size|filesizeformat }}
+
+  Submitter       : {{ submission.submitter }}
+
+  Abstract        : {{ submission.abstract }}
+
+
+  Authors:
+{% for author in submission.authors %}    {{ author.name }}{% if author.email %} <{{ author.email }}>{% endif%}
+{% endfor %}
+{% endautoescape %}
+
+
+Best regards,
+
+	The IETF Secretariat
+	through the draft submission service

@@ -1,0 +1,134 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+{% load ietf_filters %}
+{% load textfilters %}
+
+<div class="row">
+  <div class="col-md-2 hidden-sm hidden-xs">
+
+    {% for n, positions in position_groups %}
+      <h4><span class="label label-{{ n|pos_to_label }}"> {{ n.name }}</span></h4>
+      {% for p in positions|dictsort:"balloter.last_name" %}
+        <div class="balloter-name">
+          {% if p.is_old_pos %}<span class="text-muted">({% endif %}{% if p.comment or p.discuss %}<a href="#{{ p.balloter.plain_name|slugify }}">{% endif %}{{ p.balloter.plain_name }}{% if p.comment or p.discuss %}</a>{% endif %}{% if p.is_old_pos %})</span>{% endif %}
+        </div>
+      {% empty %}
+        (None)
+      {% endfor %}
+      <br>
+    {% endfor %}
+  </div>
+
+  <div class="col-md-10">
+    {% if all_ballots and all_ballots|length > 1 %}
+      <ul class="pagination pagination-sm">
+        <li class="disabled"><span><b>Ballots</b></span></li>
+        {% for b in all_ballots %}
+          <li {% if b == ballot %}class="active"{% endif %}>
+            <a href="{% url "ietf.doc.views_doc.document_ballot" name=doc.name ballot_id=b.pk %}">
+	      {{ b.ballot_type.name }} ({{ b.rev }})
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if doc.type_id == "draft" or doc.type_id == "conflrev" or doc.type_id == "statchg" %}
+      {% if deferred %}
+        <p class="alert alert-danger">Ballot deferred by {{ deferred.by }} on {{ deferred.time|date:"Y-m-d" }}.</p>
+      {% endif %}
+    {% endif %}
+
+    {% if not ballot_open %}
+      <p class="alert alert-warning"><b>Note:</b> This ballot was opened for revision {{ ballot.rev }} and is now closed.</p>
+    {% else %}
+      <p class="alert alert-info"><b>Summary:</b> {{ summary }}</p>
+    {% endif %}
+
+    {% if ballot.ballot_type.question %}
+      <p class="well"><b>Ballot question:</b> "{{ ballot.ballot_type.question }}"</p>
+    {% endif %}
+
+    {% if editable and user|has_role:"Area Director,Secretariat,IRSG Member" %}
+      <a class="btn btn-default"
+	  href="https://mailarchive.ietf.org/arch/search/?q=subject:{{doc.name}}+AND+subject:(discuss+OR+comment+OR+review)">
+	 Search Mailarchive</a>
+
+      {% if user|can_ballot:doc %}
+        <a class="btn btn-primary" href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}">Edit position</a>
+      {% endif %}
+
+      {% if doc.type_id == "draft" or doc.type_id == "conflrev" or doc.type_id == "statchg" %}
+        {% if deferred %}
+          <a class="btn btn-default" href="{% url 'ietf.doc.views_ballot.undefer_ballot' name=doc.name %}">Undefer ballot</a>
+        {% else %}
+          {% if doc.telechat_date %}
+            <a class="btn btn-warning" href="{% url 'ietf.doc.views_ballot.defer_ballot' name=doc.name %}">Defer ballot</a>
+          {% endif %}
+        {% endif %}
+
+        {% if user|has_role:"Area Director,Secretariat" and ballot.ballot_type.slug != "irsg-approve" %}
+          <a class="btn btn-danger" href="{% url 'ietf.doc.views_ballot.clear_ballot' name=doc.name ballot_type_slug=ballot.ballot_type.slug%}">Clear ballot</a>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+
+    {% for n, positions in position_groups %}
+      {% for p in positions|dictsort:"balloter.last_name" %}
+        <h4 class="anchor-target" id="{{ p.balloter.plain_name|slugify }}">
+          {% if p.is_old_pos %}<span class="text-muted">({% endif %}{{ p.balloter.plain_name }}{% if p.is_old_pos %})</span>{% endif %}
+            <span class="pull-right">
+              {% if p.old_positions %}
+                <span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>
+              {% endif %}
+              <span class="label label-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
+              {% if user|has_role:"Secretariat" %}
+                <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}" title="Click to edit the position of {{ p.balloter.plain_name }}" class="btn btn-default btn-xs">
+	          Edit</a>
+              {% endif %}
+            </span>
+        </h4>
+
+        {% if p.pos.blocking and p.discuss %}
+          <div class="panel panel-danger">
+            <div class="panel-heading">
+              <h5 class="panel-title">
+		<b>{{ p.pos.name }}</b> ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev}}{% endif %})
+		{% if p.send_email %}
+		  <span class="fa fa-envelope-o pull-right" title="Email requested to be sent for this discuss"></span>
+		{% elif p.any_email_sent == True %}
+		  <span class="fa fa-envelope pull-right" title="Email requested to be sent for earlier discuss"></span>
+		{% elif p.any_email_sent == False %}
+		  <span class="fa fa-comment-o pull-right" title="No email send requests for this discuss"></span>
+		{% else %}
+		  <span class="fa fa-comment-o pull-right" title="No email send requests for this discuss"></span>
+
+		{% endif %}
+	      </h5>
+            </div>
+            <div class="panel-body"><pre class="ballot pasted">{{ p.discuss|linkify }}</pre></div>
+          </div>
+        {% endif %}
+
+        {% if p.comment %}
+          <div class="panel panel-{{ p.pos|pos_to_label }}">
+            <div class="panel-heading">
+              <h5 class="panel-title">
+		<b>Comment</b> ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev}}{% endif %})
+		{% if p.send_email %}
+		  <span class="fa fa-envelope-o pull-right" title="Email requested to be sent for this comment"></span>
+		{% elif p.any_email_sent == True %}
+		  <span class="fa fa-envelope pull-right" title="Email requested to be sent for earlier comment"></span>
+		{% elif p.any_email_sent == False %}
+		  <span class="fa fa-comment-o pull-right" title="No email send requests for this comment"></span>
+		{% else %}
+		  <div class="pull-right small italic" style="margin-top: -0.3em;" title="No ballot position send log available">No email<br/>send info</div>
+		{% endif %}
+	      </h5>
+            </div>
+            <div class="panel-body"><pre class="ballot pasted">{{ p.comment|linkify }}</pre></div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+  </div>
+</div>

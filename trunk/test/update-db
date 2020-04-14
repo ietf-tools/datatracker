@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# push in a new copy of the database from a dump of the master database, and
+# do the fixups needed to run the django apps.
+
+program=${0##*/}
+progdir=${0%/*}
+
+cd $progdir/..
+build=$PWD
+
+function die() { echo "$*; terminating."; echo "$program: Error: $*" 1>&2; exit 1; }
+
+
+for dir in /var/local /var/state /var/run /var/tmp; do
+    [ -d $dir -a -w $dir ] && state=$dir/$program && break
+done
+[ "$state" ] || die "Couldn't find a directory to keep state in."
+[ -d "$state" ] || mkdir $state
+[ "$state" ] || die "Couldn't create state dir."
+
+
+for dir in $DBLOCK /var/lock /var/state /var/run /var/tmp; do
+    [ -d $dir -a -w $dir ] && lock=$dir/ietfdb && break
+done
+[ "$lock" ] || die "Couldn't find a directory to keep lock in."
+
+[ "$DBDUMP" ] || DBDUMP="$1"
+[ "$DBDUMP" ] || DBDUMP=/www/tools.ietf.org/events/raw/sqldump/sqldump.raw
+[ "$DBFIX"  ] || DBFIX=$build/test/sql_fixup.sql
+[ "$DBSANE" ] || DBSANE=$build/test/sql_sanitize.sql
+[ "$DBTEST" ] || DBTEST=$build/test/sql_setup.sql
+[ "$DBTIME" ] || DBTIME=$state/update-db.dump
+[ "$DBSTART" ] || DBSTART=$state/update-db.start
+[ "$DBDONE" ] || DBDONE=$state/update-db.done
+[ "$DBLOCK" ] || DBLOCK=$lock
+
+PIDFILE=$DBLOCK/pid
+
+while true; do
+    if mkdir $DBLOCK; then
+	chmod a+rwx $DBLOCK
+	#echo ""
+	#date +"Time: %Y-%m-%d %H:%M"
+	#echo "Database dump file is from $(date -r $DBDUMP +'%Y-%m-%d %H:%M')."
+	#echo "Last update done $(date -r $DBDONE +'%Y-%m-%d %H:%M')."
+	if [ $DBDUMP -nt $DBTIME ]; then
+	    export PYTHONPATH=$PWD
+	    echo "Updating database dated $(date -r $DBDONE +'%Y-%m-%d %H:%M') from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M')"
+	    #echo -n "Updating database from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M')... " 1>&2
+
+	    echo "$$" > $PIDFILE
+	    chmod a+rw $PIDFILE
+	    touch -r $DBDUMP $DBTIME
+	    touch $DBSTART
+	    echo "Updating local database from $DBDUMP ..."
+	    python ietf/manage.py dbshell <  $DBDUMP
+	    echo "Updating local database from $DBFIX ..."
+	    python ietf/manage.py dbshell <  $DBFIX
+	    echo "Updating local database from $DBSANE ..."
+	    python ietf/manage.py dbshell <  $DBSANE
+	    echo "Updating local database from $DBTEST ..."
+	    python ietf/manage.py dbshell <  $DBTEST
+	    echo "Running Django syncdb ..."
+	    python ietf/manage.py syncdb
+	    touch $DBDONE
+	    echo "Done."
+	    #echo "Done." 1>&2
+	else
+	    echo "Database is up-to-date (updated $(date -r $DBDONE +'%Y-%m-%d %H:%M') from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M'))"
+	fi
+	rm -rf $DBLOCK
+	exit 0
+    else
+	pid=$(< $PIDFILE ) || die "Couldn't read pidfile '$PIDFILE'"
+	if kill -0 $pid; then
+	    echo "Pidfile for process $pid exists, and process is running. Sleeping."
+	    sleep 10
+	else
+	    echo "Pidfile for process $pid exists, but process isn't running."
+	    echo "Removing lock and old pid file $pidfile."
+	    rm -rf $DBLOCK
+	fi
+    fi
+done

@@ -1,0 +1,5 @@
+#!/bin/bash
+cur=$(svn info | awk '/^Revision:/ { print $2 }')
+svn log $PWD -r ${2:-HEAD}:${1:-$((cur-100))} | sed -n -e '1,/^Set version info and settings back to development mode/p' | sed -r 's/^(----------|r[0-9]+).*$/\n/' | sed '/./,/^$/!d' | sed '1,/./s/^/  * /;/^$/,/./s/^/  * /;/^  \* $/d' | sed -e :a -e '$!N;s/\n([A-Za-z0-9])/ \\1/;ta' -e 'P;D' | head -n -1 | fold -sw76 | sed -r 's/^([^ ].*)$/    &/' | sed -r 's/^  \* /\n  * /'
+echo ""
+TZ=UTC date +" -- Henrik Levkowetz <henrik@levkowetz.com>  %d %b %Y %H:%M:%S %z"

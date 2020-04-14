@@ -1,0 +1,143 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin static %}
+
+{% load nomcom_tags %}
+
+{% block subtitle %} - View feedback {% endblock %}
+
+{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block nomcom_content %}
+  {% origin %}
+
+<div class="col-md-10">
+  <h2>Feedback related to nominees</h2>
+
+  {% regroup nominees_feedback by nominee.staterank as stateranked_nominees %}
+  {% for staterank in stateranked_nominees %}
+    <div class="panel panel-default">
+     <div class="panel-heading">
+         {% if staterank.grouper == 0 %}
+            <h6 class="anchor-target" id="accepted">Accepted nomination for at least one position</h6>
+         {% elif staterank.grouper == 1 %}
+            <h6 class="anchor-target" id="pending">Pending for at least one position and has not accepted any nomination</h6>
+         {% else %}
+            <h6 class="anchor-target" id="declined">Declined each nominated position</h6>
+         {% endif %}
+     </div>
+     <div class="panel-body">
+      <table class="table table-condensed table-striped tablesorter">
+        <thead>
+          <tr>
+            <th class="col-sm-1">First Name</th>
+            <th class="col-sm-1">Last Name</th>
+            <th class="col-sm-2">Email</th>
+            {% for ft in nominee_feedback_types %}
+              <th class="col-sm-1 text-center">{{ ft.name }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for fb_dict in staterank.list %}
+            <tr>
+              <td>
+                <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">{{ fb_dict.nominee.person.first_name }}</a>
+              </td>
+              <td>
+                <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">{{ fb_dict.nominee.person.last_name }}</a>
+              </td>
+              <td>
+                <span class="hidden-xs">&lt;<a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">{{ fb_dict.nominee.email.address }}</a>&gt;</span>
+              </td>
+              {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}
+                <td class="text-right">
+                   {% if fbtype_newflag %}<span class="label label-success">New</span>{% endif %}
+                   {{ fbtype_count }}
+                </td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+     </div>
+    </div>
+  {% endfor %}
+
+  <h2 class="anchor-target" id="topics">Feedback related to topics</h2>
+
+    <div class="panel panel-default">
+     <div class="panel-body">
+      <table class="table table-condensed table-striped">
+        <thead>
+          <tr>
+            <th class="col-sm-9">Topic</th>
+            {% for ft in topic_feedback_types %}
+              <th class="col-sm-1 text-center">{{ ft.name }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for fb_dict in topics_feedback %}
+            <tr>
+              <td>
+                <a href="{% url 'ietf.nomcom.views.view_feedback_topic' year=year topic_id=fb_dict.topic.id %}">{{ fb_dict.topic.subject }}</a>
+              </td>
+              {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}
+                <td class="text-right">
+                   {% if fbtype_newflag %}<span class="label label-success">New</span>{% endif %}
+                   {{ fbtype_count }}
+                </td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+     </div>
+    </div>
+
+  {% if independent_feedback_types %}
+    <h2 class="anchor-target" id="misc">Feedback not related to Nominees</h2>
+
+    <table class="table table-condensed table-striped">
+      <thead>
+        <tr>
+          <th></th>
+          {% for ft in independent_feedback_types %}
+            <th>{{ ft.name }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+	    <a href="{% url 'ietf.nomcom.views.view_feedback_unrelated' year %}">View feedback not related to nominees</a>
+          </td>
+          {% for count in independent_feedback %}
+            <td>{{ count }}</td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  {% endif %}
+
+</div>
+    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
+      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+        <li><a href="#accepted">Accepted</a></li>
+        <li><a href="#pending">Pending</a></li>
+        <li><a href="#declined">Declined</a></li>
+        <li><a href="#topics">Topics</a></li>
+        <li><a href="#misc">Miscellaneous</a></li>
+     </ul>
+   </div>
+
+{% endblock %}
+
+{% block js %}
+  <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

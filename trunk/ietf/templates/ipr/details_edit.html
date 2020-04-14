@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles %}
+{% load ietf_filters ipr_filters bootstrap3 widget_tweaks %}
+
+{% block title %}{% if form.instance %}Edit IPR #{{ form.instance.id }}{% else %}New IPR{% endif %}{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  {% if form.instance|to_class_name == "HolderIprDisclosure" %}
+    <h1>The Patent Disclosure and Licensing Declaration Template for Specific IPR Disclosures</h1>
+
+    <p>This document is an IETF IPR Disclosure and Licensing Declaration
+      Template and is submitted to inform the IETF of a) patent or patent
+      application information regarding the IETF document or contribution
+      listed in Section IV, and b) an IPR Holder's intention with respect to
+      the licensing of its necessary patent claims.  No actual license is
+      implied by submission of this template. Please complete and submit a
+      separate template for each IETF document or contribution to which the
+      disclosed patent information relates.</p>
+
+  {% elif form.instance|to_class_name == "ThirdPartyIprDisclosure" %}
+    <h1>The Patent Disclosure and Licensing Declaration Template for Third Party IPR Disclosures</h1>
+    <p>This form is used to let the IETF know about patent information
+      regarding an IETF document or contribution when the person letting the
+      IETF know about the patent has no relationship with the patent owners.
+      Click <a href="/ipr/new-specific">here</a>
+      if you want to disclose information about patents or patent
+      applications where you do have a relationship to the patent owners or
+      patent applicants.</p>
+
+  {% else %}
+    <h1>The Patent Disclosure and Licensing Declaration Template for Generic IPR Disclosures</h1>
+    <p>This document is an IETF IPR Patent Disclosure and Licensing
+      Declaration Template and is submitted to inform the IETF of a) patent
+      or patent application information that is not related to a specific
+      IETF document or contribution, and b) an IPR Holder's intention with
+      respect to the licensing of its necessary patent claims. No actual
+      license is implied by submission of this template.</p>
+
+    <p><b>Note:</b> According to Section 5.4.3 of
+      <a href="https://www.ietf.org/rfc/rfc8179.txt">RFC 8179</a>,
+      "Intellectual Property Rights in IETF Technology," you
+      are still required to file specific disclosures on IPR unless your
+      generic disclosure satisfies certain conditions. Please see the
+      RFC for details.</p>
+  {% endif %}
+
+  <p>
+    If you wish to submit your IPR disclosure by e-mail, then please send
+    it to <a href="mailto:ietf-ipr@ietf.org">ietf-ipr@ietf.org</a>.
+    Submissions made by e-mail that do not comply with the formal
+    requirements of Section 5, "IPR Disclosures," of
+    <a href="https://www.ietf.org/rfc/rfc8179.txt">RFC 8179</a>,
+    "Intellectual Property Rights in IETF Technology",
+    will be posted, but will be marked as "non-compliant".
+  </p>
+
+
+  <form class="ipr-form form-horizontal show-required" method="post">
+    {% csrf_token %}
+
+    {% if form.errors %}
+      <div class="alert alert-danger">
+        <p>
+          There were errors in the submitted form -- see below.  Please correct these and resubmit.
+        </p>
+        {% if form.non_field_errors %}
+          <ul class="errorlist">
+            {% for error in form.non_field_errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <p class="help-block">Fields marked with <label class="required"></label> are required</p>
+
+    <h2>Updates</h2>
+
+    {% bootstrap_field form.updates layout="horizontal" %}
+
+    {% if user|has_role:"Secretariat" %}
+      {% bootstrap_field form.compliant layout="horizontal" %}
+    {% else %}
+      <input type="hidden" id="id_compliant" name="compliant" value="checked" />
+    {% endif %}
+
+    <h2>{% cycle 'I' 'II' 'III' 'IV' 'V' 'VI' 'VII' 'VIII' as section %}.
+      {% if form.instance|to_class_name == "ThirdPartyIprDisclosure" %}Possible{% endif %} Patent holder/applicant ("patent holder")</h2>
+
+      {% bootstrap_field form.holder_legal_name layout='horizontal' %}
+
+      {% if form.holder_contact_name %}
+        <h2>{% cycle section %}. Patent holder's contact for license application</h2>
+        {% bootstrap_field form.holder_contact_name layout='horizontal' %}
+        {% bootstrap_field form.holder_contact_email layout='horizontal' %}
+        {% bootstrap_field form.holder_contact_info layout='horizontal' %}
+      {% endif %}
+
+      {% if form.ietfer_name %}
+        <h2>{% cycle section %}. Contact information for the IETF participant whose personal belief triggered this disclosure</h2>
+        {% bootstrap_field form.ietfer_name layout='horizontal' %}
+        {% bootstrap_field form.ietfer_contact_email layout='horizontal' %}
+        {% bootstrap_field form.ietfer_contact_info layout='horizontal' %}
+      {% endif %}
+
+      {% if type != "generic" %}
+        <h2>{% cycle section %}. IETF document or other contribution to which this IPR disclosure relates</h2>
+
+        <p class="help-block">
+          If an Internet-Draft or RFC includes multiple parts and it is not
+          reasonably apparent which part of such Internet-Draft or RFC is alleged
+          to be covered by the patent information disclosed in Section
+          V(A) or V(B), please identify the sections of
+          the Internet-Draft or RFC that are alleged to be so
+          covered.
+        </p>
+
+        {{ draft_formset.management_form }}
+
+        {% for draft_form in draft_formset %}
+          <div class="form-group draft-row {% if forloop.last %}template{% endif %}">
+
+            <label class="col-md-2 control-label" for="{{ draft_form.document.id_for_label }}">
+              {{ draft_form.document.label }}
+            </label>
+
+            <div class="col-md-6">
+              {{ draft_form.id }}
+              {{ draft_form.document }}{% if draft_form.document.errors %}<div class="alert alert-danger">{{ draft_form.document.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-2">
+              {% render_field draft_form.revisions class="form-control" placeholder="Revisions, e.g. 04-07" %}
+              <label class="sr-only" for="{{ draft_form.revisions.id_for_label }}">{{ draft_form.revisions.label }}</label>
+            </div>
+
+            <div class="col-md-2">
+              {% render_field draft_form.sections class="form-control" placeholder="Sections" %}
+              <label class="sr-only" for="{{ draft_form.sections.id_for_label }}">{{ draft_form.sections.label }}</label>
+            </div>
+          </div>
+        {% endfor %}
+
+        <div class="form-group">
+          <label class="col-md-2 control-label"></label>
+          <div class="col-md-10"><a class="draft-add-row btn btn-default"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add more</a></div>
+        </div>
+
+        {% bootstrap_field form.other_designations layout='horizontal' %}
+      {% endif %}
+
+      <h2>{% cycle section %}. Disclosure of Patent Information{% if form.instance|to_class_name == "ThirdPartyIprDicslosure" %}, if known{% endif %}
+        <small>i.e., patents or patent applications required to be disclosed by Section 5 of RFC8179</small></h2>
+
+      {% if form.patent_number %}
+        <p>
+          A. For granted patents or published pending patent applications,
+          please provide the following information:
+        </p>
+        {% bootstrap_field form.patent_number layout='horizontal' %}
+        {% bootstrap_field form.patent_inventor layout='horizontal' %}
+        {% bootstrap_field form.patent_title layout='horizontal' %}
+        {% bootstrap_field form.patent_date layout='horizontal' %}
+        {% bootstrap_field form.patent_notes layout='horizontal' %}
+
+        <p>B. Does your disclosure relate to an unpublished pending patent application?</p>
+        {% bootstrap_field form.has_patent_pending layout='horizontal' %}
+
+      {% elif form.patent_info %}
+        <p>
+          A. For granted patents or published pending patent applications,
+          please provide the following information:
+        </p>
+        {% bootstrap_field form.patent_info layout='horizontal' %}
+
+        <p>B. Does your disclosure relate to an unpublished pending patent application?</p>
+        {% bootstrap_field form.has_patent_pending layout='horizontal' %}
+
+      {% else %}
+        <p>This disclosure relates to an unpublished pending patent application.</p>
+      {% endif %}
+
+      {% if form.licensing %}
+        <h2>{% cycle section %}. Licensing declaration</h2>
+
+        <p>
+          The Patent Holder states that its position with respect
+          to licensing any patent claims contained in the patent(s) or patent
+          application(s) disclosed above that would necessarily be infringed by
+          implementation of a technology required by a relevant IETF specification
+          ("Necessary Patent Claims"), for the purpose of implementing such
+          specification, is as follows (select one licensing declaration option only):
+        </p>
+
+        {% bootstrap_field form.licensing layout='horizontal' %}
+
+        <p>Above licensing declaration is limited solely to standards-track IETF documents.</p>
+
+        {% bootstrap_field form.licensing_comments layout='horizontal' %}
+
+        {% if form.submitter_claims_all_terms_disclosed %}
+          {% bootstrap_field form.submitter_claims_all_terms_disclosed layout='horizontal' %}
+
+          {% if form.instance|to_class_name == "GenericIprDisclosure" %}
+            <p class="alert alert-info">
+              <strong>Note</strong>: According to
+              <a href="https://www.ietf.org/rfc/rfc8179.txt?">RFC 8179</a>,
+              Section 5.4.3, unless you check the box
+              above, and choose either option a) or b), you must still file specific
+              IPR disclosures as appropriate.
+            </p>
+          {% endif %}
+        {% endif %}
+
+        <p>
+          <strong>Note: The individual submitting this template represents and warrants
+            that he or she is authorized by the Patent Holder to agree to the
+            above-selected licensing declaration.</strong>
+        </p>
+      {% endif %}
+
+      {% if form.statement %}
+        <h2>{% cycle section %}. Statement</h2>
+        <p>
+          The statement should include any licensing information.
+        </p>
+
+        {% bootstrap_field form.statement layout='horizontal' %}
+
+      {% endif %}
+
+      <h2>{% cycle section %}. Contact information of submitter of this form</h2>
+
+      {% bootstrap_field form.same_as_ii_above layout='horizontal' %}
+      {% bootstrap_field form.submitter_name layout='horizontal' %}
+      {% bootstrap_field form.submitter_email layout='horizontal' %}
+
+      <h2>{% cycle section %}. Other notes</h2>
+
+      {% bootstrap_field form.notes layout='horizontal' %}
+
+      {% buttons layout='horizontal' %}
+        <button class="btn btn-primary" type="submit" name="submit" value="Submit">Submit</button>
+      {% endbuttons %}
+  </form>
+
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+  <script src="{% static 'ietf/js/ipr-edit.js' %}"></script>
+{% endblock %}

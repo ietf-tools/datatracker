@@ -1,0 +1,11 @@
+The following Person records have been identified by the NomCom chair as potential duplicates.
+
+The following records:{% for p in duplicate_persons %}
+{{p.name}} ({{p.id}}) [{{p.email_set.all|join:", "}}]{% endfor %}
+
+appear to be duplicates of this person (which should be kept)
+{{primary_person.name}} ({{primary_person.id}}) [{{primary_person.email_set.all|join:", "}}]
+
+Please verify that these are indeed duplicates, and if so, merge them.
+
+Thanks in advance.

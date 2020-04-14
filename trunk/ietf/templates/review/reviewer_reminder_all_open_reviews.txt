@@ -1,0 +1,10 @@
+{% load ietf_filters %}{% autoescape off %}{% filter wordwrap:78 %}This is just a friendly reminder that you have {{ assignments|length }} open review{{ assignments|length|pluralize }} in team {{ team.acronym }}.
+
+The following reviews are open:{% for assignment in assignments %}
+- {{ assignment.review_request.doc.name }} (deadline {{ assignment.review_request.deadline }})
+{% endfor %}
+
+You are receiving this reminder because you have configured the Datatracker to remind you of all your open reviews every {{ remind_days }} day{{ remind_days|pluralize }}. You can see your reviews and change your settings here:
+
+{{ reviewer_overview_url }}
+{% endfilter %}{% endautoescape %}

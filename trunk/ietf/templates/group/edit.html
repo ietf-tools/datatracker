@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+{% load ietf_filters %}
+
+{% block title %}
+  {% if group %}
+    Edit {{ group.type.name }} {{ group.acronym }}
+  {% else %}
+    Start chartering new group
+  {% endif %}
+{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>
+    {% if action == "edit" %}
+      Edit {{ group.type.name }} {{ group.acronym }}
+    {% elif action == "charter" %}
+      Start chartering new group
+    {% else %}
+      Create new group or BOF
+    {% endif %}
+  </h1>
+
+  {% if not request.user.is_authenticated %}
+  <p class="alert alert-info">Note that persons with authorization to manage information, e.g.
+    chairs and delegates, need a datatracker account to actually do
+    so. New accounts can be <a href="{% url "ietf.ietfauth.views.create_account" %}">created here</a>.</p>
+  {% else %}
+    <p></p>
+  {% endif %}
+
+  <form class="form-horizontal" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form layout='horizontal' %}
+
+    {% buttons layout='horizontal' %}
+      {% if action == "edit" %}
+        <button class="btn btn-primary" type="submit">Submit</button>
+        <a class="btn btn-default pull-right" href="{{ group.about_url }}">Back</a>
+      {% elif action == "charter" %}
+        <button class="btn btn-primary" type="submit">Start chartering</button>
+      {% else %}
+        <button class="btn btn-primary" type="submit">Create group or BOF</button>
+      {% endif %}
+    {% endbuttons %}
+  </form>
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+  <script>
+   $(document).ready(function () {
+       $("#id_acronym").closest(".form-group").each(function() {
+           // fixup styling a bit in case the confirm checkbox is shown
+           if ($(this).next().find("#id_confirm_acronym").length > 0) {
+               $(this).css("margin-bottom", 0);
+               $(this).find(".help-block").css("margin-bottom", 0);
+               if ($(this).hasClass("has-error"))
+                   $(this).next().addClass("has-error");
+           }
+       });
+   });
+  </script>
+{% endblock %}

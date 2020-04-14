@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load ams_filters %}
+
+{% block title %}IETF {{ meeting.number }} Proceedings - Progress Report{% endblock %}
+
+{% block content %}
+
+<h1><a href="{% url 'ietf.meeting.views.proceedings' num=meeting.number %}">IETF {{ meeting.number }} Proceedings</a></h1>
+<h2>IETF Progress Report</h2>
+
+<h4>{{ sdate|date:"d-F-y" }} to {{ edate|date:"d-F-y" }}</h4>
+
+<ul class="progress-section">
+    <li>{{ actions_count }} IESG Protocol and Document Actions this period</li>
+    <li>{{ last_calls_count }} IESG Last Calls issued to the IETF this period</li>
+    <li></li>
+    <li>{{ new_drafts_count|stringformat:"3s" }}    New I-Ds   ({{ new_drafts_updated_count }} of which were updated, some ({{ new_drafts_updated_more_count }}) more than once)</li>
+    <li>{{ updated_drafts_count|stringformat:"3s" }}    I-Ds were updated   (Some more than once)</li>
+    <li></li>
+    <li><h4>In the final 4 weeks before meeting</h4></li>
+    <li>{{ ffw_new_count|stringformat:"3s" }}    New I-Ds were received - {{ ffw_new_percent }} of total newbies since last meeting</li>
+    <li>{{ ffw_update_count|stringformat:"3s" }}    I-Ds were updated - {{ ffw_update_percent }} of total updated since last meeting</li>
+</ul>
+<h4>{{ new_groups.count }} New Working Group(s) formed this period</h4>
+<ul class="progress-section">
+    {% for group in new_groups %}
+        <li>{{ group.name }} ({{ group.acronym }})</li>
+    {% endfor %}
+</ul>
+
+<h4>{{ concluded_groups.count }} Working Group(s) concluded this period</h4>
+<ul class="progress-section">
+    {% for group in concluded_groups %}
+    <li>{{ group.name }} ({{ group.acronym }})</li>
+    {% endfor %}
+</ul>
+
+<h4>{{ rfcs.count }} RFCs published this period</h4>
+<p>{{ counts.std }} Standards Track; {{ counts.bcp }} BCP; {{ counts.exp }} Experimental; {{ counts.inf }} Informational</p>
+
+<table class="table">
+  {% for rfc in rfcs %}
+    <tr>
+      <td><a href="{{ rfc.doc.get_absolute_url }}">{{ rfc.doc.canonical_name|upper }}</a></td>
+      <td>{{ rfc.doc.intended_std_level.name|abbr_status }}</td>
+      <td>({{ rfc.doc.group.acronym }})</td>
+      <td>{{ rfc.time|date:"F Y" }}</td>
+      <td>{{ rfc.doc.title }}</td>
+    </tr>
+  {% endfor %}
+</table>
+
+{% endblock %}

@@ -1,0 +1,261 @@
+#!/usr/bin/env python3.7
+# -*- mode: python; coding: utf-8 -*-
+# Copyright The IETF Trust 2019, All Rights Reserved
+"""
+NAME
+	$program - Check for current copyright notice in given files
+
+SYNOPSIS
+	$program [OPTIONS] ARGS
+
+DESCRIPTION
+	Given a list of files or filename wildcard patterns, check all for
+	an IETF Trust copyright notice with the current year.  Optionally
+        generate a diff on standard out which can be used by 'patch'.
+
+        An invocation similar to the following can be particularly useful with
+        a set of changed version-controlled files, as it will fix up the
+        Copyright statements of any python files with pending changes:
+
+        $ check-copyright -p $(svn st | cut -c 9- | grep '\.py$' ) | patch -p0
+
+
+%(options)s
+
+AUTHOR
+	Written by Henrik Levkowetz, <henrik@tools.ietf.org>
+
+COPYRIGHT
+	Copyright 2019 the IETF Trust
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the Simplified BSD license as published by the
+        Open Source Initiative at http://opensource.org/licenses/BSD-2-Clause.
+
+"""
+
+
+import datetime
+import os
+import sys
+import time
+
+path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if not path in sys.path:
+    sys.path.insert(0, path)
+
+import getopt
+import re
+import pytz
+import tzparse
+import debug
+
+version = "1.0.0"
+program = os.path.basename(sys.argv[0])
+progdir = os.path.dirname(sys.argv[0])
+
+debug.debug = True
+
+# ----------------------------------------------------------------------
+# Parse options
+
+options = ""
+for line in re.findall("\n +(if|elif) +opt in \[(.+)\]:\s+#(.+)\n", open(sys.argv[0]).read()):
+    if not options:
+        options += "OPTIONS\n"
+    options += "        %-16s %s\n" % (line[1].replace('"', ''), line[2])
+options = options.strip()
+
+# with ' < 1:' on the next line, this is a no-op:
+if len(sys.argv) < 1:
+    print(__doc__ % locals())
+    sys.exit(1)
+
+try:
+    opts, files = getopt.gnu_getopt(sys.argv[1:], "hC:pvV", ["help", "copyright=", "patch", "version", "verbose",])
+except Exception as e:
+    print( "%s: %s" % (program, e))
+    sys.exit(1)
+
+# ----------------------------------------------------------------------
+# Handle options
+
+# set default values, if any
+opt_verbose = 0
+opt_patch = False
+opt_copyright = "Copyright The IETF Trust {years}, All Rights Reserved"
+
+# handle individual options
+for opt, value in opts:
+    if   opt in ["-h", "--help"]: # Output this help, then exit
+        print( __doc__ % locals() )
+        sys.exit(1)
+    elif opt in ["-p", "--patch"]: # Generate patch output rather than error messages
+        opt_patch = True
+    elif opt in ["-C", "--copyright"]: # Copyright line pattern using {years} for years
+        opt_copyright = value
+    elif opt in ["-V", "--version"]: # Output version information, then exit
+        print( program, version )
+        sys.exit(0)
+    elif opt in ["-v", "--verbose"]: # Be more verbose
+        opt_verbose += 1
+
+# ----------------------------------------------------------------------
+def say(s):
+    sys.stderr.write("%s\n" % (s))
+
+# ----------------------------------------------------------------------
+def note(s):
+    if opt_verbose:
+        sys.stderr.write("%s\n" % (s))
+
+# ----------------------------------------------------------------------
+def die(s, error=1):
+    sys.stderr.write("\n%s: Error: %s\n\n" % (program, s))
+    sys.exit(error)
+
+# ----------------------------------------------------------------------
+
+def pipe(cmd, inp=None):
+    import shlex
+    from subprocess import Popen, PIPE
+    args = shlex.split(cmd)
+    bufsize = 4096
+    stdin = PIPE if inp else None
+    pipe = Popen(args, stdin=stdin, stdout=PIPE, stderr=PIPE, bufsize=bufsize, encoding='utf-8', universal_newlines=True)
+    out, err = pipe.communicate(inp)
+    code = pipe.returncode
+    if code != 0:
+        raise OSError(err)
+    return out
+
+# ----------------------------------------------------------------------
+def split_loginfo(line):
+    try:
+        parts = line.split()
+        rev  = parts[0][1:]
+        who  = parts[2]
+        date = parts[4]
+        time = parts[5]
+        tz   = parts[6]
+        when = tzparse.tzparse(" ".join(parts[4:7]), "%Y-%m-%d %H:%M:%S %Z")
+        when = when.astimezone(pytz.utc)
+    except ValueError as e:
+        sys.stderr.write("Bad log line format: %s\n  %s\n" % (line, e))
+
+    return rev, who, when
+
+# ----------------------------------------------------------------------
+def get_first_commit(path):
+    note("Getting first commit for '%s'" % path)
+    cmd = 'svn log %s' % path
+    if opt_verbose > 1:
+        note("Running '%s' ..." % cmd)
+    try:
+        commit_log = pipe(cmd)
+        commit_log = commit_log.splitlines()
+        commit_log.reverse()
+        for line in commit_log:
+            if re.search(loginfo_format, line):
+                rev, who, when = split_loginfo(line)
+                break
+            else:
+                pass
+    except OSError:
+        rev, who, when = None, None, datetime.datetime.now()
+    return { path: { 'rev': rev, 'who': who, 'date': when.strftime('%Y-%m-%d %H:%M:%S'), }, }
+
+
+# ----------------------------------------------------------------------
+# The program itself    
+
+import os
+import json
+
+cwd = os.getcwd()
+
+# Get current initinfo from cache and svn
+cachefn = os.path.join(os.environ.get('HOME', '.'), '.initinfo')
+
+if os.path.exists(cachefn):
+    note("Reading initinfo cache file %s" % cachefn)
+    with open(cachefn, "r") as file:
+        cache = json.load(file)
+else:
+    sys.stderr.write("No  initinfo cache file found -- will have to extract all information from SVN.\n"+
+        "This may take some time.\n\n")
+    cache = {}
+initinfo = cache
+
+merged_revs = {}
+write_cache = False
+loginfo_format = r'^r[0-9]+ \| [^@]+@[^@]+ \| \d\d\d\d-\d\d-\d\d '
+
+year = time.strftime('%Y')
+copyright_re = "(?i)"+opt_copyright.format(years=r"(\d+-)?\d+")
+for path in files:
+    try:
+        if not os.path.exists(path):
+            note("File does not exist: %s" % path)
+            continue
+        note("Checking path %s" % path)
+        if not path in initinfo:
+            initinfo.update(get_first_commit(path))
+            write_cache = True
+        date = initinfo[path]['date']
+        init = date[:4]
+        
+        copyright_year_re = "(?i)"+opt_copyright.format(years=r"({init}-)?{year}".format(init=init, year=year))
+        with open(path) as file:
+            try:
+                chunk = file.read(4000)
+            except UnicodeDecodeError as e:
+                sys.stderr.write(f'Error when reading {file.name}: {e}\n')
+                raise
+            if os.path.basename(path) == '__init__.py' and len(chunk)==0:
+                continue
+            if not re.search(copyright_year_re, chunk):
+                if year == init:
+                    copyright = opt_copyright.format(years=year)
+                else:
+                    copyright = opt_copyright.format(years=f"{init}-{year}")
+                if opt_patch:
+                    print(f"--- {file.name}\t(original)")
+                    print(f"+++ {file.name}\t(modified)")
+                    if not re.search(copyright_re, chunk):
+                        # Simple case, just insert copyright at the top
+                        print( "@@ -1,3 +1,4 @@")
+                        print(f"+# {copyright}")
+                        for i, line in list(enumerate(chunk.splitlines()))[:3]:
+                            print(f" {line}")
+                    else:
+                        # Find old copyright, then emit preceding lines,
+                        # change, and following lines.
+                        pos = None
+                        for i, line in enumerate(chunk.splitlines(), start=1):
+                            if re.search(copyright_re, line):
+                                pos = i
+                                break
+                        if not pos:
+                            raise RuntimeError("Unexpected state: Expected a copyright line, but found none")
+                        print(f"@@ -1,{pos+3} +1,{pos+3} @@")
+                        for i, line in list(enumerate(chunk.splitlines(), start=1))[:pos+3]:
+                            if i == pos:
+                                print(f"-{line}")
+                                print(f"+# {copyright}")
+                            else:
+                                print(f" {line}")
+                else:
+                    sys.stderr.write(f"{path}(1): Error: Missing or bad copyright.  Expected: {copyright}")
+    except Exception:
+        if write_cache:
+            cache = initinfo
+            with open(cachefn, "w") as file:
+                json.dump(cache, file, indent=2, sort_keys=True)
+        raise
+
+if write_cache:
+    cache = initinfo
+    with open(cachefn, "w") as file:
+        json.dump(cache, file, indent=2, sort_keys=True)
+

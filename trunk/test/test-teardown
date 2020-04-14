@@ -1,0 +1,32 @@
+#!/bin/bash
+#
+# This script expects to be started by a Buildbot slave with PWD set to the build 
+# directory.
+
+# Script Setup
+# ============
+
+program=${0##*/}
+progdir=${0%/*}
+build=$PWD
+
+. $progdir/shell-utils
+
+# Project teardown
+# Remove the temporary settings_local.py we created for the tests
+
+rm -v test/settings_local.py
+
+# Database Cleanup
+# Make sure the test database has been removed
+if echo "show databases;" | python ietf/manage.py dbshell | grep test_ietf; then
+    echo "drop database test_ietf;" | python ietf/manage.py dbshell
+    echo "test database removed."
+fi
+
+# Release database update lock
+
+LOCKDIR=/var/lock/ietfdb
+rm -rf $LOCKDIR
+
+exit $warnings

@@ -1,0 +1,56 @@
+      {% load ams_filters %}
+      <table class="full-width">
+        <col width="200">
+        <tr class="row1"><td>Working Group Name:</td><td>{{ group.name }} ({{ group.acronym }})</td></tr>
+        <tr class="row2"><td>Area Name:</td><td>{{ group.parent }}</td></tr>
+        <tr class="row1"><td>Number of Sessions Requested:</td><td>{% if session.length_session3 %}3{% else %}{{ session.num_session }}{% endif %}</td></tr>
+        <tr class="row2"><td>Length of Session 1:</td><td>{{ session.length_session1|display_duration }}</td></tr>
+        {% if session.length_session2 %}
+          <tr class="row2"><td>Length of Session 2:</td><td>{{ session.length_session2|display_duration }}</td></tr>
+          <tr class="row2"><td>Time between sessions:</td><td>{% if session.session_time_relation_display %}{{ session.session_time_relation_display }}{% else %}No preference{% endif %}</td></tr>
+        {% endif %}
+        {% if session.length_session3 %}
+          <tr class="row2"><td>Length of Session 3:</td><td>{{ session.length_session3|display_duration }}</td></tr>
+        {% endif %}
+        <tr class="row1"><td>Number of Attendees:</td><td>{{ session.attendees }}</td></tr>
+        <tr class="row2">
+          <td>Conflicts to Avoid:</td>
+          <td>
+            <table>
+              {% if session.conflict1 %}<tr><td>Chair Conflict: </td><td>{{ session.conflict1 }}</td></tr>{% endif %}
+              {% if session.conflict2 %}<tr><td>Technology Overlap: </td><td>{{ session.conflict2 }}</td></tr>{% endif %}
+              {% if session.conflict3 %}<tr><td>Key Participant Conflict: </td><td>{{ session.conflict3 }}</td></tr>{% endif %}
+            </table>
+          </td>
+        </tr>
+        <tr class="row1">
+          <td>Other WGs that included {{ group }} in their conflict list:</td>
+          <td>{% if session_conflicts %}{{ session_conflicts }}{% else %}<i>None so far</i>{% endif %}</td>
+        </tr>
+        <tr class="row2">
+          <td>Resources requested:</td>
+          <td>{% if session.resources %}<ul>{% for resource in session.resources %}<li>{{ resource.desc }}</li>{% endfor %}</ul>{% else %}<i>None so far</i>{% endif %}</td>
+        </tr>
+        <tr class="row1">
+          <td>People who must be present:</td>
+          <td>{% if session.bethere %}<ul>{% for person in session.bethere %}<li>{{ person }}</li>{% endfor %}</ul>{% else %}<i>None</i>{% endif %}</td>
+        <tr class="row2">
+          <td>Can not meet on:</td>
+          <td>{% if session.timeranges_display %}{{ session.timeranges_display|join:', ' }}{% else %}No constraints{% endif %}</td>
+        </tr>
+        <tr class="row1">
+          <td>Adjacent with WG:</td>
+          <td>{{ session.adjacent_with_wg|default:'No preference' }}</td>
+        </tr>
+        <tr class="row2">
+          <td>Joint session:</td>
+          <td>
+              {% if session.joint_with_groups %}
+                {{ session.joint_for_session_display }} with: {{ session.joint_with_groups }}
+              {% else %}
+                Not a joint session
+              {% endif %}
+          </td>
+        </tr>
+        <tr class="row1"><td>Special Requests:</td><td>{{ session.comments }}</td></tr>
+      </table>

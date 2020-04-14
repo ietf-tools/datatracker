@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load bootstrap3 %}
+{% load textfilters %}
+
+
+{% block title %}
+  Charter submission for {{ group.acronym }} {{ group.type.name }}
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Charter submission</h1>
+
+  <table class="table table-condensed">
+    <tbody class="meta">
+      <tr>
+        <th>{{ group.type.name }}</th>
+        <th>Name</th>
+        <td>{{ group.name }}</td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <th>Acronym</th>
+        <td>{{ group.acronym }}</td>
+      </tr>
+
+      <tr>
+        <td></td>
+        {% if group.parent and group.parent.type_id == "area" %}
+          <th>{{ group.parent.type.name }}</th>
+          <td>{{ group.parent.name }} ({{ group.parent.acronym }})</td>
+        {% else %}
+          <th></th><td></td>
+        {% endif %}
+      </tr>
+      <tr>
+        <td></td>
+        <th>State</th>
+        <td>
+          {{ group.state.name }}
+          {% if requested_close %}
+            <div class="label label-info">In the process of being closed</div>
+          {% endif %}
+        </td>
+      </tr>
+    </tbody>
+    <tbody class="meta">
+      {% for slug, label, roles in group.personnel %}
+        <tr>
+          {% if forloop.first %}
+            <th>Personnel</th>
+          {% else %}
+            <td></td>
+          {% endif %}
+          <th>{{ label }}</th>
+          <td>
+  
+  
+            {% for r in roles %}
+              <span class="fa fa-envelope-o"></span>
+              <a href="mailto:{{ r.email.address }}">{{ r.person.plain_name }}</a>
+              <br>
+            {% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  
+    {% if group.list_email %}
+    <tbody class="meta">
+      <tr>
+         <th>Mailing list</th>
+         <th>Address</th><td>{{ group.list_email|linkify }}</td>
+      </tr>
+      <tr><td></td><th>To subscribe</th><td>{{ group.list_subscribe|linkify }}</td></tr>
+      <tr><td></td><th>Archive</th><td>{{ group.list_archive|linkify }}</td></tr>
+    </tbody>
+    {% endif %}
+  </table>
+
+  <p class="alert alert-info">The text will be submitted as <b>{{ name }}-{{ next_rev }}</b>.</p>
+
+  <form enctype="multipart/form-data" method="post" id="charter-form">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      {% if group.charter %}
+        <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=name %}">Back</a>
+      {% else %}
+        <a class="btn btn-default pull-right" href="{% url "ietf.group.views.group_about" group_type=group.type_id acronym=group.acronym %}">Back</a>
+      {% endif %}
+    {% endbuttons %}
+  </form>
+
+{% endblock %}

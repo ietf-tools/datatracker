@@ -1,0 +1,100 @@
+{% extends "submit/submit_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% block title %}Note Well{% endblock %}
+
+{% block submit_content %}
+  {% origin %}
+    <h2>Note Well</h2>
+
+    <p>
+
+      This is a reminder of IETF policies in effect on various topics such as
+      patents or code of conduct. It is only meant to point you in the right
+      direction. Exceptions may apply. The IETF's patent policy and the definition
+      of an IETF "contribution" and "participation" are set forth in BCP 79;
+      please read it carefully.
+
+    </p>
+    <p>
+      As a reminder:
+    </p>
+    <ul>
+      <li>
+
+	By participating in the IETF, you agree to follow IETF processes and
+	policies.
+
+      </li>
+      <li>
+
+	If you are aware that any IETF contribution is covered by patents or
+	patent applications that are owned or controlled by you or your sponsor,
+	you must disclose that fact, or not participate in the discussion.
+
+      </li>
+      <li>
+
+	As a participant in or attendee to any IETF activity you acknowledge that
+	written, audio, video, and photographic records of meetings may be made
+	public.
+
+      </li>
+      <li>
+
+	Personal information that you provide to IETF will be handled in
+	accordance with the IETF Privacy Statement.
+
+      </li>
+      <li>
+
+	As a participant or attendee, you agree to work respectfully with other
+	participants; please contact the ombudsteam
+	(<a href="https://www.ietf.org/contact/ombudsteam/">https://www.ietf.org/contact/ombudsteam/</a>)
+	if you have questions or concerns about this.
+
+      </li>
+
+    </ul>
+    <p>
+
+      Definitive information is in the documents listed below and other IETF BCPs.
+      For advice, please talk to WG chairs or ADs:
+
+    </p>
+    <ul>
+      <li>
+	<a href="https://tools.ietf.org/html/bcp9">BCP 9</a>
+	(Internet Standards Process)
+      </li>
+      <li>
+	<a	href="https://tools.ietf.org/html/bcp25">      BCP 25    </a>
+	(Working Group processes)
+
+      </li>
+      <li>
+	<a	href="https://tools.ietf.org/html/bcp25">      BCP 25    </a>
+	(Anti-Harassment Procedures) 
+
+      </li>
+      <li>
+	<a	href="https://tools.ietf.org/html/bcp54">      BCP 54    </a>
+	(Code of Conduct)
+
+      </li>
+      <li>
+	<a	href="https://tools.ietf.org/html/bcp78">      BCP 78    </a>
+	(Copyright)
+      </li>
+      <li>
+	<a	href="https://tools.ietf.org/html/bcp79">      BCP 79    </a>
+	(Patents, Participation)
+
+      </li>
+      <li>
+	<a	href="https://www.ietf.org/privacy-policy/">      https://www.ietf.org/privacy-policy/    </a>
+	(Privacy Policy)
+      </li>
+    </ul>
+
+{% endblock %}

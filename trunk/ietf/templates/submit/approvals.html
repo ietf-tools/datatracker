@@ -1,0 +1,107 @@
+{% extends "submit/submit_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block title %}Draft submission approvals{% endblock %}
+
+{% load ietf_filters %}
+
+{% block submit_content %}
+  {% origin %}
+  {% if user.is_authenticated %}
+    <h2 class="anchor-target" id="approvals">Submissions you can approve</h2>
+
+    {% if not approvals %}
+      <p>You don't have any submissions to approve.</p>
+    {% else %}
+      <table class="approvals table table-condensed table-striped tablesorter">
+        <thead>
+          <tr>
+            <th>Draft</th>
+            <th>Submitted</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in approvals %}
+            <tr>
+              <td><a href="{% url "ietf.submit.views.submission_status" submission_id=s.pk access_token=s.access_token %}">{{ s.name }}-{{ s.rev }}</a></td>
+              <td>{{ s.submission_date }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    <h2 class="anchor-target" id="preapprovals">Pre-approved drafts not yet submitted</h2>
+
+    {% if user|has_role:"Secretariat,WG Chair,RG Chair" %}
+      <p><a class="btn btn-default" href="{% url "ietf.submit.views.add_preapproval" %}">Add pre-approval</a></p>
+    {% endif %}
+
+    {% if not preapprovals %}
+      <p>No pre-approvals within your jurisdiction found.</p>
+    {% else %}
+      <table class="preapprovals table table-condensed table-striped tablesorter">
+        <thead>
+          <tr>
+            <th>Draft name</th>
+            <th>Pre-approved</th>
+            <th>By</th>
+            <th class="sorter-false"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in preapprovals %}
+            <tr>
+              <td>{{ p.name }}</td>
+              <td>{{ p.time|date:"Y-m-d" }}</td>
+              <td>{{ p.by }}</td>
+              <td><a class="btn btn-danger btn-xs" href="{% url "ietf.submit.views.cancel_preapproval" preapproval_id=p.id %}">Cancel</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    <h2 class="anchor-target" id="recently-approved">Approved drafts within the past {{ days }} days</h2>
+
+    {% if not recently_approved %}
+      <p>No drafts approved.</p>
+    {% else %}
+      <table class="recently-approved table table-condensed table-striped tablesorter">
+        <thead>
+          <tr>
+            <th>Draft</th>
+            <th>Submitted</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in recently_approved %}
+            <tr>
+              <td><a href="{% url "ietf.doc.views_doc.document_main" d.name %}">{{ d.name }}</a></td>
+              <td>{{ d.submission_date }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+  {% else %}
+    <h2>Submission of approvals</h2>
+    <p>
+      This is where chairs and the secretariat can approve and pre-approve document
+      submissions which require approval, such as WG -00 drafts.
+    </p>
+    <p>
+      You need to <a href="https://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">sign in</a> in order to handle approvals.
+    </p>
+  {% endif %}
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

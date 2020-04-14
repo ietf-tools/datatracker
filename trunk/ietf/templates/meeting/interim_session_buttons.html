@@ -1,0 +1,42 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load textfilters %}
+{% load origin %}
+  {% origin %}
+  {% if session.agenda %}
+    {% with session.official_timeslotassignment as item %}
+      {% include "meeting/session_agenda_include.html" %}
+      <!-- agenda pop-up button -->
+      <a class="" data-toggle="modal" data-target="#modal-{{item.slug}}" title="Show meeting materials"><span class="fa fa-fw fa-arrows-alt"></span></a>
+      <!-- materials tar file -->
+      <a class="" href="/meeting/{{meeting.number}}/agenda/{{session.group.acronym}}-drafts.tgz" title="Download meeting materials as .tar archive"><span class="fa fa-fw fa-file-archive-o"></span></a>
+      <!-- materials PDF file -->
+      <a class="" href="/meeting/{{ meeting.number }}/agenda/{{session.group.acronym}}-drafts.pdf" title="Download meeting materials as PDF file"><span class="fa fa-fw fa-file-pdf-o"></span></a>
+    {% endwith %}
+  {% endif %}
+      <!-- etherpad -->
+      <a class="" href="https://etherpad.ietf.org/p/notes-ietf-{{ meeting.number }}?useMonospaceFont=true" title="Etherpad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
+      <!-- Jabber -->
+      <a class="" href="xmpp:{{session.jabber_room_name}}@jabber.ietf.org?join" title="Jabber room for {{session.jabber_room_name}}"><span class="fa fa-fw fa-lightbulb-o"></span></a>
+      <!-- webex -->
+      {% if "webex.com/" in session.agenda_note|first_url %}
+	<a class=""
+	  href="{{ session.agenda_note|first_url }}"
+	  title="Webex session"><span class="fa fa-fw fa-phone"></span>
+	</a>
+      {% elif session.remote_instructions|first_url %}
+	<a class=""
+	  href="{{ session.remote_instructions|first_url }}"
+	  title="Webex session"><span class="fa fa-fw fa-phone"></span>
+	</a>
+      {% elif item.timeslot.location.webex_url %}
+	  <a class=""
+	    href="{{item.timeslot.location.webex_url|format:session }}"
+	    title="Webex session"><span class="fa fa-fw fa-phone"></span>
+	  </a>
+      {% else %}
+	<span class="">
+	  <span class="fa fa-fw fa-phone" style="color: #ddd;"
+		title="No webex info found in remote instructions or agenda note"></span>
+	</span>
+      {% endif %}
+

@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+
+# This script requires that the proper virtual python environment has been
+# invoked before start
+
+import os
+import sys
+import syslog
+
+# boilerplate
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path = [ basedir ] + sys.path
+os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
+
+virtualenv_activation = os.path.join(basedir, "env", "bin", "activate_this.py")
+if os.path.exists(virtualenv_activation):
+    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
+
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
+
+import django
+django.setup()
+
+# ----------------------------------------------------------------------
+
+from ietf.doc.lastcall import get_expired_last_calls, expire_last_call
+
+drafts = get_expired_last_calls()
+for doc in drafts:
+    try:
+        expire_last_call(doc)
+        syslog.syslog("Expired last call for %s (id=%s)" % (doc.file_tag(), doc.pk))
+    except Exception as e:
+        syslog.syslog(syslog.LOG_ERR, "ERROR: Failed to expire last call for %s (id=%s)" % (doc.file_tag(), doc.pk))

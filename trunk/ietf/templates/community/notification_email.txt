@@ -1,0 +1,17 @@
+{# Copyright The IETF Trust 2019, All Rights Reserved #}{% autoescape off %}{% load ietf_filters %}
+Hello,
+
+This is a notification from the {{ clist.long_name }}.
+
+Document: {{ event.doc }},
+https://datatracker.ietf.org/doc/{{ event.doc.name }}/
+
+Change by {{ event.by }} on {{ event.time }}:
+
+{{ event.desc|textify|striptags }}
+
+Best regards,
+
+        The Datatracker draft tracking service
+        (for the IETF Secretariat)
+{% endautoescape %}

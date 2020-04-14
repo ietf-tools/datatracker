@@ -1,0 +1,26 @@
+/*
+:Author: Henrik Levkowetz
+:Contact: henrik@levkowetz.com
+:Copyright: This stylesheet has been placed in the public domain.
+
+Stylesheet for use with Docutils.  
+*/
+
+/* Your customizations go here.  For example: */
+
+.document {
+	margin: 0.2em 0.4em;
+	width: 50em;
+}
+/* Undo some of the settings above, for fully css compliant browsers. */
+/* The qualification of the elements hide this from less capable browsers. */
+div[class=document] {
+	width: auto;
+	max-width: 50em;	/* 58em = 128ex in the design browser */
+}
+
+cite	{
+	display: block;
+	width: 100%;
+	text-align: right;
+}

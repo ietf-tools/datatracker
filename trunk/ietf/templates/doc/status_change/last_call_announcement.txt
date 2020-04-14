@@ -1,0 +1,25 @@
+{% load ietf_filters %}{% load mail_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
+To: IETF-Announce <ietf-announce@ietf.org>{% if cc %}
+CC: {{ cc }}{% endif %}
+Reply-To: last-call@ietf.org
+Sender: <iesg-secretary@ietf.org>
+Subject: Last Call: {{ doc.title|clean_whitespace }}
+
+{% filter wordwrap:78 %}
+The IESG has received a request from {{ requester }} to make the following status changes:
+{%for change in changes %}
+- {{ change }}
+{% endfor %}
+The supporting document for this request can be found here:
+
+{{ settings.IDTRACKER_BASE_URL }}{{ doc.get_absolute_url }}
+
+The IESG plans to make a decision in the next few weeks, and solicits final comments on this action. Please send substantive comments to the last-call@ietf.org mailing lists by {{ expiration_date }}. Exceptionally, comments may be sent to iesg@ietf.org instead. In either case, please retain the beginning of the Subject line to allow automated sorting.{% endfilter %}
+
+The affected document{{ urls|pluralize }} can be obtained via
+{% for u in urls %}{{ settings.IDTRACKER_BASE_URL}}{{ u }}
+{% endfor %}
+IESG discussion of this request can be tracked via
+{{ settings.IDTRACKER_BASE_URL }}{% url "ietf.doc.views_doc.document_ballot" name=doc %}
+
+{% endautoescape %}

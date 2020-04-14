@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block title %}Active teams{% endblock %}
+
+
+{% block content %}
+  {% origin %}
+  <h1>Active teams</h1>
+  <table class="table table-condensed table-striped tablesorter">
+    <thead>
+      <tr>
+        <th>Team</th>
+        <th>Name</th>
+        <th>Chairs</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for group in teams %}
+        <tr>
+          <td><a href="{% url "ietf.group.views.group_home" acronym=group.acronym %}">{{ group.acronym }}</a></td>
+          <td>{{ group.name }}</td>
+          <td>
+            {% for chair in group.chairs %}
+	      <a href="{% url 'ietf.person.views.profile' email_or_name=chair.person.name %}">{{ chair.person.plain_name }}</a>
+	      <a href="mailto:{{ chair.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>{% if not forloop.last %} , {% endif %}
+            {% endfor %}
+          </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}
