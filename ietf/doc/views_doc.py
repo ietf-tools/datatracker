@@ -34,17 +34,14 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
 import glob
 import io
 import json
 import os
 import re
-import six
 
-from six.moves.urllib.parse import quote
+from urllib.parse import quote
 
 from django.http import HttpResponse, Http404 , HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
@@ -1392,7 +1389,7 @@ def add_sessionpresentation(request,name):
     if doc.group:
         sessions = sorted(sessions,key=lambda x:0 if x.group==doc.group else 1)
 
-    session_choices = [(s.pk, six.text_type(s)) for s in sessions]
+    session_choices = [(s.pk, str(s)) for s in sessions]
 
     if request.method == 'POST':
         version_form = VersionForm(request.POST,choices=version_choices)

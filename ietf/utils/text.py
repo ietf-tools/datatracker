@@ -1,11 +1,8 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import re
-import six
 import textwrap
 import unicodedata
 
@@ -60,7 +57,7 @@ def fill(text, width):
 def wordwrap(text, width=80):
     """Wraps long lines without loosing the formatting and indentation
        of short lines"""
-    if not isinstance(text, six.string_types):
+    if not isinstance(text, str):
         return text
     def block_separator(s):
         "Look for lines of identical symbols, at least three long"
@@ -142,7 +139,7 @@ def maybe_split(text, split=True, pos=5000):
     return text
 
 def decode(raw):
-    assert isinstance(raw, six.binary_type)
+    assert isinstance(raw, bytes)
     try:
         text = raw.decode('utf-8')
     except UnicodeDecodeError:
@@ -154,7 +151,7 @@ def decode(raw):
 def text_to_dict(t):
     "Converts text with RFC2822-formatted header fields into a dictionary-like object."
     # ensure we're handed a unicode parameter
-    assert isinstance(t, six.text_type)
+    assert isinstance(t, str)
     d = {}
     # Return {} for malformed input
     if not len(t.lstrip()) == len(t):

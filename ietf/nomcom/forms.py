@@ -2,11 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
-import six
-if six.PY3:
-    from typing import List, Tuple      # pyflakes:ignore
+from typing import List, Tuple      # pyflakes:ignore
 
 from django.conf import settings
 from django import forms
@@ -42,12 +38,12 @@ class PositionNomineeField(forms.ChoiceField):
         results = []
         for position in positions:
             accepted_nominees = [np.nominee for np in NomineePosition.objects.filter(position=position,state='accepted').exclude(nominee__duplicated__isnull=False)]
-            nominees = [('%s_%s' % (position.id, i.id), six.text_type(i)) for i in accepted_nominees]
+            nominees = [('%s_%s' % (position.id, i.id), str(i)) for i in accepted_nominees]
             if nominees:
                 results.append((position.name+" (Accepted)", nominees))
         for position in positions:
             other_nominees = [np.nominee for np in NomineePosition.objects.filter(position=position).exclude(state='accepted').exclude(nominee__duplicated__isnull=False)]
-            nominees = [('%s_%s' % (position.id, i.id), six.text_type(i)) for i in other_nominees]
+            nominees = [('%s_%s' % (position.id, i.id), str(i)) for i in other_nominees]
             if nominees:
                 results.append((position.name+" (Declined or Pending)", nominees))
         kwargs['choices'] = results

@@ -1,14 +1,11 @@
-# Copyright The IETF Trust 2015-2019, All Rights Reserved
+# Copyright The IETF Trust 2015-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 import gzip
 import io
 import json
 import os
-import six
 
 from difflib import ndiff
 
@@ -61,7 +58,7 @@ class Command(BaseCommand):
     valid_sections = ['template', 'url', 'code']
 
     def read_coverage(self, filename, version=None):
-        if isinstance(filename, six.string_types):
+        if isinstance(filename, str):
             try:
                 if filename.endswith(".gz"):
                     file = gzip.open(filename, "rb")

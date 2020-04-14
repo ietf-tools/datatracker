@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from ietf.review.factories import ReviewAssignmentFactory, ReviewRequestFactory
 from ietf.utils.test_utils import TestCase, reload_db_objects
 from .mailarch import hash_list_message_id

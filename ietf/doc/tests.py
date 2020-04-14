@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import shutil
 import datetime
@@ -17,9 +15,9 @@ if sys.version_info[0] == 2 and sys.version_info[1] < 7:
 else:
     import unittest
 
-from six.moves.http_cookies import SimpleCookie
+from http.cookies import SimpleCookie
 from pyquery import PyQuery
-from six.moves.urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs
 from tempfile import NamedTemporaryFile
 
 from django.urls import reverse as urlreverse

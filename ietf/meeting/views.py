@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import csv
 import datetime
 import glob
@@ -13,14 +11,13 @@ import json
 import os
 import pytz
 import re
-import six
 import tarfile
 import markdown2
 
 
 from calendar import timegm
 from collections import OrderedDict, Counter, deque
-from six.moves.urllib.parse import unquote
+from urllib.parse import unquote
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
 
@@ -556,7 +553,7 @@ def agenda_csv(schedule, filtered_assignments):
     headings = ["Date", "Start", "End", "Session", "Room", "Area", "Acronym", "Type", "Description", "Session ID", "Agenda", "Slides"]
 
     def write_row(row):
-        encoded_row = [v.encode('utf-8') if isinstance(v, six.text_type) else v for v in row]
+        encoded_row = [v.encode('utf-8') if isinstance(v, str) else v for v in row]
 
         while len(encoded_row) < len(headings):
             encoded_row.append(None) # produce empty entries at the end as necessary

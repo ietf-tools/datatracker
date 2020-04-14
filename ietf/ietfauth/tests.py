@@ -1,12 +1,10 @@
-# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import io
 import os, shutil, time, datetime
-from six.moves.urllib.parse import urlsplit
+from urllib.parse import urlsplit
 from pyquery import PyQuery
 from unittest import skipIf
 

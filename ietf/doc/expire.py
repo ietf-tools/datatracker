@@ -1,17 +1,14 @@
-# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 # expiry of Internet Drafts
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from django.conf import settings
 
 import datetime, os, shutil, glob, re
-import six
 from pathlib import Path
-if six.PY3:
-    from typing import List, Tuple      # pyflakes:ignore
+
+from typing import List, Tuple      # pyflakes:ignore
 
 from ietf.utils import log
 from ietf.utils.mail import send_mail

@@ -2,13 +2,11 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
 
 
 from pyquery import PyQuery
-from six.moves.urllib.parse import quote
+from urllib.parse import quote
 
 from django.urls import reverse as urlreverse
 

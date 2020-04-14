@@ -1,10 +1,8 @@
-# Copyright The IETF Trust 2019, All Rights Reserved
+# Copyright The IETF Trust 2019-2020, All Rights Reserved
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import re
 
-import six
 from django.db.models.aggregates import Max
 
 from ietf.doc.models import DocumentAuthor, DocAlias
@@ -289,7 +287,7 @@ class AssignmentOrderResolver:
         if stats:
             explanations.append(", ".join(stats))
 
-        label = six.text_type(email.person)
+        label = str(email.person)
         if explanations:
             label = "{}: {}".format(label, "; ".join(explanations))
         return {

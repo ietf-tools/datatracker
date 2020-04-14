@@ -1,15 +1,12 @@
-# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# Copyright The IETF Trust 2011-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 import re
 import datetime
 import debug                            # pyflakes:ignore
-import six
-if six.PY3:
-    from typing import List, Optional   # pyflakes:ignore
+
+from typing import List, Optional   # pyflakes:ignore
 
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat

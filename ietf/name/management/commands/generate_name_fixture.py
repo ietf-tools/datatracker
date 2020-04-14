@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# Copyright The IETF Trust 2019-2020, All Rights Reserved
 #!/usr/bin/python
 
 # simple script for exporting name related base data for the tests
@@ -6,9 +6,8 @@
 import inspect
 import io
 import os, sys
-import six
-if six.PY3:
-    from typing import Any, List        # pyflakes:ignore
+
+from typing import Any, List        # pyflakes:ignore
 
 
 from django.conf import settings

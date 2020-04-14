@@ -1,8 +1,6 @@
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 # code to generate plain-text index files that are placed on
 # www.ietf.org in the same directory as the I-Ds
@@ -10,7 +8,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 import datetime
 import os
 import pytz
-import six
 
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -193,7 +190,7 @@ def all_id2_txt():
                 area = d.group.parent.acronym
         fields.append(area)
         # 9 responsible AD name
-        fields.append(six.text_type(d.ad) if d.ad else "")
+        fields.append(str(d.ad) if d.ad else "")
         # 10
         fields.append(d.intended_std_level.name if d.intended_std_level else "")
         # 11

@@ -2,14 +2,11 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import re
 import base64
 import datetime
-import six
-if six.PY3:
-    from typing import Optional         # pyflakes:ignore
+
+from typing import Optional         # pyflakes:ignore
 
 from django.conf import settings
 from django.contrib import messages

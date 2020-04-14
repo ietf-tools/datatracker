@@ -1,10 +1,6 @@
-# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# Copyright The IETF Trust 2011-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
-from __future__ import absolute_import, print_function, unicode_literals
-
-import six
 
 from django.contrib import admin
 from django.utils.encoding import force_text
@@ -21,7 +17,7 @@ def name(obj):
             name = force_text(obj.name)
         if name:
             return name
-    return six.text_type(obj)
+    return str(obj)
     
 def admin_link(field, label=None, ordering="", display=name, suffix=""):
     if not label:

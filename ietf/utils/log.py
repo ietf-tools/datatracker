@@ -2,16 +2,13 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import sys
 import logging
 import inspect
 import os.path
-import six
 import traceback
-if six.PY3:
-    from typing import Callable         # pyflakes:ignore
+
+from typing import Callable         # pyflakes:ignore
 
 try:
     import syslog

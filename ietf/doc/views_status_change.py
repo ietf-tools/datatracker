@@ -1,16 +1,13 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 import io
 import os
 import re
-import six
-if six.PY3:
-    from typing import Dict             # pyflakes:ignore
+
+from typing import Dict             # pyflakes:ignore
 
 from django import forms
 from django.shortcuts import render, get_object_or_404, redirect

@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
-
 # various utilities for working with the mailarch mail archive at
 # mailarchive.ietf.org
 
@@ -17,8 +14,8 @@ import mailbox
 import tarfile
 import tempfile
 
-from six.moves.urllib.parse import urlencode
-from six.moves.urllib.request import urlopen
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
 import debug                            # pyflakes:ignore
 

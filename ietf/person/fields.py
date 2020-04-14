@@ -1,14 +1,11 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import json
-import six
 
 from collections import Counter
-from six.moves.urllib.parse import urlencode
+from urllib.parse import urlencode
 
 from django import forms
 from django.core.validators import validate_email
@@ -90,7 +87,7 @@ class SearchablePersonsField(forms.CharField):
     def prepare_value(self, value):
         if not value:
             value = ""
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             pks = self.parse_select2_value(value)
             if self.model == Person:
                 value = self.model.objects.filter(pk__in=pks)
@@ -179,7 +176,7 @@ class PersonEmailChoiceField(forms.ModelChoiceField):
 
     def label_from_instance(self, email):
         if self.label_with == "person":
-            return six.text_type(email.person)
+            return str(email.person)
         elif self.label_with == "email":
             return email.address
         else:

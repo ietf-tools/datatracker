@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
 import io
 import json
@@ -11,14 +9,13 @@ import os
 import random
 import re
 import shutil
-import six
 
 from unittest import skipIf
 from mock import patch
 from pyquery import PyQuery
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -449,12 +446,12 @@ class MeetingTests(TestCase):
         q = PyQuery(response.content)
         self.assertEqual(1,len(q("#id_attendees tbody tr")))
 
-    @patch('six.moves.urllib.request.urlopen')
+    @patch('urllib.request.urlopen')
     def test_proceedings_overview(self, mock_urlopen):
         '''Test proceedings IETF Overview page.
         Note: old meetings aren't supported so need to add a new meeting then test.
         '''
-        mock_urlopen.return_value = six.BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
+        mock_urlopen.return_value = BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
         finalize(meeting)
@@ -2111,7 +2108,7 @@ class IphoneAppJsonTests(TestCase):
             self.assertTrue(msessions.filter(group__acronym=s['group']['acronym']).exists())
 
 class FinalizeProceedingsTests(TestCase):
-    @patch('six.moves.urllib.request.urlopen')
+    @patch('urllib.request.urlopen')
     def test_finalize_proceedings(self, mock_urlopen):
         mock_urlopen.return_value = BytesIO(b'[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
@@ -2173,7 +2170,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Upload', six.text_type(q("title")))
+        self.assertIn('Upload', str(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
@@ -2184,7 +2181,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Revise', six.text_type(q("title")))
+        self.assertIn('Revise', str(q("title")))
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some different text for a test')
         test_file.name = "also_not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
@@ -2208,7 +2205,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Upload', six.text_type(q("title")))
+        self.assertIn('Upload', str(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
@@ -2226,7 +2223,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Upload', six.text_type(q("title")))
+        self.assertIn('Upload', str(q("title")))
         
 
     def test_upload_minutes_agenda(self):
@@ -2241,7 +2238,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertIn('Upload', six.text_type(q("Title")))
+            self.assertIn('Upload', str(q("Title")))
             self.assertFalse(session.sessionpresentation_set.exists())
             self.assertFalse(q('form input[type="checkbox"]'))
     
@@ -2296,7 +2293,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertIn('Revise', six.text_type(q("Title")))
+            self.assertIn('Revise', str(q("Title")))
             test_file = BytesIO(b'this is some different text for a test')
             test_file.name = "also_some.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=True))
@@ -2330,7 +2327,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertIn('Upload', six.text_type(q("Title")))
+            self.assertIn('Upload', str(q("Title")))
             self.assertFalse(session.sessionpresentation_set.exists())
             self.assertFalse(q('form input[type="checkbox"]'))
 
@@ -2351,7 +2348,7 @@ class MaterialsTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertIn('Upload', six.text_type(q("title")))
+            self.assertIn('Upload', str(q("title")))
             self.assertFalse(session.sessionpresentation_set.filter(document__type_id=doctype))
             test_file = BytesIO(b'this is some text for a test')
             test_file.name = "not_really.txt"
@@ -2374,7 +2371,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Upload', six.text_type(q("title")))
+        self.assertIn('Upload', str(q("title")))
         self.assertFalse(session1.sessionpresentation_set.filter(document__type_id='slides'))
         test_file = BytesIO(b'this is not really a slide')
         test_file.name = 'not_really.txt'
@@ -2402,7 +2399,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertTrue(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertIn('Revise', six.text_type(q("title")))
+        self.assertIn('Revise', str(q("title")))
         test_file = BytesIO(b'new content for the second slide deck')
         test_file.name = 'doesnotmatter.txt'
         r = self.client.post(url,dict(file=test_file,title='rename the presentation',apply_to_all=False))

@@ -1,10 +1,8 @@
-# Copyright The IETF Trust 2015-2019, All Rights Reserved
+# Copyright The IETF Trust 2015-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function, unicode_literals
 
-import six
-if six.PY3:
-    from typing import Dict, List       # pyflakes:ignore
+
+from typing import Dict, List       # pyflakes:ignore
 
 from django import forms
 

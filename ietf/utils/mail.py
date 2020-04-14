@@ -2,13 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import copy
 import datetime
 #import logging
 import re
-import six
 import smtplib
 import sys
 import textwrap
@@ -38,8 +35,7 @@ import ietf
 from ietf.utils.log import log, assertion
 from ietf.utils.text import isascii
 
-if six.PY3:
-    from typing import Any, Dict, List  # pyflakes:ignore
+from typing import Any, Dict, List  # pyflakes:ignore
 
 # Testing mode:
 # import ietf.utils.mail
@@ -189,7 +185,7 @@ def send_mail(request, to, frm, subject, template, context, *args, **kwargs):
     return send_mail_text(request, to, frm, subject, txt, *args, **kwargs)
 
 def encode_message(txt):
-    assert isinstance(txt, six.text_type)
+    assert isinstance(txt, str)
     return MIMEText(txt.encode('utf-8'), 'plain', 'UTF-8')
 
 def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=False, bcc=None, copy=True, save=True):
@@ -228,13 +224,7 @@ def formataddr(addrtuple):
     address field.  Does what's needed, and returns a string value suitable for
     use in a To: or Cc: email header field.
     """
-    if six.PY2:
-        name, addr = addrtuple
-        if name and not isascii(name):
-            name = str(Header(name, 'utf-8'))
-        return simple_formataddr((name, addr))
-    else:
-        return simple_formataddr(addrtuple)
+    return simple_formataddr(addrtuple)
 
 def parseaddr(addr):
     """
@@ -245,7 +235,7 @@ def parseaddr(addr):
 
     """
 
-    addr = ''.join( [ ( s.decode(m) if m else s.decode()) if isinstance(s, six.binary_type) else s for (s,m) in decode_header(addr) ] )
+    addr = ''.join( [ ( s.decode(m) if m else s.decode()) if isinstance(s, bytes) else s for (s,m) in decode_header(addr) ] )
     name, addr = simple_parseaddr(addr)
     return name, addr
 
@@ -477,7 +467,7 @@ def send_mail_preformatted(request, preformatted, extra={}, override={}):
 def send_mail_message(request, message, extra={}):
     """Send a Message object."""
     # note that this doesn't handle MIME messages at the moment
-    assertion('isinstance(message.to, six.string_types) and isinstance(message.cc, six.string_types) and isinstance(message.bcc, six.string_types)')
+    assertion('isinstance(message.to, str) and isinstance(message.cc, str) and isinstance(message.bcc, str)')
 
     e = extra.copy()
     if message.reply_to:
@@ -627,8 +617,5 @@ def get_email_addresses_from_text(text):
     
 
 def get_payload(msg, decode=False):
-    if six.PY2:
-        return msg.get_payload(decode=decode).decode(msg.get_content_charset('utf-8'))
-    else:
-        return msg.get_payload(decode=decode)
+    return msg.get_payload(decode=decode)
         

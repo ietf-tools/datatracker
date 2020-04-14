@@ -2,12 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import bleach
 import datetime
 import re
-import six
 
 from email.utils import parseaddr
 
@@ -23,11 +20,12 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
+from ietf.doc.models import BallotDocEvent
 from ietf.doc.models import ConsensusDocEvent
+from ietf.utils.html import sanitize_fragment
+from ietf.utils import log
 from ietf.doc.utils import prettify_std_name
 from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped
-from ietf.utils.html import sanitize_fragment
-from ietf.doc.models import BallotDocEvent
 
 register = template.Library()
 
@@ -72,7 +70,7 @@ def parse_email_list(value):
 
 
     """
-    if value and isinstance(value, (six.binary_type, six.text_type)): # testing for 'value' being true isn't necessary; it's a fast-out route
+    if value and isinstance(value, str): # testing for 'value' being true isn't necessary; it's a fast-out route
         addrs = re.split(", ?", value)
         ret = []
         for addr in addrs:
@@ -81,6 +79,8 @@ def parse_email_list(value):
                 name = email
             ret.append('<a href="mailto:%s">%s</a>' % ( email.replace('&', '&amp;'), escape(name) ))
         return mark_safe(", ".join(ret))
+    elif value and isinstance(value, bytes):
+        log.assertion('isinstance(value, str)')        
     else:
         return value
 
@@ -117,8 +117,10 @@ def make_one_per_line(value):
     >>> make_one_per_line(None)
 
     """
-    if value and isinstance(value, (six.binary_type, six.text_type)):
+    if value and isinstance(value, str):
         return re.sub(", ?", "\n", value)
+    elif value and isinstance(value, bytes):
+        log.assertion('isinstance(value, str)')
     else:
         return value
 
@@ -153,10 +155,12 @@ def sanitize(value):
 @register.filter(name='bracket')
 def square_brackets(value):
     """Adds square brackets around text."""
-    if isinstance(value, (six.binary_type, six.text_type)):
+    if isinstance(value, str):
         if value == "":
              value = " "
         return "[ %s ]" % value
+    elif isinstance(value, bytes):
+        log.assertion('isinstance(value, str)')
     elif value > 0:
         return "[ X ]"
     elif value < 0:
@@ -364,7 +368,7 @@ def expires_soon(x,request):
 
 @register.filter(name='startswith')
 def startswith(x, y):
-    return six.text_type(x).startswith(y)
+    return str(x).startswith(y)
 
 @register.filter
 def has_role(user, role_names):

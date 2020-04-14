@@ -1,15 +1,14 @@
 # Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function, unicode_literals
+
 
 import datetime
 import email.utils
 import jsonfield
 import os
 import re
-import six
 
-from six.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from django.conf import settings
 from django.core.validators import RegexValidator
@@ -97,7 +96,7 @@ class Group(GroupInfo):
         return e[0] if e else None
 
     def has_role(self, user, role_names):
-        if isinstance(role_names, six.string_types):
+        if not isinstance(role_names, (list, tuple)):
             role_names = [role_names]
         return user.is_authenticated and self.role_set.filter(name__in=role_names, person__user=user).exists()
 

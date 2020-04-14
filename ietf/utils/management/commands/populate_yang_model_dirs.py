@@ -1,15 +1,13 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
+import io
 import os
 import sys
 import time
 
 from pathlib2 import Path
-from six import StringIO
 from textwrap import dedent
 from xym import xym
 
@@ -66,8 +64,8 @@ class Command(BaseCommand):
         def extract_from(file, dir, strict=True):
             saved_stdout = sys.stdout
             saved_stderr = sys.stderr
-            xymerr = StringIO()
-            xymout = StringIO()            
+            xymerr = io.StringIO()
+            xymout = io.StringIO()            
             sys.stderr = xymerr
             sys.stdout = xymout
             model_list = []

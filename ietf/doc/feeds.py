@@ -1,11 +1,8 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
-import six
 
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed, Rss201rev2Feed
@@ -50,7 +47,7 @@ class DocumentChangesFeed(Feed):
         return item.time
 
     def item_author_name(self, item):
-        return six.text_type(item.by)
+        return str(item.by)
 
     def item_link(self, item):
         return urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=item.doc.canonical_name())) + "#history-%s" % item.pk

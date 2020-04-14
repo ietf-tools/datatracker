@@ -2,15 +2,12 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
 import email
 import io
 import os
 import re
 import shutil
-import six
 import sys
 
 
@@ -160,7 +157,7 @@ class SubmitTests(TestCase):
         submission = Submission.objects.get(name=name)
         if len(submission.authors) != 1:
             sys.stderr.write("\nAuthor extraction failure.\n")
-            sys.stderr.write(six.ensure_text("Author name used in test: %s\n"%author))
+            sys.stderr.write(force_str("Author name used in test: %s\n"%author))
             sys.stderr.write("Author ascii name: %s\n" % author.ascii)
             sys.stderr.write("Author initials: %s\n" % author.initials())
         self.assertEqual(len(submission.authors), 1)
@@ -421,7 +418,7 @@ class SubmitTests(TestCase):
         self.assertTrue("unknown-email-" not in confirm_email["To"])
         if change_authors:
             # Since authors changed, ensure chairs are copied (and that the message says why)
-            self.assertTrue("chairs have been copied" in six.text_type(confirm_email))
+            self.assertTrue("chairs have been copied" in str(confirm_email))
             if group_type in ['wg','rg','ag']:
                 self.assertTrue("mars-chairs@" in confirm_email["To"].lower())
             elif group_type == 'area':
@@ -431,7 +428,7 @@ class SubmitTests(TestCase):
             if stream_type=='ise':
                self.assertTrue("rfc-ise@" in confirm_email["To"].lower())
         else:
-            self.assertNotIn("chairs have been copied", six.text_type(confirm_email))
+            self.assertNotIn("chairs have been copied", str(confirm_email))
             self.assertNotIn("mars-chairs@", confirm_email["To"].lower())
 
         confirmation_url = self.extract_confirmation_url(confirm_email)
@@ -570,7 +567,7 @@ class SubmitTests(TestCase):
         # both submitter and author get email
         self.assertTrue(author.email().address.lower() in confirm_email["To"])
         self.assertTrue("submitter@example.com" in confirm_email["To"])
-        self.assertFalse("chairs have been copied" in six.text_type(confirm_email))
+        self.assertFalse("chairs have been copied" in str(confirm_email))
 
         confirmation_url = self.extract_confirmation_url(outbox[-1])
 

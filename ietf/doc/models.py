@@ -1,13 +1,12 @@
 # Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function, unicode_literals
+
 
 import datetime
 import logging
 import io
 import os
 import rfc2html
-import six
 
 from django.db import models
 from django.core import checks
@@ -418,7 +417,7 @@ class DocumentInfo(models.Model):
 
     def relations_that(self, relationship):
         """Return the related-document objects that describe a given relationship targeting self."""
-        if isinstance(relationship, six.string_types):
+        if isinstance(relationship, str):
             relationship = ( relationship, )
         if not isinstance(relationship, tuple):
             raise TypeError("Expected a string or tuple, received %s" % type(relationship))
@@ -441,7 +440,7 @@ class DocumentInfo(models.Model):
 
     def relations_that_doc(self, relationship):
         """Return the related-document objects that describe a given relationship from self to other documents."""
-        if isinstance(relationship, six.string_types):
+        if isinstance(relationship, str):
             relationship = ( relationship, )
         if not isinstance(relationship, tuple):
             raise TypeError("Expected a string or tuple, received %s" % type(relationship))

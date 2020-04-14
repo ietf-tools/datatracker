@@ -2,16 +2,13 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
 import email.utils
 import email.header
-import six
 import uuid
 
 from hashids import Hashids
-from six.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -88,9 +85,8 @@ class Person(models.Model):
     def plain_ascii(self):
         if not hasattr(self, '_cached_plain_ascii'):
             if self.ascii:
-                if isinstance(self.ascii, six.binary_type):
-                    uname = six.text_type(self.ascii)
-                    ascii = unidecode_name(uname)
+                if isinstance(self.ascii, bytes):
+                    ascii = unidecode_name(self.ascii.decode('utf-8'))
                 else:
                     ascii = unidecode_name(self.ascii)
             else:
@@ -109,7 +105,7 @@ class Person(models.Model):
         may be an object or the group acronym."""
         if group:
             from ietf.group.models import Group
-            if isinstance(group, six.string_types):
+            if isinstance(group, str):
                 group = Group.objects.get(acronym=group)
             e = Email.objects.filter(person=self, role__group=group, role__name=role_name)
         else:
@@ -351,7 +347,7 @@ class PersonalApiKey(models.Model):
     @classmethod
     def validate_key(cls, s):
         import struct, hashlib, base64
-        assert isinstance(s, six.binary_type)
+        assert isinstance(s, bytes)
         key = base64.urlsafe_b64decode(s)
         id, salt, hash = struct.unpack(KEY_STRUCT, key)
         k = cls.objects.filter(id=id)

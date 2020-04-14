@@ -1,12 +1,9 @@
-# Copyright The IETF Trust 2015-2019, All Rights Reserved
+# Copyright The IETF Trust 2015-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import io
 import os
-import six
 import tempfile
 
 from django.core.management import call_command
@@ -90,7 +87,7 @@ class CoverageChangeTestCase(TestCase):
         lfh, latest = tempfile.mkstemp(suffix='.json')
         with io.open(latest, "w") as file:
             file.write(latest_txt)
-        output = six.StringIO()
+        output = io.StringIO()
         call_command('coverage_changes', master, latest, stdout=output)
         text = output.getvalue()
         os.unlink(master)

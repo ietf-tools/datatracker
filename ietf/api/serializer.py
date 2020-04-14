@@ -1,12 +1,9 @@
-# Copyright The IETF Trust 2018-2019, All Rights Reserved
+# Copyright The IETF Trust 2018-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import hashlib
 import json
-import six
 
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, FieldError
@@ -154,7 +151,7 @@ class AdminJsonSerializer(Serializer):
                             if hasattr(field_value, "_meta"):
                                 self._current[name] = self.expand_related(field_value, name)
                             else:
-                                self._current[name] = six.text_type(field_value)
+                                self._current[name] = str(field_value)
             except ObjectDoesNotExist:
                 pass
             except AttributeError:

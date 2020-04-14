@@ -2,10 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
-import six
 
 from django.urls import reverse
 
@@ -316,14 +313,14 @@ class SubmitRequestCase(TestCase):
         r = self.client.post(url,post_data)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue('Confirm' in six.text_type(q("title")), r.context['form'].errors)
+        self.assertTrue('Confirm' in str(q("title")), r.context['form'].errors)
         # confirm
         post_data['submit'] = 'Submit'
         r = self.client.post(confirm_url,post_data)
         self.assertRedirects(r, reverse('ietf.secr.sreq.views.main'))
         self.assertEqual(len(outbox),len_before+1)
         notification = outbox[-1]
-        notification_payload = six.text_type(notification.get_payload(decode=True),"utf-8","replace")
+        notification_payload = notification.get_payload(decode=True).decode(encoding="utf-8", errors="replace")
         sessions = Session.objects.filter(meeting=meeting,group=group)
         self.assertEqual(len(sessions), 2)
         session = sessions[0]

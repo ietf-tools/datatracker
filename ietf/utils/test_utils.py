@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Portion Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
@@ -34,16 +34,13 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import re
 import email
 import html5lib
-import six
 import sys
 
-from six.moves.urllib.parse import unquote
+from urllib.parse import unquote
 
 from unittest.util import strclass
 from bs4 import BeautifulSoup
@@ -175,7 +172,7 @@ class TestCase(django.test.TestCase):
         if subject:
             mlist = [ m for m in mlist if subject in m["Subject"] ]
         if text:
-            assert isinstance(text, six.text_type)
+            assert isinstance(text, str)
             mlist = [ m for m in mlist if text in get_payload(m) ]
         if count and len(mlist) != count:
             sys.stderr.write("Wrong count in assertMailboxContains().  The complete mailbox contains %s emails:\n\n" % len(mailbox))

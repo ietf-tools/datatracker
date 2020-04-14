@@ -2,13 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import io
 import os
 import re
 import shutil
-import six
 import sys
 import tempfile
 
@@ -148,8 +145,8 @@ class DraftYangChecker(object):
                 # This places the yang models as files in workdir
                 saved_stdout = sys.stdout
                 saved_stderr = sys.stderr
-                sys.stdout = six.StringIO()
-                sys.stderr = six.StringIO()
+                sys.stdout = io.StringIO()
+                sys.stderr = io.StringIO()
                 extractor.extract_yang_model(file.readlines())
                 model_list = extractor.get_extracted_models(False, True)
                 out = sys.stdout.getvalue()

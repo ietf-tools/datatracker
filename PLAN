@@ -7,9 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Remove Python 2.7 compatibility code.  This includes cleaning up 'from future'
-  imports and usages of 'six' 2/3 compatibility modules.
-
 * Transition to Django 2.2 (via 2.0 and 2.1).  This depends on Python 3.x.
   Security updates to Django 1.11 will cease around April 2020.
 

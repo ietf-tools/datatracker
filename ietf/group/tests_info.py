@@ -2,15 +2,12 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import shutil
 import calendar
 import datetime
 import io
 import bleach
-import six
 
 from pyquery import PyQuery
 from tempfile import NamedTemporaryFile
@@ -1455,7 +1452,7 @@ class StatusUpdateTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code,200)
             q=PyQuery(response.content)
-            self.assertTrue(bleach.linkify(escape(event.desc)) in six.text_type(q('pre')))
+            self.assertTrue(bleach.linkify(escape(event.desc)) in str(q('pre')))
             self.assertFalse(q('a#edit_button'))
             self.client.login(username=chair.person.user.username,password='%s+password'%chair.person.user.username)
             response = self.client.get(url)

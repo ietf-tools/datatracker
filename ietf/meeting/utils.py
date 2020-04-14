@@ -2,12 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
 import requests
 
-from six.moves.urllib.error import HTTPError
+from urllib.error import HTTPError
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.db.models.expressions import Subquery, OuterRef

@@ -2,15 +2,13 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
 import io
 import random
 import shutil
 
 from pyquery import PyQuery
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from django.db import IntegrityError
 from django.db.models import Max

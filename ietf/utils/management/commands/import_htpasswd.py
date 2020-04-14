@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2014-2019, All Rights Reserved
+# Copyright The IETF Trust 2014-2020, All Rights Reserved
 import io
 import sys
 
@@ -11,8 +11,8 @@ def import_htpasswd_file(filename, verbosity=1, overwrite=False):
     with io.open(filename) as file:
         for line in file:
             if not ':' in line:
-                raise ValueError('Found a line without colon separator in the htpassword file %s:'+
-                    '   "%s"' % (file.name, line)) # pylint: disable=too-many-format-args
+                raise ValueError('Found a line without colon separator in the htpassword file %s:'
+                                 '   "%s"' % (file.name, line))
             username, password = line.strip().split(':', 1)
             try:
                 user = User.objects.get(username=username)

@@ -1,10 +1,8 @@
 #!/usr/bin/python
-# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 # -*- python -*-
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 """
 NAME
@@ -45,12 +43,11 @@ import io
 import os
 import os.path
 import re
-import six
 import stat
 import sys
 import time
-if six.PY3:
-    from typing import Dict, List       # pyflakes:ignore
+
+from typing import Dict, List       # pyflakes:ignore
 
 version = "0.35"
 program = os.path.basename(sys.argv[0])
@@ -136,7 +133,7 @@ def acronym_match(s, l):
 class Draft():
 
     def __init__(self, text, source, name_from_source=False):
-        assert isinstance(text, six.text_type)
+        assert isinstance(text, str)
         self.source = source
         self.rawtext = text
         self.name_from_source = name_from_source

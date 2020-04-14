@@ -1,16 +1,17 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function, unicode_literals
+
 
 # old meeting models can be found in ../proceedings/models.py
 
-import pytz
 import datetime
 import io
-from six.moves.urllib.parse import urljoin
 import os
+import pytz
 import re
 import string
+
+from urllib.parse import urljoin
 
 import debug                            # pyflakes:ignore
 

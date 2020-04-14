@@ -1,14 +1,11 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import copy
 import io
 import pkg_resources
-import six
 import syslog
 
 from trac.core import TracError
@@ -334,7 +331,7 @@ class Command(BaseCommand):
         if not self.group_list is None:
             self.group_list = self.group_list.split('.')
 
-        if isinstance(self.verbosity, six.string_types) and self.verbosity.isdigit():
+        if isinstance(self.verbosity, str) and self.verbosity.isdigit():
             self.verbosity = int(self.verbosity)
 
         if self.dummy_run and self.verbosity < 2:

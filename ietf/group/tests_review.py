@@ -2,11 +2,8 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
 import debug      # pyflakes:ignore
-import six
 
 from pyquery import PyQuery
 
@@ -522,7 +519,7 @@ class ReviewTests(TestCase):
         # i.e. the document name is expected twice in the output (#2118)
         self.assertEqual(generated_text.count(review_req1.doc.name), 2)
         self.assertEqual(generated_text.count('(-0 lc reviewed)'), 2)  # previous completed assignment
-        self.assertTrue(six.text_type(Person.objects.get(user__username="marschairman")) in generated_text)
+        self.assertTrue(str(Person.objects.get(user__username="marschairman")) in generated_text)
 
         empty_outbox()
         r = self.client.post(url, {

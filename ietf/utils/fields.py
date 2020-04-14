@@ -1,11 +1,8 @@
-# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
-import six
 import re
 
 import debug                            # pyflakes:ignore
@@ -23,7 +20,7 @@ class MultiEmailField(forms.Field):
         if not value:
             return []
 
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             values = value.split(',')
             return [ x.strip() for x in values if x.strip() ]
         else:

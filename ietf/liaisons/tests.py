@@ -1,14 +1,11 @@
-# Copyright The IETF Trust 2009-2019, All Rights Reserved
+# Copyright The IETF Trust 2009-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 import io
 import os
 import shutil
-import six
 
 import debug    # pyflakes:ignore
 
@@ -241,7 +238,7 @@ class ManagementCommandTests(TestCase):
 
         LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
 
-        out = six.StringIO()
+        out = io.StringIO()
         mailbox_before = len(outbox)
         call_command('check_liaison_deadlines',stdout=out)
         self.assertEqual(len(outbox), mailbox_before + 1)
@@ -251,7 +248,7 @@ class ManagementCommandTests(TestCase):
 
         RoleFactory(name_id='liaiman',group__type_id='sdo')
 
-        out = six.StringIO()
+        out = io.StringIO()
         mailbox_before = len(outbox)
         call_command('remind_update_sdo_list',stdout=out)
         self.assertTrue(len(outbox) > mailbox_before)

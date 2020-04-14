@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2020, All Rights Reserved
+# Some parts Copyright The IETF Trust 2020, All Rights Reserved
 #!/usr/bin/env python
 """
     Patch utility to apply unified diffs
@@ -11,7 +11,7 @@
     https://github.com/techtonik/python-patch/
 
 """
-from __future__ import print_function
+
 
 __author__ = "anatoly techtonik <techtonik@gmail.com>"
 __version__ = "1.16"

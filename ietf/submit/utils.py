@@ -2,16 +2,13 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
 import io
 import os
 import pathlib
 import re
-import six                              # pyflakes:ignore
-if six.PY3:
-    from typing import Callable, Optional # pyflakes:ignore
+
+from typing import Callable, Optional # pyflakes:ignore
 
 from django.conf import settings
 from django.core.validators import validate_email, ValidationError
@@ -503,7 +500,7 @@ def ensure_person_email_info_exists(name, email, docname):
         person = Person()
         person.name = name
         person.name_from_draft = name
-        log.assertion('isinstance(person.name, six.text_type)')
+        log.assertion('isinstance(person.name, str)')
         person.ascii = unidecode_name(person.name)
         person.save()
     else:
@@ -692,7 +689,7 @@ def get_draft_meta(form, saved_files):
                 if s is None:
                     return ""
 
-                if isinstance(s, six.text_type):
+                if isinstance(s, str):
                     return s
                 else:
                     try:

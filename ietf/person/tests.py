@@ -2,10 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
-import six
 
 from pyquery import PyQuery
 from io import StringIO
@@ -94,7 +91,7 @@ class PersonTests(TestCase):
         empty_outbox()
         p = PersonFactory(name="Föö Bär")
         PersonFactory(name=p.name)
-        self.assertTrue("possible duplicate" in six.text_type(outbox[0]["Subject"]).lower())
+        self.assertTrue("possible duplicate" in str(outbox[0]["Subject"]).lower())
 
     def test_merge(self):
         url = urlreverse("ietf.person.views.merge")
