@@ -1225,12 +1225,30 @@ Session.prototype.generate_info_table = function() {
     if(!read_only) {
         $("#info_location").html(generate_select_box()+"<button id='info_location_set'>set</button>");
     }
-
-    if("comments" in this && this.comments.length > 0 && this.comments != "None") {
-        $("#special_requests").text(this.comments);
-    } else {
-        $("#special_requests").text("Special requests: None");
+    
+    var special_requests_text = '';
+    if(this.joint_with_groups) {
+        special_requests_text += 'Joint session with ' + this.joint_with_groups.join(', ') + '. ';
     }
+    if(this.constraints.wg_adjacent) {
+        for (var target_href in this.constraints.wg_adjacent) {
+            if (this.constraints.wg_adjacent.hasOwnProperty(target_href)) {
+                special_requests_text += 'Schedule adjacent with ' + this.constraints.wg_adjacent[target_href].othergroup.acronym + '. ';
+            }
+        }
+    }
+    if(this.constraints.time_relation) {
+        special_requests_text += this.constraints.time_relation.time_relation.time_relation_display + '. ';
+    }
+    if(this.constraints.timerange) {
+        special_requests_text += this.constraints.timerange.timerange.timeranges_display + '. ';
+    }
+    if("comments" in this && this.comments.length > 0 && this.comments != "None") {
+        special_requests_text += this.comments;
+    } else {
+        special_requests_text += "Special requests: None";
+    }
+    $("#special_requests").text(special_requests_text);
 
     this.selectit();
 
@@ -1721,13 +1739,17 @@ Session.prototype.add_constraint_obj = function(obj) {
             obj.person = person;
         });
     } else {
-        // must be conflic*
+        // must be conflic*, timerange, time_relation or wg_adjacent
         var ogroupname;
         if(obj.source_href == this.group_href) {
             obj.thisgroup  = this.group;
             obj.othergroup = find_group_by_href(obj.target_href, "constraint src"+obj.href);
             obj.direction = 'ours';
-            ogroupname = obj.target_href;
+            if (obj.target_href) {
+                ogroupname = obj.target_href;
+            } else {
+                ogroupname = obj.name;
+            }
             if(this.constraints[listname][ogroupname]) {
                 console.log("Found multiple instances of",this.group_href,listname,ogroupname);
             }

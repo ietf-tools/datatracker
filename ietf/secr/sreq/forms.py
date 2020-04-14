@@ -6,8 +6,9 @@ from django import forms
 
 import debug                            # pyflakes:ignore
 
+from ietf.name.models import TimerangeName
 from ietf.group.models import Group
-from ietf.meeting.models import ResourceAssociation
+from ietf.meeting.models import ResourceAssociation, Constraint
 from ietf.person.fields import SearchablePersonsField
 from ietf.utils.html import clean_text_field
 
@@ -18,6 +19,8 @@ from ietf.utils.html import clean_text_field
 NUM_SESSION_CHOICES = (('','--Please select'),('1','1'),('2','2'))
 # LENGTH_SESSION_CHOICES = (('','--Please select'),('1800','30 minutes'),('3600','1 hour'),('5400','1.5 hours'), ('7200','2 hours'),('9000','2.5 hours'))
 LENGTH_SESSION_CHOICES = (('','--Please select'),('1800','30 minutes'),('3600','1 hour'),('5400','1.5 hours'), ('7200','2 hours'))
+SESSION_TIME_RELATION_CHOICES = (('', 'No preference'),) + Constraint.TIME_RELATION_CHOICES
+JOINT_FOR_SESSION_CHOICES = (('1', 'First session'), ('2', 'Second session'), ('3', 'Third session'), )
 
 # -------------------------------------------------
 # Helper Functions
@@ -63,10 +66,17 @@ class GroupSelectForm(forms.Form):
         super(GroupSelectForm, self).__init__(*args,**kwargs)
         self.fields['group'].widget.choices = choices
 
+
+class NameModelMultipleChoiceField(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, name):
+        return name.desc
+
+    
 class SessionForm(forms.Form):
     num_session = forms.ChoiceField(choices=NUM_SESSION_CHOICES)
     length_session1 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES)
     length_session2 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES,required=False)
+    session_time_relation = forms.ChoiceField(choices=SESSION_TIME_RELATION_CHOICES, required=False)
     length_session3 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES,required=False)
     attendees = forms.IntegerField()
     # FIXME: it would cleaner to have these be
@@ -75,13 +85,19 @@ class SessionForm(forms.Form):
     conflict1 = forms.CharField(max_length=255,required=False)
     conflict2 = forms.CharField(max_length=255,required=False)
     conflict3 = forms.CharField(max_length=255,required=False)
+    joint_with_groups = forms.CharField(max_length=255,required=False)
+    joint_for_session = forms.ChoiceField(choices=JOINT_FOR_SESSION_CHOICES, required=False)
     comments = forms.CharField(max_length=200,required=False)
     wg_selector1 = forms.ChoiceField(choices=[],required=False)
     wg_selector2 = forms.ChoiceField(choices=[],required=False)
     wg_selector3 = forms.ChoiceField(choices=[],required=False)
+    wg_selector4 = forms.ChoiceField(choices=[],required=False)
     third_session = forms.BooleanField(required=False)
     resources     = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
     bethere       = SearchablePersonsField(label="Must be present", required=False)
+    timeranges    = NameModelMultipleChoiceField(widget=forms.CheckboxSelectMultiple, required=False,
+                                                 queryset=TimerangeName.objects.all())
+    adjacent_with_wg = forms.ChoiceField(required=False)
 
     def __init__(self, group, *args, **kwargs):
         if 'hidden' in kwargs:
@@ -98,8 +114,10 @@ class SessionForm(forms.Form):
         self.fields['length_session3'].widget.attrs['onClick'] = "if (check_third_session()) { this.disabled=true;}"
         self.fields['comments'].widget = forms.Textarea(attrs={'rows':'3','cols':'65'})
 
-        group_acronym_choices = [('','--Select WG(s)')] + list(allowed_conflicting_groups().exclude(pk=group.pk).values_list('acronym','acronym').order_by('acronym'))
-        for i in range(1, 4):
+        other_groups = list(allowed_conflicting_groups().exclude(pk=group.pk).values_list('acronym', 'acronym').order_by('acronym'))
+        self.fields['adjacent_with_wg'].choices = [('', '--No preference')] + other_groups
+        group_acronym_choices = [('','--Select WG(s)')] + other_groups
+        for i in range(1, 5):
             self.fields['wg_selector{}'.format(i)].choices = group_acronym_choices
 
         # disabling handleconflictfield (which only enables or disables form elements) while we're hacking the meaning of the three constraints currently in use:
@@ -109,6 +127,7 @@ class SessionForm(forms.Form):
         self.fields['wg_selector1'].widget.attrs['onChange'] = "document.form_post.conflict1.value=document.form_post.conflict1.value + ' ' + this.options[this.selectedIndex].value; return 1;"
         self.fields['wg_selector2'].widget.attrs['onChange'] = "document.form_post.conflict2.value=document.form_post.conflict2.value + ' ' + this.options[this.selectedIndex].value; return 1;"
         self.fields['wg_selector3'].widget.attrs['onChange'] = "document.form_post.conflict3.value=document.form_post.conflict3.value + ' ' + this.options[this.selectedIndex].value; return 1;"
+        self.fields['wg_selector4'].widget.attrs['onChange'] = "document.form_post.joint_with_groups.value=document.form_post.joint_with_groups.value + ' ' + this.options[this.selectedIndex].value; return 1;"
 
         # disabling check_prior_conflict javascript while we're hacking the meaning of the three constraints currently in use
         #self.fields['wg_selector2'].widget.attrs['onClick'] = "return check_prior_conflict(2);"
@@ -127,6 +146,7 @@ class SessionForm(forms.Form):
             for key in list(self.fields.keys()):
                 self.fields[key].widget = forms.HiddenInput()
             self.fields['resources'].widget = forms.MultipleHiddenInput()
+            self.fields['timeranges'].widget = forms.MultipleHiddenInput()
 
     def clean_conflict1(self):
         conflict = self.cleaned_data['conflict1']
@@ -142,7 +162,12 @@ class SessionForm(forms.Form):
         conflict = self.cleaned_data['conflict3']
         check_conflict(conflict, self.group)
         return conflict
-    
+
+    def clean_joint_with_groups(self):
+        groups = self.cleaned_data['joint_with_groups']
+        check_conflict(groups, self.group)
+        return groups
+
     def clean_comments(self):
         return clean_text_field(self.cleaned_data['comments'])
 
@@ -166,10 +191,20 @@ class SessionForm(forms.Form):
         if data.get('num_session','') == '2':
             if not data['length_session2']:
                 raise forms.ValidationError('You must enter a length for all sessions')
-        
+        else:
+            if data.get('session_time_relation'):
+                raise forms.ValidationError('Time between sessions can only be used when two '
+                                            'sessions are requested.')
+            if data['joint_for_session'] == '2':
+                raise forms.ValidationError('The second session can not be the joint session, '
+                                            'because you have not requested a second session.')
+
         if data.get('third_session',False):
             if not data['length_session2'] or not data.get('length_session3',None):
                 raise forms.ValidationError('You must enter a length for all sessions')
+        elif data['joint_for_session'] == '3':
+                raise forms.ValidationError('The third session can not be the joint session, '
+                                            'because you have not requested a third session.')
         
         return data
         

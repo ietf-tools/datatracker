@@ -11,6 +11,7 @@ from typing import Optional         # pyflakes:ignore
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.db import DataError
 from django.urls import reverse as urlreverse
 from django.core.validators import ValidationError
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponse
@@ -55,9 +56,9 @@ def upload_submission(request):
                 try:
                     fill_in_submission(form, submission, authors, abstract, file_size)
                 except Exception as e:
-                    if submission:
-                        submission.delete()
                     log("Exception: %s\n" % e)
+                    if submission and submission.id:
+                        submission.delete()
                     raise
 
                 apply_checkers(submission, file_name)
@@ -79,6 +80,13 @@ def upload_submission(request):
             form._errors["__all__"] = form.error_class(["There was a failure converting the xml file to text -- please verify that your xml file is valid.  (%s)" % e.message])
             if debug.debug:
                 raise
+        except DataError as e:
+            form = SubmissionManualUploadForm(request=request)
+            form._errors = {}
+            form._errors["__all__"] = form.error_class(["There was a failure processing your upload -- please verify that your draft passes idnits.  (%s)" % e.message])
+            if debug.debug:
+                raise
+
     else:
         form = SubmissionManualUploadForm(request=request)
 

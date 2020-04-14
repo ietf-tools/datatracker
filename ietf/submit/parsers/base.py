@@ -3,7 +3,6 @@
 
 
 import re
-import magic
 import datetime
 import debug                            # pyflakes:ignore
 
@@ -11,6 +10,8 @@ from typing import List, Optional   # pyflakes:ignore
 
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
+
+from ietf.utils.mime import get_mime_type
 
 class MetaData(object):
     rev = None
@@ -82,20 +83,7 @@ class FileParser(object):
     def parse_file_type(self):
         self.fd.file.seek(0)
         content = self.fd.file.read(64*1024)
-        if hasattr(magic, "open"):
-            m = magic.open(magic.MAGIC_MIME)
-            m.load()
-            filetype = m.buffer(content)
-        else:
-            m = magic.Magic()
-            m.cookie = magic.magic_open(magic.MAGIC_NONE | magic.MAGIC_MIME | magic.MAGIC_MIME_ENCODING)
-            magic.magic_load(m.cookie, None)
-            filetype = m.from_buffer(content)
-        if ';' in filetype and 'charset=' in filetype:
-            mimetype, charset = re.split('; *charset=', filetype)
-        else:
-            mimetype = re.split(';', filetype)[0]
-            charset = 'utf-8'
+        mimetype, charset = get_mime_type(content)
         if not mimetype in self.mimetypes:
             self.parsed_info.add_error('Expected an %s file of type "%s", found one of type "%s"' % (self.ext.upper(), '" or "'.join(self.mimetypes), mimetype))
         self.parsed_info.mimetype = mimetype

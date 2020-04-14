@@ -69,8 +69,10 @@ class SessionStatusName(NameModel):
 class TimeSlotTypeName(NameModel):
     """Session, Break, Registration, Other, Reserved, unavail"""
 class ConstraintName(NameModel):
-    """Conflict"""
+    """conflict, conflic2, conflic3, bethere, timerange, time_relation, wg_adjacent"""
     penalty = models.IntegerField(default=0, help_text="The penalty for violating this kind of constraint; for instance 10 (small penalty) or 10000 (large penalty)")
+class TimerangeName(NameModel):
+    """(monday|tuesday|wednesday|thursday|friday)-(morning|afternoon-early|afternoon-late)"""
 class LiaisonStatementPurposeName(NameModel):
     """For action, For comment, For information, In response, Other"""
 class NomineePositionStateName(NameModel):

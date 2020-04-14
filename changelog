@@ -1,3 +1,78 @@
+ietfdb (6.126.0) ietf; urgency=medium
+
+  **Groundwork for upcoming automatic scheduling assistance**
+
+  * Merged in ^/branch/dash/automatic-scheduler@17395 from sasha@dashcare.nl,
+    which adds groundwork for upcoming automatic scheduling assistance:
+
+    ~ Added a management command to create a dummy IETF 999 meeting.
+
+    ~ Added display of new constraints and joint sessions to agenda builder
+      interface.
+
+    ~ The new timerange, time_relation and wg_adjacent constraints, along with
+      the joint_with_groups option, are now reflected in the special requests
+      field.  This allows them to be taken into account while scheduling
+      sessions.
+
+    ~ Clarified the wording in the session request form regarding conflicts
+      with BOFs.
+
+    ~ Added support for structured entry and storage of joint sessions in
+      meetings:
+
+      - Also adds additional tests for the SessionForm
+      - Fixes a javascript error in session requests for non-WG groups,
+        that could cause incorrect form behaviour.
+      - Expands the tests added in [17289] a bit.
+
+    ~ Added support for the timerange, wg_adjacent and time_relation
+      constraints.  This adds three new constraints to the database and
+      relevant UIs:
+
+      - timerange: "This WG can't meet during these timeframes"
+      - wg_adjacent: "Schedule adjacent to another WG (directly following,
+        no breaks, same room)"
+      - time_relation: schedule the two sessions of one WG on subsequent
+        days or with at least one day seperation
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Apr 2020 16:25:23 +0000
+
+
+ietfdb (6.125.0) ietf; urgency=medium
+
+  **Various meeting-related fixes and improvements**
+
+  * Merged in [17590] from rcross@amsl.com:
+    Added support for variable length meetings to secr/meetings app.  
+
+  * Changed the handling of some exceptions during draft submission to give 
+    user feedback rather than server 500 responses, in order to deal better 
+    with severely malformed drafts.
+
+  * Added a workaround for the current libmagic on OpenSUSE, which quite
+    easily can mischaracterise text/plain documents as text/x-Algol68.  Fixes
+    issues #2941 and #2956.
+
+  * Added validation of the session duration in interim meeting requests, with
+    added values in settings.py for min and max duration.
+
+  * Clarified the standalone XML draft submission requirements, and 
+    mentioned the xml2rfc switch to use for v3 sources.
+
+  * Changes to accept a wider range of URLs when displaying call-in links from
+    the Session agenda_note and remote_instructions fields.
+
+  * Changed some fields to raw_id_fields in the MessageAdmin, for improved
+    admin page load times.
+
+  * Added 'Remote instructions' at the top of interim sesssion pages, and 
+    made the 'Meeting Details' button available to the group chairs, not only 
+    secretariat.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Apr 2020 16:51:46 +0000
+
+
 ietfdb (6.124.0) ietf; urgency=medium
 
   **Enhanced 'Upcoming Meetings' page, and more**

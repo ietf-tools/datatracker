@@ -1,4 +1,5 @@
 # Copyright The IETF Trust 2013-2019, All Rights Reserved
+import datetime
 import re
 
 from django import forms
@@ -10,13 +11,6 @@ from ietf.meeting.models import Meeting, Room, TimeSlot, Session, SchedTimeSessA
 from ietf.name.models import TimeSlotTypeName
 import ietf.utils.fields
 
-DAYS_CHOICES = ((0,'Saturday'),
-                (1,'Sunday'),
-                (2,'Monday'),
-                (3,'Tuesday'),
-                (4,'Wednesday'),
-                (5,'Thursday'),
-                (6,'Friday'))
 
 # using Django week_day lookup values (Sunday=1)
 SESSION_DAYS = ((2,'Monday'),
@@ -131,15 +125,18 @@ class MeetingRoomForm(forms.ModelForm):
         exclude = ['resources']
 
 class TimeSlotForm(forms.Form):
-    day = forms.ChoiceField(choices=DAYS_CHOICES)
+    day = forms.ChoiceField()
     time = forms.TimeField()
     duration = ietf.utils.fields.DurationField()
     name = forms.CharField(help_text='Name that appears on the agenda')
     
     def __init__(self,*args,**kwargs):
+        if 'meeting' in kwargs:
+            self.meeting = kwargs.pop('meeting')
         super(TimeSlotForm, self).__init__(*args,**kwargs)
         self.fields["time"].widget.attrs["placeholder"] = "HH:MM"
         self.fields["duration"].widget.attrs["placeholder"] = "HH:MM"
+        self.fields["day"].choices = self.get_day_choices()
 
     def clean_duration(self):
         '''Limit to HH:MM format'''
@@ -147,6 +144,16 @@ class TimeSlotForm(forms.Form):
         if not SESSION_DURATION_RE.match(duration):
             raise forms.ValidationError('{} value has an invalid format. It must be in HH:MM format'.format(duration))
         return self.cleaned_data['duration']
+
+    def get_day_choices(self):
+        '''Get day choices for form based on meeting duration'''
+        choices = []
+        start = self.meeting.date 
+        for n in range(self.meeting.days):
+            date = start + datetime.timedelta(days=n)
+            choices.append((n, date.strftime("%a %b %d")))
+        return choices
+
 
 class MiscSessionForm(TimeSlotForm):
     short = forms.CharField(max_length=32,label='Short Name',help_text='Enter an abbreviated session name (used for material file names)',required=False)

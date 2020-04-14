@@ -5612,6 +5612,39 @@
   {
     "fields": {
       "desc": "",
+      "name": "Preference for time between sessions",
+      "order": 0,
+      "penalty": 100000,
+      "used": true
+    },
+    "model": "name.constraintname",
+    "pk": "time_relation"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Can't meet within timerange",
+      "order": 0,
+      "penalty": 100000,
+      "used": true
+    },
+    "model": "name.constraintname",
+    "pk": "timerange"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Request for adjacent scheduling with another WG",
+      "order": 0,
+      "penalty": 100000,
+      "used": true
+    },
+    "model": "name.constraintname",
+    "pk": "wg_adjacent"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Africa",
       "order": 0,
       "used": true
@@ -11700,6 +11733,156 @@
     },
     "model": "name.streamname",
     "pk": "legacy"
+  },
+  {
+    "fields": {
+      "desc": "Friday early afternoon",
+      "name": "friday-afternoon-early",
+      "order": 13,
+      "used": true
+    },
+    "model": "name.timerangename",
+    "pk": "friday-afternoon-early"
+  },
+  {
+    "fields": {
+      "desc": "Friday late afternoon",
+      "name": "friday-afternoon-late",
+      "order": 14,
+      "used": true
+    },
+    "model": "name.timerangename",
+    "pk": "friday-afternoon-late"
+  },
+  {
+    "fields": {
+      "desc": "Friday morning",
+      "name": "friday-morning",
+      "order": 12,
+      "used": true
+    },
+    "model": "name.timerangename",
+    "pk": "friday-morning"
+  },
+  {
+    "fields": {
+      "desc": "Monday early afternoon",
+      "name": "monday-afternoon-early",
+      "order": 1,
+      "used": true
+    },
+    "model": "name.timerangename",
+    "pk": "monday-afternoon-early"
+  },
+  {
+    "fields": {
+      "desc": "Monday late afternoon",
+      "name": "monday-afternoon-late",
+      "order": 2,
+      "used": true
+    },
+    "model": "name.timerangename",
+    "pk": "monday-afternoon-late"
+  },
+  {
+    "fields": {
+      "desc": "Monday morning",
+      "name": "monday-morning",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.timerangename",
+    "pk": "monday-morning"
+  },
+  {
+    "fields": {
+      "desc": "Thursday early afternoon",
+      "name": "thursday-afternoon-early",
+      "order": 10,
+      "used": true
+    },
+    "model": "name.timerangename",
+    "pk": "thursday-afternoon-early"
+  },
+  {
+    "fields": {
+      "desc": "Thursday late afternoon",
+      "name": "thursday-afternoon-late",
+      "order": 11,
+      "used": true
+    },
+    "model": "name.timerangename",
+    "pk": "thursday-afternoon-late"
+  },
+  {
+    "fields": {
+      "desc": "Thursday morning",
+      "name": "thursday-morning",
+      "order": 9,
+      "used": true
+    },
+    "model": "name.timerangename",
+    "pk": "thursday-morning"
+  },
+  {
+    "fields": {
+      "desc": "Tuesday early afternoon",
+      "name": "tuesday-afternoon-early",
+      "order": 4,
+      "used": true
+    },
+    "model": "name.timerangename",
+    "pk": "tuesday-afternoon-early"
+  },
+  {
+    "fields": {
+      "desc": "Tuesday late afternoon",
+      "name": "tuesday-afternoon-late",
+      "order": 5,
+      "used": true
+    },
+    "model": "name.timerangename",
+    "pk": "tuesday-afternoon-late"
+  },
+  {
+    "fields": {
+      "desc": "Tuesday morning",
+      "name": "tuesday-morning",
+      "order": 3,
+      "used": true
+    },
+    "model": "name.timerangename",
+    "pk": "tuesday-morning"
+  },
+  {
+    "fields": {
+      "desc": "Wednesday early afternoon",
+      "name": "wednesday-afternoon-early",
+      "order": 7,
+      "used": true
+    },
+    "model": "name.timerangename",
+    "pk": "wednesday-afternoon-early"
+  },
+  {
+    "fields": {
+      "desc": "Wednesday late afternoon",
+      "name": "wednesday-afternoon-late",
+      "order": 8,
+      "used": true
+    },
+    "model": "name.timerangename",
+    "pk": "wednesday-afternoon-late"
+  },
+  {
+    "fields": {
+      "desc": "Wednesday morning",
+      "name": "wednesday-morning",
+      "order": 6,
+      "used": true
+    },
+    "model": "name.timerangename",
+    "pk": "wednesday-morning"
   },
   {
     "fields": {

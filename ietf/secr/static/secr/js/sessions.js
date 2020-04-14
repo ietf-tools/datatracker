@@ -15,23 +15,34 @@ function stat_ls (val){
   if (val == 0) {
     document.form_post.length_session1.disabled = true;
     document.form_post.length_session2.disabled = true;
-    document.form_post.length_session3.disabled = true;
+    if (document.form_post.length_session3) { document.form_post.length_session3.disabled = true; }
+    document.form_post.session_time_relation.disabled = true;
+    document.form_post.joint_for_session.disabled = true;
     document.form_post.length_session1.value = 0;
     document.form_post.length_session2.value = 0;
     document.form_post.length_session3.value = 0;
+    document.form_post.session_time_relation.value = '';
+    document.form_post.joint_for_session.value = '';
     document.form_post.third_session.checked=false;
   }
   if (val == 1) {
     document.form_post.length_session1.disabled = false;
     document.form_post.length_session2.disabled = true;
-    document.form_post.length_session3.disabled = true;
+    if (document.form_post.length_session3) { document.form_post.length_session3.disabled = true; }
+    document.form_post.session_time_relation.disabled = true;
+    document.form_post.joint_for_session.disabled = true;
     document.form_post.length_session2.value = 0;
     document.form_post.length_session3.value = 0;
+    document.form_post.session_time_relation.value = '';
+    document.form_post.joint_for_session.value = '1';
     document.form_post.third_session.checked=false;
   }
   if (val == 2) {
     document.form_post.length_session1.disabled = false;
     document.form_post.length_session2.disabled = false;
+    if (document.form_post.length_session3) { document.form_post.length_session3.disabled = false; }
+    document.form_post.session_time_relation.disabled = false;
+    document.form_post.joint_for_session.disabled = false;
   }
 }
 
@@ -110,6 +121,15 @@ function delete_last3 () {
   b = temp.join(' ');
   document.form_post.conflict3.value = b;
   document.form_post.wg_selector3.selectedIndex=0;
+}
+function delete_last_joint_with_groups () {
+  var b = document.form_post.joint_with_groups.value;
+  var temp = new Array();
+  temp = b.split(' ');
+  temp.pop();
+  b = temp.join(' ');
+  document.form_post.joint_with_groups.value = b;
+  document.form_post.wg_selector4.selectedIndex=0;
 }
 
 // Not calling check_prior_confict (see ietf/secr/sreq/forms.py definition of SessionForm)

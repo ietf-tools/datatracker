@@ -740,7 +740,7 @@ def times(request, meeting_id, schedule_name):
     times = sorted(slots, key=lambda a: a['time'])
 
     if request.method == 'POST':
-        form = TimeSlotForm(request.POST)
+        form = TimeSlotForm(request.POST, meeting=meeting)
         if form.is_valid():
             time = get_timeslot_time(form, meeting)
             duration = form.cleaned_data['duration']
@@ -764,7 +764,7 @@ def times(request, meeting_id, schedule_name):
             return redirect('ietf.secr.meetings.views.times', meeting_id=meeting_id,schedule_name=schedule_name)
 
     else:
-        form = TimeSlotForm()
+        form = TimeSlotForm(meeting=meeting)
 
     return render(request, 'meetings/times.html', {
         'form': form,
@@ -799,7 +799,7 @@ def times_edit(request, meeting_id, schedule_name, time):
         if button_text == 'Cancel':
             return redirect('ietf.secr.meetings.views.times', meeting_id=meeting_id,schedule_name=schedule_name)
 
-        form = TimeSlotForm(request.POST)
+        form = TimeSlotForm(request.POST, meeting=meeting)
         if form.is_valid():
             day = form.cleaned_data['day']
             time = get_timeslot_time(form, meeting)
@@ -825,7 +825,7 @@ def times_edit(request, meeting_id, schedule_name, time):
                    'time':dtime.strftime('%H:%M'),
                    'duration':timeslots.first().duration,
                    'name':timeslots.first().name}
-        form = TimeSlotForm(initial=initial)
+        form = TimeSlotForm(initial=initial, meeting=meeting)
 
     return render(request, 'meetings/times_edit.html', {
         'meeting': meeting,

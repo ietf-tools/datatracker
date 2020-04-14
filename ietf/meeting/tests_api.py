@@ -10,6 +10,7 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
+from ietf.name.models import TimerangeName
 from ietf.group.models import Group
 from ietf.meeting.models import Schedule, TimeSlot, Session, SchedTimeSessAssignment, Meeting, Constraint
 from ietf.meeting.test_data import make_meeting_test_data
@@ -117,10 +118,23 @@ class ApiTests(TestCase):
                                              person=Person.objects.get(user__username="ad"),
                                              name_id="bethere")
 
+        c_adjacent = Constraint.objects.create(meeting=meeting, source=session.group,
+                                              target=Group.objects.get(acronym="irg"),
+                                              name_id="wg_adjacent")
+
+        c_time_relation = Constraint.objects.create(meeting=meeting, source=session.group,
+                                                    time_relation='subsequent-days',
+                                                    name_id="time_relation")
+
+        c_timerange = Constraint.objects.create(meeting=meeting, source=session.group,
+                                                name_id="timerange")
+        c_timerange.timeranges.set(TimerangeName.objects.filter(slug__startswith='monday'))
+
         r = self.client.get(urlreverse("ietf.meeting.ajax.session_constraints", kwargs=dict(num=meeting.number, sessionid=session.pk)))
         self.assertEqual(r.status_code, 200)
         constraints = r.json()
-        self.assertEqual(set([c_ames.pk, c_person.pk]), set(c["constraint_id"] for c in constraints))
+        expected_keys = set([c_ames.pk, c_person.pk, c_adjacent.pk, c_time_relation.pk, c_timerange.pk])
+        self.assertEqual(expected_keys, set(c["constraint_id"] for c in constraints))
 
     def test_meeting_json(self):
         meeting = make_meeting_test_data()

@@ -19,7 +19,7 @@ from ietf.meeting.models import Meeting, Session, Constraint, ResourceAssociatio
 from ietf.meeting.helpers import get_meeting
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.name.models import SessionStatusName, ConstraintName
-from ietf.secr.sreq.forms import SessionForm, ToolStatusForm, allowed_conflicting_groups
+from ietf.secr.sreq.forms import SessionForm, ToolStatusForm, allowed_conflicting_groups, JOINT_FOR_SESSION_CHOICES
 from ietf.secr.utils.decorators import check_permissions
 from ietf.secr.utils.group import get_my_groups
 from ietf.utils.mail import send_mail
@@ -78,6 +78,19 @@ def get_initial_session(sessions, prune_conflicts=False):
     initial['comments'] = sessions[0].comments
     initial['resources'] = sessions[0].resources.all()
     initial['bethere'] = [x.person for x in sessions[0].constraints().filter(name='bethere').select_related("person")]
+    wg_adjacent = conflicts.filter(name__slug='wg_adjacent')
+    initial['adjacent_with_wg'] = wg_adjacent[0].target.acronym if wg_adjacent else None
+    time_relation = conflicts.filter(name__slug='time_relation')
+    initial['session_time_relation'] = time_relation[0].time_relation if time_relation else None
+    initial['session_time_relation_display'] = time_relation[0].get_time_relation_display if time_relation else None
+    timeranges = conflicts.filter(name__slug='timerange')
+    initial['timeranges'] = timeranges[0].timeranges.all() if timeranges else []
+    initial['timeranges_display'] = [t.desc for t in initial['timeranges']]
+    for idx, session in enumerate(sessions):
+        if session.joint_with_groups.count():
+            initial['joint_with_groups'] = ' '.join(session.joint_with_groups_acronyms())
+            initial['joint_for_session'] = str(idx + 1)
+            initial['joint_for_session_display'] = dict(JOINT_FOR_SESSION_CHOICES)[initial['joint_for_session']]
     return initial
 
 def get_lock_message(meeting=None):
@@ -163,7 +176,8 @@ def session_conflicts_as_string(group, meeting):
     Takes a Group object and Meeting object and returns a string of other groups which have
     a conflict with this one
     '''
-    group_list = [ g.source.acronym for g in group.constraint_target_set.filter(meeting=meeting) ]
+    groups = group.constraint_target_set.filter(meeting=meeting, name__in=['conflict', 'conflic2', 'conflic3'])
+    group_list = [g.source.acronym for g in groups]
     return ', '.join(group_list)
 
 # -------------------------------------------------
@@ -260,6 +274,12 @@ def confirm(request, acronym):
     if 'bethere' in session_data:
         person_id_list = [ id for id in form.data['bethere'].split(',') if id ]
         session_data['bethere'] = Person.objects.filter(pk__in=person_id_list)
+    if session_data.get('session_time_relation'):
+        session_data['session_time_relation_display'] = dict(Constraint.TIME_RELATION_CHOICES)[session_data['session_time_relation']]
+    if session_data.get('joint_for_session'):
+        session_data['joint_for_session_display'] = dict(JOINT_FOR_SESSION_CHOICES)[session_data['joint_for_session']]
+    if form.cleaned_data.get('timeranges'):
+        session_data['timeranges_display'] = [t.desc for t in form.cleaned_data['timeranges']]
     session_data['resources'] = [ ResourceAssociation.objects.get(pk=pk) for pk in request.POST.getlist('resources') ]
     
     button_text = request.POST.get('submit', '')
@@ -299,12 +319,27 @@ def confirm(request, acronym):
                 )
                 if 'resources' in form.data:
                     new_session.resources.set(session_data['resources'])
+                if int(form.data.get('joint_for_session', '-1')) == count:
+                    groups_split = form.cleaned_data.get('joint_with_groups').replace(',',' ').split()
+                    joint = Group.objects.filter(acronym__in=groups_split)
+                    new_session.joint_with_groups.set(joint)
                 session_changed(new_session)
 
         # write constraint records
         save_conflicts(group,meeting,form.data.get('conflict1',''),'conflict')
         save_conflicts(group,meeting,form.data.get('conflict2',''),'conflic2')
         save_conflicts(group,meeting,form.data.get('conflict3',''),'conflic3')
+        save_conflicts(group, meeting, form.data.get('adjacent_with_wg', ''), 'wg_adjacent')
+
+        if form.cleaned_data.get('session_time_relation'):
+            cn = ConstraintName.objects.get(slug='time_relation')
+            Constraint.objects.create(source=group, meeting=meeting, name=cn,
+                                      time_relation=form.cleaned_data['session_time_relation'])
+
+        if form.cleaned_data.get('timeranges'):
+            cn = ConstraintName.objects.get(slug='timerange')
+            constraint = Constraint.objects.create(source=group, meeting=meeting, name=cn)
+            constraint.timeranges.set(form.cleaned_data['timeranges'])
 
         if 'bethere' in form.data:
             bethere_cn = ConstraintName.objects.get(slug='bethere')
@@ -443,7 +478,30 @@ def edit(request, acronym, num=None):
                         session.save()
                         session_changed(session)
 
+                # New sessions may have been created, refresh the sessions list
+                sessions = add_event_info_to_session_qs(
+                    Session.objects.filter(group=group, meeting=meeting)).filter(
+                    Q(current_status__isnull=True) | ~Q(
+                        current_status__in=['canceled', 'notmeet'])).order_by('id')
 
+                if 'joint_with_groups' in form.changed_data or 'joint_for_session' in form.changed_data:
+                    joint_with_groups_list = form.cleaned_data.get('joint_with_groups').replace(',', ' ').split()
+                    new_joint_with_groups = Group.objects.filter(acronym__in=joint_with_groups_list)
+                    new_joint_for_session_idx = int(form.data.get('joint_for_session', '-1')) - 1
+                    current_joint_for_session_idx = None
+                    current_joint_with_groups = None
+                    for idx, session in enumerate(sessions):
+                        if session.joint_with_groups.count():
+                            current_joint_for_session_idx = idx
+                            current_joint_with_groups = session.joint_with_groups.all()
+
+                    if current_joint_with_groups != new_joint_with_groups or current_joint_for_session_idx != new_joint_for_session_idx:
+                        if current_joint_for_session_idx is not None:
+                            sessions[current_joint_for_session_idx].joint_with_groups.clear()
+                            session_changed(sessions[current_joint_for_session_idx])
+                        sessions[new_joint_for_session_idx].joint_with_groups.set(new_joint_with_groups)
+                        session_changed(sessions[new_joint_for_session_idx])
+                            
                 if 'attendees' in form.changed_data:
                     sessions.update(attendees=form.cleaned_data['attendees'])
                 if 'comments' in form.changed_data:
@@ -457,6 +515,9 @@ def edit(request, acronym, num=None):
                 if 'conflict3' in form.changed_data:
                     Constraint.objects.filter(meeting=meeting,source=group,name='conflic3').delete()
                     save_conflicts(group,meeting,form.cleaned_data['conflict3'],'conflic3')
+                if 'adjacent_with_wg' in form.changed_data:
+                    Constraint.objects.filter(meeting=meeting, source=group, name='wg_adjacent').delete()
+                    save_conflicts(group, meeting, form.cleaned_data['adjacent_with_wg'], 'wg_adjacent')
 
                 if 'resources' in form.changed_data:
                     new_resource_ids = form.cleaned_data['resources']
@@ -469,6 +530,20 @@ def edit(request, acronym, num=None):
                     bethere_cn = ConstraintName.objects.get(slug='bethere')
                     for p in form.cleaned_data['bethere']:
                         Constraint.objects.create(name=bethere_cn, source=group, person=p, meeting=session.meeting)
+
+                if 'session_time_relation' in form.changed_data:
+                    Constraint.objects.filter(meeting=meeting, source=group, name='time_relation').delete()
+                    if form.cleaned_data['session_time_relation']:
+                        cn = ConstraintName.objects.get(slug='time_relation')
+                        Constraint.objects.create(source=group, meeting=meeting, name=cn,
+                                                  time_relation=form.cleaned_data['session_time_relation'])
+
+                if 'timeranges' in form.changed_data:
+                    Constraint.objects.filter(meeting=meeting, source=group, name='timerange').delete()
+                    if form.cleaned_data['timeranges']:
+                        cn = ConstraintName.objects.get(slug='timerange')
+                        constraint = Constraint.objects.create(source=group, meeting=meeting, name=cn)
+                        constraint.timeranges.set(form.cleaned_data['timeranges'])
 
                 # deprecated
                 # log activity
