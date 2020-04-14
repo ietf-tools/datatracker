@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters %}
+{% load staticfiles %}
+
+{% block title %}History for {{ doc.name }}-{{ doc.rev }}{% endblock %}
+
+{% block morecss %}
+  form.diff-form button[type=submit] { margin-left: 2em; }
+{% endblock %}
+
+{% block pagehead %}
+  <link rel="alternate" type="application/atom+xml" href="/feed/document-changes/{{ doc.name }}/" />
+  <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  {{ top|safe }}
+
+  {% if diff_revisions and diff_revisions|length > 1 or doc.name|rfcbis %}
+    <h2>Revision differences</h2>
+
+    <form class="form-horizontal diff-form" action="{{rfcdiff_base_url}}" method="get" target="_blank">
+
+      <div class="form-group">
+        <div class="col-sm-2 ">
+          <label for="url1" class="control-label">From revision</label>
+        </div>
+        <div class="col-sm-10">
+          <select class="form-control" id="url1" name="url1">
+	    {% for name, rev, time, url in diff_revisions %}
+	      <option value="{{ url }}" {% if diff_revisions|length > 1 and forloop.counter == 2 %} selected="selected" {% endif %}>
+	        {{ name }}{% if rev %}-{{ rev }}{% endif %}
+	        ({{ time|date:"Y-m-d" }})
+	      </option>
+	    {% endfor %}
+	    {% if doc.name|rfcbis %}
+	      <option value="{{ doc.name|rfcbis }}"{% if diff_revisions and diff_revisions|length == 1 %} selected="selected"{% endif %}>
+	        {{ doc.name|rfcbis }}
+	      </option>
+	    {% endif %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="col-sm-2 ">
+          <label for="url2" class="control-label">To revision</label>
+        </div>
+        <div class="col-sm-10">
+          <select class="form-control" id="url2" name="url2">
+	    {% for name, rev, time, url in diff_revisions %}
+	      <option value="{{ url }}" {% if forloop.counter == 1 %} selected="selected" {% endif %}>
+	        {{ name }}{% if rev %}-{{ rev }}{% endif %}
+	        ({{ time|date:"Y-m-d" }})
+	      </option>
+	    {% endfor %}
+	    {% if doc.name|rfcbis %}
+	      <option value="{{ doc.name|rfcbis }}">
+	        {{ doc.name|rfcbis }}
+	      </option>
+	    {% endif %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="col-sm-2 ">
+          <label class="control-label">Diff format</label>
+        </div>
+        <div class="col-sm-10">
+          <div class="btn-group" data-toggle="buttons">
+	    <label class="btn btn-default active">
+	      <input type="radio" name="difftype" value="--html"> Side-by-side
+	    </label>
+	    <label class="btn btn-default">
+	      <input type="radio" name="difftype" value="--abdiff"> Before-after
+	    </label>
+	    <label class="btn btn-default">
+	      <input type="radio" name="difftype" value="--chbars"> Change bars
+	    </label>
+	    <label class="btn btn-default">
+	      <input type="radio" name="difftype" value="--hwdiff"> Wdiff
+	    </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+      </div>
+    </form>
+  {% endif %}
+
+  <h2>Document history</h2>
+  {% if can_add_comment %} 
+   <div class="buttonlist">
+      <a class="btn btn-default" href="{% url 'ietf.doc.views_doc.add_comment' name=doc.name %}"><span class="fa fa-plus"></span> Add comment</a>
+    </div>
+  {% endif %}
+
+  <table class="table table-condensed table-striped tablesorter">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Rev.</th>
+        <th>By</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for e in events %}
+        <tr class="anchor-target" id="history-{{ e.pk }}">
+          <td class="text-nowrap"><div title="{{ e.time|date:'Y-m-d H:i:s O' }}">{{ e.time|date:"Y-m-d" }}</div></td>
+          <td class="text-center">{{ e.rev }}</td>
+          <td>{{ e.by|escape }}</td>
+          <td>{{ e.desc|format_history_text|safe }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock content %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

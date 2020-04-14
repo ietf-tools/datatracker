@@ -1,0 +1,8 @@
+{% load ams_filters %}
+The {{ group.name }} ({{ group.acronym }}) {% if not meeting.city %}virtual {% endif %}{% if is_multi_day %}multi-day {% endif %}
+interim meeting for {{ meeting.date|date:"Y-m-d" }} from {{ start_time|time:"H:i" }} to {{ end_time|time:"H:i" }} {{ meeting.time_zone }}
+has been cancelled.
+
+{{ meeting.session_set.0.agenda_note }}
+
+

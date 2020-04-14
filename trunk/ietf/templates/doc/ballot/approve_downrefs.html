@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2019, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Approve downward references for {{ doc }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Approve downward references<br><small>The ballot for <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a> was just approved</small></h1>
+
+  {% if not downrefs_to_rfc %}
+    <p>No downward references for <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></p>
+  {% else %}
+    <p>Add downward references to RFCs to the downref registry, if they were identified in the IETF Last Call and approved by the Sponsoring Area Director.<p>
+    <p><b>Last Call text for this document:</b><p>
+    <pre>
+    {{ last_call_text }}
+    </pre>
+    <p><b>This document has downward references to the following RFCs.<br>Which downward references, if any, are to be added to the downref registry?</b></p>
+    <form action="" method="post">
+    {% csrf_token %}
+    {% bootstrap_form approve_downrefs_form %}
+    {% buttons %}
+    <p>
+      <a class="btn btn-primary" href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Add no downref entries</a>
+      <button type="submit" class="btn btn-warning" value="Save checked downrefs">Add checked downref entries</button>
+    </p>
+    {% endbuttons %}
+    </form>
+  {% endif %}
+
+{% endblock %}

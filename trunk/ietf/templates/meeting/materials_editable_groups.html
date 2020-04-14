@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016-2019, All Rights Reserved #}
+{% load origin %}
+
+{% load ietf_filters managed_groups group_filters %}
+
+{% block content %}
+   <h1>IETF {{ meeting_num }} meeting materials that you can edit</h1>
+
+   {% if user and user.is_authenticated %}
+      {% with user|matman_groups as user_groups %} 
+         {% if user_groups %}
+            {% for g in user_groups %}
+               {% if g|has_sessions:meeting_num %}
+                  <p><a href="{% url 'ietf.meeting.views.session_details' num=meeting_num acronym=g.acronym %}">{{ g.acronym }}</a></p>
+               {% else %}
+                  <p>{{ g.acronym }} (No session requested) </p>
+               {% endif %}
+            {% endfor %}
+         {% else %}
+            <p>You cannot manage the meeting materials for any groups.</p>
+         {% endif %}
+      {% endwith %}
+   {% else %}
+      <p>You cannot manage the meeting materials for any groups.</p>
+   {% endif %}
+{% endblock %}

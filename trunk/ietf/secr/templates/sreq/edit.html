@@ -1,0 +1,47 @@
+{% extends "base_site.html" %}
+{% load staticfiles %}
+{% block title %}Sessions - Edit{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
+  <script type="text/javascript" src="{% static 'secr/js/sessions.js' %}"></script>
+
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Sessions</a>
+  &raquo; <a href="../">{{ group.acronym }}</a>
+  &raquo; Edit 
+{% endblock %}
+
+{% block instructions %}
+  <a href="https://www.ietf.org/chairs/session-request-tool-instructions/" target="_blank">Instructions</a>
+{% endblock %}
+
+{% block content %}
+
+<noscript>
+    <div style="position: fixed; top: 0px; left: 0px; z-index: 3000; 
+                height: 100%; width: 100%; background-color: #FFFFFF">
+        <p style="margin-left: 10px">This page requires JavaScript.</p>
+    </div>
+</noscript>
+
+<div class="module interim-container">
+    <h2>IETF {{ meeting.number }}: Edit Session Request</h2>
+         <div class="inline-related">
+         <br>
+
+         {% include "includes/sessions_request_form.html" %}
+
+</div> <!-- module -->
+
+{% endblock %}
+
+{% block footer-extras %}
+  {% include "includes/sessions_footer.html" %}
+{% endblock %}

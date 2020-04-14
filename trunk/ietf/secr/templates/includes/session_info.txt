@@ -1,0 +1,28 @@
+{% load ams_filters %}
+---------------------------------------------------------
+Working Group Name: {{ group.name }}
+Area Name: {{ group.parent }}
+Session Requester: {{ login }}
+{% if session.joint_with_groups %}{{ session.joint_for_session_display }} joint with: {{ session.joint_with_groups }}{% endif %}
+
+Number of Sessions: {{ session.num_session }}
+Length of Session(s):  {{ session.length_session1|display_duration }}{% if session.length_session2 %}, {{ session.length_session2|display_duration }}{% endif %}{% if session.length_session3 %}, {{ session.length_session3|display_duration }}{% endif %}
+Number of Attendees: {{ session.attendees }}
+Conflicts to Avoid: 
+{% if session.conflict1 %} Chair Conflict: {{ session.conflict1 }}{% endif %}
+{% if session.conflict2 %} Technology Overlap: {{ session.conflict2 }}{% endif %}
+{% if session.conflict3 %} Key Participant Conflict: {{ session.conflict3 }}{% endif %}
+{% if session.session_time_relation_display %} {{ session.session_time_relation_display }}{% endif %}
+{% if session.adjacent_with_wg %} Adjacent with WG: {{ session.adjacent_with_wg }}{% endif %}
+{% if session.timeranges_display %} Can't meet: {{ session.timeranges_display|join:", " }}{% endif %}
+
+
+People who must be present:
+{% for person in session.bethere %}  {{ person.ascii_name }}
+{% endfor %}
+Resources Requested:
+{% for resource in session.resources %}  {{ resource.desc }}
+{% endfor %}
+Special Requests:
+  {{ session.comments }}
+---------------------------------------------------------

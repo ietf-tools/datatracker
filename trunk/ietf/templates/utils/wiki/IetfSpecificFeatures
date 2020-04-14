@@ -1,0 +1,94 @@
+= IETF-Specific Information =
+
+== Editing the Wiki and Issues ==
+
+In order to create and edit wiki pages and issues, you need to log in.  Click on the
+small 'Login' link above the main horizontal menubar.  You log in with the same
+username (your email address) and password as for all other ''tools.ietf.org'' password
+protected accesses.  If you don't have a login/passwd or need to reset your passwd, go
+to http://tools.ietf.org/newpasswd .
+
+The login and password is also used for commits to the SVN repository.  See more about
+the repository further down.
+
+== IETF-Specific Features ==
+
+This Trac installation has a few IETF-specific features which are not generally found
+in Trac:
+
+ * Occurences of RFC numbers or draft names in Wiki text will generate links to the
+   RFC or draft in question.  Unless you want to point to an RFC or draft in a
+   specific location which is different from the automatically generated link, you
+   don't need to explicitly add links for RFCs and drafts.  Examples: RFC 2026,
+   draft-ietf-poised95-std-proc-3
+
+ * Each issue in the issue tracker can be indicated to concern a 'component'. This is
+   a standard Trac feature; however, the list of available components is automatically
+   updated to include all the active working group drafts.  This makes it easier to
+   associate issues with drafts for the WG participants, without the Chairs needing to
+   go in as admin users and add a new component each time there's a new WG draft.
+
+ * The 'Severity' field of an issue has a special significance if the issue type is
+   set to 'state' or 'task'.  In that case, the Severity will be shown as an
+   annotation to the draft state on the regular WG status page on tools.ietf.org.
+   This can be useful for WG chairs to indicate more exactly the state of a WG draft,
+   which will otherwise simply be indicated as 'Active' on the status page, until it
+   is sent to the IESG for processing.
+
+ * If issues are registered against a draft ,indicated by setting the issue's
+   'component' field to the appropriate (abbreviated) draft name, the status page
+   will show a progress bar, indicating the total number of issues for that draft, as
+   well as the proportion which have been closed, and the number of still open issues.
+
+ * Everywhere you can use wiki markup (on the wiki pages, roadmap descriptions,
+   etc.) you may embed a macro which shows a ticket statistics graph.  Full
+   information about the macro is available at [http://trac-hacks.org/wiki/TicketStatsMacro].
+   Briefly, the macro syntax is:
+   {{{
+       [[TicketStats( height=250,daterange=12m,res_days=30)]]
+   }}}
+   which gives this result: [[TicketStats( height=250,daterange=12m,res_days=30)]]
+
+Issue tracker changes which are reflected in the WG status pages ('Severity'
+annotations and issue progress bars) may take up to 1 hour to propagate from the
+server which hosts the Trac instance (trac.tools.ietf.org) to the other tools servers.
+
+== Integration with tools.ietf.org ==
+
+For all working groups which have an instance of Trac installed, the URL to Trac for
+that WG has the form '''''!http://tools.ietf.org/wg/<wg>/trac'''''.
+There's also a link to the Trac issue tracker and a link to the Trac
+wiki in the horizontal menu on the WG status page
+'''''!http://tools.ietf.org/wg/<wg>'''''
+once Trac has been installed.
+
+== SVN Repository ==
+
+For each WG with a Trac instance there is also a SVN repository, with an URL of the
+form '''''!https://svn.tools.ietf.org/svn/wg/<wg>'''''.  Anybody can check out from
+the repository, but you need to use the tools server login and password in order to
+commit to the repository.
+
+To check out a repository with a command-line svn client, see this example for the ''hybi'' WG:
+
+{{{
+work/ $ svn co --username=henrik@levkowetz.com https://svn.tools.ietf.org/svn/wg/hybi/
+work/ $ cd hybi/
+hybi/ $
+}}}
+
+SVN also lets you check out parts of the repository tree, but for more info on
+that, please see the documentation on http://subversion.apache.org/.
+
+To add a document to the repository, place the document in your SVN working folder,
+tell SVN it should be added, and when ready, commit it to the repository:
+{{{
+hybi/ $ svn add draft-foo-bar-baz.txt
+hybi/ $ #...
+hybi/ $ svn commit draft-foo-bar-baz.txt -m "Commit message ..."
+hybi/ $
+}}}
+
+The IETF Trac instances use a variation of the Trac SVN hook script which is provided
+with Trac.  This script updates Track Issue Tickets based on keywords in the SVN
+commit messages; the keywords and their use is described in SvnTracHooks.

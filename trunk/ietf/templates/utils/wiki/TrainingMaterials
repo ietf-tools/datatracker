@@ -1,0 +1,10 @@
+= Training Materials =
+
+WG Traingin Materials go here.
+
+If you want to embed video, you can use the ![[Movie(<url>,width=<width>,height=<height>)]]
+macro to embed moves from [http://youtube.com/ YouTube].  Suggested width and height parameters: width=640,height=385.
+
+Example which doesn't point to an actual video:
+
+[[Movie(http://www.youtube.com/watch?v=g_exampleid,width=640px,height=385px)]] 

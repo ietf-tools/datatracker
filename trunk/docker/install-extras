@@ -1,0 +1,8 @@
+#!/bin/bash
+
+export DEBIAN_FRONTEND=noninteractive
+su - -c "apt-get update \
+	&& apt-get install -qy graphviz ghostscript apache2-utils \
+	&& apt-get clean \
+	&& rm -rf /var/lib/apt/lists/*"
+      

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2019, All Rights Reserved #}
+{% load origin staticfiles %}
+
+{% load ballot_icon %}
+{% load ietf_filters %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block title %}IRSG ballot status{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>IRSG ballot status</h1>
+
+  <table class="table table-condensed table-striped tablesorter">
+    <thead>
+      <tr>
+        <th>Document</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for doc in docs %}
+        <tr>
+          <td>
+	    {{ doc.displayname_with_link }}
+          </td>
+          {% include "doc/search/status_columns.html" %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
+
+{% block js %}
+  <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}
+

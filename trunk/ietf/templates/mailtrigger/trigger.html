@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% block title %}Mail Triggers{% endblock %}
+
+
+{% block content %}
+  {% origin %}
+  <h1>Mail Triggers</h1>
+
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Trigger</th>
+        <th>Recipients</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for mailtrigger in mailtriggers %}
+        <tr>
+          <td><span title="{{mailtrigger.desc}}">{{mailtrigger.slug}}</span></td>
+          <td>To: 
+            {% for recipient in mailtrigger.to.all %}
+              {% comment %}<span title="{{recipient.desc}}">{{recipient.slug}}</span>{% endcomment %}
+              <a href="{% url 'ietf.mailtrigger.views.show_recipients' recipient.slug %}" title="{{recipient.desc}}">{{recipient.slug}}</a>{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+            {% if mailtrigger.cc.exists %}
+              <br/>Cc:
+              {% for recipient in mailtrigger.cc.all %}
+                {% comment %}<span title="{{recipient.desc}}">{{recipient.slug}}</span>{% endcomment %}
+                <a href="{% url 'ietf.mailtrigger.views.show_recipients' recipient.slug %}" title="{{recipient.desc}}">{{recipient.slug}}</a>{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            {% endif %}
+          </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+{% endblock %}

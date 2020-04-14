@@ -1,0 +1,6 @@
+BLUE DOT REPORT
+
+NAMES                            ROSTER                              BADGE
+--------------------------------------------------------------------------
+{% for chair in chairs %}{{ chair.name|safe|stringformat:"-33s" }}{{ chair.groups|stringformat:"-36s" }}BLUE
+{% endfor %}

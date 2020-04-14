@@ -1,0 +1,14 @@
+--- unidecode/__init__.py.old	2018-01-17 07:54:06.882306379 -0800
++++ unidecode/__init__.py	2018-01-09 04:26:04.210366000 -0800
+@@ -22,9 +22,9 @@
+ 
+ def _warn_if_not_unicode(string):
+     if version_info[0] < 3 and not isinstance(string, unicode):
+-        warnings.warn(  "Argument %r is not an unicode object. "
++        warnings.warn(  "Argument %r (%s) is not an unicode object. "
+                         "Passing an encoded string will likely have "
+-                        "unexpected results." % (type(string),),
++                        "unexpected results." % (type(string), string[:16]),
+                         RuntimeWarning, 2)
+ 
+ 

@@ -1,0 +1,18 @@
+<table class="simple-table">
+  {% for p in unavailable_periods %}
+  <tr class="unavailable-period-{{ p.state }}">
+    <th class="padded-right">Dates:</th>
+    <td> {% if p.start_date or p.end_date %}{{ p.start_date|default:"&infin;" }} -{% endif %} {{ p.end_date|default:"&infin;" }}</td>
+  </tr>
+  <tr class="unavailable-period-{{ p.state }}">
+    <th class="padded-right">Availability:</th>
+    <td>{{ p.get_availability_display }}</td>
+  </tr>
+  <tr class="unavailable-period-{{ p.state }}">
+    <th class="padded-right">Reason:</th>
+    <td>{{ p.reason }}</td>
+  </tr>
+  <tr><td>&nbsp;</td></td></td></tr>
+  {% endfor %}
+</table>
+

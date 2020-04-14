@@ -1,0 +1,29 @@
+= Welcome to this IETF WG Trac installation =
+
+Trac is a '''minimalistic''' approach to '''web-based''' project management,
+suitable for software and documentation projects and similar.  Its goal is to
+simplify effective tracking and handling of project issues, enhancements and
+overall progress.
+
+As all Wiki pages, this page is editable, this means that you can modify the
+contents of this page simply by using your web-browser. Simply click on the
+"Edit this page" link at the bottom of the page. WikiFormatting will give you
+a detailed description of available Wiki formatting commands.
+
+There is nothing in this page which isn't also covered in one of the other
+wiki pages, so the first adjustment you make of this Trac installation could
+be to edit the content of this page, replacing this initial text with content
+appropriate to your Working Group.
+
+There are some aspects of this Trac installation which are specific to the
+IETF environment.  Those are described in IetfSpecificFeatures.
+
+
+== Starting Points ==
+
+ * TracGuide --  Built-in Documentation
+ * [http://trac.edgewall.org/ The Trac project] -- Trac Open Source Project
+ * [http://trac.edgewall.org/wiki/TracFaq Trac FAQ] -- Frequently Asked Questions
+ * TracSupport --  Trac Support
+
+For a complete list of local wiki pages, see TitleIndex.

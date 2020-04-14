@@ -1,0 +1,5 @@
+The following liaison statement will remain pending (and not public available) in the system until you approve it:
+
+{% include "liaisons/liaison_mail.txt" %}
+
+Please visit {{ liaison.get_absolute_url }} in order to approve the liaison statement.

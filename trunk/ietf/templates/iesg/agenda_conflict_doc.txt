@@ -1,0 +1,8 @@
+{% load ietf_filters %}{% with doc.conflictdoc as conflictdoc %}
+  o {{ doc.canonical_name }}-{{ doc.rev }}
+    {% filter wordwrap:"68"|indent|indent %}{{ doc.title }}{% endfilter %}
+      {{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}
+      {% filter wordwrap:"66"|indent:"4" %}{{ conflictdoc.title }} ({{ conflictdoc.stream }}: {{ conflictdoc.intended_std_level }}){% endfilter %}
+{% if conflictdoc.note %}{# note: note is not escaped #}      {% filter wordwrap:"64"|indent:"6" %}Note: {{ conflictdoc.note|striptags }}{% endfilter %}
+{% endif %}    Token: {{ doc.ad }}
+{% with doc.active_defer_event as defer %}{% if defer %}    Was deferred by {{defer.by}} on {{defer.time|date:"Y-m-d"}}{% endif %}{% endwith %}{% endwith %}

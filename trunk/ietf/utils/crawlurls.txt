@@ -1,0 +1,19 @@
+# List of starting points for the test crawler (see
+# bin/run-real-data-tests). Add URLs that have no link from inside the
+# project.
+
+/
+/doc/all/
+/doc/iesg/last-call/
+/doc/in-last-call/
+/iesg/decisions/
+/iesg/agenda/documents.txt
+/iesg/agenda/agenda.json
+/iesg/agenda/scribe_template.html
+/wg/1wg-summary.txt
+/wg/1wg-summary-by-acronym.txt
+/wg/1wg-charters.txt
+/wg/1wg-charters-by-acronym.txt
+/sitemap.xml
+/sitemap-ipr.xml
+/sitemap-liaison.xml
