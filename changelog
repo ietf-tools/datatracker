@@ -1,3 +1,19 @@
+ietfdb (6.127.0) ietf; urgency=medium
+
+  **Removed Python 2.7 compatibility.**
+
+  This release removes python 2.7 compatibility code.  It is a precursor to
+  conversion from Django 1.11 to Django 2.2 (via 2.0 and 2.1).  The coming
+  Django 2.x compatible release will have a major version bump, to match.
+  Please note that there may however be some additional releases based on
+  Django 1.11 before we come to the first Django 2.x release.
+
+  * Merged in the py3clean work, which removes usage of six and __future__ 
+    imports, along with other py2/3 compatibility code.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Apr 2020 19:45:50 +0000
+
+
 ietfdb (6.126.0) ietf; urgency=medium
 
   **Groundwork for upcoming automatic scheduling assistance**
