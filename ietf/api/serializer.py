@@ -231,6 +231,9 @@ class JsonExportMixin(object):
         for k in list(qfilter.keys()):
             if k.startswith("_"):
                 del qfilter[k]
+        # discard a possible apikey, rather than using it as a queryset argument
+        if 'apikey' in qfilter:
+            del qfilter['apikey']
         qfilter.update(filter)
         filter = qfilter
         key = request.GET.get("_key", "pk")
