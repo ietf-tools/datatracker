@@ -16,6 +16,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.utils.test_runner import set_coverage_checking
 from ietf.person.models import Person, PersonalApiKey, PersonApiKeyEvent
+from ietf.utils import log
 
 @decorator
 def skip_coverage(f, *args, **kwargs):
@@ -76,7 +77,12 @@ def require_api_key(f, request, *args, **kwargs):
     key.save()
     PersonApiKeyEvent.objects.create(person=person, type='apikey_login', key=key, desc="Logged in with key ID %s, endpoint %s" % (key.id, key.endpoint))
     # Execute decorated function
-    return f(request, *args, **kwargs)
+    try:
+        ret = f(request, *args, **kwargs)
+    except AttributeError as e:
+        log.log("Bad API call: args: %s, kwargs: %s, exception: %s" % (args, kwargs, e))
+        return err(400, "Bad or missing parameters")
+    return ret
 
 
 def _memoize(func, self, *args, **kwargs):
