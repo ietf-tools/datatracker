@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 
+import json
+
 from jwcrypto.jwk import JWK
 
 from django.conf import settings
@@ -92,3 +94,14 @@ class ApiV2PersonExportView(DetailView, JsonExportMixin):
             return self.err(400, "No filters provided")
 
         return self.json_view(request, filter=querydict.dict(), expand=expand)
+
+@method_decorator((csrf_exempt, require_api_key), name='dispatch')
+class PersonAccessMeetechoView(DetailView, JsonExportMixin):
+    model = Person
+
+    def err(self, code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+
+    def get(self, request):
+        person = get_object_or_404(self.model, user=request.user)
+        return HttpResponse(json.dumps({ 'name' : person.name, 'email': person.email().address, }), content_type='application/json')
