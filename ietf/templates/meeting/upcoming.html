@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
+{% load cache %}
 {% load ietf_filters staticfiles classname %}
 
 {% block pagehead %}
@@ -42,6 +42,7 @@
         </div>
       {% endif %}
   
+      {% cache 600 upcoming-meetings entries.count %}
         {% if entries %}
           <table class="table table-condensed table-striped tablesorter">
             <thead>
@@ -86,7 +87,7 @@
         {% else %}
           <h3>No upcoming meetings</h3>
         {% endif %}
-
+      {% endcache %}
     </div>
   </div>
   <div id="calendar" class="col-md-10" ></div>
