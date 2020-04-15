@@ -34,3 +34,6 @@ DATABASES = {
 
 if TEST_CODE_COVERAGE_CHECKER and not TEST_CODE_COVERAGE_CHECKER._started: # pyflakes:ignore
     TEST_CODE_COVERAGE_CHECKER.start()                          # pyflakes:ignore
+
+REQUEST_PROFILE_STORE_ANONYMOUS_SESSIONS = False
+    

@@ -357,6 +357,9 @@ if DEBUG:
 
 
 MIDDLEWARE = [
+    # Must be first to measure correct request timing
+    'request_profiler.middleware.ProfilingMiddleware',
+    #
     'django.middleware.csrf.CsrfViewMiddleware',
     'corsheaders.middleware.CorsMiddleware', # see docs on CORS_REPLACE_HTTPS_REFERER before using it
     'django.middleware.common.CommonMiddleware',
@@ -405,6 +408,7 @@ INSTALLED_APPS = [
     'django_password_strength',
     'djangobwr',
     'form_utils',
+    'request_profiler',
     'simple_history',
     'tastypie',
     'widget_tweaks',
@@ -1118,9 +1122,10 @@ if SERVER_MODE != 'production':
 
     CACHES = {
         'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
             #'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
             #'LOCATION': '127.0.0.1:11211',
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+            #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
             'VERSION': __version__,
             'KEY_PREFIX': 'ietf:dt',
         },

@@ -51,3 +51,5 @@ PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME                            # pyflakes:i
 MIDDLEWARE = [ c for c in MIDDLEWARE if not c in DEV_MIDDLEWARE ] # pyflakes:ignore
 
 TEMPLATES[0]['OPTIONS']['context_processors'] = [ p for p in TEMPLATES[0]['OPTIONS']['context_processors'] if not p in DEV_TEMPLATE_CONTEXT_PROCESSORS ] # pyflakes:ignore
+
+REQUEST_PROFILE_STORE_ANONYMOUS_SESSIONS = False

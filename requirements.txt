@@ -19,6 +19,7 @@ django-formtools>=1.0		# instead of django.contrib.formtools in 1.8
 django-markup>=1.1
 django-password-strength>=1.2.1
 django-referrer-policy>=1.0
+django-request-profiler==0.14   # 0.15 and above requires Django 2.x
 django-simple-history>=2.3.0
 django-stubs==1.3.0
 django-tastypie>=0.13.2
