@@ -173,8 +173,8 @@ ENV DDIR="/usr/local/share/datatracker"
 RUN mkdir -p $DDIR
 WORKDIR $DDIR
 
-COPY requirements3.txt ./
-RUN pip$PYREV --no-cache-dir install -r requirements3.txt
+COPY requirements.txt ./
+RUN pip$PYREV --no-cache-dir install -r requirements.txt
 
 COPY settings_local.py ./
 COPY setprompt ./

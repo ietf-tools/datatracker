@@ -102,7 +102,7 @@ echo "Activating the virtual python environment ..."
 
 if ! python -c "import django"; then
     echo "Installing requirements ..."
-    pip install -r /usr/local/share/datatracker/requirements3.txt
+    pip install -r /usr/local/share/datatracker/requirements.txt
 fi
 
 if [ ! -f $CWD/ietf/settings_local.py ]; then
