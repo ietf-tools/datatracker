@@ -1250,7 +1250,15 @@ def eligible(request, year):
     for m in previous_five:
         registration_emails = m.meetingregistration_set.values_list('email',flat=True)
         attendees[m] = Person.objects.filter(email__address__in=registration_emails).distinct()
-        potentials.update(attendees[m].exclude(role__group__type_id='area',role__group__state='active',role__name_id='ad').exclude(role__group__acronym='iab',role__name_id__in=['member','chair']).exclude(role__group__acronym='iaoc',role__name_id__in=['member','chair']))
+        # See RFC8713 section 4.15
+        potentials.update(
+            attendees[m] \
+                .exclude(role__group__acronym='isocbot', role__name_id__in=['member','chair']) \
+                .exclude(role__group__acronym='ietf-trust', role__name_id__in=['member','chair']) \
+                .exclude(role__group__acronym='llc-board', role__name_id__in=['member','chair']) \
+                .exclude(role__group__type_id='area',role__group__state='active',role__name_id='ad') \
+                .exclude(role__group__acronym='iab',role__name_id__in=['member','chair']) 
+        )
     eligible_persons = []
     for p in potentials:
         count = 0
