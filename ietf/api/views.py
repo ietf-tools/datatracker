@@ -95,13 +95,8 @@ class ApiV2PersonExportView(DetailView, JsonExportMixin):
 
         return self.json_view(request, filter=querydict.dict(), expand=expand)
 
-@method_decorator((csrf_exempt, require_api_key), name='dispatch')
-class PersonAccessMeetechoView(DetailView, JsonExportMixin):
-    model = Person
-
-    def err(self, code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
-
-    def get(self, request):
-        person = get_object_or_404(self.model, user=request.user)
-        return HttpResponse(json.dumps({ 'name' : person.name, 'email': person.email().address, }), content_type='application/json')
+@require_api_key
+@csrf_exempt
+def person_access_meetecho(request):
+    person = get_object_or_404(Person, user=request.user)
+    return HttpResponse(json.dumps({ 'name' : person.name, 'email': person.email().address, }), content_type='application/json')

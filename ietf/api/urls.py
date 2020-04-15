@@ -25,7 +25,7 @@ urlpatterns = [
     # For mailarchive use, requires secretariat role
     url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
     # For meetecho access
-    url(r'^v2/person/access/meetecho', api_views.PersonAccessMeetechoView.as_view()),
+    url(r'^person/access/meetecho', api_views.person_access_meetecho),
 ]
 
 # Additional (standard) Tastypie endpoints
