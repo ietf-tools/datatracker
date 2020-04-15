@@ -234,6 +234,11 @@ class Person(models.Model):
         ct1['ascii']     = self.ascii
         return ct1
 
+    def available_api_endpoints(self):
+        from ietf.ietfauth.utils import has_role
+        return [ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES if r==None or has_role(self.user, r) ]
+
+
 @python_2_unicode_compatible
 class Alias(models.Model):
     """This is used for alternative forms of a name.  This is the
@@ -328,13 +333,13 @@ def salt():
     return uuid.uuid4().bytes[:12]
 
 # Manual maintenance: List all endpoints that use @require_api_key here
-PERSON_API_KEY_ENDPOINTS = [
-    ("/api/iesg/position", "/api/iesg/position"),
-#   This requires secretariat role, and need not be listed generally:
-#    ("/api/v2/person/person", "/api/v2/person/person"),
-    ("/api/meeting/session/video/url", "/api/meeting/session/video/url"),
-    ("/api/v2/person/access/meetecho", "/api/v2/person/access/meetecho"), 
+PERSON_API_KEY_VALUES = [
+    ("/api/iesg/position", "/api/iesg/position", "Area Director"),
+    ("/api/v2/person/person", "/api/v2/person/person", "Secretariat"),
+    ("/api/meeting/session/video/url", "/api/meeting/session/video/url", "Recording Manager"),
+    ("/api/person/access/meetecho", "/api/person/access/meetecho", None), 
 ]
+PERSON_API_KEY_ENDPOINTS = [ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES ]
 
 @python_2_unicode_compatible
 class PersonalApiKey(models.Model):
@@ -375,7 +380,7 @@ class PersonalApiKey(models.Model):
         return self._cached_hash
 
     def __str__(self):
-        return "%s (%s): %s ..." % (self.endpoint, self.created.strftime("%Y-%m-%d %H:%M"), self.hash()[:16])
+        return "%s %-24s %-32s(%6d): %s ..." % (self.created.strftime("%Y-%m-%d %H:%M"), self.person.name, self.endpoint, self.count, self.hash()[:16])
 
 PERSON_EVENT_CHOICES = [
     ("apikey_login", "API key login"),

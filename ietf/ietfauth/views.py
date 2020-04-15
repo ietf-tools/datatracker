@@ -65,9 +65,9 @@ from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordF
                                 WhitelistForm, ChangePasswordForm, get_person_form, RoleEmailForm,
                                 NewEmailForm, ChangeUsernameForm, PersonPasswordForm)
 from ietf.ietfauth.htpasswd import update_htpasswd_file
-from ietf.ietfauth.utils import role_required
+from ietf.ietfauth.utils import role_required, has_role
 from ietf.mailinglists.models import Subscribed, Whitelisted
-from ietf.person.models import Person, Email, Alias, PersonalApiKey
+from ietf.person.models import Person, Email, Alias, PersonalApiKey, PERSON_API_KEY_VALUES
 from ietf.review.models import ReviewerSettings, ReviewWish, ReviewAssignment
 from ietf.review.utils import unavailable_periods_to_list, get_default_filter_re
 from ietf.doc.fields import SearchableDocumentField
@@ -650,7 +650,10 @@ def apikey_index(request):
 @login_required
 @person_required
 def apikey_create(request):
+    endpoints = [('', '----------')] + [ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES if r==None or has_role(request.user, r) ]
     class ApiKeyForm(forms.ModelForm):
+        endpoint = forms.ChoiceField(choices=endpoints)
+
         class Meta:
             model = PersonalApiKey
             fields = ['endpoint']

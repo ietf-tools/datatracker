@@ -21,7 +21,7 @@ from ietf.group.models import Group, Role, RoleName
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.mailinglists.models import Subscribed
-from ietf.person.models import Person, Email, PersonalApiKey, PERSON_API_KEY_ENDPOINTS
+from ietf.person.models import Person, Email, PersonalApiKey
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
@@ -531,18 +531,19 @@ class IetfAuthTests(TestCase):
         self.assertContains(r, 'Endpoint')
 
         # Add 2 keys
-        for endpoint, display in PERSON_API_KEY_ENDPOINTS:
+        endpoints = person.available_api_endpoints()
+        for endpoint, display in endpoints:
             r = self.client.post(url, {'endpoint': endpoint})
             self.assertRedirects(r, urlreverse('ietf.ietfauth.views.apikey_index'))
         
         # Check api key list content
         url = urlreverse('ietf.ietfauth.views.apikey_index')
         r = self.client.get(url)
-        for endpoint, display in PERSON_API_KEY_ENDPOINTS:
+        for endpoint, display in endpoints:
             self.assertContains(r, endpoint)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('td code')), len(PERSON_API_KEY_ENDPOINTS)) # hash
-        self.assertEqual(len(q('td a:contains("Disable")')), len(PERSON_API_KEY_ENDPOINTS))
+        self.assertEqual(len(q('td code')), len(endpoints)) # hash
+        self.assertEqual(len(q('td a:contains("Disable")')), len(endpoints))
 
         # Get one of the keys
         key = person.apikeys.first()
@@ -562,8 +563,8 @@ class IetfAuthTests(TestCase):
         url = urlreverse('ietf.ietfauth.views.apikey_index')
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('td code')), len(PERSON_API_KEY_ENDPOINTS)) # key hash
-        self.assertEqual(len(q('td a:contains("Disable")')), len(PERSON_API_KEY_ENDPOINTS)-1)
+        self.assertEqual(len(q('td code')), len(endpoints)) # key hash
+        self.assertEqual(len(q('td a:contains("Disable")')), len(endpoints)-1)
 
     def test_apikey_errors(self):
         BAD_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
@@ -577,7 +578,7 @@ class IetfAuthTests(TestCase):
         login_testing_unauthorized(self, person.user.username, url)
 
         # Add keys
-        for endpoint, display in PERSON_API_KEY_ENDPOINTS:
+        for endpoint, display in person.available_api_endpoints():
             r = self.client.post(url, {'endpoint': endpoint})
             self.assertRedirects(r, urlreverse('ietf.ietfauth.views.apikey_index'))
 
@@ -620,7 +621,8 @@ class IetfAuthTests(TestCase):
         login_testing_unauthorized(self, person.user.username, url)
 
         # Add keys
-        for endpoint, display in PERSON_API_KEY_ENDPOINTS:
+        endpoints = person.available_api_endpoints()
+        for endpoint, display in endpoints:
             r = self.client.post(url, {'endpoint': endpoint})
             self.assertRedirects(r, urlreverse('ietf.ietfauth.views.apikey_index'))
         
@@ -639,7 +641,7 @@ class IetfAuthTests(TestCase):
         cmd = Command()
         cmd.handle(verbosity=0, days=7)
         
-        self.assertEqual(len(outbox), len(PERSON_API_KEY_ENDPOINTS))
+        self.assertEqual(len(outbox), len(endpoints))
         for mail in outbox:
             body = mail.get_payload(decode=True).decode('utf-8')
             self.assertIn("API key usage", mail['subject'])
