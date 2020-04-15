@@ -20,9 +20,9 @@ urlpatterns = [
     url(r'^meeting/session/video/url$', meeting_views.api_set_session_video_url),
     url(r'^submit/?$', submit_views.api_submit),
     url(r'^iesg/position', views_ballot.api_set_position),
-    # GPRD: export of all personal information
+    # GPRD: export of personal information for the logged-in person
     url(r'^export/personal-information/$', api_views.PersonalInformationExportView.as_view()),
-    # For mailarchive
+    # For mailarchive use, requires secretariat role
     url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
     # For meetecho access
     url(r'^v2/person/access/meetecho', api_views.PersonAccessMeetechoView.as_view()),
