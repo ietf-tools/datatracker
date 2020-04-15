@@ -242,6 +242,7 @@ class Person(models.Model):
 class PersonExtResource(models.Model):
     person = ForeignKey(Person) 
     name = models.ForeignKey(ExtResourceName, on_delete=models.CASCADE)
+    display_name = models.CharField(max_length=255, default='', blank=True)
     value = models.CharField(max_length=2083) # 2083 is the maximum legal URL length
 
 @python_2_unicode_compatible

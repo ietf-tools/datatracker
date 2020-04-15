@@ -11,16 +11,6 @@ from collections import OrderedDict
 
 from django.db import migrations
 
-"""
-This makes me very nervous:
-
->>> DocumentURL.objects.filter(desc__icontains='notifications').values_list('tag',flat=True).distinct()
-<QuerySet ['yang-impact-analysis', 'yang-module-metadata']>
-
-I suspect the wrong thing is happening with the map below wrt the GitHub notificaitons string.
-
-"""
-
 name_map = {
     "Issue.*":                "tracker",
     ".*FAQ.*":                "faq",
@@ -76,10 +66,11 @@ def forward(apps, schema_editor):
                 match_found = True
                 mapped += 1
                 name = ExtResourceName.objects.get(slug=slug)
-                DocExtResource.objects.create(doc=doc_url.doc, name_id=slug, value=doc_url.url) # TODO: validate this value against name.type
+                DocExtResource.objects.create(doc=doc_url.doc, name_id=slug, value=doc_url.url, display_name=doc_url.desc) # TODO: validate this value against name.type
                 break
         if not match_found:
             for regext, slug in url_map.items():
+                doc_url.url = doc_url.url.strip()
                 if re.search(regext, doc_url.url):
                     match_found = True
                     if slug:
@@ -93,7 +84,7 @@ def forward(apps, schema_editor):
                             doc_url.url = doc_url.url.replace("/tree/master","")
                             doc_url.url = re.sub('/issues$', '', doc_url.url)
                             doc_url.url = re.sub('/blob/master.*$', '', doc_url.url)
-                        DocExtResource.objects.create(doc=doc_url.doc, name_id=slug, value=doc_url.url) # TODO: validate this value against name.type
+                        DocExtResource.objects.create(doc=doc_url.doc, name_id=slug, value=doc_url.url, display_name=doc_url.desc) # TODO: validate this value against name.type
                     else:
                         ignored +=1
                     break

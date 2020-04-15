@@ -11,7 +11,6 @@ from collections import OrderedDict
 
 from django.db import migrations
 
-
 name_map = {
     "Issue.*":                "tracker",
     ".*FAQ.*":                "faq",
@@ -34,21 +33,29 @@ name_map = {
     "GitLab User Name":       "gitlab_username",
 }
 
-# TODO: Review all the None values below and make sure ignoring the URLs they match is really the right thing to do.
+# TODO: Consider dropping known bad links at this point
+#   " *https?://www.ietf.org/html.charters/*": None, # all these links are dead
+#   " *http://www.bell-labs.com/mailing-lists/pint": None, # dead link
+#   "http://www.ietf.org/wg/videos/mile-overview.html": None, # dead link
+#   " http://domen.uninett.no/~hta/ietf/notary-status.h": None,  # dead link
+#   " http://www.ERC.MsState.Edu/packetway": None, # dead link
+#   "mailarchive\\.ietf\\.org" : None,
+#   "bell-labs\\.com": None,
+#   "html\\.charters": None,
+#   "datatracker\\.ietf\\.org": None,
+#   etc.
+
 url_map = OrderedDict({
    "https?://github\\.com": "github_repo",
    "https?://trac\\.ietf\\.org/.*/wiki": "wiki",
    "ietf\\.org.*/trac/wiki": "wiki",
    "trac.*wiki": "wiki",
-   "www\\.ietf\\.org/mailman" : None,
-   "www\\.ietf\\.org/mail-archive" : None,
-   "mailarchive\\.ietf\\.org" : None,
+   "www\\.ietf\\.org/mailman" : "mailing_list",
+   "www\\.ietf\\.org/mail-archive" : "mailing_list_archive",
    "ietf\\.org/logs": "jabber_log",
    "ietf\\.org/jabber/logs": "jabber_log",
    "xmpp:.*?join": "jabber_room",
-   "bell-labs\\.com": None,
-   "html\\.charters": None,
-   "datatracker\\.ietf\\.org": None,
+   "https?://.*": "webpage"
 })
 
 def forward(apps, schema_editor):
@@ -60,6 +67,7 @@ def forward(apps, schema_editor):
     not_mapped = 0
     ignored = 0
 
+    debug.say("Matching...")
     for group_url in GroupUrl.objects.all():
         match_found = False
         for regext,slug in name_map.items():
@@ -67,10 +75,11 @@ def forward(apps, schema_editor):
                 match_found = True
                 mapped += 1
                 name = ExtResourceName.objects.get(slug=slug)
-                GroupExtResource.objects.create(group=group_url.group, name_id=slug, value=group_url.url) # TODO: validate this value against name.type
+                GroupExtResource.objects.create(group=group_url.group, name_id=slug, value=group_url.url, display_name=group_url.name) # TODO: validate this value against name.type
                 break
         if not match_found:
             for regext, slug in url_map.items():
+                group_url.url = group_url.url.strip()
                 if re.search(regext, group_url.url):
                     match_found = True
                     if slug:
@@ -84,7 +93,7 @@ def forward(apps, schema_editor):
                             group_url.url = group_url.url.replace("/tree/master","")
                             group_url.url = re.sub('/issues$', '', group_url.url)
                             group_url.url = re.sub('/blob/master.*$', '', group_url.url)
-                        GroupExtResource.objects.create(group=group_url.group, name_id=slug, value=group_url.url) # TODO: validate this value against name.type
+                        GroupExtResource.objects.create(group=group_url.group, name_id=slug, value=group_url.url, display_name=group_url.name) # TODO: validate this value against name.type
                     else:
                         ignored +=1
                     break
