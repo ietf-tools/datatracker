@@ -14,9 +14,10 @@ import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.meeting.models import Session, Meeting, SchedulingEvent, TimeSlot
-from ietf.group.models import Group
+from ietf.group.models import Group, Role
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName
+from ietf.nomcom.utils import DISQUALIFYING_ROLE_QUERY_EXPRESSION
 from ietf.person.models import Email
 from ietf.secr.proceedings.proc_utils import import_audio_files
 
@@ -174,13 +175,9 @@ def attended_in_last_five_ietf_meetings(person, date=datetime.datetime.today()):
 
 def is_nomcom_eligible(person, date=datetime.date.today()):
     attended = attended_in_last_five_ietf_meetings(person, date)
-    # See RFC8713 section 4.15
-    is_isoc_board = person.role_set.filter(group__acronym='isocbot', name_id__in=['member', 'chair']).exists()
-    is_ietf_trust = person.role_set.filter(group__acronym='ietf-trust', name_id__in=['member', 'chair']).exists()
-    is_llc_board = person.role_set.filter(group__acronym='llc-board', name_id__in=['member', 'chair']).exists()
-    is_iesg = person.role_set.filter(group__type_id='area',group__state='active',name_id='ad').exists()
-    is_iab = person.role_set.filter(group__acronym='iab',name_id__in=['member','chair']).exists()
-    return len(attended)>=3 and not any([is_isoc_board, is_ietf_trust, is_llc_board, is_iesg, is_iab])
+    disqualifying_roles = Role.objects.filter(person=person).filter(DISQUALIFYING_ROLE_QUERY_EXPRESSION)
+    return len(attended)>=3 and not disqualifying_roles.exists()
+
 
 def sort_accept_tuple(accept):
     tup = []

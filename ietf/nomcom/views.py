@@ -22,7 +22,7 @@ from django.utils.encoding import force_bytes
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import group_template_edit, group_template_show
 from ietf.name.models import NomineePositionStateName, FeedbackTypeName
-from ietf.group.models import Group, GroupEvent 
+from ietf.group.models import Group, GroupEvent, Role 
 from ietf.message.models import Message
 from ietf.meeting.models import Meeting
 
@@ -37,7 +37,8 @@ from ietf.nomcom.models import (Position, NomineePosition, Nominee, Feedback, No
                                 FeedbackLastSeen, Topic, TopicFeedbackLastSeen, )
 from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key,
                                get_hash_nominee_position, send_reminder_to_nominees,
-                               HOME_TEMPLATE, NOMINEE_ACCEPT_REMINDER_TEMPLATE,NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE)
+                               HOME_TEMPLATE, NOMINEE_ACCEPT_REMINDER_TEMPLATE,NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE,
+                               DISQUALIFYING_ROLE_QUERY_EXPRESSION)
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person
 from ietf.utils import log
@@ -1251,14 +1252,8 @@ def eligible(request, year):
         registration_emails = m.meetingregistration_set.values_list('email',flat=True)
         attendees[m] = Person.objects.filter(email__address__in=registration_emails).distinct()
         # See RFC8713 section 4.15
-        potentials.update(
-            attendees[m] \
-                .exclude(role__group__acronym='isocbot', role__name_id__in=['member','chair']) \
-                .exclude(role__group__acronym='ietf-trust', role__name_id__in=['member','chair']) \
-                .exclude(role__group__acronym='llc-board', role__name_id__in=['member','chair']) \
-                .exclude(role__group__type_id='area',role__group__state='active',role__name_id='ad') \
-                .exclude(role__group__acronym='iab',role__name_id__in=['member','chair']) 
-        )
+        disqualified_roles = Role.objects.filter(DISQUALIFYING_ROLE_QUERY_EXPRESSION)
+        potentials.update(attendees[m].exclude(role__in=disqualified_roles))
     eligible_persons = []
     for p in potentials:
         count = 0

@@ -13,6 +13,7 @@ from email.header import decode_header
 from email.iterators import typed_subpart_iterator
 from email.utils import parseaddr
 
+from django.db.models import Q
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist
@@ -56,6 +57,11 @@ DEFAULT_NOMCOM_TEMPLATES = [HOME_TEMPLATE,
                             FEEDBACK_RECEIPT_TEMPLATE,
                             IESG_GENERIC_REQUIREMENTS_TEMPLATE,
                         ]
+
+# See RFC8713 section 4.15
+DISQUALIFYING_ROLE_QUERY_EXPRESSION = (   Q(group__acronym__in=['isocbot', 'ietf-trust', 'llc-board', 'iab'], name_id__in=['member', 'chair'])
+                                        | Q(group__type_id='area', group__state='active',name_id='ad')
+                                      )
 
 
 def get_nomcom_by_year(year):
@@ -470,4 +476,5 @@ def create_feedback_email(nomcom, msg):
 
 class EncryptedException(Exception):
     pass
+
     
