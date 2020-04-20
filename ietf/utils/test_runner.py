@@ -71,7 +71,6 @@ debug.debug = True
 
 import ietf
 import ietf.utils.mail
-from ietf.checks import maybe_create_svn_symlinks
 from ietf.utils.management.commands import pyflakes
 from ietf.utils.test_smtpserver import SMTPTestServerDriver
 from ietf.utils.test_utils import TestCase
@@ -621,8 +620,6 @@ class IetfTestRunner(DiscoverRunner):
                 break
             except socket.error:
                 pass
-
-        maybe_create_svn_symlinks(settings)
 
         if os.path.exists(settings.UTILS_TEST_RANDOM_STATE_FILE):
             print("     Loading factory-boy random state from %s" % settings.UTILS_TEST_RANDOM_STATE_FILE)
