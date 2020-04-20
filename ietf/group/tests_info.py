@@ -1377,7 +1377,7 @@ class MeetingInfoTests(TestCase):
     def setUp(self):
         self.group = GroupFactory.create(type_id='wg')
         today = datetime.date.today()
-        SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=90))
+        SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=14))
         self.inprog = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=1))
         SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today+datetime.timedelta(days=90))
         SessionFactory.create(meeting__type_id='interim',group=self.group,meeting__date=today+datetime.timedelta(days=45))
@@ -1391,6 +1391,9 @@ class MeetingInfoTests(TestCase):
             self.assertTrue(q('#inprogressmeets'))
             self.assertTrue(q('#futuremeets'))
             self.assertTrue(q('#pastmeets'))
+            # This should be improved to make sure each session shows up in the right section above
+            for session in self.group.session_set.all():
+                self.assertIn(session.meeting.number,unicontent(response))
 
         self.group.session_set.filter(id=self.inprog.id).delete()
         response = self.client.get(url)
