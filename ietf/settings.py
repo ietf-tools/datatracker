@@ -995,8 +995,8 @@ TRAC_CREATE_ADHOC_WIKIS = [
 ]
 
 SVN_PACKAGES = [
-    "/usr/lib/python2.7/dist-packages/svn",
-    "/usr/lib/python2.7/dist-packages/libsvn",
+    "/usr/lib/python/dist-packages/svn",
+    "/usr/lib/python3.6/dist-packages/libsvn",
 ]
 
 TRAC_ENV_OPTIONS = [
@@ -1064,6 +1064,7 @@ SILENCED_SYSTEM_CHECKS = [
 CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/fix-django-unicode-comparison-bug.patch',
     'patch/fix-unidecode-argument-warning.patch',
+    'patch/fix-request-profiler-streaming-length.patch',
 ]
 if DEBUG:
     try:
