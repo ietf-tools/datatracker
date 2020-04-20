@@ -293,67 +293,6 @@ def check_cache(app_configs, **kwargs):
     return errors
 
     
-def maybe_create_svn_symlinks(settings):
-    site_packages_dir = None
-    errors = []
-    for p in sys.path:
-        if ('/env/' in p or '/venv/' in p) and '/site-packages' in p:
-            site_packages_dir = p
-            break
-    if site_packages_dir:
-        for path in settings.SVN_PACKAGES:
-            if os.path.exists(path):
-                dir, name = os.path.split(path)
-                package_link = os.path.join(site_packages_dir, name)
-                if not os.path.lexists(package_link):
-                    os.symlink(path, package_link)
-            else:
-                errors.append(checks.Critical(
-                    "The setting SVN_PACKAGES specify a library path which\n"
-                    "does not exist:\n"
-                    "   %s\n" % path,
-                    hint = "Please provide the correct python system site-package paths for\n"
-                    "\tsvn and libsvn in SVN_PACKAGES.\n",
-                    id = "datatracker.E0018",))
-    return errors
-
-@checks.register('cache')
-def check_svn_import(app_configs, **kwargs):
-    #
-    if already_ran():
-        return []
-    #
-    errors = []
-    # 
-    errors += maybe_create_svn_symlinks(settings)
-    #
-    if settings.SERVER_MODE == 'production':
-        try:
-            import svn                  # pyflakes:ignore
-        except ImportError as e:
-            errors.append(checks.Critical(
-                "Could not import the python svn module:\n   %s\n" % e,
-                hint = dedent("""
-                    You are running in production mode, and the subversion bindings for python
-                    are necessary in order to run the Trac wiki glue scripts.
-
-                    However, the subversion bindings seem to be unavailable.  The subversion
-                    bindings are not available for install using pip, but must be supplied by
-                    the system package manager.  In order to be available within the python
-                    virtualenv, ietf.checks.check_svn_import() tries to create a symlink from
-                    the configured location of the system-provided svn package to the
-                    site-packages directory of the virtualenv. If you get this message, that has
-                    failed to provide the svn package.
-
-                    Please install 'python-subversion' (Debian), 'subversion-python' (RedHat,
-                    CentOS, Fedora), 'subversion-python27bindings' (BSD); and provide the
-                    correct path to the svn package in settings.SVN_PACKAGE.  Further tips are
-                    available at https://trac.edgewall.org/wiki/TracSubversion.
-
-                    """).replace('\n', '\n   ').rstrip(),
-                id = "datatracker.E0019",
-            ))
-    return errors
 
 @checks.register('files')
 def maybe_patch_library(app_configs, **kwargs):
