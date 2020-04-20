@@ -66,6 +66,7 @@ class TestCrawlerShellCommand(steps.WarningCountingShellCommand):
                 wregex[key] = pattern
 
         # Count matches to the various warning patterns
+        last_line = None
         for line in log.getText().split("\n"):
             for key in wregex:
                 match = re.search(wregex[key], line)
@@ -83,11 +84,12 @@ class TestCrawlerShellCommand(steps.WarningCountingShellCommand):
                 self.step_status.setStatistic(key, len(warnings[key]))
             self.setProperty(key, len(warnings[key]), "TestCrawlerShellCommand")
 
-        match = re.search(self.logline, last_line)
-        for key in ['elapsed', 'pages']:
-            info = match.group(key)
-            self.step_status.setStatistic(key, info)
-            self.setProperty(key, info, "TestCrawlerShellCommand")
+        if last_line:
+            match = re.search(self.logline, last_line)
+            for key in ['elapsed', 'pages']:
+                info = match.group(key)
+                self.step_status.setStatistic(key, info)
+                self.setProperty(key, info, "TestCrawlerShellCommand")
 
     def describe(self, done=False):
         description = steps.WarningCountingShellCommand.describe(self, done)
@@ -113,7 +115,7 @@ class DjangoTest(steps.WarningCountingShellCommand):
     warnOnFailure = 1
     description = ["testing"]
     descriptionDone = ["test"]
-    command = ["python", "-m", "unittest", "discover"]
+    command = ["manage.py", "test", ]
 
     regexPatterns = {
         "tests":            "Ran (\d+) tests in [0-9.]+s",
