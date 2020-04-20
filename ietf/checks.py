@@ -3,7 +3,6 @@
 
 
 import os
-import sys
 import time
 from textwrap import dedent
 from typing import List, Tuple      # pyflakes:ignore
