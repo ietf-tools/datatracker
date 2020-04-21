@@ -15,7 +15,6 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.deletion import CASCADE
 from django.dispatch import receiver
-from django.utils.encoding import python_2_unicode_compatible
 
 from simple_history.models import HistoricalRecords
 
@@ -29,7 +28,6 @@ from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
 
 
-@python_2_unicode_compatible
 class GroupInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
     name = models.CharField(max_length=80)
@@ -252,7 +250,6 @@ class GroupHistory(GroupInfo):
     class Meta:
         verbose_name_plural="group histories"
 
-@python_2_unicode_compatible
 class GroupURL(models.Model):
     group = ForeignKey(Group)
     name = models.CharField(max_length=255)
@@ -261,7 +258,6 @@ class GroupURL(models.Model):
     def __str__(self):
         return u"%s (%s)" % (self.url, self.name)
 
-@python_2_unicode_compatible
 class GroupMilestoneInfo(models.Model):
     group = ForeignKey(Group)
     # a group has two sets of milestones, current milestones
@@ -289,7 +285,6 @@ class GroupMilestoneHistory(GroupMilestoneInfo):
     time = models.DateTimeField()
     milestone = ForeignKey(GroupMilestone, related_name="history_set")
 
-@python_2_unicode_compatible
 class GroupStateTransitions(models.Model):
     """Captures that a group has overriden the default available
     document state transitions for a certain state."""
@@ -310,7 +305,6 @@ GROUP_EVENT_CHOICES = [
     ("status_update", "Status update"),
     ]
 
-@python_2_unicode_compatible
 class GroupEvent(models.Model):
     """An occurrence for a group, used for tracking who, when and what."""
     group = ForeignKey(Group)
@@ -331,7 +325,6 @@ class ChangeStateGroupEvent(GroupEvent):
 class MilestoneGroupEvent(GroupEvent):
     milestone = ForeignKey(GroupMilestone)
 
-@python_2_unicode_compatible
 class Role(models.Model):
     name = ForeignKey(RoleName)
     group = ForeignKey(Group)
@@ -349,7 +342,6 @@ class Role(models.Model):
     class Meta:
         ordering = ['name_id', ]
 
-@python_2_unicode_compatible
 class RoleHistory(models.Model):
     # RoleHistory doesn't have a time field as it's not supposed to be
     # used on its own - there should always be a GroupHistory

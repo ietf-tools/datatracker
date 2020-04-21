@@ -6,7 +6,6 @@ import os
 
 from django.conf import settings
 from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
 
 from ietf.meeting.models import Meeting
 
@@ -61,7 +60,6 @@ class InterimMeeting(Meeting):
         else:
             return ''
 
-@python_2_unicode_compatible
 class Registration(models.Model):
     rsn = models.AutoField(primary_key=True)
     fname = models.CharField(max_length=255)

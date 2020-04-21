@@ -47,7 +47,6 @@ from bs4 import BeautifulSoup
 
 import django.test
 from django.conf import settings
-from django.utils.encoding import python_2_unicode_compatible
 from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
@@ -98,7 +97,6 @@ class ReverseLazyTest(django.test.TestCase):
         response = self.client.get('/ipr/update/')
         self.assertRedirects(response, "/ipr/", status_code=301)
 
-@python_2_unicode_compatible
 class TestCase(django.test.TestCase):
     """
     Does basically the same as django.test.TestCase, but adds asserts for html5 validation.

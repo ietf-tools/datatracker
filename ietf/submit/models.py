@@ -7,7 +7,6 @@ import email
 import jsonfield
 
 from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
 
 import debug                            # pyflakes:ignore
 
@@ -28,7 +27,6 @@ def parse_email_line(line):
     name, addr = email.utils.parseaddr(line) if '@' in line else (line, '')
     return dict(name=name, email=addr)
 
-@python_2_unicode_compatible
 class Submission(models.Model):
     state = ForeignKey(DraftSubmissionStateName)
     remote_ip = models.CharField(max_length=100, blank=True)
@@ -76,7 +74,6 @@ class Submission(models.Model):
         checks = [ self.checks.filter(checker=c).latest('time') for c in self.checks.values_list('checker', flat=True).distinct() ]
         return checks
         
-@python_2_unicode_compatible
 class SubmissionCheck(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
     submission = ForeignKey(Submission, related_name='checks')
@@ -95,7 +92,6 @@ class SubmissionCheck(models.Model):
     def has_errors(self):
         return self.errors != '[]'
 
-@python_2_unicode_compatible
 class SubmissionEvent(models.Model):
     submission = ForeignKey(Submission)
     time = models.DateTimeField(default=datetime.datetime.now)
@@ -109,7 +105,6 @@ class SubmissionEvent(models.Model):
         ordering = ("-time", "-id")
 
 
-@python_2_unicode_compatible
 class Preapproval(models.Model):
     """Pre-approved draft submission name."""
     name = models.CharField(max_length=255, db_index=True)
@@ -119,7 +114,6 @@ class Preapproval(models.Model):
     def __str__(self):
         return self.name
 
-@python_2_unicode_compatible
 class SubmissionEmailEvent(SubmissionEvent):
     message     = ForeignKey(Message, null=True, blank=True,related_name='manualevents')
     msgtype     = models.CharField(max_length=25)

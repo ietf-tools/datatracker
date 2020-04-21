@@ -5,7 +5,6 @@
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
 from django.utils.text import slugify
 
 from ietf.person.models import Email, Person
@@ -27,7 +26,6 @@ STATE_EVENT_MAPPING = {
 }
 
 
-@python_2_unicode_compatible
 class LiaisonStatement(models.Model):
     title = models.CharField(max_length=255)
     from_groups = models.ManyToManyField(Group, blank=True, related_name='liaisonstatement_from_set')
@@ -201,7 +199,6 @@ class LiaisonStatement(models.Model):
                 approval_set.intersection_update(group.liaison_approvers())
         return list(set([ r.email.address for r in approval_set ]))
 
-@python_2_unicode_compatible
 class LiaisonStatementAttachment(models.Model):
     statement = ForeignKey(LiaisonStatement)
     document = ForeignKey(Document)
@@ -211,7 +208,6 @@ class LiaisonStatementAttachment(models.Model):
         return self.document.name
 
 
-@python_2_unicode_compatible
 class RelatedLiaisonStatement(models.Model):
     source = ForeignKey(LiaisonStatement, related_name='source_of_set')
     target = ForeignKey(LiaisonStatement, related_name='target_of_set')
@@ -221,7 +217,6 @@ class RelatedLiaisonStatement(models.Model):
         return "%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
 
 
-@python_2_unicode_compatible
 class LiaisonStatementGroupContacts(models.Model):
     group = ForeignKey(Group, unique=True, null=True)
     contacts = models.CharField(max_length=255,blank=True)
@@ -231,7 +226,6 @@ class LiaisonStatementGroupContacts(models.Model):
         return "%s" % self.group.name
 
 
-@python_2_unicode_compatible
 class LiaisonStatementEvent(models.Model):
     time = models.DateTimeField(auto_now_add=True)
     type = ForeignKey(LiaisonStatementEventTypeName)

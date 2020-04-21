@@ -16,7 +16,7 @@ from django.core.validators import URLValidator, RegexValidator
 from django.urls import reverse as urlreverse
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
-from django.utils.encoding import python_2_unicode_compatible, force_text
+from django.utils.encoding import force_text
 from django.utils.html import mark_safe # type:ignore
 
 import debug                            # pyflakes:ignore
@@ -36,7 +36,6 @@ from ietf.utils.models import ForeignKey
 
 logger = logging.getLogger('django')
 
-@python_2_unicode_compatible
 class StateType(models.Model):
     slug = models.CharField(primary_key=True, max_length=30) # draft, draft-iesg, charter, ...
     label = models.CharField(max_length=255, help_text="Label that should be used (e.g. in admin) for state drop-down for this type of state") # State, IESG state, WG state, ...
@@ -58,7 +57,6 @@ def check_statetype_slugs(app_configs, **kwargs):
             ))
     return errors
 
-@python_2_unicode_compatible
 class State(models.Model):
     type = ForeignKey(StateType)
     slug = models.SlugField()
@@ -543,7 +541,6 @@ class DocumentInfo(models.Model):
 
 STATUSCHANGE_RELATIONS = ('tops','tois','tohist','toinf','tobcp','toexp')
 
-@python_2_unicode_compatible
 class RelatedDocument(models.Model):
     source = ForeignKey('Document')
     target = ForeignKey('DocAlias')
@@ -617,7 +614,6 @@ class DocumentAuthorInfo(models.Model):
         abstract = True
         ordering = ["document", "order"]
 
-@python_2_unicode_compatible
 class DocumentAuthor(DocumentAuthorInfo):
     document = ForeignKey('Document')
 
@@ -631,7 +627,6 @@ validate_docname = RegexValidator(
     'invalid'
 )
 
-@python_2_unicode_compatible
 class Document(DocumentInfo):
     name = models.CharField(max_length=255, validators=[validate_docname,], unique=True)           # immutable
 
@@ -866,7 +861,6 @@ class DocumentURL(models.Model):
     desc = models.CharField(max_length=255, default='', blank=True)
     url  = models.URLField(max_length=2083) # 2083 is the legal max for URLs
 
-@python_2_unicode_compatible
 class RelatedDocHistory(models.Model):
     source = ForeignKey('DocHistory')
     target = ForeignKey('DocAlias', related_name="reversely_related_document_history_set")
@@ -874,7 +868,6 @@ class RelatedDocHistory(models.Model):
     def __str__(self):
         return u"%s %s %s" % (self.source.doc.name, self.relationship.name.lower(), self.target.name)
 
-@python_2_unicode_compatible
 class DocHistoryAuthor(DocumentAuthorInfo):
     # use same naming convention as non-history version to make it a bit
     # easier to write generic code
@@ -883,7 +876,6 @@ class DocHistoryAuthor(DocumentAuthorInfo):
     def __str__(self):
         return u"%s %s (%s)" % (self.document.doc.name, self.person, self.order)
 
-@python_2_unicode_compatible
 class DocHistory(DocumentInfo):
     doc = ForeignKey(Document, related_name="history_set")
     # the name here is used to capture the canonical name at the time
@@ -934,7 +926,6 @@ class DocHistory(DocumentInfo):
         verbose_name = "document history"
         verbose_name_plural = "document histories"
 
-@python_2_unicode_compatible
 class DocAlias(models.Model):
     """This is used for documents that may appear under multiple names,
     and in particular for RFCs, which for continuity still keep the
@@ -1042,7 +1033,6 @@ EVENT_TYPES = [
     ("removed_related_ipr", "Removed related IPR"),
     ]
 
-@python_2_unicode_compatible
 class DocEvent(models.Model):
     """An occurrence for a document, used for tracking who, when and what."""
     time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened", db_index=True)
@@ -1086,7 +1076,6 @@ class ConsensusDocEvent(DocEvent):
     consensus = models.NullBooleanField(default=None)
 
 # IESG events
-@python_2_unicode_compatible
 class BallotType(models.Model):
     doc_type = ForeignKey(DocTypeName, blank=True, null=True)
     slug = models.SlugField()
@@ -1221,7 +1210,6 @@ class SubmissionDocEvent(DocEvent):
     submission = ForeignKey(ietf.submit.models.Submission)
 
 # dumping store for removed events
-@python_2_unicode_compatible
 class DeletedEvent(models.Model):
     content_type = ForeignKey(ContentType)
     json = models.TextField(help_text="Deleted object in JSON format, with attribute names chosen to be suitable for passing into the relevant create method.")

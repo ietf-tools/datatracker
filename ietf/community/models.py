@@ -6,14 +6,12 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import signals
 from django.urls import reverse as urlreverse
-from django.utils.encoding import python_2_unicode_compatible
 
 from ietf.doc.models import Document, DocEvent, State
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
 from ietf.utils.models import ForeignKey
 
-@python_2_unicode_compatible
 class CommunityList(models.Model):
     user = ForeignKey(User, blank=True, null=True)
     group = ForeignKey(Group, blank=True, null=True)
@@ -39,7 +37,6 @@ class CommunityList(models.Model):
         return ""
 
 
-@python_2_unicode_compatible
 class SearchRule(models.Model):
     # these types define the UI for setting up the rule, and also
     # helps when interpreting the rule and matching documents
@@ -85,7 +82,6 @@ class SearchRule(models.Model):
     def __str__(self):
         return "%s %s %s/%s/%s/%s" % (self.community_list, self.rule_type, self.state, self.group, self.person, self.text)
 
-@python_2_unicode_compatible
 class EmailSubscription(models.Model):
     community_list = ForeignKey(CommunityList)
     email = ForeignKey(Email)

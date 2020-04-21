@@ -44,10 +44,11 @@
 /share
 /static
 /testresult
+/tmp
+/tmp-nomcom-public-keys-dir
 /trunk27
 /trunk36
 /trunk37
 /unix.tag
-/tmp-nomcom-public-keys-dir
 *.pyc
 __pycache__

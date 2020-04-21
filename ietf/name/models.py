@@ -3,11 +3,9 @@
 
 
 from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
 
 from ietf.utils.models import ForeignKey
 
-@python_2_unicode_compatible
 class NameModel(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     name = models.CharField(max_length=255)

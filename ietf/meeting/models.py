@@ -22,7 +22,6 @@ from django.conf import settings
 # mostly used by json_dict()
 #from django.template.defaultfilters import slugify, date as date_format, time as time_format
 from django.template.defaultfilters import date as date_format
-from django.utils.encoding import python_2_unicode_compatible
 from django.utils.text import slugify
 
 from ietf.dbtemplate.models import DBTemplate
@@ -58,7 +57,6 @@ def fmt_date(o):
     d = datetime_safe.new_date(o)
     return d.strftime(DATE_FORMAT)
 
-@python_2_unicode_compatible
 class Meeting(models.Model):
     # number is either the number for IETF meetings, or some other
     # identifier for interim meetings/IESG retreats/liaison summits/...
@@ -308,7 +306,6 @@ class Meeting(models.Model):
 
 # === Rooms, Resources, Floorplans =============================================
 
-@python_2_unicode_compatible
 class ResourceAssociation(models.Model):
     name = ForeignKey(RoomResourceName)
     icon = models.CharField(max_length=64)       # icon to be found in /static/img
@@ -325,7 +322,6 @@ class ResourceAssociation(models.Model):
         res1['resource_id'] = self.pk
         return res1
 
-@python_2_unicode_compatible
 class Room(models.Model):
     meeting = ForeignKey(Meeting)
     modified = models.DateTimeField(auto_now=True)
@@ -418,7 +414,6 @@ def floorplan_path(instance, filename):
     root, ext = os.path.splitext(filename)
     return "%s/floorplan-%s-%s%s" % (settings.FLOORPLAN_MEDIA_DIR, instance.meeting.number, xslugify(instance.name), ext)
 
-@python_2_unicode_compatible
 class FloorPlan(models.Model):
     name    = models.CharField(max_length=255)
     short   = models.CharField(max_length=3, default='')
@@ -435,7 +430,6 @@ class FloorPlan(models.Model):
 
 # === Schedules, Sessions, Timeslots and Assignments ===========================
 
-@python_2_unicode_compatible
 class TimeSlot(models.Model):
     """
     Everything that would appear on the meeting agenda of a meeting is
@@ -603,7 +597,6 @@ class TimeSlot(models.Model):
 
 # end of TimeSlot
 
-@python_2_unicode_compatible
 class Schedule(models.Model):
     """
     Each person may have multiple schedules saved.
@@ -707,7 +700,6 @@ class Schedule(models.Model):
         self.delete()
 
 # to be renamed SchedTimeSessAssignments (stsa)
-@python_2_unicode_compatible
 class SchedTimeSessAssignment(models.Model):
     """
     This model provides an N:M relationship between Session and TimeSlot.
@@ -812,7 +804,6 @@ class SchedTimeSessAssignment(models.Model):
 
         return "-".join(components).lower()
 
-@python_2_unicode_compatible
 class Constraint(models.Model):
     """
     Specifies a constraint on the scheduling.
@@ -883,7 +874,6 @@ class Constraint(models.Model):
         return ct1
 
 
-@python_2_unicode_compatible
 class SessionPresentation(models.Model):
     session = ForeignKey('Session')
     document = ForeignKey(Document)
@@ -901,7 +891,6 @@ class SessionPresentation(models.Model):
 constraint_cache_uses = 0
 constraint_cache_initials = 0
 
-@python_2_unicode_compatible
 class Session(models.Model):
     """Session records that a group should have a session on the
     meeting (time and location is stored in a TimeSlot) - if multiple
@@ -1215,7 +1204,6 @@ class Session(models.Model):
         else:
             return self.group.acronym
 
-@python_2_unicode_compatible
 class SchedulingEvent(models.Model):
     session = ForeignKey(Session)
     time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
@@ -1225,7 +1213,6 @@ class SchedulingEvent(models.Model):
     def __str__(self):
         return u'%s : %s : %s : %s' % (self.session, self.status, self.time, self.by)
 
-@python_2_unicode_compatible
 class ImportantDate(models.Model):
     meeting = ForeignKey(Meeting)
     date = models.DateField()

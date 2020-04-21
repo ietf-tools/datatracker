@@ -4,7 +4,6 @@
 
 from django.db import models
 from django.template import Template, Context
-from django.utils.encoding import python_2_unicode_compatible
 
 from email.utils import parseaddr
 from ietf.utils.mail import formataddr, get_email_addresses_from_text
@@ -31,7 +30,6 @@ def clean_duplicates(addrlist):
             addresses.append(addr)
     return addresses
 
-@python_2_unicode_compatible
 class MailTrigger(models.Model):
     slug = models.CharField(max_length=64, primary_key=True)
     desc = models.TextField(blank=True)
@@ -44,7 +42,6 @@ class MailTrigger(models.Model):
     def __str__(self):
         return self.slug
 
-@python_2_unicode_compatible
 class Recipient(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     desc = models.TextField(blank=True)

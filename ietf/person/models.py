@@ -17,7 +17,7 @@ from django.core.validators import validate_email
 from django.db import models
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
-from django.utils.encoding import python_2_unicode_compatible, smart_bytes
+from django.utils.encoding import smart_bytes
 from django.utils.text import slugify
 
 from simple_history.models import HistoricalRecords
@@ -33,7 +33,6 @@ from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
 
 
-@python_2_unicode_compatible
 class Person(models.Model):
     history = HistoricalRecords()
     user = OneToOneField(User, blank=True, null=True, on_delete=models.SET_NULL)
@@ -239,7 +238,6 @@ class Person(models.Model):
         return [ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES if r==None or has_role(self.user, r) ]
 
 
-@python_2_unicode_compatible
 class Alias(models.Model):
     """This is used for alternative forms of a name.  This is the
     primary lookup point for names, and should always contain the
@@ -267,7 +265,6 @@ class Alias(models.Model):
     class Meta:
         verbose_name_plural = "Aliases"
 
-@python_2_unicode_compatible
 class Email(models.Model):
     history = HistoricalRecords()
     address = models.CharField(max_length=64, primary_key=True, validators=[validate_email])
@@ -341,7 +338,6 @@ PERSON_API_KEY_VALUES = [
 ]
 PERSON_API_KEY_ENDPOINTS = [ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES ]
 
-@python_2_unicode_compatible
 class PersonalApiKey(models.Model):
     person   = ForeignKey(Person, related_name='apikeys')
     endpoint = models.CharField(max_length=128, null=False, blank=False, choices=PERSON_API_KEY_ENDPOINTS)
@@ -388,7 +384,6 @@ PERSON_EVENT_CHOICES = [
     ("email_address_deactivated", "Email address deactivated"),
     ]
 
-@python_2_unicode_compatible
 class PersonEvent(models.Model):
     person = ForeignKey(Person)
     time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")

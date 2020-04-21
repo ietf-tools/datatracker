@@ -37,9 +37,7 @@
 import datetime
 
 from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
 
-@python_2_unicode_compatible
 class TelechatAgendaItem(models.Model):
     TYPE_CHOICES = (
         (1, "Any Other Business (WG News, New Proposals, etc.)"),
@@ -80,7 +78,6 @@ class TelechatDateManager(models.Manager):
     def active(self):
         return self.get_queryset().filter(date__gte=datetime.date.today())
 
-@python_2_unicode_compatible
 class TelechatDate(models.Model):
     objects = TelechatDateManager()
 
