@@ -13,6 +13,7 @@ debug.debug = True
 from django.conf import settings
 from django.core import checks
 from django.utils.module_loading import import_string
+from django.utils.encoding import force_str
 import ietf.utils.patch as patch
 
 checks_run = []                         # type: List[str]
@@ -315,7 +316,7 @@ def maybe_patch_library(app_configs, **kwargs):
                         "Could not apply patch from file '%s'"%patch_file,
                         hint=("Make sure that the patch file contains a unified diff and has valid file paths\n\n"
                             "\tPatch root: %s\n"
-                            "\tTarget files: %s\n") % (library_path, ',  '.join(i.target for i in patch_set.items)),
+                            "\tTarget files: %s\n") % (library_path, ',  '.join(force_str(i.target) for i in patch_set.items)),
                         id="datatracker.W0002",
                         ))
             else:
