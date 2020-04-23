@@ -31,7 +31,9 @@ warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="docu
 warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="xml2rfc")
 warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="site")
 warnings.filterwarnings("ignore", message="Flags not at the start of the expression", module="genshi")
+warnings.filterwarnings("ignore", message="Flags not at the start of the expression", module="coverage")
 warnings.filterwarnings("ignore", message="encodestring\(\) is a deprecated alias since 3.1, use encodebytes\(\)")
+
 
 try:
     import syslog
