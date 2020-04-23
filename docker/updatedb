@@ -76,7 +76,7 @@ DOWNLOAD=1
 QUIET=""
 
 if   [ "$(uname)" = "Linux" ]; then
-    args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
+    args=$(getopt -o "$shortopts" --long "$longopts" -n "$program" -- $SV "$@")
     if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
     eval set -- "$args"
     sed="sed -r"
