@@ -1320,11 +1320,11 @@ def edit_doc_extresources(request, name):
                     value = parts[1]
                     display_name = ' '.join(parts[2:]).strip('()')
                     doc.docextresource_set.create(value=value, name_id=name, display_name=display_name)
-                    new_resources = format_resources(doc.docextresource_set.all())
-                    e = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type='changed_document')
-                    e.desc = "Changed document external resources from:\n\n%s\n\nto:\n\n%s" % (old_resources, new_resources)
-                    e.save()
-                    doc.save_with_history([e])
+                new_resources = format_resources(doc.docextresource_set.all())
+                e = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type='changed_document')
+                e.desc = "Changed document external resources from:\n\n%s\n\nto:\n\n%s" % (old_resources, new_resources)
+                e.save()
+                doc.save_with_history([e])
                 messages.success(request,"Document resources updated.")
             else:
                 messages.info(request,"No change in Document resources.")

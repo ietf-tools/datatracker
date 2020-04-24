@@ -1135,7 +1135,6 @@ class IndividualInfoFormsTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('form textarea[id=id_resources]')),1)
 
-        # AMHERE
         badlines = (
             'github_repo https://github3.com/some/repo',
             'github_notify  badaddr',

@@ -138,6 +138,36 @@
 	</tr>
         {% endif %}
       {% endwith %}
+
+       {% with group.groupextresource_set.all as resources %}
+        {% if resources or can_edit_group %}
+          <tr>
+            <td></td>
+            <th>Additional Resources</th>
+            <td class="edit">
+              {% if can_edit_group %}
+                <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='resources' %}">Edit</a>
+              {% endif %}
+            </td>
+            <td>
+              {% if resources %}
+                <table class="col-md-12 col-sm-12 col-xs-12">
+                  <tbody>
+                    {% for resource in resources|dictsort:"display_name" %}
+                      {% if resource.name.type.slug == 'url' or resource.name.type.slug == 'email' %}
+                        <tr><td> - <a href="{{ resource.value }}" title="{{resource.name.name}}">{% firstof resource.display_name resource.name.name %}</a></td></tr> 
+                        {# Maybe make how a resource displays itself a method on the class so templates aren't doing this switching #}
+                      {% else %}
+                        <tr><td> - <span title="{{resource.name.name}}">{% firstof resource.display_name resource.name.name %}: {{resource.value}}</span></td></tr>
+                      {% endif %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+              {% endif %}
+            </td>
+          </tr>
+        {% endif %}
+      {% endwith %}     
     </tbody>
 
     <tbody class="meta">
