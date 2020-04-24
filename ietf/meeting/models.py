@@ -532,6 +532,18 @@ class TimeSlot(models.Model):
             return local_end_time.astimezone(pytz.utc)
         else:
             return None
+    def local_start_time(self):
+        if self.tz():
+            local_start_time = self.tz().localize(self.time)
+            return local_start_time
+        else:
+            return None
+    def local_end_time(self):
+        if self.tz():
+            local_end_time = self.tz().localize(self.end_time())
+            return local_end_time
+        else:
+            return None
 
     @property
     def js_identifier(self):
