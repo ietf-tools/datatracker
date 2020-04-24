@@ -7,9 +7,13 @@ import re
 
 import debug
 
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 
 from django.db import migrations
+
+from ietf.utils.validators import validate_external_resource_value
+from django.core.exceptions import ValidationError
+
 
 name_map = {
     "Issue.*":                "tracker",
@@ -55,16 +59,14 @@ def forward(apps, schema_editor):
     ExtResourceName = apps.get_model('name', 'ExtResourceName')
     DocumentUrl = apps.get_model('doc', 'DocumentUrl')
 
-    mapped = 0
-    not_mapped = 0
-    ignored = 0
+    stats = Counter()
 
     for doc_url in DocumentUrl.objects.all():
         match_found = False
         for regext,slug in name_map.items():
             if re.match(regext, doc_url.desc):
                 match_found = True
-                mapped += 1
+                stats['mapped'] += 1
                 name = ExtResourceName.objects.get(slug=slug)
                 DocExtResource.objects.create(doc=doc_url.doc, name_id=slug, value=doc_url.url, display_name=doc_url.desc) # TODO: validate this value against name.type
                 break
@@ -74,7 +76,7 @@ def forward(apps, schema_editor):
                 if re.search(regext, doc_url.url):
                     match_found = True
                     if slug:
-                        mapped +=1
+                        stats['mapped'] +=1
                         name = ExtResourceName.objects.get(slug=slug)
                         # Munge the URL if it's the first github repo match
                         #  Remove "/tree/master" substring if it exists
@@ -84,14 +86,19 @@ def forward(apps, schema_editor):
                             doc_url.url = doc_url.url.replace("/tree/master","")
                             doc_url.url = re.sub('/issues$', '', doc_url.url)
                             doc_url.url = re.sub('/blob/master.*$', '', doc_url.url)
-                        DocExtResource.objects.create(doc=doc_url.doc, name_id=slug, value=doc_url.url, display_name=doc_url.desc) # TODO: validate this value against name.type
+                        try:
+                            validate_external_resource_value(name, doc_url.url)
+                            DocExtResource.objects.create(doc=doc_url.doc, name=name, value=doc_url.url, display_name=doc_url.desc) # TODO: validate this value against name.type
+                        except ValidationError as e: # pyflakes:ignore
+                            debug.show('("Failed validation:", doc_url.url, e)')
+                            stats['failed_validation'] +=1
                     else:
-                        ignored +=1
+                        stats['ignored'] +=1
                     break
         if not match_found:
             debug.show('("Not Mapped:",doc_url.desc, doc_url.tag.slug, doc_url.doc.name, doc_url.url)')
-            not_mapped += 1
-    debug.show('(mapped, ignored, not_mapped)')
+            stats['not_mapped'] += 1
+    print (stats)
 
 def reverse(apps, schema_editor):
     DocExtResource = apps.get_model('doc', 'DocExtResource')

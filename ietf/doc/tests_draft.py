@@ -1125,6 +1125,46 @@ class IndividualInfoFormsTests(TestCase):
         self.assertIn('wiki https://wiki.org/', doc.latest_event(DocEvent,type="changed_document").desc)
         self.assertIn('https://wiki.org/', [ u.url for u in doc.documenturl_set.all() ])
 
+    def test_edit_doc_extresources(self):
+        url = urlreverse('ietf.doc.views_draft.edit_doc_extresources', kwargs=dict(name=self.docname))
+
+        login_testing_unauthorized(self, "secretary", url)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form textarea[id=id_resources]')),1)
+
+        # AMHERE
+        badlines = (
+            'github_repo https://github3.com/some/repo',
+            'github_notify  badaddr',
+            'website /not/a/good/url'
+            'notavalidtag blahblahblah'
+        )
+
+        for line in badlines:
+            r = self.client.post(url, dict(resources=line, submit="1"))
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertTrue(q('.alert-danger'))
+
+        goodlines = """
+            github_repo https://github.com/some/repo Some display text
+            github_notify notify@example.com
+            github_username githubuser
+            website http://example.com/http/is/fine
+        """
+
+        r = self.client.post(url, dict(resources=goodlines, submit="1"))
+        self.assertEqual(r.status_code,302)
+        doc = Document.objects.get(name=self.docname)
+        self.assertEqual(doc.latest_event(DocEvent,type="changed_document").desc[:35], 'Changed document external resources')
+        self.assertIn('github_username githubuser', doc.latest_event(DocEvent,type="changed_document").desc)
+        self.assertEqual(doc.docextresource_set.count(), 4)
+        self.assertEqual(doc.docextresource_set.get(name__slug='github_repo').display_name, 'Some display text')
+
+
 class SubmitToIesgTests(TestCase):
 
     def setUp(self):

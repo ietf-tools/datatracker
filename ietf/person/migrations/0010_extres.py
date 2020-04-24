@@ -10,7 +10,7 @@ import ietf.utils.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0011_populate_extres'),
+        ('name', '0010_extres'),
         ('person', '0009_auto_20190118_0725'),
     ]
 

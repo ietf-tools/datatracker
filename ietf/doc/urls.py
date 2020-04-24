@@ -131,6 +131,7 @@ urlpatterns = [
     url(r'^%(name)s/edit/approvedownrefs/$' % settings.URL_REGEXPS, views_ballot.approve_downrefs),
     url(r'^%(name)s/edit/makelastcall/$' % settings.URL_REGEXPS, views_ballot.make_last_call),
     url(r'^%(name)s/edit/urls/$' % settings.URL_REGEXPS, views_draft.edit_document_urls),
+    url(r'^%(name)s/edit/resources/$' % settings.URL_REGEXPS, views_draft.edit_doc_extresources),
     url(r'^%(name)s/edit/issueballot/irsg/$' % settings.URL_REGEXPS, views_ballot.issue_irsg_ballot),
     url(r'^%(name)s/edit/closeballot/irsg/$' % settings.URL_REGEXPS, views_ballot.close_irsg_ballot),
 

@@ -10,7 +10,7 @@ import ietf.utils.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0011_populate_extres'),
+        ('name', '0010_extres'),
         ('doc', '0031_set_state_for_charters_of_replaced_groups'),
     ]
 

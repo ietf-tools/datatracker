@@ -10,7 +10,7 @@ import ietf.utils.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0011_populate_extres'),
+        ('name', '0010_extres'),
         ('group', '0023_use_milestone_dates_default_to_true'),
     ]
 

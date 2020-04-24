@@ -55,6 +55,9 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('name', '0010_extres'),
+        ('group', '0024_extres'),
+        ('doc', '0032_extres'),
+        ('person', '0010_extres'),
     ]
 
     operations = [

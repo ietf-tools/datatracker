@@ -7,9 +7,13 @@ import re
 
 import debug
 
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 
 from django.db import migrations
+from django.core.exceptions import ValidationError
+
+
+from ietf.utils.validators import validate_external_resource_value
 
 name_map = {
     "Issue.*":                "tracker",
@@ -63,17 +67,14 @@ def forward(apps, schema_editor):
     ExtResourceName = apps.get_model('name', 'ExtResourceName')
     GroupUrl = apps.get_model('group', 'GroupUrl')
 
-    mapped = 0
-    not_mapped = 0
-    ignored = 0
+    stats = Counter()
 
-    debug.say("Matching...")
     for group_url in GroupUrl.objects.all():
         match_found = False
         for regext,slug in name_map.items():
             if re.match(regext, group_url.name):
                 match_found = True
-                mapped += 1
+                stats['mapped'] += 1
                 name = ExtResourceName.objects.get(slug=slug)
                 GroupExtResource.objects.create(group=group_url.group, name_id=slug, value=group_url.url, display_name=group_url.name) # TODO: validate this value against name.type
                 break
@@ -83,7 +84,7 @@ def forward(apps, schema_editor):
                 if re.search(regext, group_url.url):
                     match_found = True
                     if slug:
-                        mapped +=1
+                        stats['mapped'] +=1
                         name = ExtResourceName.objects.get(slug=slug)
                         # Munge the URL if it's the first github repo match
                         #  Remove "/tree/master" substring if it exists
@@ -93,14 +94,19 @@ def forward(apps, schema_editor):
                             group_url.url = group_url.url.replace("/tree/master","")
                             group_url.url = re.sub('/issues$', '', group_url.url)
                             group_url.url = re.sub('/blob/master.*$', '', group_url.url)
-                        GroupExtResource.objects.create(group=group_url.group, name_id=slug, value=group_url.url, display_name=group_url.name) # TODO: validate this value against name.type
+                        try:
+                            validate_external_resource_value(name, group_url.url)
+                            GroupExtResource.objects.create(group=group_url.group, name=name, value=group_url.url, display_name=group_url.name) # TODO: validate this value against name.type
+                        except ValidationError as e: # pyflakes:ignore
+                            debug.show('("Failed validation:", group_url.url, e)')
+                            stats['failed_validation'] +=1
                     else:
-                        ignored +=1
+                        stats['ignored'] +=1
                     break
         if not match_found:
             debug.show('("Not Mapped:",group_url.group.acronym, group_url.name, group_url.url)')
-            not_mapped += 1
-    debug.show('(mapped, ignored, not_mapped)')
+            stats['not_mapped'] += 1
+    print(stats)
 
 def reverse(apps, schema_editor):
     GroupExtResource = apps.get_model('group', 'GroupExtResource')
