@@ -1139,12 +1139,15 @@ def session_details(request, num, acronym):
             else:
                 session.times = [ x.timeslot.local_start_time() for x in ss ]
             session.cancelled = session.current_status == 'canceled'
+            session.status = ''
         elif meeting.type_id=='interim':
             session.times = [ meeting.date ]
             session.cancelled = session.current_status == 'canceled'
+            session.status = ''
         else:
             session.times = []
             session.cancelled = session.current_status == 'canceled'
+            session.status = status_names.get(session.current_status, session.current_status)
 
         session.filtered_artifacts = list(session.sessionpresentation_set.filter(document__type__slug__in=['agenda','minutes','bluesheets']))
         session.filtered_artifacts.sort(key=lambda d:['agenda','minutes','bluesheets'].index(d.document.type.slug))

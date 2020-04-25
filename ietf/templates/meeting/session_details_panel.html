@@ -3,7 +3,7 @@
   {% for session in sessions %}
     <h2 class="anchor-target" id="session_{{session.pk}}">{% if sessions|length > 1 %}Session {{ forloop.counter }} : {% endif %}
        {% for time in session.times %}{% if not forloop.first %}, {% endif %} {{time|dateformat:"l Y-m-d H:i T"}} {% if time.tzinfo.zone != "UTC" %}<span class="small">({{time|utc|dateformat:"H:i T"}})</span>{% endif %}{% endfor %}
-       {% if session.cancelled %}<span class="error">CANCELLED</span>{% endif %}
+       {% if session.cancelled %}<small class="label label-warning">CANCELLED</small>{% else %}{{ session.status }}{% endif %}
        {% if session.name %} : {{ session.name }}{% endif %}
       {% if meeting.date >= thisweek %}
         <a class="regular pull-right" title="icalendar entry for {{acronym}} session {{ forloop.counter }}" href="{% url 'ietf.meeting.views.ical_agenda' num=meeting.number session_id=session.id %}"><span class="fa fa-calendar"></span></a>
