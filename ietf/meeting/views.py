@@ -2335,6 +2335,11 @@ def floor_plan(request, num=None, floor=None, ):
     floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
     if floor:
         floors = [ f for f in floors if xslugify(f.name) == floor ]
+    for floor in floors:
+        try:
+            floor.image.width
+        except FileNotFoundError:
+            raise Http404('Missing floorplan image for %s' % floor)
     return render(request, 'meeting/floor-plan.html', {
             "schedule": schedule,
             "number": num,
