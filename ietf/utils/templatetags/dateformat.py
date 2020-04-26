@@ -20,7 +20,6 @@ def dateformat(value, arg=None):
     """
     if value in (None, ''):
         return ''
-    debug.type('value')
     if   isinstance(value, datetime.datetime):
         pass
     elif isinstance(value, datetime.date):
