@@ -1,3 +1,106 @@
+ietfdb (6.128.0) ietf; urgency=medium
+
+  **Changes in nomcom eligibility code, IPR handling, CI buildbot, and API keys**
+
+  From the commit log:
+
+  * Changed meeting links to etherpad instances to use port 9009, in order
+    to avoid web server proxying, which can cause issues under load.
+
+  * In IPR disclosure statement updates, don't show links to parked IPR
+    declarations, since they will 404.
+
+  * Fixed a server 500 on missing flooplan image file, which should have
+    returned a 404.
+
+  * Changed the date/datetime at the top of meeting session pages to indicate
+    timezone, and be given in UTC for virtual interim meetings, but meeting
+    timezone with UTC in parentheses for in-person meetings.  Fixes issue
+    #2963.
+
+  * Enhanced [17687] slightly, adding rendering of other status settings than
+    cancelled, and adding warning background for cancelled.  See issue #2963.
+
+  * Added a template filter that is a replacement for Django's builtin 'date'
+    filter, with a more polymorphic signature: It accepts either datetime or
+    date input, and ignores time-specific format entries when handling a date.
+
+  * Fixed a html closing tag error.
+
+  * Gave docker/updatedb a --quiet flag for use with buildbot, and fixed an
+    issue with error reporting of bad script switches for docker/updatedb.
+
+  * Moved minimum version up for python-magic, due to a Py3 issue with earlier
+    versions.
+
+  * Fixed a number of Py2/Py3 issues and removed more Py2 compatibility code.
+
+  * Updated some minimum versions for required packages.
+
+  * Merged in [17663] from rjsparks@nostrum.com: Show recent meetings on a
+    group's meeting tab even if there aren't other past meetings. Fixes #2961.
+    
+
+  * Added an explicit dependency on svn.  Under py3 it can be installed 
+    with pip, and doesn't need OS packages for python-subversion (it still 
+    needs libsvn1, though).
+
+  * Updated buildbot in a number of respects, in order to be able to deploy
+    Py3 workers:
+
+    - Added the possibility of specifying worker path on the command line for
+      the restart-workers script
+
+    - Added a buildbot_passwords template
+
+    - Removed excess workers
+
+    - Updated the buildbot master config file.
+
+    - Updated buildbot workers from 0.8 to 2.7, transitioned to Python 3, and
+      added some convenience scripts.
+
+  * Merged in [17649] from rjsparks@nostrum.com: Follow RFC8713 section 4.15
+    for roles that disqualify for nomcom. Fixes #2944.  
+
+  * Merged in [17650] from rjsparks@nostrum.com: Refactored
+    nomcom-disqualifying roles into one place.  
+
+  * Added a request profiler and a management command to purge profiler
+    records.
+
+  * Added template fragment caching for the upcoming meetings page.
+
+  * Tweaked the group 'closing notes' edit line for the secretariat on the
+    group about page.
+
+  * Changed the use of requirements3.txt in docker files back to
+    requirements.txt, and removed requirements3.txt
+
+  * Added a personal API key for meetecho access.
+
+  * Added the meetecho access api key to the list of personal API keys
+    available through the Personal API GUI, and removed a secretariat-only key
+    from the list.
+
+  * Added a migration for the updated list of personal API endpoints.
+
+  * Simplified the URL and view code for the personal meetecho access API
+    endpoint, and added test code.
+
+  * Refined the GUI for personal API endpoints so that endpoints for which one
+    does not have the right Roles do not show in the GUI, and added a
+    supporting method on Person objects.  Updated tests accordingly.
+
+  * Updated the API v2 JsonExporMixin to not try to use an API key argument as
+    a queryset argument when building the json response.
+
+  * Added exception handling in the require_api_key() decorator for
+    AttributeError raised by the decorated function.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com> 27 Apr 2020 19:10:10 +0000
+
+
 ietfdb (6.127.0) ietf; urgency=medium
 
   **Removed Python 2.7 compatibility.**
