@@ -23,6 +23,5 @@ def dateformat(value, arg=None):
     if   isinstance(value, datetime.datetime):
         pass
     elif isinstance(value, datetime.date):
-        debug.say('got date')
         arg = arg.translate(elide_timefmt).strip()
     return date(value, arg)
