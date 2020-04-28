@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2020, All Rights Reserved
 
 from django.conf.urls import include
 from django.views.generic import RedirectView
@@ -27,6 +27,7 @@ safe_for_all_meeting_types = [
 
 type_ietf_only_patterns = [
     url(r'^agenda/%(owner)s/%(schedule_name)s/edit$' % settings.URL_REGEXPS, views.edit_schedule),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/edit/$' % settings.URL_REGEXPS, views.edit_meeting_schedule),
     url(r'^agenda/%(owner)s/%(schedule_name)s/details$' % settings.URL_REGEXPS, views.edit_schedule_properties),
     url(r'^agenda/%(owner)s/%(schedule_name)s/delete$' % settings.URL_REGEXPS, views.delete_schedule),
     url(r'^agenda/%(owner)s/%(schedule_name)s/make_official$' % settings.URL_REGEXPS, views.make_schedule_official),
@@ -40,6 +41,7 @@ type_ietf_only_patterns = [
     url(r'^agenda/%(owner)s/%(schedule_name)s/session/(?P<assignment_id>\d+).json$' % settings.URL_REGEXPS, ajax.assignment_json),
     url(r'^agenda/%(owner)s/%(schedule_name)s/sessions.json$' % settings.URL_REGEXPS,      ajax.assignments_json),
     url(r'^agenda/%(owner)s/%(schedule_name)s.json$' % settings.URL_REGEXPS, ajax.schedule_infourl),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/copy/$' % settings.URL_REGEXPS, views.copy_meeting_schedule),
     url(r'^agenda/by-room$', views.agenda_by_room),
     url(r'^agenda/by-type$', views.agenda_by_type),
     url(r'^agenda/by-type/(?P<type>[a-z]+)$', views.agenda_by_type),
@@ -77,6 +79,7 @@ type_ietf_only_patterns_id_optional = [
     url(r'^agenda(?P<ext>.txt)$', views.agenda),
     url(r'^agenda(?P<ext>.csv)$', views.agenda),
     url(r'^agenda/edit$', views.edit_schedule),
+    url(r'^agenda/edit/$', views.edit_meeting_schedule),
     url(r'^requests$', views.meeting_requests),
     url(r'^agenda/agenda\.ics$', views.ical_agenda),
     url(r'^agenda\.ics$', views.ical_agenda),

@@ -15,7 +15,7 @@ from urllib.parse import urljoin
 
 import debug                            # pyflakes:ignore
 
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import Max
 from django.conf import settings
@@ -620,7 +620,7 @@ class Schedule(models.Model):
     schedule, others may copy it
     """
     meeting  = ForeignKey(Meeting, null=True, related_name='schedule_set')
-    name     = models.CharField(max_length=16, blank=False)
+    name     = models.CharField(max_length=16, blank=False, help_text="Letters, numbers and -:_ allowed.", validators=[RegexValidator(r'^[A-Za-z0-9-:_]*$')])
     owner    = ForeignKey(Person)
     visible  = models.BooleanField(default=True, help_text="Make this agenda available to those who know about it.")
     public   = models.BooleanField(default=True, help_text="Make this agenda publically available.")

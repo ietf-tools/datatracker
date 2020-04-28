@@ -86,6 +86,18 @@ template_coverage_collection = None
 code_coverage_collection = None
 url_coverage_collection = None
 
+def load_and_run_fixtures(verbosity):
+    loadable = [f for f in settings.GLOBAL_TEST_FIXTURES if "." not in f]
+    call_command('loaddata', *loadable, verbosity=int(verbosity)-1, commit=False, database="default")
+
+    for f in settings.GLOBAL_TEST_FIXTURES:
+        if f not in loadable:
+            # try to execute the fixture
+            components = f.split(".")
+            module_name = ".".join(components[:-1])
+            module = importlib.import_module(module_name)
+            fn = getattr(module, components[-1])
+            fn()
 
 def safe_create_test_db(self, verbosity, *args, **kwargs):
     global test_database_name, old_create
@@ -99,17 +111,7 @@ def safe_create_test_db(self, verbosity, *args, **kwargs):
 
     if settings.GLOBAL_TEST_FIXTURES:
         print("     Loading global test fixtures: %s" % ", ".join(settings.GLOBAL_TEST_FIXTURES))
-        loadable = [f for f in settings.GLOBAL_TEST_FIXTURES if "." not in f]
-        call_command('loaddata', *loadable, verbosity=int(verbosity)-1, commit=False, database="default")
-
-        for f in settings.GLOBAL_TEST_FIXTURES:
-            if f not in loadable:
-                # try to execute the fixture
-                components = f.split(".")
-                module_name = ".".join(components[:-1])
-                module = importlib.import_module(module_name)
-                fn = getattr(module, components[-1])
-                fn()
+        load_and_run_fixtures(verbosity)
 
     return test_database_name
 
@@ -774,3 +776,26 @@ class IetfTestRunner(DiscoverRunner):
             os.unlink(settings.UTILS_TEST_RANDOM_STATE_FILE)
 
         return failures
+
+class IetfLiveServerTestCase(StaticLiveServerTestCase):
+    @classmethod
+    def setUpClass(cls):
+        set_coverage_checking(False)
+        super(IetfLiveServerTestCase, cls).setUpClass()
+
+        # LiveServerTestCase uses TransactionTestCase which seems to
+        # somehow interfere with the fixture loading process in
+        # IetfTestRunner when running multiple tests (the first test
+        # is fine, in the next ones the fixtures have been wiped) -
+        # this is no doubt solvable somehow, but until then we simply
+        # recreate them here
+        from ietf.person.models import Person
+        if not Person.objects.exists():
+            load_and_run_fixtures(verbosity=0)
+
+    @classmethod
+    def tearDownClass(cls):
+        super(IetfLiveServerTestCase, cls).tearDownClass()
+        set_coverage_checking(True)
+
+    

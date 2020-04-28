@@ -69,6 +69,7 @@ class TimeSlotTypeName(NameModel):
 class ConstraintName(NameModel):
     """conflict, conflic2, conflic3, bethere, timerange, time_relation, wg_adjacent"""
     penalty = models.IntegerField(default=0, help_text="The penalty for violating this kind of constraint; for instance 10 (small penalty) or 10000 (large penalty)")
+    editor_label = models.CharField(max_length=32, blank=True, help_text="Very short label for producing warnings inline in the sessions in the schedule editor.")
 class TimerangeName(NameModel):
     """(monday|tuesday|wednesday|thursday|friday)-(morning|afternoon-early|afternoon-late)"""
 class LiaisonStatementPurposeName(NameModel):

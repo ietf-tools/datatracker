@@ -8,6 +8,7 @@ import glob
 import io
 import itertools
 import json
+import math
 import os
 import pytz
 import re
@@ -16,7 +17,7 @@ import markdown2
 
 
 from calendar import timegm
-from collections import OrderedDict, Counter, deque
+from collections import OrderedDict, Counter, deque, defaultdict
 from urllib.parse import unquote
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
@@ -40,6 +41,7 @@ from django.utils.encoding import force_str
 from django.utils.functional import curry
 from django.utils.text import slugify
 from django.views.decorators.cache import cache_page
+from django.utils.html import format_html
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
 
@@ -49,9 +51,11 @@ from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocA
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials
 from ietf.person.models import Person
+from ietf.person.name import plain_name
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission, SessionStatusName, SchedulingEvent, SchedTimeSessAssignment
+from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
+from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Constraint, ConstraintName
 from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
@@ -347,6 +351,405 @@ def edit_timeslots(request, num=None):
                                           "ts_list":ts_list,
                                       })
 
+class CopyScheduleForm(forms.ModelForm):
+    class Meta:
+        model = Schedule
+        fields = ['name', 'visible', 'public']
+
+    def __init__(self, schedule, new_owner, *args, **kwargs):
+        super(CopyScheduleForm, self).__init__(*args, **kwargs)
+
+        self.schedule = schedule
+        self.new_owner = new_owner
+
+        username = new_owner.user.username
+
+        name_suggestion = username
+        counter = 2
+
+        existing_names = set(Schedule.objects.filter(meeting=schedule.meeting_id, owner=new_owner).values_list('name', flat=True))
+        while name_suggestion in existing_names:
+            name_suggestion = username + str(counter)
+            counter += 1
+
+        self.fields['name'].initial = name_suggestion
+        self.fields['name'].label = "Name of new schedule"
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name and Schedule.objects.filter(meeting=self.schedule.meeting_id, owner=self.new_owner, name=name):
+            raise forms.ValidationError("Schedule with this name already exists.")
+        return name
+
+@role_required('Area Director','Secretariat')
+def copy_meeting_schedule(request, num, owner, name):
+    meeting  = get_meeting(num)
+    schedule = get_object_or_404(meeting.schedule_set, owner__email__address=owner, name=name)
+
+    if request.method == 'POST':
+        form = CopyScheduleForm(schedule, request.user.person, request.POST)
+
+        if form.is_valid():
+            new_schedule = form.save(commit=False)
+            new_schedule.meeting = schedule.meeting
+            new_schedule.owner = request.user.person
+            new_schedule.save()
+
+            # keep a mapping so that extendedfrom references can be chased
+            old_pk_to_new_pk = {}
+            extendedfroms = {}
+            for assignment in schedule.assignments.all():
+                extendedfrom_id = assignment.extendedfrom_id
+
+                # clone by resetting primary key
+                old_pk = assignment.pk
+                assignment.pk = None
+                assignment.schedule = new_schedule
+                assignment.extendedfrom = None
+                assignment.save()
+
+                old_pk_to_new_pk[old_pk] = assignment.pk
+                if extendedfrom_id is not None:
+                    extendedfroms[assignment.pk] = extendedfrom_id
+
+            for pk, extendedfrom_id in extendedfroms.values():
+                if extendedfrom_id in old_pk_to_new_pk:
+                    SchedTimeSessAssignment.objects.filter(pk=pk).update(extendedfrom=old_pk_to_new_pk[extendedfrom_id])
+
+            # now redirect to this new schedule
+            return redirect(edit_meeting_schedule, meeting.number, new_schedule.owner_email(), new_schedule.name)
+            
+    else:
+        form = CopyScheduleForm(schedule, request.user.person)
+
+    return render(request, "meeting/copy_meeting_schedule.html", {
+        'meeting': meeting,
+        'schedule': schedule,
+        'form': form,
+    })
+
+
+@ensure_csrf_cookie
+def edit_meeting_schedule(request, num=None, owner=None, name=None):
+    meeting = get_meeting(num)
+    if name is None:
+        schedule = meeting.schedule
+    else:
+        schedule = get_schedule_by_name(meeting, get_person_by_email(owner), name)
+
+    if schedule is None:
+        raise Http404("No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
+
+    can_see, can_edit, secretariat = schedule_permissions(meeting, schedule, request.user)
+
+    if not can_see:
+        if request.method == 'POST':
+            return HttpResponseForbidden("Can't view this schedule")
+
+        # FIXME: check this
+        return render(request, "meeting/private_schedule.html",
+                                             {"schedule":schedule,
+                                              "meeting": meeting,
+                                              "meeting_base_url": request.build_absolute_uri(meeting.base_url()),
+                                              "hide_menu": True
+                                          }, status=403, content_type="text/html")
+
+    assignments = get_all_assignments_from_schedule(schedule)
+
+    rooms = meeting.room_set.filter(session_types__slug='regular').distinct().order_by("capacity")
+    timeslots_qs = meeting.timeslot_set.filter(type='regular').prefetch_related('type', 'sessions').order_by('location', 'time', 'name')
+
+    sessions = add_event_info_to_session_qs(
+        Session.objects.filter(
+            meeting=meeting,
+            # Restrict graphical scheduling to regular meeting requests (Sessions) for now
+            type='regular',
+        ),
+        requested_time=True,
+        requested_by=True,
+    ).exclude(current_status__in=['notmeet', 'disappr', 'deleted', 'apprw']).prefetch_related(
+        'resources', 'group', 'group__parent', 'group__type',
+    )
+
+    if request.method == 'POST':
+        if not can_edit:
+            return HttpResponseForbidden("Can't edit this schedule")
+
+        action = request.POST.get('action')
+
+        if action == 'assign' and request.POST.get('session', '').isdigit() and request.POST.get('timeslot', '').isdigit():
+            session = get_object_or_404(sessions, pk=request.POST['session'])
+            timeslot = get_object_or_404(timeslots_qs, pk=request.POST['timeslot'])
+
+            existing_assignments = SchedTimeSessAssignment.objects.filter(session=session, schedule=schedule)
+            if existing_assignments:
+                existing_assignments.update(timeslot=timeslot, modified=datetime.datetime.now())
+            else:
+                SchedTimeSessAssignment.objects.create(
+                    session=session,
+                    schedule=schedule,
+                    timeslot=timeslot,
+                )
+
+            return HttpResponse("OK")
+
+        elif action == 'unassign' and request.POST.get('session', '').isdigit():
+            session = get_object_or_404(sessions, pk=request.POST['session'])
+            SchedTimeSessAssignment.objects.filter(session=session, schedule=schedule).delete()
+
+            return HttpResponse("OK")
+
+        return HttpResponse("Invalid parameters", status_code=400)
+
+    assignments_by_session = defaultdict(list)
+    for a in assignments:
+        assignments_by_session[a.session_id].append(a)
+
+    # Prepare timeslot layout, making a timeline per day scaled in
+    # browser em units to ensure that everything lines up even if the
+    # timeslots are not the same in the different rooms
+
+    def timedelta_to_css_ems(timedelta):
+        css_ems_per_hour = 5
+        return timedelta.seconds / 60.0 / 60.0 * css_ems_per_hour
+
+    timeslots_by_day = defaultdict(list)
+    for t in timeslots_qs:
+        timeslots_by_day[t.time.date()].append(t)
+
+    day_min_max = []
+    for day, timeslots in sorted(timeslots_by_day.items()):
+        day_min_max.append((day, min(t.time for t in timeslots), max(t.end_time() for t in timeslots)))
+
+    timeslots_by_room_and_day = defaultdict(list)
+    room_has_timeslots = set()
+    for t in timeslots_qs:
+        room_has_timeslots.add(t.location_id)
+        timeslots_by_room_and_day[(t.location_id, t.time.date())].append(t)
+
+    days = []
+    for day, day_min_time, day_max_time in day_min_max:
+        day_labels = []
+        day_width = timedelta_to_css_ems(day_max_time - day_min_time)
+
+        label_width = 4 # em
+
+        hourly_delta = 2
+
+        first_hour = int(math.ceil((day_min_time.hour + day_min_time.minute / 60.0) / hourly_delta) * hourly_delta)
+        t = day_min_time.replace(hour=first_hour, minute=0, second=0, microsecond=0)
+
+        last_hour = int(math.floor((day_max_time.hour + day_max_time.minute / 60.0) / hourly_delta) * hourly_delta)
+        end = day_max_time.replace(hour=last_hour, minute=0, second=0, microsecond=0)
+
+        while t <= end:
+            left_offset = timedelta_to_css_ems(t - day_min_time)
+            right_offset = day_width - left_offset
+            if right_offset > label_width:
+                # there's room for the label
+                day_labels.append((t, 'left', left_offset))
+            else:
+                day_labels.append((t, 'right', right_offset))
+
+            t += datetime.timedelta(seconds=hourly_delta * 60 * 60)
+
+        if not day_labels:
+            day_labels.append((day_min_time, 'left', 0))
+
+        room_timeslots = []
+        for r in rooms:
+            if r.pk not in room_has_timeslots:
+                continue
+
+            timeslots = []
+            for t in timeslots_by_room_and_day.get((r.pk, day), []):
+                timeslots.append({
+                    'timeslot': t,
+                    'offset': timedelta_to_css_ems(t.time - day_min_time),
+                    'width': timedelta_to_css_ems(t.end_time() - t.time),
+                })
+
+            room_timeslots.append((r, timeslots))
+
+        days.append({
+            'day': day,
+            'width': day_width,
+            'time_labels': day_labels,
+            'room_timeslots': room_timeslots,
+        })
+
+    room_labels = [[r for r in rooms if r.pk in room_has_timeslots] for i in range(len(days))]
+
+    # prepare sessions
+    for ts in timeslots_qs:
+        ts.session_assignments = []
+    timeslots_by_pk = {ts.pk: ts for ts in timeslots_qs}
+
+    # group parent colors
+    def cubehelix(i, total, hue=1.2, start_angle=0.5):
+        # theory in https://arxiv.org/pdf/1108.5083.pdf
+        rotations = total // 4
+        x = float(i + 1) / (total + 1)
+        phi = 2 * math.pi * (start_angle / 3 + rotations * x)
+        a = hue * x * (1 - x) / 2.0
+
+        return (
+            max(0, min(x + a * (-0.14861 * math.cos(phi) + 1.78277 * math.sin(phi)), 1)),
+            max(0, min(x + a * (-0.29227 * math.cos(phi) + -0.90649 * math.sin(phi)), 1)),
+            max(0, min(x + a * (1.97294 * math.cos(phi)), 1)),
+        )
+
+    session_parents = sorted(set(
+        s.group.parent for s in sessions
+        if s.group and s.group.parent and s.group.parent.type_id == 'area' or s.group.parent.acronym == 'irtf'
+    ), key=lambda p: p.acronym)
+    for i, p in enumerate(session_parents):
+        rgb_color = cubehelix(i, len(session_parents))
+        p.scheduling_color = "#" + "".join( hex(int(round(x * 255)))[2:] for x in rgb_color)
+
+    # dig out historic AD names
+    ad_names = {}
+    session_groups = set(s.group for s in sessions if s.group and s.group.parent.type_id == 'area')
+    meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
+
+    for group_id, history_time, name in Person.objects.filter(rolehistory__name='ad', rolehistory__group__group__in=session_groups, rolehistory__group__time__lte=meeting_time).values_list('rolehistory__group__group', 'rolehistory__group__time', 'name').order_by('rolehistory__group__time'):
+        ad_names[group_id] = plain_name(name)
+
+    for group_id, name in Person.objects.filter(role__name='ad', role__group__in=session_groups, role__group__time__lte=meeting_time).values_list('role__group', 'name'):
+        ad_names[group_id] = plain_name(name)
+
+    # requesters
+    requested_by_lookup = {p.pk: p for p in Person.objects.filter(pk__in=set(s.requested_by for s in sessions if s.requested_by))}
+
+    # constraints - convert the human-readable rules in the database
+    # to constraints on the actual sessions, compress them and output
+    # them, so that the JS simply has to detect violations and show
+    # the relevant preprocessed label
+    constraints = Constraint.objects.filter(meeting=meeting)
+    person_needed_for_groups = defaultdict(set)
+    for c in constraints:
+        if c.name_id == 'bethere' and c.person_id is not None:
+            person_needed_for_groups[c.person_id].add(c.source_id)
+
+    sessions_for_group = defaultdict(list)
+    for s in sessions:
+        if s.group_id is not None:
+            sessions_for_group[s.group_id].append(s.pk)
+
+    constraint_names = {n.pk: n for n in ConstraintName.objects.all()}
+    constraint_names_with_count = set()
+    constraint_label_replacements = [
+        (re.compile(r"\(person\)"), lambda match_groups: format_html("<i class=\"fa fa-user-o\"></i>")),
+        (re.compile(r"\(([^()])\)"), lambda match_groups: format_html("<span class=\"encircled\">{}</span>", match_groups[0])),
+    ]
+    for n in list(constraint_names.values()):
+        # spiff up the labels a bit
+        for pattern, replacer in constraint_label_replacements:
+            m = pattern.match(n.editor_label)
+            if m:
+                n.editor_label = replacer(m.groups())
+
+        # add reversed version of the name
+        reverse_n = ConstraintName(
+            slug=n.slug + "-reversed",
+            name="{} - reversed".format(n.name),
+        )
+        reverse_n.editor_label = format_html("<i>{}</i>", n.editor_label)
+        constraint_names[reverse_n.slug] = reverse_n
+
+    constraints_for_sessions = defaultdict(list)
+
+    def add_group_constraints(g1_pk, g2_pk, name_id, person_id):
+        if g1_pk != g2_pk:
+            for s1_pk in sessions_for_group.get(g1_pk, []):
+                for s2_pk in sessions_for_group.get(g2_pk, []):
+                    if s1_pk != s2_pk:
+                        constraints_for_sessions[s1_pk].append((name_id, s2_pk, person_id))
+
+    reverse_constraints = []
+    seen_forward_constraints_for_groups = set()
+
+    for c in constraints:
+        if c.target_id:
+            add_group_constraints(c.source_id, c.target_id, c.name_id, c.person_id)
+            seen_forward_constraints_for_groups.add((c.source_id, c.target_id, c.name_id))
+            reverse_constraints.append(c)
+
+        elif c.person_id:
+            constraint_names_with_count.add(c.name_id)
+
+            for g in person_needed_for_groups.get(c.person_id):
+                add_group_constraints(c.source_id, g, c.name_id, c.person_id)
+
+    for c in reverse_constraints:
+        # suppress reverse constraints in case we have a forward one already
+        if (c.target_id, c.source_id, c.name_id) not in seen_forward_constraints_for_groups:
+            add_group_constraints(c.target_id, c.source_id, c.name_id + "-reversed", c.person_id)
+
+    unassigned_sessions = []
+    for s in sessions:
+        s.requested_by_person = requested_by_lookup.get(s.requested_by)
+
+        s.scheduling_label = "???"
+        if s.group:
+            s.scheduling_label = s.group.acronym
+        elif s.name:
+            s.scheduling_label = s.name
+
+        s.requested_duration_in_hours = s.requested_duration.seconds / 60.0 / 60.0
+
+        session_layout_margin = 0.2
+        s.layout_width = timedelta_to_css_ems(s.requested_duration) - 2 * session_layout_margin
+        s.parent_acronym = s.group.parent.acronym if s.group and s.group.parent else ""
+        s.historic_group_ad_name = ad_names.get(s.group_id)
+
+        # compress the constraints, so similar constraint explanations
+        # are shared between the conflicting sessions they cover
+        constrained_sessions_grouped_by_explanation = defaultdict(set)
+        for name_id, ts in itertools.groupby(sorted(constraints_for_sessions.get(s.pk, [])), key=lambda t: t[0]):
+            ts = list(ts)
+            session_pks = (t[1] for t in ts)
+            constraint_name = constraint_names[name_id]
+            if name_id in constraint_names_with_count:
+                for session_pk, grouped_session_pks in itertools.groupby(session_pks):
+                    count = sum(1 for i in grouped_session_pks)
+                    constrained_sessions_grouped_by_explanation[format_html("{}{}", constraint_name.editor_label, count)].add(session_pk)
+
+            else:
+                constrained_sessions_grouped_by_explanation[constraint_name.editor_label].update(session_pks)
+
+        s.constrained_sessions = list(constrained_sessions_grouped_by_explanation.items())
+
+        assigned = False
+        for a in assignments_by_session.get(s.pk, []):
+            timeslot = timeslots_by_pk.get(a.timeslot_id)
+            if timeslot:
+                timeslot.session_assignments.append((a, s))
+                assigned = True
+
+        if not assigned:
+            unassigned_sessions.append(s)
+
+    js_data = {
+        'can_edit': can_edit,
+        'urls': {
+            'assign': request.get_full_path()
+        }
+    }
+
+    return render(request, "meeting/edit_meeting_schedule.html", {
+        'meeting': meeting,
+        'schedule': schedule,
+        'can_edit': can_edit,
+        'js_data': json.dumps(js_data, indent=2),
+        'days': days,
+        'room_labels': room_labels,
+        'unassigned_sessions': unassigned_sessions,
+        'session_parents': session_parents,
+        'hide_menu': True,
+    })
+
+
 ##############################################################################
 #@role_required('Area Director','Secretariat')
 # disable the above security for now, check it below.
@@ -419,6 +822,7 @@ def edit_schedule(request, num=None, owner=None, name=None):
                                           "hide_menu": True,
                                       })
 
+
 ##############################################################################
 #  show the properties associated with a schedule (visible, public)
 #
@@ -444,7 +848,7 @@ def edit_schedule_properties(request, num=None, owner=None, name=None):
             if form.is_valid():
                form.save()
                return HttpResponseRedirect(reverse('ietf.meeting.views.list_schedules',kwargs={'num': num}))
-        else: 
+        else:
             form = SchedulePropertiesForm(instance=schedule)
         return render(request, "meeting/properties_edit.html",
                                              {"schedule":schedule,

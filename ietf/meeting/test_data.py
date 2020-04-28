@@ -99,11 +99,11 @@ def make_meeting_test_data(meeting=None):
     # slots
     session_date = meeting.date + datetime.timedelta(days=1)
     slot1 = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
-                                    duration=datetime.timedelta(minutes=30),
+                                    duration=datetime.timedelta(minutes=60),
                                     time=datetime.datetime.combine(session_date, datetime.time(9, 30)))
     slot2 = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
-                                    duration=datetime.timedelta(minutes=30),
-                                    time=datetime.datetime.combine(session_date, datetime.time(10, 30)))
+                                    duration=datetime.timedelta(minutes=60),
+                                    time=datetime.datetime.combine(session_date, datetime.time(10, 50)))
     breakfast_slot = TimeSlot.objects.create(meeting=meeting, type_id="lead", location=breakfast_room,
                                     duration=datetime.timedelta(minutes=90),
                                     time=datetime.datetime.combine(session_date, datetime.time(7,0)))
@@ -116,7 +116,7 @@ def make_meeting_test_data(meeting=None):
     # mars WG
     mars = Group.objects.get(acronym='mars')
     mars_session = Session.objects.create(meeting=meeting, group=mars,
-                                          attendees=10, requested_duration=datetime.timedelta(minutes=20),
+                                          attendees=10, requested_duration=datetime.timedelta(minutes=50),
                                           type_id='regular')
     SchedulingEvent.objects.create(session=mars_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=slot1, session=mars_session, schedule=schedule)
@@ -125,7 +125,7 @@ def make_meeting_test_data(meeting=None):
     # ames WG
     ames_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="ames"),
                                           attendees=10,
-                                          requested_duration=datetime.timedelta(minutes=20),
+                                          requested_duration=datetime.timedelta(minutes=60),
                                           type_id='regular')
     SchedulingEvent.objects.create(session=ames_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=slot2, session=ames_session, schedule=schedule)
@@ -134,7 +134,7 @@ def make_meeting_test_data(meeting=None):
     # IESG breakfast
     iesg_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="iesg"),
                                           name="IESG Breakfast", attendees=25,
-                                          requested_duration=datetime.timedelta(minutes=20),
+                                          requested_duration=datetime.timedelta(minutes=60),
                                           type_id="lead")
     SchedulingEvent.objects.create(session=iesg_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=breakfast_slot, session=iesg_session, schedule=schedule)
