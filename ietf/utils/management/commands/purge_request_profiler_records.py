@@ -27,4 +27,5 @@ class Command(BaseCommand):
     def handle(self, *filenames, **options):
         start = datetime.datetime.now() - datetime.timedelta(days=int(options['days']))
         deleted = ProfilingRecord.objects.filter(start_ts__lt=start).delete()
-        self.stdout.write('deleted: %s' % str(deleted))
+        if options['verbosity'] > 1:
+            self.stdout.write('deleted: %s' % str(deleted))
