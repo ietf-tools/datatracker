@@ -933,9 +933,6 @@ BADNESS_TOOSMALL_100 = 50000
 BADNESS_TOOBIG     = 100
 BADNESS_MUCHTOOBIG = 500
 
-# do not run SELENIUM tests by default
-SKIP_SELENIUM = True
-
 # Set debug apps in settings_local.DEV_APPS
 
 DEV_APPS = []                           # type: List[str]
