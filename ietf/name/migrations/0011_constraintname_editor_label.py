@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0009_add_verified_errata_to_doctagname'),
+        ('name', '0010_timerangename'),
     ]
 
     def fill_in_editor_labels(apps, schema_editor):
