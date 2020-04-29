@@ -22,8 +22,6 @@ Abstract{{ docs|pluralize }}
 The file{{ urls|pluralize }} can be obtained via
 {% for u in urls %}{{ u }}
 {% endfor %}
-IESG discussion can be tracked via
-{{ doc_url }}
 
 {% if ipr_links %}The following IPR Declarations may be related to this I-D:
 
