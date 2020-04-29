@@ -40,7 +40,7 @@ class ChangeStateTests(TestCase):
         ad = Person.objects.get(user__username="ad")
         draft = WgDraftFactory(ad=ad,states=[('draft','active'),('draft-iesg','iesg-eva')])
         DocEventFactory(type='started_iesg_process',by=ad,doc=draft,rev=draft.rev,desc="Started IESG Process")
-        draft.tags.add("point")
+        draft.tags.add("ad-f-up")
 
         url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "ad", url)
@@ -114,14 +114,14 @@ class ChangeStateTests(TestCase):
         
         r = self.client.post(url,
                              dict(state=State.objects.get(used=True, type="draft-iesg", slug="review-e").pk,
-                                  substate="point",
+                                  substate="need-rev",
                                   comment="Test comment"))
         self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "review-e")
         self.assertTrue(not draft.tags.filter(slug="ad-f-up"))
-        self.assertTrue(draft.tags.filter(slug="point"))
+        self.assertTrue(draft.tags.filter(slug="need-rev"))
         self.assertEqual(draft.docevent_set.count(), events_before + 2)
         self.assertTrue("Test comment" in draft.docevent_set.all()[0].desc)
         self.assertTrue("IESG state changed" in draft.docevent_set.all()[1].desc)
