@@ -1,7 +1,7 @@
 [
   {
     "fields": {
-      "content": "{{ assigner.ascii }} has assigned {{ reviewer.person.ascii }} as a reviewer for this document.\n\n{% if prev_team_reviews %}This team has completed other reviews of this document:{% endif %}{% for assignment in prev_team_reviews %}\n- {{ assignment.completed_on }} {{ assignment.reviewer.person.ascii }} -{% if assignment.reviewed_rev %}{{ assignment.reviewed_rev }}{% else %}{{ assignment.review_request.requested_rev }}{% endif %} {{ assignment.result.name }}  \n{% endfor %}\n",
+      "content": "{% autoescape off %}{{ assigner.ascii }} has assigned {{ reviewer.person.ascii }} as a reviewer for this document.\n\n{% if prev_team_reviews %}This team has completed other reviews of this document:{% endif %}{% for assignment in prev_team_reviews %}\n- {{ assignment.completed_on }} {{ assignment.reviewer.person.ascii }} -{% if assignment.reviewed_rev %}{{ assignment.reviewed_rev }}{% else %}{{ assignment.review_request.requested_rev }}{% endif %} {{ assignment.result.name }}  \n{% endfor %}{% endautoescape %}\n",
       "group": null,
       "path": "/group/defaults/email/review_assigned.txt",
       "title": "Default template for review assignment email",
