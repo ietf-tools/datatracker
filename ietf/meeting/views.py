@@ -2268,6 +2268,8 @@ def upcoming(request):
                         reverse('ietf.meeting.views.interim_request')))
     actions.append(('Download as .ics',
                     reverse('ietf.meeting.views.upcoming_ical')))
+    actions.append(('Subscribe with webcal',
+                    'webcal://'+request.get_host()+reverse('ietf.meeting.views.upcoming_ical')))
 
     return render(request, 'meeting/upcoming.html', {
                   'entries': entries,
