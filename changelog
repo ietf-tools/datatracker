@@ -1,3 +1,22 @@
+ietfdb (6.129.0) ietf; urgency=medium
+
+  **New meeting schedule editor**
+
+  This provides the first release of the new meeting schedule editor which
+  lets the Secretariat and IESG lay out the week's schedule for in-person IETF
+  meetings on a visual grid.  The new editor is based on experience gained
+  with the current schedule editor.  In addition to visual and functional
+  improvements, the underlying javascript and ajax API has been thoroughly
+  revised.
+
+  * Merged in  ^/branch/iola/meeting-improvement-r17214@17617, which 
+    provides a new meeting schedule editor.
+
+  * Minor housekeeping changes
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 May 2020 09:04:27 +0000
+
+
 ietfdb (6.128.0) ietf; urgency=medium
 
   **Changes in nomcom eligibility code, IPR handling, CI buildbot, and API keys**
