@@ -2735,7 +2735,6 @@ def upcoming_ical(request):
 
 def upcoming_json(request):
     '''Return Upcoming meetings in json format'''
-    filters = request.GET.getlist('filters')
     today = datetime.date.today()
 
     # get meetings starting 7 days ago -- we'll filter out sessions in the past further down
