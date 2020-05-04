@@ -1,5 +1,6 @@
 # -*- conf-mode -*-
 
+^/personal/markd/v6.120.0.dev0@17694    # Review still shows issues, henrik will rework (29 Apr 2020)
 ^/personal/markd/v6.120.0.dev0@17570    # Review issues to be resolved (08 Apr 2020)
 ^/personal/mahoney/6.121.1.dev0@17473   # Test commit
 /personal/kivinen/6.94.2.dev0@16091	# Replaced by later commit
