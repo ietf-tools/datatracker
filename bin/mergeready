@@ -372,7 +372,11 @@ keys.sort()
 unmerged = False
 for key in keys:
     (rev, repo, branch, who, merge_path) = all_commits[key]
-    i = unmerged_branch_commits[branch].index(rev)
+    try:
+        i = unmerged_branch_commits[branch].index(rev)
+    except:
+        say("Unexpected state.  Mismatch between branch name and revision in hold-for-merge or ready-for-merge?")
+        raise
     if not i == 0:
         unmerged = True
         sys.stderr.write("There are unmerged commits ahead of r%s on branch ^/%s:\n" % (rev, branch))
