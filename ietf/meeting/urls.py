@@ -120,6 +120,7 @@ urlpatterns = [
     url(r'^past/?$', views.past),
     url(r'^upcoming/?$', views.upcoming),
     url(r'^upcoming\.ics/?$', views.upcoming_ical),
+    url(r'^upcoming\.json/?$', views.upcoming_json),
     # Then patterns from more specific to less
     url(r'^(?P<num>interim-[a-z0-9-]+)/', include(type_interim_patterns)),
     url(r'^(?P<num>\d+)/requests.html$', RedirectView.as_view(url='/meeting/%(num)s/requests', permanent=True)),

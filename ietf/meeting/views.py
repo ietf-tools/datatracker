@@ -2733,6 +2733,23 @@ def upcoming_ical(request):
     return response
     
 
+def upcoming_json(request):
+    '''Return Upcoming meetings in json format'''
+    filters = request.GET.getlist('filters')
+    today = datetime.date.today()
+
+    # get meetings starting 7 days ago -- we'll filter out sessions in the past further down
+    meetings = data_for_meetings_overview(Meeting.objects.filter(date__gte=today-datetime.timedelta(days=7)).order_by('date'))
+
+    data = {}
+    for m in meetings:
+        data[m.number] = {
+            'date':  m.date.strftime("%Y-%m-%d"),
+        }
+
+    response = HttpResponse(json.dumps(data, indent=2, sort_keys=False), content_type='application/json;charset=%s'%settings.DEFAULT_CHARSET)
+    return response
+
 def floor_plan(request, num=None, floor=None, ):
     meeting = get_meeting(num)
     schedule = meeting.schedule

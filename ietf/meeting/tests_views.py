@@ -1511,6 +1511,15 @@ class InterimTests(TestCase):
         self.assertEqual(r.content.count(b'UID'), 2)
 
 
+    def test_upcoming_json(self):
+        make_meeting_test_data()
+        url = urlreverse("ietf.meeting.views.upcoming_json")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.get('Content-Type'), "application/json;charset=utf-8")
+        data = r.json()
+        self.assertEqual(len(data), 3)
+
     def test_interim_request_permissions(self):
         '''Ensure only authorized users see link to request interim meeting'''
         make_meeting_test_data()
