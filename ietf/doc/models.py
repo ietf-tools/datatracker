@@ -74,7 +74,7 @@ class State(models.Model):
         ordering = ["type", "order"]
 
 IESG_BALLOT_ACTIVE_STATES = ("lc", "writeupw", "goaheadw", "iesg-eva", "defer")
-IESG_SUBSTATE_TAGS = ('point', 'ad-f-up', 'need-rev', 'extpty')
+IESG_SUBSTATE_TAGS = ('ad-f-up', 'need-rev', 'extpty')
 
 class DocumentInfo(models.Model):
     """Any kind of document.  Draft, RFC, Charter, IPR Statement, Liaison Statement"""

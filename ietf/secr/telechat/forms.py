@@ -10,7 +10,7 @@ from ietf.name.models import BallotPositionName, DocTagName
 # Globals
 # -------------------------------------------------
 
-TELECHAT_TAGS = ('point','ad-f-up','extpty','need-rev')
+TELECHAT_TAGS = ('ad-f-up','extpty','need-rev')
 
 # -------------------------------------------------
 # Forms
