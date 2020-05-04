@@ -175,7 +175,6 @@ def chart_data_person_drafts(request, id):
         data = []
     else:
         data = model_to_timeline_data(DocEvent, doc__documentauthor__person=person, type='new_revision', doc__type_id='draft')
-    debug.show('len(data)')
     return JsonResponse(data, safe=False)
     
 
