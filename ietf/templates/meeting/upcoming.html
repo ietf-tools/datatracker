@@ -20,7 +20,14 @@
   <div class="row">
     <div class="col-md-10">
 
-      <h1>Upcoming Meetings</h1>
+      <h1>Upcoming Meetings
+         <span class="regular pull-right">
+         <a title="iCalendar subscription for upcoming meetings" href="webcal://{{request.get_host}}{% url 'ietf.meeting.views.upcoming_ical' %}">
+            <span class="fa fa-stack-1"><i class="fa fa-fw fa-calendar-o fa-stack-1x"></i><i class="fa fa-fw fa-repeat fa-stack-xs"></i></span>
+         </a>
+         <a title="iCalendar entry for upcoming meetings" href="{% url 'ietf.meeting.views.upcoming_ical' %}"><span class="fa fa-calendar"></span></a>
+         </span>
+      </h1>
 
       <p>For more on regular IETF meetings see <a href="https://www.ietf.org/meeting/upcoming.html">here</a></p>
 
@@ -68,11 +75,17 @@
                       <td>{{ session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}} - {{ session.official_timeslotassignment.timeslot.utc_end_time | date:"H:i e" }}</td>
                       <td><a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{ session.group.acronym }}</a></td>
                       <td>
-                        <a href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">{{ session.meeting.number }}{% if session.current_status == 'canceled' %}&nbsp;&nbsp;<span class="label label-warning">CANCELLED</span>{% endif %}</a>
+                        <a href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">{{ session.meeting.number }}</a>
                       </td>
-                      <td class='text-right'>
-                         {% include "meeting/interim_session_buttons.html" %}
-                      </td>
+                      {% if session.current_status == 'canceled' %}
+                        <td class='text-right'>
+                          <span class="label label-warning">CANCELLED</span>
+                        </td>
+                      {% else %}
+                        <td class='text-right'>
+                          {% include "meeting/interim_session_buttons.html" with show_agenda=True %}
+                        </td>
+                      {% endif %}
                     {% endwith %}
                   {% else %}
                       <td><span class="label-warning">Unexpected entry type: {{entry|classname}}</span></td>
