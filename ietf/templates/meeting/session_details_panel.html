@@ -1,12 +1,25 @@
 {% load origin ietf_filters textfilters tz dateformat %}{% origin %}
 
   {% for session in sessions %}
+    {% with item=session.official_timeslotassignment %}
     <h2 class="anchor-target" id="session_{{session.pk}}">{% if sessions|length > 1 %}Session {{ forloop.counter }} : {% endif %}
        {% for time in session.times %}{% if not forloop.first %}, {% endif %} {{time|dateformat:"l Y-m-d H:i T"}} {% if time.tzinfo.zone != "UTC" %}<span class="small">({{time|utc|dateformat:"H:i T"}})</span>{% endif %}{% endfor %}
        {% if session.cancelled %}<small class="label label-warning">CANCELLED</small>{% else %}{{ session.status }}{% endif %}
        {% if session.name %} : {{ session.name }}{% endif %}
-      {% if meeting.date >= thisweek %}
-        <a class="regular pull-right" title="icalendar entry for {{acronym}} session {{ forloop.counter }}" href="{% url 'ietf.meeting.views.ical_agenda' num=meeting.number session_id=session.id %}"><span class="fa fa-calendar"></span></a>
+         {% if not session.cancelled %}
+           <span class="regular pull-right">
+             {% if meeting.type.slug == 'interim' %}
+               {% include "meeting/interim_session_buttons.html" with show_agenda=False show_empty=False %}
+             {% else %}
+               {% with schedule=meeting.schedule %}
+                 {% include "meeting/session_buttons_include.html" %}
+               {% endwith %}
+             {% endif %}
+             <!-- iCalendar item -->
+             {% if now < item.timeslot.end_time %}
+               <a title="icalendar entry for {{acronym}} session {{ forloop.counter }}" href="{% url 'ietf.meeting.views.ical_agenda' num=meeting.number session_id=session.id %}"><span class="fa fa-fw fa-calendar-o"></span> </a>
+             {% endif %}
+           </span>
       {% endif %}
     </h2>
     {% if session.agenda_note %}<h3>{{session.agenda_note}}</h3>{% endif %}
@@ -141,4 +154,5 @@
         {% endif %}
       </div>
     </div>
+    {% endwith %}
   {% endfor %}
