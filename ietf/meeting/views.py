@@ -1645,10 +1645,14 @@ class UploadBlueSheetForm(FileUploadForm):
         super(UploadBlueSheetForm, self).__init__(*args, **kwargs )
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
 def upload_session_bluesheets(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session,pk=session_id)
+
+    if not session.can_manage_materials(request.user):
+        return HttpResponseForbidden("You don't have permission to upload bluesheets for this session.")
+    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
+        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
     if session.meeting.type.slug == 'ietf' and not has_role(request.user, 'Secretariat'):
         return HttpResponseForbidden('Restricted to role Secretariat')

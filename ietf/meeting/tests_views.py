@@ -2377,7 +2377,7 @@ class MaterialsTests(TestCase):
     def test_upload_bluesheets_interim_chair_access(self):
         make_meeting_test_data()
         mars = Group.objects.get(acronym='mars')
-        session=SessionFactory(meeting__type_id='interim',group=mars)
+        session=SessionFactory(meeting__type_id='interim',group=mars, meeting__date = datetime.date.today())
         url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
