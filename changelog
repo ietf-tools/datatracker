@@ -41,7 +41,7 @@ ietfdb (6.129.1) ietf; urgency=medium
     profile page to type='draft'.  This fixes an issue where other document
     types, for instance reviews, would be counted.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  06 May 2020 12:35:44 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 May 2020 13:30:24 +0000
 
 ietfdb (6.129.0) ietf; urgency=medium
 
