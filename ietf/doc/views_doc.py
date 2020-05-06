@@ -256,7 +256,9 @@ def document_main(request, name, rev=None):
 
             if "pdf" not in found_types:
                 file_urls.append(("pdf", settings.TOOLS_ID_PDF_URL + doc.name + "-" + doc.rev + ".pdf"))
-            file_urls.append(("htmlized", settings.TOOLS_ID_HTML_URL + doc.name + "-" + doc.rev))
+            #file_urls.append(("htmlized", settings.TOOLS_ID_HTML_URL + doc.name + "-" + doc.rev))
+            file_urls.append(("htmlized (tools)", settings.TOOLS_ID_HTML_URL + doc.name + "-" + doc.rev))
+            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
 
             # latest revision
             latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
