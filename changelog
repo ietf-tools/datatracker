@@ -1,3 +1,48 @@
+ietfdb (6.129.1) ietf; urgency=medium
+
+  **Bugfixes**
+
+  * Merged in [17711] from henrik@levkowetz.com:
+    Turned autoescape off for another email fragment template (production
+    database has also been changed).  This fixes an issue where
+    test_assign_reviewer() would sometimes fail due to html-escaped characters
+    in email text. 
+
+  * Merged in [17725] from rjsparks@nostrum.com:
+    Add help text strongly encouraging always having a conference link in 
+    any interim request. Fixes #2973.  
+
+  * Merged in [17724] from rjsparks@nostrum.com:
+    Use normal material management permissions for uploading bluesheets. 
+    Fixes #2975.  
+
+  * Merged in [17723] from rjsparks@nostrum.com:
+    Stop requiring AD approval of virtual interims. Fixes #2972.  
+
+  * Merged in [17712] from rjsparks@nostrum.com:
+    Add a webcal link to /meetings/upcoming. Partially addresses #2971. 
+    Adding this to the main agenda page will require some js juggling, and I 
+    think getting some runtime with it first to make sure it is what we want 
+    makes sense. 
+
+  * Merged in [17709] from rjsparks@nostrum.com:
+    Modified the last-call announcement template, at the IESG's request, 
+    removing the link to documment's ballot (which may not exist at the time 
+    last-call goes out). Fixes #2967.  
+
+  * Merged in [17708] from rjsparks@nostrum.com:
+    Remove 'point raised - writup needed' from the set of substates the 
+    IESG can use with a document. Fixes #2968.  
+
+  * Added a first iteration of /meeting/upcoming.json for Meetecho use, 
+    with the expectation that buildout and tweaks may be required.
+
+  * Limited the data for 'New draft revisions over time' on the personal 
+    profile page to type='draft'.  This fixes an issue where other document
+    types, for instance reviews, would be counted.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 May 2020 12:35:44 +0000
+
 ietfdb (6.129.0) ietf; urgency=medium
 
   **New meeting schedule editor**
