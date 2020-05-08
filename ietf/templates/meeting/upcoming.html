@@ -60,7 +60,7 @@
                     {% with meeting=entry %}
                       <td>{{ meeting.date }} - {{ meeting.end }}</td>
                       <td>ietf</td>
-                      <td><a href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">IETF {{ meeting.number }}</a></td>
+                      <td><a class="ietf-meeting-link" href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">IETF {{ meeting.number }}</a></td>
                       <td></td>
                     {% endwith %}
                   {% elif entry|classname == 'Session' %}
@@ -68,7 +68,7 @@
                       <td>{{ session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}} - {{ session.official_timeslotassignment.timeslot.utc_end_time | date:"H:i e" }}</td>
                       <td><a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{ session.group.acronym }}</a></td>
                       <td>
-                        <a href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">{{ session.meeting.number }}{% if session.current_status == 'canceled' %}&nbsp;&nbsp;<span class="label label-warning">CANCELLED</span>{% endif %}</a>
+                        <a class="interim-meeting-link" href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">{{ session.meeting.number }}{% if session.current_status == 'canceled' %}&nbsp;&nbsp;<span class="label label-warning">CANCELLED</span>{% endif %}</a>
                       </td>
                       <td class='text-right'>
                          {% include "meeting/interim_session_buttons.html" %}

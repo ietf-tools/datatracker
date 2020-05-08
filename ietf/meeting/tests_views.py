@@ -26,7 +26,8 @@ from django.db.models import F
 import debug           # pyflakes:ignore
 
 from ietf.doc.models import Document
-from ietf.group.models import Group, Role
+from ietf.group.models import Group, Role, GroupFeatures
+from ietf.group.utils import can_manage_group
 from ietf.person.models import Person
 from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request
 from ietf.meeting.helpers import send_interim_approval_request
@@ -37,7 +38,7 @@ from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.utils import finalize, condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.meeting.views import session_draft_list
-from ietf.name.models import SessionStatusName, ImportantDateName
+from ietf.name.models import SessionStatusName, ImportantDateName, RoleName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
@@ -1546,7 +1547,8 @@ class InterimTests(TestCase):
         r = self.client.get("/meeting/interim/request/")
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(Group.objects.filter(type__in=('wg', 'rg', 'ag'), state__in=('active', 'proposed')).count(),
+        Group.objects.filter(type_id__in=GroupFeatures.objects.filter(has_meetings=True).values_list('type_id',flat=True), state__in=('active', 'proposed', 'bof'))
+        self.assertEqual(Group.objects.filter(type_id__in=GroupFeatures.objects.filter(has_meetings=True).values_list('type_id',flat=True), state__in=('active', 'proposed', 'bof')).count(),
             len(q("#id_group option")) - 1)  # -1 for options placeholder
         self.client.logout()
 
@@ -1930,6 +1932,28 @@ class InterimTests(TestCase):
         user = User.objects.get(username='ameschairman')
         self.assertFalse(can_view_interim_request(meeting=meeting,user=user))
 
+    def test_can_manage_group(self):
+        make_meeting_test_data()
+        # unprivileged user
+        user = User.objects.get(username='plain')
+        group = Group.objects.get(acronym='mars')
+        self.assertFalse(can_manage_group(user=user,group=group))
+        # Secretariat
+        user = User.objects.get(username='secretary')
+        self.assertTrue(can_manage_group(user=user,group=group))
+        # related AD
+        user = User.objects.get(username='ad')
+        self.assertTrue(can_manage_group(user=user,group=group))
+        # other AD
+        user = User.objects.get(username='ops-ad')
+        self.assertTrue(can_manage_group(user=user,group=group))
+        # WG Chair
+        user = User.objects.get(username='marschairman')
+        self.assertTrue(can_manage_group(user=user,group=group))
+        # Other WG Chair
+        user = User.objects.get(username='ameschairman')
+        self.assertFalse(can_manage_group(user=user,group=group))
+
     def test_interim_request_details(self):
         make_meeting_test_data()
         meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
@@ -1974,13 +1998,6 @@ class InterimTests(TestCase):
         make_meeting_test_data()
         meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
         url = urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
-        # ensure no cancel button for unauthorized user
-        self.client.login(username="ameschairman", password="ameschairman+password")
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q("a.btn:contains('Cancel')")), 0)
-        # ensure cancel button for authorized user
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -2784,3 +2801,164 @@ class SessionTests(TestCase):
                                  })
         self.assertEqual(r.status_code,302)
         self.assertEqual(len(outbox),1)
+
+class HasMeetingsTests(TestCase):
+
+    def do_request_interim(self, url, group, user, meeting_count):
+        login_testing_unauthorized(self,user.username, url)
+        r = self.client.get(url) 
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('#id_group option[value="%d"]'%group.pk))
+        date = datetime.date.today() + datetime.timedelta(days=30+meeting_count)
+        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        remote_instructions = 'Use webex'
+        agenda = 'Intro. Slides. Discuss.'
+        agenda_note = 'On second level'
+        meeting_count = Meeting.objects.filter(number__contains='-%s-'%group.acronym, date__year=date.year).count()
+        next_num = "%02d" % (meeting_count+1)
+        data = {'group':group.pk,
+                'meeting_type':'single',
+                'city':'',
+                'country':'',
+                'time_zone':'UTC',
+                'session_set-0-date':date.strftime("%Y-%m-%d"),
+                'session_set-0-time':time.strftime('%H:%M'),
+                'session_set-0-requested_duration':'03:00:00',
+                'session_set-0-remote_instructions':remote_instructions,
+                'session_set-0-agenda':agenda,
+                'session_set-0-agenda_note':agenda_note,
+                'session_set-TOTAL_FORMS':1,
+                'session_set-INITIAL_FORMS':0,
+                'session_set-MIN_NUM_FORMS':0,
+                'session_set-MAX_NUM_FORMS':1000}
+
+        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
+        meeting = Meeting.objects.order_by('id').last()
+        self.assertEqual(meeting.type_id,'interim')
+        self.assertEqual(meeting.date,date)
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year, group.acronym, next_num))
+        self.client.logout()
+
+
+    def create_role_for_authrole(self, authrole):
+        role = None
+        if authrole == 'Secretariat':
+            role = RoleFactory.create(group__acronym='secretariat',name_id='secr')
+        elif authrole == 'Area Director':
+            role = RoleFactory.create(name_id='ad', group__type_id='area')
+        elif authrole == 'IAB':
+            role = RoleFactory.create(name_id='member', group__acronym='iab')
+        elif authrole == 'IRTF Chair':
+            role = RoleFactory.create(name_id='chair', group__acronym='irtf')
+        if role is None:
+            self.assertIsNone("Can't test authrole:"+authrole)
+        self.assertNotEqual(role, None)                       
+        return role
+
+
+    def test_can_request_interim(self):
+
+        url = urlreverse('ietf.meeting.views.interim_request')
+        for gf in GroupFeatures.objects.filter(has_meetings=True):
+            meeting_count = 0
+            for role in gf.groupman_roles:
+                role = RoleFactory(group__type_id=gf.type_id, name_id=role)
+                self.do_request_interim(url, role.group, role.person.user, meeting_count)
+            for authrole in gf.groupman_authroles:
+                group = GroupFactory(type_id=gf.type_id)
+                role = self.create_role_for_authrole(authrole)
+                self.do_request_interim(url, group, role.person.user, 0)
+
+
+    def test_cannot_request_interim(self):
+
+        url = urlreverse('ietf.meeting.views.interim_request')
+
+        self.client.login(username='secretary', password='secretary+password')
+        nomeetings = []
+        for gf in GroupFeatures.objects.exclude(has_meetings=True):
+            nomeetings.append(GroupFactory(type_id=gf.type_id))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        for group in nomeetings:
+            self.assertFalse(q('#id_group option[value="%d"]'%group.pk))
+        self.client.logout()
+
+        all_role_names = set(RoleName.objects.values_list('slug',flat=True))
+        for gf in GroupFeatures.objects.filter(has_meetings=True):
+            for role_name in all_role_names - set(gf.groupman_roles):
+                role = RoleFactory(group__type_id=gf.type_id,name_id=role_name)
+                self.client.login(username=role.person.user.username, password=role.person.user.username+'+password')
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 403)
+                self.client.logout()
+
+    def test_appears_on_upcoming(self):
+        url = urlreverse('ietf.meeting.views.upcoming')
+        for gf in GroupFeatures.objects.filter(has_meetings=True):
+            session = SessionFactory(
+                group__type_id = gf.type_id,
+                meeting__type_id='interim', 
+                meeting__date = datetime.datetime.today()+datetime.timedelta(days=30),
+                status_id='sched',
+            )
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertIn(session.meeting.number, q('.interim-meeting-link').text())
+
+
+    def test_appears_on_pending(self):
+        url = urlreverse('ietf.meeting.views.interim_pending')
+        for gf in GroupFeatures.objects.filter(has_meetings=True):
+            group = GroupFactory(type_id=gf.type_id)
+            meeting_date = datetime.datetime.today() + datetime.timedelta(days=30)
+            session = SessionFactory(
+                group=group,
+                meeting__type_id='interim', 
+                meeting__date = meeting_date,
+                meeting__number = 'interim-%d-%s-00'%(meeting_date.year,group.acronym),
+                status_id='apprw',
+            )
+            for role_name in gf.groupman_roles:
+                role = RoleFactory(group=group, name_id=role_name)
+                self.client.login(username=role.person.user.username, password=role.person.user.username+'+password')
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 200)
+                q = PyQuery(r.content)
+                self.assertIn(session.meeting.number, q('.interim-meeting-link').text())
+                self.client.logout()
+            for authrole in gf.groupman_authroles:
+                role = self.create_role_for_authrole(authrole)
+                self.client.login(username=role.person.user.username, password=role.person.user.username+'+password')
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 200)
+                q = PyQuery(r.content)
+                self.assertIn(session.meeting.number, q('.interim-meeting-link').text())
+                self.client.logout()
+
+
+    def test_appears_on_announce(self):
+        url = urlreverse('ietf.meeting.views.interim_announce')
+        login_testing_unauthorized(self,"secretary",url)
+        sessions=[]
+        for gf in GroupFeatures.objects.filter(has_meetings=True):
+            group = GroupFactory(type_id=gf.type_id)
+            meeting_date = datetime.datetime.today() + datetime.timedelta(days=30)
+            session = SessionFactory(
+                group=group,
+                meeting__type_id='interim', 
+                meeting__date = meeting_date,
+                meeting__number = 'interim-%d-%s-00'%(meeting_date.year,group.acronym),
+                status_id='scheda',
+            )
+            sessions.append(session)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        for session in sessions:
+            self.assertIn(session.meeting.number, q('.interim-meeting-link').text())
+
