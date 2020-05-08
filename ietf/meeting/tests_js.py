@@ -234,8 +234,18 @@ class ScheduleEditTests(IetfLiveServerTestCase):
         
         self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting=meeting, session__group__acronym='mars', schedule__name='test-schedule').count(),1)
 
+
+        ss = list(SchedTimeSessAssignment.objects.filter(session__meeting__number=72,session__group__acronym='mars',schedule__name='test-schedule')) # pyflakes:ignore
+        debug.pprint('ss[0].json_dict("http:")')
+
+
         self.login()
         url = self.absreverse('ietf.meeting.views.edit_schedule',kwargs=dict(num='72',name='test-schedule',owner='plain@example.com'))
+        js  = self.absreverse('ietf.meeting.ajax.sessions_json', kwargs=dict(num='72'))
+        debug.show('js')
+        r = self.client.get(js)         # pyflakes:ignore
+        from ietf.utils.test_utils import unicontent # pyflakes:ignore
+        debug.pprint('r.json()')
         self.driver.get(url)
 
         s1 = Session.objects.filter(group__acronym='mars', meeting=meeting).first()

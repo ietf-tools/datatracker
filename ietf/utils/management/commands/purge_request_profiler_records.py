@@ -21,7 +21,7 @@ class Command(BaseCommand):
             
             
     def add_arguments(self, parser):
-        parser.add_argument('-d', '--days', dest='days', type=int, default=30,
+        parser.add_argument('-d', '--days', dest='days', type=int, default=3,
             help='Purge records older than this (default %(default)s days).')
 
     def handle(self, *filenames, **options):

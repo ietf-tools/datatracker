@@ -27,7 +27,7 @@ li.daylistentry { margin-left:2em; font-weight: 400; }
 {% block title %}Agenda for {{meeting}} by Session Type{% endblock %}
 
 {% block content %}
-{% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=meeting.updated selected="by-type"  title_extra="by Session Type" %}
+{% include "meeting/meeting_heading.html" with updated=meeting.updated selected="by-type"  title_extra="by Session Type" %}
 
 {% regroup assignments by session.type.slug as type_list %}
 <ul class="typelist">

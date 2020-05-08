@@ -61,10 +61,10 @@ from django.db.migrations.operations.fields import FieldOperation
 from django.db.migrations.operations.models import ModelOperation
 from django.db.migrations.operations.base import Operation
 from django.template import TemplateDoesNotExist
-from django.template.loaders.base import Loader as BaseLoader
+from django.template.loaders.filesystem import Loader as BaseLoader
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
-from django.urls import RegexURLResolver # type: ignore
+from django.urls import URLResolver # type: ignore
 
 import debug                            # pyflakes:ignore
 debug.debug = True
@@ -88,7 +88,7 @@ url_coverage_collection = None
 
 def load_and_run_fixtures(verbosity):
     loadable = [f for f in settings.GLOBAL_TEST_FIXTURES if "." not in f]
-    call_command('loaddata', *loadable, verbosity=int(verbosity)-1, commit=False, database="default")
+    call_command('loaddata', *loadable, verbosity=int(verbosity)-1, database="default")
 
     for f in settings.GLOBAL_TEST_FIXTURES:
         if f not in loadable:
@@ -157,12 +157,11 @@ class MyPyTest(TestCase):
 class TemplateCoverageLoader(BaseLoader):
     is_usable = True
 
-    def load_template_source(self, template_name, dirs):
+    def get_template(self, template_name, skip=None):
         global template_coverage_collection, loaded_templates
         if template_coverage_collection == True:
             loaded_templates.add(str(template_name))
         raise TemplateDoesNotExist(template_name)
-    load_template_source.is_usable = True # type: ignore # https://github.com/python/mypy/issues/2087
 
 def record_urls_middleware(get_response):
     def record_urls(request):
@@ -177,38 +176,40 @@ def get_url_patterns(module, apps=None):
         if not apps:
             return True
         for app in apps:
-            if name.startswith(app+'.'):
+            if str(name).startswith(app+'.'):
                 return True
         return False
     def exclude(name):
         for pat in settings.TEST_URL_COVERAGE_EXCLUDE:
-            if re.search(pat, name):
+            if re.search(pat, str(name)):
                 return True
         return False
-    def append(res, p0, p1, item):
+    def do_append(res, p0, p1, item):
+        p0 = str(p0)
+        p1 = str(p1)
         if p1.startswith("^"):
             res.append((p0 + p1[1:], item))
         else:
-            res.append((item.p0 + ".*" + p1, item))
+            res.append((p0 + p1, item))
     if not hasattr(module, 'urlpatterns'):
         return []
     res = []
     for item in module.urlpatterns:
-        if isinstance(item, RegexURLResolver):
+        if isinstance(item, URLResolver):
             if type(item.urlconf_module) is list:
                 for subitem in item.urlconf_module:
-                    if isinstance(subitem, RegexURLResolver):
+                    if isinstance(subitem, URLResolver):
                         res += get_url_patterns(subitem.urlconf_module)
                     else:
-                        sub = subitem.regex.pattern
-                        append(res, item.regex.pattern, subitem.regex.pattern, subitem)
+                        sub = subitem.pattern
+                        do_append(res, item.pattern, subitem.pattern, subitem)
             else:
-                if include(item.urlconf_module.__name__) and not exclude(item.regex.pattern):
+                if include(item.urlconf_module.__name__) and not exclude(item.pattern):
                     subpatterns = get_url_patterns(item.urlconf_module)
                     for sub, subitem in subpatterns:
-                        append(res, item.regex.pattern, sub, subitem)
+                        do_append(res, item.pattern, sub, subitem)
         else:
-            res.append((item.regex.pattern, item))
+            res.append((str(item.pattern), item))
     return res
 
 _all_templates = None

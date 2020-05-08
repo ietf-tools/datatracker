@@ -532,7 +532,7 @@ def post_approved_draft(url, name):
     headers = {
             "Content-type": "application/x-www-form-urlencoded",
             "Accept": "text/plain",
-            "Authorization": "Basic %s" % force_str(base64.encodestring(smart_bytes("%s:%s" % (username, password)))).replace("\n", ""),
+            "Authorization": "Basic %s" % force_str(base64.encodebytes(smart_bytes("%s:%s" % (username, password)))).replace("\n", ""),
         }
 
     log("Posting RFC-Editor notifcation of approved draft '%s' to '%s'" % (name, url))

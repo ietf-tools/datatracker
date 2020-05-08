@@ -18,7 +18,7 @@ ul.sessionlist { list-style:none; padding-left:2em; margin-bottom:10px;}
 
 {% block content %}
 
-  {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=meeting.updated selected="by-room" title_extra="by Room" %}
+  {% include "meeting/meeting_heading.html" with updated=meeting.updated selected="by-room" title_extra="by Room" %}
 
   <ul class="daylist">
     {% for day,sessions in ss_by_day.items %}
