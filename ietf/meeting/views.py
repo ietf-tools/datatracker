@@ -601,7 +601,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     session_parents = sorted(set(
         s.group.parent for s in sessions
-        if s.group and s.group.parent and s.group.parent.type_id == 'area' or s.group.parent.acronym == 'irtf'
+        if s.group and s.group.parent and (s.group.parent.type_id == 'area' or s.group.parent.acronym == 'irtf')
     ), key=lambda p: p.acronym)
     for i, p in enumerate(session_parents):
         rgb_color = cubehelix(i, len(session_parents))
@@ -609,7 +609,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     # dig out historic AD names
     ad_names = {}
-    session_groups = set(s.group for s in sessions if s.group and s.group.parent.type_id == 'area')
+    session_groups = set(s.group for s in sessions if s.group and s.group.parent and s.group.parent.type_id == 'area')
     meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
 
     for group_id, history_time, name in Person.objects.filter(rolehistory__name='ad', rolehistory__group__group__in=session_groups, rolehistory__group__time__lte=meeting_time).values_list('rolehistory__group__group', 'rolehistory__group__time', 'name').order_by('rolehistory__group__time'):
