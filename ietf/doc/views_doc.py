@@ -685,7 +685,7 @@ def document_html(request, name, rev=None):
 
     doc = docs.get()
     if not os.path.exists(doc.get_file_name()):
-        raise Http404("Document not found: %s" % doc.get_base_name())
+        raise Http404("File not found: %s" % doc.get_file_name())
 
     top = render_document_top(request, doc, "status", name)
     if not rev and not name.startswith('rfc'):
