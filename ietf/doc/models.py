@@ -158,7 +158,7 @@ class DocumentInfo(models.Model):
                     else:
                         self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
             elif self.type_id in ["slides", "agenda", "minutes", "bluesheets", ] and self.meeting_related():
-                    self._cached_base_name = "%s-%s.txt" % self.canonical_name() 
+                    self._cached_base_name = "%s-%s.txt" % (self.canonical_name(), self.rev) 
             elif self.type_id == 'review':
                 # TODO: This will be wrong if a review is updated on the same day it was created (or updated more than once on the same day)
                 self._cached_base_name = "%s.txt" % self.name
