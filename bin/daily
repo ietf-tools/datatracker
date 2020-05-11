@@ -42,9 +42,6 @@ $DTDIR/ietf/manage.py run_yang_model_checks -v0
 # Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner:
 $DTDIR/ietf/bin/expire-ids
 
-# Send notifications about coming expirations
-$DTDIR/ietf/bin/notify-expirations
-
 # Send nomcom reminders about nomination acceptance and questionnaires
 $DTDIR/ietf/manage.py send_reminders
 
