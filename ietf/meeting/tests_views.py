@@ -2812,6 +2812,17 @@ class SessionTests(TestCase):
         self.assertEqual(len(outbox),1)
 
 class HasMeetingsTests(TestCase):
+    def setUp(self):
+        self.materials_dir = self.tempdir('materials')
+        #
+        self.saved_agenda_path = settings.AGENDA_PATH
+        #
+        settings.AGENDA_PATH = self.materials_dir
+
+    def tearDown(self):
+        shutil.rmtree(self.materials_dir)
+        #
+        settings.AGENDA_PATH = self.saved_agenda_path
 
     def do_request_interim(self, url, group, user, meeting_count):
         login_testing_unauthorized(self,user.username, url)
