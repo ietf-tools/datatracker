@@ -21,6 +21,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document
 from ietf.group.models import Group
+from ietf.group.utils import can_manage_some_groups, can_manage_group
 from ietf.ietfauth.utils import has_role, user_is_person
 from ietf.liaisons.utils import get_person_for_user
 from ietf.mailtrigger.utils import gather_address_lists
@@ -324,11 +325,14 @@ def can_approve_interim_request(meeting, user):
     if not session:
         return False
     group = session.group
-    if group.type.slug == 'wg':
+    if group.type.slug in ['wg','ag']:
         if group.parent.role_set.filter(name='ad', person=person) or group.role_set.filter(name='ad', person=person):
             return True
     if group.type.slug == 'rg' and group.parent.role_set.filter(name='chair', person=person):
         return True
+    if group.type.slug == 'program':
+        if person.role_set.filter(group__acronym='iab', name='member'):
+            return True
     return False
 
 
@@ -336,14 +340,13 @@ def can_edit_interim_request(meeting, user):
     '''Returns True if the user can edit the interim meeting request'''
     if meeting.type.slug != 'interim':
         return False
-    if has_role(user, 'Secretariat'):
+    if has_role(user, 'Secretariat'): # Consider removing - can_manage_group should handle this
         return True
-    person = get_person_for_user(user)
     session = meeting.session_set.first()
     if not session:
         return False
     group = session.group
-    if group.role_set.filter(name='chair', person=person):
+    if can_manage_group(user, group):
         return True
     elif can_approve_interim_request(meeting, user):
         return True
@@ -352,29 +355,17 @@ def can_edit_interim_request(meeting, user):
 
 
 def can_request_interim_meeting(user):
-    if has_role(user, ('Secretariat', 'Area Director', 'WG Chair', 'IRTF Chair', 'RG Chair')):
-        return True
-    return False
-
+    return can_manage_some_groups(user)
 
 def can_view_interim_request(meeting, user):
     '''Returns True if the user can see the pending interim request in the pending interim view'''
     if meeting.type.slug != 'interim':
         return False
-    if has_role(user, 'Secretariat'):
-        return True
-    person = get_person_for_user(user)
     session = meeting.session_set.first()
     if not session:
         return False
     group = session.group
-    if has_role(user, 'Area Director') and group.type.slug == 'wg':
-        return True
-    if has_role(user, 'IRTF Chair') and group.type.slug == 'rg':
-        return True
-    if group.role_set.filter(name='chair', person=person):
-        return True
-    return False
+    return can_manage_group(user, group)
 
 
 def create_interim_meeting(group, date, city='', country='', timezone='UTC',
@@ -512,11 +503,17 @@ def send_interim_approval_request(meetings):
     else:
         is_series = False
     approver_set = set()
-    for role in group.interim_approval_roles():
-        approver = "%s of the %s" % ( role.name.name, role.group.name)
-        approver_set.add(approver)
+    for authrole in group.features.groupman_authroles: # NOTE: This makes an assumption that the authroles are exactly the set of approvers
+        approver_set.add(authrole)
     approvers = list(approver_set)
-    context = locals()  # TODO Unnecessarily complex, context needs to only contain what the template needs
+    context = {
+        'group': group,
+        'is_series': is_series,
+        'meetings': meetings,
+        'approvers': approvers,
+        'requester': requester,
+        'approval_urls': approval_urls,
+    }
     send_mail(None,
               to_email,
               from_email,

@@ -15,7 +15,7 @@ import debug                            # pyflakes:ignore
 from ietf.community.models import CommunityList, SearchRule
 from ietf.community.utils import reset_name_contains_index_for_rule, can_manage_community_list
 from ietf.doc.models import Document, State
-from ietf.group.models import Group, RoleHistory, Role
+from ietf.group.models import Group, RoleHistory, Role, GroupFeatures
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import GroupTypeName
 from ietf.person.models import Email
@@ -105,6 +105,7 @@ def save_milestone_in_history(milestone):
 
     return h
 
+# TODO: rework this using features.groupman_authroles
 def can_manage_group_type(user, group, type_id=None):
     if not user.is_authenticated:
         return False
@@ -125,8 +126,11 @@ def can_manage_group_type(user, group, type_id=None):
     return has_role(user, ('Secretariat'))
 
 def can_manage_group(user, group):
-    if can_manage_group_type(user, group):
-        return True
+    if not user.is_authenticated:
+        return False
+    for authrole in group.features.groupman_authroles:
+        if has_role(user, authrole):
+            return True
     return group.has_role(user, group.features.groupman_roles)
 
 def milestone_reviewer_for_group_type(group_type):
@@ -140,6 +144,18 @@ def can_manage_materials(user, group):
 
 def can_manage_session_materials(user, group, session):
     return has_role(user, 'Secretariat') or (group.has_role(user, group.features.matman_roles) and not session.is_material_submission_cutoff())
+
+# Maybe this should be cached...
+def can_manage_some_groups(user):
+    if not user.is_authenticated:
+        return False
+    for gf in GroupFeatures.objects.all():
+        for authrole in gf.groupman_authroles:
+            if has_role(user, authrole):
+                return True
+            if Role.objects.filter(name__in=gf.groupman_roles, group__type_id=gf.type_id, person__user=user).exists():
+                return True
+    return False          
 
 def can_provide_status_update(user, group):
     if not group.features.acts_like_wg:

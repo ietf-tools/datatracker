@@ -29,7 +29,8 @@ from ietf.mailtrigger.utils import gather_address_lists
 # -------------------------------------------------
 # Globals
 # -------------------------------------------------
-AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','IAB Group Chair','Area Director','Secretariat','Team Chair','IRTF Chair')
+# TODO: This needs to be replaced with something that pays attention to groupfeatures
+AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','IAB Group Chair','Area Director','Secretariat','Team Chair','IRTF Chair','Program Chair','Program Lead','Program Secretary')
 
 # -------------------------------------------------
 # Helper Functions
@@ -319,7 +320,10 @@ def confirm(request, acronym):
                 )
                 if 'resources' in form.data:
                     new_session.resources.set(session_data['resources'])
-                if int(form.data.get('joint_for_session', '-1')) == count:
+                jfs = form.data.get('joint_for_session', '-1')
+                if not jfs: # jfs might be ''
+                    jfs = '-1'
+                if int(jfs) == count:
                     groups_split = form.cleaned_data.get('joint_with_groups').replace(',',' ').split()
                     joint = Group.objects.filter(acronym__in=groups_split)
                     new_session.joint_with_groups.set(joint)

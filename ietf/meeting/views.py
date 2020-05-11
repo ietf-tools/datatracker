@@ -49,7 +49,7 @@ from django.views.generic import RedirectView
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocAlias
 from ietf.group.models import Group
-from ietf.group.utils import can_manage_session_materials
+from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
 from ietf.person.models import Person
 from ietf.person.name import plain_name
 from ietf.ietfauth.utils import role_required, has_role
@@ -96,7 +96,7 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
 def get_interim_menu_entries(request):
     '''Setup menu entries for interim meeting view tabs'''
     entries = []
-    if has_role(request.user, ('Area Director','Secretariat','IRTF Chair','WG Chair', 'RG Chair')):
+    if can_manage_some_groups(request.user):
         entries.append(("Upcoming", reverse("ietf.meeting.views.upcoming")))
         entries.append(("Pending", reverse("ietf.meeting.views.interim_pending")))
         if has_role(request.user, "Secretariat"):
@@ -1508,7 +1508,7 @@ def meeting_requests(request, num=None):
         s.current_status_name = status_names.get(s.current_status, s.current_status)
         s.requested_by_person = session_requesters.get(s.requested_by)
 
-    groups_not_meeting = Group.objects.filter(state='Active',type__in=['wg','rg','ag','bof']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym").prefetch_related("parent")
+    groups_not_meeting = Group.objects.filter(state='Active',type__in=['wg','rg','ag','bof','program']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym").prefetch_related("parent")
 
     return render(request, "meeting/requests.html",
         {"meeting": meeting, "sessions":sessions,
@@ -2392,8 +2392,12 @@ def interim_skip_announcement(request, number):
         'meeting': meeting})
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
+@login_required
 def interim_pending(request):
+
+    if not can_manage_some_groups(request.user):
+        return HttpResponseForbidden()
+
     '''View which shows interim meeting requests pending approval'''
     meetings = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='apprw')
 
@@ -2411,8 +2415,12 @@ def interim_pending(request):
         'meetings': meetings})
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
+@login_required
 def interim_request(request):
+
+    if not can_manage_some_groups(request.user):
+        return HttpResponseForbidden("You don't have permission to request any interims")
+
     '''View for requesting an interim meeting'''
     SessionFormset = inlineformset_factory(
         Meeting,
@@ -2497,15 +2505,15 @@ def interim_request(request):
         "formset": formset})
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
+@login_required
 def interim_request_cancel(request, number):
     '''View for cancelling an interim meeting request'''
     meeting = get_object_or_404(Meeting, number=number)
     first_session = meeting.session_set.first()
-    session_status = current_session_status(first_session)
     group = first_session.group
-    if not can_view_interim_request(meeting, request.user):
+    if not can_manage_group(request.user, group):
         return HttpResponseForbidden("You do not have permissions to cancel this meeting request")
+    session_status = current_session_status(first_session)
 
     if request.method == 'POST':
         form = InterimCancelForm(request.POST)
@@ -2538,10 +2546,13 @@ def interim_request_cancel(request, number):
     })
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
+@login_required
 def interim_request_details(request, number):
-    '''View details of an interim meeting reqeust'''
+    '''View details of an interim meeting request'''
     meeting = get_object_or_404(Meeting, number=number)
+    group = meeting.session_set.first().group
+    if not can_manage_group(request.user, group):
+        return HttpResponseForbidden("You do not have permissions to manage this meeting request")
     sessions = meeting.session_set.all()
     can_edit = can_edit_interim_request(meeting, request.user)
     can_approve = can_approve_interim_request(meeting, request.user)
@@ -2582,7 +2593,7 @@ def interim_request_details(request, number):
         "can_approve": can_approve})
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
+@login_required
 def interim_request_edit(request, number):
     '''Edit details of an interim meeting reqeust'''
     meeting = get_object_or_404(Meeting, number=number)

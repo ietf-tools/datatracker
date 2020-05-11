@@ -2484,6 +2484,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[\"chair\"]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[\"chair\",\"lead\",\"delegate\"]",
       "has_chartering_process": false,
       "has_default_jabber": true,
@@ -2514,6 +2515,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[\"chair\"]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[\"chair\"]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -2544,6 +2546,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[\"chair\",\"delegate\",\"secr\"]",
+      "groupman_authroles": "[\"Secretariat\",\"Area Director\"]",
       "groupman_roles": "[\"ad\",\"chair\",\"delegate\"]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -2574,6 +2577,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[\"ad\",\"delegate\",\"secr\"]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[\"ad\"]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -2604,6 +2608,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[\"ad\",\"secr\"]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -2634,6 +2639,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[\"chair\"]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -2664,6 +2670,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[\"chair\"]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[\"chair\"]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -2694,6 +2701,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[\"chair\"]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[\"chair\",\"delegate\"]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -2724,6 +2732,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[\"chair\"]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[\"chair\",\"delegate\"]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -2754,6 +2763,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[\"auth\"]",
+      "groupman_authroles": "[]",
       "groupman_roles": "[]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -2784,6 +2794,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[\"chair\",\"delegate\"]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -2814,6 +2825,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[\"chair\"]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[\"chair\",\"delegate\"]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -2844,6 +2856,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[\"chair\"]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -2874,6 +2887,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[\"chair\"]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[\"chair\",\"advisor\"]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -2903,21 +2917,22 @@
       "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
-      "docman_roles": "[\"lead\",\"secr\"]",
-      "groupman_roles": "[\"lead\",\"secr\"]",
+      "docman_roles": "[\"lead\",\"chair\",\"secr\"]",
+      "groupman_authroles": "[\"Secretariat\",\"IAB\"]",
+      "groupman_roles": "[\"lead\",\"chair\",\"secr\"]",
       "has_chartering_process": false,
       "has_default_jabber": false,
       "has_documents": true,
-      "has_meetings": false,
+      "has_meetings": true,
       "has_milestones": true,
       "has_nonsession_materials": false,
       "has_reviews": false,
       "has_session_materials": false,
       "is_schedulable": false,
       "material_types": "[\"slides\"]",
-      "matman_roles": "[\"lead\",\"secr\"]",
+      "matman_roles": "[\"lead\",\"chair\",\"secr\"]",
       "req_subm_approval": false,
-      "role_order": "[\"lead\",\"secr\"]",
+      "role_order": "[\"lead\",\"chair\",\"secr\"]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -2934,6 +2949,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.review_requests",
       "docman_roles": "[\"secr\"]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[\"ad\",\"secr\"]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -2964,6 +2980,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -2994,6 +3011,7 @@
       "customize_workflow": true,
       "default_tab": "ietf.group.views.group_documents",
       "docman_roles": "[\"chair\",\"delegate\",\"secr\"]",
+      "groupman_authroles": "[\"Secretariat\",\"IRTF Chair\"]",
       "groupman_roles": "[\"chair\",\"delegate\"]",
       "has_chartering_process": true,
       "has_default_jabber": true,
@@ -3024,6 +3042,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[\"liaiman\",\"matman\"]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -3054,6 +3073,7 @@
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "docman_roles": "[\"chair\"]",
+      "groupman_authroles": "[\"Secretariat\"]",
       "groupman_roles": "[\"chair\"]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -3084,6 +3104,7 @@
       "customize_workflow": true,
       "default_tab": "ietf.group.views.group_documents",
       "docman_roles": "[\"chair\",\"delegate\",\"secr\"]",
+      "groupman_authroles": "[\"Secretariat\",\"Area Director\"]",
       "groupman_roles": "[\"ad\",\"chair\",\"delegate\",\"secr\"]",
       "has_chartering_process": true,
       "has_default_jabber": true,
@@ -5603,8 +5624,8 @@
   },
   {
     "fields": {
-      "editor_label": "(1)",
       "desc": "",
+      "editor_label": "(1)",
       "name": "Conflicts with",
       "order": 0,
       "penalty": 100000,
@@ -5616,9 +5637,10 @@
   {
     "fields": {
       "desc": "",
+      "editor_label": "time_relation",
       "name": "Preference for time between sessions",
       "order": 0,
-      "penalty": 100000,
+      "penalty": 1000,
       "used": true
     },
     "model": "name.constraintname",
@@ -5627,6 +5649,7 @@
   {
     "fields": {
       "desc": "",
+      "editor_label": "timerange",
       "name": "Can't meet within timerange",
       "order": 0,
       "penalty": 100000,
@@ -5638,9 +5661,10 @@
   {
     "fields": {
       "desc": "",
+      "editor_label": "wg_adjacent",
       "name": "Request for adjacent scheduling with another WG",
       "order": 0,
-      "penalty": 100000,
+      "penalty": 10000,
       "used": true
     },
     "model": "name.constraintname",
@@ -10183,6 +10207,17 @@
   },
   {
     "fields": {
+      "default_offset_days": 70,
+      "desc": "Announcement of whether conditions have improved enough to hold an in-person meeting in Madrid, or if IETF 108 will be held as a virtual meeting",
+      "name": "IETF 108 Go-ahead Announcement",
+      "order": 0,
+      "used": false
+    },
+    "model": "name.importantdatename",
+    "pk": "ietf-108-go-ahead"
+  },
+  {
+    "fields": {
       "default_offset_days": -82,
       "desc": "IETF Online Registration Opens",
       "name": "Registration Opens",
@@ -11271,6 +11306,16 @@
   {
     "fields": {
       "desc": "",
+      "name": "Communications Director",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.rolename",
+    "pk": "comdir"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Co-ordinator",
       "order": 0,
       "used": true
@@ -11420,7 +11465,7 @@
   },
   {
     "fields": {
-      "desc": "Provides log-in permission to restricted Trac instances",
+      "desc": "Provides log-in permission to restricted Trac instances.  Used by the generate_apache_perms management command, called from ../../scripts/Cron-runner",
       "name": "Trac Editor",
       "order": 0,
       "used": true
@@ -11500,8 +11545,8 @@
   },
   {
     "fields": {
-      "desc": "WebEx support",
-      "name": "WebEx session",
+      "desc": "Web streaming support",
+      "name": "WebEx",
       "order": 0,
       "used": true
     },
@@ -14436,9 +14481,9 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2020-02-19T00:13:43.554",
+      "time": "2020-04-29T00:13:24.969",
       "used": true,
-      "version": "xym 0.4"
+      "version": "xym 0.4.8"
     },
     "model": "utils.versioninfo",
     "pk": 1
@@ -14447,9 +14492,9 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2020-02-19T00:13:44.450",
+      "time": "2020-04-29T00:13:26.832",
       "used": true,
-      "version": "pyang 2.1.1"
+      "version": "pyang 2.2.1"
     },
     "model": "utils.versioninfo",
     "pk": 2
@@ -14458,9 +14503,9 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2020-02-19T00:13:44.597",
+      "time": "2020-04-29T00:13:27.209",
       "used": true,
-      "version": "yanglint 0.14.80"
+      "version": "yanglint SO 1.6.7"
     },
     "model": "utils.versioninfo",
     "pk": 3
@@ -14469,9 +14514,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2020-02-19T00:13:45.481",
+      "time": "2020-04-29T00:13:28.798",
       "used": true,
-      "version": "xml2rfc 2.40.0"
+      "version": "xml2rfc 2.44.0"
     },
     "model": "utils.versioninfo",
     "pk": 4

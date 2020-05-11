@@ -15,7 +15,7 @@ from django.forms import BaseInlineFormSet
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
-from ietf.group.models import Group
+from ietf.group.models import Group, GroupFeatures
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.models import Session, Meeting, Schedule, countries, timezones
 from ietf.meeting.helpers import get_next_interim_number, make_materials_directories
@@ -100,8 +100,7 @@ class InterimSessionInlineFormSet(BaseInlineFormSet):
         return                          # formset doesn't have cleaned_data
 
 class InterimMeetingModelForm(forms.ModelForm):
-    # TODO: Should area groups get to schedule Interims?
-    group = GroupModelChoiceField(queryset=Group.objects.filter(type__in=('wg', 'rg', 'ag'), state__in=('active', 'proposed', 'bof')).order_by('acronym'), required=False)
+    group = GroupModelChoiceField(queryset=Group.objects.filter(type_id__in=GroupFeatures.objects.filter(has_meetings=True).values_list('type_id',flat=True), state__in=('active', 'proposed', 'bof')).order_by('acronym'), required=False)
     in_person = forms.BooleanField(required=False)
     meeting_type = forms.ChoiceField(choices=(
         ("single", "Single"),
@@ -156,13 +155,15 @@ class InterimMeetingModelForm(forms.ModelForm):
             return  # don't reduce group options
         q_objects = Q()
         if has_role(self.user, "Area Director"):
-            q_objects.add(Q(type="wg", state__in=("active", "proposed", "bof")), Q.OR)
+            q_objects.add(Q(type__in=["wg", "ag"], state__in=("active", "proposed", "bof")), Q.OR)
         if has_role(self.user, "IRTF Chair"):
             q_objects.add(Q(type="rg", state__in=("active", "proposed")), Q.OR)
         if has_role(self.user, "WG Chair"):
             q_objects.add(Q(type="wg", state__in=("active", "proposed", "bof"), role__person=self.person, role__name="chair"), Q.OR)
         if has_role(self.user, "RG Chair"):
             q_objects.add(Q(type="rg", state__in=("active", "proposed"), role__person=self.person, role__name="chair"), Q.OR)
+        if has_role(self.user, "Program Lead") or has_role(self.user, "Program Chair"):
+            q_objects.add(Q(type="program", state__in=("active", "proposed"), role__person=self.person, role__name__in=["chair", "lead"]), Q.OR)
         
         queryset = Group.objects.filter(q_objects).distinct().order_by('acronym')
         self.fields['group'].queryset = queryset

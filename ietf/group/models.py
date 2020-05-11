@@ -65,9 +65,6 @@ class GroupInfo(models.Model):
             kwargs["group_type"] = self.type_id
         return urlreverse(self.features.about_page, kwargs=kwargs)
 
-    def interim_approval_roles(self):
-        return list(set([ role for role in self.parent.role_set.filter(name__in=['ad', 'chair']) ]))
-
     def is_bof(self):
         return self.state_id in ["bof", "bof-conc"]
 
@@ -238,6 +235,7 @@ class GroupFeatures(models.Model):
     admin_roles             = jsonfield.JSONField(max_length=64, blank=False, default=["chair"]) # Trac Admin
     docman_roles            = jsonfield.JSONField(max_length=128, blank=False, default=["ad","chair","delegate","secr"])
     groupman_roles          = jsonfield.JSONField(max_length=128, blank=False, default=["ad","chair",])
+    groupman_authroles      = jsonfield.JSONField(max_length=128, blank=False, default=["Secretariat",])
     matman_roles            = jsonfield.JSONField(max_length=128, blank=False, default=["ad","chair","delegate","secr"])
     role_order              = jsonfield.JSONField(max_length=128, blank=False, default=["chair","secr","member"],
                                                 help_text="The order in which roles are shown, for instance on photo pages.  Enter valid JSON.")
