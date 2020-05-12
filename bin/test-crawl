@@ -138,6 +138,7 @@ def check_html_valid(url, response, args):
         key = re.sub("/dir/[a-z0-9-]+/",   "/dir/foo/", key)
         key = re.sub("/draft-[a-z0-9-]+/",   "/draft-foo/", key)
         key = re.sub("/group/[a-z0-9-]+/",   "/group/foo/", key)
+        key = re.sub("/html/[a-z0-9-]+",   "/html/foo/", key)
         key = re.sub("/ipr/search/.*",   "/ipr/search/", key)
         key = re.sub("/meeting/[-0-9a-z]+/agenda/[0-9a-z]+/",   "/meeting/nn/agenda/foo/", key)
         key = re.sub("/release/[0-9dev.]+/",   "/release/n.n.n/", key)

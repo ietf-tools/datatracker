@@ -49,7 +49,7 @@ from django.views.generic import RedirectView
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocAlias
 from ietf.group.models import Group
-from ietf.group.utils import can_manage_session_materials
+from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
 from ietf.person.models import Person
 from ietf.person.name import plain_name
 from ietf.ietfauth.utils import role_required, has_role
@@ -82,6 +82,7 @@ from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
     create_recording)
 from ietf.utils.decorators import require_api_key
+from ietf.utils.history import find_history_replacements_active_at
 from ietf.utils.log import assertion
 from ietf.utils.mail import send_mail_message, send_mail_text
 from ietf.utils.pipe import pipe
@@ -96,7 +97,7 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
 def get_interim_menu_entries(request):
     '''Setup menu entries for interim meeting view tabs'''
     entries = []
-    if has_role(request.user, ('Area Director','Secretariat','IRTF Chair','WG Chair', 'RG Chair')):
+    if can_manage_some_groups(request.user):
         entries.append(("Upcoming", reverse("ietf.meeting.views.upcoming")))
         entries.append(("Pending", reverse("ietf.meeting.views.interim_pending")))
         if has_role(request.user, "Secretariat"):
@@ -601,7 +602,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     session_parents = sorted(set(
         s.group.parent for s in sessions
-        if s.group and s.group.parent and s.group.parent.type_id == 'area' or s.group.parent.acronym == 'irtf'
+        if s.group and s.group.parent and (s.group.parent.type_id == 'area' or s.group.parent.acronym == 'irtf')
     ), key=lambda p: p.acronym)
     for i, p in enumerate(session_parents):
         rgb_color = cubehelix(i, len(session_parents))
@@ -609,7 +610,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     # dig out historic AD names
     ad_names = {}
-    session_groups = set(s.group for s in sessions if s.group and s.group.parent.type_id == 'area')
+    session_groups = set(s.group for s in sessions if s.group and s.group.parent and s.group.parent.type_id == 'area')
     meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
 
     for group_id, history_time, name in Person.objects.filter(rolehistory__name='ad', rolehistory__group__group__in=session_groups, rolehistory__group__time__lte=meeting_time).values_list('rolehistory__group__group', 'rolehistory__group__time', 'name').order_by('rolehistory__group__time'):
@@ -1508,7 +1509,7 @@ def meeting_requests(request, num=None):
         s.current_status_name = status_names.get(s.current_status, s.current_status)
         s.requested_by_person = session_requesters.get(s.requested_by)
 
-    groups_not_meeting = Group.objects.filter(state='Active',type__in=['wg','rg','ag','bof']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym").prefetch_related("parent")
+    groups_not_meeting = Group.objects.filter(state='Active',type__in=['wg','rg','ag','bof','program']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym").prefetch_related("parent")
 
     return render(request, "meeting/requests.html",
         {"meeting": meeting, "sessions":sessions,
@@ -1532,8 +1533,21 @@ def session_details(request, num, acronym):
     if not sessions:
         raise Http404
 
+    # Find the time of the meeting, so that we can look back historically 
+    # for what the group was called at the time. 
+    meeting_time = datetime.datetime.combine(meeting.date, datetime.time()) 
+
+    groups = list(set([ s.group for s in sessions ]))
+    group_replacements = find_history_replacements_active_at(groups, meeting_time) 
+
     status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
     for session in sessions:
+
+        session.historic_group = None 
+        if session.group: 
+            session.historic_group = group_replacements.get(session.group_id) 
+            if session.historic_group: 
+                session.historic_group.historic_parent = None 
 
         session.type_counter = Counter()
         ss = session.timeslotassignments.filter(schedule=meeting.schedule).order_by('timeslot__time')
@@ -1587,6 +1601,7 @@ def session_details(request, num, acronym):
                     'can_manage_materials' : can_manage,
                     'can_view_request': can_view_request,
                     'thisweek': datetime.date.today()-datetime.timedelta(days=7),
+                    'now': datetime.datetime.now(),
                   })
 
 class SessionDraftsForm(forms.Form):
@@ -2392,8 +2407,12 @@ def interim_skip_announcement(request, number):
         'meeting': meeting})
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
+@login_required
 def interim_pending(request):
+
+    if not can_manage_some_groups(request.user):
+        return HttpResponseForbidden()
+
     '''View which shows interim meeting requests pending approval'''
     meetings = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='apprw')
 
@@ -2411,8 +2430,12 @@ def interim_pending(request):
         'meetings': meetings})
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
+@login_required
 def interim_request(request):
+
+    if not can_manage_some_groups(request.user):
+        return HttpResponseForbidden("You don't have permission to request any interims")
+
     '''View for requesting an interim meeting'''
     SessionFormset = inlineformset_factory(
         Meeting,
@@ -2497,15 +2520,15 @@ def interim_request(request):
         "formset": formset})
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
+@login_required
 def interim_request_cancel(request, number):
     '''View for cancelling an interim meeting request'''
     meeting = get_object_or_404(Meeting, number=number)
     first_session = meeting.session_set.first()
-    session_status = current_session_status(first_session)
     group = first_session.group
-    if not can_view_interim_request(meeting, request.user):
+    if not can_manage_group(request.user, group):
         return HttpResponseForbidden("You do not have permissions to cancel this meeting request")
+    session_status = current_session_status(first_session)
 
     if request.method == 'POST':
         form = InterimCancelForm(request.POST)
@@ -2538,10 +2561,13 @@ def interim_request_cancel(request, number):
     })
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
+@login_required
 def interim_request_details(request, number):
-    '''View details of an interim meeting reqeust'''
+    '''View details of an interim meeting request'''
     meeting = get_object_or_404(Meeting, number=number)
+    group = meeting.session_set.first().group
+    if not can_manage_group(request.user, group):
+        return HttpResponseForbidden("You do not have permissions to manage this meeting request")
     sessions = meeting.session_set.all()
     can_edit = can_edit_interim_request(meeting, request.user)
     can_approve = can_approve_interim_request(meeting, request.user)
@@ -2582,7 +2608,7 @@ def interim_request_details(request, number):
         "can_approve": can_approve})
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
+@login_required
 def interim_request_edit(request, number):
     '''Edit details of an interim meeting reqeust'''
     meeting = get_object_or_404(Meeting, number=number)
@@ -2645,7 +2671,7 @@ def past(request):
 
 def upcoming(request):
     '''List of upcoming meetings'''
-    today = datetime.date.today()
+    today = datetime.date.today()-datetime.timedelta(days=7)
 
     # Get ietf meetings starting 7 days ago, and interim meetings starting today
     ietf_meetings = Meeting.objects.filter(type_id='ietf', date__gte=today-datetime.timedelta(days=7))
@@ -2684,6 +2710,7 @@ def upcoming(request):
                   'menu_actions': actions,
                   'menu_entries': menu_entries,
                   'selected_menu_entry': selected_menu_entry,
+                  'now': datetime.datetime.now()
                   })
 
 

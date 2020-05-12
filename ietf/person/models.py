@@ -353,7 +353,10 @@ class PersonalApiKey(models.Model):
     def validate_key(cls, s):
         import struct, hashlib, base64
         assert isinstance(s, bytes)
-        key = base64.urlsafe_b64decode(s)
+        try:
+            key = base64.urlsafe_b64decode(s)
+        except Exception:
+            return None
         id, salt, hash = struct.unpack(KEY_STRUCT, key)
         k = cls.objects.filter(id=id)
         if not k.exists():

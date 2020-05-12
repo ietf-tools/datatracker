@@ -264,7 +264,7 @@ class GroupPagesTests(TestCase):
         can_edit = {
             'wg'   : ['secretary','ad'],
             'rg'   : ['secretary','irtf-chair'],
-            'ag'   : ['secretary', ],
+            'ag'   : ['secretary', 'ad' ],
             'team' : ['secretary',], # The code currently doesn't let ads edit teams or directorates. Maybe it should.
             'dir'  : ['secretary',],
             'review'  : ['secretary',],

@@ -166,6 +166,8 @@ class Recipient(models.Model):
                 addrs.extend(group.role_set.filter(name='ad').values_list('email__address',flat=True))
             if group.type_id=='rg':
                 addrs.extend(Recipient.objects.get(slug='stream_managers').gather(**{'streams':['irtf']}))
+            elif group.type_id=='program':
+                addrs.extend(Recipient.objects.get(slug='iab').gather(**{}))
         return addrs
 
     def gather_group_secretaries(self, **kwargs):

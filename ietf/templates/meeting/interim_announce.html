@@ -39,7 +39,7 @@
               <td>{{ meeting.date }}</td>
               <td>{{ meeting.responsible_group.acronym }}</td>
               <td>
-                <a href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">{{ meeting.number }}</a>
+                <a class="interim-meeting-link" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">{{ meeting.number }}</a>
               </td>
             </tr>
           {% endfor %}

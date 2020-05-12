@@ -256,7 +256,9 @@ def document_main(request, name, rev=None):
 
             if "pdf" not in found_types:
                 file_urls.append(("pdf", settings.TOOLS_ID_PDF_URL + doc.name + "-" + doc.rev + ".pdf"))
-            file_urls.append(("htmlized", settings.TOOLS_ID_HTML_URL + doc.name + "-" + doc.rev))
+            #file_urls.append(("htmlized", settings.TOOLS_ID_HTML_URL + doc.name + "-" + doc.rev))
+            file_urls.append(("htmlized (tools)", settings.TOOLS_ID_HTML_URL + doc.name + "-" + doc.rev))
+            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
 
             # latest revision
             latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
@@ -683,7 +685,7 @@ def document_html(request, name, rev=None):
 
     doc = docs.get()
     if not os.path.exists(doc.get_file_name()):
-        raise Http404("Document not found: %s" % doc.get_base_name())
+        raise Http404("File not found: %s" % doc.get_file_name())
 
     top = render_document_top(request, doc, "status", name)
     if not rev and not name.startswith('rfc'):

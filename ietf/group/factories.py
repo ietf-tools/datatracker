@@ -18,6 +18,15 @@ class GroupFactory(factory.DjangoModelFactory):
     list_email = factory.LazyAttribute(lambda a: '%s@ietf.org'% a.acronym)
     uses_milestone_dates = True
 
+    @factory.lazy_attribute
+    def parent(self):
+        if self.type_id in ['wg','ag']:
+            return GroupFactory(type_id='area')
+        elif self.type_id in ['rg']:
+            return GroupFactory(acronym='irtf', type_id='irtf')
+        else:
+            return None
+
 class ReviewTeamFactory(GroupFactory):
 
     type_id = 'review'
