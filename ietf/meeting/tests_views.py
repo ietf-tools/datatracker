@@ -1243,6 +1243,12 @@ class SessionDetailsTests(TestCase):
         self.assertTrue(all([x in unicontent(r) for x in ('slides','agenda','minutes','draft')]))
         self.assertNotContains(r, 'deleted')
 
+        q = PyQuery(r.content)
+        self.assertTrue(q('h2#session_%s div#session-buttons-%s' % (session.id, session.id)), 
+                               'Session detail page does not contain session tool buttons') 
+        self.assertFalse(q('h2#session_%s div#session-buttons-%s span.fa-arrows-alt' % (session.id, session.id)), 
+                         'The session detail page is incorrectly showing the "Show meeting materials" button')
+
     def test_session_details_past_interim(self):
         group = GroupFactory.create(type_id='wg',state_id='active')
         chair = RoleFactory(name_id='chair',group=group)
@@ -1492,8 +1498,7 @@ class InterimTests(TestCase):
         self.assertContains(r, 'IETF 72')
         # cancelled session
         q = PyQuery(r.content)
-#        self.assertIn('CANCELLED', q('[id*="-ames"]').text())
-        self.assertIn('CANCELLED', q('tr>td>a>span').text())
+        self.assertIn('CANCELLED', q('tr>td.text-right>span').text())
         self.check_interim_tabs(url)
 
     def test_upcoming_ical(self):

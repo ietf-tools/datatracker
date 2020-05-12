@@ -771,6 +771,25 @@ ul.progress-section {
 
 .btn .fa-stack { width: 1em; height: 1em; }
 .btn .fa-stack .fa-stack-1x { line-height: 80%; }
+.fa-stack-1 {
+  position: relative;
+  display: inline-block;
+  width: 1.28571429em;
+  height: 1em;
+  vertical-align: inherit;
+}
+.fa-stack-sm {
+  width: 100%;
+  text-align: center;
+  font-size: 0.7172em;
+  line-height: inherit;
+}
+.fa-stack-xs {
+  width: 100%;
+  text-align: center;
+  font-size: 0.5em;
+  line-height: inherit;
+}
 
 /* ========================================================================== */
 

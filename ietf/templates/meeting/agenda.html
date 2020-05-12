@@ -229,15 +229,12 @@
 		      <span class="label label-danger pull-right">CANCELLED</span>
 		    {% endif %}
 
-		    {% if item.session.agenda %}
-		      {% include "meeting/session_agenda_include.html" %}
-		    {% endif %}
 	          </td>
-		  <td class="col-md-2">
+		  <td class="col-md-2 text-right">
 		    <span class="hidden-xs">
 		      {% if item.timeslot.type.slug == 'other' %}
 		        {% if item.session.agenda %}
-			  {% include "meeting/session_buttons_include.html" %}
+			  {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
 			{% else %}
 			  {% for slide in item.session.slides %}
 			    <a href="{{slide.get_href}}">{{ slide.title|clean_whitespace }}</a>
@@ -332,12 +329,10 @@
                       <br><span class="text-danger">{{item.session.agenda_note}}</span>
                     {% endif %}
 
-		    {% include "meeting/session_agenda_include.html" %}
-
 		  </td>
 		  <td class="text-nowrap text-right">
 		  <span class="hidden-xs">
-		    {% include "meeting/session_buttons_include.html" %}
+		    {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
 		  </span>
 		  </td>
 		</tr>
