@@ -16,7 +16,5 @@ source $DTDIR/env/bin/activate
 
 logger -p user.info -t cron "Running $DTDIR/bin/every15m"
 
-
-
-
-
+# Send mail scheduled to go out at certain times
+$DTDIR/ietf/bin/send-scheduled-mail all
