@@ -61,4 +61,4 @@ $DTDIR/ietf/manage.py fetch_meeting_attendance --latest 2
 $DTDIR/ietf/bin/send-review-reminders
 
 # Purge old request_profiler records
-$DTDIR/ietf/manage.py purge_request_profiler_records
+$DTDIR/ietf/manage.py purge_request_profiler_records -d2
