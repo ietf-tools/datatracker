@@ -106,7 +106,7 @@ done
 # The program itself
 
 if   [ "$CHG" ]; then
-  name=$(echo $(svn log -c $CHG | sed -r -e '/^---/d' -e '/^r[0-9]+/d' -e '/^$/d' -e 's/Merged in \[[0-9]+\] from [^:]+..//' ) | sed -r -e 's/(.*)/\L\1/' -e 's/[^[:alnum:]]/-/g' -e 's/-+/-/g' | cut -c 1-40)
+  name=$(echo $(svn log -c $CHG | sed -r -e '/^---/d' -e '/^r[0-9]+/d' -e '/^$/d' -e 's/Merged in \[[0-9]+\] from [^:]+..//' ) | sed -r -e 's/(.*)/\L\1/' -e 's/[^[:alnum:]]/-/g' -e 's/-+/-/g' -e's/-$//' | cut -c 1-40)
   name="$name-c$CHG"
 else
   if [ $# -lt 2 ]; then die "Expected patch name and file list on the command line."; fi
