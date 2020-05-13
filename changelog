@@ -1,3 +1,44 @@
+ietfdb (6.130.0) ietf; urgency=medium
+
+  **Meeting services for IAB programs, meeting shortcuts in additional places, bugfixes**
+
+  Extracted from the commit log:
+
+  * Merged in [17764] from rjsparks@nostrum.com:
+    Allow IAB programs to use normal meeting mechanics. Fixes #2970.  
+
+  * Based on [17694] from mark@painless-security.com, this merges in a set 
+    of changes that provides agenda-like details on session meeting view, and 
+    fixes issue #2751.  It also aligns the styling of materials and resources 
+    link lists on the upcoming meetings and ietf agenda pages, and adds 
+    calendar symbols with links and recordings symbols with links to interim 
+    meeting pages.
+
+  * Added send-scheduled-mail to bin/every15min
+
+  * Reworded the instructions for submission tool bug reporting and manual 
+    posting to avoid reports going to the wrong address.
+
+  * Added missing notify-expirations script to bin/weekly
+
+  * Added a catch for malformed apikey input.
+
+  * Fixed a case of too few format string parameters.
+
+  * Tweaked a 404 message to differentiate between two not-found cases.
+
+  * Updated the buildbot config with additional builders, database loading 
+    as part of test-crawler run, tweaked test-crawler start-time and other 
+    tweaks
+
+  * Added a second link to htmlized draft content (on the datatracker) in 
+    addition to the link to the tools hosted htmlized document.
+
+  * Fixed some instances of invalid html.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 May 2020 00:21:43 +0000
+
+
 ietfdb (6.129.1) ietf; urgency=medium
 
   **Bugfixes**
