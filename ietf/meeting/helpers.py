@@ -401,7 +401,7 @@ def get_announcement_initial(meeting, is_change=False):
     addrs = gather_address_lists('interim_announced',group=group).as_strings()
     initial['to'] = addrs.to
     initial['cc'] = addrs.cc
-    initial['frm'] = settings.INTERIM_ANNOUNCE_FROM_EMAIL
+    initial['frm'] = settings.INTERIM_ANNOUNCE_FROM_EMAIL_PROGRAM if group.type_id=='program' else settings.INTERIM_ANNOUNCE_FROM_EMAIL_DEFAULT
     if in_person:
         desc = 'Interim'
     else:
@@ -410,12 +410,9 @@ def get_announcement_initial(meeting, is_change=False):
         change = ' CHANGED'
     else:
         change = ''
-    if group.type.slug == 'rg':
-        type = 'RG'
-    elif group.type.slug == 'wg' and group.state.slug == 'bof':
+    type = group.type.slug.upper()
+    if group.type.slug == 'wg' and group.state.slug == 'bof':
         type = 'BOF'
-    else:
-        type = 'WG'
     initial['subject'] = '{name} ({acronym}) {type} {desc} Meeting: {date}{change}'.format(
         name=group.name, 
         acronym=group.acronym,
@@ -547,7 +544,7 @@ def send_interim_cancellation_notice(meeting):
     session = meeting.session_set.first()
     group = session.group
     (to_email, cc_list) = gather_address_lists('interim_cancelled',group=group)
-    from_email = settings.INTERIM_ANNOUNCE_FROM_EMAIL
+    from_email = settings.INTERIM_ANNOUNCE_FROM_EMAIL_PROGRAM if group.type_id=='program' else settings.INTERIM_ANNOUNCE_FROM_EMAIL_DEFAULT
     subject = '{group} ({acronym}) {type} Interim Meeting Cancelled (was {date})'.format(
         group=group.name,
         acronym=group.acronym,

@@ -764,7 +764,8 @@ IDSUBMIT_ANNOUNCE_FROM_EMAIL = 'internet-drafts@ietf.org'
 IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
 
 # Interim Meeting Tool settings
-INTERIM_ANNOUNCE_FROM_EMAIL = 'IESG Secretary <iesg-secretary@ietf.org>'
+INTERIM_ANNOUNCE_FROM_EMAIL_DEFAULT = 'IESG Secretary <iesg-secretary@ietf.org>'
+INTERIM_ANNOUNCE_FROM_EMAIL_PROGRAM = 'IAB Executive Administrative Manager <execd@iab.org>'
 VIRTUAL_INTERIMS_REQUIRE_APPROVAL = False
 INTERIM_SESSION_MINIMUM_MINUTES = 30
 INTERIM_SESSION_MAXIMUM_MINUTES = 300
