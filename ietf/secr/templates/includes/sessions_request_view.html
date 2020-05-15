@@ -7,7 +7,9 @@
         <tr class="row2"><td>Length of Session 1:</td><td>{{ session.length_session1|display_duration }}</td></tr>
         {% if session.length_session2 %}
           <tr class="row2"><td>Length of Session 2:</td><td>{{ session.length_session2|display_duration }}</td></tr>
-          <tr class="row2"><td>Time between sessions:</td><td>{% if session.session_time_relation_display %}{{ session.session_time_relation_display }}{% else %}No preference{% endif %}</td></tr>
+          {% if not is_virtual %}
+            <tr class="row2"><td>Time between sessions:</td><td>{% if session.session_time_relation_display %}{{ session.session_time_relation_display }}{% else %}No preference{% endif %}</td></tr>
+          {% endif %}
         {% endif %}
         {% if session.length_session3 %}
           <tr class="row2"><td>Length of Session 3:</td><td>{{ session.length_session3|display_duration }}</td></tr>
@@ -27,10 +29,12 @@
           <td>Other WGs that included {{ group }} in their conflict list:</td>
           <td>{% if session_conflicts %}{{ session_conflicts }}{% else %}<i>None so far</i>{% endif %}</td>
         </tr>
-        <tr class="row2">
-          <td>Resources requested:</td>
-          <td>{% if session.resources %}<ul>{% for resource in session.resources %}<li>{{ resource.desc }}</li>{% endfor %}</ul>{% else %}<i>None so far</i>{% endif %}</td>
-        </tr>
+        {% if not is_virtual %}
+          <tr class="row2">
+            <td>Resources requested:</td>
+            <td>{% if session.resources %}<ul>{% for resource in session.resources %}<li>{{ resource.desc }}</li>{% endfor %}</ul>{% else %}<i>None so far</i>{% endif %}</td>
+          </tr>
+        {% endif %}
         <tr class="row1">
           <td>People who must be present:</td>
           <td>{% if session.bethere %}<ul>{% for person in session.bethere %}<li>{{ person }}</li>{% endfor %}</ul>{% else %}<i>None</i>{% endif %}</td>
@@ -38,19 +42,21 @@
           <td>Can not meet on:</td>
           <td>{% if session.timeranges_display %}{{ session.timeranges_display|join:', ' }}{% else %}No constraints{% endif %}</td>
         </tr>
-        <tr class="row1">
-          <td>Adjacent with WG:</td>
-          <td>{{ session.adjacent_with_wg|default:'No preference' }}</td>
-        </tr>
-        <tr class="row2">
-          <td>Joint session:</td>
-          <td>
-              {% if session.joint_with_groups %}
-                {{ session.joint_for_session_display }} with: {{ session.joint_with_groups }}
-              {% else %}
-                Not a joint session
-              {% endif %}
-          </td>
-        </tr>
+        {% if not is_virtual %}
+          <tr class="row1">
+            <td>Adjacent with WG:</td>
+            <td>{{ session.adjacent_with_wg|default:'No preference' }}</td>
+          </tr>
+          <tr class="row2">
+            <td>Joint session:</td>
+            <td>
+                {% if session.joint_with_groups %}
+                  {{ session.joint_for_session_display }} with: {{ session.joint_with_groups }}
+                {% else %}
+                  Not a joint session
+                {% endif %}
+            </td>
+          </tr>
+        {% endif %}
         <tr class="row1"><td>Special Requests:</td><td>{{ session.comments }}</td></tr>
       </table>
