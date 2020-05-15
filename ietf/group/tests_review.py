@@ -26,7 +26,7 @@ from ietf.review.utils import (
 from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAssignmentStateName, \
     ReviewTypeName
 import ietf.group.views
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.dbtemplate.factories import DBTemplateFactory
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.doc.factories import DocumentFactory
@@ -538,7 +538,7 @@ class ReviewTests(TestCase):
         self.assertIn('replytoaddr', outbox[0]["Reply-To"])
         self.assertIn('fromaddr', outbox[0]["From"])
         self.assertEqual(outbox[0]["subject"], "Test subject")
-        self.assertIn("Test body", outbox[0].get_payload(decode=True).decode("utf-8"))
+        self.assertIn("Test body", get_payload_text(outbox[0]))
 
     def test_change_reviewer_settings(self):
         reviewer = ReviewerSettingsFactory(person__user__username='reviewer',expertise='Some expertise').person
@@ -586,9 +586,9 @@ class ReviewTests(TestCase):
         self.assertEqual(settings.expertise, "Some expertise")
         self.assertEqual(len(outbox), 1)
         self.assertTrue("reviewer availability" in outbox[0]["subject"].lower())
-        msg_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
-        self.assertTrue("frequency changed", msg_content)
-        self.assertTrue("skip next", msg_content)
+        msg_content = get_payload_text(outbox[0])
+        self.assertTrue("Frequency changed", msg_content)
+        self.assertTrue("Skip next", msg_content)
         self.assertTrue("requested to be the next person", msg_content)
 
         # Normal reviewer should not be able to change skip_next
@@ -618,9 +618,10 @@ class ReviewTests(TestCase):
         self.assertEqual(period.end_date, None)
         self.assertEqual(period.availability, "unavailable")
         self.assertEqual(len(outbox), 1)
-        msg_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
+        msg_content = get_payload_text(outbox[0])
         self.assertTrue(start_date.isoformat(), msg_content)
         self.assertTrue("indefinite", msg_content)
+        self.assertTrue("Whimsy", msg_content)
         self.assertEqual(period.reason, "Whimsy")
 
         # end unavailable period
@@ -635,8 +636,10 @@ class ReviewTests(TestCase):
         period = reload_db_objects(period)
         self.assertEqual(period.end_date, end_date)
         self.assertEqual(len(outbox), 1)
-        msg_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
+        msg_content = get_payload_text(outbox[0])
+        self.assertTrue('Set end date', msg_content)
         self.assertTrue(start_date.isoformat(), msg_content)
+        self.assertTrue(end_date.isoformat(), msg_content)
         self.assertTrue("indefinite", msg_content)
 
         # delete unavailable period
@@ -648,7 +651,8 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(UnavailablePeriod.objects.filter(person=reviewer, team=review_req.team, start_date=start_date).count(), 0)
         self.assertEqual(len(outbox), 1)
-        msg_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
+        msg_content = get_payload_text(outbox[0])
+        self.assertTrue('Removed', msg_content)
         self.assertTrue(start_date.isoformat(), msg_content)
         self.assertTrue(end_date.isoformat(), msg_content)
 
@@ -749,13 +753,13 @@ class ReviewTests(TestCase):
         empty_outbox()
         email_reviewer_reminder(assignment)
         self.assertEqual(len(outbox), 1)
-        self.assertTrue(review_req.doc.name in outbox[0].get_payload(decode=True).decode("utf-8"))
+        self.assertTrue(review_req.doc.name in get_payload_text(outbox[0]))
 
         # email secretary
         empty_outbox()
         email_secretary_reminder(assignment, secretary_role)
         self.assertEqual(len(outbox), 1)
-        self.assertTrue(review_req.doc.name in outbox[0].get_payload(decode=True).decode("utf-8"))
+        self.assertTrue(review_req.doc.name in get_payload_text(outbox[0]))
 
     def test_send_unavaibility_period_ending_reminder(self):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review",
@@ -803,7 +807,7 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertTrue(reviewer.person.email_address() in outbox[0]["To"])
         self.assertTrue(secretary.person.email_address() in outbox[0]["To"])
-        message = outbox[0].get_payload(decode=True).decode("utf-8")
+        message = get_payload_text(outbox[0])
         self.assertTrue(reviewer.person.name in message)
         self.assertTrue(review_team.acronym in message)
         self.assertEqual(len(log), 1)
@@ -834,7 +838,7 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertTrue(secretary.person.email_address() in outbox[0]["To"])
         self.assertEqual(outbox[0]["Subject"], "1 Overdue review for team {}".format(review_req.team.acronym))
-        message = outbox[0].get_payload(decode=True).decode("utf-8")
+        message = get_payload_text(outbox[0])
         self.assertIn(review_req.team.acronym + ' has 1 accepted or assigned review overdue by at least 5 days.', message)
         self.assertIn('Review of {} by {}'.format(review_req.doc.name, reviewer.plain_name()), message)
         self.assertEqual(len(log), 1)
@@ -855,7 +859,7 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertTrue(reviewer.email_address() in outbox[0]["To"])
         self.assertEqual(outbox[0]["Subject"], "Reminder: you have 1 open review assignment")
-        message = outbox[0].get_payload(decode=True).decode("utf-8")
+        message = get_payload_text(outbox[0])
         self.assertTrue(review_req.team.acronym in message)
         self.assertTrue('you have 1 open review' in message)
         self.assertTrue(review_req.doc.name in message)
@@ -884,7 +888,7 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertIn(reviewer.email_address(), outbox[0]["To"])
         self.assertEqual(outbox[0]["Subject"], "Reminder: you have not responded to a review assignment")
-        message = outbox[0].get_payload(decode=True).decode("utf-8")
+        message = get_payload_text(outbox[0])
         self.assertIn(review_req.team.acronym, message)
         self.assertIn('accept or reject the assignment on', message)
         self.assertIn(review_req.doc.name, message)
