@@ -616,6 +616,18 @@ def get_email_addresses_from_text(text):
     return [ formataddr(e) for e in getaddresses([text, ]) if valid(e) ]
     
 
+
 def get_payload(msg, decode=False):
     return msg.get_payload(decode=decode)
+
+def get_payload_text(msg, decode=True):
+    charset = msg.get_charset()
+    payload = msg.get_payload(decode=decode)
+    try:
+        payload = payload.decode(str(charset))
+    except UnicodeDecodeError as e:
+        sys.stderr.write("Exception: %s\n" % e)
+        sys.stderr.write("Payload: %s\n" % payload)
+        raise
+    return payload
         
