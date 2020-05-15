@@ -360,6 +360,7 @@ def email_reviewer_availability_change(request, team, reviewer_role, msg, by):
             "reviewer_overview_url": url,
             "reviewer": reviewer_role.person,
             "team": team,
+            "msg": msg,
             "by": by,
         }, cc=cc)
 

@@ -1797,7 +1797,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
             in_the_past = period.end_date and period.end_date < today
 
             if not in_the_past:
-                msg = "Unavailable for review: {} - {} ({})  {}".format(
+                msg = "{} -- {} {}\n                         {}".format(
                     period.start_date.isoformat() if period.start_date else "indefinite",
                     period.end_date.isoformat() if period.end_date else "indefinite",
                     period.get_availability_display(),
