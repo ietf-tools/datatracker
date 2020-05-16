@@ -111,7 +111,7 @@ from ietf.doc.models import LastCallDocEvent
 
 
 from ietf.name.models import ReviewAssignmentStateName
-from ietf.utils.mail import send_mail_text, parse_preformatted, get_payload
+from ietf.utils.mail import send_mail_text, parse_preformatted
 
 from ietf.ietfauth.utils import user_is_person
 from ietf.dbtemplate.models import DBTemplate
@@ -1704,7 +1704,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
         
         (msg,_,_) = parse_preformatted(partial_msg)
 
-        body = get_payload(msg)
+        body = msg.get_payload()
         subject = msg['Subject']
 
         form = EmailOpenAssignmentsForm(initial={

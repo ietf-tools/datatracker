@@ -10,11 +10,11 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
 from django.urls import reverse as urlreverse
-from django.utils.encoding import force_str, force_text
+from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.mail import send_mail, send_mail_text, get_payload
+from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ipr.utils import iprs_from_docs, related_docs
 from ietf.doc.models import WriteupDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
 from ietf.doc.utils import needed_ballot_positions
@@ -387,7 +387,7 @@ def generate_issue_ballot_mail(request, doc, ballot):
 def email_iana(request, doc, to, msg, cc=None):
     # fix up message and send it with extra info on doc in headers
     import email
-    parsed_msg = email.message_from_string(force_str(msg))
+    parsed_msg = email.message_from_string(msg)
     parsed_msg.set_charset('UTF-8')
 
     extra = extra_automation_headers(doc)
@@ -395,7 +395,7 @@ def email_iana(request, doc, to, msg, cc=None):
     
     send_mail_text(request, to,
                    parsed_msg["From"], parsed_msg["Subject"],
-                   get_payload(parsed_msg),
+                   parsed_msg.get_payload(),
                    extra=extra,
                    cc=cc)
 

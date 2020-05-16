@@ -25,7 +25,7 @@ from ietf.group.models import Group, GroupMilestone
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
-from ietf.utils.mail import outbox, empty_outbox, get_payload
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized
 
 class ViewCharterTests(TestCase):
@@ -187,7 +187,7 @@ class EditCharterTests(TestCase):
                 self.assertIn("Internal WG Review", outbox[-3]['Subject'])
                 self.assertIn("iab@", outbox[-3]['To'])
                 self.assertIn("iesg@", outbox[-3]['To'])
-                body = get_payload(outbox[-3])
+                body = get_payload_text(outbox[-3])
                 for word in ["A new IETF WG", "Chairs", "Ames Man <ameschairman@example.org>",
                     "Secretaries", "Secretary <amessecretary@example.org>",
                     "Assigned Area Director", "Areað Irector <aread@example.org>",
@@ -198,13 +198,13 @@ class EditCharterTests(TestCase):
 
             self.assertIn("state changed", outbox[-2]['Subject'].lower())
             self.assertIn("iesg-secretary@", outbox[-2]['To'])
-            body = get_payload(outbox[-2])
+            body = get_payload_text(outbox[-2])
             for word in ["WG", "Charter", ]:
                 self.assertIn(word, body)
 
             self.assertIn("State Update Notice", outbox[-1]['Subject'])
             self.assertIn("ames-chairs@", outbox[-1]['To'])
-            body = get_payload(outbox[-1])
+            body = get_payload_text(outbox[-1])
             for word in ["State changed", "Datatracker URL", ]:
                 self.assertIn(word, body)
 
@@ -224,7 +224,7 @@ class EditCharterTests(TestCase):
         empty_outbox()
         r = self.client.post(url, dict(charter_state=str(State.objects.get(used=True,type="charter",slug="intrev").pk), message="test"))
         self.assertEqual(r.status_code, 302)
-        self.assertTrue("A new charter" in get_payload(outbox[-3]))
+        self.assertTrue("A new charter" in get_payload_text(outbox[-3]))
 
     def test_change_rg_state(self):
 
@@ -245,7 +245,7 @@ class EditCharterTests(TestCase):
         self.assertIn("Internal RG Review", outbox[-3]['Subject'])
         self.assertIn("iab@", outbox[-3]['To'])
         self.assertIn("irsg@", outbox[-3]['To'])
-        body = get_payload(outbox[-3])
+        body = get_payload_text(outbox[-3])
         for word in ["A new IRTF RG", 
             "Mailing list", "somerg@ietf.org",
             "Charter", "Milestones"]:
@@ -254,13 +254,13 @@ class EditCharterTests(TestCase):
 
         self.assertIn("state changed", outbox[-2]['Subject'].lower())
         self.assertIn("iesg-secretary@", outbox[-2]['To'])
-        body = get_payload(outbox[-2])
+        body = get_payload_text(outbox[-2])
         for word in ["RG", "Charter", ]:
             self.assertIn(word, body)
 
         self.assertIn("State Update Notice", outbox[-1]['Subject'])
         self.assertIn("somerg-chairs@", outbox[-1]['To'])
-        body = get_payload(outbox[-1])
+        body = get_payload_text(outbox[-1])
         for word in ["State changed", "Datatracker URL", ]:
             self.assertIn(word, body)
 
@@ -793,7 +793,7 @@ class EditCharterTests(TestCase):
         #
         self.assertTrue("approved" in outbox[0]['Subject'].lower())
         self.assertTrue("iesg-secretary" in outbox[0]['To'])
-        body = get_payload(outbox[0])
+        body = get_payload_text(outbox[0])
         for word in ["WG",   "/wg/ames/about/",
             "Charter", "/doc/charter-ietf-ames/", ]:
             self.assertIn(word, body)
@@ -801,7 +801,7 @@ class EditCharterTests(TestCase):
         self.assertTrue("WG Action" in outbox[1]['Subject'])
         self.assertTrue("ietf-announce" in outbox[1]['To'])
         self.assertTrue("ames-wg@ietf.org" in outbox[1]['Cc'])
-        body = get_payload(outbox[1])
+        body = get_payload_text(outbox[1])
         for word in ["Chairs", "Ames Man <ameschairman@example.org>",
             "Secretaries", "Secretary <amessecretary@example.org>",
             "Assigned Area Director", "Areað Irector <aread@example.org>",

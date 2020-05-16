@@ -12,7 +12,7 @@ from ietf.group.factories import GroupFactory
 from ietf.message.models import Message, SendQueue
 from ietf.message.utils import send_scheduled_message_from_send_queue
 from ietf.person.models import Person
-from ietf.utils.mail import outbox, send_mail_text, send_mail_message, get_payload
+from ietf.utils.mail import outbox, send_mail_text, send_mail_message, get_payload_text
 from ietf.utils.test_utils import TestCase
 
 class MessageTests(TestCase):
@@ -46,7 +46,7 @@ class MessageTests(TestCase):
                     continue
                 self.assertEqual(e1.get_all(k), e2.get_all(k), "Header field: %s" % k)
             self.longMessage = False
-            self.assertEqual(get_payload(e1), get_payload(e2))
+            self.assertEqual(get_payload_text(e1), get_payload_text(e2))
 
         #
         self.assertEqual(Message.objects.count(), 0)

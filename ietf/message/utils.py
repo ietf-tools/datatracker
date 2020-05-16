@@ -6,13 +6,13 @@ import re, datetime, email
 
 from django.utils.encoding import force_str
 
-from ietf.utils.mail import send_mail_text, send_mail_mime, get_payload
+from ietf.utils.mail import send_mail_text, send_mail_mime
 from ietf.message.models import Message
 
 first_dot_on_line_re = re.compile(r'^\.', re.MULTILINE)
 
 def infer_message(s):
-    parsed = email.message_from_string(force_str(s))
+    parsed = email.message_from_string(s)
 
     m = Message(
         subject = parsed.get("Subject", ""),
@@ -21,7 +21,7 @@ def infer_message(s):
         cc = parsed.get("Cc", ""),
         bcc = parsed.get("Bcc", ""),
         reply_to = parsed.get("Reply-To", ""),
-        body = get_payload(parsed),
+        body = parsed.get_payload(),
         content_type = parsed.get_content_type(),
     )
 

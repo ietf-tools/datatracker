@@ -35,7 +35,7 @@ from ietf.name.models import DocTagName, GroupStateName, GroupTypeName
 from ietf.person.models import Person, Email
 from ietf.person.factories import PersonFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
 
 def group_urlreverse_list(group, viewname):
@@ -629,7 +629,7 @@ class GroupEditTests(TestCase):
         self.assertTrue('Personnel change' in outbox[0]['Subject'])
         for prefix in ['ad1','ad2','aread','marschairman','marsdelegate']:
             self.assertTrue(prefix+'@' in outbox[0]['To'])
-        self.assertTrue(outbox[0].get_payload(decode=True).decode(str(outbox[0].get_charset())).startswith('Sec Retary'))
+        self.assertTrue(get_payload_text(outbox[0]).startswith('Sec Retary'))
 
 
     def test_edit_field(self):

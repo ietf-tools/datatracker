@@ -30,7 +30,7 @@ from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting, MeetingTypeName
 from ietf.iesg.models import TelechatDate
 from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils.mail import outbox, empty_outbox, get_payload
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase
 
 
@@ -387,7 +387,7 @@ class EditInfoTests(TestCase):
         data["telechat_date"] = next_week.isoformat()
         r = self.client.post(url,data)
         self.assertEqual(r.status_code, 302)
-        self.assertIn("may not leave enough time", get_payload(outbox[-1]))
+        self.assertIn("may not leave enough time", get_payload_text(outbox[-1]))
 
     def test_start_iesg_process_on_draft(self):
 

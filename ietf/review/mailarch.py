@@ -24,6 +24,8 @@ from pyquery import PyQuery
 from django.conf import settings
 from django.utils.encoding import force_bytes, force_str
 
+from ietf.utils.mail import get_payload_text
+
 def list_name_from_email(list_email):
     if not list_email.endswith("@ietf.org"):
         return None
@@ -81,7 +83,7 @@ def retrieve_messages_from_mbox(mbox_fileobj):
             for part in msg.walk():
                 if part.get_content_type() == "text/plain":
                     charset = part.get_content_charset() or "utf-8"
-                    content += part.get_payload(decode=True).decode(charset, "ignore")
+                    content += get_payload_text(part, default_charset=charset)
 
             # parse a couple of things for the front end
             utcdate = None

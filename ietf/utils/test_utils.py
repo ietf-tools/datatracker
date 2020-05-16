@@ -51,7 +51,7 @@ from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.mail import get_payload
+from ietf.utils.mail import get_payload_text
 
 real_database_name = settings.DATABASES["default"]["NAME"]
 
@@ -171,7 +171,7 @@ class TestCase(django.test.TestCase):
             mlist = [ m for m in mlist if subject in m["Subject"] ]
         if text:
             assert isinstance(text, str)
-            mlist = [ m for m in mlist if text in get_payload(m) ]
+            mlist = [ m for m in mlist if text in get_payload_text(m) ]
         if count and len(mlist) != count:
             sys.stderr.write("Wrong count in assertMailboxContains().  The complete mailbox contains %s emails:\n\n" % len(mailbox))
             for m in mailbox:

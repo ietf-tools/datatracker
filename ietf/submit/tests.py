@@ -35,7 +35,7 @@ from ietf.person.models import Person
 from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
 from ietf.submit.models import Submission, Preapproval
 from ietf.submit.mail import add_submission_email, process_response_email
-from ietf.utils.mail import outbox, empty_outbox, get_payload
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.models import VersionInfo
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.draft import Draft
@@ -194,8 +194,7 @@ class SubmitTests(TestCase):
 
     def extract_confirmation_url(self, confirmation_email):
         # dig out confirmation_email link
-        charset = confirmation_email.get_content_charset()
-        msg = confirmation_email.get_payload(decode=True).decode(charset)
+        msg = get_payload_text(confirmation_email)
         line_start = "http"
         confirmation_url = None
         for line in msg.split("\n"):
@@ -298,16 +297,16 @@ class SubmitTests(TestCase):
         self.assertTrue(draft.relations_that_doc("possibly-replaces").first().target, sug_replaced_alias)
         self.assertEqual(len(outbox), mailbox_before + 5)
         self.assertIn(("I-D Action: %s" % name), outbox[-4]["Subject"])
-        self.assertIn(author.ascii, get_payload(outbox[-4]))
+        self.assertIn(author.ascii, get_payload_text(outbox[-4]))
         self.assertIn(("I-D Action: %s" % name), outbox[-3]["Subject"])
-        self.assertIn(author.ascii, get_payload(outbox[-3]))
+        self.assertIn(author.ascii, get_payload_text(outbox[-3]))
         self.assertIn("New Version Notification",outbox[-2]["Subject"])
-        self.assertIn(name, get_payload(outbox[-2]))
-        self.assertIn("mars", get_payload(outbox[-2]))
+        self.assertIn(name, get_payload_text(outbox[-2]))
+        self.assertIn("mars", get_payload_text(outbox[-2]))
         # Check "Review of suggested possible replacements for..." mail
         self.assertIn("review", outbox[-1]["Subject"].lower())
-        self.assertIn(name, get_payload(outbox[-1]))
-        self.assertIn(sug_replaced_alias.name, get_payload(outbox[-1]))
+        self.assertIn(name, get_payload_text(outbox[-1]))
+        self.assertIn(sug_replaced_alias.name, get_payload_text(outbox[-1]))
         self.assertIn("ames-chairs@", outbox[-1]["To"].lower())
         self.assertIn("mars-chairs@", outbox[-1]["To"].lower())
 
@@ -497,17 +496,17 @@ class SubmitTests(TestCase):
         self.assertEqual(len(outbox), mailbox_before + 3)
         self.assertTrue(("I-D Action: %s" % name) in outbox[-3]["Subject"])
         self.assertTrue(("I-D Action: %s" % name) in draft.message_set.order_by("-time")[0].subject)
-        self.assertTrue(author.ascii in get_payload(outbox[-3]))
+        self.assertTrue(author.ascii in get_payload_text(outbox[-3]))
         self.assertTrue("i-d-announce@" in outbox[-3]['To'])
         self.assertTrue("New Version Notification" in outbox[-2]["Subject"])
-        self.assertTrue(name in get_payload(outbox[-2]))
+        self.assertTrue(name in get_payload_text(outbox[-2]))
         interesting_address = {'ietf':'mars', 'irtf':'irtf-chair', 'iab':'iab-chair', 'ise':'rfc-ise'}[draft.stream_id]
         self.assertTrue(interesting_address in force_text(outbox[-2].as_string()))
         if draft.stream_id == 'ietf':
             self.assertTrue(draft.ad.role_email("ad").address in force_text(outbox[-2].as_string()))
             self.assertTrue(ballot_position.balloter.role_email("ad").address in force_text(outbox[-2].as_string()))
         self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
-        self.assertTrue(name in get_payload(outbox[-1]))
+        self.assertTrue(name in get_payload_text(outbox[-1]))
         r = self.client.get(urlreverse('ietf.doc.views_search.recent_drafts'))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)

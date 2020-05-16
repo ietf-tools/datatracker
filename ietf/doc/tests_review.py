@@ -20,24 +20,23 @@ from pyquery import PyQuery
 import debug                            # pyflakes:ignore
 
 import ietf.review.mailarch
+
 from ietf.doc.factories import ( NewRevisionDocEventFactory, IndividualDraftFactory, WgDraftFactory,
-    WgRfcFactory, ReviewFactory, DocumentFactory)
-from ietf.doc.models import DocumentAuthor, RelatedDocument, DocEvent, ReviewRequestDocEvent, ReviewAssignmentDocEvent
+                            WgRfcFactory, ReviewFactory, DocumentFactory)
+from ietf.doc.models import ( DocumentAuthor, RelatedDocument, DocEvent, ReviewRequestDocEvent,
+                            ReviewAssignmentDocEvent, )
 from ietf.group.factories import RoleFactory, ReviewTeamFactory
 from ietf.group.models import Group
 from ietf.message.models import Message
-from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAssignmentStateName, \
-    ReviewTypeName
+from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewAssignmentStateName, ReviewTypeName
+from ietf.person.factories import PersonFactory
 from ietf.person.models import Email, Person
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
-from ietf.review.models import (ReviewRequest, ReviewerSettings,
-                                ReviewWish, NextReviewerInTeam)
+from ietf.review.models import ReviewRequest, ReviewerSettings, ReviewWish, NextReviewerInTeam
 from ietf.review.policies import get_reviewer_queue_policy
-
-from ietf.utils.test_utils import TestCase
+from ietf.utils.mail import outbox, empty_outbox, parseaddr, on_behalf_of, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized, reload_db_objects
-from ietf.utils.mail import outbox, empty_outbox, parseaddr, on_behalf_of
-from ietf.person.factories import PersonFactory
+from ietf.utils.test_utils import TestCase
 
 class ReviewTests(TestCase):
     def setUp(self):
@@ -228,7 +227,7 @@ class ReviewTests(TestCase):
         self.assertIn('<reviewer@example.com>', outbox[0]["To"])
         self.assertNotIn("<reviewsecretary@example.com>", outbox[0]["To"])
         self.assertIn("reviewsecretary2@example.com", outbox[0]["CC"])
-        mail_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
+        mail_content = get_payload_text(outbox[0])
         self.assertIn("closed", mail_content)
         self.assertIn("review_request_close_comment", mail_content)
 
@@ -330,7 +329,7 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox), 1)
         self.assertEqual('"Some Reviewer" <reviewer@example.com>', outbox[0]["To"])
-        message = outbox[0].get_payload(decode=True).decode("utf-8")
+        message = get_payload_text(outbox[0])
         self.assertIn("Pages: {}".format(doc.pages), message )
         self.assertIn("{} has assigned {}".format(secretary.person.ascii, reviewer.person.ascii), message)
         self.assertIn("This team has completed other reviews", message)
@@ -423,7 +422,7 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertIn(assignment.reviewer.address, outbox[0]["To"])
         self.assertNotIn("<reviewsecretary@example.com>", outbox[0]["To"])
-        self.assertTrue("Test message" in outbox[0].get_payload(decode=True).decode("utf-8"))
+        self.assertTrue("Test message" in get_payload_text(outbox[0]))
 
         # try again, but now with an expired review request, which should not be allowed (#2277)
         assignment.state_id = 'assigned'
@@ -645,7 +644,7 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertIn(assignment.review_request.team.list_email, outbox[0]["To"])
         self.assertIn(assignment.reviewer.role_set.filter(group=assignment.review_request.team,name='reviewer').first().person.plain_name(), parseaddr(outbox[0]["From"])[0] )
-        self.assertIn("This is a review", outbox[0].get_payload(decode=True).decode("utf-8"))
+        self.assertIn("This is a review", get_payload_text(outbox[0]))
 
         self.assertIn(settings.MAILING_LIST_ARCHIVE_URL, assignment.review.external_url)
 
@@ -658,7 +657,7 @@ class ReviewTests(TestCase):
         self.assertEqual(parseaddr(outbox[0]["To"]), parseaddr(message.to))
         self.assertEqual(parseaddr(outbox[0]["From"]), parseaddr(on_behalf_of(message.frm)))
         self.assertEqual(parseaddr(outbox[0]["Reply-To"]), parseaddr(message.frm))
-        self.assertEqual(outbox[0].get_payload(decode=True).decode(str(outbox[0].get_charset())), message.body)
+        self.assertEqual(get_payload_text(outbox[0]), message.body)
 
         # check the review document page
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ "name": assignment.review.name })
@@ -699,7 +698,7 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox), 1)
         self.assertIn(assignment.review_request.team.list_email, outbox[0]["To"])
-        self.assertIn("This is a review", outbox[0].get_payload(decode=True).decode("utf-8"))
+        self.assertIn("This is a review", get_payload_text(outbox[0]))
 
         self.assertIn(settings.MAILING_LIST_ARCHIVE_URL, assignment.review.external_url)
 
@@ -740,7 +739,7 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox), 1)
         self.assertIn(assignment.review_request.team.list_email, outbox[0]["To"])
-        self.assertIn("This is a review", outbox[0].get_payload(decode=True).decode("utf-8"))
+        self.assertIn("This is a review", get_payload_text(outbox[0]))
 
         self.assertIn(settings.MAILING_LIST_ARCHIVE_URL, assignment.review.external_url)
 
@@ -767,7 +766,7 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox), 2)
         self.assertIn('Has Issues', outbox[-1]['Subject'])
-        self.assertIn('settings indicated', outbox[-1].get_payload(decode=True).decode("utf-8"))
+        self.assertIn('settings indicated', get_payload_text(outbox[-1]))
 
     def test_complete_notify_ad_because_checkbox(self):
         assignment, url = self.setup_complete_review_test()
@@ -791,7 +790,7 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox), 2)
         self.assertIn('Has Issues', outbox[-1]['Subject']) 
-        self.assertIn('reviewer indicated', outbox[-1].get_payload(decode=True).decode("utf-8"))
+        self.assertIn('reviewer indicated', get_payload_text(outbox[-1]))
 
     @patch('requests.get')
     def test_complete_review_link_to_mailing_list(self, mock):
@@ -908,7 +907,7 @@ class ReviewTests(TestCase):
 
         self.assertTrue(assignment.review_request.team.list_email in outbox[1]["To"])
         self.assertTrue("partial review" in outbox[1]["Subject"].lower())
-        body = outbox[1].get_payload(decode=True).decode("utf-8")
+        body = get_payload_text(outbox[1])
         self.assertTrue("This is a review" in body)
         # This review has a line longer than 80, but less than 100; it should
         # not be wrapped.
@@ -941,7 +940,7 @@ class ReviewTests(TestCase):
 
         # This review has a line longer than 100; it should be wrapped to less
         # than 80.
-        body = outbox[2].get_payload(decode=True).decode("utf-8")
+        body = get_payload_text(outbox[2])
         self.assertIn('really, really, really', body)
         self.assertTrue(all( len(line) <= 80 for line in body.splitlines() ))
 

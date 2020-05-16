@@ -20,13 +20,13 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
-from django.utils.encoding import force_str, force_text
+from django.utils.encoding import force_str
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.person.models import Email, Person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.pipe import pipe
-from ietf.utils.mail import send_mail_text, send_mail
+from ietf.utils.mail import send_mail_text, send_mail, get_payload_text
 from ietf.utils.log import log
 from ietf.person.name import unidecode_name
 
@@ -438,18 +438,14 @@ def get_body(message):
                                                              'plain')]
         body = []
         for part in text_parts:
-            charset = get_charset(part, get_charset(message))
-            body.append(force_text(part.get_payload(decode=True),
-                                charset,
-                                "replace"))
+            charset = get_charset(message)
+            body.append(get_payload_text(part, default_charset=charset))
 
         return "\n".join(body).strip()
 
     else:  # if it is not multipart, the payload will be a string
            # representing the message body
-        body = force_text(message.get_payload(decode=True),
-                       get_charset(message),
-                       "replace")
+        body = get_payload_text(message)
         return body.strip()
 
 

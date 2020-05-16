@@ -16,7 +16,7 @@ from django.conf import settings
 from django.core.files import File
 from django.contrib.auth.models import User
 from django.urls import reverse
-from django.utils.encoding import force_text, force_str
+from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
@@ -39,7 +39,7 @@ from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, get_hash
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Email, Person
 from ietf.stats.models import MeetingRegistration
-from ietf.utils.mail import outbox, empty_outbox, get_payload
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 
 client_test_cert_files = None
@@ -539,7 +539,7 @@ class NomcomViewsTest(TestCase):
         self.assertEqual('Nomination receipt', outbox[-1]['Subject'])
         self.assertEqual(self.email_from, outbox[-1]['From'])
         self.assertIn('plain', outbox[-1]['To'])
-        self.assertIn('Comments with accents äöå', force_text(outbox[-1].get_payload(decode=True),"utf-8","replace"))
+        self.assertIn('Comments with accents äöå', get_payload_text(outbox[-1]))
 
         # Nominate the same person for the same position again without asking for confirmation 
 
@@ -580,7 +580,7 @@ class NomcomViewsTest(TestCase):
         self.assertEqual('Nomination receipt', outbox[-1]['Subject'])
         self.assertEqual(self.email_from, outbox[-1]['From'])
         self.assertIn('plain', outbox[-1]['To'])
-        self.assertIn('Comments with accents äöå', force_text(outbox[-1].get_payload(decode=True),"utf-8","replace"))
+        self.assertIn('Comments with accents äöå', get_payload_text(outbox[-1]))
 
         # Nominate the same person for the same position again without asking for confirmation 
 
@@ -831,12 +831,12 @@ class NomcomViewsTest(TestCase):
         # We're interested in the confirmation receipt here
         self.assertEqual(len(outbox),3)
         self.assertEqual('NomCom comment confirmation', outbox[2]['Subject'])
-        email_body = get_payload(outbox[2])
+        email_body = get_payload_text(outbox[2])
         self.assertIn(position, email_body)
         self.assertNotIn('$', email_body)
         self.assertEqual(self.email_from, outbox[-2]['From'])
         self.assertIn('plain', outbox[2]['To'])
-        self.assertIn('Comments with accents äöå', force_text(outbox[2].get_payload(decode=True),"utf-8","replace"))
+        self.assertIn('Comments with accents äöå', get_payload_text(outbox[2]))
 
         empty_outbox()
         self.feedback_view(public=True)

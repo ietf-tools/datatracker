@@ -22,7 +22,7 @@ from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
 from ietf.name.models import StreamName
 from ietf.utils.test_utils import TestCase
-from ietf.utils.mail import outbox, empty_outbox, get_payload
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized
 
 
@@ -302,9 +302,9 @@ class ConflictReviewTests(TestCase):
         self.assertIn('iana@', outbox[0]['Cc'])
 
         if approve_type == 'appr-noprob':
-            self.assertIn( 'IESG has no problem', ''.join(wrap(get_payload(outbox[0]), 2**16)))
+            self.assertIn( 'IESG has no problem', ''.join(wrap(get_payload_text(outbox[0]), 2**16)))
         else:
-            self.assertIn( 'NOT be published', ''.join(wrap(get_payload(outbox[0]), 2**16)))
+            self.assertIn( 'NOT be published', ''.join(wrap(get_payload_text(outbox[0]), 2**16)))
 
 
     def test_approve_reqnopub(self):

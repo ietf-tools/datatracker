@@ -19,7 +19,7 @@ from ietf.doc.mails import email_state_changed
 from ietf.doc.models import Document, DocEvent, State, StateDocEvent, StateType
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person
-from ietf.utils.mail import parseaddr
+from ietf.utils.mail import parseaddr, get_payload_text
 from ietf.utils.timezone import local_timezone_to_utc, email_time_to_local_timezone, utc_to_local_timezone
 
 
@@ -254,8 +254,7 @@ def parse_review_email(text):
         by = Person.objects.get(name="(System)")
 
     # comment
-    charset = msg.get_content_charset()
-    body = msg.get_payload(decode=True).decode(charset or 'utf-8').replace("\r", "")
+    body = get_payload_text(msg).replace("\r", "")
 
     begin_search = re.search(r'\(BEGIN\s+IANA\s+(LAST\s+CALL\s+)?COMMENTS?(\s*:\s*[a-zA-Z0-9-\.]*)?\s*\)',body)
     end_search = re.search(r'\(END\s+IANA\s+(LAST\s+CALL\s+)?COMMENTS?\)',body)

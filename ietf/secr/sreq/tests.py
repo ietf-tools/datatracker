@@ -15,7 +15,7 @@ from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.name.models import TimerangeName
 from ietf.person.models import Person
 from ietf.secr.sreq.forms import SessionForm
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 
 from pyquery import PyQuery
 
@@ -320,7 +320,7 @@ class SubmitRequestCase(TestCase):
         self.assertRedirects(r, reverse('ietf.secr.sreq.views.main'))
         self.assertEqual(len(outbox),len_before+1)
         notification = outbox[-1]
-        notification_payload = notification.get_payload(decode=True).decode(encoding="utf-8", errors="replace")
+        notification_payload = get_payload_text(notification)
         sessions = Session.objects.filter(meeting=meeting,group=group)
         self.assertEqual(len(sessions), 2)
         session = sessions[0]

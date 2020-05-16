@@ -15,17 +15,17 @@ from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized
-from ietf.utils.mail import outbox, empty_outbox
-from ietf.group.models import Group, Role, RoleName
 from ietf.group.factories import GroupFactory, RoleFactory
+from ietf.group.models import Group, Role, RoleName
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.mailinglists.models import Subscribed
-from ietf.person.models import Person, Email, PersonalApiKey
 from ietf.person.factories import PersonFactory, EmailFactory
+from ietf.person.models import Person, Email, PersonalApiKey
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
 from ietf.utils.decorators import skip_coverage
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 
 import ietf.ietfauth.views
 
@@ -99,7 +99,7 @@ class IetfAuthTests(TestCase):
 
     def extract_confirm_url(self, confirm_email):
         # dig out confirm_email link
-        msg = confirm_email.get_payload(decode=True).decode(confirm_email.get_content_charset())
+        msg = get_payload_text(confirm_email)
         line_start = "http"
         confirm_url = None
         for line in msg.split("\n"):
@@ -643,7 +643,7 @@ class IetfAuthTests(TestCase):
         
         self.assertEqual(len(outbox), len(endpoints))
         for mail in outbox:
-            body = mail.get_payload(decode=True).decode('utf-8')
+            body = get_payload_text(mail)
             self.assertIn("API key usage", mail['subject'])
             self.assertIn(" %s times" % count, body)
             self.assertIn(date, body)

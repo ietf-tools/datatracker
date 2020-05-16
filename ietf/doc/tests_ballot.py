@@ -23,7 +23,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person, PersonalApiKey
 from ietf.person.factories import PersonFactory
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
-from ietf.utils.mail import outbox, empty_outbox, get_payload
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.text import unwrap
 
 
@@ -174,7 +174,7 @@ class EditPositionTests(TestCase):
         self.assertEqual(len(outbox), mailbox_before + 1)
         m = outbox[-1]
         self.assertIn('COMMENT', m['Subject'])
-        self.assertIn('New comment', get_payload(m))
+        self.assertIn('New comment', get_payload_text(m))
 
 
     def test_edit_position_as_secretary(self):
@@ -460,11 +460,11 @@ class BallotWriteupsTests(TestCase):
             self.assertTrue('drafts-eval@' in outbox[-1]['To'])
             self.assertTrue('X-IETF-Draft-string' in outbox[-1])
             if case=='none':
-                self.assertNotIn('call expire', outbox[-1].get_payload(decode=True).decode("utf-8"))
+                self.assertNotIn('call expire', get_payload_text(outbox[-1]))
             elif case=='past':
-                self.assertIn('call expired', outbox[-1].get_payload(decode=True).decode("utf-8"))
+                self.assertIn('call expired', get_payload_text(outbox[-1]))
             else:
-                self.assertIn('call expires', outbox[-1].get_payload(decode=True).decode("utf-8"))
+                self.assertIn('call expires', get_payload_text(outbox[-1]))
             self.client.logout()
 
 
@@ -797,7 +797,7 @@ class MakeLastCallTests(TestCase):
         self.assertTrue("ietf-announce@" in outbox[-2]['To'])
         for prefix in ['draft-ietf-mars-test','mars-chairs','aread']:
             self.assertTrue(prefix+"@" in outbox[-2]['Cc'])
-        self.assertIn("The following IPR Declarations", get_payload(outbox[-2]))
+        self.assertIn("The following IPR Declarations", get_payload_text(outbox[-2]))
 
         self.assertTrue("Last Call" in outbox[-1]['Subject'])
         self.assertTrue("drafts-lastcall@icann.org" in outbox[-1]['To'])

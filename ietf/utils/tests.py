@@ -41,7 +41,7 @@ from ietf.submit.tests import submission_file
 from ietf.utils.bower_storage import BowerStorageFinder
 from ietf.utils.draft import Draft, getmeta
 from ietf.utils.log import unreachable, assertion
-from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox, get_payload
+from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox, get_payload_text
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase
 
@@ -72,7 +72,7 @@ body
         self.assertSameEmail(recv['Cc'], 'cc1@example.com, cc2@example.com')
         self.assertSameEmail(recv['Bcc'], None)
         self.assertEqual(recv['Subject'], 'subject')
-        self.assertEqual(get_payload(recv), 'body\n')
+        self.assertEqual(get_payload_text(recv), 'body\n')
 
         override = {
             'To': 'oto1@example.net, oto2@example.net',
@@ -102,7 +102,7 @@ body
         self.assertSameEmail(recv['Cc'], '<occ1@example.net>, occ2@example.net')
         self.assertSameEmail(recv['Bcc'], None)
         self.assertEqual(recv['Subject'], 'osubject')
-        self.assertEqual(get_payload(recv), 'body\n')
+        self.assertEqual(get_payload_text(recv), 'body\n')
 
         extra = {'Fuzz': [ 'bucket' ]}
         send_mail_preformatted(request=None, preformatted=msg, extra=extra, override={})

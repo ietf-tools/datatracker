@@ -11,7 +11,7 @@ import datetime
 
 from django.urls import reverse as urlreverse
 
-from ietf.utils.mail import outbox, empty_outbox, get_payload
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, unicontent, login_testing_unauthorized
 from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, RgDraftFactory, RgRfcFactory, BallotDocEventFactory, IRSGBallotDocEventFactory, BallotPositionDocEventFactory
 from ietf.doc.models import BallotDocEvent, BallotPositionDocEvent
@@ -363,7 +363,7 @@ class BaseManipulationTests():
         r = self.client.post(url, dict(cc_choices=['doc_authors','doc_group_chairs','doc_group_mail_list'], body="Stuff"))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox),1)
-        self.assertNotIn('discuss-criteria', get_payload(outbox[0]))
+        self.assertNotIn('discuss-criteria', get_payload_text(outbox[0]))
 
     def test_close_ballot(self):
         draft = RgDraftFactory()

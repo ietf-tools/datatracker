@@ -23,13 +23,10 @@ from ietf.ipr.models import (IprDisclosureBase,GenericIprDisclosure,HolderIprDis
 from ietf.ipr.utils import get_genitive, get_ipr_summary
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message
-from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.text import text_to_dict
 
-
-def extract_message_content(message):
-    return message.get_payload(decode=True).decode(str(message.get_charset()))
 
 def make_data_from_content(content):
     q = PyQuery(content)
@@ -582,10 +579,10 @@ I would like to revoke this declaration.
         self.assertEqual(r.status_code,302)
         self.assertEqual(len(outbox),len_before+2)
         self.assertTrue('george@acme.com' in outbox[len_before]['To'])
-        self.assertIn('posted on '+datetime.date.today().strftime("%Y-%m-%d"), extract_message_content(outbox[len_before]).replace('\n',' '))
+        self.assertIn('posted on '+datetime.date.today().strftime("%Y-%m-%d"), get_payload_text(outbox[len_before]).replace('\n',' '))
         self.assertTrue('draft-ietf-mars-test@ietf.org' in outbox[len_before+1]['To'])
         self.assertTrue('mars-wg@ietf.org' in outbox[len_before+1]['Cc'])
-        self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), extract_message_content(outbox[len_before+1]).replace('\n',' '))
+        self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), get_payload_text(outbox[len_before+1]).replace('\n',' '))
 
     def test_notify_generic(self):
         RoleFactory(name_id='ad',group__acronym='gen')
@@ -601,7 +598,7 @@ I would like to revoke this declaration.
         r = self.client.post(url, data )
         self.assertEqual(r.status_code,302)
         self.assertEqual(len(outbox),2)
-        self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), extract_message_content(outbox[1]).replace('\n',' '))
+        self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), get_payload_text(outbox[1]).replace('\n',' '))
 
     def test_process_response_email(self):
         # first send a mail
