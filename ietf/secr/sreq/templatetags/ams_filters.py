@@ -27,7 +27,7 @@ def display_duration(value):
     label."""
     map = {'0':'None',
            '1800':'30 Minutes',
-           '3000':'50 Miuntes',
+           '3000':'50 Minutes',
            '3600':'1 Hour',
            '5400':'1.5 Hours',
            '6000':'100 Minutes',
