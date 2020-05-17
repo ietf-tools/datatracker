@@ -624,11 +624,6 @@ def get_email_addresses_from_text(text):
 def get_payload_text(msg, decode=True, default_charset="utf-8"):
     charset = msg.get_charset() or default_charset
     payload = msg.get_payload(decode=decode)
-    try:
-        payload = payload.decode(str(charset))
-    except UnicodeDecodeError as e:
-        sys.stderr.write("Exception: %s\n" % e)
-        sys.stderr.write("Payload: %s\n" % payload)
-        raise
+    payload = payload.decode(str(charset))
     return payload
         
