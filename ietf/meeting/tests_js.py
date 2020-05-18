@@ -8,6 +8,7 @@ import datetime
 from pyquery import PyQuery 
 from unittest import skipIf
 
+import django
 from django.urls import reverse as urlreverse
 #from django.test.utils import override_settings
 
@@ -205,6 +206,7 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
         self.assertTrue(not s1_element.is_displayed())
 
 @skipIf(skip_selenium, skip_message)
+@skipIf(django.VERSION[0]==2, "Skipping test with race conditions under Django 2")
 class ScheduleEditTests(IetfLiveServerTestCase):
     def setUp(self):
         self.driver = start_web_driver()
@@ -228,19 +230,28 @@ class ScheduleEditTests(IetfLiveServerTestCase):
         self.driver.find_element_by_xpath('//button[@type="submit"]').click()
 
     def testUnschedule(self):
+
         meeting = make_meeting_test_data()
         colors.fg_group_colors['FARFUT'] = 'blue'
         colors.bg_group_colors['FARFUT'] = 'white'
         
         self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting=meeting, session__group__acronym='mars', schedule__name='test-schedule').count(),1)
 
+
+        ss = list(SchedTimeSessAssignment.objects.filter(session__meeting__number=72,session__group__acronym='mars',schedule__name='test-schedule')) # pyflakes:ignore
+
         self.login()
         url = self.absreverse('ietf.meeting.views.edit_schedule',kwargs=dict(num='72',name='test-schedule',owner='plain@example.com'))
         self.driver.get(url)
 
-        s1 = Session.objects.filter(group__acronym='mars', meeting=meeting).first()
+        # driver.get() will wait for scripts to finish, but not ajax
+        # requests.  Wait for completion of the permissions check:
+        read_only_note = self.driver.find_element_by_id('read_only')
+        WebDriverWait(self.driver, 10).until(expected_conditions.invisibility_of_element(read_only_note), "Read-only schedule")
 
-        time.sleep(0.1)
+        s1 = Session.objects.filter(group__acronym='mars', meeting=meeting).first()
+        selector = "#session_{}".format(s1.pk)
+        WebDriverWait(self.driver, 30).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, selector)), "Did not find %s"%selector)
 
         self.assertEqual(self.driver.find_elements_by_css_selector("#sortable-list #session_{}".format(s1.pk)), [])
 
@@ -251,6 +262,7 @@ class ScheduleEditTests(IetfLiveServerTestCase):
         self.assertTrue(self.driver.find_elements_by_css_selector("#sortable-list #session_{}".format(s1.pk)))
 
         time.sleep(0.1) # The API that modifies the database runs async
+
         self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting__number=72,session__group__acronym='mars',schedule__name='test-schedule').count(),0)
 
 @skipIf(skip_selenium, skip_message)

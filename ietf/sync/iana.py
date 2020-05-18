@@ -68,7 +68,7 @@ def fetch_changes_json(url, start, end):
     # HTTP basic auth
     username = "ietfsync"
     password = settings.IANA_SYNC_PASSWORD
-    headers = { "Authorization": "Basic %s" % force_str(base64.encodestring(smart_bytes("%s:%s" % (username, password)))).replace("\n", "") }
+    headers = { "Authorization": "Basic %s" % force_str(base64.encodebytes(smart_bytes("%s:%s" % (username, password)))).replace("\n", "") }
     text = requests.get(url, headers=headers).text
     return text
 

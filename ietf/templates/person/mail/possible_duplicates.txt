@@ -12,7 +12,7 @@ Please check to see if they represent the same actual person, and if so, merge t
     time:     {{person.time}}
     ascii:    {{person.ascii}}
     email:    {% for email in person.email_set.all %}{{ email.address }} {% endfor %}
-    aliases:  {{ person.alias_set.all|join:", " }}
+    aliases:  {{ person.aliases|join:", " }}
     username: {% if person.user %}{{person.user.username}}{% else %}None{% endif %}
 
 {% endfor %} {% endautoescape %}

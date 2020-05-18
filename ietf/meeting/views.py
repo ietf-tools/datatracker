@@ -2794,6 +2794,7 @@ def floor_plan(request, num=None, floor=None, ):
         except FileNotFoundError:
             raise Http404('Missing floorplan image for %s' % floor)
     return render(request, 'meeting/floor-plan.html', {
+            "meeting": meeting,
             "schedule": schedule,
             "number": num,
             "floors": floors,

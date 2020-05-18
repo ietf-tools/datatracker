@@ -99,6 +99,8 @@ class Person(models.Model):
         return name_parts(self.name)[3]
     def first_name(self):
         return name_parts(self.name)[1]
+    def aliases(self):
+        return [ str(a) for a in self.alias_set.all() ]
     def role_email(self, role_name, group=None):
         """Lookup email for role for person, optionally on group which
         may be an object or the group acronym."""

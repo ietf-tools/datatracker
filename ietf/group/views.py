@@ -1000,6 +1000,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                     changed_personnel.update(set(old)^set(new))
 
             if personnel_change_text!="":
+                changed_personnel = [ str(p) for p in changed_personnel ]
                 personnel_change_text = "%s has updated %s personnel:\n\n" % (request.user.person.plain_name(), group.acronym.upper() ) + personnel_change_text
                 email_personnel_change(request, group, personnel_change_text, changed_personnel)
 

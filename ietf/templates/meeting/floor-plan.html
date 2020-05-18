@@ -7,7 +7,7 @@
 {% load staticfiles %}
 
 {% block title %}
-  IETF {{ schedule.meeting.number }} meeting agenda
+  IETF {{ meeting.number }} meeting agenda
   {% if "-utc" in request.path %}
     (UTC)
   {% endif %}
@@ -40,7 +40,7 @@ hr.slim {
   <div class="row">
     <div class="col-md-12 col-sm-12 col-xs-12" >
 
-      {% include "meeting/meeting_heading.html" with meeting=schedule.meeting selected="floor-plan" title_extra="Floor Plan" %}
+      {% include "meeting/meeting_heading.html" with selected="floor-plan" title_extra="Floor Plan" %}
 
     </div>
   </div>
@@ -85,7 +85,6 @@ hr.slim {
 {% endblock %}
 
 {% block js %}
-{% with meeting=schedule.meeting %}
   <script src="{% static 'ietf/js/room_params.js' %}"></script>
   <script>
     // These must match the 'arrowdiv' divs above
@@ -118,5 +117,4 @@ hr.slim {
 	return [left, top, right, bottom, floor, width];
     }
   </script>
-{% endwith %}
 {% endblock %}

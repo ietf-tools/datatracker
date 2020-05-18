@@ -13,26 +13,9 @@ import warnings
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
 warnings.simplefilter("always", DeprecationWarning)
+warnings.filterwarnings("ignore", message="Add the `renderer` argument to the render\(\) method of", module="bootstrap3")
+warnings.filterwarnings("ignore", message="The logout\(\) view is superseded by")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
-warnings.filterwarnings("ignore", message="The popen2 module is deprecated.  Use the subprocess module.", module="ietf.utils.pipe")
-warnings.filterwarnings("ignore", message="Usage of field.rel has been deprecated. Use field.remote_field instead.", module="tastypie.resources")
-warnings.filterwarnings("ignore", message="Importing from django.core.urlresolvers is deprecated in favor of django.urls.", module="tastypie.resources")
-warnings.filterwarnings("ignore", message="on_delete will be a required arg for OneToOneField in Django 2.0.", module="tastypie")
-warnings.filterwarnings("ignore", message=r"The load_template\(\) method is deprecated. Use get_template\(\) instead.")
-warnings.filterwarnings("ignore", message="escape isn't the last filter in")
-warnings.filterwarnings("ignore", message="Deprecated allow_tags attribute used on field")
-warnings.filterwarnings("ignore", message="You passed a bytestring as `filenames`. This will not work on Python 3.")
-warnings.filterwarnings("ignore", message="django.forms.extras is deprecated.", module="bootstrap3")
-warnings.filterwarnings("ignore", message="defusedxml.lxml is no longer supported and will be removed in a future release.", module="tastypie")
-warnings.filterwarnings("ignore", message="Duplicate index '.*' defined on the table")
-# Warnings found under Python 3.7:
-warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated")
-warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="docutils.io")
-warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="xml2rfc")
-warnings.filterwarnings("ignore", message="'U' mode is deprecated", module="site")
-warnings.filterwarnings("ignore", message="Flags not at the start of the expression", module="genshi")
-warnings.filterwarnings("ignore", message="Flags not at the start of the expression", module="coverage")
-warnings.filterwarnings("ignore", message="encodestring\(\) is a deprecated alias since 3.1, use encodebytes\(\)")
 
 
 try:
@@ -367,7 +350,6 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.http.ConditionalGetMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
@@ -902,7 +884,6 @@ SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
 SECR_PPT2PDF_COMMAND = ['/usr/bin/soffice','--headless','--convert-to','pdf:writer_globaldocument_pdf_Export','--outdir']
 STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://ietf.org/registration/attendees/{number}'
 NEW_PROCEEDINGS_START = 95
-USE_ETAGS=True
 YOUTUBE_API_KEY = ''
 YOUTUBE_API_SERVICE_NAME = 'youtube'
 YOUTUBE_API_VERSION = 'v3'
@@ -1062,7 +1043,6 @@ SILENCED_SYSTEM_CHECKS = [
 ]
 
 CHECKS_LIBRARY_PATCHES_TO_APPLY = [
-    'patch/fix-django-unicode-comparison-bug.patch',
     'patch/fix-unidecode-argument-warning.patch',
     'patch/fix-request-profiler-streaming-length.patch',
 ]
