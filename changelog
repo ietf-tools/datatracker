@@ -1,3 +1,41 @@
+ietfdb (6.130.1) ietf; urgency=medium
+
+  **Bugfixes**
+
+  From the commit log:
+
+  * Merged in [17797] from rjsparks@nostrum.com:
+    Better use of group type in interim announcement tools. Fixes #2989.  
+
+  * Refactored many instances of msg.get_payload(decode=True).decode('utf-8')
+    and similar to get_payload_text(msg), which uses msg.get_charset() to get
+    the actual charset to do the decoding in a consistent manner.  Also
+    removed some instances of force_str (but more remain).
+
+  * Added group chair/secretary role information to the personal meetecho 
+    key API return.
+
+  * Added a bunch of drafts for which we don't have text files to the 
+    test-crawler exclusion list.
+
+  * Fleshed out a review test slightly, and did some refactoring.
+
+  * Added an utility function to get email payload as unicode text.
+
+  * Merged in [17794] from mark@painless-security.com:
+    Add the 'msg' variable for interpolation on reviewer availability 
+    change emails, and reformat the add-a-period email.  Fixes #2891.   
+
+  * Merged in [17722] from mark@painless-security.com:
+    Remove the 'experimental' verbiage from the references / referenced by 
+    pages.  Fixes #2857.   
+
+  * Fixed a bug in upcoming() leading to entries before the current date
+    being shown.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 May 2020 04:46:17 +0000
+
+
 ietfdb (6.130.0) ietf; urgency=medium
 
   **Meeting services for IAB programs, meeting shortcuts in additional places, bugfixes**
