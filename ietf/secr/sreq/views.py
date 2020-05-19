@@ -19,7 +19,8 @@ from ietf.meeting.models import Meeting, Session, Constraint, ResourceAssociatio
 from ietf.meeting.helpers import get_meeting
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.name.models import SessionStatusName, ConstraintName
-from ietf.secr.sreq.forms import SessionForm, ToolStatusForm, allowed_conflicting_groups, JOINT_FOR_SESSION_CHOICES
+from ietf.secr.sreq.forms import (SessionForm, ToolStatusForm, allowed_conflicting_groups,
+    JOINT_FOR_SESSION_CHOICES, VirtualSessionForm)
 from ietf.secr.utils.decorators import check_permissions
 from ietf.secr.utils.group import get_my_groups
 from ietf.utils.mail import send_mail
@@ -114,6 +115,13 @@ def get_requester_text(person,group):
         return '%s, a %s Area Director' % (person.ascii, group.parent.acronym.upper())
     if person.role_set.filter(name='secr',group__acronym='secretariat'):
         return '%s, on behalf of the %s working group' % (person.ascii, group.acronym)
+
+def get_session_form_class():
+    meeting = get_meeting()
+    if meeting.number in settings.SECR_VIRTUAL_MEETINGS:
+        return VirtualSessionForm
+    else:
+        return SessionForm
 
 def save_conflicts(group, meeting, conflicts, name):
     '''
@@ -261,9 +269,12 @@ def confirm(request, acronym):
     '''
     # FIXME: this should be using form.is_valid/form.cleaned_data - invalid input will make it crash
     group = get_object_or_404(Group,acronym=acronym)
-    form = SessionForm(group, request.POST, hidden=True)
-    form.is_valid()
     meeting = get_meeting()
+    FormClass = get_session_form_class()
+
+    form = FormClass(group, request.POST, hidden=True)
+    form.is_valid()
+    
     login = request.user.person
 
     # check if request already exists for this group
@@ -365,6 +376,7 @@ def confirm(request, acronym):
 
     return render(request, 'sreq/confirm.html', {
         'form': form,
+        'is_virtual': meeting.number in settings.SECR_VIRTUAL_MEETINGS,
         'session': session_data,
         'group': group,
         'session_conflicts': session_conflicts},
@@ -397,6 +409,8 @@ def edit(request, acronym, num=None):
     sessions = add_event_info_to_session_qs(Session.objects.filter(group=group, meeting=meeting)).filter(Q(current_status__isnull=True) | ~Q(current_status__in=['canceled', 'notmeet'])).order_by('id')
     sessions_count = sessions.count()
     initial = get_initial_session(sessions)
+    FormClass = get_session_form_class()
+
     if 'resources' in initial:
         initial['resources'] = [x.pk for x in initial['resources']]
 
@@ -417,7 +431,7 @@ def edit(request, acronym, num=None):
         if button_text == 'Cancel':
             return redirect('ietf.secr.sreq.views.view', acronym=acronym)
 
-        form = SessionForm(group, request.POST, initial=initial)
+        form = FormClass(group, request.POST, initial=initial)
         if form.is_valid():
             if form.has_changed():
                 # might be cleaner to simply delete and rewrite all records (but maintain submitter?)
@@ -566,10 +580,11 @@ def edit(request, acronym, num=None):
     else:
         if not sessions:
             return redirect('ietf.secr.sreq.views.new', acronym=acronym)
-        form = SessionForm(group, initial=initial)
+        form = FormClass(group, initial=initial)
 
     return render(request, 'sreq/edit.html', {
         'is_locked': is_locked,
+        'is_virtual': meeting.number in settings.SECR_VIRTUAL_MEETINGS,
         'meeting': meeting,
         'form': form,
         'group': group,
@@ -652,6 +667,8 @@ def new(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
     meeting = get_meeting()
     session_conflicts = session_conflicts_as_string(group, meeting)
+    is_virtual = meeting.number in settings.SECR_VIRTUAL_MEETINGS,
+    FormClass = get_session_form_class()
 
     # check if app is locked
     is_locked = check_app_locked()
@@ -664,7 +681,7 @@ def new(request, acronym):
         if button_text == 'Cancel':
             return redirect('ietf.secr.sreq.views.main')
 
-        form = SessionForm(group, request.POST)
+        form = FormClass(group, request.POST)
         if form.is_valid():
             return confirm(request, acronym)
 
@@ -688,15 +705,16 @@ def new(request, acronym):
         add_essential_people(group,initial)
         if 'resources' in initial:
             initial['resources'] = [x.pk for x in initial['resources']]
-        form = SessionForm(group, initial=initial)
+        form = FormClass(group, initial=initial)
 
     else:
         initial={}
         add_essential_people(group,initial)
-        form = SessionForm(group, initial=initial)
+        form = FormClass(group, initial=initial)
 
     return render(request, 'sreq/new.html', {
         'meeting': meeting,
+        'is_virtual': is_virtual,
         'form': form,
         'group': group,
         'session_conflicts': session_conflicts},
@@ -807,7 +825,7 @@ def view(request, acronym, num = None):
     is_locked = check_app_locked()
     if is_locked:
         messages.warning(request, "The Session Request Tool is closed")
-        
+
     # if there are no session requests yet, redirect to new session request page
     if not sessions:
         if is_locked:
@@ -837,6 +855,7 @@ def view(request, acronym, num = None):
 
     return render(request, 'sreq/view.html', {
         'is_locked': is_locked,
+        'is_virtual': meeting.number in settings.SECR_VIRTUAL_MEETINGS,
         'session': session,
         'activities': activities,
         'meeting': meeting,

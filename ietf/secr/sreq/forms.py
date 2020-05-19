@@ -19,6 +19,7 @@ from ietf.utils.html import clean_text_field
 NUM_SESSION_CHOICES = (('','--Please select'),('1','1'),('2','2'))
 # LENGTH_SESSION_CHOICES = (('','--Please select'),('1800','30 minutes'),('3600','1 hour'),('5400','1.5 hours'), ('7200','2 hours'),('9000','2.5 hours'))
 LENGTH_SESSION_CHOICES = (('','--Please select'),('1800','30 minutes'),('3600','1 hour'),('5400','1.5 hours'), ('7200','2 hours'))
+VIRTUAL_LENGTH_SESSION_CHOICES = (('','--Please select'),('3000','50 minutes'),('6000','100 minutes'))
 SESSION_TIME_RELATION_CHOICES = (('', 'No preference'),) + Constraint.TIME_RELATION_CHOICES
 JOINT_FOR_SESSION_CHOICES = (('1', 'First session'), ('2', 'Second session'), ('3', 'Third session'), )
 
@@ -207,7 +208,16 @@ class SessionForm(forms.Form):
                                             'because you have not requested a third session.')
         
         return data
-        
+
+
+class VirtualSessionForm(SessionForm):
+    '''A SessionForm customized for special virtual meeting requirements'''
+    length_session1 = forms.ChoiceField(choices=VIRTUAL_LENGTH_SESSION_CHOICES)
+    length_session2 = forms.ChoiceField(choices=VIRTUAL_LENGTH_SESSION_CHOICES,required=False)
+    length_session3 = forms.ChoiceField(choices=VIRTUAL_LENGTH_SESSION_CHOICES,required=False)
+    attendees = forms.IntegerField(required=False)
+
+
 class ToolStatusForm(forms.Form):
     message = forms.CharField(widget=forms.Textarea(attrs={'rows':'3','cols':'80'}), strip=False)
 
