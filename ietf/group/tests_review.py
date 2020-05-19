@@ -385,7 +385,7 @@ class ReviewTests(TestCase):
         r = self.client.get(unassigned_url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, review_req1.doc.name)
-        self.assertContains(r, doc_author.name)
+        self.assertContains(r, doc_author.plain_name())
 
         # Test that conflicts are detected
         r = self.client.post(unassigned_url, {
