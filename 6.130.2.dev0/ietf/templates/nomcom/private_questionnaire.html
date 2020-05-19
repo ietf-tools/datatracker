@@ -1,0 +1,27 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+{% load nomcom_tags %}
+
+{% block subtitle %} - Quesionnaire Response{% endblock %}
+
+{% block nomcom_content %}
+  {% origin %}
+  {% if form %}
+    {% if questionnaire_response %}
+      <h2>Questionnaire response</h2>
+      {{ questionnaire_response }}
+    {% endif %}
+
+    <form id="questionnnaireform" method="post">
+      {% csrf_token %}
+      {% bootstrap_form form %}
+      {% buttons %}
+        <input class="btn btn-primary" type="submit" value="Save" name="save" {% if submit_disabled %}disabled="disabled"{% endif %}>
+      {% endbuttons %}
+    </form>
+  {% endif %}
+
+{% endblock %}

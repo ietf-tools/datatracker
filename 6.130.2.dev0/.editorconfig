@@ -1,0 +1,16 @@
+# EditorConfig helps developers define and maintain consistent
+# coding styles between different editors and IDEs
+# editorconfig.org
+
+root = true
+
+# Settings for IETF datatracker
+
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+# to avoid tripping Henrik's commit hook:
+trim_trailing_whitespace = false
+insert_final_newline = false

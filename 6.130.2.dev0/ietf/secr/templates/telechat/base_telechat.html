@@ -1,0 +1,64 @@
+{% extends "base_site.html" %}
+{% load staticfiles %}
+
+{% block title %}Telechat{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
+  <link rel="stylesheet" type="text/css" href="{% static 'secr/css/telechat.css' %}" />
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="{% url 'ietf.secr.telechat.views.main' %}">Telechat</a> 
+{% endblock %}
+
+{% block content %}
+{% load ietf_filters %}
+<div id="telechat-sidebar">
+    <h2>Agenda {{ date }}</h2>
+    {% if agenda %}
+    <ul>
+      {% for num, section in agenda.sections.iteritems %}
+      {% if num >= "2" and num < "5" %}
+      <li class="level{{ num|sectionlevel }}">{{ num }} {{ section.title }}
+
+      {% if "docs" in section %}
+        {% if section.docs %}
+        <ul class="doc-list">
+          {% for doc in section.docs %}
+          <li><a href="{% url 'ietf.secr.telechat.views.doc_detail' date=date name=doc.name %}">{{ doc.name }}</a></li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div>None</div>
+        {% endif %}
+      </li>
+      {% endif %}
+
+      {% endif %}
+      {% endfor %}
+    </ul>
+    {% else %}
+    Please select a telechat to display the agenda.
+    {% endif %}
+</div>
+
+
+<div id="telechat-main">
+  {% if date %}
+  <div id="telechat-nav">
+    <ul class="list-nav">
+      <li><a href="{% url 'ietf.secr.telechat.views.roll_call' date=date %}">Roll Call</a></li>
+      <li><a href="{% url 'ietf.secr.telechat.views.bash' date=date %}">Bash Agenda</a></li>
+      <li><a href="{% url 'ietf.secr.telechat.views.minutes' date=date %}">Minute Approval</a></li>
+      <li><a href="{% url 'ietf.secr.telechat.views.doc' date=date %}">Main Agenda</a></li>
+      <li><a href="{% url 'ietf.secr.telechat.views.management' date=date %}">Management Issues</a></li>
+    </ul>
+  </div>
+  {% endif %}
+  
+  {% block subsection %}<div id="telechat-content"></div>{% endblock %}
+
+</div>
+
+{% endblock %}

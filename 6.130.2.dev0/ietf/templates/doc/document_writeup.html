@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load ietf_filters %}
+{% load textfilters %}
+
+{% block title %}Writeups for {{ doc.name }}-{{ doc.rev }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  {{ top|safe }}
+
+  {% for title, subtitle, writeups in sections %}
+    <h2>
+      {{ title|capfirst_allcaps }}
+      {% if subtitle %}
+        <br><small>{{ subtitle|safe }}</small>
+      {% endif %}
+    </h2>
+
+    {% for name, text, url in writeups %}
+      {% if text %}
+        <pre>{{ text|linkify }}</pre>
+      {% endif %}
+
+      <p>
+        {% if can_edit %}
+          <a href="{{ url }}" class="btn btn-default">
+            {% if text %}
+              Edit
+            {% else %}
+              Generate
+            {% endif %}
+            {{ name|lower_allcaps }}
+          </a>
+        {% endif %}
+      </p>
+    {% endfor %}
+  {% endfor %}
+{% endblock content %}

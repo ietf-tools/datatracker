@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load markup_tags %}
+{% load staticfiles %}
+{% load ietf_filters %}
+{% load group_filters %}
+
+{% block title %}Profile for {{ persons.0 }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  {% if persons|length > 1 %}
+  <div class="col-md-12">
+     <h4>More than one person with this name has been found.  Showing all:</h4>
+     <hr>
+  </div>
+  {% endif %}
+  {% for person in persons %}
+  <div class="col-md-12">
+    {% if not forloop.first %}<hr>{% endif %}
+
+    <h1>{{ person.name }} {% if person.ascii != person.name %}<br><small>({{person.ascii}})</small>{% endif %}</h1>
+
+    <div class="bio-text">
+       {% if person.photo %}
+       <a href="{{person.photo.url}}">
+	 <img class="bio-photo" src="{{ person.photo.url }}" alt="Photo of {{ person }}" />
+       </a>
+       {% else %}
+	 <img class="bio-photo" src="{{ MEDIA_URL }}photo/nopictureavailable.jpg" alt="No photo available"/>
+       {% endif %}
+       {{ person.biography | apply_markup:"restructuredtext" }}
+    </div>
+  </div>
+
+  {% if person.role_set.exists %}
+    <div class="col-md-12">
+       <h2 id="roles">Roles</h2>
+       <table class="table">
+	   {% for role in person.role_set.all|active_roles %}
+	       <tr>
+		 <td>
+		   {{ role.name.name }}
+		   {% if role.group.type_id == 'sdo' %}for{% elif role.name_id == 'reviewer' %}in{% else %}of{% endif %}
+		   <a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.name }}</a>
+		   (<a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.acronym }}</a>)
+		 </td>
+		 <td>
+		   <a href="mailto:{{role.email.address}}">{{ role.email.address }}</a>
+		 </td>
+	       </tr>
+	   {% empty %}
+	     {{ person.first_name }} has no active roles as of {{ today }}.
+	   {% endfor %}
+       </table>
+    </div>
+  {% endif %}
+
+
+
+  <div class="col-md-6">
+     <h2 id="rfcs">RFCs</h2>
+     {% if person.rfcs %}
+	<table class="table">
+	  {% for doc in person.rfcs  %}
+	    <tr> 
+	      <td><a href="{{ doc.get_absolute_url }}">{{ doc.canonical_name }}</a></td>
+	      <td>{{ doc.pub_date|date:"b Y"|title|nbsp }}</td>
+	      <td>{{ doc.title }}<br>
+              {% with doc.referenced_by_rfcs.count as refbycount %}
+                {% if refbycount %}
+                  Cited by <a style="text-decoration: underline" href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.canonical_name %}" rel="nofollow">{{ refbycount }} RFC{{ refbycount|pluralize}}</a>
+                {% endif %}
+              {% endwith %}
+	      </td>
+	    </tr>
+	  {% endfor %}
+	</table>
+     {% else %}
+       {{ person.first_name }} has no RFCs as of {{ today }}.
+     {% endif %}
+  </div>
+  <div class="col-md-6">
+     <h2 id="drafts">Active Drafts</h2>
+     {% if person.active_drafts.exists %}
+	<ul>
+	   {% for doc in person.active_drafts %}
+	     <li>
+	       <a href="{{ doc.get_absolute_url }}">{{ doc.canonical_name }}</a>
+	     </li>
+	   {% endfor %}
+	</ul>
+     {% else %}
+       {{ person.first_name }} has no active drafts as of {{ today }}.
+     {% endif %}
+  </div>
+  <div class="col-md-6">
+     <h2>Expired Drafts <small>excluding replaced drafts</small></h2>
+     {% if person.expired_drafts.exists %}
+	<ul>
+	   {% for doc in person.expired_drafts %}
+	       {% if not doc.replaced_by %}
+	         <li><a href="{{ doc.get_absolute_url }}">{{ doc.canonical_name }}</a></li>
+	       {% endif %}
+	   {% endfor %}
+	</ul>
+     {% else %}
+       {{ person.first_name }} has no expired drafts as of {{ today }}.
+     {% endif %}
+  </div>
+
+  {% if person.has_drafts %}
+  <div id="chart" style="width:100%; height:400px; margin-top:1em;" class="panel panel-default panel-body col-md-12"></div>
+  {% endif %}
+
+  {% endfor %}
+{% endblock %}
+
+{% block js %}
+  {% if persons|length == 1 %}
+      <script src="{% static 'highcharts/highstock.js' %}"></script>
+      <script src="{% static 'highcharts/modules/exporting.js' %}"></script>
+      <script>
+	$(function () {
+	    $.getJSON('{% url "ietf.doc.views_stats.chart_conf_person_drafts" id=persons.0.id %}', function (conf) {
+		// Create the chart
+		chart = Highcharts.stockChart('chart', conf);
+		chart.showLoading();
+		$.getJSON('{% url "ietf.doc.views_stats.chart_data_person_drafts" id=persons.0.id %}', function (data) {
+		    chart.series[0].setData(data);
+		    chart.hideLoading();
+		});
+	    });
+	});
+      </script>
+
+  {% endif %}
+{% endblock %}

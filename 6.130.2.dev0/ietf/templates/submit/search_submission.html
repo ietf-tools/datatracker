@@ -1,0 +1,33 @@
+{% extends "submit/submit_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Submission status{% endblock %}
+
+{% block submit_content %}
+  {% origin %}
+  <p>
+    Please enter the name of the Internet-Draft you wish to view the
+    submission status of.
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+
+    {% if error %}
+      <p class="alert alert-danger">{{ error }}</p>
+    {% endif %}
+
+    <div class="form-group">
+      <label>I-D name</label>
+      <input type="text" class="form-control" placeholder="draft-..." name="name" value="{{ name|default:"" }}">
+    </div>
+
+    {% buttons %}
+      <input class="btn btn-primary" type="submit" value="See status">
+    {% endbuttons %}
+  </form>
+
+{% endblock %}

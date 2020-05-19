@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load bootstrap3 %}
+
+{% block title %}Change position for {{ balloter.plain_name }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Change position for {{ balloter.plain_name }} regarding <br><small><a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
+
+  <div class="question">{{ ballot.ballot_type.question }}</div>
+
+  {% if ballot_deferred %}
+    <p class="alert alert-info">
+      Ballot deferred by {{ ballot_deferred.by }} on {{ ballot_deferred.time|date:"Y-m-d" }}.
+    </p>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+
+    {% for field in form %}
+      {% if field.name == "discuss" %}<div id="div_id_discuss">{% endif %}
+      {% bootstrap_field field %}
+      {% if field.name == "discuss" and old_pos and old_pos.discuss_time %}
+        <div class="help-block">Last edited {{ old_pos.discuss_time }}</div>
+      {% elif field.name == "comment" and old_pos and old_pos.comment_time %}
+        <div class="help-block">Last edited {{ old_pos.comment_time }}</div>
+      {% endif %}
+      {% if field.name == "discuss" %}</div>{% endif %}
+    {% endfor %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" name="send_mail" value="Save and send email">Save & send email</button>
+      <input type="submit" class="btn btn-default" value="Save">
+
+      {% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
+        {% if doc.stream.slug != "irtf" %}
+        {% if ballot_deferred %}
+          <input type="submit" class="btn btn-warning" name="Undefer" value="Undefer ballot">
+        {% else %}
+          <input type="submit" class="btn btn-danger" name="Defer" value="Defer ballot">
+        {% endif %}
+        {% endif %}
+      {% endif %}
+    {% endbuttons %}
+  </form>
+{% endblock %}
+
+{% block js %}
+  <script>
+    var block_pos = {{ blocking_positions|safe }};
+
+    function discussToggle(val) {
+        if (val in block_pos) {
+            $("#div_id_discuss").show();
+        } else {
+            $("#div_id_discuss").hide();
+        }
+    }
+
+   $("input[name=position]").click(function () {
+       discussToggle($(this).val());
+   });
+
+   discussToggle($("input[name=position]:checked").val());
+  </script>
+{% endblock %}

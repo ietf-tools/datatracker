@@ -1,0 +1,10 @@
+
+This directory is for patches to the datatracker environment, not for patches
+to the datatracker itself (those are ephemeral, in the sense that they should
+not stay around as patches, they should be committed to the repository if they
+are of long-term value).
+
+As an example, trace-django-queryset-origin.patch is a patch to django 1.10
+which adds some meta-information to the query entries provided for debug
+purpose by django.template.context_processors.debug as sql_queries.
+

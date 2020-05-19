@@ -1,0 +1,61 @@
+{% extends "submit/submit_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load humanize %}
+{% load bootstrap3 %}
+
+{% block title %}Add pre-approval{% endblock %}
+
+{% load ietf_filters %}
+
+{% block submit_content %}
+  {% origin %}
+
+  <h2>Add pre-approval</h2>
+
+  <p>You can register a pre-approved draft name. Then the chair
+    approval step of group -00 submissions is suspended for that draft name
+    so a future submission is posted to the data tracker immediately.</p>
+
+  <p>When the revision -00 draft is submitted, the pre-approval will not
+    be shown anymore as it has fulfilled its purpose (only revision -00 submissions are
+    subject to approval). If the draft never shows up, you can instead
+    later cancel the pre-approval to get rid of it.</p>
+
+  <h3>Instructions</h3>
+
+  <p class="alert alert-warning">Do not include <code>-00</code> and do not include a file extension
+    like <code>.txt</code> in the name.</p>
+
+  {% if user|has_role:"Secretariat" %}
+    <p class="alert alert-info">Only group submissions are subject to approval and are thus pre-approvable.</p>
+  {% else %}
+    <p>As chair{% if groups|length > 1 %} of {{ groups|length|apnumber }} groups{% endif %} you can pre-approve draft names on the form:</p>
+
+    <p class="buttonlist">
+      {% for g in groups %}
+        <button class="btn btn-default name-template">draft-ietf-<b>{{ g.acronym }}</b>-<i>something</i></button>
+      {% endfor %}
+    </p>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn btn-default pull-right" href="{% url "ietf.submit.views.approvals" %}#preapprovals">Back</a>
+    {% endbuttons %}
+  </form>
+
+{% endblock %}
+
+{% block js %}
+  <script>
+    $(".name-template").click(function (){
+        $("form input[name=name]").text("").focus().val($(this).text().replace("something", ""));
+    });
+  </script>
+{% endblock %}

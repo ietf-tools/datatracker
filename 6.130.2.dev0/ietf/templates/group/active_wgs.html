@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin staticfiles group_filters %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block title %}Active IETF working groups{% endblock %}
+
+{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <div class="row">
+    <div class="col-md-10">
+
+      <h1>Active IETF working groups</h1>
+
+      <a class="btn btn-default" href="{% url "ietf.group.views.concluded_groups" %}">Concluded WGs</a>
+      <a class="btn btn-default" href="{% url "ietf.group.views.all_status" %}">Status Reports</a>
+      <a class="btn btn-default" href="{% url "ietf.group.views.chair_photos" group_type="wg" %}">Chair Photos</a>
+
+      {% for area in areas %}
+        <h2 class="anchor-target" id="{{area.acronym}}">{{ area.name }} ({{ area.acronym }})</h2>
+
+        {% if area.ads %}
+          <h3>{{ area.acronym }} Area Director{{ area.ads|pluralize }} (AD{{ area.ads|pluralize }})</h3>
+          <ul class="list-unstyled">
+            {% for ad in area.ads %}
+              <li>
+		<a href="mailto:{{ ad.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>
+		<a href="{% url 'ietf.person.views.profile' email_or_name=ad.person.name %}">{{ ad.person.plain_name }}</a>
+	        {% if ad.name == "pre-ad" %} (Incoming AD){% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        {% if area.urls %}
+          <h3>{{ area.acronym }} area-specific web page{{ area.urls|pluralize}}</h3>
+          <ul class="list-unstyled">
+            {% for url in area.urls %}
+              <li><a href="{{ url.url }}">{{ url.name }}</a></li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        {% if area.groups %}
+          <h3>{{ area.acronym }} active WG{{ area.groups|pluralize}} ({{area.groups.count}})</h3>
+          <table class="table table-condensed table-striped tablesorter">
+            <thead>
+	      <tr>
+	        <th>Group</th>
+	        <th>Responsible AD</th>
+	        <th>Name</th>
+	        <th>Chairs</th>
+	      </tr>
+            </thead>
+            <tbody>
+	      {% for group in area.groups %}
+	        <tr>
+		  <td><div class="anchor-target" id="{{group.acronym}}"><a href="{% url "ietf.group.views.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></div></td>
+	          <td>
+		    {% if group.ad_role %}
+		    <a href="mailto:{{ group.ad_role.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>
+		    <a href="{% url 'ietf.person.views.profile' email_or_name=group.ad_role.person.name %}">{{ group.ad_role.person.plain_name.split.0 }}</a>
+		    {% endif %}
+	          </td>
+	          <td>{{ group.name }}</td>
+	          <td>
+                   {% for chair in group.chairs %}{% role_person_link chair %}{% if not forloop.last %} , {% endif %}
+                   {% endfor %}
+                   {% if group.ad_out_of_area %}(Assigned AD: {% role_person_link group.ad_role %}){% endif %}
+	          </td>
+	        </tr>
+	      {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <h3>No active {{ area.acronym }} WGs</h3>
+        {% endif %}
+
+        <hr>
+      {% endfor %}
+
+    </div>
+    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
+      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+        {% for area in areas %}
+          <li><a href="#{{area.acronym}}">{{ area.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

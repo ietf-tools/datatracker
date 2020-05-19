@@ -1,0 +1,23 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load bootstrap3 %}
+{% load nomcom_tags %}
+
+{% block subtitle %} - Edit Nominee {{ nominee }}{% endblock %}
+
+{% block nomcom_content %}
+  {% origin %}
+
+  <h2>Edit email<br><small>{{ nominee }}</small></h2>
+
+  <form method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    {% buttons %}
+      <input class="btn btn-primary" type="submit" value="Save">
+      <a class="btn btn-default pull-right" href="{% url "ietf.nomcom.views.private_index" year %}">Back</a>
+    {% endbuttons %}
+  </form>
+
+{% endblock %}

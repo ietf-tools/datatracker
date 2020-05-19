@@ -1,0 +1,58 @@
+      <table class="table table-condensed table-striped">
+      <thead>
+        <tr>
+          <th class="col-md-2"></th>
+          <th class="col-md-2"></th>
+          <th class="col-md-1"></th>
+          <th class="col-md-1"></th>
+          <th class="col-md-1"></th>
+          <th class="col-md-1"></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for s in sessions %}
+        <tr>
+         <td>
+	   {% ifchanged s.meeting %}
+	     {% if s.meeting.type.slug == 'ietf' %}
+	       IETF {{s.meeting.number}} 
+	     {% else %}
+	       {{s.meeting.number}}
+	     {% endif %}
+	   {% endifchanged %}
+	 </td>
+         <td class="text-right">
+          {% if s.name %}{{ s.name }}<br>{% endif %}
+          {% if s.current_status == "sched" %}
+	     {{s.time|date:"D"}} &nbsp; {{s.time|date:"Y-m-d"}}
+          {% else %}
+             {{s.current_status_name}}
+          {% endif %}
+          {% if show_request and s.meeting.type_id == 'ietf' %}
+             {% if can_edit %}
+               <br>
+               <a class="btn btn-default btn-xs" href="{% url 'ietf.secr.sreq.views.view' num=s.meeting.number acronym=s.group.acronym %}">Edit Session Request</a>
+            {% endif %}
+          {% endif %}
+         </td>
+	 <td class="text-left padded-left ">
+	   {% if show_ical %}
+             {% if s.meeting.type_id == 'ietf' %}
+	     {{s.time|date:"H:i"}}
+	     &nbsp;<a href="{% url 'ietf.meeting.views.ical_agenda' num=s.meeting.number session_id=s.id %}"><span class="fa fa-calendar"></span></a>
+	     {% else %}
+	     <span class='invisible'>{{s.time|date:"H:i"}}</span>
+	     &nbsp;<a href="{% url 'ietf.meeting.views.ical_agenda' num=s.meeting.number acronym=s.group.acronym %}"><span class="fa fa-calendar"></span></a>
+	     {% endif %}
+	   {% endif %}
+	 </td>
+         <td>{% if s.agenda %}<a href="{{ s.agenda.get_absolute_url }}">Agenda</a>{% endif %}</td>
+         <td>{% if s.minutes %}<a href="{{ s.minutes.get_absolute_url }}">Minutes</a>{% endif %}</td>
+         <td>
+	   <a href="{% url 'ietf.meeting.views.session_details' num=s.meeting.number acronym=s.group.acronym %}">
+	     {% if can_always_edit or can_edit_materials %}Edit {% endif %}Materials
+	   </a>
+	 </td>
+      {% endfor %}
+      </tbody>
+      </table>

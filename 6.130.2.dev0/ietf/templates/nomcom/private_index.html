@@ -1,0 +1,176 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
+{% load origin static %}
+
+{% block subtitle %} - Administration {% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block nomcom_content %}
+  {% origin %}
+  <h2>Nomination status</h2>
+
+  <div class="table-responsive">
+  <table class="table table-condensed table-striped table-hover col-sm-12">
+    <thead>
+      <tr>
+        <th class="col-sm-2">Position</th>
+        <th class="col-sm-1">Open</th>
+        <th class="col-sm-1">Accepting<br/>Nominations</th>
+        <th class="col-sm-1">Accepting<br/>Feedback</th>
+        <th class="col-sm-1">Nominations</th>
+        <th class="col-sm-1">Unique Nominees</th>
+        <th class="col-sm-1">Accepted</th>
+        <th class="col-sm-1">Declined</th>
+        <th class="col-sm-1">Pending</th>
+        <th class="col-sm-1">Questionnaire<br/>Responses</th>
+        <th class="col-sm-1">Comments</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in stats %}
+        <tr>
+          <td>{{ item.position__name }}</td>
+          <td>{{ item.position.is_open|yesno:"Yes,No,No" }}</td>
+          <td>{{ item.position.accepting_nominations|yesno:"Yes,No,No" }}</td>
+          <td>{{ item.position.accepting_feedback|yesno:"Yes,No,No" }}</td>
+          <td>{{ item.nominations }}</td>
+          <td>{{ item.nominees }}</td>
+          <td>{{ item.accepted }}</td>
+          <td>{{ item.declined }}</td>
+          <td>{{ item.pending }}</td>
+          <td>{{ item.questionnaire }}</td>
+          <td>{{ item.comments }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <th>Totals</th>
+        <th>{{ totals.open }}</th>
+        <th>{{ totals.accepting_nominations }}</th>
+        <th>{{ totals.accepting_feedback }}</th>
+        <th>{{ totals.nominations }}</th>
+        <th>{{ totals.nominees }}</th>
+        <th>{{ totals.accepted }}</th>
+        <th>{{ totals.declined }}</th>
+        <th>{{ totals.pending }}</th>
+        <th>{{ totals.questionnaire }}</th>
+        <th>{{ totals.comments }}</th>
+      </tr>
+      <tr>
+        <th>Unique Nominee Totals</th>
+        <th>-</th>
+        <th>-</th>
+        <th>-</th>
+        <th>-</th>
+        <th>{{ unique_totals.nominees }}</th>
+        <th>{{ unique_totals.accepted }}</th>
+        <th>{{ unique_totals.declined }}</th>
+        <th>{{ unique_totals.pending }}</th>
+        <th>-</th>
+        <th>-</th>
+      </tr>
+    </tfoot>
+  </table>
+  </div>
+
+  <h2>Nominees by position</h2>
+
+  <form class="form-inline" method="get">
+    <div class="form-group">
+      <label>State: </label>
+      <select class="form-control input-sm" name="state">
+        <option value="">All</option>
+        {% for state in states %}
+          <option value="{{ state.slug }}"
+	          {% if state.slug == selected_state %}selected="selected"{% endif%}>
+	          {{ state.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Position:</label>
+      <select class="form-control input-sm" name="position">
+        <option value="">All</option>
+        {% for position in positions %}
+          <option value="{{ position.id }}"
+	          {% if position.id == selected_position %}selected="selected"{% endif%}>
+	          {{ position.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <input class="btn btn-default" name="submit" value="Filter" type="submit">
+  </form>
+
+
+  <div class="table-responsive">
+  {% if is_chair and nomcom.group.state_id == 'active' %}
+    <form class="form-inline" id="batch-action-form" method="post">{% csrf_token %}
+  {% endif %}
+
+
+  <table class="table table-condensed table-striped table-hover tablesorter"
+         id="nominee-position-table">
+    <thead>
+      <tr>
+	{% if is_chair and nomcom.group.state_id == 'active' %}<th colspan="2"><span class="fa fa-check"></span></th>{% endif %}
+	<th colspan="2">Nominee</th>
+	<th>Position</th>
+	<th>State</th>
+	<th>Questionnaire response</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for np in nominee_positions %}
+        <tr>
+	  {% if is_chair and nomcom.group.state_id == 'active' %}
+	    <td><input class="batch-select" type="checkbox" value="{{ np.id }}" name="selected"></td>
+	    <td class="edit"><a class="btn btn-default btn-xs" href="{% url 'ietf.nomcom.views.edit_nominee' year np.nominee.id %}">Edit</a></td>
+	  {% endif %}
+
+	  <td>
+	      <a href="{% url 'ietf.person.views.profile' email_or_name=np.nominee.name %}">{{ np.nominee }}</a>
+	  </td>
+	  <td>
+	      <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=np.nominee.id %}#comment">View feedback</a>
+	  </td>
+	  <td>{{ np.position.name }}</td>
+	  <td>{{ np.state }}</td>
+	  <td>{{ np.questionnaires|yesno:"Yes,No,No" }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if is_chair %}
+
+    {% if nomcom.group.state_id == 'active' %}
+      <div class="form-group">
+        <label>Action:</label>
+        <select class="form-control" name="action">
+          <option value="" selected="selected">---------</option>
+          <option value="set_as_accepted">Set as accepted</option>
+          <option value="set_as_pending">Set as pending</option>
+          <option value="set_as_declined">Set as declined</option>
+        </select>
+      </div>
+
+      <button class="btn btn-warning"  type="submit" title="Run action">Apply</button>
+
+      </form>
+    {% endif %}
+  {% endif %}
+  </div>
+
+{% endblock %}
+
+{% block js %}
+  <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

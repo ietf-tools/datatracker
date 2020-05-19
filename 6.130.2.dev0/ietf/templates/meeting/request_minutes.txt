@@ -1,0 +1,21 @@
+{% autoescape off %} Dear WG Chairs and BOF Chairs,
+ 
+The secretariat is in the process of compiling the proceedings for {{meeting }}
+and we are still missing meeting minutes from various sessions. 
+
+The cutoff for submissions is {{ meeting.get_submission_cut_off_date }}, and the correction submissions 
+cutoff is {{ meeting.get_submission_correction_date }}.
+
+Please upload meeting minutes, as well as any presentations from your 
+sessions, at your earliest convenience using the Meeting Materials Manager 
+found here: {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.meeting.views.materials' num=meeting.number %}
+
+Alternatively, you are welcome to send them to proceedings@ietf.org for 
+manual posting.
+
+Groups that are missing minutes:{% for group in needs_minutes %}{% ifchanged group.parent %}
+
+{{group.parent.name}}:{% endifchanged %}
+    {{ group.acronym | upper }}{% if group.state_id == 'bof' %} (BoF){% endif %}{% endfor %}
+
+{% endautoescape %}

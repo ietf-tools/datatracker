@@ -1,0 +1,3 @@
+#!/bin/bash
+
+for d in ${1:-workers/*}; do ( cd $d; . env/bin/activate; buildbot-worker restart; ); done

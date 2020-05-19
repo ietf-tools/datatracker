@@ -1,0 +1,30 @@
+#!/bin/bash
+
+program=${0##*/}
+progdir=${0%/*}
+
+. $progdir/shell-utils
+
+cd $progdir/..				# now at trunk/
+
+pidfile=$(test/test-setup)		# create a patched django for test purposes, and more
+[ "$pidfile" ] || die "Didn't get a pidfile name"
+
+test/run-pyflakes ietf
+
+# Trap keyboard interrupt to ensure the test/teardown is run if we interrupt the tests
+trap 'echo "$program($LINENO): Caught Interrupt"' INT 
+
+# run tests with our patched django
+set -m
+PYTHONPATH=test:test/lib URLPREFIX="$*" python ietf/manage.py test &
+pid=$!
+echo $pid > $pidfile
+fg %1
+wait $pid
+
+# reset keyboard interrupt trap
+trap INT
+
+test/test-teardown
+

@@ -1,0 +1,6 @@
+{
+  "name": "highcharts",
+  "version": "6.2.0",
+  "main": "highcharts.js",
+  "license": "https://www.highcharts.com/license"
+}

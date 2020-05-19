@@ -1,0 +1,127 @@
+{% extends base_template %}
+{# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+{% load nomcom_tags %}
+
+{% block morecss %}
+.btn-group-vertical .btn {
+    text-align: left;
+}
+.btn-group-vertical .btn .badge {
+    float:right;
+    margin-top: 0.15em;
+    margin-right: 0.15em;
+}
+.btn-group-vertical .btn .photo {
+    display: inline-block;
+    min-width: 15px;
+    float:right;
+}
+.feedbackphoto {
+    display: inline-block;
+    float:right;
+    margin-bottom: 0.15em;
+    margin-left: 0.15em;
+}
+
+{% endblock %}
+
+{% block subtitle %} - Feedback{% endblock %}
+
+{% block nomcom_content %}
+  {% origin %}
+  <p id="instructions" class="alert alert-info">
+   {% if nomcom.group.state_id == 'conclude' %}
+     Feedback to this nomcom is closed.
+   {% else %} 
+     Select a nominee from the list of nominees to the right to obtain a new feedback form.
+   {% endif %}
+  </p>
+
+  {% if nomcom|has_publickey %}
+    <div class="row">
+      <div id="nominees" class="col-sm-4 col-sm-push-8">
+        <h3>Nominees</h3>
+
+        {% for p in positions %}
+          {% if p.nomineeposition_set.accepted.not_duplicated %}
+            <h4>{{ p.name }}</h4>
+            <div class="btn-group-vertical form-group">
+              {% for np in p.nomineeposition_set.accepted.not_duplicated %}
+                <a class="btn btn-default btn-xs" {% if nomcom.group.state_id != 'conclude' %}href="?nominee={{np.nominee.id}}&position={{ np.position.id}}"{% endif %}>
+	          {{ np.nominee.name }}
+                  {% with count=counts|lookup:np.position.id|lookup:np.nominee.id %}
+                    <span class="badge" 
+                          title="{% if count %}{{count}} earlier comment{{count|pluralize}} from you {% else %}You have not yet provided feedback {% endif %} on {{np.nominee.email.address}} as {{np.position}}">
+                      {{ count | default:"no feedback" }}
+                    </span>&nbsp;
+                  {% endwith %}
+                </a>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endfor %}
+
+        <p>
+          A number after a name indicates
+          that you have given comments on this nominee
+          earlier. Position the mouse pointer over
+          the badge for more information about this
+          nominee.
+        </p>
+
+        <h3>Topics</h3>
+        <div class="btn-group-vertical form-group">
+          {% for t in topics %}
+            <a class="btn btn-default btn-xs" {% if nomcom.group.state_id != 'conclude' %}href="?topic={{t.id}}"{% endif %}> 
+              {{t.subject}} 
+              {% with count=topic_counts|lookup:t.id %}
+                <span class="badge" 
+                      title="{% if count %}{{count}} earlier comment{{count|pluralize}} from you {% else %}You have not yet provided feedback {% endif %} on {{t.subject}}">
+                  {{ count | default:"no feedback" }}
+                </span>&nbsp;
+              {% endwith %}
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="col-sm-8 col-sm-pull-4">
+        {% if form %}
+          {% if form.position %}
+            <h3> Provide feedback about 
+                <a href="{% url 'ietf.person.views.profile' email_or_name=form.nominee.name %}">
+                    {{form.nominee.email.person.name}}
+                </a> ({{form.nominee.email.address}}) for the {{form.position.name}} position.
+            {% if nomcom.show_nominee_pictures and form.nominee.email.person.photo_thumb %}
+              <span class="feedbackphoto"><img src="{{form.nominee.email.person.photo_thumb.url}}" width=100 /></span>
+            {% endif %}
+            </h3>
+          {% elif form.topic %}
+            <h3 >Provide feedback about "{{form.topic.subject}}"</h3>
+            <div>A description of this topic is at the end of the page.</div>
+          {% endif %}
+          <p>This feedback will only be available to <a href="{% url 'ietf.nomcom.views.year_index' year=year %}">NomCom {{year}}</a>.
+             You may have the feedback mailed back to you by selecting the option below.</p>
+
+          <form id="feedbackform" method="post">
+            {% csrf_token %}
+            {% bootstrap_form form %}
+            {% buttons %}
+              <input class="btn btn-primary" type="submit" value="Save" name="save">
+            {% endbuttons %}
+          </form>
+          {% if form.topic %}
+          <div class="panel panel-default">
+            <div class="panel-heading">Description: {{form.topic.subject}}</div>
+            <div class="panel-body">{{form.topic.get_description|safe}}</div>
+          </div>
+        {% endif %}
+      {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+{% endblock %}

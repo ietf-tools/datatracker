@@ -1,0 +1,69 @@
+{% load origin %}{% origin %}
+<div id="chart"></div>
+
+<script>
+ var chartConf = {
+     chart: {
+         type: 'column'
+     },
+     plotOptions: {
+         column: {
+             animation: false
+         }
+     },
+     title: {
+         text: '{{ stats_title|escapejs }}'
+     },
+     xAxis: {
+         tickInterval: 1,
+         title: {
+             text: 'Author of number of {{ doc_label }}s'
+         },
+         max: 20
+     },
+     yAxis: {
+         title: {
+             text: 'Percentage of authors'
+         },
+         labels: {
+             formatter: function () {
+                 return this.value + '%';
+             }
+         }
+     },
+     tooltip: {
+         formatter: function () {
+             var s = '<b>' + this.x + ' ' + (this.x == 1 ? "{{ doc_label }}" : '{{ doc_label }}s') + '</b>';
+
+             $.each(this.points, function () {
+                 s += '<br/>' + chartConf.yAxis.title.text + ': ' + this.y.toFixed(1) + '%';
+             });
+
+             return s;
+         },
+         shared: true
+     },
+     series: {{ chart_data }}
+ };
+</script>
+
+<h3>Data</h3>
+
+<table class="table table-condensed stats-data">
+  <thead>
+    <tr>
+      <th>Documents</th>
+      <th>Percentage of authors</th>
+      <th>Authors</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for document_count, percentage, count, names in table_data %}
+      <tr>
+        <td>{{ document_count }}</td>
+        <td>{{ percentage|floatformat:2 }}%</td>
+        <td>{% include "stats/includes/number_with_details_cell.html" with content_limit=10 %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

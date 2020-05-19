@@ -1,0 +1,35 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+{% load staticfiles %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+{% endblock %}
+
+{% block subtitle %} - Edit members{% endblock %}
+
+{% block nomcom_content %}
+  {% origin %}
+  <h2>
+     Edit members
+  </h2>
+
+  <form method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    {% buttons %}
+      <button class="btn btn-primary" type="submit">Save</button>
+      <a class="btn btn-default" href="{% url 'ietf.nomcom.views.private_index' year %}">Cancel</a>
+    {% endbuttons %}
+  </form>
+
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+{% endblock %}

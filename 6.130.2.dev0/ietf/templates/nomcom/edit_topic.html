@@ -1,0 +1,32 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2017, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles %}
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+{% endblock %}
+
+{% load bootstrap3 %}
+
+{% block subtitle %} - {% if topic %}Edit{% else %}Add{% endif %} topics{% endblock %}
+
+{% block nomcom_content %}
+  {% origin %}
+  <h2>{% if topic %}Edit{% else %}Add{% endif %} topic</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <input class="btn btn-primary" type="submit" value="{% if topic %}Save{% else %}Add{% endif %}">
+      <a class="btn btn-default pull-right" href="../">Back</a>
+    {% endbuttons %}
+  </form>
+{% endblock %}
+
+{% block content_end %}
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+{% endblock %}

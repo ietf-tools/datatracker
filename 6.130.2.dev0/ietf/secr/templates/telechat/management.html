@@ -1,0 +1,21 @@
+{% extends "telechat/base_telechat.html" %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; {{ date }}
+{% endblock %}
+
+
+{% block subsection %}
+<div id="telechat-content">
+  <h1>Management Issues</h1>
+    <ul>
+      {% for issue in issues %}
+        <li><h3>{{ issue.title }}</h3></li>
+      {% endfor %}
+    </ul>
+    <br>
+    <a href="/admin/iesg/telechatagendaitem/" target="_blank">Add a new Management Issue</a>
+
+</div>
+
+{% endblock %}
