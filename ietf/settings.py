@@ -715,6 +715,13 @@ CACHES = {
             'MAX_ENTRIES': 100000,      # 100,000
         },
     },
+    'slowpages': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/a/cache/datatracker/slowpages',
+        'OPTIONS': {
+            'MAX_ENTRIES': 5000,
+        },
+    },
 }
 
 HTMLIZER_VERSION = 1
@@ -1137,7 +1144,15 @@ if SERVER_MODE != 'production':
             'OPTIONS': {
                 'MAX_ENTRIES': 1000,
             },
-        }
+        },
+        'slowpages': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+            #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            'LOCATION': '/var/cache/datatracker/',
+            'OPTIONS': {
+                'MAX_ENTRIES': 5000,
+            },
+        },
     }
     SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
