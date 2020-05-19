@@ -24,6 +24,7 @@ from simple_history.models import HistoricalRecords
 
 import debug                            # pyflakes:ignore
 
+from ietf.name.models import ExtResourceName
 from ietf.person.name import name_parts, initials, plain_name
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
@@ -237,6 +238,12 @@ class Person(models.Model):
         from ietf.ietfauth.utils import has_role
         return [ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES if r==None or has_role(self.user, r) ]
 
+
+class PersonExtResource(models.Model):
+    person = ForeignKey(Person) 
+    name = models.ForeignKey(ExtResourceName, on_delete=models.CASCADE)
+    display_name = models.CharField(max_length=255, default='', blank=True)
+    value = models.CharField(max_length=2083) # 2083 is the maximum legal URL length
 
 class Alias(models.Model):
     """This is used for alternative forms of a name.  This is the

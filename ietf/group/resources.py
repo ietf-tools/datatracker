@@ -13,7 +13,7 @@ from ietf import api
 
 from ietf.group.models import (Group, GroupStateTransitions, GroupMilestone, GroupHistory, # type: ignore
     GroupURL, Role, GroupEvent, RoleHistory, GroupMilestoneHistory, MilestoneGroupEvent,
-    ChangeStateGroupEvent, GroupFeatures, HistoricalGroupFeatures)
+    ChangeStateGroupEvent, GroupFeatures, HistoricalGroupFeatures, GroupExtResource)
 
 
 from ietf.person.resources import PersonResource
@@ -348,3 +348,23 @@ class HistoricalGroupFeaturesResource(ModelResource):
             "history_user": ALL_WITH_RELATIONS,
         }
 api.group.register(HistoricalGroupFeaturesResource())
+
+
+from ietf.name.resources import ExtResourceNameResource
+class GroupExtResourceResource(ModelResource):
+    group            = ToOneField(GroupResource, 'group')
+    name             = ToOneField(ExtResourceNameResource, 'name')
+    class Meta:
+        queryset = GroupExtResource.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'groupextresource'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "display_name": ALL,
+            "value": ALL,
+            "group": ALL_WITH_RELATIONS,
+            "name": ALL_WITH_RELATIONS,
+        }
+api.group.register(GroupExtResourceResource())

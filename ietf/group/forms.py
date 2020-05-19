@@ -11,10 +11,11 @@ import debug      # pyflakes:ignore
 # Django imports
 from django import forms
 from django.utils.html import mark_safe # type:ignore
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 
 # IETF imports
 from ietf.group.models import Group, GroupHistory, GroupStateName
-from ietf.name.models import ReviewTypeName
+from ietf.name.models import ReviewTypeName, ExtResourceName
 from ietf.person.fields import SearchableEmailsField, PersonEmailChoiceField
 from ietf.person.models import Person
 from ietf.review.models import ReviewerSettings, UnavailablePeriod, ReviewSecretarySettings
@@ -24,6 +25,7 @@ from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.text import strip_suffix
 #from ietf.utils.ordereddict import insert_after_in_ordered_dict
 from ietf.utils.fields import DatepickerDateField, MultiEmailField
+from ietf.utils.validators import validate_external_resource_value
 
 # --- Constants --------------------------------------------------------
 
@@ -80,6 +82,7 @@ class GroupForm(forms.Form):
     list_subscribe = forms.CharField(max_length=255, required=False)
     list_archive = forms.CharField(max_length=255, required=False)
     urls = forms.CharField(widget=forms.Textarea, label="Additional URLs", help_text="Format: https://site/path (Optional description). Separate multiple entries with newline. Prefer HTTPS URLs where possible.", required=False)
+    resources = forms.CharField(widget=forms.Textarea, label="Additional Resources", help_text="UPDATEME: Format: https://site/path (Optional description). Separate multiple entries with newline. Prefer HTTPS URLs where possible.", required=False)
     closing_note = forms.CharField(widget=forms.Textarea, label="Closing note", required=False)
 
     def __init__(self, *args, **kwargs):
@@ -125,6 +128,12 @@ class GroupForm(forms.Form):
             for f in keys:
                 if f != field and not (f == 'closing_note' and field == 'state'):
                     del self.fields[f]
+        if 'resources' in self.fields:
+            info =   "Format: 'tag value (Optional description)'. " \
+                   + "Separate multiple entries with newline. When the value is a URL, use https:// where possible.<br>" \
+                   + "Valid tags: %s" % ', '.join([ o.slug for o in ExtResourceName.objects.all().order_by('slug') ])
+            self.fields['resources'].help_text = mark_safe('<div>'+info+'</div>')
+
 
     def clean_acronym(self):
         # Changing the acronym of an already existing group will cause 404s all
@@ -183,6 +192,30 @@ class GroupForm(forms.Form):
 
     def clean_urls(self):
         return [x.strip() for x in self.cleaned_data["urls"].splitlines() if x.strip()]
+
+    def clean_resources(self):
+        lines = [x.strip() for x in self.cleaned_data["resources"].splitlines() if x.strip()]
+        errors = []
+        for l in lines:
+            parts = l.split()
+            if len(parts) == 1:
+                errors.append("Too few fields: Expected at least tag and value: '%s'" % l)
+            elif len(parts) >= 2:
+                name_slug = parts[0]
+                try:
+                    name = ExtResourceName.objects.get(slug=name_slug)
+                except ObjectDoesNotExist:
+                    errors.append("Bad tag in '%s': Expected one of %s" % (l, ', '.join([ o.slug for o in ExtResourceName.objects.all() ])))
+                    continue
+                value = parts[1]
+                try:
+                    validate_external_resource_value(name, value)
+                except ValidationError as e:
+                    e.message += " : " + value
+                    errors.append(e)
+        if errors:
+            raise ValidationError(errors)
+        return lines
 
     def clean_delegates(self):
         if len(self.cleaned_data["delegates"]) > MAX_GROUP_DELEGATES:

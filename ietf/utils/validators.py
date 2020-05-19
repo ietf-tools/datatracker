@@ -5,10 +5,12 @@
 import os
 import re
 from pyquery import PyQuery
+from urllib.parse import urlparse
+
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, URLValidator, EmailValidator
 from django.template.defaultfilters import filesizeformat
 from django.utils.deconstruct import deconstructible
 
@@ -83,3 +85,37 @@ def validate_no_html_frame(file):
     q = PyQuery(file.read())
     if q("frameset") or q("frame") or q("iframe"):
         raise ValidationError('Found content with html frames.  Please upload a file that does not use frames')
+
+# instantiations of sub-validiators used by the external_resource validator
+
+validate_url = URLValidator()
+validate_http_url = URLValidator(schemes=['http','https'])
+validate_email = EmailValidator()
+
+def validate_external_resource_value(name, value):
+    """ validate a resource value using its name's properties """
+
+    if name.type.slug == 'url':
+
+        if name.slug in ( 'github_org', 'github_repo' ):
+            validate_http_url(value)
+            if urlparse(value).netloc.lower() != 'github.com':
+                raise ValidationError('URL must be a github url')
+        elif name.slug == 'jabber_room':
+            pass 
+            # TODO - build a xmpp URL validator. See XEP-0032.
+            # It should be easy to build one by copyhacking URLValidator,
+            # but reading source says it would be better to wait to do that
+            # until after we make the Django 2 transition
+        else:
+            validate_url(value)
+
+    elif name.type.slug == 'email':
+        validate_email(value)
+
+    elif name.type.slug == 'string':
+        pass
+
+    else:
+        raise ValidationError('Unknown resource type '+name.type.name)
+

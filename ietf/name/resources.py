@@ -17,7 +17,7 @@ from ietf.name.models import ( AgendaTypeName, BallotPositionName, ConstraintNam
     LiaisonStatementState, LiaisonStatementTagName, MeetingTypeName, NomineePositionStateName,
     ReviewAssignmentStateName, ReviewRequestStateName, ReviewResultName, ReviewTypeName,
     RoleName, RoomResourceName, SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName,
-    TopicAudienceName, ReviewerQueuePolicyName, TimerangeName)
+    TopicAudienceName, ReviewerQueuePolicyName, TimerangeName, ExtResourceTypeName, ExtResourceName)
 
 class TimeSlotTypeNameResource(ModelResource):
     class Meta:
@@ -615,3 +615,38 @@ class TimerangeNameResource(ModelResource):
             "order": ALL,
         }
 api.name.register(TimerangeNameResource())
+
+
+class ExtResourceTypeNameResource(ModelResource):
+    class Meta:
+        queryset = ExtResourceTypeName.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'extresourcetypename'
+        ordering = ['slug', ]
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(ExtResourceTypeNameResource())
+
+class ExtResourceNameResource(ModelResource):
+    type             = ToOneField(ExtResourceTypeNameResource, 'type')
+    class Meta:
+        queryset = ExtResourceName.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'extresourcename'
+        ordering = ['slug', ]
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+            "type": ALL_WITH_RELATIONS,
+        }
+api.name.register(ExtResourceNameResource())
