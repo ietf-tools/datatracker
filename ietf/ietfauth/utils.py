@@ -81,7 +81,7 @@ def has_role(user, role_names, *args, **kwargs):
             "Recording Manager": Q(person=person,name="recman",group__type="ietf",group__state="active", ),
             "Reviewer": Q(person=person, name="reviewer", group__state="active"),
             "Review Team Secretary": Q(person=person, name="secr", group__reviewteamsettings__isnull=False,group__state="active", ),
-            "IRSG Member": (Q(person=person, name="member", group__acronym="irsg") | Q(person=person, name="chair", group__acronym="irtf")),
+            "IRSG Member": (Q(person=person, name="member", group__acronym="irsg") | Q(person=person, name="chair", group__acronym="irtf") | Q(person=person, name="atlarge", group__acronym="irsg")),
 
             }
 
