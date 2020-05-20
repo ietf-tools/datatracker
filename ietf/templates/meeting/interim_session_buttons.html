@@ -3,6 +3,7 @@
 {% load staticfiles %}
 {% load textfilters %}
 {% origin %}
+{% with session.official_timeslotassignment as item %}
     {% if session.agenda and show_agenda %}
       {% include "meeting/session_agenda_include.html" %}
       <!-- agenda pop-up button -->
@@ -86,6 +87,5 @@
       {% endif %}
     {% endwith %}
   {% endif %}
-
-
+{% endwith %}
   
