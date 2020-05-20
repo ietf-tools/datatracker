@@ -1244,7 +1244,9 @@ def eligible(request, year):
     # today's date makes sense; for previous nomcoms, we should probably get
     # the date of the announcement of the Call for Volunteers, instead
     date = datetime.date.today()
-    previous_five = Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]
+    previous_five = ( Meeting.objects.filter(type='ietf',date__lte=date)
+                        .exclude(city='').exclude(city='Virtual')
+                        .order_by('-date')[:5] )
     log.assertion("len(previous_five) == 5")
     attendees = {}
     potentials = set()
