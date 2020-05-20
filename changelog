@@ -1,3 +1,30 @@
+ietfdb (7.0.0) ietf; urgency=medium
+
+  **Upgrade to Django 2.0**
+
+  This release moves the datatracker on to the Django 2.0 framework, from the
+  earlier Django 1.11.  Further upgrades to Django 2.1 and 2.2 will follow.
+  The major version bump is motivated by not being able to run under Python 2.x
+  and Django 1.x any more.
+
+  There are also some other minor changes:
+
+  * Merged in ^/personal/henrik/6.129.2-django2.0 which contains an upgrade 
+    of Django from 1.11 to 2.0, with the accompanying code changes needed.
+
+  * Added a template with-clause that was lost in merging.
+
+  * Merged in [17803] from rcross@amsl.com:
+    Made various changes to session request form, mostly removal of fields, in
+    order to support virtual session requests. 
+    Also added settings.SECR_VIRTUAL_MEETINGS list.
+
+  * Fixed a test that incorrectly looked for author.name instead of
+    author.plain_name()
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 May 2020 09:33:26 +0000
+
+
 ietfdb (6.130.1) ietf; urgency=medium
 
   **Bugfixes**
