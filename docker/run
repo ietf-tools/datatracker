@@ -74,8 +74,8 @@ trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; 
 # Option parsing
 
 # Options
-shortopts=dhi:m:Mp:r:t:vVu:
-longopts=download-data,help,ietfdb-url=,mysqldata=,no-mysqldir,port=,docker-repo=,tag=,verbose,version,user=,
+shortopts=dhi:m:Mp:r:t:vVu:cC
+longopts=download-data,help,ietfdb-url=,mysqldata=,no-mysqldir,port=,docker-repo=,tag=,verbose,version,user=,cached,no-cached
 
 # Default values
 MYSQLDIR=$parent/data/mysql
@@ -86,6 +86,7 @@ DBURL=https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2
 WHO=$(whoami)
 WHOUID=$(id -u $WHO)
 WHOGID=$(id -g $WHO)
+CACHED=''
 
 if   [ "$(uname)" = "Linux" ]; then
     args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
@@ -98,10 +99,15 @@ else
     if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
     set -- $args
     sed="sed -E"
+    if [ "$(uname)" = "Darwin" ]; then
+	CACHED=':cached'
+    fi
 fi
 
 while true ; do
     case "$1" in
+	-c| --cached)	CACHED=':cached';;	# Use cached disk access to reduce system load
+	-C| --no-cached)	CACHED='';;	# Use fully synchronized disk access
 	-d| --download-data) DOWNLOAD=1;;	# Download and set up the database files
 	-h| --help)	usage; exit;;		# Show this help, then exit
 	-f| --filedir)	FILEDIR=$2; shift;;	# Set the desired location of drafts, charters etc.
@@ -225,14 +231,15 @@ else
     echo -e "\nThe web interface for 'runserver' should appear on $URL\n"
     echo -e "User $WHO ($WHOUID:$WHOGID)"
     if [ -z "$MYSQLDIR" ]; then
-	docker run -ti -p $PORT:8000 -v "$HOME:/home/$WHO"                              \
+	docker run -ti -p $PORT:8000 -v "$HOME:/home/$WHO$CACHED"                       \
 	    -e USER="$WHO" -e DATADIR="${parent#$HOME/}/data" -e CWD="${PWD#$HOME/}"	\
 	    -e TAG="$TAG" -e FILEDIR=${FILEDIR#$HOME} -e UID="$WHOUID" -e GID="$WHOGID"	\
 	    "$REPO:$TAG" "$@"
     else
-	docker run -ti -p $PORT:8000 -v "$HOME:/home/$WHO" -v "$MYSQLDIR:/var/lib/mysql"\
-	    -e USER="$WHO" -e DATADIR="${parent#$HOME/}/data" -e CWD="${PWD#$HOME/}"	\
-	    -e TAG="$TAG" -e FILEDIR=${FILEDIR#$HOME} -e UID="$WHOUID" -e GID="$WHOGID"	\
+	docker run -ti -p $PORT:8000 -v "$HOME:/home/$WHO$CACHED"                       \
+	    -v "$MYSQLDIR:/var/lib/mysql" -e USER="$WHO"                                \
+	    -e DATADIR="${parent#$HOME/}/data" -e CWD="${PWD#$HOME/}" -e TAG="$TAG"     \
+	    -e FILEDIR=${FILEDIR#$HOME} -e UID="$WHOUID" -e GID="$WHOGID"               \
 	    "$REPO:$TAG" "$@"
     fi
 
