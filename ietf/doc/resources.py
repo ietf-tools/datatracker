@@ -777,7 +777,7 @@ class DocExtResourceResource(ModelResource):
         queryset = DocExtResource.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'docextresource'
+        resource_name = 'docextresource'
         ordering = ['id', ]
         filtering = { 
             "id": ALL,

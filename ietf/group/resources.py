@@ -358,7 +358,7 @@ class GroupExtResourceResource(ModelResource):
         queryset = GroupExtResource.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'groupextresource'
+        resource_name = 'groupextresource'
         ordering = ['id', ]
         filtering = { 
             "id": ALL,

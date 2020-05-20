@@ -622,7 +622,7 @@ class ExtResourceTypeNameResource(ModelResource):
         queryset = ExtResourceTypeName.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'extresourcetypename'
+        resource_name = 'extresourcetypename'
         ordering = ['slug', ]
         filtering = { 
             "slug": ALL,
@@ -639,7 +639,7 @@ class ExtResourceNameResource(ModelResource):
         queryset = ExtResourceName.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'extresourcename'
+        resource_name = 'extresourcename'
         ordering = ['slug', ]
         filtering = { 
             "slug": ALL,

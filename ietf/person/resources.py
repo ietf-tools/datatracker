@@ -192,7 +192,7 @@ class PersonExtResourceResource(ModelResource):
         queryset = PersonExtResource.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'personextresource'
+        resource_name = 'personextresource'
         ordering = ['id', ]
         filtering = { 
             "id": ALL,
