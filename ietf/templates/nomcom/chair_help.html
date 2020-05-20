@@ -49,31 +49,31 @@ x509_extensions    = ss_v3_ca
 
 [ req_distinguished_name ]
 commonName           = Common Name (e.g. NomComYY)
-commonName_default   = NomCom{{year|slice:"2:"}}
+commonName_default   = NomCom{{year}}
 
 [ ss_v3_ca ]
 
 subjectKeyIdentifier = hash
 keyUsage = critical, digitalSignature, keyEncipherment, dataEncipherment
 basicConstraints = critical, CA:true
-subjectAltName = email:nomcom{{year|slice:"2:"}}@ietf.org
+subjectAltName = email:nomcom{{year}}@ietf.org
 extendedKeyUsage= emailProtection
 </pre></li>
 <li>Generate a private key and corresponding certificate:
-<pre>openssl req -config nomcom-config.cnf -x509 -new -newkey rsa:2048 -sha256 -days 730 -nodes -keyout privateKey-nomcom{{year|slice:"2:"}}.pem -out nomcom{{year|slice:"2:"}}.cert</pre>
+<pre>openssl req -config nomcom-config.cnf -x509 -new -newkey rsa:2048 -sha256 -days 730 -nodes -keyout privateKey-nomcom{{year}}.pem -out nomcom{{year}}.cert</pre>
 (Just press Enter when presented with "Common Name (e.g. NomComYY) [NomCom15]:")
 </li>
 </ol>
 <p>
 You will upload the certificate to the datatracker (and make it available to people wishing to send mail) in the steps below.
 </p>
-<p>Securely distribute privateKey-nomcom{{year|slice:"2:"}} to your NomCom advisor(s), liaisons, and members, as they become known.</p>
+<p>Securely distribute privateKey-nomcom{{year}} to your NomCom advisor(s), liaisons, and members, as they become known.</p>
 
 
 <h3 class="anchor-target" id="configure">Configure the Datatracker NomCom</h3>
 
 <p>Sign into the datatracker and go to the <a href="{% url 'ietf.nomcom.views.edit_nomcom' year %}">NomCom Configuration Page</a>.</p>
-<p>Use the Browse button to select the public nomcom{{year|slice:"2:"}}.cert file created above.</p>
+<p>Use the Browse button to select the public nomcom{{year}}.cert file created above.</p>
 <p>Enter any special instructions you want to appear on the nomination entry form in the "Help text for nomination form" box. These will appear on the form immediately below the field labeled "Candidate's qualifications for the position".</p>
 <p>Choose whether to have the datatracker send questionnares, and whether to automatically remind people to accept nominations and return questionnaires, according to the instructions on the form.</p>
 <p>Press the save button.</p>
