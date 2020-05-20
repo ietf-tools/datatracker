@@ -44,7 +44,7 @@ class {{model.name}}Resource(ModelResource):{% if model.foreign_keys %}{% for fk
         queryset = {{model.name}}.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = '{{model.resource_name}}'
+        {% if model.rn_comment %}#resource_name = '{{model.resource_name}}'{% else %}resource_name = '{{model.resource_name}}'{% endif %}
         ordering = ['{{model.pk_name}}', ]
         filtering = { {% for name in model.plain_names %}
             "{{ name }}": ALL,{%endfor%}{% for name in model.fk_names%}
@@ -178,6 +178,7 @@ class Command(AppCommand):
                             fk_names=fk_names,
                             m2m_names=m2m_names,
                             pk_name=pk_name,
+                            rn_comment=False if resource_name.endswith('resource') else True,
                         )
 
                     # Sort resources according to internal FK reference depth
