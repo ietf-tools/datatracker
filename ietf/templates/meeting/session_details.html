@@ -17,7 +17,7 @@
 
   <h1>{{ meeting }} : {{ acronym }}
     {% if meeting.date >= thisweek %}
-      <a class="regular pull-right" title="icalendar entry for {{acronym}}@{{meeting.number}}" href="{% url 'ietf.meeting.views.ical_agenda' num=meeting.number acronym=acronym %}"><span class="fa fa-fw fa-calendar"></span> </a>
+      <a class="regular pull-right" title="icalendar entry for {{acronym}}@{{meeting.number}}" href="{% url 'ietf.meeting.views.agenda_ical' num=meeting.number acronym=acronym %}"><span class="fa fa-fw fa-calendar"></span> </a>
     {% endif %}
   </h1>
 

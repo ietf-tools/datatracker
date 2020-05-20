@@ -12,7 +12,7 @@ the original request.
 {% if agenda_note %}
 Special Note: {{ agenda_note }}{% endif %}
 
-iCalendar: {{ baseurl }}{% url "ietf.meeting.views.ical_agenda" num=meeting.number acronym=group.acronym %}
+iCalendar: {{ baseurl }}{% url "ietf.meeting.views.agenda_ical" num=meeting.number acronym=group.acronym %}
 
 Request Information:
 

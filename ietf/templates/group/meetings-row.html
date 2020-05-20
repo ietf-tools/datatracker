@@ -39,10 +39,10 @@
 	   {% if show_ical %}
              {% if s.meeting.type_id == 'ietf' %}
 	     {{s.time|date:"H:i"}}
-	     &nbsp;<a href="{% url 'ietf.meeting.views.ical_agenda' num=s.meeting.number session_id=s.id %}"><span class="fa fa-calendar"></span></a>
+	     &nbsp;<a href="{% url 'ietf.meeting.views.agenda_ical' num=s.meeting.number session_id=s.id %}"><span class="fa fa-calendar"></span></a>
 	     {% else %}
 	     <span class='invisible'>{{s.time|date:"H:i"}}</span>
-	     &nbsp;<a href="{% url 'ietf.meeting.views.ical_agenda' num=s.meeting.number acronym=s.group.acronym %}"><span class="fa fa-calendar"></span></a>
+	     &nbsp;<a href="{% url 'ietf.meeting.views.agenda_ical' num=s.meeting.number acronym=s.group.acronym %}"><span class="fa fa-calendar"></span></a>
 	     {% endif %}
 	   {% endif %}
 	 </td>

@@ -17,7 +17,7 @@
              {% endif %}
              <!-- iCalendar item -->
              {% if now < item.timeslot.end_time %}
-               <a title="icalendar entry for {{acronym}} session {{ forloop.counter }}" href="{% url 'ietf.meeting.views.ical_agenda' num=meeting.number session_id=session.id %}"><span class="fa fa-fw fa-calendar-o"></span> </a>
+               <a title="icalendar entry for {{acronym}} session {{ forloop.counter }}" href="{% url 'ietf.meeting.views.agenda_ical' num=meeting.number session_id=session.id %}"><span class="fa fa-fw fa-calendar-o"></span> </a>
              {% endif %}
            </span>
          {% endif %}

@@ -33,7 +33,7 @@
     {% endif %}
 
     {% for session in doc.sessions %}
-      <a href="{% url 'ietf.meeting.views.ical_agenda' num=session.meeting.number session_id=session.id %}"
+      <a href="{% url 'ietf.meeting.views.agenda_ical' num=session.meeting.number session_id=session.id %}"
 	title="Calendar entry: document is on the agenda for {{ session.group.acronym }}@{{ session.meeting }}">
 	{# font-size set to make the width of fa-calendar come out the same as fa-bookmark-o above: #}
 	<span class="fa fa-calendar" style="font-size: 75%"></span>

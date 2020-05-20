@@ -345,7 +345,7 @@
           <td>
             {% if presentations %}
               {% for pres in presentations %}
-                <a href="{% url 'ietf.meeting.views.ical_agenda' num=pres.session.meeting.number session_id=pres.session.id %}"><span class="fa fa-calendar"></span></a>
+                <a href="{% url 'ietf.meeting.views.agenda_ical' num=pres.session.meeting.number session_id=pres.session.id %}"><span class="fa fa-calendar"></span></a>
                 {{ pres.session.short_name }} at {{ pres.session.meeting }}
                 {% if pres.rev and pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %}, {% endif %}
               {% endfor %}
