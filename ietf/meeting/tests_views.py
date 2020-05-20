@@ -197,7 +197,7 @@ class MeetingTests(TestCase):
         self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
 
         # iCal
-        r = self.client.get(urlreverse("ietf.meeting.views.ical_agenda", kwargs=dict(num=meeting.number))
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
                             + "?" + session.group.parent.acronym.upper())
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
@@ -503,7 +503,7 @@ class MeetingTests(TestCase):
         s2 = SessionFactory.create(meeting=meeting, group=s1.group, add_to_schedule=False)
         SchedTimeSessAssignment.objects.create(timeslot=t2, session=s2, schedule=meeting.schedule)
         #
-        url = urlreverse('ietf.meeting.views.ical_agenda', kwargs={'num':meeting.number, 'acronym':s1.group.acronym, })
+        url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number, 'acronym':s1.group.acronym, })
         r = self.client.get(url)
         self.assertEqual(r.get('Content-Type'), "text/calendar")
         self.assertContains(r, 'BEGIN:VEVENT')
@@ -513,7 +513,7 @@ class MeetingTests(TestCase):
         self.assertContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
         self.assertContains(r, 'END:VEVENT')
         #
-        url = urlreverse('ietf.meeting.views.ical_agenda', kwargs={'num':meeting.number, 'session_id':s1.id, })
+        url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number, 'session_id':s1.id, })
         r = self.client.get(url)
         self.assertEqual(r.get('Content-Type'), "text/calendar")
         self.assertContains(r, 'BEGIN:VEVENT')
@@ -606,7 +606,7 @@ class MeetingTests(TestCase):
 
     def test_cancelled_ics(self):
         session=SessionFactory(meeting__type_id='ietf',status_id='canceled')
-        url = urlreverse('ietf.meeting.views.ical_agenda', kwargs=dict(num=session.meeting.number))
+        url = urlreverse('ietf.meeting.views.agenda_ical', kwargs=dict(num=session.meeting.number))
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         self.assertIn('STATUS:CANCELLED',unicontent(r))
@@ -2176,7 +2176,7 @@ class InterimTests(TestCase):
         s2 = SessionFactory.create(meeting=meeting, group=s1.group, add_to_schedule=False)
         SchedTimeSessAssignment.objects.create(timeslot=t2, session=s2, schedule=meeting.schedule)
         #
-        url = urlreverse('ietf.meeting.views.ical_agenda', kwargs={'num':meeting.number, 'acronym':s1.group.acronym, })
+        url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number, 'acronym':s1.group.acronym, })
         r = self.client.get(url)
         self.assertEqual(r.get('Content-Type'), "text/calendar")
         self.assertContains(r, 'BEGIN:VEVENT')
@@ -2186,7 +2186,7 @@ class InterimTests(TestCase):
         self.assertContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
         self.assertContains(r, 'END:VEVENT')
         #
-        url = urlreverse('ietf.meeting.views.ical_agenda', kwargs={'num':meeting.number, 'session_id':s1.id, })
+        url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number, 'session_id':s1.id, })
         r = self.client.get(url)
         self.assertEqual(r.get('Content-Type'), "text/calendar")
         self.assertContains(r, 'BEGIN:VEVENT')
@@ -2256,7 +2256,7 @@ class IphoneAppJsonTests(TestCase):
     def test_iphone_app_json_interim(self):
         make_meeting_test_data()
         meeting = Meeting.objects.filter(type_id='interim').order_by('id').last()
-        url = urlreverse('ietf.meeting.views.json_agenda',kwargs={'num':meeting.number})
+        url = urlreverse('ietf.meeting.views.agenda_json',kwargs={'num':meeting.number})
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         data = r.json()
@@ -2278,7 +2278,7 @@ class IphoneAppJsonTests(TestCase):
             room.x2 = random.randint(0,100)
             room.y2 = random.randint(0,100)
             room.save()
-        url = urlreverse('ietf.meeting.views.json_agenda',kwargs={'num':meeting.number})
+        url = urlreverse('ietf.meeting.views.agenda_json',kwargs={'num':meeting.number})
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         data = r.json()

@@ -19,8 +19,8 @@ safe_for_all_meeting_types = [
     url(r'^session/(?P<session_id>\d+)/remove_from_session$', views.ajax_remove_slides_from_session),
     url(r'^session/(?P<session_id>\d+)/reorder_in_session$', views.ajax_reorder_slides_in_session),
     url(r'^session/(?P<session_id>\d+)/doc/%(name)s/remove$' % settings.URL_REGEXPS, views.remove_sessionpresentation),
-    url(r'^session/(?P<session_id>\d+)\.ics$',    views.ical_agenda),
-    url(r'^sessions/(?P<acronym>[-a-z0-9]+)\.ics$', views.ical_agenda),
+    url(r'^session/(?P<session_id>\d+)\.ics$',    views.agenda_ical),
+    url(r'^sessions/(?P<acronym>[-a-z0-9]+)\.ics$', views.agenda_ical),
     url(r'^slidesubmission/(?P<slidesubmission_id>\d+)$', views.approve_proposed_slides)
 ]
 
@@ -71,7 +71,7 @@ type_interim_patterns = [
     url(r'^agenda/(?P<acronym>[A-Za-z0-9-]+)-drafts.pdf$', views.session_draft_pdf),
     url(r'^agenda/(?P<acronym>[A-Za-z0-9-]+)-drafts.tgz$', views.session_draft_tarfile),
     url(r'^materials/%(document)s((?P<ext>\.[a-z0-9]+)|/)?$' % settings.URL_REGEXPS, views.materials_document),
-    url(r'^agenda.json$', views.json_agenda)
+    url(r'^agenda.json$', views.agenda_json)
 ]
 
 type_ietf_only_patterns_id_optional = [
@@ -81,9 +81,9 @@ type_ietf_only_patterns_id_optional = [
     url(r'^agenda/edit$', views.edit_schedule),
     url(r'^agenda/edit/$', views.edit_meeting_schedule),
     url(r'^requests$', views.meeting_requests),
-    url(r'^agenda/agenda\.ics$', views.ical_agenda),
-    url(r'^agenda\.ics$', views.ical_agenda),
-    url(r'^agenda.json$', views.json_agenda),
+    url(r'^agenda/agenda\.ics$', views.agenda_ical),
+    url(r'^agenda\.ics$', views.agenda_ical),
+    url(r'^agenda.json$', views.agenda_json),
     url(r'^agenda/week-view(?:.html)?/?$', views.week_view),
     url(r'^agenda/room-view(?:.html)?/?$', views.room_view),
     url(r'^floor-plan/?$', views.floor_plan),

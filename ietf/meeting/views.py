@@ -1306,7 +1306,7 @@ def ical_session_status(session_with_current_status):
     else:
         return "CONFIRMED"
 
-def ical_agenda(request, num=None, name=None, acronym=None, session_id=None):
+def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
     meeting = get_meeting(num, type_in=None)
     schedule = get_schedule(meeting, name)
     updated = meeting.updated()
@@ -1363,7 +1363,7 @@ def ical_agenda(request, num=None, name=None, acronym=None, session_id=None):
     }, content_type="text/calendar")
 
 @cache_page(15 * 60)
-def json_agenda(request, num=None ):
+def agenda_json(request, num=None ):
     meeting = get_meeting(num, type_in=['ietf','interim'])
 
     sessions = []
