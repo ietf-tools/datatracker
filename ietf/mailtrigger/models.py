@@ -84,7 +84,7 @@ class Recipient(models.Model):
         addrs = []
         if 'doc' in kwargs:
             doc=kwargs['doc']
-            if doc.group.features.acts_like_wg:
+            if doc.group and doc.group.features.acts_like_wg:
                 if doc.group.list_email:
                     addrs.append(doc.group.list_email)
         return addrs
