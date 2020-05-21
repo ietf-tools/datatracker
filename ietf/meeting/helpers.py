@@ -129,12 +129,19 @@ def get_meeting(num=None,type_in=['ietf',]):
     else:
         raise Http404("No such meeting found: %s" % num)
 
+def get_current_ietf_meeting():
+    meetings = Meeting.objects.filter(type='ietf',date__gte=datetime.datetime.today()-datetime.timedelta(days=31)).order_by('date')
+    return meetings.first()
+
+def get_current_ietf_meeting_num():
+    return get_current_ietf_meeting().number
+
 def get_ietf_meeting(num=None):
     if num:
-        meetings = Meeting.objects.filter(number=num)
+        meeting = Meeting.objects.filter(number=num).first()
     else:
-        meetings = Meeting.objects.filter(type='ietf',date__gte=datetime.datetime.today()-datetime.timedelta(days=31)).order_by('date')
-    return meetings.first()
+        meeting = get_current_ietf_meeting()
+    return meeting
 
 def get_schedule(meeting, name=None):
     if name is None:

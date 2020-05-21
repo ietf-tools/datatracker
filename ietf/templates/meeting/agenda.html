@@ -44,15 +44,13 @@
   </div>
   <div class="row">
      <div class="col-md-10">
-      {# cache this part for 5 minutes -- it takes 3-6 seconds to generate #}
-      {% load cache %}
-      {% cache 300 ietf_meeting_agenda_utc schedule.meeting.number request.path %}
-
         <h1>Agenda</h1>
 
+    {% if is_current_meeting %}
 	<p class="alert alert-info">
 	  <b>Note:</b> IETF agendas are subject to change, up to and during a meeting.
 	</p>
+    {% endif %}
 
   {% if schedule.meeting.agenda_info_note %}
     <p class="alert alert-info">
@@ -353,7 +351,6 @@
     </div>
   </div>
 
-      {% endcache %}
 {% endblock %}
 
 {% block js %}
