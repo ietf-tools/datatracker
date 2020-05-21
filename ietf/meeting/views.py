@@ -44,7 +44,7 @@ from django.views.decorators.cache import cache_page
 from django.utils.html import format_html
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
-
+from django.core.cache import caches
 
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocAlias
@@ -61,7 +61,8 @@ from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
 from ietf.meeting.helpers import get_modified_from_assignments
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
-from ietf.meeting.helpers import get_meeting, get_schedule, schedule_permissions, get_ietf_meeting
+from ietf.meeting.helpers import get_meeting, get_ietf_meeting, get_current_ietf_meeting_num
+from ietf.meeting.helpers import get_schedule, schedule_permissions
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
 from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
 from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
@@ -902,6 +903,12 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         else:
             raise Http404("No such meeting")
 
+    if name == None and owner == None:
+        cache_key = ("meeting:%s:%s%s" % (meeting.number, base, ext))[:228]
+        rendered_page = caches['slowpages'].get(cache_key)
+        if rendered_page:
+            return rendered_page
+
     if name is None:
         schedule = get_schedule(meeting, name)
     else:
@@ -943,13 +950,25 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
 
         p.group_list.sort(key=lambda g: g.acronym)
 
-    return render(request, "meeting/"+base+ext, {
+    rendered_page = render(request, "meeting/"+base+ext, {
         "schedule": schedule,
         "filtered_assignments": filtered_assignments,
         "updated": updated,
         "group_parents": group_parents,
         "now": datetime.datetime.now(),
+        "is_current_meeting": bool(num == get_current_ietf_meeting_num()),
     }, content_type=mimetype[ext])
+
+    # If the agenda is for the current meeting, only cache for 2 minutes
+    if name == None and owner == None:
+        cache_key = ("meeting:%s:%s%s" % (meeting.number, base, ext))[:228]
+        if meeting.number == get_current_ietf_meeting_num():
+            timeout = 60 * 2
+        else:
+            timeout = 60 * 60 * 24
+        caches['slowpages'].set(cache_key, rendered_page, timeout)
+
+    return rendered_page
 
 def agenda_csv(schedule, filtered_assignments):
     response = HttpResponse(content_type="text/csv; charset=%s"%settings.DEFAULT_CHARSET)
