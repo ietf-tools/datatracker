@@ -251,7 +251,7 @@ def wg_summary_acronym(request, group_type):
                     'groups': groups },
                   content_type='text/plain; charset=UTF-8')
 
-@cache_page ( 60 * 60 )
+@cache_page ( 60 * 60, cache="slowpages" )
 def wg_charters(request, group_type):
     if group_type != "wg":
         raise Http404
@@ -268,7 +268,7 @@ def wg_charters(request, group_type):
                   { 'areas': areas },
                   content_type='text/plain; charset=UTF-8')
 
-@cache_page ( 60 * 60 )
+@cache_page ( 60 * 60, cache="slowpages" )
 def wg_charters_by_acronym(request, group_type):
     if group_type != "wg":
         raise Http404

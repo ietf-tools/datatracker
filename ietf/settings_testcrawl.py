@@ -35,6 +35,14 @@ CACHES = {
             'MAX_ENTRIES': 100000,
         },
     },
+    'slowpages': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/var/cache/datatracker/slowpages',
+        'OPTIONS': {
+            'MAX_ENTRIES': 5000,
+        },
+    },
 }
 
 PASSWORD_HASHERS = [ 'django.contrib.auth.hashers.MD5PasswordHasher', ]
