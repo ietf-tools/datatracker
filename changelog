@@ -1,3 +1,59 @@
+ietfdb (7.1.0) ietf; urgency=medium
+
+  **Code sprint 107.1**
+
+  This was an online codesprint, held March 19.  Thanks to all who
+  participated!  There were some very good contributions:
+
+  * Merged in [17835] from pusateri@bangj.com:
+    Add agenda_note and remote_instructions to agenda.json API.  Fixes 
+    #2955. 
+
+  * Merged in [17838] from fenton@bluepopcorn.net:
+    Give IRSG at-large members balloting capability. Fixes #2979.
+
+  * Merged in [17843] from housley@vigilsec.com:
+    Created a 'slowpages' file cache for some very stable pages.
+
+  * Merged in [17864] from housley@vigilsec.com:
+    Added /meeting/<num>/agenda pages to the slowpages cache. Also limited
+    display of the 'agendas are subject to change' notice to the current
+    meeting's agenda. Fixes #2992.
+
+  The release also contains some commits made just before or after the
+  code sprint:
+
+  * Added a missing guard against attribute access on None.
+
+  * Changed the nomcom chair help page to show 4-digit years, rather than 
+    2-digit years in templates and examples.
+
+  * Renamed some view funtions for consistency.  Almost all .json enpoints 
+    were named *_json(), but not all.  Fixed in this commit, together with the 
+    equivalent renaiming for one .ical endpoint.
+
+  * Refined the makeresources management command slightly to improve 
+    handling of models with names ending in 'Resource' -- tastypie requires the 
+    resource name to be explicitly set in this case.
+
+  * Updated the NomCom eligibility calculation to use the last 5 in-person 
+    meetings, in accordance with draft-iesg-nomcom-eligibility-2020-03 which 
+    has now been approved for publication.  The code will need revisiting when 
+    the long-term policy is available.
+
+  * Merged in a patch from mark@painless-security.com to add caching 
+    options to docker/run
+
+  * Changed the wording in one place on the NomCom Chair help page so as to be
+    in line with menu entry and page title of the NomCom Settings page, based
+    on feedback from Barbara Stark.
+
+  * Added a utility script docker/rsync-extras to populate a dev instance with
+    drafts, rfcs, slides, etc.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 May 2020 23:11:53 +0000
+
+
 ietfdb (7.0.0) ietf; urgency=medium
 
   **Upgrade to Django 2.0**
