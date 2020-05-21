@@ -1,0 +1,51 @@
+{% extends "meetings/base_rooms_times.html" %}
+{% load bootstrap3 %}
+
+{% block subsection %}
+
+<div class="module role-container">
+  <h2>Sessions</h2>
+
+  <table class="table table-condensed table-striped ipr-table tablesorter">
+    <thead>
+      <tr>
+        <th>Group</th>
+        <th>Time</th>
+        <th>Room</th>
+        <th>Agenda Note</th>
+        <th>Status</th>
+        <th></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for session in sessions %}
+        <tr>
+          <td>{{ session.group.acronym }}</td>
+          <td>
+            {% if session.official_timeslotassignment %}
+              {{ session.official_timeslotassignment.timeslot.time|date:"l H:i"|default:"" }}
+            {% endif %}
+          </td>
+          <td>
+            {% if session.official_timeslotassignment %}
+              {{ session.official_timeslotassignment.timeslot.location }}
+            {% endif %}
+          </td>
+          <td>{{ session.agenda_note }}</td>
+          <td>{{ session.current_status_name }}</td>
+          <td><a href="{% url 'ietf.secr.meetings.views.regular_session_edit' meeting_id=meeting.number schedule_name=schedule.name session_id=session.id %}">Edit</a></td>
+          <td>
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="pk" value="{{ session.pk }}">
+              <input type="submit" name="cancel" value="Cancel">
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div> <!-- module -->
+
+{% endblock %}

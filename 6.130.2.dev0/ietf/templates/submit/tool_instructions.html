@@ -1,0 +1,171 @@
+{% extends "submit/submit_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% block title %}I-D Submission tool instructions{% endblock %}
+
+{% block submit_content %}
+  {% origin %}
+  <h2>I-D submission tool instructions</h2>
+
+  <p><b>Tool URL:</b> <a href="{% url "ietf.submit.views.upload_submission" %}">https://datatracker.ietf.org{% url "ietf.submit.views.upload_submission" %}</a></p>
+
+  <p>
+    This page will explain the purpose and content of each screen in the I-D Submission Tool, and the actions that result by clicking the form buttons on each screen.
+  </p>
+
+  <p>
+    Internet-Drafts are working documents of the Internet Engineering
+    Task Force (IETF), its areas, and its working groups. Note that other
+    groups may also distribute working documents as Internet-Drafts.
+  </p>
+
+  <p>
+    Internet-Drafts are draft documents, and are valid for a maximum of
+    six months. They may be updated, replaced, or obsoleted by other
+    documents at any time.
+  </p>
+
+  <p>
+    The list of current Internet-Drafts can be accessed at
+    <a href="https://www.ietf.org/ietf/1id-abstracts.txt">https://www.ietf.org/ietf/1id-abstracts.txt</a>.
+  </p>
+
+  <p>
+    An API for automated draft submission is available as an alternative to this webpage at
+    <a href="https://datatracker.ietf.org/api/submit/">https://datatracker.ietf.org/api/submit/</a>.
+  </p>
+
+  <h3>Upload screen</h3>
+  <p>
+    The Upload screen is the first screen that a user will see when he or she starts the I-D submission process. A user can submit four different formats of an I-D, plain text, XML, PDF, and postscript, at the same time. Failure to submit at least one of a plain-text or xml version will cause an error, and an error screen will be displayed.
+  </p>
+
+  <p>
+    By submitting your I-D, you are granting some rights to the IETF Trust.  Before you submit your I-D,
+    review the information on the NOTE WELL tab and <a href="https://tools.ietf.org/html/bcp78">BCP 78</a>,
+    "Rights Contributors Provide to the IETF Trust".
+  </p>
+
+  <p>
+    Before you submit your I-D, it is recommended that you check it for nits
+    using the <b><a href="https://tools.ietf.org/tools/idnits/">idnits tool</a></b>.
+  </p>
+
+  <p>
+    <b>Form buttons and resulting actions</b>:
+  </p>
+  <table class="table table-condensed table-striped">
+    <tr>
+      <th>.txt format</th>
+      <td>Button to select a plain-text file of an I-D from a user's local file system.</td>
+    </tr>
+    <tr>
+      <th>.xml format</th>
+      <td>Button to select an XML file of an I-D from a user's local file system. </td>
+    </tr>
+    <tr>
+      <th>.pdf format</th>
+      <td>Button to select a PDF file of an I-D from a user's local file system. </td>
+    </tr>
+    <tr>
+      <th>.ps format</th>
+      <td>Button to select a postscript file of an I-D from a user's local file system. </td>
+    </tr>
+    <tr>
+      <th>Upload</th>
+      <td>Button to upload the document(s). The tool will begin parsing the plain-text document (or creating it from the xml if only xml is provided) and validate the document. The parsed meta-data will be displayed for user confirmation along with the validation results.</td>
+    </tr>
+  </table>
+
+  <h3>Validation screen</h3>
+  <p>
+    After a user uploads the document(s),  the tool will parse the plain-text version, validate the I-D, and display the validation results with option(s) for next steps. The validation includes: checking for all IPR-related notices and I-D boilerplate described in <a href="https://www.ietf.org/ietf/1id-guidelines.html">Guidelines to Authors of Internet-Drafts</a>; the required sections described in <a href="https://www.ietf.org/ID-Checklist.html">the I-D Check List</a>; the version number; and the creation date.
+  </p>
+
+  <p>
+    If the submission does not have any validation errors, then the user will be allowed to proceed with the automated posting process. This process will begin with submitter authentication, which will be done by e-mail.
+  </p>
+
+  <p>
+    A user must carefully examine the meta-data that are displayed on this screen, and make sure that these data were extracted correctly.  If the data were not extracted correctly, then the user can correct the errors via the Adjust page. In such a case, the user will pass the draft to the Secretariat for manual posting.
+  </p>
+
+  <p><b>Form buttons and resulting actions:</b></p>
+
+  <table class="table table-condensed table-striped">
+    <tr>
+      <th>Adjust meta-data</th>
+      <td>Button to proceed to a screen with editable form fields for correcting the meta-data. A user can use this button to request manual posting by the Secretariat.</td>
+    </tr>
+    <tr>
+      <th>Cancel</th>
+      <td>Button to cancel the current submission. A user will be prompted for a confirmation before the submission is canceled. Once confirmed, the current submission will be canceled, the uploaded document(s) will be deleted permanently from the server, and a notification message will be sent to all authors with the IP address of the user who just canceled the submission.</td>
+    </tr>
+  </table>
+
+
+  <p><b>When no meta-data error is detected:</b></p>
+
+  <table class="table table-condensed table-striped">
+    <tr>
+      <th>Button(s) with author's name(s)</th>
+      <td>Button(s) to automatically fill out the given name, family name, and email address of the authors. If the submitter is one of the authors, then the submitter's information will be automatically inserted in the appropriate fields. If the submitter is not one of the authors, then the submitter will need to manually fill out these fields.</td>
+    </tr>
+    <tr>
+      <th>Post now</th>
+      <td>
+	<p>Button to start the automated posting process with submitter authentication. Once clicked, an email message will be sent to the parties who can verify the sybmission. For a new draft (-00), that will be the authors listed in the document. For -01 and subsequent drafts, the confirmation message is sent to the authors of the <b>previous</b> version. One of the recipients of the confirmation message will need to open the email message via his or her email application, and click the link provided in the message body.</p>
+	<p>Once a link in the email body is clicked, the document gets pushed to the IETF Web and FTP sites, a notification is sent to the authors of the document, and an I-D Action announcement will be sent out within the next 15 minutes.</p>
+	<p>If the document requires an additional approval from a chair of a working group, i.e., for submission of a 00 version of a working group document, then a message will be sent to the chairs of the working group for the approval. Once approved, the document will be immediately announced and available via the IETF Web and FTP sites.</p>
+      </td>
+    </tr>
+  </table>
+
+
+  <h3>Adjust screen</h3>
+  <p>
+    This is the screen where a user can adjust any meta-data that could have been incorrectly parsed from the submitted document. The document with adjusted meta-data will be submitted to the Secretariat for manual posting.
+  </p>
+
+  <p><b>Form buttons and resulting actions:</b></p>
+
+  <table class="table table-condensed table-striped">
+    <tr>
+      <th>Button(s) with author's name(s)</th>
+      <td>Button(s) to automatically fill out the given name, family name, and email address of the authors. If the submitter is one of the authors, then the submitter's information will be automatically inserted in the appropriate fields. If the submitter is not one of the authors, then the submitter will need to manually fill out these fields.</td>
+    </tr>
+    <tr>
+      <th>Submit for manual posting</th>
+      <td>Button to send a manual posting request to the Secretariat including any corrected meta-data and comments for the Secretariat. Once clicked, a notification message will be sent to the Secretariat, and a receipt page will be displayed.
+    </tr>
+    <tr>
+      <th>Cancel</th>
+      <td>Button to cancel the current submission. A user will be prompted for a confirmation before the submission is canceled. Once confirmed, the current suissio
+	n will be canceled, the uploaded document(s) will be deleted permanently from the server, and a notification message will be sent to all authors with the IP address of the user who just canceled the submission.</td>
+    </tr>
+  </table>
+
+  <h3>Status screen</h3>
+  <p>
+    The Status screen is the screen where a user can view the current status of a document that has just been submitted by the user, or a document that was submitted previously via the tool. If a link 'Status' is clicked from the tool's first page, then a form field will be provided for a user to look up a document by name.
+  </p>
+
+  <p><b>Form buttons and resulting actions:</b></p>
+
+  <table class="table table-condensed table-striped">
+    <tr>
+      <th>Cancel</th>
+      <td>Button to cancel the current submission. This button will be displayed only when the document is in the process of being submitted.  A user will be prompted for a confirmation before the submission is canceled. Once confirmed, the current submission will be canceled, the uploaded document(s) will be deleted permanently from the server, and a notification message will be sent to all authors with the IP address of the user who just canceled the submission.</td>
+    </tr>
+  </table>
+
+  <h3>Problem report</h3>
+
+  {% include "submit/problem-reports-footer.html" %}
+
+  <p>
+    The specification for this tool can be found in <a href="https://www.ietf.org/rfc/rfc4228.txt?number=4228">RFC 4228</a>.
+  </p>
+
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016-2019, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles %}
+{% load ietf_filters %}
+{% load textfilters %}
+
+{% block title %}{{ doc.title }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  {{ top|safe }}
+
+  {% include "doc/revisions_list.html" %}
+
+  {% include "doc/review/request_info.html" %}
+
+  <table class="table table-condensed">
+    <thead id="message-row">
+       <tr>
+	  {% if doc.rev != latest_rev %}
+          <th colspan="4" class="alert-warning">The information below is for an old version of the document</th>
+	  {% elif doc.get_state_slug != "active" or other_reviews %}
+          <th colspan="4"></th>
+	  {% else %}
+
+	  {% endif %}  
+       </tr>
+    </thead>
+    <tbody class="meta">
+      {% if doc.get_state_slug != "active" %}
+      <tr>
+        <th></th>
+        <th>State</th>
+        <td class="edit"></td>
+        <td>{{ doc.get_state.name }}</td>
+      </tr>
+      {% endif %}
+
+      {% if other_reviews %}
+      <tr>
+        <th></th>
+        <th>Other reviews</th>
+        <td class="edit"></td>
+        <td>
+          {% for review_assignment in other_reviews %}
+            {% include "doc/review_assignment_summary.html" with current_doc_name=review_assignemnt.review_request.doc.name current_rev=review_assignment.reviewed_rev %}
+          {% endfor %}
+        </td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <h2>{{ doc.type.name }}<br><small>{{ doc.name }}</small></h2>
+
+  {% if doc.rev and content != None %}
+    <pre class="pasted">{{ content|linkify }}</pre>
+  {% endif %}
+{% endblock %}

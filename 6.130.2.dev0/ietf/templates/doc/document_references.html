@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin staticfiles ietf_filters %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block title %}
+  References from {{doc.canonical_name}}
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>References from {{doc.canonical_name}}</h1>
+
+  <p class="alert alert-info">
+    These dependencies are extracted using heuristics looking for strings with particular prefixes. Notably, this means that references to I-Ds by title only are not reflected here. If it's really important, please inspect the documents' references sections directly.
+  </p>
+  <p>
+    <a class="btn btn-default" href="{% url 'ietf.doc.views_help.relationship_help' subset='reference' %}">Reference type help</a>
+  </p>
+
+  <table class="table table-condensed table-striped tablesorter">
+    <thead>
+      <tr>
+        <th>Document</th>
+        <th>Title</th>
+        <th>Status</th>
+        <th>Type</th>
+        <th>Downref</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ref in refs %}
+        {% with ref.target.name as name %}
+          <tr>
+            <td><a href="{% url 'ietf.doc.views_doc.document_main' name=name %}">{{ name|prettystdname }}</a></td>
+            <td>
+	      <b>{{ref.target.document.title}}</b><br>
+              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_references' name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
+              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_referenced_by' name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
+            </td>
+            <td>
+	      {% ifequal ref.target.document.get_state.slug 'rfc' %}
+	        {% with ref.target.document.std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
+	{% else %}
+	        {% with ref.target.document.intended_std_level as lvl %}{% if lvl %}{{lvl}}{% endif %}{%endwith%}
+	      {% endifequal %}
+            </td>
+            <td>{{ref.relationship.name}}</td>
+            <td>{{ref.is_downref|default:''}}</td>
+          </tr>
+        {% endwith %}
+      {% endfor %}
+  </table>
+
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

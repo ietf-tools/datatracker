@@ -1,0 +1,408 @@
+#!/usr/bin/env python
+# -*- python -*-
+"""
+NAME
+	%(program)s - look for SVN commits that are ready to merge
+
+SYNOPSIS
+	%(program)s [OPTIONS] ARGS
+
+DESCRIPTION
+	%(program)s looks in the SVN log for commits which are marked with the
+        phrase 'Commit ready for merge', and compares the resulting list with
+        the 'svn:mergeinfo' property on the current directory, in order to
+        work out which (if any) commits are ready to merge, but not yet
+        merged.  The command requires (and checks) that it's running in a
+        directory named 'trunk', and requires that to be an SVN working copy.
+
+        The files (in the top directory of the working copy) 'ready-for-merge'
+        and 'hold-for-merge' are also consulted for additions and exceptions to
+        the merge list.
+
+        A list of commit date, committer, and branch@revision for each commit
+        which is marked ready for merge, but not yet merged, is then written
+        to standard out.
+
+%(options)s
+
+AUTHOR
+	Written by Henrik Levkowetz, <henrik@tools.ietf.org>
+
+COPYRIGHT
+	Copyright 2014 Henrik Levkowetz
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the Simplified BSD license as published by the
+        Open Source Initiative at http://opensource.org/licenses/BSD-2-Clause.
+
+"""
+from __future__ import print_function, unicode_literals
+
+import sys
+import os
+
+path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if not path in sys.path:
+    sys.path.insert(0, path)
+
+import getopt
+import re
+import pytz
+import tzparse
+import debug
+
+version = "0.20"
+program = os.path.basename(sys.argv[0])
+progdir = os.path.dirname(sys.argv[0])
+
+# ----------------------------------------------------------------------
+# Parse options
+
+options = ""
+for line in re.findall("\n +(if|elif) +opt in \[(.+)\]:\s+#(.+)\n", open(sys.argv[0]).read()):
+    if not options:
+        options += "OPTIONS\n"
+    options += "        %-16s %s\n" % (line[1].replace('"', ''), line[2])
+options = options.strip()
+
+# with ' < 1:' on the next line, this is a no-op:
+if len(sys.argv) < 1:
+    print(__doc__ % locals())
+    sys.exit(1)
+
+try:
+    opts, files = getopt.gnu_getopt(sys.argv[1:], "hvV", ["help", "version","verbose",])
+except Exception as e:
+    print( "%s: %s" % (program, e))
+    sys.exit(1)
+
+# ----------------------------------------------------------------------
+# Handle options
+
+# set default values, if any
+opt_verbose = 0
+
+# handle individual options
+for opt, value in opts:
+    if   opt in ["-h", "--help"]: # Output this help, then exit
+        print( __doc__ % locals() )
+        sys.exit(1)
+    elif opt in ["-V", "--version"]: # Output version information, then exit
+        print( program, version )
+        sys.exit(0)
+    elif opt in ["-v", "--verbose"]: # Output version information, then exit
+        opt_verbose += 1
+
+# ----------------------------------------------------------------------
+def say(s):
+    sys.stderr.write("%s\n" % (s))
+
+
+# ----------------------------------------------------------------------
+def note(s):
+    if opt_verbose:
+        sys.stderr.write("%s\n" % (s))
+
+# ----------------------------------------------------------------------
+def die(s, error=1):
+    sys.stderr.write("\n%s: Error: %s\n\n" % (program, s))
+    sys.exit(error)
+
+# ----------------------------------------------------------------------
+# The program itself    
+
+import os
+import json
+
+cwd = os.getcwd()
+
+if cwd.split(os.path.sep)[-1] != 'trunk':
+    die("Expected to run this operation in trunk, but the current\ndirectory is '%s'" % cwd)
+
+# ----------------------------------------------------------------------
+# Some utility functions
+
+def pipe(cmd, inp=None):
+    import shlex
+    from subprocess import Popen, PIPE
+    args = shlex.split(cmd)
+    bufsize = 4096
+    stdin = PIPE if inp else None
+    pipe = Popen(args, stdin=stdin, stdout=PIPE, stderr=PIPE, bufsize=bufsize)
+    out, err = pipe.communicate(inp)
+    code = pipe.returncode
+    if code != 0:
+        raise OSError(err)
+    return out.decode('utf-8')
+
+def split_loginfo(line):
+    try:
+        parts = line.split()
+        rev  = parts[0][1:]
+        who  = parts[2]
+        date = parts[4]
+        time = parts[5]
+        tz   = parts[6]
+        when = tzparse.tzparse(" ".join(parts[4:7]), "%Y-%m-%d %H:%M:%S %Z")
+        when = when.astimezone(pytz.utc)
+    except ValueError as e:
+        sys.stderr.write("Bad log line format: %s\n  %s\n" % (line, e))
+
+    return rev, who, when
+
+# ----------------------------------------------------------------------
+
+# Get repository information
+svn_info = {}
+for line in pipe('svn info .').splitlines():
+    if line:
+        key, value = line.strip().split(':', 1)
+        svn_info[key] = value.strip()
+
+repo = svn_info["Repository Root"]
+head = int(svn_info['Revision'])
+
+# Get current mergeinfo from cache and svn
+cachefn = os.path.join(os.environ.get('HOME', '.'), '.mergeinfo')
+
+if os.path.exists(cachefn):
+    note("Reading mergeinfo cache file %s" % cachefn)
+    with open(cachefn, "r") as file:
+        cache = json.load(file)
+else:
+    sys.stderr.write("No merge info cache file found -- will have to extract all information from SVN.\n"+
+        "This may take some time.\n\n")
+    opt_verbose = True
+    cache = {}
+mergeinfo = cache[repo] if repo in cache else {}
+
+merged_revs = {}
+write_cache = False
+loginfo_format = r'^r[0-9]+ \| [^@]+@[^@]+ \| \d\d\d\d-\d\d-\d\d '
+note("Getting svn:mergeinfo for current branch")
+for line in pipe('svn propget svn:mergeinfo .').splitlines():
+    if opt_verbose:
+        sys.stderr.write('.')
+    if line in mergeinfo:
+        merged = mergeinfo[line]
+    else:
+        merged = {}
+        branch, revs = line.strip().split(':',1)
+        for part in revs.split(','):
+            if '-' in part:
+                beg, end = part.split('-')
+                try:
+                    commit_log = pipe('svn log -v -r %s:%s %s%s' % (beg, end, repo, branch))
+                    for logline in commit_log.splitlines():
+                        if re.search(loginfo_format, logline):
+                            rev, who, when = split_loginfo(logline)
+                            merged[rev] = branch[1:]
+                            write_cache = True
+                except OSError:
+                    pass
+            else:
+                merged[part] = branch[1:]
+                write_cache = True
+        mergeinfo[line] = merged
+    merged_revs.update(merged)
+note('')
+
+if write_cache:
+    cache[repo] = mergeinfo
+    with open(cachefn, "w") as file:
+        json.dump(cache, file, indent=2, sort_keys=True)
+
+def get_changeset_list_from_file(repo, filename):
+    """
+    This is used to read changesets to hold or merge from the ready-for-merge
+    and hold-for-merge files.
+    """
+    list = []
+    if os.path.exists(filename):
+        note("Reading list from '%s'" % filename)
+    else:
+        note("File doesn't exist: '%s'" % filename)
+        return list
+    with open(filename) as file:
+        for line in file:
+            line = line.strip()
+            if line.startswith('#') or line == "":
+                continue
+            try:
+                #note("   '%s'" % line)
+                parts = line.split()
+                if len(parts) >1 and parts[1] == '@':
+                    branch, rev = parts[0], parts[2]
+                    changeset = "%s@%s" % (branch, rev)
+                else:
+                    changeset = parts[0]
+                    branch, rev = changeset.split('@')
+                if branch.startswith('^'):
+                    branch = branch[1:]
+                if branch.startswith('/'):
+                    branch = branch[1:]
+                if not (rev in merged_revs and branch == merged_revs[rev]):
+                    list += [(rev, repo, branch),]
+                #elif rev in merged_revs and not branch == merged_revs[rev]:
+                #    sys.stderr.write('Rev %s: %s != %s' % (rev, branch, merged_revs[rev]))                
+                else:
+                    #sys.stderr.write('Already merged: merged_revs[%s]: %s\n' % (rev, merged_revs[rev]))
+                    pass
+            except ValueError as e:
+                sys.stderr.write("Bad changeset specification in %s: '%s': %s\n" % (file.name, changeset, e))
+    return list
+
+def get_ready_commits(repo, tree):
+    list = []
+    note("Getting ready commits from '%s'" % tree)
+    cmd = 'svn log -v -r %s:HEAD %s/%s/' % ((head-200), repo, tree)
+    if opt_verbose > 1:
+        note("Running '%s' ..." % cmd)
+    commit_log = pipe(cmd)
+    for line in commit_log.splitlines():
+        if re.search(loginfo_format, line):
+            rev, who, when = split_loginfo(line)
+            branch = None
+            continue
+        if (line.startswith('   M') or line.startswith('   A') or line.startswith('   D')) and branch == None:
+            type, path = line[:4], line[5:]
+            if ' (from ' in path:
+                i = path.index(' (from ')
+                path = path[:i]
+            branch = '/'.join(path.split('/')[1:4])
+        elif re.search("(?i)((commit|branch) ready (for|to) merge)", line):
+            if not rev in merged_revs:
+                note("   %s  %s: %s@%s" % (when.strftime("%Y-%m-%d %H:%MZ"), who, branch, rev))
+                list += [(rev, repo, branch),]
+            elif rev in merged_revs and not branch == merged_revs[rev]:
+                sys.stderr.write('Rev %s: %s != %s\n' % (rev, branch, merged_revs[rev]))                
+            else:
+                pass
+        else:
+            pass
+            
+    return list
+    
+ready  = get_changeset_list_from_file(repo, 'ready-for-merge')
+ready += get_changeset_list_from_file(repo, '../ready-for-merge')
+hold   = get_changeset_list_from_file(repo, 'hold-for-merge')
+hold  += get_changeset_list_from_file(repo, '../hold-for-merge')
+ready += get_ready_commits(repo, 'personal')
+ready += get_ready_commits(repo, 'branch/iola')
+ready += get_ready_commits(repo, 'branch/dash')
+
+ready_commits = {}
+all_commits = {}
+not_passed = {}
+branches = set()
+for entry in ready:
+    rev, repo, branch = entry
+    branches.add(branch)
+    # Get the time, committer, and commit message
+    cmd = 'svn log -v -r %s %s/%s/' % (rev, repo, branch)
+    if opt_verbose > 1:
+        note("Running '%s' ..." % cmd)
+    try:
+        loginfo = pipe(cmd).splitlines()
+    except OSError:
+        continue
+    try:
+        rev, who, when = split_loginfo(loginfo[1])
+    except IndexError:
+        die("Wrong changeset version in %s@%s ?" % (branch, rev))
+    for line in loginfo[3:]:
+        type, path = line[:4], line[5:]
+        if 'M' in type or 'A' in type or 'D' in type:
+            if ' (from ' in path:
+                i = path.index(' (from ')
+                path = path[:i]
+            break
+    # Get the test status
+    try:
+        cmd = 'svn propget --revprop -r %s "test:unittest"' % rev
+        unittest = pipe(cmd).strip()
+    except OSError as e:
+        if "E200017" in str(e):
+            unittest = ""
+            pass
+        else:
+            raise
+    # 
+    dirs = path.split(os.path.sep)
+    dirs = dirs[:dirs.index('ietf')] if 'ietf' in dirs else dirs[:4]
+    merge_path = os.path.join(*dirs)
+    if not (rev, repo, merge_path) in hold:
+        output_line = "%s  %-24s ^/%s@%s" % (when.strftime("%Y-%m-%d_%H:%MZ"), who+":", merge_path, rev)
+        all_commits[when] = (rev, repo, branch, who, merge_path)
+        if unittest == 'passed':
+            ready_commits[when] = output_line
+        else:
+            not_passed[when] = output_line
+
+hold_revs = {}
+for rev, repo, branch in hold:
+    hold_revs[rev] = branch
+
+unmerged_branch_commits = {}
+for branch in branches:
+    note("Fetching commit information for branch %s" % branch)
+    commits = []
+    cmd = 'svn log -v -r 0:HEAD --stop-on-copy %s/%s/' % (repo, branch)
+    commit_log = pipe(cmd)
+    rev = None
+    mod = False
+    for line in commit_log.splitlines():
+        if re.search(loginfo_format, line):
+            rev, who, when = split_loginfo(line)
+        elif re.search('^   [AMD]', line):
+            if not ' (from ' in line and not mod:
+                mod = True
+        elif re.search('^-{72}$', line) and rev and mod:
+            if not rev in merged_revs and not rev in hold_revs:
+                commits.append(rev)
+            rev = None
+            mod = False
+    commits.sort()
+    unmerged_branch_commits[branch] = commits
+
+keys = list(all_commits.keys())
+keys.sort()
+# Check that we don't have holes in the commit list -- commits not mentioned
+# as ready for merge, and not already merged, earlier than a waiting commit.
+unmerged = False
+for key in keys:
+    (rev, repo, branch, who, merge_path) = all_commits[key]
+    try:
+        i = unmerged_branch_commits[branch].index(rev)
+    except:
+        say("Unexpected state.  Mismatch between branch name and revision in hold-for-merge or ready-for-merge?")
+        raise
+    if not i == 0:
+        unmerged = True
+        sys.stderr.write("There are unmerged commits ahead of r%s on branch ^/%s:\n" % (rev, branch))
+        for j in range(0,i):
+            commit = unmerged_branch_commits[branch][j]
+            if commit != rev:
+                sys.stderr.write("  %s:\n" % commit)
+                commit_comment = pipe("svn log -c %s ^/" % commit).splitlines()[3:-1]
+                for l in commit_comment:
+                    sys.stderr.write("    %s\n" % l)
+        unmerged_branch_commits[branch] = unmerged_branch_commits[branch][i:]
+        sys.stderr.write("\n")
+    del unmerged_branch_commits[branch][0]
+
+keys = list(not_passed.keys())
+keys.sort()
+if len(keys) > 0:
+    print("")
+    print("Commits marked ready which haven't passed the test suite:\n")
+    for key in keys:
+        print(not_passed[key])
+    print('')
+
+keys = list(ready_commits.keys())
+keys.sort()
+for key in keys:
+    print(ready_commits[key])
+
+print("\n%s pending merges" % len(keys))

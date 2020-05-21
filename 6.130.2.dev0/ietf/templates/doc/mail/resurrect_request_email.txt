@@ -1,0 +1,4 @@
+{% autoescape off %}I-D that is requested to be resurrected: {{ doc.file_tag }}
+Requested by: {{ by }}
+Datatracker URL: {{ url }}
+{% endautoescape %}

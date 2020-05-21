@@ -1,0 +1,172 @@
+--- django/db/models/query.py	2018-03-13 07:07:54.156249000 -0700
++++ django/db/models/query.py	2018-03-14 09:06:43.378819023 -0700
+@@ -5,6 +5,7 @@
+ import copy
+ import sys
+ import warnings
++import inspect
+ from collections import OrderedDict, deque
+ 
+ from django.conf import settings
+@@ -171,6 +172,8 @@
+         self._known_related_objects = {}  # {rel_field: {pk: rel_obj}}
+         self._iterable_class = ModelIterable
+         self._fields = None
++        self._origin = []
++        self._djangodir = __file__[:(__file__.index('django')+len('django')+1)]
+ 
+     def as_manager(cls):
+         # Address the circular dependency between `Queryset` and `Manager`.
+@@ -310,6 +313,31 @@
+         combined.query.combine(other.query, sql.OR)
+         return combined
+ 
++    def _add_origin(self, depth=1):
++        import debug
++        if settings.DEBUG:
++            # get list of frame records.  Each is:
++            # [ frame, filename, lineno, function, code_context, index ]
++            stack = inspect.stack(5)
++            # caller stack record
++            method = stack[depth][3]
++            # look for the first stack entry which is not from django
++            i = 0
++            while i<len(stack) and stack[i][1].startswith(self._djangodir) and not stack[i][3] == 'render':
++                i += 1
++            if i<len(stack):
++                stack = stack[i:]
++                frame = stack[0][0]
++                function = stack[0][3]
++                if function == 'render' and 'context' in frame.f_locals:
++                    that = frame.f_locals['self']
++                    if hasattr(that, 'filename'):
++                        debug.show('that.filename')
++                origin = stack[0]+(method,)
++            else:
++                origin = stack[2]+(method,)
++            self._origin.append(origin)
++
+     ####################################
+     # METHODS THAT DO DATABASE QUERIES #
+     ####################################
+@@ -781,6 +809,7 @@
+         Returns a new QuerySet instance with the args ANDed to the existing
+         set.
+         """
++        self._add_origin()
+         return self._filter_or_exclude(False, *args, **kwargs)
+ 
+     def exclude(self, *args, **kwargs):
+@@ -788,6 +817,7 @@
+         Returns a new QuerySet instance with NOT (args) ANDed to the existing
+         set.
+         """
++        self._add_origin()
+         return self._filter_or_exclude(True, *args, **kwargs)
+ 
+     def _filter_or_exclude(self, negate, *args, **kwargs):
+@@ -812,6 +842,7 @@
+         This exists to support framework features such as 'limit_choices_to',
+         and usually it will be more natural to use other methods.
+         """
++        self._add_origin()
+         if isinstance(filter_obj, Q) or hasattr(filter_obj, 'add_to_query'):
+             clone = self._clone()
+             clone.query.add_q(filter_obj)
+@@ -866,6 +897,7 @@
+         """
+         if nowait and skip_locked:
+             raise ValueError('The nowait option cannot be used with skip_locked.')
++        self._add_origin()
+         obj = self._clone()
+         obj._for_write = True
+         obj.query.select_for_update = True
+@@ -886,6 +918,7 @@
+         if self._fields is not None:
+             raise TypeError("Cannot call select_related() after .values() or .values_list()")
+ 
++        self._add_origin()
+         obj = self._clone()
+         if fields == (None,):
+             obj.query.select_related = False
+@@ -905,6 +938,7 @@
+         prefetch is appended to. If prefetch_related(None) is called, the list
+         is cleared.
+         """
++        self._add_origin()
+         clone = self._clone()
+         if lookups == (None,):
+             clone._prefetch_related_lookups = ()
+@@ -917,6 +951,7 @@
+         Return a query set in which the returned objects have been annotated
+         with extra data or aggregations.
+         """
++        self._add_origin()
+         annotations = OrderedDict()  # To preserve ordering of args
+         for arg in args:
+             # The default_alias property may raise a TypeError, so we use
+@@ -960,6 +995,7 @@
+         """
+         assert self.query.can_filter(), \
+             "Cannot reorder a query once a slice has been taken."
++        self._add_origin()
+         obj = self._clone()
+         obj.query.clear_ordering(force_empty=False)
+         obj.query.add_ordering(*field_names)
+@@ -971,6 +1007,7 @@
+         """
+         assert self.query.can_filter(), \
+             "Cannot create distinct fields once a slice has been taken."
++        self._add_origin()
+         obj = self._clone()
+         obj.query.add_distinct_fields(*field_names)
+         return obj
+@@ -982,6 +1019,7 @@
+         """
+         assert self.query.can_filter(), \
+             "Cannot change a query once a slice has been taken"
++        self._add_origin()
+         clone = self._clone()
+         clone.query.add_extra(select, select_params, where, params, tables, order_by)
+         return clone
+@@ -990,6 +1028,7 @@
+         """
+         Reverses the ordering of the QuerySet.
+         """
++        self._add_origin()
+         clone = self._clone()
+         clone.query.standard_ordering = not clone.query.standard_ordering
+         return clone
+@@ -1004,6 +1043,7 @@
+         """
+         if self._fields is not None:
+             raise TypeError("Cannot call defer() after .values() or .values_list()")
++        self._add_origin()
+         clone = self._clone()
+         if fields == (None,):
+             clone.query.clear_deferred_loading()
+@@ -1023,6 +1063,7 @@
+             # Can only pass None to defer(), not only(), as the rest option.
+             # That won't stop people trying to do this, so let's be explicit.
+             raise TypeError("Cannot pass None as an argument to only().")
++        self._add_origin()
+         clone = self._clone()
+         clone.query.add_immediate_loading(fields)
+         return clone
+@@ -1109,6 +1150,7 @@
+         clone._known_related_objects = self._known_related_objects
+         clone._iterable_class = self._iterable_class
+         clone._fields = self._fields
++        clone._origin = self._origin
+ 
+         clone.__dict__.update(kwargs)
+         return clone
+@@ -1116,6 +1158,8 @@
+     def _fetch_all(self):
+         if self._result_cache is None:
+             self._result_cache = list(self._iterable_class(self))
++            if settings.DEBUG:
++                connections[self.db].queries_log[-1]['origin'] = self._origin
+         if self._prefetch_related_lookups and not self._prefetch_done:
+             self._prefetch_related_objects()
+ 

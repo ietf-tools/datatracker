@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% block title %}Web-based Working Group email archives{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Web-based Working Group email archives</h1>
+
+  <p>These links to the Web-based working group e-mail archives are
+    extracted from the working group charters.  Please consult the
+    charters for more information about the mailing lists and archives
+    of specific working groups.  Charters for active working groups are
+    available on
+    the <a href="{% url 'ietf.group.views.active_groups' group_type='wg' %}">Active IETF Working Groups</a> Web page.
+    Charters for concluded working groups are available on
+    the <a href="{% url 'ietf.group.views.concluded_groups' %}">Concluded
+    Working Groups</a> Web page.</p>
+
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Acronym</th><th>Name</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for group in groups %}
+        <tr>
+          <td><a href="{{ group.list_archive }}">{{ group.acronym }}</a></td>
+          <td>{{ group.name }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

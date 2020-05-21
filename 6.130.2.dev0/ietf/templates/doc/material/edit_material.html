@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}{% if action == "new" or action == "revise" %}Upload{% else %}Edit{% endif %} {{ document_type.name }} for group {{ group.name }} ({{ group.acronym }}){% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>{% if action == "new" or action == "revise" %}Upload{% else %}Edit{% endif %} {{ document_type.name }}<br><small>{{ group.name }} ({{ group.acronym }})</small></h1>
+
+  {% if action == "new" %}
+    <p class="help-block">
+      Below you can upload a document for the group {{ group.name }}
+      <a href="{% url "ietf.group.views.materials" acronym=group.acronym %}">({{ group.acronym }})</a>.
+      The document will appear under the materials tab in the group pages.
+    </p>
+
+    <h2>Upload</h2>
+  {% elif action == "revise" %}
+    <p>
+      Below you can upload a new revision of {{ doc_name }} for the group {{ group.name }}
+      <a href="{% url "ietf.group.views.materials" acronym=group.acronym %}">({{ group.acronym }})</a>.
+    </p>
+
+    <h2>Upload New Revision</h2>
+  {% endif %}
+
+  <form class="upload-material" method="post" enctype="multipart/form-data" data-nameprefix="{{ document_type.slug }}-{{ group.acronym }}-">
+    {% csrf_token %}
+
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <a class="btn btn-default pull-right" href="{% if doc_name %}{% url "ietf.doc.views_doc.document_main" name=doc_name %}{% else %}{% url "ietf.group.views.materials" acronym=group.acronym %}{% endif %}">Back</a>
+      <button class="btn btn-primary" type="submit">{% if action == "new" or action == "revise" %}Upload{% else %}Save{% endif %}</button>
+    {% endbuttons %}
+  </form>
+
+{% endblock content %}
+
+{% block js %}
+  <script>
+   $(document).ready(function () {
+       $("form.upload-material input#id_title").on("change keyup", function () {
+           var v = $(this).val();
+           var slug = $(this).parents("form").data("nameprefix");
+           slug += v.toLowerCase().replace(/ /g,'-').replace(/[-]+/g, '-').replace(/[^a-z-]+/g,'');
+           $(this).parents("form").find("input#id_name").val(slug);
+       });
+   });
+  </script>
+{% endblock %}

@@ -1,0 +1,820 @@
+#!/usr/bin/env python
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+
+import os, sys, re, datetime, argparse, traceback, json, subprocess
+import html5lib
+import random
+
+# Set up import path to find our own Django
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
+if not basedir in sys.path:
+    sys.path.insert(0, basedir)
+
+# Parse args now, so we can use custom settings when importing django
+parser = argparse.ArgumentParser(
+    description="""Perform a test crawl of the project. For each found URL, the HTTP
+    response status is printed. If it's not OK/redirect, FAIL is
+    printed - in case of errors, a stacktrace is also included.""")
+parser.add_argument('urls', metavar='URL', nargs='*',
+                    help='One or more URLs to start the crawl from')
+parser.add_argument('--urls', '-u', dest='url_file',
+                    help='File with URLs to start the crawl from')
+parser.add_argument('--slow', dest='slow_threshold', type=float, default=1.0,
+                    help='Responses taking longer than this (in seconds) results in SLOW being printed')
+parser.add_argument('--settings', help='Custom settings file')
+parser.add_argument('--logfile', help='Write to logfile')
+parser.add_argument('--user', help='Crawl logged in as this user', default=None)
+parser.add_argument('--no-follow', dest='follow', action='store_false', default=True,
+                    help='Do not follow URLs found in fetched pages, just check the given URLs')
+parser.add_argument('--validator-nu', dest='validator_nu', action='store_true',
+                    help='Use validator.nu instead of html5lib for HTML validation')
+parser.add_argument('--pedantic', action='store_true',
+                    help='Stop the crawl on the first HTML validation issue')
+parser.add_argument('--random', action='store_true',
+                    help='Crawl URLs randomly')
+parser.add_argument('--validate-all', dest='validate_all', action='store_true', default=False,
+                    help='Run html 5 validation on all pages, without skipping similar urls. '
+                    '(The default is to only run validation on one of /foo/1/, /foo/2/, /foo/3/, etc.)')
+parser.add_argument('-v', '--verbose', action='store_true', default=False,
+                    help='Be more verbose')
+
+args = parser.parse_args()
+
+# Import Django, call setup()
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", args.settings or "ietf.settings_testcrawl")
+
+import django
+import django.test
+import django.core.checks
+from django.conf import settings
+
+django.setup()
+
+# This needs to come after we set up sys path to include the local django
+import debug    # pyflakes:ignore
+
+# prevent memory from leaking when settings.DEBUG=True
+# from django.db import connection
+# class DontSaveQueries(list):
+#     def append(self, x):
+#         pass
+# connection.queries = DontSaveQueries()
+
+from ietf.name.models import DocTypeName
+from ietf.utils.html import unescape
+from ietf.utils.test_utils import unicontent
+
+# --- Constants ---
+
+MAX_URL_LENGTH = 500
+
+# --- Functions ---
+
+def note(s):
+    if args.verbose:
+        sys.stderr.write(s)
+        sys.stderr.write('\n')
+
+def strip_url(url):
+    if url.startswith("http://testserver"):
+        url = url[len("http://testserver"):]
+    fragment_url = re.search("^(.+)#[a-z_.-]+$", url)
+    if fragment_url:
+        url = fragment_url.group(1)
+    return url
+
+def extract_html_urls(content):
+    for m in re.finditer(r'(<(?:(?:a|link) [^>]*href|(?:img|script) [^>]*src)=[\'"]([^"]+)[\'"][^>]*>)', content):
+        if re.search(r'rel=["\']?nofollow["\']', m.group(1)):
+            continue
+        url = strip_url(m.group(2))
+        if len(url) > MAX_URL_LENGTH:
+            continue # avoid infinite GET parameter appendages
+
+        if not url.startswith("/"):
+            continue
+
+        if url.startswith("//"):
+            continue
+
+        yield unescape(url)
+
+def extract_tastypie_urls(content):
+    VISIT_OBJECTS = False
+    VISIT_NEXT = False
+    data = json.loads(content)
+    for item in data:
+        if type(data[item]) is dict:
+            if "list_endpoint" in data[item]:
+                uri = data[item]["list_endpoint"]
+                yield uri
+    if VISIT_NEXT:
+        if "meta" in data and "next" in data["meta"]:
+            uri = data["meta"]["next"]
+            if uri != None:
+                yield uri
+    if VISIT_OBJECTS:
+        if "objects" in data:
+            object_list = data["objects"]
+            for i in range(len(object_list)):
+                if "resource_uri" in object_list[i]:
+                    uri = object_list[i]["resource_uri"]
+                    yield uri
+
+def check_html_valid(url, response, args):
+    global parser, validated_urls, doc_types, warnings
+    key = url
+    if not args.validate_all:
+        # derive a key for urls like this by replacing primary keys
+        key = re.sub("#.*$",       "", key)
+        key = re.sub("/.+@.+/",    "/x@x.org/", key)
+        key = re.sub("/[0-9.]+/",   "/mmmm/", key)
+        key = re.sub("/[0-9.]+/",   "/nnnn/", key)
+        key = re.sub("/ag/[a-z0-9-]+/",   "/ag/foo/", key)
+        key = re.sub("/area/[a-z0-9-]+/",   "/area/foo/", key)
+        key = re.sub("/bcp[0-9]+/",   "/bcpnnn/", key)
+        key = re.sub("/conflict-review-[a-z0-9-]+/",   "/conflrev-foo/", key)
+        key = re.sub("/dir/[a-z0-9-]+/",   "/dir/foo/", key)
+        key = re.sub("/draft-[a-z0-9-]+/",   "/draft-foo/", key)
+        key = re.sub("/group/[a-z0-9-]+/",   "/group/foo/", key)
+        key = re.sub("/html/[a-z0-9-]+",   "/html/foo/", key)
+        key = re.sub("/ipr/search/.*",   "/ipr/search/", key)
+        key = re.sub("/meeting/[-0-9a-z]+/agenda/[0-9a-z]+/",   "/meeting/nn/agenda/foo/", key)
+        key = re.sub("/release/[0-9dev.]+/",   "/release/n.n.n/", key)
+        key = re.sub("/rfc[0-9]+/",   "/rfcnnnn/", key)
+        key = re.sub("/rg/[a-z0-9-]+/",   "/rg/foo/", key)
+        key = re.sub("/secr/srec/nnnn/[0-9a-z-]+/", "/secr/sreq/nn/bar/", key)
+        key = re.sub("/state/[a-z0-9-]+/",   "/state/foo/", key)
+        key = re.sub("/state/[a-z0-9-]+/[a-z0-9-]+/",   "/state/foo/bar/", key)
+        key = re.sub("/status-change-[a-z0-9-]+/",   "/statchg-foo/", key)
+        key = re.sub("/std[0-9]+/",   "/stdnnn/", key)
+        key = re.sub("/submit/status/nnnn/[0-9a-f]+/", "/submit/status/nnnn/bar/", key)
+        key = re.sub("/team/[a-z0-9-]+/",   "/team/foo/", key)
+        key = re.sub("/wg/[a-z0-9-]+/",   "/wg/foo/", key)
+        key = re.sub("\?.*$",       "", key)
+
+        for slug in doc_types:
+            key = re.sub("/%s-.*/"%slug, "/%s-nnnn/"%slug, key)
+
+    if not key in validated_urls:
+        note('Validate: %-32s: %s' % (url[:32], key))
+        # These URLs have known issues, skip them until those are fixed
+        for pattern in (
+                '/secr',
+		'admin/',
+		'/doc/.*/edit/info/',
+		'rfc542$',
+		'rfc776$',
+		'draft-leroux-pce-pcecp-interarea-reqs',
+                'draft-fujiwara-dnsop-resolver-update',
+            ):
+            if re.search(pattern, url):
+                validated_urls[key] = True
+                log("%s blacklisted; skipping HTML validation" % url)
+                return
+
+        if hasattr(response, "content"):
+            content = response.content
+        else:
+            content = response.streaming_content
+        validated_urls[key] = True
+        if args.validator_nu:
+            v = subprocess.Popen(["java", "-jar", basedir + "/bin/vnu.jar",
+                                  "--format", "json", "-"],
+                                 stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+            for m in json.loads(v.communicate(content)[1])["messages"]:
+                t = m["subType"] if m["type"] == "info" else m["type"]
+                tags.append("\n%s\tLine %d: %s" %
+                            (t.upper(), m["lastLine"], m["message"]))
+                tags.append("\n\t%s" % m["extract"].replace('\n', ' '))
+                tags.append("\n\t%s%s" %
+                            (" " * m["hiliteStart"], "^" * m["hiliteLength"]))
+                # disregard some HTML issues that are (usually) due to invalid
+                # database content
+                if not re.search('Forbidden code point|Bad value|seamless|The first child|Duplicate ID|The first occurrence of ID', m["message"]):
+                    warnings += 1
+        else:
+            try:
+                parser.parse(content)
+            except Exception as e:
+                for err in parser.errors:
+                    pos, code, data = err
+                    tags.append(u"WARN invalid html at line, pos %s: %s" % (pos, e))
+                warnings += 1
+
+def skip_extract_from(url):
+    for pattern in (
+            r'^/doc/html/[a-z0-9-]+',
+            r'^/meeting/[a-z0-9-]+/agenda/[a-z0-9-]+',
+            r'^/static/coverage/',
+        ):
+        if re.search(pattern, url):
+            return True
+    return False
+
+def skip_url(url):
+    for pattern in (
+            "^/community/[0-9]+/remove_document/",
+            "^/community/personal/",
+            # Skip most of the slow pdf composite generation urls and svg urls
+            "^/meeting/[0-9]+/agenda/[0-9b-z].*-drafts\\.pdf",
+            "^/wg/[a-z0-9-]+/deps/svg/",
+            # This bad url occurs in an uploaded html agenda:
+            r"/site/ietfdhcwg/_/rsrc/1311005436000/system/app/css/overlay.css\?cb=simple100%250150goog-ws-left",
+            r"/dir/tsvdir/reviews/",
+            r"draft-touch-msword-template-v2\.0",
+
+            # These will always 404:
+            r"^/doc/html/charter-ietf-cicm",
+            r"^/doc/html/charter-ietf-dcon",
+            r"^/doc/html/charter-ietf-fun",
+            r"^/doc/html/charter-ietf-multrans",
+            r"^/doc/html/charter-ietf-sdn",
+            r"^/doc/html/charter-ietf-woes",
+            r"^/doc/html/draft-allan-mpls-loadbal-06",
+            r"^/doc/html/draft-allocchio-mail11-00",
+            r"^/doc/html/draft-almquist-leak-01",
+            r"^/doc/html/draft-almquist-nexthop-01",
+            r"^/doc/html/draft-armitage-ion-mars-scsp-06",
+            r"^/doc/html/draft-balakrishnan-cm-03",
+            r"^/doc/html/draft-ballardie-cbt-02",
+            r"^/doc/html/draft-bellovin-ipng-shape-of-bits-00",
+            r"^/doc/html/draft-bellovin-itrace-04",
+            r"^/doc/html/draft-bhaskar-pim-ss-04",
+            r"^/doc/html/draft-bhattach-diot-pimso-04",
+            r"^/doc/html/draft-bierman-rmonmib-apmcaps-04",
+            r"^/doc/html/draft-blaze-ipsp-trustmgt-04",
+            r"^/doc/html/draft-blumenthal-snmpv2a-community-00",
+            r"^/doc/html/draft-borenstein-agc-spec-00",
+            r"^/doc/html/draft-borenstein-kidcode-00",
+            r"^/doc/html/draft-borenstein-mailcap-00",
+            r"^/doc/html/draft-borenstein-pgp-mime-00",
+            r"^/doc/html/draft-brockhaus-lamps-cmp-updates-00",
+            r"^/doc/html/draft-brockhaus-lamps-cmp-updates-03",
+            r"^/doc/html/draft-brockhaus-lamps-lightweight-cmp-profile-00",
+            r"^/doc/html/draft-brockhaus-lamps-lightweight-cmp-profile-03",
+            r"^/doc/html/draft-brown-supplpkgs-04",
+            r"^/doc/html/draft-brownlee-acct-arch-report-03",
+            r"^/doc/html/draft-cain-igmp-00",
+            r"^/doc/html/draft-calhoun-aaa-diameter-comp-01",
+            r"^/doc/html/draft-calhoun-mobileip-fa-tokens-04",
+            r"^/doc/html/draft-calhoun-mobileip-min-lat-handoff-02",
+            r"^/doc/html/draft-callon-addflow-support-clnp-00",
+            r"^/doc/html/draft-callon-routing-00",
+            r"^/doc/html/draft-carpenter-ipng-nosi-00",
+            r"^/doc/html/draft-carpenter-percep-00",
+            r"^/doc/html/draft-casati-gtp-03",
+            r"^/doc/html/draft-ceuppens-mpls-optical-04",
+            r"^/doc/html/draft-chapin-clnp-ISO8473-00",
+            r"^/doc/html/draft-cheng-modular-ikmp-00",
+            r"^/doc/html/draft-cole-appm-01",
+            r"^/doc/html/draft-conta-ipv6-icmp-igmp-00",
+            r"^/doc/html/draft-coya-test-01",
+            r"^/doc/html/draft-crocker-cidrd-myth-00",
+            r"^/doc/html/draft-crocker-pci-00",
+            r"^/doc/html/draft-crocker-stif-00",
+            r"^/doc/html/draft-daigle-napstr-05",
+            r"^/doc/html/draft-davie-intserv-compress-01",
+            r"^/doc/html/draft-davie-tag-switching-atm-04",
+            r"^/doc/html/draft-davin-qosrep-00",
+            r"^/doc/html/draft-davin-rsvfms-00",
+            r"^/doc/html/draft-dckmtr-proxy-00",
+            r"^/doc/html/draft-doolan-tdp-spec-04",
+            r"^/doc/html/draft-duerst-ruby-04",
+            r"^/doc/html/draft-dusse-pem-message-00",
+            r"^/doc/html/draft-dutt-rap-rsvp-proxy-01",
+            r"^/doc/html/draft-eastlake-muse-05",
+            r"^/doc/html/draft-elmalki-soliman-hmipv4v6-04",
+            r"^/doc/html/draft-ema-vpim-simplev3-02",
+            r"^/doc/html/draft-esaki-co-cl-ip-forw-atm-01",
+            r"^/doc/html/draft-etf-marid-protocol-00",
+            r"^/doc/html/draft-faltstrom-macmime-00",
+            r"^/doc/html/draft-faltstrom-whois-05",
+            r"^/doc/html/draft-fielding-http-spec-01",
+            r"^/doc/html/draft-flick-interfaces-mib-00",
+            r"^/doc/html/draft-flick-repeater-dev-mib-00",
+            r"^/doc/html/draft-floyd-cc-alt",
+            r"^/doc/html/draft-ford-bigten-bt-format-00",
+            r"^/doc/html/draft-ford-sdrp-sipp16-format-00",
+            r"^/doc/html/draft-freed-ftbp-00",
+            r"^/doc/html/draft-freed-newenc-01",
+            r"^/doc/html/draft-gellens-imapext-annotate-01",
+            r"^/doc/html/draft-gharai-hdtv-video-04",
+            r"^/doc/html/draft-glenn-layer-security-00",
+            r"^/doc/html/draft-hares-idrp-familytree-00",
+            r"^/doc/html/draft-harrington-control-mib-00",
+            r"^/doc/html/draft-harrington-data-filter-mib-00",
+            r"^/doc/html/draft-haskin-intra-route-server-00",
+            r"^/doc/html/draft-helenius-ppp-subnet-04",
+            r"^/doc/html/draft-hinden-ipng-addr-00",
+            r"^/doc/html/draft-holbrook-ssm-04",
+            r"^/doc/html/draft-hollenbeck-epp-tcp-02",
+            r"^/doc/html/draft-houldsworth-ip6-nsap-use-00",
+            r"^/doc/html/draft-houldsworth-sc6-hot-finland-00",
+            r"^/doc/html/draft-huitema-shipworm-01",
+            r"^/doc/html/draft-iab-liaisons-00",
+            r"^/doc/html/draft-iab-mou2jtc1-03",
+            r"^/doc/html/draft-iab-standards-processv3-00",
+            r"^/doc/html/draft-ietf-aft-socks-md5-auth-00",
+            r"^/doc/html/draft-ietf-bgpdepl-minutes-93feb-00",
+            r"^/doc/html/draft-ietf-bmwg-overallperf-00",
+            r"^/doc/html/draft-ietf-bridge-sr-obj-00",
+            r"^/doc/html/draft-ietf-cat-altftp-00",
+            r"^/doc/html/draft-ietf-cip-apisocket-00",
+            r"^/doc/html/draft-ietf-cipso-ipsec-option-00",
+            r"^/doc/html/draft-ietf-decnetiv-mib-implement-00",
+            r"^/doc/html/draft-ietf-dhc-problem-stmt-00",
+            r"^/doc/html/draft-ietf-dns-idpr-02",
+            r"^/doc/html/draft-ietf-dns-ixfr-01",
+            r"^/doc/html/draft-ietf-dnsind-dynDNS-arch-00",
+            r"^/doc/html/draft-ietf-dnsind-dynDNS-impl-00",
+            r"^/doc/html/draft-ietf-dtn-tcpclv4-00",
+            r"^/doc/html/draft-ietf-dtn-tcpclv4-15",
+            r"^/doc/html/draft-ietf-dtn-tcpclv4-18",
+            r"^/doc/html/draft-ietf-dtn-tcpclv4-19",
+            r"^/doc/html/draft-ietf-ethermib-objects-00",
+            r"^/doc/html/draft-ietf-fax-tiff-f-reg-01",
+            r"^/doc/html/draft-ietf-geopriv-dhcp-lo-option-01",
+            r"^/doc/html/draft-ietf-html-charset-harmful-00",
+            r"^/doc/html/draft-ietf-iafa-templates-00",
+            r"^/doc/html/draft-ietf-idmr-mtree-00",
+            r"^/doc/html/draft-ietf-idmr-pim-dense-spec-00",
+            r"^/doc/html/draft-ietf-idmr-pim-dm-spec-08",
+            r"^/doc/html/draft-ietf-idr-bgp-tcp-md5bad-01",
+            r"^/doc/html/draft-ietf-idr-community-00",
+            r"^/doc/html/draft-ietf-idr-rifs-00",
+            r"^/doc/html/draft-ietf-ids-iwps-design-spec-01",
+            r"^/doc/html/draft-ietf-ids-pilots-00",
+            r"^/doc/html/draft-ietf-iesg-evolutionplan-00",
+            r"^/doc/html/draft-ietf-iiir-html-01",
+            r"^/doc/html/draft-ietf-iiir-http-00",
+            r"^/doc/html/draft-ietf-ipae-new-ip-00",
+            r"^/doc/html/draft-ietf-ipidrp-sip-01",
+            r"^/doc/html/draft-ietf-iplpdn-multi-isdn-02",
+            r"^/doc/html/draft-ietf-iplpdn-para-negotiation-02",
+            r"^/doc/html/draft-ietf-iplpdn-shortcutrouting-02",
+            r"^/doc/html/draft-ietf-iplpdn-simple-multi-01",
+            r"^/doc/html/draft-ietf-ipp-indp-04",
+            r"^/doc/html/draft-ietf-ipsec-ike-base-mode-03",
+            r"^/doc/html/draft-ietf-ipsec-intragkm-03",
+            r"^/doc/html/draft-ietf-ipsp-spsl-04",
+            r"^/doc/html/draft-ietf-ipsra-pic-07",
+            r"^/doc/html/draft-ietf-isis-atipx-00",
+            r"^/doc/html/draft-ietf-isis-multilevel-routing-00",
+            r"^/doc/html/draft-ietf-isis-nbma-00",
+            r"^/doc/html/draft-ietf-isis-tcpip-01",
+            r"^/doc/html/draft-ietf-isn-aup-01",
+            r"^/doc/html/draft-ietf-lsma-scenarios-03",
+            r"^/doc/html/draft-ietf-mailext-lang-char-00",
+            r"^/doc/html/draft-ietf-mhsds-822dir-03",
+            r"^/doc/html/draft-ietf-mhsds-convert-01",
+            r"^/doc/html/draft-ietf-mhsds-mhsprofile-04",
+            r"^/doc/html/draft-ietf-mhsds-mhsuse-03",
+            r"^/doc/html/draft-ietf-mmusic-agree-00",
+            r"^/doc/html/draft-ietf-mobileip-aaa-req-00",
+            r"^/doc/html/draft-ietf-mobileip-addr-ext-00",
+            r"^/doc/html/draft-ietf-mobileip-integrated-00",
+            r"^/doc/html/draft-ietf-mobileip-mib-fa-01",
+            r"^/doc/html/draft-ietf-mobileip-mib-ha-01",
+            r"^/doc/html/draft-ietf-mobileip-mib-mn-01",
+            r"^/doc/html/draft-ietf-mobileip-mib-sec-01",
+            r"^/doc/html/draft-ietf-msi-api-03",
+            r"^/doc/html/draft-ietf-nasreq-nasrequirements-01",
+            r"^/doc/html/draft-ietf-netdata-implement-03",
+            r"^/doc/html/draft-ietf-netdata-netdata-04",
+            r"^/doc/html/draft-ietf-nimrod-dns-01",
+            r"^/doc/html/draft-ietf-nisi-nicdoc-00",
+            r"^/doc/html/draft-ietf-nisi-nics-00",
+            r"^/doc/html/draft-ietf-nntp-news-01",
+            r"^/doc/html/draft-ietf-oncrpc-remote-06",
+            r"^/doc/html/draft-ietf-osids-dirtree-00",
+            r"^/doc/html/draft-ietf-osids-dsanaming-02",
+            r"^/doc/html/draft-ietf-osids-requirements-00",
+            r"^/doc/html/draft-ietf-osids-simple-stack-00",
+            r"^/doc/html/draft-ietf-osids-treestructure-00",
+            r"^/doc/html/draft-ietf-osinsap-format-01",
+            r"^/doc/html/draft-ietf-osix500-directories-01",
+            r"^/doc/html/draft-ietf-ospf-extattr-00",
+            r"^/doc/html/draft-ietf-ospf-ipv6-ext-00",
+            r"^/doc/html/draft-ietf-ospf-pmp-if-00",
+            r"^/doc/html/draft-ietf-otp-ver-03",
+            r"^/doc/html/draft-ietf-pana-aaa-interworking-00",
+            r"^/doc/html/draft-ietf-pem-notary-00",
+            r"^/doc/html/draft-ietf-pim-ipv6-04",
+            r"^/doc/html/draft-ietf-pim-simplekmp-02",
+            r"^/doc/html/draft-ietf-pint-conf-02",
+            r"^/doc/html/draft-ietf-pip-vector-00",
+            r"^/doc/html/draft-ietf-poised-nomcomm-00",
+            r"^/doc/html/draft-ietf-pppext-aha-auth-00",
+            r"^/doc/html/draft-ietf-pppext-ipcp-network-04",
+            r"^/doc/html/draft-ietf-pppext-kap-auth-00",
+            r"^/doc/html/draft-ietf-pppext-kapv4-auth-00",
+            r"^/doc/html/draft-ietf-ripv2-ripng-00",
+            r"^/doc/html/draft-ietf-rmon-trap-00",
+            r"^/doc/html/draft-ietf-rmonmib-rmon2hc-01",
+            r"^/doc/html/draft-ietf-roamops-actng-08",
+            r"^/doc/html/draft-ietf-rohc-rtp-rocco-performance-01",
+            r"^/doc/html/draft-ietf-rohc-rtp-rocco-video-01",
+            r"^/doc/html/draft-ietf-rolc-nhrp-mib-00",
+            r"^/doc/html/draft-ietf-rreq-iprouters-04",
+            r"^/doc/html/draft-ietf-rsvp-policy-ext-05",
+            r"^/doc/html/draft-ietf-rsvp-state-compression-04",
+            r"^/doc/html/draft-ietf-sdr-IPv6-pack-00",
+            r"^/doc/html/draft-ietf-sdr-pl-00",
+            r"^/doc/html/draft-ietf-sdr-route-construction-01",
+            r"^/doc/html/draft-ietf-sdr-route-setup-00",
+            r"^/doc/html/draft-ietf-sdr-speakers-attribute-00",
+            r"^/doc/html/draft-ietf-sip-64bit-plan-00",
+            r"^/doc/html/draft-ietf-sip-dnss-00",
+            r"^/doc/html/draft-ietf-sip-ospf-00",
+            r"^/doc/html/draft-ietf-sip-rip-01",
+            r"^/doc/html/draft-ietf-sip-unicast-addr-00",
+            r"^/doc/html/draft-ietf-sipp-auto-addr-00",
+            r"^/doc/html/draft-ietf-sipp-bsd-api-02",
+            r"^/doc/html/draft-ietf-sipp-dhcpopt-01",
+            r"^/doc/html/draft-ietf-sipp-discovery-04",
+            r"^/doc/html/draft-ietf-sipp-discovery-formats-00",
+            r"^/doc/html/draft-ietf-sipp-dns-01",
+            r"^/doc/html/draft-ietf-sipp-dns-ext-00",
+            r"^/doc/html/draft-ietf-sipp-icmp-igmp-00",
+            r"^/doc/html/draft-ietf-sipp-routing-addr-02",
+            r"^/doc/html/draft-ietf-sipp-sst-overview-00",
+            r"^/doc/html/draft-ietf-sipping-overload-design",
+            r"^/doc/html/draft-ietf-smime-certdist-06",
+            r"^/doc/html/draft-ietf-smtpext-pipeline-02",
+            r"^/doc/html/draft-ietf-snmp-isdn-cisco-00",
+            r"^/doc/html/draft-ietf-snmpsec-m2mv2-01",
+            r"^/doc/html/draft-ietf-snmpsec-mibv2-00",
+            r"^/doc/html/draft-ietf-snmpsec-protov2-01",
+            r"^/doc/html/draft-ietf-snmpsec-tmv2-00",
+            r"^/doc/html/draft-ietf-stjohns-ipso-00",
+            r"^/doc/html/draft-ietf-svrloc-discovery-11",
+            r"^/doc/html/draft-ietf-tcplw-extensions-00",
+            r"^/doc/html/draft-ietf-tcplw-high-performance-01",
+            r"^/doc/html/draft-ietf-telnet-authker-v5-01",
+            r"^/doc/html/draft-ietf-telnet-compression-00",
+            r"^/doc/html/draft-ietf-telnet-encryption-02",
+            r"^/doc/html/draft-ietf-tewg-measure-07",
+            r"^/doc/html/draft-ietf-thinosi-profile-00",
+            r"^/doc/html/draft-ietf-tnfs-spec-03",
+            r"^/doc/html/draft-ietf-ucp-connectivity-01",
+            r"^/doc/html/draft-ietf-udlr-life-03",
+            r"^/doc/html/draft-ietf-ufdl-spec-01",
+            r"^/doc/html/draft-ietf-uri-roy-urn-urc-00",
+            r"^/doc/html/draft-ietf-uri-urc-00",
+            r"^/doc/html/draft-ietf-uri-urc-sgml-00",
+            r"^/doc/html/draft-ietf-uri-urc-spec-00",
+            r"^/doc/html/draft-ietf-uri-urc-trivial-00",
+            r"^/doc/html/draft-ietf-uri-urn-issues-00",
+            r"^/doc/html/draft-ietf-uri-urn-madsen-critique-00",
+            r"^/doc/html/draft-ietf-uri-urn-res-descript-00",
+            r"^/doc/html/draft-ietf-uri-urn-res-thoughts-00",
+            r"^/doc/html/draft-ietf-uri-urn-syntax-00",
+            r"^/doc/html/draft-ietf-uri-urn-x-dns-2-00",
+            r"^/doc/html/draft-ietf-uri-urn2urc-00",
+            r"^/doc/html/draft-ietf-uri-yaurn-00",
+            r"^/doc/html/draft-ietf-userdoc2-fyi-biblio-00",
+            r"^/doc/html/draft-ietf-uswg-fyi1-02",
+            r"^/doc/html/draft-ietf-whip-reqs-summary-01",
+            r"^/doc/html/draft-ietf-x400ops-admd-03",
+            r"^/doc/html/draft-ietf-x400ops-dnsx400rout-02",
+            r"^/doc/html/draft-ietf-x400ops-tbl-dist-00",
+            r"^/doc/html/draft-ietf-x400ops-tbl-dist-part1-01",
+            r"^/doc/html/draft-ietf-x400ops-tbl-dist-part2-01",
+            r"^/doc/html/draft-ipsec-isakmp-mode-cfg-02",
+            r"^/doc/html/draft-johnson-imhp-00",
+            r"^/doc/html/draft-jseng-utf5-02",
+            r"^/doc/html/draft-just-ldapv3-rescodes-03",
+            r"^/doc/html/draft-karrenberg-proposal-00",
+            r"^/doc/html/draft-kastenholz-loki-00",
+            r"^/doc/html/draft-kempf-scope-rules-04",
+            r"^/doc/html/draft-klyne-conneg-feature-match-03",
+            r"^/doc/html/draft-koch-dnsind-local-compression-01",
+            r"^/doc/html/draft-kzm-rap-sppi-04",
+            r"^/doc/html/draft-kzm-snmpv2-adminv2-alt-00",
+            r"^/doc/html/draft-kzm-snmpv2-coex-alt-00",
+            r"^/doc/html/draft-kzm-snmpv2-conf-alt-00",
+            r"^/doc/html/draft-kzm-snmpv2-intro-alt-00",
+            r"^/doc/html/draft-kzm-snmpv2-mib-alt-00",
+            r"^/doc/html/draft-kzm-snmpv2-smi-alt-00",
+            r"^/doc/html/draft-kzm-snmpv2-usec-conf-alt-00",
+            r"^/doc/html/draft-larson-bad-dns-res-01",
+            r"^/doc/html/draft-lear-foglamps-03",
+            r"^/doc/html/draft-leech-socks-protocol-v4-01",
+            r"^/doc/html/draft-levi-snmp-mid-level-mgr-00",
+            r"^/doc/html/draft-levi-snmp-script-language-00",
+            r"^/doc/html/draft-levinson-sgml-02",
+            r"^/doc/html/draft-li-bigten-addr-format-00",
+            r"^/doc/html/draft-li-tap-ipv7-00",
+            r"^/doc/html/draft-lloyd-ip6-iso-itu-reg-00",
+            r"^/doc/html/draft-macker-mdp-framework-05",
+            r"^/doc/html/draft-mahoney-snmpv2-features-00",
+            r"^/doc/html/draft-mahoney-snmpv2-proto-alt-00",
+            r"^/doc/html/draft-martensson-rocco-video-04",
+            r"^/doc/html/draft-mccann-mobileip-sessionid-04",
+            r"^/doc/html/draft-megginson-ldup-lcup-01",
+            r"^/doc/html/draft-metzger-ah-sha-00",
+            r"^/doc/html/draft-mpls-rsvpte-attributes-00",
+            r"^/doc/html/draft-myers-imap-imsp-01",
+            r"^/doc/html/draft-myers-imap-mbox-00",
+            r"^/doc/html/draft-myers-smtp-mult-01",
+            r"^/doc/html/draft-nelson-model-mailext-00",
+            r"^/doc/html/draft-newman-imap-annotate-00",
+            r"^/doc/html/draft-nguyen-bgp-ipv6-vpn-03",
+            r"^/doc/html/draft-nordmark-ipv6-aaa-hooks-04",
+            r"^/doc/html/draft-nyckelgard-isl-arch-04",
+            r"^/doc/html/draft-ohta-address-allocation-01",
+            r"^/doc/html/draft-ohta-dynamic-dns-00",
+            r"^/doc/html/draft-ohta-ip-over-atm-02",
+            r"^/doc/html/draft-ohta-mime-charset-names-00",
+            r"^/doc/html/draft-ohta-shared-media-02",
+            r"^/doc/html/draft-ohta-simple-dns-01",
+            r"^/doc/html/draft-ohta-text-encoding-01",
+            r"^/doc/html/draft-ohta-translation-instr-01",
+            r"^/doc/html/draft-ooms-cl-multicast-03",
+            r"^/doc/html/draft-ops-rfc2011-update-01",
+            r"^/doc/html/draft-ouldbrahim-bgpvpn-auto-03",
+            r"^/doc/html/draft-palme-autosub-06",
+            r"^/doc/html/draft-pan-diffserv-mib-01",
+            r"^/doc/html/draft-perkins-cnlp-support-00",
+            r"^/doc/html/draft-perkins-homeaddr-dhcpopt-00",
+            r"^/doc/html/draft-perkins-opaque-04",
+            r"^/doc/html/draft-polk-slp-loc-auth-server-04",
+            r"^/doc/html/draft-popp-cnrp-goals-01",
+            r"^/doc/html/draft-pusateri-igmp-mib-00",
+            r"^/doc/html/draft-pusateri-ipmulti-mib-00",
+            r"^/doc/html/draft-reddy-opsawg-mud-tls-00",
+            r"^/doc/html/draft-reddy-opsawg-mud-tls-03",
+            r"^/doc/html/draft-reichmeyer-polterm-terminology-04",
+            r"^/doc/html/draft-rekhter-arch-sipp16-addr-00",
+            r"^/doc/html/draft-rekhter-bigten-addr-arch-00",
+            r"^/doc/html/draft-rekhter-direct-provider-01",
+            r"^/doc/html/draft-rekhter-idr-over-atm-00",
+            r"^/doc/html/draft-rekhter-lsr-mobile-hosts-00",
+            r"^/doc/html/draft-rekhter-select-providers-02",
+            r"^/doc/html/draft-rekhter-sops-02",
+            r"^/doc/html/draft-rekhter-stratum-aggregation-01",
+            r"^/doc/html/draft-renwick-hippiarp-01",
+            r"^/doc/html/draft-renwick-hippimib-01",
+            r"^/doc/html/draft-rfced-info-corson-00",
+            r"^/doc/html/draft-rfced-info-katsube-oops-00",
+            r"^/doc/html/draft-rfced-info-perkins-05",
+            r"^/doc/html/draft-rfced-info-pi-vs-pa-addrspac-00",
+            r"^/doc/html/draft-rfced-info-senie-00",
+            r"^/doc/html/draft-ronc-domain-phb-set-ldap-rep-04",
+            r"^/doc/html/draft-ronc-domain-phb-set-specification-04",
+            r"^/doc/html/draft-rose-limit-01",
+            r"^/doc/html/draft-rose-smxp-spec-00",
+            r"^/doc/html/draft-rosen-ppvpn-l2vpn-01",
+            r"^/doc/html/draft-rosen-tag-stack-05",
+            r"^/doc/html/draft-rosenberg-mmusic-sdp-offer-answer-01",
+            r"^/doc/html/draft-rosenberg-sip-tunnels-01",
+            r"^/doc/html/draft-salzr-ldap-repsig-01",
+            r"^/doc/html/draft-sandick-pimsm-ssmrules-04",
+            r"^/doc/html/draft-schroeppel-dnsind-ecc-04",
+            r"^/doc/html/draft-simpson-exchanges-00",
+            r"^/doc/html/draft-simpson-ipv6-deploy-00",
+            r"^/doc/html/draft-simpson-ipv6-discovery-req-00",
+            r"^/doc/html/draft-simpson-ipv6-hc-00",
+            r"^/doc/html/draft-simpson-sipp-64-bit-plan-00",
+            r"^/doc/html/draft-sinnreich-interdomain-sip-qos-osp-02",
+            r"^/doc/html/draft-slutsman-aicd-02",
+            r"^/doc/html/draft-speer-avt-layered-video-05",
+            r"^/doc/html/draft-stein-green-commerce-model-00",
+            r"^/doc/html/draft-svanbro-rohc-lower-layer-guidelines-04",
+            r"^/doc/html/draft-templin-atn-aero-interface-00",
+            r"^/doc/html/draft-templin-atn-aero-interface-21",
+            r"^/doc/html/draft-teraoka-ipv6-mobility-sup-07",
+            r"^/doc/html/draft-thayer-seccomp-04",
+            r"^/doc/html/draft-traina-bgp-confed-00",
+            r"^/doc/html/draft-treese-class-desc-00",
+            r"^/doc/html/draft-vaudreuil-binaryheaders-01",
+            r"^/doc/html/draft-vaudreuil-enum-e164dir-05",
+            r"^/doc/html/draft-veizades-ipng-svrloc-00",
+            r"^/doc/html/draft-villamizar-isis-omp-01",
+            r"^/doc/html/draft-waldbusser-conventions-01",
+            r"^/doc/html/draft-waldbusser-rmonmib-apm-04",
+            r"^/doc/html/draft-waldbusser-ssecimpl-01",
+            r"^/doc/html/draft-waters-snmpv1-sec-mech-00",
+            r"^/doc/html/draft-weider-comindex-00",
+            r"^/doc/html/draft-wijnen-snmpv2-snmpv2t-00",
+            r"^/doc/html/draft-woundy-dhcpleasequery-04",
+            r"^/doc/html/draft-wright-policy-mpls-04",
+            r"^/doc/html/draft-yu-asn1-pitfalls-04",
+            r"^/doc/html/draft-yu-rpd-00",
+            r"^/doc/html/draft-zaccone-nat-rsip-gen-arch-02",
+            r"^/doc/html/draft-zaccone-nat-transp-fram-02",
+            r"^/doc/html/draft-zaccone-nat-transport-03",
+            r"^/doc/html/status-change-icmpv6-dns-ipv6-to-internet-standard",
+
+            r"^/static/coverage/",
+            r"^/meeting/6[0-4]/agenda",
+            r"^https?://www.ietf.org/",
+        ):
+        if re.search(pattern, url):
+            return True
+    return False
+
+def log(s):
+    print(s)
+    if logfile:
+        if not type(s) is str:
+            s = s.encode('utf-8')
+        logfile.write(s)
+        logfile.write('\n')
+
+def get_referrers(url):
+    ref_list = []
+    while url in referrers:
+        url = referrers[url]
+        if url in ref_list:
+            log("Circular referral list, discovered at %s" % url)
+            break
+        ref_list.append(url)
+    return ref_list
+
+# --- GLobals ---
+
+slow_threshold = args.slow_threshold
+
+visited = set()
+urls = {} # url -> referrer
+referrers = {}
+
+initial_urls = []
+initial_urls.extend(args.urls)
+
+if args.url_file:
+    with open(args.url_file) as f:
+        for line in f:
+            line = line.partition("#")[0].strip()
+            if line:
+                initial_urls.append(line)
+
+if not initial_urls:
+    initial_urls.append("/")
+    initial_urls.append("/api/v1")
+
+for url in initial_urls:
+    urls[url] = "[initial]"
+
+parser = html5lib.HTMLParser(strict=True)
+
+# initialise validated_urls with some patterns we don't want to check,
+# because they aren't under our control, such as uploaded group agendas.
+validated_urls = {'/meeting/nn/agenda/foo/': True, }
+
+doc_types = [ t.slug for t in DocTypeName.objects.all() ]
+
+errors = 0
+warnings = 0
+count = 0
+
+start_time = datetime.datetime.now()
+
+client = django.test.Client(Accept='text/html,text/plain,application/json')
+
+logfile = None
+if args.logfile:
+    logfile = open(args.logfile, "w")
+
+# --- Main ---
+
+if __name__ == "__main__":
+    if (args.user):
+        # log in as user, to have the respective HTML generated by the templates
+        response = client.post('/accounts/login/',
+                               {'username': args.user, 'password': 'password'},
+                               secure=True, follow=True)
+        if (response.status_code != 200):
+            log("Could not log in as %s, HTML response %d" %
+                (args.user, response.status_code))
+            sys.exit(1)
+
+    # Run django system checks and checks from ietf.checks:
+    error_list = django.core.checks.run_checks()
+    silenced = []
+    for i in range(len(error_list)):
+        if error_list[i].id in settings.SILENCED_SYSTEM_CHECKS:
+            silenced.append(i)
+    silenced.sort(reverse=True)
+    for i in silenced:
+        del error_list[i]
+    if error_list:
+        print("")
+        for entry in error_list:
+            print(entry)
+
+    while urls:
+        if args.random:
+            # popitem() is documented to be random, but really isn't
+            url = random.choice(urls.keys())
+            referrer = urls.pop(url)
+        else:
+            url, referrer = urls.popitem()
+
+        visited.add(url)
+
+        if skip_url(url):
+            continue
+
+        timestamp = datetime.datetime.now()
+        acc_time = (timestamp - start_time).total_seconds()
+        acc_secs = (timestamp - start_time).total_seconds()
+        hrs = acc_secs // (60*60)
+        min = (acc_secs % (60*60)) // 60
+        sec = acc_secs % 60
+
+        try:
+            request_start = datetime.datetime.now()
+            if args.verbose:
+                sys.stderr.write(url+'\n')
+            r = client.get(url, secure=True)
+            elapsed = datetime.datetime.now() - request_start
+        except KeyboardInterrupt:
+            log(" ... was fetching %s" % url)
+            sys.exit(1)
+        except:
+            elapsed = datetime.datetime.now() - request_start
+            tags = [ u"FAIL  (from [ %s ])" % (",\n\t".join(get_referrers(url))) ]
+            log("%2d:%02d:%02d %7d %6d  %s %6.3fs %s %s" % (hrs,min,sec, len(visited), len(urls), 500, elapsed.total_seconds(), url, " ".join(tags)))
+            log("=============")
+            log(traceback.format_exc())
+            log("=============")
+            errors += 1
+        else:
+            tags = []
+
+            if r.status_code in (301, 302):
+                u = strip_url(r["Location"])
+                if u not in visited and u not in urls:
+                    urls[u] = referrer # referrer is original referrer, not redirected url
+                    referrers[u] = referrer
+
+            elif r.status_code == 200:
+                ctype = r["Content-Type"]
+                if ";" in ctype:
+                    ctype = ctype[:ctype.index(";")]
+
+                if ctype == "text/html":
+                    try:
+                        if args.follow and not skip_extract_from(url):
+                            for u in extract_html_urls(unicontent(r)):
+                                if u not in visited and u not in urls:
+                                    urls[u] = url
+                                    referrers[u] = url
+
+                        check_html_valid(url, r, args)
+
+                    except:
+                        log("error extracting HTML urls from %s" % url)
+                        log("=============")
+                        log(traceback.format_exc())
+                        log("=============")
+
+                elif ctype == "application/json":
+                    try:
+                        if args.follow:
+                            for u in extract_tastypie_urls(unicontent(r)):
+                                if u not in visited and u not in urls:
+                                    urls[u] = url
+                                    referrers[u] = url
+                    except:
+                        log("error extracting urls from %s" % url)
+                        log("=============")
+                        log(traceback.format_exc())
+                        log("=============")
+
+            else:
+                tags.append(u"FAIL  (from %s)" % (referrer, ))
+                errors += 1
+
+            if elapsed.total_seconds() > slow_threshold:
+                tags.append("SLOW")
+
+            acc_time = (timestamp - start_time).total_seconds()
+            acc_secs = (timestamp - start_time).total_seconds()
+            hrs = acc_secs // (60*60)
+            min = (acc_secs % (60*60)) // 60
+            sec = acc_secs % 60
+
+            if (len(visited) % 100) == 1:
+                log("\nElapsed  Visited  Queue Code   Time  Url  ...  Notes")
+
+            log("%2d:%02d:%02d %7d %6d  %s %6.3fs %s %s" % (hrs,min,sec, len(visited), len(urls), r.status_code, elapsed.total_seconds(), url, " ".join(tags)))
+            if ((errors or warnings) and args.pedantic):
+                sys.exit(1)
+
+    if logfile:
+        logfile.close()
+        sys.stderr.write("Output written to %s\n\n" % logfile.name)
+
+    if errors > 0:
+        sys.stderr.write("Found %s errors, grep output for FAIL for details\n" % errors)
+        sys.exit(1)
+    else:
+        sys.stderr.write("Found no errors.\n")
+    if warnings > 0:
+        sys.stderr.write("Found %s warnings, grep output for WARN for details\n" % warnings)
+    else:
+        sys.stderr.write("Found no warnings.\n")

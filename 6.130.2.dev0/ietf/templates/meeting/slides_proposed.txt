@@ -1,0 +1,12 @@
+{% load ietf_filters %}{% autoescape off %}From: {{settings.DEFAULT_FROM_EMAIL}}
+To: {{to}}{% if cc %}
+Cc: {{cc}}{% endif %}
+Subject: {{ submission.submitter }} has proposed slides for {{ submission.session.meeting }} : {{ submission.session.group.acronym }}{% if session.name %} : {{submission.session.name}}{% endif %}
+
+{{ submission.submitter }} has proposed slides for {{ submission.session.meeting }} : {{ submission.session.group.acronym }}{% if session.name %} : {{submission.session.name}}{% endif %}
+
+Title: {{submission.title}}
+
+You may approve or disapprove this proposal at {{settings.IDTRACKER_BASE_URL}}{% url "ietf.meeting.views.approve_proposed_slides" slidesubmission_id=submission.pk num=submission.session.meeting.number %}
+
+{% endautoescape %}

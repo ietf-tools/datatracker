@@ -1,0 +1,35 @@
+The "new" datatracker uses Twitter Bootstrap for the UI.
+
+Get familiar with http://getbootstrap.com/getting-started/ and use those
+UI elements instead of cooking up your own.
+
+We have some site-wide customization applied to the bootstrap version we keep
+in bootstrap/ (from which the minified dist version is built); it modifies
+some stuff under less/
+
+We also apply some additional customizations in static/css/ietf.css; we
+should eventually move that under bootstrap/less/ if possible. (ietf.css was
+what Lars used initially for customization with an unmodified bootstrap.)
+
+Some ground rules:
+
+* Think hard before tweaking the bootstrap CSS, it will make it harder to
+  upgrade to future releases.
+
+* No <style> tags in the HTML! Put CSS into the "morecss" block of a
+  template instead.
+
+* CSS that is used by multiple templates goes into static/css/ietf.css.
+
+* Javascript that is only used on one template goes into the "js" block of
+  that template.
+
+* Javascript that is used by multiple templates goes into static/js/ietf.js.
+
+* Every template includes jquery, so write jquery code and not plain Javascript.
+  It's shorter and often faster.
+
+* No CSS, HTML styling or Javascript in the python code!
+
+* Templates that use jquery or bootstrap plugins include the css file in the
+  "pagehead" block, and the Javascript in the "js" block.

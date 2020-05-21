@@ -1,0 +1,26 @@
+
+# set a fancy prompt
+PS_TIME="\A "
+
+if [ "$(whoami)" = "root" ]; then
+    PS_COLOUR='\[\033[1;31m\]'
+    PS_END="\[\033[m\]"
+else
+    PS_COLOUR="\[\033[1;34m\]"
+    PS_END="\[\033[m\]"
+fi
+
+if   [ "$TERM" = xterm ]; then
+    PS_XTERM="\[\033]0;\]\h:\w\007"
+else
+    PS_XTERM=""
+fi
+COLOUR_RED='\[\033[1;31m\]'
+COLOUR_BLK='\[\033[1;30m\]'
+if [ "$SHLVL" -gt 1 ]; then
+    PS_SHLVL="$(eval "printf '>%.0s' {2..$SHLVL}") "
+else
+    PS_SHLVL=""
+fi
+
+PS1="$PS_XTERM\n$COLOUR_RED$PS_SHLVL$PS_COLOUR$PS_TIME$COLOUR_RED$PS_COLOUR${VIRTUAL_ENV:+$COLOUR_RED($(basename $VIRTUAL_ENV))$PS_COLOUR }\w\n\u @ $COLOUR_BLK\h$PS_COLOUR \\$ $PS_END"

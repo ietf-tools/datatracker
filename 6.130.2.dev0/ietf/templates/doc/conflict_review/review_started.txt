@@ -1,0 +1,12 @@
+{% load mail_filters %}{% autoescape off %}To: {{to}}{% if cc %}
+Cc: {{cc}}
+{% endif %}From: {{ frm }}
+Subject: Conflict Review requested for {{reviewed_doc.name}}
+
+{{ by.name }} has requested a conflict review for:
+    {{ reviewed_doc.name }}
+    {{ reviewed_doc.title }}
+
+The conflict review is being tracked at <{{ review_url }}>
+
+{% endautoescape%}

@@ -1,0 +1,18 @@
+{% autoescape off %}
+A new version (-{{ submission.rev }}) has been submitted for {{ submission.name }}:
+https://www.ietf.org/internet-drafts/{{ submission.name }}-{{ submission.rev }}.txt
+{% if msg %}
+{{ msg|striptags }}
+{% endif %}
+
+The IETF datatracker page for this Internet-Draft is:
+https://datatracker.ietf.org/doc/{{ submission.name }}/
+
+Diff from previous version:
+{{rfcdiff_base_url}}?url2={{ submission.name }}-{{ submission.rev }}
+
+Please note that it may take a couple of minutes from the time of submission
+until the diff is available at tools.ietf.org.
+
+IETF Secretariat.
+{% endautoescape %}

@@ -17,7 +17,7 @@ from ietf.doc.models import (BallotType, DeletedEvent, StateType, State, Documen
     InitialReviewDocEvent, DocHistoryAuthor, BallotDocEvent, RelatedDocument,
     RelatedDocHistory, BallotPositionDocEvent, AddedMessageEvent, SubmissionDocEvent,
     ReviewRequestDocEvent, ReviewAssignmentDocEvent, EditedAuthorsDocEvent, DocumentURL,
-    IanaExpertDocEvent, IRSGBallotDocEvent )
+    IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource )
 
 from ietf.name.resources import BallotPositionNameResource, DocTypeNameResource
 class BallotTypeResource(ModelResource):
@@ -767,3 +767,23 @@ class IRSGBallotDocEventResource(ModelResource):
             "ballotdocevent_ptr": ALL_WITH_RELATIONS,
         }
 api.doc.register(IRSGBallotDocEventResource())
+
+
+from ietf.name.resources import ExtResourceNameResource
+class DocExtResourceResource(ModelResource):
+    doc              = ToOneField(DocumentResource, 'doc')
+    name             = ToOneField(ExtResourceNameResource, 'name')
+    class Meta:
+        queryset = DocExtResource.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        resource_name = 'docextresource'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "display_name": ALL,
+            "value": ALL,
+            "doc": ALL_WITH_RELATIONS,
+            "name": ALL_WITH_RELATIONS,
+        }
+api.doc.register(DocExtResourceResource())

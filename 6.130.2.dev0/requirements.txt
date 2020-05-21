@@ -1,0 +1,73 @@
+# -*- conf-mode -*-
+setuptools>=40.3.0,<45.0			# Require this first, to prevent later errors
+#
+argon2-cffi>=16.1.0		# For the Argon2 password hasher option
+beautifulsoup4>=4.5.0
+bibtexparser>=0.6.2,<1.0	# Version 1.0 doesn't work under python 2.7.  1.0.1 doesn't recognize month names or abbreviations.
+bleach>=2.0.0,!=3.0.0,!=3.0.1,!=3.0.2
+coverage>=4.0.1,!=4.0.2,<5.0
+#cssselect>=0.6.1               # for PyQuery
+decorator>=4.0.4
+defusedxml>=0.4.1		# for TastyPie when ussing xml; not a declared dependency
+Django>=1.11,!=1.11.18,<1.12	# 1.11.18 has problems exporting BinaryField from django.db.models
+django-bcrypt>=0.9.2		# for the BCrypt password hasher option.  Remove when all bcrypt upgraded to argon2
+django-bootstrap3>=8.2.1,<9.0.0
+django-csp>=3.5
+django-cors-headers>=2.4.0
+django-form-utils>=1.0.3
+django-formtools>=1.0		# instead of django.contrib.formtools in 1.8
+django-markup>=1.1
+django-password-strength>=1.2.1
+django-referrer-policy>=1.0
+django-request-profiler==0.14   # 0.15 and above requires Django 2.x
+django-simple-history>=2.3.0
+django-stubs==1.3.0
+django-tastypie>=0.13.2
+django-webtest>=1.9.7
+django-widget-tweaks>=1.3
+docutils>=0.12,!=0.15
+factory-boy>=2.9.0
+google-api-python-client
+Faker>=0.8.8,!=0.8.9,!=0.8.10		# from factory-boy # Faker 0.8.9,0.8.10 sometimes return string names instead of unicode.
+hashids>=1.1.0
+html2text>=2019.8.11
+html5lib>=1.0.1
+httplib2>=0.10.3
+# jsonfield 3.x and higher requires Django 2.2 or higher
+jsonfield>=1.0.3,<3.0		# for SubmissionCheck.  This is https://github.com/bradjasper/django-jsonfield/.
+jwcrypto>=0.4.0			# for signed notifications
+#lxml>=3.4.0                    # from PyQuery; 
+markdown2>=2.3.8
+mock>=2.0.0
+mypy==0.750			# Version requirements determined by django-stubs.
+mysqlclient>=1.3.13
+oauth2client>=4.0.0		# required by google-api-python-client, but not always pulled in
+pathlib>=1.0
+pathlib2>=2.3.0
+Pillow>=3.0
+#pip==9.0.1			# Earlier pip has issues, 9.0.2 and 9.0.3, 10.0.0b1 leaves dross when down- and up-grading packages
+pyang>=1.7.2
+pyflakes>=0.9.2
+pyopenssl>=17.5.0		# Used by urllib3.contrib, which is used by PyQuery but not marked as a dependency
+pyquery>=1.3.0
+python-dateutil>=2.4
+python-magic>=0.4.12
+python-memcached>=1.56		# for django.core.cache.backends.memcached
+python-mimeparse>=1.6		# from TastyPie
+pytz>=2014.7
+#pyzmail>=1.0.3
+requests!=2.12.*
+rfc2html>=2.0.1
+selenium>=3.9.0
+six>=1.10.0
+sqlparse>=0.2.2
+svn>=1.0.1
+tblib>=1.3.0
+tqdm>=3.7.0
+#Trac>=1.0.10,<1.2
+Unidecode>=0.4.18
+#wsgiref>=0.1.2
+xml2rfc>=2.35.0
+xym>=0.4.4,!=0.4.7,<1.0
+#zxcvbn-python>=4.4.14		# Not needed until we do back-end password entropy validation
+

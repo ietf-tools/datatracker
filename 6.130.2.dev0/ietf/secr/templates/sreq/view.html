@@ -1,0 +1,46 @@
+{% extends "base_site.html" %}
+{% load staticfiles %}
+
+{% block title %}Sessions - View{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../">Sessions</a>
+  &raquo; {{ group.acronym }}
+{% endblock %}
+
+{% block instructions %}
+  <a href="https://www.ietf.org/chairs/session-request-tool-instructions/" target="_blank">Instructions</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+    <h2>Sessions - View (meeting: {{ meeting.number }})</h2>
+
+    {% include "includes/sessions_request_view.html" %}
+      
+    <br>
+   
+    {% include "includes/activities.html" %}
+    
+      <div class="button-group">
+        <ul>
+          <li><button name="edit" onclick="window.location='{% url "ietf.secr.sreq.views.edit" acronym=group.acronym num=meeting.number %}'"{% if is_locked %} disabled{% endif %}>Edit</button></li>
+          {% if show_approve_button %}
+            <li><button onclick="window.location='approve/'">Approve Third Session</button></li>
+          {% endif %}
+          <li><button onclick="if (window.confirm('Do you really want to cancel this session?')) { window.location='cancel/' };" {% if is_locked %} disabled{% endif %}>Cancel this Request</button></li>
+          <li><button onclick="window.location='{% url "ietf.secr.sreq.views.main" %}'">Back</button></li>
+        </ul>
+      </div> <!-- button-group -->
+</div> <!-- module -->
+
+{% endblock %}
+
+{% block footer-extras %}
+  {% include "includes/sessions_footer.html" %}
+{% endblock %}

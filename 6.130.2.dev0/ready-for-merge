@@ -1,0 +1,142 @@
+# By saying 'Commit ready for merge' in the commit message when you commit a
+# change to your branch, the commit will be included in the merge list for the
+# next release.  However, if a commit for some reason is missing that phrase
+# in the commit comment, the branch and revision of the changeset can be added
+# to this file in trunk/ by the merge master, and it will also be included in
+# the merge list.
+
+# --- Add entries at the top ---
+
+^/personal/henrik/6.128.1-cleanup@17711
+
+^/personal/rjs/6.128.1.dev0@17712
+
+^/personal/housley/6.121.1.dev0@17521
+^/personal/housley/6.121.1.dev0@17505
+
+^/personal/rcross/6.121.1.dev0@17466
+^/branch/akayla/irsg/6.122.1.dev0@17483
+^/personal/valery/6.121.1.dev0@17484
+^/personal/valery/6.121.1.dev0@17486
+
+/personal/housley/6.115.1.dev0@17179
+/personal/housley/6.115.1.dev0@17178
+
+/personal/housley/6.110.2.dev0@17036
+/personal/housley/6.110.2.dev0@17035
+
+/personal/rjs/6.104.1.dev0@16810
+
+/branch/dash/main@16670
+
+/personal/rjs/6.100.1.dev0@16629
+
+/personal/rjs/6.99.2.dev0@16603
+/personal/rjs/6.99.2.dev0@16601
+
+/personal/housley/6.99.2.dev0@16563
+
+/personal/housley/6.94.2.dev0@16126
+/personal/housley/6.94.2.dev0@16125
+/personal/housley/6.94.2.dev0@16087
+
+/personal/fenton/6.94.2.dev0@16108
+
+/personal/housley/6.87.4.dev0@15683
+
+/personal/rcross/6.81.3.dev0@15265
+/personal/rcross/6.81.3.dev0@15264
+/personal/rcross/6.81.3.dev0@15263
+
+/personal/kivinen/6.81.4.dev0@15349
+/personal/kivinen/6.81.4.dev0@15347
+/personal/housley/6.81.4.dev0@15331
+/personal/fenton/6.81.4.dev0@15338
+/personal/housley/6.75.2.dev0@15282
+
+/personal/rjs/6.79.1.dev0@15076
+/personal/rjs/6.79.1.dev0@15075
+/personal/rjs/6.79.1.dev0@15074
+/personal/rjs/6.79.1.dev0@15073
+/personal/rjs/6.75.2.dev0@14850
+/personal/housley/6.75.2.dev0@14851
+/personal/ben/6.75.2.dev0@14849
+/personal/ben/6.75.2.dev0@14848
+
+/personal/housley/6.65.2.dev0@14467
+/personal/housley/6.56.1.dev0@14062
+#/personal/sbirkholz/6.56.1.dev0@13917
+/personal/alireza/6.56.1.dev0@13916
+/personal/alireza/6.56.1.dev0@13913
+/personal/alireza/6.56.1.dev0@13908
+/personal/housley/6.56.1.dev0@13893
+
+/personal/housley/6.48.2.dev0@13205
+/personal/housley/6.48.2.dev0@13181
+
+/personal/housley/6.37.2.dev0@12326
+/personal/adam/6.37.2.dev0@12340
+
+/personal/housley/6.27.1.dev0@11663
+/personal/housley/6.27.1.dev0@11666
+
+/personal/housley/6.18.2.dev0@11082
+/personal/housley/6.18.2.dev0@11070
+/personal/housley/6.18.2.dev0@11064
+
+/branch/iola/community-list-cleanup-r10639@10718
+/personal/housley/v6.14.2.dev0@10839
+
+/personal/housley/v6.14.2.dev0@10834
+/personal/housley/v6.8.1.dev0@10773
+/personal/housley/v6.8.1.dev0@10772
+/personal/housley/v6.8.1.dev0@10771
+/personal/housley/v6.8.1.dev0@10770
+
+/personal/rjs/v6.13.1.dev0@10757
+/personal/rjs/v6.13.1.dev0@10731
+/personal/rjs/v6.11.1.dev0@10701
+
+# A whole bunch of ready commits not marked as such
+/personal/lars/6.11.1.dev0@10621
+/personal/lars/6.11.1.dev0@10616
+/personal/lars/6.11.1.dev0@10615
+/personal/lars/6.11.1.dev0@10614
+/personal/lars/6.11.1.dev0@10605
+
+/personal/housley/v6.8.1.dev0@10633
+/personal/housley/v6.8.1.dev0@10632
+/personal/housley/v6.8.1.dev0@10630
+#
+branch/iola/automatic-doc-name-search-r10126 @ 10158
+branch/iola/docalias-primary-key-r10101 @ 10111
+branch/amsl/liaisons/6.4.1 @ 10098
+branch/iola/meeting-history-r9663 @ 9669
+branch/iola/milestone-editing-bugfix-r9994 @ 9996
+#personal/rjs/v6.0.2.dev0@9540:9542
+#personal/lars/6.0.2.dev0@9526
+personal/lars/6.0.2.dev0@9525
+personal/lars/6.0.2.dev0@9524
+personal/willem/v5.12.4.dev0@9316
+branch/iola/facelift-r8876@8970		Test crawler speed-up
+branch/iola/facelift-r8510@8733
+personal/rcross/v5.7.3-dev0@8641
+personal/suresh/v5.7.3-dev0@8602
+personal/rjs/v5.6.3-dev0-session@8305
+personal/rcross/v5.6.2-dev0@8216
+branch/iola/people-cleanup@8297
+branch/iola/team-support@8057
+personal/fanpeng/v5.5.3-dev0@8005
+branch/iola/team-support@7914
+personal/rjs/v5.4.0@7644
+branch/iola/djangoport-fixes@7416
+branch/iola/djangoport-fixes@7421
+branch/iola/djangoport-fixes@7519
+personal/rcross/v5.1.0@7568
+personal/rcross/v5.1.0@7549	Fix tests broken in auth change
+personal/rcross/v5.1.0@7454
+personal/rjs/v5.1.0-dajaxice-patch@7456
+personal/rcross/v5.0.2@7398
+personal/rcross/v5.0.2@7378
+personal/jmh/v5.0.2@7375	
+personal/rjs/v4.90@7138		Was waiting for additional tests

@@ -1,0 +1,26 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+<li>
+  {{ doc.title }} ({{ doc.intended_std_level }})
+  <br><a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
+  {% with doc.rfc_number as rfc_number %}
+    {% if rfc_number %}
+      <a href="http://www.rfc-editor.org/rfc/rfc{{ rfc_number }}/">[txt]</a>
+    {% else %}
+      <a href="{{doc.get_href}}">[txt]</a>
+    {% endif %}
+  {% endwith %}
+
+  <br>Token: {{ doc.ad }} ({{ doc.area_acronym }} area)
+
+  {% if doc.note %}
+    <br>Note: {{ doc.note|linebreaksbr }}
+  {% endif %}
+
+  {% for ipr in doc.ipr %}
+    {% if ipr.disclosure.state.slug == "posted" %}
+      <br>IPR: <a href="https://datatracker.ietf.org/ipr/{{ ipr.disclosure.id }}/">{{ ipr.disclosure.title }}</a>
+    {% endif %}
+  {% endfor %}
+
+  {% include "iesg/scribe_doc_ballot.html" %}
+</li>

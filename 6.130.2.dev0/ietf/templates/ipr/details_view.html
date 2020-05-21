@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, 2017. All Rights Reserved. #}
+{% load origin %}
+
+{% load ietf_filters ipr_filters %}
+
+{% block title %}IPR Details - {{ ipr.title }}{% endblock %}
+
+{% block pagehead %}
+  <meta name="description" content="IPR disclosure #{{ipr.ipr_id}}: {{ ipr.title }} ({{ ipr.time|date:"Y" }})" />
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <div id="ipr-details">
+
+    <h1>IPR Details<br><small>{{ ipr.title }}</small></h1>
+
+    {% include "ipr/details_tabs.html" %}
+
+    <div class="buttonlist">
+      {% if ipr.state_id == 'posted' %}
+        <a class="btn btn-default" href="{% url "ietf.ipr.views.update" ipr.id %}" rel="nofollow">Update this IPR disclosure</a>
+      {% endif %}
+
+      {% if user|has_role:"Secretariat" %}
+        {# admin actions #}
+        {% if ipr.updates and ipr.state_id == 'pending' and not ipr.update_notified_date %}
+          <a class="btn btn-default" href="{% url 'ietf.ipr.views.notify' id=ipr.id type="update"%}" title="Notify the submitter of IPR that is being updated">Notify</a>
+        {% endif %}
+
+        {% if ipr.updates and ipr.state_id == 'pending' and ipr.update_notified_date or not ipr.updates and ipr.state_id == 'pending' %}
+          <a class="btn btn-default" href="{% url 'ietf.ipr.views.post' id=ipr.id %}"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Post</a>
+        {% endif %}
+
+        <a class="btn btn-default" href="{% url 'ietf.ipr.views.email' id=ipr.id %}" title="Email submitter of this disclsoure"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span> Email</a>
+        <a class="btn btn-default" href="{% url 'ietf.ipr.views.edit' id=ipr.id %}">Edit</a>
+        <a class="btn btn-default" href="{% url 'ietf.ipr.views.state' id=ipr.id %}">Change State</a>
+      {% endif %}
+    </div>
+
+    {% if not ipr.compliant %}
+      {% if in_force_ipr_rfc == 'RFC 8179' %}
+        <p class="alert alert-danger">This IPR disclosure does not comply with the formal requirements of Section 5,
+          "IPR Disclosures," of <a href="https://www.rfc-editor.org/rfc/rfc8179.txt">RFC 8179</a>, "Intellectual Property Rights in IETF Technology."</p>
+      {% else %}
+        <p class="alert alert-danger">This IPR disclosure does not comply with the formal requirements of Section 6,
+          "IPR Disclosures," of <a href="https://www.rfc-editor.org/rfc/rfc3979.txt">RFC 3979</a>, "Intellectual Property Rights in IETF Technology."</p>
+      {% endif %}
+    {% endif %}
+
+    {% if ipr.has_legacy_event %}
+      <p>The text of the original IPR disclosure is available in the <a href="{% url "ietf.ipr.views.history" id=ipr.id %}">disclosure history</a>.</p>
+    {% endif %}
+
+    <div>
+      <strong>Submitted:</strong>
+      {{ ipr.time|date:"F j, Y" }} under the rules in {{ in_force_ipr_rfc }}
+    </div>
+
+    <div>
+      {% if user|has_role:"Secretariat" %}
+        <strong>State:</strong>
+        {{ ipr.state }}
+      {% endif %}
+    </div>
+
+    
+    {% if ipr.state_id == 'posted' %}
+      <p class="help-block">Note: Updates to IPR disclosures must only be made by authorized
+        representatives of the original submitters. Updates will automatically
+        be forwarded to the current Patent Holder's Contact and to the Submitter
+        of the original IPR disclosure.</p>
+    {% endif %}
+
+    {% if updates_iprs or updated_by_iprs%}
+      <h2>Updates</h2>
+
+      {% if updated_by_iprs %}
+      <dl class="dl-horizontal">
+        <dt>Updated by</dt>
+        <dd>
+          {% for item in updated_by_iprs %}
+            <div>
+              IPR Disclosure ID #{{ item.source.id }},
+              {% if item.source.state.slug == "removed" %}
+                "{{ item.source.title }}" (which was removed at the request of the submitter)
+              {% else %}
+                "<a href="{% url "ietf.ipr.views.show" id=item.source.id %}">{{ item.source.title }}</a>"
+              {% endif %}
+            </div>
+          {% endfor %}
+      </dl>
+      {% endif %}
+
+      {% if updates_iprs %}
+      <dl class="dl-horizontal">
+        <dt>Updates</dt>
+        <dd>
+          {% for item in updates_iprs %}
+            <div>
+              IPR Disclosure ID #{{ item.target.id }},
+              {% if item.target.state.slug == "removed" %}
+                "{{ item.target.title }}" (which was removed at the request of the submitter)
+	      {% elif item.target.state.slug == "rejected" %}
+                "{{ item.target.title }}" (which was rejected)
+	      {% elif item.target.state.slug == "parked" %}
+                "{{ item.target.title }}"
+              {% else %}
+                "<a href="{% url "ietf.ipr.views.show" id=item.target.id %}">{{ item.target.title }}</a>"
+              {% endif %}
+            </div>
+          {% endfor %}
+      </dl>
+      {% endif %}
+    {% endif %}
+
+    {% if user|has_role:"Secretariat" and ipr.update_notified_date %}
+      <div class="alert alert-info">This update was notified to the submitter of the IPR that is being updated on: {{ ipr.update_notified_date|date:"Y-m-d" }}</div>
+    {% endif %}
+
+    <div class="form-horizontal">
+
+      <h2>{% cycle 'I' 'II' 'III' 'IV' 'V' 'VI' 'VII' 'VIII' as section %}.
+        {% if ipr|to_class_name == "ThirdPartyIprDisclosure" %}Possible{% endif %}
+        Patent Holder/Applicant ("Patent Holder")</h2>
+
+	  <table class="table-condensed col-md-12">
+	    {% if prev %}
+	    {% if prev.state.slug == "posted" %}
+	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% else %}
+	    <tr><th class="ipr-prev">Previous (#{{prev.id}}, {{prev.state}})</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% endif %}
+	    {% endif %}
+	    <tr>
+	      {% if prev %}<td class="col-md-5 ipr-prev">{{ prev.holder_legal_name }}</td>{% endif %}
+	      <th class="col-md-2 ipr-label">Holder legal name</th>
+	      <td class="col-md-5 ipr-this">{{ ipr.holder_legal_name }}</td>
+	    </tr>
+	  </table>
+
+        {% if ipr.holder_contact_name or ipr.holder_contact_info %}
+          <h2>{% cycle section %}. Patent Holder's Contact for Licence Application</h2>
+
+	  <table class="table-condensed col-md-12">
+	    {% if prev %}
+	    {% if prev.state.slug == "posted" %}
+	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% else %}
+	    <tr><th class="ipr-prev">Previous (#{{prev.id}}, {{prev.state}})</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% endif %}
+	    {% endif %}
+
+	    <tr>
+	      {% if prev %}<td class="col-md-5 ipr-prev">{{ prev.holder_contact_name }}</td>{% endif %}
+	      <th class="col-md-2 ipr-label">Holder contact name</th>
+	      <td class="col-md-5 ipr-this">{{ ipr.holder_contact_name }}</td>
+	    </tr>
+
+	    <tr>
+	      {% if prev %}<td class="col-md-5 ipr-prev">{{ prev.holder_contact_email }}</td>{% endif %}
+	      <th class="col-md-2 ipr-label">Holder contact email</th>
+	      <td class="col-md-5 ipr-this">{{ ipr.holder_contact_email }}</td>
+	    </tr>
+
+	    <tr>
+	      {% if prev %}<td class="col-md-5 ipr-prev">{{ prev.holder_contact_info|linebreaks }}</td>{% endif %}
+	      <th class="col-md-2 ipr-label">Holder contact info</th>
+	      <td class="col-md-5 ipr-this">{{ ipr.holder_contact_info|linebreaks }}</td>
+	    </tr>
+
+	  </table>
+	{% endif %}
+
+        {% if ipr.ietfer_name or ipr.ietfer_contact_email or ipr.ietfer_contact_info %}
+          <h2>{% cycle section %}. Contact Information for the IETF Participant Whose Personal Belief Triggered this Disclosure</h2>
+
+	  <table class="table-condensed col-md-12">
+	    {% if prev %}
+	    {% if prev.state.slug == "posted" %}
+	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% else %}
+	    <tr><th class="ipr-prev">Previous (#{{prev.id}}, {{prev.state}})</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% endif %}
+	    {% endif %}
+	    <tr>
+	      {% if prev %}<td class="col-md-5 ipr-prev">{{ prev.ietfer_name }}</td>{% endif %}
+	      <th class="col-md-2 ipr-label">Name</th>
+	      <td class="col-md-5 ipr-this">{{ ipr.ietfer_name }}</td>
+	    </tr>
+
+	    <tr>
+	      {% if prev %}<td class="col-md-5 ipr-prev">{{ prev.ietfer_contact_email }}</td>{% endif %}
+	      <th class="col-md-2 ipr-label">Email</th>
+	      <td class="col-md-5 ipr-this">{{ ipr.ietfer_contact_email }}</td>
+	    </tr>
+
+	    <tr>
+	      {% if prev %}<td class="col-md-5 ipr-prev">{{ prev.ietfer_contact_info|linebreaks }}</td>{% endif %}
+	      <th class="col-md-2 ipr-label">Other info</th>
+	      <td class="col-md-5 ipr-this">{{ ipr.ietfer_contact_info|linebreaks }}</td>
+	    </tr>
+
+	  </table>
+        {% endif %}
+
+        {% if ipr.iprdocrel_set.all or ipr.other_designations %}
+          <h2>{% cycle section %}. IETF Document or Other Contribution to Which this IPR Disclosure Relates</h2>
+
+	  <table class="table-condensed col-md-12">
+	    {% if prev %}
+	    {% if prev.state.slug == "posted" %}
+	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% else %}
+	    <tr><th class="ipr-prev">Previous (#{{prev.id}}, {{prev.state}})</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% endif %}
+	    {% endif %}
+	    <tr>
+
+	      {% if prev %}
+	      <td class="col-md-5 ipr-prev">
+		  {% for iprdocrel in prev.iprdocrel_set.all %}
+		    <b>{{ iprdocrel.doc_type }}:</b>
+		    {{ iprdocrel.formatted_name }} ("{{ iprdocrel.document.document.title }}")
+
+		      {% if iprdocrel.revisions %}
+			<div>Revisions: {{ iprdocrel.revisions }}</div>
+		      {% endif %}
+
+		      {% if iprdocrel.sections %}
+			<div>Sections: {{ iprdocrel.sections }}</div>
+		      {% endif %}
+		  {% endfor %}
+
+		  {% if prev.other_designations %}
+		    <b>Designations for Other Contributions</b>
+		    {{ prev.other_designations }}
+		  {% endif %}
+	      </td>
+	      {% endif %}
+
+	      <th class="col-md-2 ipr-label"></th>
+
+	      <td class="col-md-5 ipr-this">
+		  {% for iprdocrel in ipr.iprdocrel_set.all %}
+		    <b>{{ iprdocrel.doc_type }}:</b>
+		    {{ iprdocrel.formatted_name }} ("{{ iprdocrel.document.document.title }}")
+
+		      {% if iprdocrel.revisions %}
+			<div>Revisions: {{ iprdocrel.revisions }}</div>
+		      {% endif %}
+
+		      {% if iprdocrel.sections %}
+			<div>Sections: {{ iprdocrel.sections }}</div>
+		      {% endif %}
+		  {% endfor %}
+
+		  {% if ipr.other_designations %}
+		    <dt>Designations for Other Contributions</dt>
+		    <dd>{{ ipr.other_designations }}</dd>
+		  {% endif %}
+	      </td>
+	    <tr>
+	  </table>
+        {% endif %}
+
+        {% if ipr.patent_info or ipr.has_patent_pending %}
+          <h2>{% cycle section %}. Disclosure of Patent Information <small>i.e., patents or patent applications required to be disclosed by {{ in_force_ipr_rfc }}</small></h2>
+
+          <p>A. For granted patents or published pending patent applications, please provide the following information:</p>
+
+	  <table class="table-condensed col-md-12">
+	    {% if prev %}
+	    {% if prev.state.slug == "posted" %}
+	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% else %}
+	    <tr><th class="ipr-prev">Previous (#{{prev.id}}, {{prev.state}})</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% endif %}
+	    {% endif %}
+	    <tr>
+	      {% if prev %}<td class="col-md-5 ipr-prev">{{ prev.patent_info|linebreaks }}</td>{% endif %}
+	      <th class="col-md-2 ipr-label">Patent, Serial, Publication, Registration, or Application/File number(s)</th>
+	      <td class="col-md-5 ipr-this">{{ ipr.patent_info|linebreaks }}</td>
+	    </tr>
+	  </table>
+
+          <p>B. Does this disclosure relate to an unpublished pending patent application?:</p>
+          
+	  <table class="table-condensed col-md-12">
+	    {% if prev %}
+	    {% if prev.state.slug == "posted" %}
+	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% else %}
+	    <tr><th class="ipr-prev">Previous (#{{prev.id}}, {{prev.state}})</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% endif %}
+	    {% endif %}
+	    <tr>
+	      {% if prev %}<td class="col-md-5 ipr-prev">{{ prev.has_patent_pending|yesno:"Yes,No" }}</td>{% endif %}
+	      <th class="col-md-2 ipr-label">Has patent pending</th>
+	      <td class="col-md-5 ipr-this">{{ ipr.has_patent_pending|yesno:"Yes,No" }}</td>
+	    </tr>
+	  </table>
+        {% endif %}
+
+        {% if ipr.licensing %}
+          <h2>{% cycle section %}. Licensing Declaration</h2>
+
+          <p>
+            The Patent Holder states that its position with respect
+            to licensing any patent claims contained in the patent(s) or patent
+            application(s) disclosed above that would necessarily be infringed by
+            implementation of the technology required by the relevant IETF specification
+            ("Necessary Patent Claims"), for the purpose of implementing such
+            specification, is as follows(select one licensing declaration option only):
+          </p>
+          
+	  {% if prev.licensing.slug == "provided-later" or ipr.licensing.slug == "provided-later" %}
+	  <div>
+	     Possible licensing choices a), b), and c) when Licensing Declaration to be Provided Later:
+	     <ul style="list-style: none">
+		{% for desc in choices_abc %}
+		<li>{{ desc}}</li>
+		{% endfor %}
+	     </ul>
+	  </div>
+	  {% endif %}
+
+	  <table class="table-condensed col-md-12">
+	    {% if prev %}
+	    {% if prev.state.slug == "posted" %}
+	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% else %}
+	    <tr><th class="ipr-prev">Previous (#{{prev.id}}, {{prev.state}})</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% endif %}
+	    {% endif %}
+	    <tr>
+	      {% if prev %}<td class="col-md-5 ipr-prev">{% if prev.licensing.slug == "provided-later" %}{{ prev.licensing.desc|slice:"2:"|slice:":117" }}){% else %}{{ prev.licensing.desc|slice:"2:" }}{% endif %}</td>{% endif %}
+	      <th class="col-md-2 ipr-label">Licensing</th>
+	      <td class="col-md-5 ipr-this">{% if ipr.licensing.slug == "provided-later" %}{{ ipr.licensing.desc|slice:"2:"|slice:":117" }}){% else %}{{ ipr.licensing.desc|slice:"2:" }}{% endif %}</td>
+	    </tr>
+	    <tr>
+	      {% if prev %}<td class="col-md-5 ipr-prev">{{ prev.licensing_comments|default:"(No information submitted)"|linebreaks }}</td>{% endif %}
+	      <th class="col-md-2 ipr-label">Licensing information, comments, notes, or URL for further information</th>
+	      <td class="col-md-5 ipr-this">{{ ipr.licensing_comments|default:"(No information submitted)"|linebreaks }}</td>
+	    </tr>
+	  </table>
+
+          <p>Note: The individual submitting this template represents and warrants
+            that he or she is authorized by the Patent Holder to agree to the
+            above-selected licensing declaration.</p>
+
+        {% elif ipr.statement %}
+          <h2>{% cycle section %}. Statement</h2>
+
+	  <table class="table-condensed col-md-12">
+	    {% if prev %}
+	    {% if prev.state.slug == "posted" %}
+	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% else %}
+	    <tr><th class="ipr-prev">Previous (#{{prev.id}}, {{prev.state}})</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% endif %}
+	    {% endif %}
+	    <tr>
+	      {% if prev %}<td class="col-md-5 ipr-prev">{{ prev.statement|linebreaks }}</td>{% endif %}
+	      <th class="col-md-2 ipr-label">Statement</th>
+	      <td class="col-md-5 ipr-this">{{ ipr.statement|linebreaks }}</td>
+	    </tr>
+	  </table>
+        {% endif %}
+
+        <h2>{% cycle section %}. Contact Information of Submitter of this Form</h2>
+
+	  <table class="table-condensed col-md-12">
+	    {% if prev %}
+	    {% if prev.state.slug == "posted" %}
+	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% else %}
+	    <tr><th class="ipr-prev">Previous (#{{prev.id}}, {{prev.state}})</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% endif %}
+	    {% endif %}
+	    <tr>
+	      {% if prev %}<td class="col-md-5 ipr-prev">{{ prev.submitter_name }}</td>{% endif %}
+	      <th class="col-md-2 ipr-label">Submitter name</th>
+	      <td class="col-md-5 ipr-this">{{ ipr.submitter_name }}</td>
+	    </tr>
+
+	    <tr>
+	      {% if prev %}<td class="col-md-5 ipr-prev">{{ prev.submitter_email }}</td>{% endif %}
+	      <th class="col-md-2 ipr-label">Submitter email</th>
+	      <td class="col-md-5 ipr-this">{{ ipr.submitter_email }}</td>
+	    </tr>
+	  </table>
+
+        {% if ipr.notes %}
+          <h2>{% cycle section %}. Other Notes</h2>
+
+	  <table class="table-condensed col-md-12">
+	    {% if prev %}
+	    {% if prev.state.slug == "posted" %}
+	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% else %}
+	    <tr><th class="ipr-prev">Previous (#{{prev.id}}, {{prev.state}})</th><th></th><th>This (#{{ipr.id}})</th></tr>
+	    {% endif %}
+	    {% endif %}
+	    <tr>
+	      {% if prev %}<td class="col-md-5 ipr-prev">{{ prev.notes|linebreaks }}</td>{% endif %}
+	      <th class="col-md-2 ipr-label">Additional notes</th>
+	      <td class="col-md-5 ipr-this">{{ ipr.notes|linebreaks }}</td>
+	    </tr>
+	  </table>
+
+        {% endif %}
+    </div>
+
+    <p class="help-block">Only those sections of the relevant entry form where the submitter provided information are displayed.</p>
+  </div>
+{% endblock content %}

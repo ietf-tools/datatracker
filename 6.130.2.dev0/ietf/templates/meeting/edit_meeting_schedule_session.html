@@ -1,0 +1,64 @@
+<div id="session{{ session.pk }}" class="session {% if not session.group.parent.scheduling_color %}untoggleable{% endif %} {% if session.parent_acronym %}parent-{{ session.parent_acronym }}{% endif %}" style="width:{{ session.layout_width }}em;" data-duration="{{ session.requested_duration.total_seconds }}" {% if session.attendees != None %}data-attendees="{{ session.attendees }}"{% endif %}>
+  <div class="session-label">
+    {{ session.scheduling_label }}
+  </div>
+
+  <div>
+    {% if session.attendees != None %}
+      <span class="attendees">{{ session.attendees }}</span>
+    {% endif %}
+
+    {% if session.comments %}
+      <span class="comments"><i class="fa fa-comment-o"></i></span>
+    {% endif %}
+
+    {% if session.constrained_sessions %}
+      <span class="constraints">
+        {% for explanation, sessions in session.constrained_sessions %}
+          <span data-sessions="{{ sessions|join:"," }}">{{ explanation }}</span>
+        {% endfor %}
+      </span>
+    {% endif %}
+  </div>
+
+  {# this is shown elsewhere on the page with JS - we just include it here for convenience #}
+  <div class="session-info">
+    <label>
+      {{ session.scheduling_label }}
+      &middot; {{ session.requested_duration_in_hours }} h
+      {% if session.group %}&middot; {% if session.group.is_bof %}BoF{% else %}{{ session.group.type.name }}{% endif %}{% endif %}
+      {% if session.attendees != None %}&middot; {{ session.attendees }} <i class="fa fa-user-o"></i>{% endif %}
+    </label>
+
+    {% if session.group %}
+      <div>
+        {{ session.group.name }}
+        {% if session.group.parent %}
+          &middot; <span class="session-parent">{{ session.group.parent.acronym }}</span>
+          {% if session.historic_group_ad_name %} ({{ session.historic_group_ad_name }}){% endif %}
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {% if session.requested_by_person %}
+      <div>
+        <i class="fa fa-user-circle-o"></i> {{ session.requested_by_person.plain_name }} {% if session.requested_time %}({{ session.requested_time|date:"Y-m-d" }}){% endif %}
+      </div>
+    {% endif %}
+
+    {% if session.resources.all %}
+      <div>
+        Resources:
+        {% for r in session.resources.all %}
+          {{ r.name }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if session.comments %}
+      <div class="comments">
+        {{ session.comments|linebreaksbr }}
+      </div>
+    {% endif %}
+  </div>
+</div>

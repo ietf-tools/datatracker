@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+
+# This script requires that the proper virtual python environment has been
+# invoked before start
+
+import datetime, os, sys
+import syslog
+
+# boilerplate
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path = [ basedir ] + sys.path
+os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
+
+# Before invoking django
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
+
+import django
+django.setup()
+
+from ietf.utils.mail import log_smtp_exception, send_error_email
+from smtplib import SMTPException
+
+
+if len(sys.argv) != 2 or sys.argv[1] not in ('all', 'rsync', 'specific'):
+    print("USAGE: %s <all | specific>" % os.path.basename(__file__))
+    print("'all' means all not sent")
+    print("'specific' means all not sent that are due to be sent")
+    sys.exit(1)
+
+from ietf.message.utils import send_scheduled_message_from_send_queue
+from ietf.message.models import SendQueue
+
+mode = sys.argv[1]
+
+now = datetime.datetime.now()
+
+needs_sending = SendQueue.objects.filter(sent_at=None).select_related("message")
+if mode == "specific":
+    needs_sending = needs_sending.exclude(send_at=None).filter(send_at__lte=now)
+
+for s in needs_sending:
+    try:
+        send_scheduled_message_from_send_queue(s)
+        syslog.syslog('Sent scheduled message %s "%s"' % (s.id, s.message.subject))
+    except SMTPException as e:
+        log_smtp_exception(e)
+        send_error_email(e)

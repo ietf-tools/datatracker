@@ -1,0 +1,39 @@
+{% extends "base_site.html" %}
+{% load ietf_filters %}
+{% load staticfiles %}
+{% block title %}Proceedings{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
+{% endblock %}
+
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="{% url 'ietf.secr.proceedings.views.main' %}">Proceedings</a>
+  &raquo; {{ meeting.number }}
+{% endblock %}
+
+{% block instructions %}
+  <a href="https://www.ietf.org/instructions/meeting_materials_tool.html" target="_blank">Instructions</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+        
+        <div class="inline-related">
+          <h2>Secretariat Only Functions</h2>
+          <div id="private-functions">
+            
+            {% include "includes/proceedings_functions.html" %}
+            
+          </div> <!-- private-functions -->
+        </div> <!-- inline-group -->
+        
+</div> <!-- module -->
+
+{% endblock %}
+
+{% block footer-extras %}
+  {% include "includes/upload_footer.html" %}
+{% endblock %}

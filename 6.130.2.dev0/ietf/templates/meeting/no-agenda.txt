@@ -1,0 +1,17 @@
+{% load humanize %}{% load ietf_filters %}{% autoescape off %}
+
+{% filter center:72 %} Agenda of the {{ meeting.number|ordinal }} IETF Meeting {% endfilter %}
+{% if meeting.agenda_warning_note %}
+{% filter center:72 %}{{ meeting.agenda_warning_note|striptags|wordwrap:72|safe }}{% endfilter %}
+{% endif %}{% if meeting.agenda_info_note %}
+{% filter center:72 %}{{ meeting.agenda_info_note|striptags|wordwrap:72|safe }}{% endfilter %}
+{% endif %}
+{% filter center:72 %}{{ meeting.date|date:"F j" }}-{% if meeting.date.month != meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endif %}{{ meeting.end_date|date:"j, Y" }}{% endfilter %}
+
+{% filter center:72 %}IETF agendas are subject to change, up to and during the meeting.{% endfilter %}
+
+
+{% filter center:72 %}There is no agenda available yet.{% endfilter %}
+
+
+{% endautoescape %}

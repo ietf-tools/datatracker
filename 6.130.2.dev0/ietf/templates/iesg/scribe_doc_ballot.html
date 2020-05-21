@@ -1,0 +1,34 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+{% with doc.active_ballot as ballot %}
+  {% if ballot %}
+    <br><b>Discusses/comments</b> <a href="https://datatracker.ietf.org/doc/{{doc.canonical_name}}/ballot/">[ballot]</a>:
+    <ul>
+      {% for p in ballot.active_balloter_positions.values %}
+        {% if p.pos %}
+          {% if p.discuss %}
+            <li>
+              <a href="#{{ doc.name }}+{{ p.balloter|slugify }}+discuss">{{ p.balloter }}: Discuss [{{ p.discuss_time }}]</a>:
+              <br>{{ p.discuss }}
+            </li>
+          {% endif %}
+          {% if p.comment %}
+            <li>
+              <a href="#{{ doc.name }}+{{ p.balloter|slugify }}+comment">{{ p.balloter }}: Comment [{{ p.comment_time }}]</a>:
+              <br>{{ p.comment }}
+            </li>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+<p><b>Telechat:</b></p>
+
+<ul>
+  <li>...</li>
+  <li>...</li>
+  <li>...</li>
+  <li>...</li>
+  <li>...</li>
+</ul>

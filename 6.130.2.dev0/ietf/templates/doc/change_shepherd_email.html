@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Change the document shepherd email for {{ doc.name }}-{{ doc.rev }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Change the document shepherd email<br><small>{{ doc.name }}-{{ doc.rev }}</small></h1>
+
+  <form method="post">
+    {% csrf_token %}
+
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
+      <button type="submit" class="btn btn-primary">Save</button>
+    {% endbuttons %}
+  </form>
+{% endblock %}

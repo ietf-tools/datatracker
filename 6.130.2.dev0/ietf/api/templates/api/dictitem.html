@@ -1,0 +1,8 @@
+{
+<!-- dictitem.html -->
+<div style="margin-left: 1em;">
+{% for key, value in data.items %}
+"{{key}}": {{value}}{% if not forloop.last %},{% endif %}<br/>
+{% endfor %}
+</div>
+}

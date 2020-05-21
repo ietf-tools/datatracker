@@ -1,0 +1,3 @@
+#!/bin/bash
+
+for d in masters/*; do ( cd $d; . env/bin/activate; buildbot restart; ); done

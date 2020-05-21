@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% block title %}IESG review decisions in {{ timeframe }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>IESG review decisions in {{ timeframe }}</h1>
+
+  <p>Showing review decisions announced in {{ timeframe }}.</p>
+
+  <p>
+    <b>Announcements in:</b>
+    {% for y in years %}
+      <a {% if y != year %}href="{% url "ietf.iesg.views.review_decisions" year=y %}"{% endif %}>{{ y }}</a>{% if not forloop.last %}, {% endif %}
+    {% endfor %}
+  </p>
+
+  {% for e in events %}
+    {% ifchanged %}
+      <h2>{{ e.time|date:"F j, Y" }}</h2>
+    {% endifchanged %}
+
+    <p>
+      {{ e.desc }} <a href="{% url "ietf.doc.views_doc.document_main" e.doc.name %}">{{ e.doc.name }}</a>
+      {% if e.doc.intended_std_level %}({{ e.doc.intended_std_level }}){% endif %}
+      - {{ e.doc.title }}
+    </p>
+  {% endfor %}
+
+{% endblock %}

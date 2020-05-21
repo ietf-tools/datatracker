@@ -1,0 +1,8 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+<ul class="dropdown-menu" role="menu">
+{% for p in parents %}
+  <li>
+    <a href="{{ p.menu_url }}">Active {{ p.name }}s</a>
+  </li>
+{% endfor %}
+</ul>

@@ -1,0 +1,21 @@
+{% autoescape off %}To: {{ to_email }}
+From: IETF Secretariat <ietf-ipr@ietf.org>
+Subject: Posting of IPR {% if ipr.updates %}Updated {% endif %}Disclosure
+Cc: {{ cc_email }}
+
+Dear {{ to_name }}:
+
+Your IPR disclosure entitled {{ ipr.title }}
+has been posted on the "IETF Page of Intellectual Property Rights Disclosures"
+(https://datatracker.ietf.org/ipr/).{% if ipr.updates %}
+Your IPR disclosure updates:
+
+{% for rel in ipr.updates %}
+IPR disclosure ID #{{ rel.target.pk }}, "{{ rel.target.title }}", which was posted on {{ rel.target.get_latest_event_posted.time|date:"Y-m-d" }}
+{% endfor %}
+{% endif %}
+
+Thank you
+
+IETF Secretariat
+{% endautoescape %}

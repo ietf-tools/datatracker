@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin bootstrap3 static %}
+
+{% block title %}Review request for {{ review_req.doc.name }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Review request<br><small>{{ review_req.doc.name }}</small></h1>
+
+  {% include "doc/review/request_info.html" %}
+
+  <div>
+    {% if can_close_request %}
+      <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.close_request" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Close request</a>
+    {% endif %}
+  </div>
+
+
+    <h3>History</h3>
+    <div id="history">
+        <table class="table table-condensed table-striped">
+            <tr>
+                <th class="col-md-1">Date</th>
+                <th class="col-md-1">By</th>
+                <th class="col-md-10">Description</th>
+            </tr>
+            {% for h in history %}
+                {% if h.history_change_reason %}
+                    <tr>
+                        <td>{{ h.history_date|date }}</td>
+                        <td>{{ h.history_user.person }}</td>
+                        <td>{{ h.history_change_reason }}</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </table>
+    </div>
+
+{% endblock %}

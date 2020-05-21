@@ -1,0 +1,158 @@
+{% load origin ietf_filters textfilters tz dateformat %}{% origin %}
+
+  {% for session in sessions %}
+    {% with item=session.official_timeslotassignment %}
+      <h2 class="anchor-target" id="session_{{session.pk}}">{% if sessions|length > 1 %}Session {{ forloop.counter }} : {% endif %}
+         {% for time in session.times %}{% if not forloop.first %}, {% endif %} {{time|dateformat:"l Y-m-d H:i T"}} {% if time.tzinfo.zone != "UTC" %}<span class="small">({{time|utc|dateformat:"H:i T"}})</span>{% endif %}{% endfor %}
+         {% if session.cancelled %}<small class="label label-warning">CANCELLED</small>{% else %}{{ session.status }}{% endif %}
+         {% if session.name %} : {{ session.name }}{% endif %}
+         {% if not session.cancelled %}
+           <span class="regular pull-right">
+             {% if meeting.type.slug == 'interim' %}
+               {% include "meeting/interim_session_buttons.html" with show_agenda=False show_empty=False %}
+             {% else %}
+               {% with schedule=meeting.schedule %}
+                 {% include "meeting/session_buttons_include.html" %}
+               {% endwith %}
+             {% endif %}
+             <!-- iCalendar item -->
+             {% if now < item.timeslot.end_time %}
+               <a title="icalendar entry for {{acronym}} session {{ forloop.counter }}" href="{% url 'ietf.meeting.views.ical_agenda' num=meeting.number session_id=session.id %}"><span class="fa fa-fw fa-calendar-o"></span> </a>
+             {% endif %}
+           </span>
+         {% endif %}
+      </h2>
+      {% if session.agenda_note %}<h3>{{session.agenda_note}}</h3>{% endif %}
+
+      {% if can_manage_materials %}
+        {% if session.current_status == 'sched' or session.current_status == 'schedw' %}
+          <div class="buttonlist">
+            {% if can_view_request %}
+              <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">Meeting Details</a>
+            {% endif %}
+          </div>
+          {% if not session.type_counter.agenda %}
+            <span class="label label-warning">This session does not yet have an agenda</span>
+          {% endif %}
+        {% endif %}
+      {% endif %}
+
+      {% if meeting.type.slug == 'interim' and session.remote_instructions %}
+      <div>
+         <b>Remote instructions:</b>
+         {% if "https://ietf.webex.com" in session.agenda_note|first_url %}
+           <a class=""
+             href="{{ session.agenda_note|first_url }}"
+             title="Webex session"><span class="fa fa-fw fa-phone"></span>
+           </a>
+         {% elif "https://ietf.webex.com" in session.remote_instructions|first_url %}
+           <a class=""
+             href="{{ session.remote_instructions|first_url }}"
+             title="Webex session"><span class="fa fa-fw fa-phone"></span>
+           </a>
+         {% endif %}
+         {{ session.remote_instructions }}
+      </div>
+      {% endif %}
+
+      <div class="panel panel-default">
+        <div class="panel-heading">Agenda, Minutes, and Bluesheets</div>
+        <div class="panel-body">
+          <table class="table table-condensed table-striped">
+            {% for pres in session.filtered_artifacts %}
+              <tr>
+                {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
+                <td>
+                  <a href="{{pres.document.get_href}}">{{pres.document.title}}</a>
+                  <a href="{{url}}">({{ pres.document.name }})</a>
+                </td>
+                {% if user|has_role:"Secretariat" or can_manage_materials %}
+                  <td class="col-md-2">
+                    {% if pres.document.type.slug == 'minutes' %}
+                        {% url 'ietf.meeting.views.upload_session_minutes' session_id=session.pk num=session.meeting.number as upload_url %}
+                    {% elif pres.document.type.slug == 'agenda' %}
+                        {% url 'ietf.meeting.views.upload_session_agenda' session_id=session.pk num=session.meeting.number as upload_url %}
+                    {% else %}
+                        {% url 'ietf.meeting.views.upload_session_bluesheets' session_id=session.pk num=session.meeting.number as upload_url %}
+                    {% endif %}
+                    {% if pres.document.type.slug != 'bluesheets' or user|has_role:"Secretariat" or meeting.type.slug == 'interim' and can_manage_materials %}
+                      <a class="btn btn-default btn-sm pull-right" href="{{upload_url}}">Upload Revision</a>
+                    {% endif %}
+                  </td> 
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </table>
+          {% if can_manage_materials %}
+            {% if not session.type_counter.agenda %}
+              <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upload_session_agenda' session_id=session.pk num=session.meeting.number %}">Upload Agenda</a>
+            {% endif %}
+            {% if not session.type_counter.minutes %}
+              <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upload_session_minutes' session_id=session.pk num=session.meeting.number %}">Upload Minutes</a>
+            {% endif %}
+          {% endif %}
+          {% if user|has_role:"Secretariat" and not session.type_counter.bluesheets or meeting.type.slug == 'interim' and can_manage_materials and not session.type_counter.bluesheets %}
+            <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upload_session_bluesheets' session_id=session.pk num=session.meeting.number %}">Upload Bluesheets</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="panel panel-default">
+        <div class="panel-heading" data-toggle="tooltip" title="Drag and drop to reorder slides">Slides</div>
+        <div class="panel-body">
+          <table class="table table-condensed table-striped slides" id="slides_{{session.pk}}">
+           <tbody session="{{session.pk}}" addToSession="{% url 'ietf.meeting.views.ajax_add_slides_to_session' session_id=session.pk num=session.meeting.number %}" removeFromSession="{% url 'ietf.meeting.views.ajax_remove_slides_from_session' session_id=session.pk num=session.meeting.number %}" reorderInSession="{% url 'ietf.meeting.views.ajax_reorder_slides_in_session' session_id=session.pk num=session.meeting.number %}">
+            {% for pres in session.filtered_slides %}
+              <tr name="{{pres.document.name}}">
+                {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
+                <td>
+                  <a href="{{pres.document.get_href}}">{{pres.document.title}} </a>
+                  <a href="{{url}}">({{ pres.document.name }}) </a>
+                </td>
+                {% if can_manage_materials %}
+                  <td class="col-md-2">
+                    <a class="btn btn-default btn-sm pull-right" href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number name=pres.document.name %}">Upload Revision</a>
+                    <a class="btn btn-default btn-sm pull-right" href="{% url 'ietf.meeting.views.remove_sessionpresentation' session_id=session.pk num=session.meeting.number name=pres.document.name %}">Remove</a>
+                  </td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+           </tbody>
+          </table>
+          {% if can_manage_materials %}
+            <a id="uploadslides" class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number %}">Upload New Slides</a>
+          {% elif request.user.is_authenticated and not session.is_material_submission_cutoff %}
+            <a id="proposeslides" class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.propose_session_slides' session_id=session.pk num=session.meeting.number %}">Propose Slides</a>
+          {% endif %}
+        </div>
+        {% if can_manage_materials %}
+          <div class="panel-footer small">Drag-and-drop to reorder slides</div>
+        {% endif %}
+      </div>
+      <div class="panel panel-default">
+        <div class="panel-heading">Drafts
+        </div>
+        <div class="panel-body">
+          <table class="table table-condensed table-striped">
+            {% for pres in session.filtered_drafts %}
+              <tr>
+                <td>
+                  {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
+                  <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}) {% if pres.rev %}Version {{pres.rev}}{% endif %}</a>
+                </td>
+                {% if can_manage_materials %}
+                  <td class="col-md-2">
+                    <a class="btn btn-default btn-sm pull-right" href="{% url 'ietf.meeting.views.remove_sessionpresentation' session_id=session.pk num=session.meeting.number name=pres.document.name %}">Remove</a>
+                  </td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </table>
+          {% if can_manage_materials %}
+            <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.add_session_drafts' session_id=session.pk num=session.meeting.number %}">
+              Link additional drafts to session
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    {% endwith %}
+  {% endfor %}

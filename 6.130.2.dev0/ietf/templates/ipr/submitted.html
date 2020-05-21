@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% block title %}IPR submission successful{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>IPR submission successful</h1>
+
+  <p>Your IPR disclosure has been submitted, and the IETF Secretariat has been notified.</p>
+
+  <p class="alert alert-info">Please note that it may take one business day for your IPR disclosure to be posted
+    on the IETF Page of Intellectual Property Rights Notices.</p>
+
+  <a class="btn btn-default" href="{% url "ietf.ipr.views.showlist" %}">Back</a>
+{% endblock %}

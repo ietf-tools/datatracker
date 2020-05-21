@@ -1,0 +1,10 @@
+{% load ams_filters %}{% load ietf_filters %}
+A new interim meeting {% if is_series %}series {% endif %}request has just been submitted by {{ requester }}.
+
+This request requires approval by the {{ approvers|comma_separated_list:"or" }}
+
+The meeting{{ meetings|pluralize }} can be approved here: 
+{% for url in approval_urls %}{{ url }}
+{% endfor %}
+
+{% for meeting in meetings %}{% if is_series %}Meeting: {{ forloop.counter }}{% endif %}{% include "meeting/interim_info.txt" %}{% endfor %}

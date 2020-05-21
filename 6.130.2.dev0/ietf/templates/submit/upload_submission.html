@@ -1,0 +1,72 @@
+{% extends "submit/submit_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters %}
+{% load bootstrap3 %}
+
+{% block title %}Upload{% endblock %}
+
+{% block submit_content %}
+  {% origin %}
+  {% if form.shutdown and user|has_role:"Secretariat" %}
+  <p class="bg-warning">WARNING: currently in draft submission blackout period</p>
+  {% endif %}
+  
+  <p>This page is used to submit Internet-Drafts to the Internet-Draft repository.</p>
+  
+  {% if form.cutoff_warning %}
+    <div class="cutoff-warning">
+      {{ form.cutoff_warning|safe }}
+    </div>
+  {% endif %}
+
+  {% if not form.shutdown or user|has_role:"Secretariat" %}
+    <p>If you run into problems when submitting an Internet-Draft
+      using this and the following pages, you may alternatively submit
+      your draft by email to
+      <a href="mailto:internet-drafts@ietf.org">internet-drafts@ietf.org</a>.
+      However, be advised that manual processing always takes additional time.
+    </p>
+
+    <p>
+      By submitting your I-D, you are granting some rights to the IETF Trust.  Before you submit your I-D,
+      review the information on the NOTE WELL tab and <a href="https://tools.ietf.org/html/bcp78">BCP 78</a>,
+      "Rights Contributors Provide to the IETF Trust".
+    </p>
+
+    <p>
+      Before you submit your I-D, it is recommended that you check it for nits
+      using the <b><a href="https://tools.ietf.org/tools/idnits/">idnits tool</a></b>.
+    </p>
+    
+    {% include "submit/problem-reports-footer.html" %}
+
+      <h2>Upload an Internet-Draft</h2>
+
+      <p>
+	 <i>
+            Either a plain-text document or a valid .xml file which can be processed by the xml2rfc
+            processor <b>must</b> be provided.
+            <br/>
+            For v3 .xml sources which include external files, this requires them to be run through xml2rfc with
+            the <tt>--prep</tt> option, to produce a completely expanded (standalone) .xml source file for
+            upload.
+            <br/>
+            If no .txt file is provided, one will be generated from the .xml file.
+            <br/>
+            Other file types are optional.
+         </i>
+      </p>
+
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% bootstrap_form form %}
+
+        {% buttons %}
+          <input class="btn btn-primary" type="submit" value="Upload" name="upload">
+        {% endbuttons %}
+      </form>
+  {% endif %}
+
+{% endblock %}
