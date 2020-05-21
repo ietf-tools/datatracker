@@ -4,6 +4,8 @@
 
 from functools import update_wrapper
 
+from django import forms
+
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
 from django.core.exceptions import PermissionDenied
@@ -16,7 +18,9 @@ from django.utils.translation import ugettext as _
 
 from ietf.group.models import (Group, GroupFeatures, GroupHistory, GroupEvent, GroupURL, GroupMilestone,
     GroupMilestoneHistory, GroupStateTransitions, Role, RoleHistory, ChangeStateGroupEvent,
-    MilestoneGroupEvent, )
+    MilestoneGroupEvent, GroupExtResource, )
+
+from ietf.utils.validators import validate_external_resource_value
 
 class RoleInline(admin.TabularInline):
     model = Role
@@ -188,3 +192,14 @@ class MilestoneGroupEventAdmin(admin.ModelAdmin):
     list_filter = ['time']
     raw_id_fields = ['group', 'by', 'milestone']
 admin.site.register(MilestoneGroupEvent, MilestoneGroupEventAdmin)
+
+class GroupExtResourceAdminForm(forms.ModelForm):
+    def clean(self):
+        validate_external_resource_value(self.cleaned_data['name'],self.cleaned_data['value'])
+
+class GroupExtResourceAdmin(admin.ModelAdmin):
+    form = GroupExtResourceAdminForm
+    list_display = ['id', 'group', 'name', 'display_name', 'value',]
+    search_fields = ['group__acronym', 'value', 'display_name', 'name__slug',]
+    raw_id_fields = ['group', ]
+admin.site.register(GroupExtResource, GroupExtResourceAdmin)
