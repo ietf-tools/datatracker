@@ -262,7 +262,10 @@ class GroupExtResource(models.Model):
     name = models.ForeignKey(ExtResourceName, on_delete=models.CASCADE)
     display_name = models.CharField(max_length=255, default='', blank=True)
     value = models.CharField(max_length=2083) # 2083 is the maximum legal URL length
-
+    def __str__(self):
+        priority = self.display_name or self.name.name
+        return u"%s (%s) %s" % (priority, self.name.slug, self.value)
+        
 class GroupMilestoneInfo(models.Model):
     group = ForeignKey(Group)
     # a group has two sets of milestones, current milestones
