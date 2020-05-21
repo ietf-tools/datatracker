@@ -36,6 +36,7 @@ def forward(apps, schema_editor):
         resourcename("jabber_log","Jabber Log", "url"),
         resourcename("mailing_list","Mailing List", "url"),
         resourcename("mailing_list_archive","Mailing List Archive","url"),
+        resourcename("repo","Other Repository", "url")
     ]
 
     for name in resourcenames:

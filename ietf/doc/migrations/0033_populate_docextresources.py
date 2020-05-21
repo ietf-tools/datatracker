@@ -40,6 +40,8 @@ name_map = {
 # TODO: Review all the None values below and make sure ignoring the URLs they match is really the right thing to do.
 url_map = OrderedDict({
    "https?://github\\.com": "github_repo",
+   "https://git.sr.ht/": "repo",
+   "https://todo.sr.ht/": "tracker",
    "https?://trac\\.ietf\\.org/.*/wiki": "wiki",
    "ietf\\.org.*/trac/wiki": "wiki",
    "trac.*wiki": "wiki",
