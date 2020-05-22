@@ -29,7 +29,7 @@ ietfdb (7.1.0) ietf; urgency=medium
     2-digit years in templates and examples.
 
   * Renamed some view funtions for consistency.  Almost all .json enpoints 
-    were named *_json(), but not all.  Fixed in this commit, together with the 
+    were named \*_json(), but not all.  Fixed in this commit, together with the 
     equivalent renaiming for one .ical endpoint.
 
   * Refined the makeresources management command slightly to improve 
