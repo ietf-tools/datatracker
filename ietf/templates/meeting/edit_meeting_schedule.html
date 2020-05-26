@@ -5,10 +5,10 @@
 {% load ietf_filters %}
 
 {% block morecss %}
+  {# set the group colors with CSS here #}
   {% for parent in session_parents %}
-    .parent-{{ parent.acronym }} {
-       background: linear-gradient(to right, {{ parent.scheduling_color }} 0.4em, transparent 0.5em);
-    }
+    .parent-{{ parent.acronym }} { background: linear-gradient(to right, {{ parent.scheduling_color }} 0.4em, transparent 0.5em); }
+    .parent-{{ parent.acronym }}.selected { background-color: {{ parent.light_scheduling_color }}; }
   {% endfor %}
 {% endblock morecss %}
 

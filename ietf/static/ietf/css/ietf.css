@@ -1108,8 +1108,8 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   cursor: pointer;
 }
 
-.edit-meeting-schedule .session.selected {
-  background-color:  #fcfcfc;
+.edit-meeting-schedule .session.selected .session-label {
+  font-weight: bold;
 }
 
 .edit-meeting-schedule .session.dragging {

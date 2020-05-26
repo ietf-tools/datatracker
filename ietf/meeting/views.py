@@ -607,6 +607,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     for i, p in enumerate(session_parents):
         rgb_color = cubehelix(i, len(session_parents))
         p.scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round(x * 255)) for x in rgb_color))
+        p.light_scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round((0.9 + 0.1 * x) * 255)) for x in rgb_color))
 
     # dig out historic AD names
     ad_names = {}
