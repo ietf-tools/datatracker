@@ -5,11 +5,14 @@ import calendar
 import datetime
 import math
 import random
+import string
 import functools
 from collections import defaultdict
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
+
+from ietf.person.models import Person
 from ietf.meeting import models
 
 OPTIMISER_MAX_CYCLES = 100
@@ -23,37 +26,54 @@ class Command(BaseCommand):
                             help='Number of the meeting to generate schedule for')
 
     def handle(self, meeting, verbosity, *args, **kwargs):
-        ScheduleHandler(meeting, verbosity).run()
+        ScheduleHandler(self.stdout, meeting, verbosity).run()
 
 
 class ScheduleHandler(object):
-    def __init__(self, meeting_number, verbosity):
+    def __init__(self, stdout, meeting_number, verbosity):
+        self.stdout = stdout
         self.verbosity = verbosity
-        self.meeting = models.Meeting.objects.get(number=meeting_number)
-        self.load_meeting()
+        try:
+            self.meeting = models.Meeting.objects.get(number=meeting_number)
+        except models.Meeting.DoesNotExist:
+            raise CommandError('Unknown meeting number {}'.format(meeting_number))
+        self._load_meeting()
 
     def run(self):
         """Schedule all sessions"""
         self.schedule.fill_initial_schedule()
         violations, cost = self.schedule.total_schedule_cost()
         if self.verbosity >= 1:
-            print('Initial schedule completed with {} violations, total cost {}'
-                  .format(len(violations), cost))
+            self.stdout.write('Initial schedule completed with {} violations, total cost {}'
+                              .format(len(violations), cost))
             
         self.schedule.optimise_schedule()
         violations, cost = self.schedule.total_schedule_cost()
         if self.verbosity >= 1:
-            print('Optimisation completed with {} violations, total cost {}'
-                  .format(len(violations), cost))
+            self.stdout.write('Optimisation completed with {} violations, total cost {}'
+                              .format(len(violations), cost))
         if self.verbosity >= 1 and violations:
-            print('Remaining violations:')
+            self.stdout.write('Remaining violations:')
             for v in violations:
-                print(v)
+                self.stdout.write(v)
 
-        # TODO: actually save the schedule
+        self._save_schedule(cost)
         return violations, cost
-
-    def load_meeting(self):
+    
+    def _save_schedule(self, cost):
+        name = 'Auto-' + ''.join(random.choice(string.ascii_uppercase) for i in range(10))
+        schedule_db = models.Schedule.objects.create(
+            meeting=self.meeting,
+            name=name,
+            owner=Person.objects.get(name='(System)'),
+            public=True,
+            visible=True,
+            badness=cost,
+        )
+        self.schedule.save_assignments(schedule_db)
+        self.stdout.write('Scheduled saved as {}'.format(name))
+        
+    def _load_meeting(self):
         """Load all timeslots and sessions into in-memory objects."""
         # TODO: ensure these filters are correct
         timeslots_db = models.TimeSlot.objects.filter(
@@ -71,13 +91,13 @@ class ScheduleHandler(object):
             schedulingevent__status_id='schedw',
         ).select_related('group')
         
-        sessions = {Session(self.meeting, s, self.verbosity) for s in sessions_db}
+        sessions = {Session(self.stdout, self.meeting, s, self.verbosity) for s in sessions_db}
         for session in sessions:
             # The complexity of a session also depends on how many
             # sessions have declared a conflict towards this session.
             session.update_complexity(sessions)
 
-        self.schedule = Schedule(timeslots, sessions, self.verbosity)
+        self.schedule = Schedule(self.stdout, timeslots, sessions, self.verbosity)
         self.schedule.adjust_for_timeslot_availability()
 
 
@@ -87,17 +107,26 @@ class Schedule(object):
     The schedule is internally represented as a dict, timeslots being keys, sessions being values.
     Note that "timeslot" means the combination of a timeframe and a location.
     """
-    def __init__(self, timeslots, sessions, verbosity):
+    def __init__(self, stdout, timeslots, sessions, verbosity):
+        self.stdout = stdout
         self.timeslots = timeslots
         self.sessions = sessions
         self.verbosity = verbosity
         self.schedule = dict()
         self.best_cost = math.inf
         self.best_schedule = None
-        self.initial_random = False
         self.fixed_cost = 0
         self.fixed_violations = []
         
+    def save_assignments(self, schedule_db):
+        for timeslot, session in self.schedule.items():
+            models.SchedTimeSessAssignment.objects.create(
+                timeslot_id=timeslot.timeslot_pk,
+                session_id=session.session_pk,
+                schedule=schedule_db,
+                badness=session.last_cost,
+            )
+    
     def adjust_for_timeslot_availability(self):
         """
         Check the number of sessions, their required capacity and duration against availability.
@@ -105,8 +134,8 @@ class Schedule(object):
         If sessions can't fit, they are trimmed, and a fixed cost is applied. 
         """
         if len(self.sessions) > len(self.timeslots):
-            raise ValueError('More sessions ({}) than timeslots ({})'
-                             .format(len(self.sessions), len(self.timeslots)))
+            raise CommandError('More sessions ({}) than timeslots ({})'
+                               .format(len(self.sessions), len(self.timeslots)))
     
         def make_capacity_adjustments(t_attr, s_attr):
             availables = [getattr(timeslot, t_attr) for timeslot in self.timeslots]
@@ -180,13 +209,10 @@ class Schedule(object):
         - Second: shortest duration that still fits
         - Third: smallest room that still fits
         If there are multiple options with equal value, a random one is picked.
-        
-        If self.initial_random is set, each session is assigned to a completely random
-        timeslot, that still fits. This is used in testing.
         """
         if self.verbosity >= 2:
-            print('== Initial scheduler starting, scheduling {} sessions in {} timeslots =='.
-                  format(len(self.sessions), len(self.timeslots)))
+            self.stdout.write('== Initial scheduler starting, scheduling {} sessions in {} timeslots =='
+                              .format(len(self.sessions), len(self.timeslots)))
         sessions = sorted(self.sessions, key=lambda s: s.complexity, reverse=True)
 
         for session in sessions:
@@ -204,12 +230,11 @@ class Schedule(object):
                 return self.calculate_dynamic_cost(proposed_schedule)[1], t.duration, t.capacity
 
             possible_slots.sort(key=timeslot_preference)
-            if self.initial_random:
-                random.shuffle(possible_slots)
             self._schedule_session(session, possible_slots[0])
             if self.verbosity >= 3:
-                print('Scheduled {} at {} in location {}'
-                      .format(session.group, possible_slots[0].start, possible_slots[0].location_pk))
+                self.stdout.write('Scheduled {} at {} in location {}'
+                                  .format(session.group, possible_slots[0].start,
+                                          possible_slots[0].location_pk))
 
     def optimise_schedule(self):
         """
@@ -237,9 +262,10 @@ class Schedule(object):
             random.shuffle(items)
 
             if self.verbosity >= 2:
-                print('== Optimiser starting run {}, dynamic cost after last optimiser run {} =='
-                      .format(run_count, last_run_cost))
-                print('Dynamic violations in last optimiser run: {}'.format(last_run_violations))
+                self.stdout.write('== Optimiser starting run {}, dynamic cost after last run {} =='
+                                  .format(run_count, last_run_cost))
+                self.stdout.write('Dynamic violations in last optimiser run: {}'
+                                  .format(last_run_violations))
             if shuffle_next_run:
                 shuffle_next_run = False
                 last_run_cost = None  # After a shuffle, attempt at least two regular runs
@@ -249,7 +275,7 @@ class Schedule(object):
                 best_cost = self.calculate_dynamic_cost()[1]
                 if best_cost == 0:
                     if self.verbosity >= 2:
-                        print('Optimiser found an optimal schedule')
+                        self.stdout.write('Optimiser found an optimal schedule')
                     return
                 best_timeslot = None
 
@@ -263,8 +289,8 @@ class Schedule(object):
                     switched_with = self._switch_sessions(original_timeslot, best_timeslot)
                     switched_with = switched_with.group if switched_with else '<empty slot>'
                     if self.verbosity >= 3:
-                        print('Found cost reduction to {} by switching {} with {}'
-                              .format(best_cost, session.group, switched_with))
+                        self.stdout.write('Found cost reduction to {} by switching {} with {}'
+                                          .format(best_cost, session.group, switched_with))
 
             if last_run_cost == best_cost:
                 shuffle_next_run = True
@@ -272,8 +298,8 @@ class Schedule(object):
             self._save_schedule()
 
         if self.verbosity >= 2:
-            print('Optimiser did not find an optimal schedule, using best schedule at dynamic cost {}'
-                  .format(self.best_cost))
+            self.stdout.write('Optimiser did not find perfect schedule, using best schedule at dynamic cost {}'
+                              .format(self.best_cost))
         self.schedule = self.best_schedule
 
     def _shuffle_conflicted_sessions(self, items):
@@ -286,8 +312,8 @@ class Schedule(object):
         to_reschedule = [(t, s) for t, s in items if s.last_cost]
         random.shuffle(to_reschedule)
         if self.verbosity >= 2:
-            print('Optimiser has no more improvements, shuffling sessions {}'
-                  .format(', '.join([s.group for t, s in to_reschedule])))
+            self.stdout.write('Optimiser has no more improvements, shuffling sessions {}'
+                              .format(', '.join([s.group for t, s in to_reschedule])))
         
         for original_timeslot, rescheduling_session in to_reschedule:
             possible_new_slots = list(self.timeslots)
@@ -299,8 +325,8 @@ class Schedule(object):
                 if switched_with is not False:
                     switched_group = switched_with.group if switched_with else '<empty slot>'
                     if self.verbosity >= 3:
-                        print('Shuffled {} to random new slot, previously in slot was {}'
-                              .format(rescheduling_session.group, switched_group))
+                        self.stdout.write('Moved {} to random new slot, previously in slot was {}'
+                                          .format(rescheduling_session.group, switched_group))
                     break
 
     def _schedule_session(self, session, timeslot):
@@ -378,9 +404,9 @@ class TimeSlot(object):
         if self.start.time() < datetime.time(12, 30):
             self.time_of_day = 'morning'
         elif self.start.time() < datetime.time(15, 30):
-            self.time_of_day = 'early-afternoon'
+            self.time_of_day = 'afternoon-early'
         else:
-            self.time_of_day = 'late-afternoon'
+            self.time_of_day = 'afternoon-late'
         self.time_group = self.day + '-' + self.time_of_day
         self.overlaps = set()
         self.adjacent = set()
@@ -411,12 +437,13 @@ class Session(object):
     i.e. it represents a single session to be scheduled. It also pulls
     in data about constraints, group parents, etc.
     """
-    def __init__(self, meeting, session_db, verbosity):
+    def __init__(self, stdout, meeting, session_db, verbosity):
         """
         Initialise this object from a Session model instance.
         This includes collecting all constraints from the database,
         and calculating an initial complexity.  
         """
+        self.stdout = stdout
         self.verbosity = verbosity
         self.session_pk = session_db.pk
         self.group = session_db.group.acronym
@@ -435,8 +462,8 @@ class Session(object):
         self.attendees = session_db.attendees
         if not self.attendees:
             if self.verbosity >= 1:
-                print('WARNING: session {} (pk {}) has no attendees set, assuming any room fits'
-                      .format(self.group, self.session_pk))
+                self.stdout.write('WARNING: session {} (pk {}) has no attendees set, assuming any room fits'
+                                  .format(self.group, self.session_pk))
             self.attendees = 0
         self.requested_duration = session_db.requested_duration
 
@@ -475,7 +502,7 @@ class Session(object):
                 self.timeranges_unavailable_penalty = constraint_db.name.penalty
             else:
                 f = 'Unknown constraint type {} for {}'
-                raise ValueError(f.format(constraint_db.name.slug, self.group))
+                raise CommandError(f.format(constraint_db.name.slug, self.group))
 
         self.complexity = sum([
             self.attendees,
@@ -503,9 +530,7 @@ class Session(object):
             ])
 
     def fits_in_timeslot(self, timeslot):
-        # return self.attendees <= timeslot.capacity and self.requested_duration <= timeslot.duration
-        return self.attendees <= timeslot.capacity and timeslot.time_group not in self.timeranges_unavailable and self.requested_duration <= timeslot.duration
-
+        return self.attendees <= timeslot.capacity and self.requested_duration <= timeslot.duration
 
     def calculate_cost(self, schedule, my_timeslot, overlapping_sessions, my_sessions):
         """
