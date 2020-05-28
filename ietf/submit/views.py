@@ -304,8 +304,8 @@ def submission_status(request, submission_id, access_token=None):
                     docevent_from_submission(request, submission, desc="Uploaded new revision")
 
                     desc = "Secretariat manually posting. Approvals already received"
-                    post_submission(request, submission, desc)
-                    create_submission_event(request, submission, desc)
+                    post_submission(request, submission, desc, desc)
+
                 else:
                     doc = submission.existing_document()
                     prev_authors = [] if not doc else [ author.person for author in doc.documentauthor_set.all() ]
@@ -316,8 +316,8 @@ def submission_status(request, submission_id, access_token=None):
                         docevent_from_submission(request, submission, desc="Uploaded new revision", who=request.user.person) # type: ignore
 
                         desc = "New version accepted (logged-in submitter: %s)" % request.user.person # type: ignore
-                        post_submission(request, submission, desc)
-                        create_submission_event(request, submission, desc)
+                        post_submission(request, submission, desc, desc)
+
                     else:
                         sent_to, desc, docDesc = send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval)
                         msg = "Set submitter to \"%s\", replaces to %s and %s" % (
@@ -360,9 +360,7 @@ def submission_status(request, submission_id, access_token=None):
             if not can_group_approve:
                 return HttpResponseForbidden('You do not have permission to perform this action')
 
-            post_submission(request, submission, "WG -00 approved")
-
-            create_submission_event(request, submission, "Approved and posted submission")
+            post_submission(request, submission, "WG -00 approved", "Approved and posted submission")
 
             return redirect("ietf.doc.views_doc.document_main", name=submission.name)
 
@@ -376,9 +374,7 @@ def submission_status(request, submission_id, access_token=None):
             else:
                 desc = "Forced post of submission"
 
-            post_submission(request, submission, desc)
-
-            create_submission_event(request, submission, desc)
+            post_submission(request, submission, desc, desc)
 
             return redirect("ietf.doc.views_doc.document_main", name=submission.name)
 
@@ -523,9 +519,7 @@ def confirm_submission(request, submission_id, auth_token):
             else:
                 desc = "New version approved by previous author"
 
-            post_submission(request, submission, desc)
-
-            create_submission_event(request, submission, "Confirmed and posted submission")
+            post_submission(request, submission, desc, "Confirmed and posted submission")
 
             return redirect("ietf.doc.views_doc.document_main", name=submission.name)
 

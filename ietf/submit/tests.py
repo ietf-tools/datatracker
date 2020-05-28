@@ -1803,7 +1803,7 @@ class ApiSubmitTests(TestCase):
         settings.IDSUBMIT_REPOSITORY_PATH = self.saved_idsubmit_repository_path
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
 
-    def post_submission(self, rev, author=None, name=None, group=None, email=None, title=None, year=None):
+    def do_post_submission(self, rev, author=None, name=None, group=None, email=None, title=None, year=None):
         url = urlreverse('ietf.submit.views.api_submit')
         if author is None:
             author = PersonFactory()
@@ -1831,14 +1831,14 @@ class ApiSubmitTests(TestCase):
         self.assertEqual(r.status_code, 405)
 
     def test_api_submit_ok(self):
-        r, author, name = self.post_submission('00')
+        r, author, name = self.do_post_submission('00')
         expected = "Upload of %s OK, confirmation requests sent to:\n  %s" % (name, author.formatted_email().replace('\n',''))
         self.assertContains(r, expected, status_code=200)
 
     def test_api_submit_secondary_email_active(self):
         person = PersonFactory()
         email = EmailFactory(person=person)
-        r, author, name = self.post_submission('00', author=person, email=email.address)
+        r, author, name = self.do_post_submission('00', author=person, email=email.address)
         for expected in [
                 "Upload of %s OK, confirmation requests sent to:" % (name, ),
                 author.formatted_email().replace('\n',''),
@@ -1851,43 +1851,43 @@ class ApiSubmitTests(TestCase):
         prim.primary = True
         prim.save()
         email = EmailFactory(person=person, active=False)
-        r, author, name = self.post_submission('00', author=person, email=email.address)
+        r, author, name = self.do_post_submission('00', author=person, email=email.address)
         expected = "No such user: %s" % email.address
         self.assertContains(r, expected, status_code=400)
 
     def test_api_submit_no_user(self):
         email='nonexistant.user@example.org'
-        r, author, name = self.post_submission('00', email=email)
+        r, author, name = self.do_post_submission('00', email=email)
         expected = "No such user: %s" % email
         self.assertContains(r, expected, status_code=400)
 
     def test_api_submit_no_person(self):
         user = UserFactory()
         email = user.username
-        r, author, name = self.post_submission('00', email=email)
+        r, author, name = self.do_post_submission('00', email=email)
         expected = "No person with username %s" % email
         self.assertContains(r, expected, status_code=400)
 
     def test_api_submit_wrong_revision(self):
-        r, author, name = self.post_submission('01')
+        r, author, name = self.do_post_submission('01')
         expected = "Invalid revision (revision 00 is expected)"
         self.assertContains(r, expected, status_code=400)
 
     def test_api_submit_pending_submission(self):
-        r, author, name = self.post_submission('00')
+        r, author, name = self.do_post_submission('00')
         expected = "Upload of"
         self.assertContains(r, expected, status_code=200)
-        r, author, name = self.post_submission('00', author=author, name=name)
+        r, author, name = self.do_post_submission('00', author=author, name=name)
         expected = "A submission with same name and revision is currently being processed"
         self.assertContains(r, expected, status_code=400)
 
     def test_api_submit_no_title(self):
-        r, author, name = self.post_submission('00', title=" ")
+        r, author, name = self.do_post_submission('00', title=" ")
         expected = "Could not extract a valid title from the upload"
         self.assertContains(r, expected, status_code=400)
 
     def test_api_submit_failed_idnits(self):
-        r, author, name = self.post_submission('00', year="2010")
+        r, author, name = self.do_post_submission('00', year="2010")
         expected = "Document date must be within 3 days of submission date"
         self.assertContains(r, expected, status_code=400)
 

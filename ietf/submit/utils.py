@@ -12,6 +12,7 @@ from typing import Callable, Optional # pyflakes:ignore
 
 from django.conf import settings
 from django.core.validators import validate_email, ValidationError
+from django.db import transaction
 from django.http import HttpRequest     # pyflakes:ignore
 from django.utils.module_loading import import_string
 
@@ -239,7 +240,8 @@ def post_rev00_submission_events(draft, submission, submitter):
     return events
 
 
-def post_submission(request, submission, approvedDesc):
+@transaction.atomic
+def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     system = Person.objects.get(name="(System)")
     submitter_parsed = submission.submitter_parsed()
     if submitter_parsed["name"] and submitter_parsed["email"]:
@@ -294,7 +296,7 @@ def post_submission(request, submission, approvedDesc):
         type="new_submission",
         doc=draft,
         by=system,
-        desc=approvedDesc,
+        desc=approved_doc_desc,
         submission=submission,
         rev=submission.rev,
     )
@@ -418,6 +420,8 @@ def post_submission(request, submission, approvedDesc):
 
     submission.draft = draft
     submission.save()
+
+    create_submission_event(request, submission, approved_subm_desc)
 
 def update_replaces_from_submission(request, submission, draft):
     if not submission.replaces:
