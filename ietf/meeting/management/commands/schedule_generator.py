@@ -6,8 +6,12 @@ import datetime
 import math
 import random
 import string
-import functools
 from collections import defaultdict
+
+try:
+    from functools import lru_cache
+except ImportError:
+    from functools32 import lru_cache
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
@@ -583,7 +587,7 @@ class Session(object):
         self.last_cost = cost
         return violations, cost
 
-    @functools.lru_cache(maxsize=10000)
+    @lru_cache(maxsize=10000)
     def _calculate_cost_overlapping_groups(self, overlapping_sessions):
         violations, cost = [], 0
         for other in overlapping_sessions:
@@ -603,7 +607,7 @@ class Session(object):
             cost += len(conflict_people) * self.conflict_people_penalty
         return violations, cost
 
-    @functools.lru_cache(maxsize=10000)
+    @lru_cache(maxsize=10000)
     def _calculate_cost_business_logic(self, overlapping_sessions):
         violations, cost = [], 0
         for other in overlapping_sessions:
@@ -645,8 +649,7 @@ class Session(object):
                 cost += self.business_constraint_costs['session_overlap_ad']
         return violations, cost
     
-    # TODO: Python 2 compatibility
-    @functools.lru_cache(maxsize=10000)
+    @lru_cache(maxsize=10000)
     def _calculate_cost_my_other_sessions(self, my_sessions):
         violations, cost = [], 0
         my_sessions = list(my_sessions)
