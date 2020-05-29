@@ -75,6 +75,11 @@ class ScheduleHandler(object):
         
     def _load_meeting(self):
         """Load all timeslots and sessions into in-memory objects."""
+        business_constraint_costs = {
+            bc.slug: bc.penalty
+            for bc in models.BusinessConstraint.objects.all()
+        }
+        
         # TODO: ensure these filters are correct
         timeslots_db = models.TimeSlot.objects.filter(
             meeting=self.meeting,
@@ -91,13 +96,15 @@ class ScheduleHandler(object):
             schedulingevent__status_id='schedw',
         ).select_related('group')
         
-        sessions = {Session(self.stdout, self.meeting, s, self.verbosity) for s in sessions_db}
+        sessions = {Session(self.stdout, self.meeting, s, business_constraint_costs, self.verbosity)
+                    for s in sessions_db}
         for session in sessions:
             # The complexity of a session also depends on how many
             # sessions have declared a conflict towards this session.
             session.update_complexity(sessions)
 
-        self.schedule = Schedule(self.stdout, timeslots, sessions, self.verbosity)
+        self.schedule = Schedule(
+            self.stdout, timeslots, sessions, business_constraint_costs, self.verbosity)
         self.schedule.adjust_for_timeslot_availability()
 
 
@@ -107,10 +114,11 @@ class Schedule(object):
     The schedule is internally represented as a dict, timeslots being keys, sessions being values.
     Note that "timeslot" means the combination of a timeframe and a location.
     """
-    def __init__(self, stdout, timeslots, sessions, verbosity):
+    def __init__(self, stdout, timeslots, sessions, business_constraint_costs, verbosity):
         self.stdout = stdout
         self.timeslots = timeslots
         self.sessions = sessions
+        self.business_constraint_costs = business_constraint_costs
         self.verbosity = verbosity
         self.schedule = dict()
         self.best_cost = math.inf
@@ -154,7 +162,7 @@ class Schedule(object):
                     msg = f.format(t_attr, session.group, getattr(session, s_attr), largest_available)
                     setattr(session, s_attr, largest_available)
                     availables.pop(-1)
-                    self.fixed_cost += 10000  # TODO
+                    self.fixed_cost += self.business_constraint_costs['session_requires_trim']
                     self.fixed_violations.append(msg)
         
         make_capacity_adjustments('duration', 'requested_duration')
@@ -437,7 +445,7 @@ class Session(object):
     i.e. it represents a single session to be scheduled. It also pulls
     in data about constraints, group parents, etc.
     """
-    def __init__(self, stdout, meeting, session_db, verbosity):
+    def __init__(self, stdout, meeting, session_db, business_constraint_costs, verbosity):
         """
         Initialise this object from a Session model instance.
         This includes collecting all constraints from the database,
@@ -445,6 +453,7 @@ class Session(object):
         """
         self.stdout = stdout
         self.verbosity = verbosity
+        self.business_constraint_costs = business_constraint_costs
         self.session_pk = session_db.pk
         self.group = session_db.group.acronym
         self.parent = session_db.group.parent.acronym if session_db.group.parent else None
@@ -604,36 +613,36 @@ class Session(object):
             if self.is_bof and other.is_prg:
                 violations.append('{}: BoF overlaps with PRG: {}'
                                   .format(self.group, other.group))
-                cost += 100000  # TODO
+                cost += self.business_constraint_costs['bof_overlapping_prg']
             # BoFs cannot conflict with any other BoFs 
             if self.is_bof and other.is_bof:
                 violations.append('{}: BoF overlaps with other BoF: {}'
                                   .format(self.group, other.group))
-                cost += 100000  # TODO
+                cost += self.business_constraint_costs['bof_overlapping_bof']
             # BoFs cannot conflict with any other WGs in their area
             if self.is_bof and self.parent == other.parent:
                 violations.append('{}: BoF overlaps with other session from same area: {}'
                                   .format(self.group, other.group))
-                cost += 100000  # TODO
+                cost += self.business_constraint_costs['bof_overlapping_area_wg']
             # BoFs cannot conflict with any area-wide meetings (of any area) 
             if self.is_bof and other.is_area_meeting:
                 violations.append('{}: BoF overlaps with area meeting {}'
                                   .format(self.group, other.group))
-                cost += 100000  # TODO
+                cost += self.business_constraint_costs['bof_overlapping_area_meeting']
             # Area meetings cannot conflict with anything else in their area 
             if self.is_area_meeting and other.parent == self.group:
                 violations.append('{}: area meeting overlaps with session from same area: {}'
                                   .format(self.group, other.group))
-                cost += 100000  # TODO
+                cost += self.business_constraint_costs['area_overlapping_in_area']
             # Area meetings cannot conflict with other area meetings 
             if self.is_area_meeting and other.is_area_meeting:
                 violations.append('{}: area meeting overlaps with other area meeting: {}'
                                   .format(self.group, other.group))
-                cost += 10000  # TODO
+                cost += self.business_constraint_costs['area_overlapping_other_area']
             # WGs overseen by the same Area Director should not conflict  
             if self.ad and self.ad == other.ad:
                 violations.append('{}: has same AD as {}'.format(self.group, other.group))
-                cost += 1000  # TODO
+                cost += self.business_constraint_costs['session_overlap_ad']
         return violations, cost
     
     # TODO: Python 2 compatibility
@@ -645,7 +654,7 @@ class Session(object):
             if my_sessions != sorted(my_sessions, key=lambda i: i[1].session_pk):
                 session_order = [s.session_pk for t, s in my_sessions]
                 violations.append('{}: sessions out of order: {}'.format(self.group, session_order))
-                cost += 10000  # TODO
+                cost += self.business_constraint_costs['sessions_out_of_order']
                 
         if self.time_relation and len(my_sessions) >= 2:
             group_days = [t.start.date() for t, s in my_sessions]
