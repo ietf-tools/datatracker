@@ -7,11 +7,7 @@ import math
 import random
 import string
 from collections import defaultdict
-
-try:
-    from functools import lru_cache
-except ImportError:
-    from functools32 import lru_cache
+from functools import lru_cache
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
