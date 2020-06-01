@@ -6,7 +6,7 @@ from django.contrib import admin
 
 from ietf.meeting.models import (Meeting, Room, Session, TimeSlot, Constraint, Schedule,
     SchedTimeSessAssignment, ResourceAssociation, FloorPlan, UrlResource,
-    SessionPresentation, ImportantDate, SlideSubmission, SchedulingEvent)
+    SessionPresentation, ImportantDate, SlideSubmission, SchedulingEvent, BusinessConstraint)
 
 
 class UrlResourceAdmin(admin.ModelAdmin):
@@ -63,6 +63,18 @@ class TimeSlotAdmin(admin.ModelAdmin):
     session_desc.short_description = "session" # type: ignore # https://github.com/python/mypy/issues/2087
 
 admin.site.register(TimeSlot, TimeSlotAdmin)
+
+
+class BusinessConstraintAdmin(admin.ModelAdmin):
+    list_display = ["slug", "name", "penalty"]
+    search_fields = ["slug", "name"]
+
+    def name_lower(self, instance):
+        return instance.name.name.lower()
+
+    name_lower.short_description = "businessconstraint" # type: ignore # https://github.com/python/mypy/issues/2087
+
+admin.site.register(BusinessConstraint, BusinessConstraintAdmin)
 
 
 class ConstraintAdmin(admin.ModelAdmin):
