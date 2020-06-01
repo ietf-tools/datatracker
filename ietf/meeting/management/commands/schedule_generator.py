@@ -140,7 +140,11 @@ class Schedule(object):
         """
         Check the number of sessions, their required capacity and duration against availability.
         If there are too many sessions, the generator exits.
-        If sessions can't fit, they are trimmed, and a fixed cost is applied. 
+        If sessions can't fit, they are trimmed, and a fixed cost is applied.
+        
+        Note that the trim is only applied on the in-memory object. The purpose
+        of trimming in advance is to prevent the optimiser from trying to resolve
+        a constraint that can never be resolved.
         """
         if len(self.sessions) > len(self.timeslots):
             raise CommandError('More sessions ({}) than timeslots ({})'
@@ -218,6 +222,9 @@ class Schedule(object):
         - Second: shortest duration that still fits
         - Third: smallest room that still fits
         If there are multiple options with equal value, a random one is picked.
+        
+        For initial scheduling, it is not a hard requirement that the timeslot is long
+        or large enough, though that will be preferred due to the lower cost.
         """
         if self.verbosity >= 2:
             self.stdout.write('== Initial scheduler starting, scheduling {} sessions in {} timeslots =='
@@ -225,14 +232,9 @@ class Schedule(object):
         sessions = sorted(self.sessions, key=lambda s: s.complexity, reverse=True)
 
         for session in sessions:
-            possible_slots = [t for t in self.timeslots if
-                              t not in self.schedule.keys() and session.fits_in_timeslot(t)]
+            possible_slots = [t for t in self.timeslots if t not in self.schedule.keys()]
             random.shuffle(possible_slots)
-            if not len(possible_slots):
-                # TODO: this needs better handling
-                raise Exception('No timeslot was left for {} ({})'
-                                .format(session.group, session.session_pk))
-
+            
             def timeslot_preference(t):
                 proposed_schedule = self.schedule.copy()
                 proposed_schedule[t] = session
@@ -339,8 +341,6 @@ class Schedule(object):
                     break
 
     def _schedule_session(self, session, timeslot):
-        if not session.fits_in_timeslot(timeslot):
-            raise ValueError
         self.schedule[timeslot] = session
 
     def _cost_for_switch(self, timeslot1, timeslot2):
@@ -555,6 +555,14 @@ class Session(object):
         violations, cost = [], 0
         overlapping_sessions = tuple(overlapping_sessions)
         
+        if self.attendees > my_timeslot.capacity:
+            violations.append('{}: scheduled scheduled in too small room'.format(self.group))
+            cost += self.business_constraint_costs['session_requires_trim']
+
+        if self.requested_duration > my_timeslot.duration:
+            violations.append('{}: scheduled scheduled in too short timeslot'.format(self.group))
+            cost += self.business_constraint_costs['session_requires_trim']
+
         if my_timeslot.time_group in self.timeranges_unavailable:
             violations.append('{}: scheduled in unavailable timerange {}'
                               .format(self.group, my_timeslot.time_group))
