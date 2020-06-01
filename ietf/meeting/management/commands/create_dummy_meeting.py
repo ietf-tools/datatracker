@@ -1565,7 +1565,7 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=115214, )  # Benjamin Kaduk
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=105815, )  # Roman Danyliw
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='timerange')
-                c.timeranges.set(TimerangeName.objects.exclude(slug__startswith='thursday-early-afternoon'))
+                c.timeranges.set(TimerangeName.objects.exclude(slug__startswith='thursday-afternoon-early'))
                 
                 ## session for mpls ##
                 s = Session.objects.create(
