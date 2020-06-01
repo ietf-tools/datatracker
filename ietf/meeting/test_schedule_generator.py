@@ -15,10 +15,11 @@ from ietf.meeting.management.commands.schedule_generator import ScheduleHandler
 
 class ScheduleGeneratorTest(TestCase):
     def setUp(self):
-        # Create a meeting of 2 days, 5 sessions per day, in 2 rooms.
+        # Create a meeting of 2 days, 5 sessions per day, in 2 rooms. There are 3 days
+        # actually created, but sundays are ignored.
         # Two rooms is a fairly low level of simultaneous schedules, this is needed
         # because the schedule in these tests is much more complex than a real schedule.
-        self.meeting = MeetingFactory(type_id='ietf', days=2)
+        self.meeting = MeetingFactory(type_id='ietf', days=2, date=datetime.date(2020, 5, 31))
         self.rooms = [
             RoomFactory(meeting=self.meeting, capacity=100),
             RoomFactory(meeting=self.meeting, capacity=10)
@@ -26,7 +27,7 @@ class ScheduleGeneratorTest(TestCase):
         
         self.timeslots = []
         for room in self.rooms:
-            for day in range(0, 2):
+            for day in range(0, 3):
                 for hour in range(12, 17): 
                     t = TimeSlotFactory(
                         meeting=self.meeting,
