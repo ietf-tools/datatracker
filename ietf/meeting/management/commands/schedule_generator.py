@@ -68,7 +68,7 @@ class ScheduleHandler(object):
             meeting=self.meeting,
             name=name,
             owner=Person.objects.get(name='(System)'),
-            public=True,
+            public=False,
             visible=True,
             badness=cost,
         )
