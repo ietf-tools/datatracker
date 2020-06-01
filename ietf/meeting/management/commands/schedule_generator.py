@@ -462,9 +462,7 @@ class Session(object):
         self.is_area_meeting = any([
             session_db.group.type_id == 'area',
             session_db.group.type_id == 'ag',
-            self.group in ['dispatch', 'gendispatch', 'intarea', 'opsarea/opsawg', 'rtgarea',
-                           'rtgwg', 'saag', 'secdispatch', 'tsvarea', 'irtfopen']
-            # meeting_seen_as_area TODO
+            session_db.group.meeting_seen_as_area,
         ])
         self.is_bof = session_db.group.state_id == 'bof'
         self.is_prg = session_db.group.type_id == 'rg' and session_db.group.state_id == 'proposed'
