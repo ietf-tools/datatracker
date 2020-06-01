@@ -56,6 +56,8 @@ class ScheduleHandler(object):
             self.stdout.write('Remaining violations:')
             for v in violations:
                 self.stdout.write(v)
+                
+        self.schedule.optimise_timeslot_capacity()
 
         self._save_schedule(cost)
         return violations, cost
@@ -339,6 +341,34 @@ class Schedule(object):
                         self.stdout.write('Moved {} to random new slot, previously in slot was {}'
                                           .format(rescheduling_session.group, switched_group))
                     break
+                    
+    def optimise_timeslot_capacity(self):
+        """
+        Optimise the schedule for room capacity usage.
+        
+        For each fully overlapping timeslot, the sessions are re-ordered so
+        that smaller sessions are in smaller rooms, and larger sessions in
+        larger rooms. This does not change which sessions overlap, so it
+        has no impact on the schedule cost. 
+        """
+        optimised_timeslots = set()
+        for timeslot in list(self.schedule.keys()):
+            if timeslot in optimised_timeslots:
+                continue
+            timeslot_overlaps = sorted(timeslot.full_overlaps, key=lambda t: t.capacity, reverse=True)
+            sessions_overlaps = [self.schedule.get(t) for t in timeslot_overlaps]
+            sessions_overlaps.sort(key=lambda s: s.attendees if s else 0, reverse=True)
+            assert len(timeslot_overlaps) == len(sessions_overlaps)
+            
+            for new_timeslot in timeslot_overlaps:
+                new_session = sessions_overlaps.pop(0)
+                if not new_session and new_timeslot in self.schedule:
+                    del self.schedule[new_timeslot]
+                elif new_session:
+                    self.schedule[new_timeslot] = new_session
+                
+            optimised_timeslots.add(timeslot)
+            optimised_timeslots.update(timeslot_overlaps)    
 
     def _schedule_session(self, session, timeslot):
         self.schedule[timeslot] = session
@@ -418,13 +448,17 @@ class TimeSlot(object):
             self.time_of_day = 'afternoon-late'
         self.time_group = self.day + '-' + self.time_of_day
         self.overlaps = set()
+        self.full_overlaps = set()
         self.adjacent = set()
 
     def store_relations(self, other_timeslots):
         """
         Store relations to all other timeslots. This should be called
         after all TimeSlot objects have been created. This allows fast
-        lookups of which TimeSlot objects overlap or are adjacent. 
+        lookups of which TimeSlot objects overlap or are adjacent.
+        Note that there is a distinction between an overlap, meaning
+        at least part of the timeslots occur during the same time,
+        and a full overlap, meaning the start and end time are identical.
         """
         for other in other_timeslots:
             if any([
@@ -433,6 +467,8 @@ class TimeSlot(object):
                 self.start >= other.start and self.end <= other.end,
             ]) and other != self:
                 self.overlaps.add(other)
+            if self.start == other.start and self.end == other.end and other != self:
+                self.full_overlaps.add(other)
             if (
                 abs(self.start - other.end) <= datetime.timedelta(minutes=30) or
                 abs(other.start - self.end) <= datetime.timedelta(minutes=30)
