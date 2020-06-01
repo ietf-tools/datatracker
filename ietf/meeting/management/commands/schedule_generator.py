@@ -87,6 +87,7 @@ class ScheduleHandler(object):
         ).exclude(location__capacity=None).select_related('location')
         
         timeslots = {TimeSlot(t, self.verbosity) for t in timeslots_db}
+        timeslots = {t for t in timeslots if t.day != 'sunday'}
         for timeslot in timeslots:
             timeslot.store_relations(timeslots)
 
@@ -522,7 +523,7 @@ class Session(object):
             self.timeranges_unavailable_penalty * len(self.timeranges_unavailable),
             self.requested_duration.seconds * 100,
         ])
-
+        
     def update_complexity(self, other_sessions):
         """
         Update the complexity of this session, based on all other sessions.
