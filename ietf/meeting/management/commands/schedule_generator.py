@@ -1,4 +1,6 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
+# For an overview of this process and context, see:
+# https://trac.tools.ietf.org/tools/ietfdb/wiki/MeetingConstraints
 from __future__ import absolute_import, print_function, unicode_literals
 
 import calendar
@@ -82,7 +84,6 @@ class ScheduleHandler(object):
             for bc in models.BusinessConstraint.objects.all()
         }
         
-        # TODO: ensure these filters are correct
         timeslots_db = models.TimeSlot.objects.filter(
             meeting=self.meeting,
             type_id='regular',
