@@ -11,31 +11,23 @@ import debug      # pyflakes:ignore
 # Django imports
 from django import forms
 from django.utils.html import mark_safe # type:ignore
+from django.db.models import F
 
 # IETF imports
-from ietf.group.models import Group, GroupHistory, GroupStateName
-from ietf.name.models import ReviewTypeName
+from ietf.group.models import Group, GroupHistory, GroupStateName, GroupFeatures 
+from ietf.name.models import ReviewTypeName, RoleName
 from ietf.person.fields import SearchableEmailsField, PersonEmailChoiceField
-from ietf.person.models import Person
+from ietf.person.models import Person, Email
 from ietf.review.models import ReviewerSettings, UnavailablePeriod, ReviewSecretarySettings
 from ietf.review.policies import get_reviewer_queue_policy
 from ietf.review.utils import close_review_request_states
 from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.utils.text import strip_suffix
 #from ietf.utils.ordereddict import insert_after_in_ordered_dict
 from ietf.utils.fields import DatepickerDateField, MultiEmailField
 
 # --- Constants --------------------------------------------------------
 
 MAX_GROUP_DELEGATES = 3
-
-# --- Utility Functions ------------------------------------------------
-
-def roles_for_group_type(group_type):
-    roles = ["chair", "secr", "techadv", "delegate", ]
-    if group_type == "review":
-        roles.append("reviewer")
-    return roles
 
 # --- Forms ------------------------------------------------------------
 
@@ -65,14 +57,7 @@ class GroupForm(forms.Form):
     name = forms.CharField(max_length=80, label="Name", required=True)
     acronym = forms.CharField(max_length=40, label="Acronym", required=True)
     state = forms.ModelChoiceField(GroupStateName.objects.all(), label="State", required=True)
-
-    # roles
-    chair_roles = SearchableEmailsField(label="Chairs", required=False, only_users=True)
-    secr_roles = SearchableEmailsField(label="Secretaries", required=False, only_users=True)
-    techadv_roles = SearchableEmailsField(label="Technical Advisors", required=False, only_users=True)
-    delegate_roles = SearchableEmailsField(label="Delegates", required=False, only_users=True, max_entries=MAX_GROUP_DELEGATES,
-                                      help_text=mark_safe("Chairs can delegate the authority to update the state of group documents - at most %s persons at a given time." % MAX_GROUP_DELEGATES))
-    reviewer_roles = SearchableEmailsField(label="Reviewers", required=False, only_users=True)
+    # Note that __init__ will add role fields here
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type='area').order_by('name'), label="Shepherding AD", empty_label="(None)", required=False)
 
     parent = forms.ModelChoiceField(Group.objects.filter(state="active").order_by('name'), empty_label="(None)", required=False)
@@ -85,15 +70,38 @@ class GroupForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.group = kwargs.pop('group', None)
         self.group_type = kwargs.pop('group_type', False)
+        if self.group:
+            self.used_roles = self.group.used_roles or self.group.features.default_used_roles
+        else:
+            self.used_roles = GroupFeatures.objects.get(type=self.group_type).default_used_roles
         if "field" in kwargs:
             field = kwargs["field"]
             del kwargs["field"]
-            if field in roles_for_group_type(self.group_type):
+            if field in self.used_roles:
                 field = field + "_roles"
         else:
             field = None
 
         super(self.__class__, self).__init__(*args, **kwargs)
+
+        for role_slug in self.used_roles:
+            role_name = RoleName.objects.get(slug=role_slug)
+            fieldname = '%s_roles'%role_slug
+            field_args = {
+                'label' : role_name.name,
+                'required' : False,
+                'only_users' : True,
+            }
+            if fieldname == 'delegate_roles':
+                field_args['max_entries'] = MAX_GROUP_DELEGATES
+                field_args['help_text'] = mark_safe("Chairs can delegate the authority to update the state of group documents - at most %s persons at a given time." % MAX_GROUP_DELEGATES)
+            self.fields[fieldname] = SearchableEmailsField(**field_args)
+            self.fields[fieldname].initial = Email.objects.filter(person__role__name_id=role_slug,person__role__group=self.group,person__role__email__pk=F('pk')).distinct()
+
+        self.adjusted_field_order = ['name','acronym','state']
+        for role_slug in self.used_roles:
+            self.adjusted_field_order.append('%s_roles'%role_slug)
+        self.order_fields(self.adjusted_field_order)
 
         if self.group_type == "rg":
             self.fields["state"].queryset = self.fields["state"].queryset.exclude(slug__in=("bof", "bof-conc"))
@@ -116,10 +124,6 @@ class GroupForm(forms.Form):
             self.fields['parent'].queryset = self.fields['parent'].queryset.filter(type="area")
             self.fields['parent'].label = "IETF Area"
 
-        role_fields_to_remove = (set(strip_suffix(attr, "_roles") for attr in self.fields if attr.endswith("_roles"))
-                                 - set(roles_for_group_type(self.group_type)))
-        for r in role_fields_to_remove:
-            del self.fields[r + "_roles"]
         if field:
             keys = list(self.fields.keys())
             for f in keys:

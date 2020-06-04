@@ -128,14 +128,6 @@ from ietf.utils.text import strip_suffix
 def roles(group, role_name):
     return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
 
-def roles_for_group_type(group_type):
-    roles = ["chair", "secr", "techadv", "delegate", ]
-    if group_type == "review":
-        roles.append("reviewer")
-    return roles
-
-
-
 
 def fill_in_charter_info(group, include_drafts=False):
     group.areadirector = getattr(group.ad_role(),'email',None)
@@ -546,7 +538,7 @@ def group_about(request, acronym, group_type=None):
                       "can_provide_status_update": can_provide_update,
                       "status_update": status_update,
                       "charter_submit_url": charter_submit_url,
-                      "editable_roles": roles_for_group_type(group_type),
+                      "editable_roles": group.used_roles or group.features.default_used_roles,
                       "closing_note": e,
                   }))
 
@@ -1076,8 +1068,6 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                         closing_note = closing_note,
                         )
 
-            for slug in roles_for_group_type(group_type):
-                init[slug + "_roles"] = Email.objects.filter(role__group=group, role__name=slug).order_by('role__person__name')
         else:
             init = dict(ad=request.user.person.id if group_type == "wg" and has_role(request.user, "Area Director") else None,
                         )
