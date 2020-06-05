@@ -72,6 +72,7 @@ trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; 
 shortopts=DhqvV
 longopts=no-download,help,quiet,verbose,version
 
+LOAD=1
 DOWNLOAD=1
 QUIET=""
 
@@ -90,9 +91,10 @@ fi
 
 while true ; do
     case "$1" in
-	-D| --no-download) DOWNLOAD="";;	# Don't download, use existing file
+	-d| --download)	LOAD="";;	# Only download
+	-D| --no-download)	DOWNLOAD="";;	# Don't download, use existing file
 	-h| --help)	usage; exit;;		# Show this help, then exit
-        -q| --quiet)    QUIET="-q";;            # Don't show progress
+	-q| --quiet)	QUIET="-q";;            # Don't show progress
 	-v| --verbose)	VERBOSE=1;;		# Be more talkative
 	-V| --version)	version; exit;;		# Show program version, then exit
 	--)		shift; break;;
@@ -129,16 +131,17 @@ if [ "$DOWNLOAD" ]; then
     wget $QUIET -N -P $DATADIR https://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz || die "No new data, quitting."
 fi
 
-echo "Loading database ..."
-if [ -z "$QUIET" ]; then
-    gunzip < $DATADIR/ietf_utf8.sql.gz \
-        | pv --progress --bytes --rate --eta --size $(gzip --list --quiet $DATADIR/ietf_utf8.sql.gz | awk '{ print $2 }') \
-        | sed -e 's/ENGINE=MyISAM/ENGINE=InnoDB/' \
-        | $parent/ietf/manage.py dbshell
-else
-    gunzip < $DATADIR/ietf_utf8.sql.gz \
-        | sed -e 's/ENGINE=MyISAM/ENGINE=InnoDB/' \
-        | $parent/ietf/manage.py dbshell
+if [ "$LOAD" ]; then
+    echo "Loading database ..."
+    if [ -z "$QUIET" ]; then
+        gunzip < $DATADIR/ietf_utf8.sql.gz \
+            | pv --progress --bytes --rate --eta --size $(gzip --list --quiet $DATADIR/ietf_utf8.sql.gz | awk '{ print $2 }') \
+            | sed -e 's/ENGINE=MyISAM/ENGINE=InnoDB/' \
+            | $parent/ietf/manage.py dbshell
+    else
+        gunzip < $DATADIR/ietf_utf8.sql.gz \
+            | sed -e 's/ENGINE=MyISAM/ENGINE=InnoDB/' \
+            | $parent/ietf/manage.py dbshell
+    fi
 fi
-
 
