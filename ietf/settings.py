@@ -392,6 +392,7 @@ INSTALLED_APPS = [
     'django_password_strength',
     'djangobwr',
     'form_utils',
+    'oidc_provider',
     'request_profiler',
     'simple_history',
     'tastypie',
@@ -862,7 +863,15 @@ INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 FLOORPLAN_MEDIA_DIR = 'floor'
 FLOORPLAN_DIR = os.path.join(MEDIA_ROOT, FLOORPLAN_MEDIA_DIR)
 
+# === OpenID Connect Provide Related Settings ==================================
+
+# Used by django-oidc-provider
+LOGIN_URL = '/accounts/login/'
+OIDC_USERINFO = 'ietf.ietfauth.utils.openid_userinfo'
+OIDC_EXTRA_SCOPE_CLAIMS = 'ietf.ietfauth.utils.OidcExtraScopeClaims'
+
 # ==============================================================================
+
 
 DOT_BINARY = '/usr/bin/dot'
 UNFLATTEN_BINARY= '/usr/bin/unflatten'
@@ -1053,6 +1062,10 @@ SILENCED_SYSTEM_CHECKS = [
 CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/fix-unidecode-argument-warning.patch',
     'patch/fix-request-profiler-streaming-length.patch',
+    'patch/change-oidc-provider-field-sizes-228.patch',
+    'patch/fix-oidc-access-token-post.patch',
+    'patch/fix-jwkest-jwt-logging.patch',
+    'patch/fix-oic-logging.patch',
 ]
 if DEBUG:
     try:
@@ -1081,7 +1094,6 @@ QqGQvE4A83TFYjqLz+8gULYecsqhRANCAASpWiOxqh8MlJy4wk362yG6bI0zkwSB
 qvNU+qRWi+YXrITsgn92/gVxX5AoK0n+s5Lx7fpjxkARVi66SF6zTJnX
 -----END PRIVATE KEY-----
 """
-
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.

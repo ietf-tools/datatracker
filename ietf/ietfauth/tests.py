@@ -2,11 +2,26 @@
 # -*- coding: utf-8 -*-
 
 
+import datetime
 import io
-import os, shutil, time, datetime
-from urllib.parse import urlsplit
+import logging                          # pyflakes:ignore
+import os
+import requests
+import requests_mock
+import shutil
+import time
+import urllib
+
+from .factories import OidClientRecordFactory
+from Cryptodome.PublicKey import RSA
+from oic import rndstr
+from oic.oic import Client as OidClient
+from oic.oic.message import RegistrationResponse, AuthorizationResponse
+from oic.utils.authn.client import CLIENT_AUTHN_METHOD
+from oidc_provider.models import RSAKey
 from pyquery import PyQuery
 from unittest import skipIf
+from urllib.parse import urlsplit
 
 import django.contrib.auth.views
 from django.urls import reverse as urlreverse
@@ -19,10 +34,12 @@ from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group, Role, RoleName
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.mailinglists.models import Subscribed
+from ietf.meeting.factories import MeetingFactory
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Person, Email, PersonalApiKey
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
+from ietf.stats.models import MeetingRegistration
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
@@ -647,4 +664,135 @@ class IetfAuthTests(TestCase):
             self.assertIn("API key usage", mail['subject'])
             self.assertIn(" %s times" % count, body)
             self.assertIn(date, body)
-        
+
+
+class OpenIDConnectTests(TestCase):
+    def request_matcher(self, request):
+        method, url = str(request).split(None, 1)
+        response = requests.Response()
+        if method == 'GET':
+            r = self.client.get(request.path)
+        elif method == 'POST':
+            data = dict(urllib.parse.parse_qsl(request.text))
+            extra = request.headers
+            for key in [ 'Authorization', ]:
+                if key in request.headers:
+                    extra['HTTP_%s'%key.upper()] = request.headers[key]
+            r = self.client.post(request.path, data=data, **extra)
+        else:
+            raise ValueError('Unexpected method: %s' % method)
+        response = requests.Response()
+        response.status_code = r.status_code
+        response.raw = r
+        response.url = url
+        response.request = request
+        response._content = r.content
+        response.encoding = 'utf-8'
+        for (k,v) in r.items():
+            response.headers[k] = v
+        return response
+
+    def test_oidc_code_auth(self):
+
+        key = RSA.generate(2048)
+        RSAKey.objects.create(key=key.exportKey('PEM').decode('utf8'))
+
+        r = self.client.get('/')
+        host = r.wsgi_request.get_host()
+
+        redirect_uris = [
+                'https://foo.example.com/',
+            ]
+        oid_client_record = OidClientRecordFactory(_redirect_uris='\n'.join(redirect_uris), )
+
+        with requests_mock.Mocker() as mock:
+            pass
+            mock._adapter.add_matcher(self.request_matcher)
+
+            # Get a client
+            client = OidClient(client_authn_method=CLIENT_AUTHN_METHOD)
+
+            # Get provider info
+            client.provider_config( 'http://%s/api/openid' % host)
+
+            # No registration step -- we only supported this out-of-band
+
+            # Set shared client/provider information in the client
+            client_reg = RegistrationResponse(  client_id= oid_client_record.client_id,
+                                                client_secret= oid_client_record.client_secret)
+            client.store_registration_info(client_reg)
+
+            # Get a user for which we want to get access
+            person = PersonFactory()
+            RoleFactory(name_id='chair', person=person)
+            meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+            MeetingRegistration.objects.create(
+                meeting=meeting, person=person, first_name=person.first_name(), last_name=person.last_name(), email=person.email())
+
+            # Get access authorisation
+            session = {}
+            session["state"] = rndstr()
+            session["nonce"] = rndstr()
+            args = {
+                "client_id": client.client_id,
+                "response_type": "code",
+                "scope": ['openid', 'profile', 'email', 'roles', 'registration', ],
+                "nonce": session["nonce"],
+                "redirect_uri": redirect_uris[0],
+                "state": session["state"]
+            }
+            auth_req = client.construct_AuthorizationRequest(request_args=args)
+            auth_url = auth_req.request(client.authorization_endpoint)
+            r = self.client.get(auth_url, follow=True)
+            self.assertEqual(r.status_code, 200)
+            login_url, __ = r.redirect_chain[-1]
+            self.assertTrue(login_url.startswith(urlreverse('ietf.ietfauth.views.login')))
+ 
+            # Do login
+            username = person.user.username
+            r = self.client.post(login_url, {'username':username, 'password':'%s+password'%username}, follow=True)
+            self.assertContains(r, 'Request for Permission')
+            q = PyQuery(r.content)
+            forms = q('form[action="/api/openid/authorize"]')
+            self.assertEqual(len(forms), 1)
+ 
+            # Authorize the client to access account information
+            data = {'allow': 'Authorize'}
+            for input in q('form[action="/api/openid/authorize"] input[type="hidden"]'):
+                name = input.get("name")
+                value = input.get("value")
+                data[name] = value
+            r = self.client.post(urlreverse('oidc_provider:authorize'), data)
+
+            # Check authorization returns
+            self.assertEqual(r.status_code, 302)
+            location = r['Location']
+            self.assertTrue(location.startswith(redirect_uris[0]))
+            self.assertIn('state=%s'%data['state'], location)
+
+            # Extract the grant code
+            params = client.parse_response(AuthorizationResponse, info=urllib.parse.urlsplit(location).query, sformat="urlencoded")
+
+            # Use grant code to get access token
+            access_token_info = client.do_access_token_request(state=params['state'],
+                                    authn_method='client_secret_basic')
+
+            for key in ['access_token', 'refresh_token', 'token_type', 'expires_in', 'id_token']:
+                self.assertIn(key, access_token_info)
+            for key in ['iss', 'sub', 'aud', 'exp', 'iat', 'auth_time', 'nonce', 'at_hash']:
+                self.assertIn(key, access_token_info['id_token'])
+
+            # Get userinfo, check keys present
+            userinfo = client.do_user_info_request(state=params["state"], scope=args['scope'])
+            for key in [ 'email', 'family_name', 'given_name', 'meeting', 'name', 'roles', ]:
+                self.assertIn(key, userinfo)
+
+            r = client.do_end_session_request(state=params["state"], scope=args['scope'])
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(r.headers["Location"], urlreverse('ietf.ietfauth.views.login'))
+
+            # The pyjwkent.jwt and oic.utils.keyio modules have had problems with calling
+            # logging.debug() instead of logger.debug(), which results in setting a root
+            # handler, causing later logging to become visible even if that wasn't intended.
+            # Fail here if that happens.
+            self.assertEqual(logging.root.handlers, [])

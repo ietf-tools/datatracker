@@ -26,6 +26,8 @@ urlpatterns = [
     url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
     # For meetecho access
     url(r'^person/access/meetecho', api_views.person_access_meetecho),
+    # OpenID authentication provider
+    url(r'^openid/', include('oidc_provider.urls', namespace='oidc_provider')),
 ]
 
 # Additional (standard) Tastypie endpoints

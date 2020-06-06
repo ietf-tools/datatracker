@@ -1,0 +1,13 @@
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+{% extends "base.html" %}
+{% load staticfiles %}
+{% block title %}404 Not Found{% endblock %}
+{% block content %}
+
+  <img class="ietflogo" src="{% static 'ietf/images/ietflogo.png' %}" alt="IETF" style="width: 10em">
+  <div class='alert'>
+
+<h3>{{ error }}</h3>
+<p>{{ description }}</p>
+
+{% endblock %}

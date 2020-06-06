@@ -4,14 +4,17 @@
 
 # various authentication and authorization utilities
 
+import oidc_provider.lib.claims
+
 from functools import wraps
 
-from django.utils.http import urlquote
 from django.conf import settings
+from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.db.models import Q
 from django.http import HttpResponseRedirect, HttpResponseForbidden
-from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import available_attrs
+from django.utils.http import urlquote
 
 import debug                            # pyflakes:ignore
 
@@ -196,3 +199,54 @@ def is_individual_draft_author(user, doc):
 
     return False
     
+def openid_userinfo(claims, user):
+    # Populate claims dict.
+    person = get_object_or_404(Person, user=user)
+    claims.update( {
+            'name':         person.plain_name(),
+            'given_name':   person.first_name(),
+            'family_name':  person.last_name(),
+            'nickname':     '-',
+            'email':        person.email().address,
+        } )
+    return claims
+
+
+class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
+
+    info_roles = (
+            "Datatracker role information",
+            "Access to a list of your IETF roles as known by the datatracker"
+        )
+
+    def scope_roles(self):
+        roles = self.user.person.role_set.values_list('name__slug', 'group__acronym')
+        info = {
+                'roles': list(roles)
+            }
+        return info
+
+    info_registration = (
+            "IETF Meeting Registration Info",
+            "Access to public IETF meeting registration information for the current meeting. "
+            "Includes meeting number, registration type and ticket type.",
+        )
+
+    def scope_registration(self):
+        from ietf.meeting.helpers import get_current_ietf_meeting
+        from ietf.stats.models import MeetingRegistration
+        meeting = get_current_ietf_meeting()
+        person = self.user.person
+        reg = MeetingRegistration.objects.filter(person=person, meeting=meeting).first()
+        info = {}
+        if reg:
+            info = {
+                'meeting':      reg.meeting.number,
+                # full_week, one_day, student:
+                'ticket_type':  getattr(reg, 'ticket_type') if hasattr(reg, 'ticket_type') else None,
+                # in_person, onliine, hackathon:
+                'reg_type':     getattr(reg, 'reg_type') if hasattr(reg, 'reg_type') else None,
+            }
+
+        return info
+            
