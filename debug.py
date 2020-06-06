@@ -88,6 +88,13 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
     else:
         return fn
 
+def filepos():
+    file, line, func, text = tb.extract_stack(None, 2)[0]
+    parts = file.split(os.sep)
+    name = os.sep.join(parts[-2:])
+    indent = ' ' * (_report_indent[0])
+    return "%s%s:%s: %s()" % (indent, name, line, func)
+
 def mark():
     def show_entry(e):
         sys.stderr.write(" at %s:L%s %s() %s\n" % e)
@@ -138,6 +145,17 @@ def show(name):
         value = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
         sys.stderr.write("%s%s: '%s'\n" % (indent, name, value))
+
+def showpos(name):
+    if debug:
+        file, line, func, text = tb.extract_stack(None, 2)[0]
+        parts = file.split(os.sep)
+        fn = os.sep.join(parts[-2:])
+        #
+        frame = inspect.stack()[1][0]
+        value = eval(name, frame.f_globals, frame.f_locals)
+        indent = ' ' * (_report_indent[0])
+        sys.stderr.write("%s%s:%s: %s: '%s'\n" % (indent, fn, line, name, value))
 
 def log(name):
     if debug:
