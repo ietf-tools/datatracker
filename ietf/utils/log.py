@@ -119,7 +119,7 @@ def assertion(statement, state=True):
             for key in [ 'request', 'status_code', ]:
                 if key in frame.f_locals:
                     extra[key] = frame.f_locals[key]
-            logger.error("Assertion failed: '%s': %s != %s", statement, repr(value), state, exc_info=(AssertionError, statement, tb), extra=extra)
+            logger.error("Assertion failed: '%s': %s != %s", statement, repr(value), state, exc_info=(AssertionError, None, tb), extra=extra)
 
 def unreachable(date="(unknown)"):
     "Raises an assertion or sends traceback to admins if executed."
@@ -135,4 +135,4 @@ def unreachable(date="(unknown)"):
             if key in frame.f_locals:
                 extra[key] = frame.f_locals[key]
         logger.error("Arrived at code in %s() which was marked unreachable on %s." % (frame.f_code.co_name, date),
-                        exc_info=(AssertionError, frame.f_code.co_name, tb), extra=extra)
+                        exc_info=(AssertionError, None, tb), extra=extra)
