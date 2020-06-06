@@ -1,0 +1,289 @@
+diff -ur oidc_provider.orig/migrations/0001_initial.py oidc_provider/migrations/0001_initial.py
+--- oidc_provider.orig/migrations/0001_initial.py	2020-05-22 15:09:21.005044205 +0200
++++ oidc_provider/migrations/0001_initial.py	2020-05-22 15:09:40.305603247 +0200
+@@ -18,8 +18,8 @@
+             fields=[
+                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                 ('name', models.CharField(default=b'', max_length=100)),
+-                ('client_id', models.CharField(unique=True, max_length=255)),
+-                ('client_secret', models.CharField(unique=True, max_length=255)),
++                ('client_id', models.CharField(unique=True, max_length=228)),
++                ('client_secret', models.CharField(unique=True, max_length=228)),
+                 ('response_type', models.CharField(max_length=30, choices=[
+                     (b'code', b'code (Authorization Code Flow)'), (b'id_token', b'id_token (Implicit Flow)'),
+                     (b'id_token token', b'id_token token (Implicit Flow)')])),
+@@ -35,7 +35,7 @@
+                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                 ('expires_at', models.DateTimeField()),
+                 ('_scope', models.TextField(default=b'')),
+-                ('code', models.CharField(unique=True, max_length=255)),
++                ('code', models.CharField(unique=True, max_length=228)),
+                 ('client', models.ForeignKey(to='oidc_provider.Client', on_delete=models.CASCADE)),
+             ],
+             options={
+@@ -49,7 +49,7 @@
+                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                 ('expires_at', models.DateTimeField()),
+                 ('_scope', models.TextField(default=b'')),
+-                ('access_token', models.CharField(unique=True, max_length=255)),
++                ('access_token', models.CharField(unique=True, max_length=228)),
+                 ('_id_token', models.TextField()),
+                 ('client', models.ForeignKey(to='oidc_provider.Client', on_delete=models.CASCADE)),
+             ],
+@@ -62,26 +62,26 @@
+             name='UserInfo',
+             fields=[
+                 ('user', models.OneToOneField(primary_key=True, serialize=False, to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
+-                ('given_name', models.CharField(max_length=255, null=True, blank=True)),
+-                ('family_name', models.CharField(max_length=255, null=True, blank=True)),
+-                ('middle_name', models.CharField(max_length=255, null=True, blank=True)),
+-                ('nickname', models.CharField(max_length=255, null=True, blank=True)),
++                ('given_name', models.CharField(max_length=228, null=True, blank=True)),
++                ('family_name', models.CharField(max_length=228, null=True, blank=True)),
++                ('middle_name', models.CharField(max_length=228, null=True, blank=True)),
++                ('nickname', models.CharField(max_length=228, null=True, blank=True)),
+                 ('gender', models.CharField(max_length=100, null=True, choices=[(b'F', b'Female'), (b'M', b'Male')])),
+                 ('birthdate', models.DateField(null=True)),
+                 ('zoneinfo', models.CharField(default=b'', max_length=100, null=True, blank=True)),
+-                ('preferred_username', models.CharField(max_length=255, null=True, blank=True)),
++                ('preferred_username', models.CharField(max_length=228, null=True, blank=True)),
+                 ('profile', models.URLField(default=b'', null=True, blank=True)),
+                 ('picture', models.URLField(default=b'', null=True, blank=True)),
+                 ('website', models.URLField(default=b'', null=True, blank=True)),
+                 ('email_verified', models.NullBooleanField(default=False)),
+                 ('locale', models.CharField(max_length=100, null=True, blank=True)),
+-                ('phone_number', models.CharField(max_length=255, null=True, blank=True)),
++                ('phone_number', models.CharField(max_length=228, null=True, blank=True)),
+                 ('phone_number_verified', models.NullBooleanField(default=False)),
+-                ('address_street_address', models.CharField(max_length=255, null=True, blank=True)),
+-                ('address_locality', models.CharField(max_length=255, null=True, blank=True)),
+-                ('address_region', models.CharField(max_length=255, null=True, blank=True)),
+-                ('address_postal_code', models.CharField(max_length=255, null=True, blank=True)),
+-                ('address_country', models.CharField(max_length=255, null=True, blank=True)),
++                ('address_street_address', models.CharField(max_length=228, null=True, blank=True)),
++                ('address_locality', models.CharField(max_length=228, null=True, blank=True)),
++                ('address_region', models.CharField(max_length=228, null=True, blank=True)),
++                ('address_postal_code', models.CharField(max_length=228, null=True, blank=True)),
++                ('address_country', models.CharField(max_length=228, null=True, blank=True)),
+                 ('updated_at', models.DateTimeField(auto_now=True, null=True)),
+             ],
+             options={
+diff -ur oidc_provider.orig/migrations/0003_code_nonce.py oidc_provider/migrations/0003_code_nonce.py
+--- oidc_provider.orig/migrations/0003_code_nonce.py	2020-05-22 15:09:21.005044205 +0200
++++ oidc_provider/migrations/0003_code_nonce.py	2020-05-22 15:09:40.297603016 +0200
+@@ -14,6 +14,6 @@
+         migrations.AddField(
+             model_name='code',
+             name='nonce',
+-            field=models.CharField(default=b'', max_length=255, blank=True),
++            field=models.CharField(default=b'', max_length=228, blank=True),
+         ),
+     ]
+diff -ur oidc_provider.orig/migrations/0005_token_refresh_token.py oidc_provider/migrations/0005_token_refresh_token.py
+--- oidc_provider.orig/migrations/0005_token_refresh_token.py	2020-05-22 15:09:21.005044205 +0200
++++ oidc_provider/migrations/0005_token_refresh_token.py	2020-05-22 15:09:40.269602205 +0200
+@@ -14,7 +14,7 @@
+         migrations.AddField(
+             model_name='token',
+             name='refresh_token',
+-            field=models.CharField(max_length=255, unique=True, null=True),
++            field=models.CharField(max_length=228, unique=True, null=True),
+             preserve_default=True,
+         ),
+     ]
+diff -ur oidc_provider.orig/migrations/0012_auto_20160405_2041.py oidc_provider/migrations/0012_auto_20160405_2041.py
+--- oidc_provider.orig/migrations/0012_auto_20160405_2041.py	2020-05-22 15:09:21.005044205 +0200
++++ oidc_provider/migrations/0012_auto_20160405_2041.py	2020-05-22 15:09:40.289602784 +0200
+@@ -15,6 +15,6 @@
+         migrations.AlterField(
+             model_name='client',
+             name='client_secret',
+-            field=models.CharField(blank=True, default=b'', max_length=255),
++            field=models.CharField(blank=True, default=b'', max_length=228),
+         ),
+     ]
+diff -ur oidc_provider.orig/migrations/0013_auto_20160407_1912.py oidc_provider/migrations/0013_auto_20160407_1912.py
+--- oidc_provider.orig/migrations/0013_auto_20160407_1912.py	2020-05-22 15:09:21.005044205 +0200
++++ oidc_provider/migrations/0013_auto_20160407_1912.py	2020-05-22 15:09:40.277602437 +0200
+@@ -15,11 +15,11 @@
+         migrations.AddField(
+             model_name='code',
+             name='code_challenge',
+-            field=models.CharField(max_length=255, null=True),
++            field=models.CharField(max_length=228, null=True),
+         ),
+         migrations.AddField(
+             model_name='code',
+             name='code_challenge_method',
+-            field=models.CharField(max_length=255, null=True),
++            field=models.CharField(max_length=228, null=True),
+         ),
+     ]
+diff -ur oidc_provider.orig/migrations/0015_change_client_code.py oidc_provider/migrations/0015_change_client_code.py
+--- oidc_provider.orig/migrations/0015_change_client_code.py	2020-05-22 15:09:21.005044205 +0200
++++ oidc_provider/migrations/0015_change_client_code.py	2020-05-22 15:09:40.281602552 +0200
+@@ -20,7 +20,7 @@
+         migrations.AlterField(
+             model_name='client',
+             name='client_secret',
+-            field=models.CharField(blank=True, default='', max_length=255),
++            field=models.CharField(blank=True, default='', max_length=228),
+         ),
+         migrations.AlterField(
+             model_name='client',
+@@ -63,7 +63,7 @@
+         migrations.AlterField(
+             model_name='code',
+             name='nonce',
+-            field=models.CharField(blank=True, default='', max_length=255),
++            field=models.CharField(blank=True, default='', max_length=228),
+         ),
+         migrations.AlterField(
+             model_name='token',
+diff -ur oidc_provider.orig/migrations/0016_userconsent_and_verbosenames.py oidc_provider/migrations/0016_userconsent_and_verbosenames.py
+--- oidc_provider.orig/migrations/0016_userconsent_and_verbosenames.py	2020-05-22 15:09:21.005044205 +0200
++++ oidc_provider/migrations/0016_userconsent_and_verbosenames.py	2020-05-22 15:14:37.858221152 +0200
+@@ -20,7 +20,7 @@
+             model_name='userconsent',
+             name='date_given',
+             field=models.DateTimeField(
+-                default=datetime.datetime(2016, 6, 10, 17, 53, 48, 889808, tzinfo=utc), verbose_name='Date Given'),
++                default=datetime.datetime(2016, 6, 10, 17, 53, 48, 889808), verbose_name='Date Given'),
+             preserve_default=False,
+         ),
+         migrations.AlterField(
+@@ -32,12 +32,12 @@
+         migrations.AlterField(
+             model_name='client',
+             name='client_id',
+-            field=models.CharField(max_length=255, unique=True, verbose_name='Client ID'),
++            field=models.CharField(max_length=228, unique=True, verbose_name='Client ID'),
+         ),
+         migrations.AlterField(
+             model_name='client',
+             name='client_secret',
+-            field=models.CharField(blank=True, default=b'', max_length=255, verbose_name='Client SECRET'),
++            field=models.CharField(blank=True, default=b'', max_length=228, verbose_name='Client SECRET'),
+         ),
+         migrations.AlterField(
+             model_name='client',
+@@ -84,17 +84,17 @@
+         migrations.AlterField(
+             model_name='code',
+             name='code',
+-            field=models.CharField(max_length=255, unique=True, verbose_name='Code'),
++            field=models.CharField(max_length=228, unique=True, verbose_name='Code'),
+         ),
+         migrations.AlterField(
+             model_name='code',
+             name='code_challenge',
+-            field=models.CharField(max_length=255, null=True, verbose_name='Code Challenge'),
++            field=models.CharField(max_length=228, null=True, verbose_name='Code Challenge'),
+         ),
+         migrations.AlterField(
+             model_name='code',
+             name='code_challenge_method',
+-            field=models.CharField(max_length=255, null=True, verbose_name='Code Challenge Method'),
++            field=models.CharField(max_length=228, null=True, verbose_name='Code Challenge Method'),
+         ),
+         migrations.AlterField(
+             model_name='code',
+@@ -109,7 +109,7 @@
+         migrations.AlterField(
+             model_name='code',
+             name='nonce',
+-            field=models.CharField(blank=True, default=b'', max_length=255, verbose_name='Nonce'),
++            field=models.CharField(blank=True, default=b'', max_length=228, verbose_name='Nonce'),
+         ),
+         migrations.AlterField(
+             model_name='code',
+@@ -135,7 +135,7 @@
+         migrations.AlterField(
+             model_name='token',
+             name='access_token',
+-            field=models.CharField(max_length=255, unique=True, verbose_name='Access Token'),
++            field=models.CharField(max_length=228, unique=True, verbose_name='Access Token'),
+         ),
+         migrations.AlterField(
+             model_name='token',
+@@ -151,7 +151,7 @@
+         migrations.AlterField(
+             model_name='token',
+             name='refresh_token',
+-            field=models.CharField(max_length=255, null=True, unique=True, verbose_name='Refresh Token'),
++            field=models.CharField(max_length=228, null=True, unique=True, verbose_name='Refresh Token'),
+         ),
+         migrations.AlterField(
+             model_name='token',
+diff -ur oidc_provider.orig/migrations/0017_auto_20160811_1954.py oidc_provider/migrations/0017_auto_20160811_1954.py
+--- oidc_provider.orig/migrations/0017_auto_20160811_1954.py	2020-05-22 15:09:21.005044205 +0200
++++ oidc_provider/migrations/0017_auto_20160811_1954.py	2020-05-22 15:09:40.329603942 +0200
+@@ -20,7 +20,7 @@
+         migrations.AlterField(
+             model_name='client',
+             name='client_secret',
+-            field=models.CharField(blank=True, default='', max_length=255, verbose_name='Client SECRET'),
++            field=models.CharField(blank=True, default='', max_length=228, verbose_name='Client SECRET'),
+         ),
+         migrations.AlterField(
+             model_name='client',
+@@ -56,7 +56,7 @@
+         migrations.AlterField(
+             model_name='code',
+             name='nonce',
+-            field=models.CharField(blank=True, default='', max_length=255, verbose_name='Nonce'),
++            field=models.CharField(blank=True, default='', max_length=228, verbose_name='Nonce'),
+         ),
+         migrations.AlterField(
+             model_name='token',
+diff -ur oidc_provider.orig/migrations/0018_hybridflow_and_clientattrs.py oidc_provider/migrations/0018_hybridflow_and_clientattrs.py
+--- oidc_provider.orig/migrations/0018_hybridflow_and_clientattrs.py	2020-05-22 15:09:21.005044205 +0200
++++ oidc_provider/migrations/0018_hybridflow_and_clientattrs.py	2020-05-22 15:09:40.317603595 +0200
+@@ -15,7 +15,7 @@
+         migrations.AddField(
+             model_name='client',
+             name='contact_email',
+-            field=models.CharField(blank=True, default='', max_length=255, verbose_name='Contact Email'),
++            field=models.CharField(blank=True, default='', max_length=228, verbose_name='Contact Email'),
+         ),
+         migrations.AddField(
+             model_name='client',
+@@ -30,13 +30,13 @@
+                 blank=True,
+                 default='',
+                 help_text='External reference to the privacy policy of the client.',
+-                max_length=255,
++                max_length=228,
+                 verbose_name='Terms URL'),
+         ),
+         migrations.AddField(
+             model_name='client',
+             name='website_url',
+-            field=models.CharField(blank=True, default='', max_length=255, verbose_name='Website URL'),
++            field=models.CharField(blank=True, default='', max_length=228, verbose_name='Website URL'),
+         ),
+         migrations.AlterField(
+             model_name='client',
+diff -ur oidc_provider.orig/migrations/0019_auto_20161005_1552.py oidc_provider/migrations/0019_auto_20161005_1552.py
+--- oidc_provider.orig/migrations/0019_auto_20161005_1552.py	2020-05-22 15:09:21.005044205 +0200
++++ oidc_provider/migrations/0019_auto_20161005_1552.py	2020-05-22 15:09:40.325603827 +0200
+@@ -15,6 +15,6 @@
+         migrations.AlterField(
+             model_name='client',
+             name='client_secret',
+-            field=models.CharField(blank=True, max_length=255, verbose_name='Client SECRET'),
++            field=models.CharField(blank=True, max_length=228, verbose_name='Client SECRET'),
+         ),
+     ]
+diff -ur oidc_provider.orig/migrations/0021_refresh_token_not_unique.py oidc_provider/migrations/0021_refresh_token_not_unique.py
+--- oidc_provider.orig/migrations/0021_refresh_token_not_unique.py	2020-05-22 15:09:21.009044320 +0200
++++ oidc_provider/migrations/0021_refresh_token_not_unique.py	2020-05-22 15:09:40.309603363 +0200
+@@ -15,7 +15,7 @@
+         migrations.AlterField(
+             model_name='token',
+             name='refresh_token',
+-            field=models.CharField(default='', max_length=255, unique=True, verbose_name='Refresh Token'),
++            field=models.CharField(default='', max_length=228, unique=True, verbose_name='Refresh Token'),
+             preserve_default=False,
+         ),
+     ]
