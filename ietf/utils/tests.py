@@ -30,7 +30,6 @@ from django.template.defaulttags import URLNode
 from django.template.loader import get_template
 from django.templatetags.static import StaticNode
 from django.urls import reverse as urlreverse
-from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
 
@@ -154,19 +153,23 @@ class TestSMTPServer(TestCase):
         self.assertEqual(len(outbox),len_before+2)
 
 
-def get_callbacks(urllist):
+def get_callbacks(urllist, namespace=None):
     callbacks = set()
+    def qualified(name):
+        return '%s:%s' % (namespace, name) if namespace else name
     for entry in urllist:
         if hasattr(entry, 'url_patterns'):
-            callbacks.update(get_callbacks(entry.url_patterns))
+            callbacks.update(get_callbacks(entry.url_patterns, entry.namespace))
         else:
             if hasattr(entry, '_callback_str'):
-                callbacks.add(force_text(entry._callback_str))
-            if (hasattr(entry, 'callback') and entry.callback
-                and type(entry.callback) in [types.FunctionType, types.MethodType ]):
-                callbacks.add("%s.%s" % (entry.callback.__module__, entry.callback.__name__))
+                callbacks.add(qualified(entry._callback_str))
+            if (hasattr(entry, 'callback') and entry.callback and
+                type(entry.callback) in [types.FunctionType, types.MethodType ]):
+                    callbacks.add(qualified("%s.%s" % (entry.callback.__module__, entry.callback.__name__)))
             if hasattr(entry, 'name') and entry.name:
-                callbacks.add(force_text(entry.name))
+                callbacks.add(qualified(entry.name))
+            if hasattr(entry, 'lookup_str') and entry.lookup_str:
+                callbacks.add(qualified(entry.lookup_str))
             # There are some entries we don't handle here, mostly clases
             # (such as Feed subclasses)
 
