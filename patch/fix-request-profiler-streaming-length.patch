@@ -1,6 +1,6 @@
 --- request_profiler.orig/models.py	2020-06-05 14:33:10.408859604 +0200
 +++ request_profiler/models.py	2020-06-05 14:35:09.412282408 +0200
-@@ -181,7 +181,7 @@
+@@ -182,7 +182,7 @@
          """Extract values from HttpRequest and store locally."""
          self.request = request
          self.http_method = request.method
@@ -9,7 +9,7 @@
          self.query_string = request.META.get("QUERY_STRING", "")
          self.http_user_agent = request.META.get("HTTP_USER_AGENT", "")[:400]
          # we care about the domain more than the URL itself, so truncating
-@@ -189,11 +189,7 @@
+@@ -190,11 +190,7 @@
          self.http_referer = request.META.get("HTTP_REFERER", "")[:400]
          # X-Forwarded-For is used by convention when passing through
          # load balancers etc., as the REMOTE_ADDR is rewritten in transit
@@ -22,7 +22,7 @@
          # these two require middleware, so may not exist
          if hasattr(request, "session"):
              self.session_key = request.session.session_key or ""
-@@ -206,7 +202,10 @@
+@@ -207,7 +203,10 @@
          """Extract values from HttpResponse and store locally."""
          self.response = response
          self.response_status_code = response.status_code
