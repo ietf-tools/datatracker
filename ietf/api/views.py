@@ -101,7 +101,7 @@ def person_access_meetecho(request):
     person = get_object_or_404(Person, user=request.user)
     
     return HttpResponse(json.dumps({
-            'name' : person.name,
+            'name' : person.plain_name(),
             'email': person.email().address,
             'roles': {
                     'chair': list(person.role_set.filter(name='chair', group__state__in=['active', 'bof', 'proposed']).values_list('group__acronym', flat=True)),
