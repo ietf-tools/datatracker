@@ -1,3 +1,45 @@
+ietfdb (7.2.0) ietf; urgency=medium
+
+  **Support for OpenID and OAuth2**
+
+  This release introduces support for OpenID and OAuth2, with out-of-band
+  client registration, and adds some other minor tweaks and bugfixes:
+
+  * Added OpenID support through django-oidc-provider, with tests using the 
+    certified python oic module.
+
+  * Added patches for some issues with the oic and oidc-provider modules, 
+    and updated a patch for request-profiler.
+
+  * Added a factory function OidClientRecordFactory for OpenID testing
+
+  * Added django urlconfig namespace support in 
+    ietf.utils.test.get_callbacks() (needed when testing the reverse lookups in 
+    templates for oidc_provider).
+
+  * Tweaked patch.py for Py3 compatibility.
+
+  * Tweaked log.unreachable() and log.assertion() for Py3 compatibility.
+
+  * Tweaked the meetecho access API fallback response to use person.plain_name
+    instead of person.name.
+
+  * Added a download-only switch to docker/updatedb
+
+  * Decorated post_submission() with @transaction.atomic, and did some 
+    slight refactoring of code related to post_submission() calls and 
+    submission events.  This was triggered by a submission left in an 
+    intermediate state because of a WSGI timeout (leading to a 504 error).
+
+  * Increased the required version of request-profiler and updated its 
+    patch file.
+
+  * Excluded a majority of htmlized drafts at /doc/html from the test-crawler
+    (but keeping some for testing) in order to reduce the crawl time.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 Jun 2020 12:07:59 +0000
+
+
 ietfdb (7.1.0) ietf; urgency=medium
 
   **Code sprint 107.1**
