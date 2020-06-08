@@ -143,6 +143,15 @@ diff -ur oidc_provider.orig/migrations/0015_change_client_code.py oidc_provider/
 diff -ur oidc_provider.orig/migrations/0016_userconsent_and_verbosenames.py oidc_provider/migrations/0016_userconsent_and_verbosenames.py
 --- oidc_provider.orig/migrations/0016_userconsent_and_verbosenames.py	2018-04-13 21:43:28.000000000 +0200
 +++ oidc_provider/migrations/0016_userconsent_and_verbosenames.py	2020-06-07 13:34:26.826716519 +0200
+@@ -20,7 +20,7 @@
+             model_name='userconsent',
+             name='date_given',
+             field=models.DateTimeField(
+-                default=datetime.datetime(2016, 6, 10, 17, 53, 48, 889808, tzinfo=utc), verbose_name='Date Given'),
++                default=datetime.datetime(2016, 6, 10, 17, 53, 48, 889808), verbose_name='Date Given'),
+             preserve_default=False,
+         ),
+         migrations.AlterField(
 @@ -32,12 +32,12 @@
          migrations.AlterField(
              model_name='client',
