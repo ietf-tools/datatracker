@@ -23,6 +23,7 @@ from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.person.factories import PersonFactory
 from ietf.person.models import PersonalApiKey
+from ietf.utils.mail import outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 
 OMITTED_APPS = (
@@ -31,7 +32,7 @@ OMITTED_APPS = (
     'ietf.ipr',
 )
 
-class CustomApiTestCase(TestCase):
+class CustomApiTests(TestCase):
 
     # Using mock to patch the import functions in ietf.meeting.views, where
     # api_import_recordings() are using them:
@@ -197,6 +198,48 @@ class CustomApiTestCase(TestCase):
         self.assertEqual(data['name'], person.name)
         self.assertEqual(data['email'], person.email().address)
 
+    def test_api_new_meeting_registration(self):
+        meeting = MeetingFactory(type_id='ietf')
+        reg = {
+                'apikey': 'invalid',
+                'affiliation': "Alguma Corporação",
+                'country_code': 'PT',
+                'email': 'foo@example.pt',
+                'first_name': 'Foo',
+                'last_name': 'Bar',
+                'meeting': meeting.number,
+                'reg_type': 'hackathon',
+                'ticket_type': 'regular',
+            }
+        url = urlreverse('ietf.api.views.api_new_meeting_registration')
+        r = self.client.post(url, reg)
+        self.assertContains(r, 'Invalid apikey', status_code=400)
+        person = PersonFactory(user__is_staff=True)
+        # Make sure 'person' has an acceptable role
+        RoleFactory(name_id='robot', person=person, email=person.email(), group__acronym='secretariat')
+        key  = PersonalApiKey.objects.create(person=person, endpoint=url)
+        reg['apikey'] = key.hash()
+        #
+        # Test valid POST
+        r = self.client.post(url, reg)
+        self.assertContains(r, "Accepted, New registration, Email sent", status_code=202)
+        #
+        # Check outgoing mail
+        self.assertEqual(len(outbox), 1)
+        body = get_payload_text(outbox[-1])
+        self.assertIn(reg['email'], outbox[-1]['To'] )
+        self.assertIn(reg['email'], body)
+        self.assertIn('account creation request', body)
+        #
+        # Test incomplete POST
+        drop_fields = ['affiliation', 'first_name', 'reg_type']
+        for field in drop_fields:
+            del reg[field]
+        r = self.client.post(url, reg)        
+        self.assertContains(r, 'Missing parameters:', status_code=400)
+        err, fields = r.content.decode().split(':', 1)
+        missing_fields = [ f.strip() for f in fields.split(',') ]
+        self.assertEqual(set(missing_fields), set(drop_fields))
 
 class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
     def __init__(self, *args, **kwargs):

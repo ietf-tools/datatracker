@@ -8,6 +8,9 @@ from jwcrypto.jwk import JWK
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
@@ -23,11 +26,14 @@ from tastypie.serializers import Serializer
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.models import Person
+from ietf.person.models import Person, Email
 from ietf.api import _api_list
 from ietf.api.serializer import JsonExportMixin
-from ietf.utils.decorators import require_api_key
+from ietf.ietfauth.views import send_account_creation_email
 from ietf.ietfauth.utils import role_required
+from ietf.meeting.models import Meeting
+from ietf.stats.models import MeetingRegistration
+from ietf.utils.decorators import require_api_key
 
 
 def top_level(request):
@@ -108,3 +114,61 @@ def person_access_meetecho(request):
                     'secr': list(person.role_set.filter(name='secr', group__state__in=['active', 'bof', 'proposed']).values_list('group__acronym', flat=True)),
                 }
         }), content_type='application/json')
+
+@require_api_key
+@role_required('Robot')
+@csrf_exempt
+def api_new_meeting_registration(request):
+    '''REST API to notify the datatracker about a new meeting registration'''
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+    required_fields = [ 'meeting', 'first_name', 'last_name', 'affiliation', 'country_code', 'email', 'reg_type', 'ticket_type', ]
+    fields = required_fields + []
+    if request.method == 'POST':
+        # parameters:
+        #   apikey:
+        #   meeting
+        #   name
+        #   email
+        #   reg_type (In Person, Remote, Hackathon Only)
+        #   ticket_type (full_week, one_day, student)
+        #   
+        data = {}
+        missing_fields = []
+        for item in fields:
+            value = request.POST.get(item, None)
+            if value is None and item in required_fields:
+                missing_fields.append(item)
+            data[item] = value
+        if missing_fields:
+            return err(400, "Missing parameters: %s" % ', '.join(missing_fields))
+        number = data['meeting']
+        try:
+            meeting = Meeting.objects.get(number=number)
+        except Meeting.DoesNotExist:
+            return err(400, "Invalid meeting value: '%s'" % (number, ))
+        email = data['email']
+        try:
+            validate_email(email)
+        except ValidationError:
+            return err(400, "Invalid email value: '%s'" % (email, ))
+        if request.POST.get('cancelled', 'false') == 'true':
+            MeetingRegistration.objects.filter(meeting_id=meeting.pk, email=email).delete()
+            return HttpResponse('OK', status=200, content_type='text/plain')
+        else:
+            object, created = MeetingRegistration.objects.get_or_create(meeting_id=meeting.pk, email=email)
+            try:
+                MeetingRegistration.objects.filter(id=object.id).update(**data)
+                object.save()
+            except ValueError as e:
+                return err(400, "Unexpected POST data: %s" % e)
+            response = "Accepted, New registration" if created else "Accepted, Updated registration"
+            if User.objects.filter(username=email).exists() or Email.objects.filter(address=email).exists():
+                pass
+            else:
+                send_account_creation_email(request, email)
+                response += ", Email sent"
+            return HttpResponse(response, status=202, content_type='text/plain')
+    else:
+        return HttpResponse(status=405)
+    
