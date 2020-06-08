@@ -90,7 +90,6 @@ class ConstraintResource(ModelResource):
         ordering = ['id', ]
         filtering = { 
             "id": ALL,
-            "day": ALL,
             "meeting": ALL_WITH_RELATIONS,
             "source": ALL_WITH_RELATIONS,
             "target": ALL_WITH_RELATIONS,
