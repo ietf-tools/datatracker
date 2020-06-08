@@ -59,6 +59,8 @@ class MeetingRegistration(models.Model):
     country_code = models.CharField(max_length=2)        # ISO 3166
     person = ForeignKey(Person, blank=True, null=True)
     email =  models.EmailField(blank=True, null=True)
+    reg_type = models.CharField(blank=True, max_length=255)
+    ticket_type = models.CharField(blank=True, max_length=255)
     
     def __str__(self):
         return "{} {}".format(self.first_name, self.last_name)
