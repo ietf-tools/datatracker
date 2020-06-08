@@ -6,6 +6,7 @@ import datetime
 import io
 import logging                          # pyflakes:ignore
 import os
+import re
 import requests
 import requests_mock
 import shutil
@@ -117,10 +118,10 @@ class IetfAuthTests(TestCase):
     def extract_confirm_url(self, confirm_email):
         # dig out confirm_email link
         msg = get_payload_text(confirm_email)
-        line_start = "http"
+        line_re = r"http.*/.*confirm"
         confirm_url = None
         for line in msg.split("\n"):
-            if line.strip().startswith(line_start):
+            if re.search(line_re, line.strip()):
                 confirm_url = line.strip()
         self.assertTrue(confirm_url)
 
