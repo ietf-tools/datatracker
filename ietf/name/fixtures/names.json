@@ -11435,6 +11435,16 @@
   },
   {
     "fields": {
+      "desc": "A role for API access by external scripts or entities, such as the mail archive, registrations system, etc.",
+      "name": "Automation Robot",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.rolename",
+    "pk": "robot"
+  },
+  {
+    "fields": {
       "desc": "",
       "name": "Secretary",
       "order": 6,
@@ -14481,7 +14491,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2020-05-10T00:12:51.809",
+      "time": "2020-06-04T00:13:08.473",
       "used": true,
       "version": "xym 0.4.8"
     },
@@ -14492,7 +14502,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2020-05-10T00:12:53.489",
+      "time": "2020-06-04T00:13:09.826",
       "used": true,
       "version": "pyang 2.2.1"
     },
@@ -14503,7 +14513,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2020-05-10T00:12:53.919",
+      "time": "2020-06-04T00:13:10.047",
       "used": true,
       "version": "yanglint SO 1.6.7"
     },
@@ -14514,7 +14524,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2020-05-10T00:12:56.462",
+      "time": "2020-06-04T00:13:11.820",
       "used": true,
       "version": "xml2rfc 2.44.0"
     },
