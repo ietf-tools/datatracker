@@ -1,3 +1,34 @@
+ietfdb (7.3.0) ietf; urgency=medium
+
+  **API for account creation triggered by meeting registration**
+
+  * Added a new API endpoint to be used by the registration system, to trigger
+    account creation.
+
+  * Refactored some account creation code to re-use the email sending part in
+    the registration system notification api for new meeting registrations.
+
+  * Updated the email template that goes out for password setting on account
+    creation, to give directions also for the case when the user already has a
+    pre-existing account.  Updated a test to match.
+
+  * Added a showapikeys management command, to be able to easily list existing
+    API keys.
+
+  * Added a migration to create login and person records for the new
+    mail-archive and registration-system accounts.
+
+  * Added a new role 'Robot', for use with reg-system and mail-archive API
+    accesses.
+
+  * Added reg_type and ticket_type to the MeetingRegistration model.
+
+  * Updated a patch for oidc_provider, to remove tzinfo in a default datetime
+    value.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Jun 2020 20:17:59 +0000
+
+
 ietfdb (7.2.0) ietf; urgency=medium
 
   **Support for OpenID and OAuth2**
