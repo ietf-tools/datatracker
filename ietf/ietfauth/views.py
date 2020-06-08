@@ -115,18 +115,7 @@ def create_account(request):
             ok_to_create = ( Whitelisted.objects.filter(email=to_email).exists()
                 or existing and (existing.time + TimeDelta(seconds=settings.LIST_ACCOUNT_DELAY)) < DateTime.now() )
             if ok_to_create:
-                auth = django.core.signing.dumps(to_email, salt="create_account")
-
-                domain = Site.objects.get_current().domain
-                subject = 'Confirm registration at %s' % domain
-                from_email = settings.DEFAULT_FROM_EMAIL
-
-                send_mail(request, to_email, from_email, subject, 'registration/creation_email.txt', {
-                    'domain': domain,
-                    'auth': auth,
-                    'username': to_email,
-                    'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
-                })
+                send_account_creation_email(request, to_email)
             else:
                 return render(request, 'registration/manual.html', { 'account_request_email': settings.ACCOUNT_REQUEST_EMAIL })
     else:
@@ -136,6 +125,19 @@ def create_account(request):
         'form': form,
         'to_email': to_email,
     })
+
+def send_account_creation_email(request, to_email):
+    auth = django.core.signing.dumps(to_email, salt="create_account")
+    domain = Site.objects.get_current().domain
+    subject = 'Confirm registration at %s' % domain
+    from_email = settings.DEFAULT_FROM_EMAIL
+    send_mail(request, to_email, from_email, subject, 'registration/creation_email.txt', {
+        'domain': domain,
+        'auth': auth,
+        'username': to_email,
+        'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
+    })
+
 
 def confirm_account(request, auth):
     try:
