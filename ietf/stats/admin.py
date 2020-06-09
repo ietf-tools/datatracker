@@ -23,5 +23,5 @@ admin.site.register(CountryAlias, CountryAliasAdmin)
 class MeetingRegistrationAdmin(admin.ModelAdmin):
     list_filter = ['meeting', ]
     list_display = ['meeting', 'first_name', 'last_name', 'affiliation', 'country_code', 'person', 'email', ]
-    search_fields = ['meeting', 'first_name', 'last_name', 'affiliation', 'country_code', 'email', ]
+    search_fields = ['meeting__number', 'first_name', 'last_name', 'affiliation', 'country_code', 'email', ]
 admin.site.register(MeetingRegistration, MeetingRegistrationAdmin)
