@@ -61,6 +61,7 @@ class MeetingRegistration(models.Model):
     email =  models.EmailField(blank=True, null=True)
     reg_type = models.CharField(blank=True, max_length=255)
     ticket_type = models.CharField(blank=True, max_length=255)
-    
+    attended = models.BooleanField(default=False)
+
     def __str__(self):
         return "{} {}".format(self.first_name, self.last_name)

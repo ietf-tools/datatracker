@@ -811,7 +811,7 @@ def meeting_stats(request, num=None, stats_type=None):
             return email.utils.formataddr(((r.first_name + " " + r.last_name).strip(), r.email))
 
         if meeting and any(stats_type == t[0] for t in possible_stats_types):
-            attendees = MeetingRegistration.objects.filter(meeting=meeting)
+            attendees = MeetingRegistration.objects.filter(meeting=meeting, attended=True)
 
             if stats_type == "country":
                 stats_title = "Number of attendees for {} {} per country".format(meeting.type.name, meeting.number)
@@ -883,7 +883,7 @@ def meeting_stats(request, num=None, stats_type=None):
         elif not meeting and any(stats_type == t[0] for t in possible_stats_types):
             template_name = "overview"
 
-            attendees = MeetingRegistration.objects.filter(meeting__type="ietf").select_related('meeting')
+            attendees = MeetingRegistration.objects.filter(meeting__type="ietf", attended=True).select_related('meeting')
 
             if stats_type == "overview":
                 stats_title = "Number of attendees per meeting"

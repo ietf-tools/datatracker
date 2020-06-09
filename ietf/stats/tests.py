@@ -123,9 +123,9 @@ class StatisticsTests(TestCase):
     def test_meeting_stats(self):
         # create some data for the statistics
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today(), number="96")
-        MeetingRegistration.objects.create(first_name='John', last_name='Smith', country_code='US', email="john.smith@example.us", meeting=meeting)
+        MeetingRegistration.objects.create(first_name='John', last_name='Smith', country_code='US', email="john.smith@example.us", meeting=meeting, attended=True)
         CountryAlias.objects.get_or_create(alias="US", country=CountryName.objects.get(slug="US"))
-        MeetingRegistration.objects.create(first_name='Jaume', last_name='Guillaume', country_code='FR', email="jaume.guillaume@example.fr", meeting=meeting)
+        MeetingRegistration.objects.create(first_name='Jaume', last_name='Guillaume', country_code='FR', email="jaume.guillaume@example.fr", meeting=meeting, attended=True)
         CountryAlias.objects.get_or_create(alias="FR", country=CountryName.objects.get(slug="FR"))
 
         # check redirect
