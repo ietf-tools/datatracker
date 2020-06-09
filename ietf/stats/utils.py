@@ -247,15 +247,19 @@ def get_meeting_registration_data(meeting):
             affiliation     = registration['Company'].strip()
             country_code    = registration['Country'].strip()
             address         = registration['Email'].strip()
-            object, created = MeetingRegistration.objects.get_or_create(
-                meeting_id=meeting.pk,
-                email=address,
-            )
-            object.first_name=first_name[:200]
-            object.last_name=last_name[:200]
-            object.affiliation=affiliation
-            object.country_code=country_code
-            object.save()
+            matching = MeetingRegistration.objects.filter(meeting_id=meeting.pk, email=address)
+            if matching.exists():
+                object = matching.first()
+                created = False
+            else:
+                object = MeetingRegistration.objects.create(meeting_id=meeting.pk, email=address)
+                object.first_name=first_name[:200]
+                object.last_name=last_name[:200]
+                object.affiliation=affiliation
+                object.country_code=country_code
+                object.attended = True
+                object.save()
+                created = True
 
             # Add a Person object to MeetingRegistration object
             # if valid email is available
