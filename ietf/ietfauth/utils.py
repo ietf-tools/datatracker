@@ -243,9 +243,9 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
             info = {
                 'meeting':      reg.meeting.number,
                 # full_week, one_day, student:
-                'ticket_type':  getattr(reg, 'ticket_type') if hasattr(reg, 'ticket_type') else None,
+                'ticket_type':  reg.ticket_type,
                 # in_person, onliine, hackathon:
-                'reg_type':     getattr(reg, 'reg_type') if hasattr(reg, 'reg_type') else None,
+                'reg_type':     reg.reg_type,
             }
 
         return info
