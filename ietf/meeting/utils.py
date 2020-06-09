@@ -166,7 +166,12 @@ def finalize(meeting):
     return
 
 def attended_ietf_meetings(person):
-    return Meeting.objects.filter(type='ietf',meetingregistration__email__in=Email.objects.filter(person=person).values_list('address',flat=True))
+    email_addresses = Email.objects.filter(person=person).values_list('address',flat=True)
+    return Meeting.objects.filter(
+                type='ietf',
+                meetingregistration__email__in=email_addresses,
+                meetingregistration__attended=True,
+            )
 
 def attended_in_last_five_ietf_meetings(person, date=datetime.datetime.today()):
     previous_five = Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]

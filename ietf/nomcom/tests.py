@@ -1821,7 +1821,7 @@ Junk body for testing
                 if not ' ' in ascii:
                     continue
                 first_name, last_name = ascii.rsplit(None, 1)
-                MeetingRegistration.objects.create(meeting=meeting, first_name=first_name, last_name=last_name, person=person, country_code='WO', email=email)
+                MeetingRegistration.objects.create(meeting=meeting, first_name=first_name, last_name=last_name, person=person, country_code='WO', email=email, attended=True)
         # test the page
         url = reverse('ietf.nomcom.views.eligible',kwargs={'year':self.nc.year()})
         login_testing_unauthorized(self,self.chair.user.username,url)

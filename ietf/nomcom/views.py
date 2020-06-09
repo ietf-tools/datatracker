@@ -1251,7 +1251,7 @@ def eligible(request, year):
     attendees = {}
     potentials = set()
     for m in previous_five:
-        registration_emails = m.meetingregistration_set.values_list('email',flat=True)
+        registration_emails = m.meetingregistration_set.filter(attended=True).values_list('email',flat=True)
         attendees[m] = Person.objects.filter(email__address__in=registration_emails).distinct()
         # See RFC8713 section 4.15
         disqualified_roles = Role.objects.filter(DISQUALIFYING_ROLE_QUERY_EXPRESSION)
