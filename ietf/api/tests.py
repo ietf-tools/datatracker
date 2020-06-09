@@ -21,8 +21,9 @@ import debug                            # pyflakes:ignore
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.test_data import make_meeting_test_data
-from ietf.person.factories import PersonFactory
+from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import PersonalApiKey
+from ietf.stats.models import MeetingRegistration
 from ietf.utils.mail import outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 
@@ -214,10 +215,10 @@ class CustomApiTests(TestCase):
         url = urlreverse('ietf.api.views.api_new_meeting_registration')
         r = self.client.post(url, reg)
         self.assertContains(r, 'Invalid apikey', status_code=400)
-        person = PersonFactory(user__is_staff=True)
-        # Make sure 'person' has an acceptable role
-        RoleFactory(name_id='robot', person=person, email=person.email(), group__acronym='secretariat')
-        key  = PersonalApiKey.objects.create(person=person, endpoint=url)
+        oidcp = PersonFactory(user__is_staff=True)
+        # Make sure 'oidcp' has an acceptable role
+        RoleFactory(name_id='robot', person=oidcp, email=oidcp.email(), group__acronym='secretariat')
+        key  = PersonalApiKey.objects.create(person=oidcp, endpoint=url)
         reg['apikey'] = key.hash()
         #
         # Test valid POST
@@ -231,6 +232,22 @@ class CustomApiTests(TestCase):
         self.assertIn(reg['email'], body)
         self.assertIn('account creation request', body)
         #
+        # Check record
+        obj = MeetingRegistration.objects.get(email=reg['email'], meeting__number=reg['meeting'])
+        for key in [ 'affiliation', 'country_code', 'first_name', 'last_name', 'person', 'reg_type', 'ticket_type', ]:
+            self.assertEqual(getattr(obj, key), reg.get(key), "Bad data for field '%s'" % key)
+        #
+        # Test with existing user
+        person = PersonFactory()
+        reg['email'] = person.email().address
+        reg['first_name'] = person.first_name()
+        reg['last_name'] = person.last_name()
+        #
+        r = self.client.post(url, reg)
+        self.assertContains(r, "Accepted, New registration", status_code=202)
+        #
+        # There should be no new outgoing mail
+        self.assertEqual(len(outbox), 1)
         # Test incomplete POST
         drop_fields = ['affiliation', 'first_name', 'reg_type']
         for field in drop_fields:
