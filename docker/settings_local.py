@@ -15,7 +15,7 @@ DATABASES = {
         'PASSWORD': 'RkTkDPFnKpko',
         'OPTIONS': {
             'sql_mode': 'STRICT_TRANS_TABLES',
-            'init_command': 'SET storage_engine=MyISAM; SET names "utf8"',
+            'init_command': 'SET storage_engine=InnoDB; SET names "utf8"',
         },
     },
 }                                       # type: Dict[str, Dict[str, Collection[str]]]
