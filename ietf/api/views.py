@@ -133,7 +133,7 @@ def api_new_meeting_registration(request):
         #   reg_type (In Person, Remote, Hackathon Only)
         #   ticket_type (full_week, one_day, student)
         #   
-        data = {}
+        data = {'attended': False, }
         missing_fields = []
         for item in fields:
             value = request.POST.get(item, None)
@@ -158,7 +158,12 @@ def api_new_meeting_registration(request):
         else:
             object, created = MeetingRegistration.objects.get_or_create(meeting_id=meeting.pk, email=email)
             try:
-                MeetingRegistration.objects.filter(id=object.id).update(**data)
+                # Set attributes not already in the object
+                for key in set(data.keys())-set(['apikey', 'meeting', 'email']):
+                    setattr(object, key, data.get(key))
+                person = Person.objects.filter(email__address=email)
+                if person.exists():
+                    object.person = person.first()
                 object.save()
             except ValueError as e:
                 return err(400, "Unexpected POST data: %s" % e)
@@ -171,4 +176,3 @@ def api_new_meeting_registration(request):
             return HttpResponse(response, status=202, content_type='text/plain')
     else:
         return HttpResponse(status=405)
-    
