@@ -4,7 +4,11 @@
 
 # various authentication and authorization utilities
 
+import datetime
+
 import oidc_provider.lib.claims
+from oidc_provider.models import Client as ClientRecord
+
 
 from functools import wraps
 
@@ -238,8 +242,16 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
         meeting = get_current_ietf_meeting()
         person = self.user.person
         reg = MeetingRegistration.objects.filter(person=person, meeting=meeting).first()
+        today = datetime.date.today()
         info = {}
         if reg:
+            # maybe register attendence if logged in to follow a meeting
+            if meeting.date <= today <= meeting.end_date():
+                client = ClientRecord.objects.get(client_id=self.client.client_id)
+                if client.name == 'Meetecho' and not reg.attended:
+                    reg.attended = True
+                    reg.save()
+            # fill in info to return
             info = {
                 'meeting':      reg.meeting.number,
                 # full_week, one_day, student:
