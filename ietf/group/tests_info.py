@@ -567,6 +567,8 @@ class GroupEditTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('form select[name=parent]')), 1)
         self.assertEqual(len(q('form input[name=acronym]')), 1)
+        for role_slug in group.used_roles or group.features.default_used_roles:
+            self.assertEqual(len(q('form input[name=%s_roles]'%role_slug)),1)
 
         # faulty post
         Group.objects.create(name="Collision Test Group", acronym="collide")

@@ -19,6 +19,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('stats', '0002_add_meetingregistration_fields'),
+        ('group', '0029_add_used_roles_and_default_used_roles'),
     ]
 
     operations = [
