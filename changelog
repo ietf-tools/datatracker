@@ -1,3 +1,49 @@
+ietfdb (7.3.1) ietf; urgency=medium
+
+  **Updates to meeting registration handling and group editing; and bug fixes**
+
+  * The fields ticket_type and reg_type are now part of MeetingRegistration.
+    Made the conditional handling of these attributes in the OpenID
+    "registration" scope handler unconditional.
+
+  * Fixed an incorrect admin site search field specification that prevented
+    certain serches from working in the admin site.
+
+  * Changed the settings_local.py for the docker image to use the database
+    type enforced in docker/updatedb.
+
+  * Fixed an issue with multiple objects matching a registsration record
+    fetched from the registration system (this has been caused by not
+    correctly detecting updates to the registration system details).
+
+  * Added a MeetingRegistration.attended field, to keep apart attendance
+    at a meeting and registration for a meeting.
+
+  * Updated meeting attendance and nomcom eligibility calculations to take
+    the MeetingRegistration.attendance flag into account.
+
+  * Added some code to set the meeting attendance flag when Meetecho pulls
+    OAuth2 profile data for session participation between the start and end
+    dates for a meeting.
+
+  * Updated the api_new_meeting_registration() endpoint to set all provided
+    fields correctly.  Fixes a bug that left some fields unset.
+
+  * Expanded the test case for api_new_meeting_registration() to test both
+    the existing and new account case, and test that additional table fields are
+    set appropriately.
+
+  * Merged in [17908] from rjsparks@nostrum.com: 
+    Added used_roles to Group and default_used_roles to GroupFeatures.
+    Dynamically build the group edit form to provide a field for all
+    used_roles. Fixes #2785 and #2572.  Partially addresses #2160.  
+
+  * Added hourly generation of two static files: 1wg-charter*.txt
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  10 Jun 2020 20:58:50 +0000
+
+
 ietfdb (7.3.0) ietf; urgency=medium
 
   **API for account creation triggered by meeting registration**
