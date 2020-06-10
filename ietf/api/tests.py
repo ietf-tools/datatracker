@@ -21,7 +21,7 @@ import debug                            # pyflakes:ignore
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.test_data import make_meeting_test_data
-from ietf.person.factories import PersonFactory, EmailFactory
+from ietf.person.factories import PersonFactory
 from ietf.person.models import PersonalApiKey
 from ietf.stats.models import MeetingRegistration
 from ietf.utils.mail import outbox, get_payload_text
