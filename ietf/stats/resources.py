@@ -57,7 +57,11 @@ class AffiliationAliasResource(ModelResource):
         }
 api.stats.register(AffiliationAliasResource())
 
+from ietf.meeting.resources import MeetingResource
+from ietf.person.resources import PersonResource
 class MeetingRegistrationResource(ModelResource):
+    meeting          = ToOneField(MeetingResource, 'meeting')
+    person           = ToOneField(PersonResource, 'person', null=True)
     class Meta:
         queryset = MeetingRegistration.objects.all()
         serializer = api.Serializer()
@@ -66,13 +70,15 @@ class MeetingRegistrationResource(ModelResource):
         ordering = ['id', ]
         filtering = { 
             "id": ALL,
-            "meeting": ALL_WITH_RELATIONS,
             "first_name": ALL,
             "last_name": ALL,
             "affiliation": ALL,
             "country_code": ALL,
             "email": ALL,
-            "person": ALL_WITH_RELATIONS
+            "reg_type": ALL,
+            "ticket_type": ALL,
+            "attended": ALL,
+            "meeting": ALL_WITH_RELATIONS,
+            "person": ALL_WITH_RELATIONS,
         }
 api.stats.register(MeetingRegistrationResource())
-
