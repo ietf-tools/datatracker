@@ -225,7 +225,7 @@ def skip_url(url):
             r"draft-touch-msword-template-v2\.0",
 
             # Skip most html conversions, not worth the time
-            "^/doc/html/draft-[0-9ac-z][0-9]b-z].*",
+            "^/doc/html/draft-[0-9ac-z][0-9b-z].*",
             "^/doc/html/charter-.*",
             "^/doc/html/status-.*",
             "^/doc/html/rfc.*",
