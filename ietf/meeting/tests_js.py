@@ -189,7 +189,7 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
         s1_element = self.driver.find_element_by_css_selector('#session{}'.format(s1.pk))
         s1_element.click()
 
-        constraint_element = s2_element.find_element_by_css_selector(".constraints span[data-sessions=\"{}\"].selected-hint".format(s1.pk))
+        constraint_element = s2_element.find_element_by_css_selector(".constraints span[data-sessions=\"{}\"].would-violate-hint".format(s1.pk))
         self.assertTrue(constraint_element.is_displayed())
 
         # current constraint violations

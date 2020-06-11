@@ -17,13 +17,33 @@ jQuery(document).ready(function () {
         content.css("padding-bottom", "14em");
     }
 
+    function findTimeslotsOverlapping(intervals) {
+        let res = [];
+
+        timeslots.each(function () {
+            var timeslot = jQuery(this);
+            let start = timeslot.data("start");
+            let end = timeslot.data("end");
+
+            for (let i = 0; i < intervals.length; ++i) {
+                if (end >= intervals[i][0] && intervals[i][1] >= start) {
+                    res.push(timeslot);
+                    break;
+                }
+            }
+        });
+
+        return res;
+    }
+    
+
     // selecting
     function selectSessionElement(element) {
         if (element) {
             sessions.not(element).removeClass("selected");
             jQuery(element).addClass("selected");
             showConstraintHints(element.id.slice("session".length));
-            content.find(".scheduling-panel .session-info-container").html(jQuery(element).find(".session-info").html());
+            content.find(".scheduling-panel .session-info-container").html(jQuery(element).find(".session-info").html()).find('[data-original-title]').tooltip();
         }
         else {
             sessions.removeClass("selected");
@@ -33,16 +53,32 @@ jQuery(document).ready(function () {
     }
 
     function showConstraintHints(sessionIdStr) {
+        let intervals = [];
+
         sessions.find(".constraints > span").each(function () {
             if (!sessionIdStr) {
-                jQuery(this).removeClass("selected-hint");
+                jQuery(this).removeClass("would-violate-hint");
                 return;
             }
 
             let sessionIds = this.dataset.sessions;
-            if (sessionIds)
-                jQuery(this).toggleClass("selected-hint", sessionIds.split(",").indexOf(sessionIdStr) != -1);
+            if (!sessionIds)
+                return;
+
+            let wouldViolate = sessionIds.split(",").indexOf(sessionIdStr) != -1;
+            jQuery(this).toggleClass("would-violate-hint", wouldViolate);
+
+            if (wouldViolate) {
+                let timeslot = jQuery(this).closest(".timeslot");
+                if (timeslot.length > 0)
+                    intervals.push([timeslot.data("start"), timeslot.data("end")]);
+            }
         });
+
+        timeslots.removeClass("would-violate-hint");
+        let overlappingTimeslots = findTimeslotsOverlapping(intervals);
+        for (let i = 0; i < overlappingTimeslots.length; ++i)
+            overlappingTimeslots[i].addClass("would-violate-hint");
     }
 
     content.on("click", function (event) {
@@ -153,7 +189,7 @@ jQuery(document).ready(function () {
 
     // hints for the current schedule
 
-    function updateCurrentSessionConstraintViolations() {
+    function updateSessionConstraintViolations() {
         // do a sweep on sessions sorted by start time
         let scheduledSessions = [];
 
@@ -233,7 +269,7 @@ jQuery(document).ready(function () {
     }
 
     function updateCurrentSchedulingHints() {
-        updateCurrentSessionConstraintViolations();
+        updateSessionConstraintViolations();
         updateAttendeesViolations();
         updateTimeSlotDurationViolations();
     }

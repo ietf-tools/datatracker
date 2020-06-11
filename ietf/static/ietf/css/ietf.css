@@ -1096,6 +1096,24 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   border-right: 2px dashed #fff; /* cut-off illusion */
 }
 
+.edit-meeting-schedule .timeslot.would-violate-hint {
+  background-color: #ffe0e0;
+}
+
+.edit-meeting-schedule .constraints .encircled,
+.edit-meeting-schedule .formatted-constraints .encircled {
+  border: 1px solid #000;
+  border-radius: 1em;
+  min-width: 1.3em;
+  text-align: center;
+  display: inline-block;
+}
+
+.edit-meeting-schedule .formatted-constraints .encircled {
+  font-size: smaller;
+  cursor: help;
+}
+
 /* sessions */
 .edit-meeting-schedule .session {
   background-color: #fff;
@@ -1106,6 +1124,14 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   border-radius: 0.4em;
   overflow: hidden;
   cursor: pointer;
+}
+
+.edit-meeting-schedule .session.selected {
+  cursor: grabbing;
+}
+
+.edit-meeting-schedule .read-only .session.selected {
+  cursor: default;
 }
 
 .edit-meeting-schedule .session.selected .session-label {
@@ -1132,7 +1158,8 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 }
 
 .edit-meeting-schedule .session.too-many-attendees .attendees {
-  color: #f33;
+  font-weight: bold;
+  color: #8432d4;
 }
 
 .edit-meeting-schedule .session .constraints {
@@ -1147,25 +1174,22 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 }
 
 .edit-meeting-schedule .session .constraints > span .encircled {
-  border: 1px solid #f99;
-  border-radius: 1em;
-  min-width: 1.3em;
-  text-align: center;
-  display: inline-block;
+  border: 1px solid #b35eff;
 }
 
 .edit-meeting-schedule .session .constraints > span.violated-hint {
   display: inline-block;
-  color: #f55;
-}
-
-.edit-meeting-schedule .session .constraints > span.selected-hint {
-  display: inline-block;
   color: #8432d4;
 }
 
-.edit-meeting-schedule .session .constraints > span.selected-hint .encircled {
-  border: 1px solid #b35eff;
+.edit-meeting-schedule .session .constraints > span.would-violate-hint {
+  display: inline-block;
+  font-weight: bold;
+  color: #f55;
+}
+
+.edit-meeting-schedule .session .constraints > span.would-violate-hint .encircled {
+  border: 1px solid #f99;
 }
 
 .edit-meeting-schedule .unassigned-sessions .session .constraints > span {

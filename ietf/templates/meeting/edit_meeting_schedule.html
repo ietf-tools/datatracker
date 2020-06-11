@@ -47,7 +47,7 @@
       {% endif %}
     </p>
 
-    <div class="edit-grid">
+    <div class="edit-grid {% if not can_edit %}read-only{% endif %}">
 
       {# using the same markup in both room labels and the actual days ensures they are aligned #}
       <div class="room-label-column">

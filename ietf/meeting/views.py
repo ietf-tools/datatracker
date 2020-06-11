@@ -55,7 +55,7 @@ from ietf.person.name import plain_name
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
-from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Constraint, ConstraintName
+from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment
 from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
@@ -77,6 +77,7 @@ from ietf.meeting.utils import session_time_for_sorting
 from ietf.meeting.utils import session_requested_by
 from ietf.meeting.utils import current_session_status
 from ietf.meeting.utils import data_for_meetings_overview
+from ietf.meeting.utils import preprocess_constraints_for_meeting_schedule_editor
 from ietf.message.utils import infer_message
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
@@ -623,70 +624,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     # requesters
     requested_by_lookup = {p.pk: p for p in Person.objects.filter(pk__in=set(s.requested_by for s in sessions if s.requested_by))}
 
-    # constraints - convert the human-readable rules in the database
-    # to constraints on the actual sessions, compress them and output
-    # them, so that the JS simply has to detect violations and show
-    # the relevant preprocessed label
-    constraints = Constraint.objects.filter(meeting=meeting)
-    person_needed_for_groups = defaultdict(set)
-    for c in constraints:
-        if c.name_id == 'bethere' and c.person_id is not None:
-            person_needed_for_groups[c.person_id].add(c.source_id)
-
-    sessions_for_group = defaultdict(list)
-    for s in sessions:
-        if s.group_id is not None:
-            sessions_for_group[s.group_id].append(s.pk)
-
-    constraint_names = {n.pk: n for n in ConstraintName.objects.all()}
-    constraint_names_with_count = set()
-    constraint_label_replacements = [
-        (re.compile(r"\(person\)"), lambda match_groups: format_html("<i class=\"fa fa-user-o\"></i>")),
-        (re.compile(r"\(([^()])\)"), lambda match_groups: format_html("<span class=\"encircled\">{}</span>", match_groups[0])),
-    ]
-    for n in list(constraint_names.values()):
-        # spiff up the labels a bit
-        for pattern, replacer in constraint_label_replacements:
-            m = pattern.match(n.editor_label)
-            if m:
-                n.editor_label = replacer(m.groups())
-
-        # add reversed version of the name
-        reverse_n = ConstraintName(
-            slug=n.slug + "-reversed",
-            name="{} - reversed".format(n.name),
-        )
-        reverse_n.editor_label = format_html("<i>{}</i>", n.editor_label)
-        constraint_names[reverse_n.slug] = reverse_n
-
-    constraints_for_sessions = defaultdict(list)
-
-    def add_group_constraints(g1_pk, g2_pk, name_id, person_id):
-        if g1_pk != g2_pk:
-            for s1_pk in sessions_for_group.get(g1_pk, []):
-                for s2_pk in sessions_for_group.get(g2_pk, []):
-                    if s1_pk != s2_pk:
-                        constraints_for_sessions[s1_pk].append((name_id, s2_pk, person_id))
-
-    reverse_constraints = []
-    seen_forward_constraints_for_groups = set()
-
-    for c in constraints:
-        if c.target_id:
-            add_group_constraints(c.source_id, c.target_id, c.name_id, c.person_id)
-            seen_forward_constraints_for_groups.add((c.source_id, c.target_id, c.name_id))
-            reverse_constraints.append(c)
-
-        elif c.person_id:
-            constraint_names_with_count.add(c.name_id)
-
-            for g in person_needed_for_groups.get(c.person_id):
-                add_group_constraints(c.source_id, g, c.name_id, c.person_id)
-
-    for c in reverse_constraints:
-        # suppress reverse constraints in case we have a forward one already
-        if (c.target_id, c.source_id, c.name_id) not in seen_forward_constraints_for_groups:
-            add_group_constraints(c.target_id, c.source_id, c.name_id + "-reversed", c.person_id)
+    # constraints
+    constraints_for_sessions, formatted_constraints_for_sessions, constraint_names = preprocess_constraints_for_meeting_schedule_editor(meeting, sessions)
 
     unassigned_sessions = []
     for s in sessions:
@@ -705,22 +644,25 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         s.parent_acronym = s.group.parent.acronym if s.group and s.group.parent else ""
         s.historic_group_ad_name = ad_names.get(s.group_id)
 
-        # compress the constraints, so similar constraint explanations
-        # are shared between the conflicting sessions they cover
-        constrained_sessions_grouped_by_explanation = defaultdict(set)
+        # compress the constraints, so similar constraint labels are
+        # shared between the conflicting sessions they cover - the JS
+        # then simply has to detect violations and show the
+        # preprocessed labels
+        constrained_sessions_grouped_by_label = defaultdict(set)
         for name_id, ts in itertools.groupby(sorted(constraints_for_sessions.get(s.pk, [])), key=lambda t: t[0]):
             ts = list(ts)
             session_pks = (t[1] for t in ts)
             constraint_name = constraint_names[name_id]
-            if name_id in constraint_names_with_count:
+            if "{count}" in constraint_name.formatted_editor_label:
                 for session_pk, grouped_session_pks in itertools.groupby(session_pks):
                     count = sum(1 for i in grouped_session_pks)
-                    constrained_sessions_grouped_by_explanation[format_html("{}{}", constraint_name.editor_label, count)].add(session_pk)
+                    constrained_sessions_grouped_by_label[format_html(constraint_name.formatted_editor_label, count=count)].add(session_pk)
 
             else:
-                constrained_sessions_grouped_by_explanation[constraint_name.editor_label].update(session_pks)
+                constrained_sessions_grouped_by_label[constraint_name.formatted_editor_label].update(session_pks)
 
-        s.constrained_sessions = list(constrained_sessions_grouped_by_explanation.items())
+        s.constrained_sessions = list(constrained_sessions_grouped_by_label.items())
+        s.formatted_constraints = formatted_constraints_for_sessions.get(s.pk, {})
 
         assigned = False
         for a in assignments_by_session.get(s.pk, []):

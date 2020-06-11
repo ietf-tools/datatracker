@@ -14,14 +14,14 @@
 
     {% if session.constrained_sessions %}
       <span class="constraints">
-        {% for explanation, sessions in session.constrained_sessions %}
-          <span data-sessions="{{ sessions|join:"," }}">{{ explanation }}</span>
+        {% for label, sessions in session.constrained_sessions %}
+          <span data-sessions="{{ sessions|join:"," }}">{{ label }}</span>
         {% endfor %}
       </span>
     {% endif %}
   </div>
 
-  {# this is shown elsewhere on the page with JS - we just include it here for convenience #}
+  {# the JS uses this to display session information in the bottom panel #}
   <div class="session-info">
     <label>
       {{ session.scheduling_label }}
@@ -58,6 +58,16 @@
     {% if session.comments %}
       <div class="comments">
         {{ session.comments|linebreaksbr }}
+      </div>
+    {% endif %}
+
+    {% if session.formatted_constraints %}
+      <div class="formatted-constraints">
+        {% for constraint_name, values in session.formatted_constraints.items %}
+          <div>
+            <span title="{{ constraint_name.name }}">{{ constraint_name.countless_formatted_editor_label }}</span>: {{ values|join:", " }}
+          </div>
+        {% endfor %}
       </div>
     {% endif %}
   </div>

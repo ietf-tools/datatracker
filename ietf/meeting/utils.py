@@ -3,20 +3,25 @@
 
 
 import datetime
+import itertools
+import re
 import requests
 
+from collections import defaultdict
 from urllib.error import HTTPError
+
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.db.models.expressions import Subquery, OuterRef
+from django.utils.html import format_html
 
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.meeting.models import Session, Meeting, SchedulingEvent, TimeSlot
+from ietf.meeting.models import Session, Meeting, SchedulingEvent, TimeSlot, Constraint
 from ietf.group.models import Group, Role
 from ietf.group.utils import can_manage_materials
-from ietf.name.models import SessionStatusName
+from ietf.name.models import SessionStatusName, ConstraintName
 from ietf.nomcom.utils import DISQUALIFYING_ROLE_QUERY_EXPRESSION
 from ietf.person.models import Email
 from ietf.secr.proceedings.proc_utils import import_audio_files
@@ -303,3 +308,91 @@ def data_for_meetings_overview(meetings, interim_status=None):
         m.interim_meeting_cancelled = m.type_id == 'interim' and all(s.current_status == 'canceled' for s in m.sessions)
 
     return meetings
+
+def format_constraint_editor_label(label, inner_fmt="{}"):
+    m = re.match(r'(.*)\(person\)(.*)', label)
+    if m:
+        return format_html("{}<i class=\"fa fa-user-o\"></i>{}", format_html(inner_fmt, m.groups()[0]), m.groups()[1])
+
+    m = re.match(r"\(([^()]+)\)", label)
+    if m:
+        return format_html("<span class=\"encircled\">{}</span>", format_html(inner_fmt, m.groups()[0]))
+
+    return format_html(inner_fmt, label)
+
+def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
+    constraints = Constraint.objects.filter(meeting=meeting).prefetch_related('target', 'person', 'timeranges')
+
+    # process constraint names
+    constraint_names = {n.pk: n for n in ConstraintName.objects.all()}
+
+    for n in list(constraint_names.values()):
+        # add reversed version of the name
+        reverse_n = ConstraintName(
+            slug=n.slug + "-reversed",
+            name="{} - reversed".format(n.name),
+        )
+        reverse_n.formatted_editor_label = format_constraint_editor_label(n.editor_label, inner_fmt="-{}")
+        constraint_names[reverse_n.slug] = reverse_n
+
+        n.formatted_editor_label = format_constraint_editor_label(n.editor_label)
+        n.countless_formatted_editor_label = format_html(n.formatted_editor_label, count="") if "{count}" in n.formatted_editor_label else n.formatted_editor_label
+
+    # convert human-readable rules in the database to constraints on actual sessions
+    constraints_for_sessions = defaultdict(list)
+
+    person_needed_for_groups = defaultdict(set)
+    for c in constraints:
+        if c.name_id == 'bethere' and c.person_id is not None:
+            person_needed_for_groups[c.person_id].add(c.source_id)
+
+    sessions_for_group = defaultdict(list)
+    for s in sessions:
+        if s.group_id is not None:
+            sessions_for_group[s.group_id].append(s.pk)
+
+    def add_group_constraints(g1_pk, g2_pk, name_id, person_id):
+        if g1_pk != g2_pk:
+            for s1_pk in sessions_for_group.get(g1_pk, []):
+                for s2_pk in sessions_for_group.get(g2_pk, []):
+                    if s1_pk != s2_pk:
+                        constraints_for_sessions[s1_pk].append((name_id, s2_pk, person_id))
+
+    reverse_constraints = []
+    seen_forward_constraints_for_groups = set()
+
+    for c in constraints:
+        if c.target_id:
+            add_group_constraints(c.source_id, c.target_id, c.name_id, c.person_id)
+            seen_forward_constraints_for_groups.add((c.source_id, c.target_id, c.name_id))
+            reverse_constraints.append(c)
+
+        elif c.person_id:
+            for g in person_needed_for_groups.get(c.person_id):
+                add_group_constraints(c.source_id, g, c.name_id, c.person_id)
+
+    for c in reverse_constraints:
+        # suppress reverse constraints in case we have a forward one already
+        if (c.target_id, c.source_id, c.name_id) not in seen_forward_constraints_for_groups:
+            add_group_constraints(c.target_id, c.source_id, c.name_id + "-reversed", c.person_id)
+
+    # formatted constraints
+    def format_constraint(c):
+        if c.name_id == "time_relation":
+            return c.get_time_relation_display()
+        elif c.name_id == "timerange":
+            return ", ".join(t.desc for t in c.timeranges.all())
+        elif c.person:
+            return c.person.plain_name()
+        elif c.target:
+            return c.target.acronym
+        else:
+            return "UNKNOWN"
+
+    formatted_constraints_for_sessions = defaultdict(dict)
+    for (group_pk, cn_pk), cs in itertools.groupby(sorted(constraints, key=lambda c: (c.source_id, constraint_names[c.name_id].order, c.name_id, c.pk)), key=lambda c: (c.source_id, c.name_id)):
+        cs = list(cs)
+        for s_pk in sessions_for_group.get(group_pk, []):
+            formatted_constraints_for_sessions[s_pk][constraint_names[cn_pk]] = [format_constraint(c) for c in cs]
+
+    return constraints_for_sessions, formatted_constraints_for_sessions, constraint_names
