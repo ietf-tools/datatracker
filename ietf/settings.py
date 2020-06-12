@@ -233,7 +233,7 @@ LOGGING = {
             'propagate': False,
         },
  	'oidc_provider': {
-	    'handlers': ['console', ],
+	    'handlers': ['syslog', 'console', ],
 	    'level': 'DEBUG',
 	},
     },
@@ -245,6 +245,13 @@ LOGGING = {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'plain',
+        },
+        'syslog': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.SysLogHandler',
+            'facility': 'user',
+            'formatter': 'plain',
+            'address': '/dev/log'
         },
         'debug_console': {
             # Active only when DEBUG=True
