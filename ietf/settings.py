@@ -224,7 +224,7 @@ LOGGING = {
     #
     'loggers': {
         'django': {
-            'handlers': ['console', 'mail_admins'],
+            'handlers': ['debug_console', 'mail_admins'],
             'level': 'INFO',
         },
         'django.server': {
@@ -232,15 +232,26 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
+ 	'oidc_provider': {
+	    'handlers': ['console', ],
+	    'level': 'DEBUG',
+	},
     },
     #
     # No logger filters
     #
     'handlers': {
         'console': {
-            'level': 'INFO',
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'plain',
+        },
+        'debug_console': {
+            # Active only when DEBUG=True
+            'level': 'DEBUG',
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
+            'formatter': 'plain',
         },
         'django.server': {
             'level': 'INFO',
@@ -283,8 +294,21 @@ LOGGING = {
         'django.server': {
             '()': 'django.utils.log.ServerFormatter',
             'format': '[%(server_time)s] %(message)s',
-        }
+        },
+        'plain': {
+            'style': '{',
+            'format': '{levelname}: {name}:{lineno}: {message}',
+        },
     },
+}
+
+# This should be overridden by settings_local for any logger where debug (or
+# other) custom log settings are wanted.  Use "ietf/manage.py showloggers -l"
+# to show registered loggers.  The content here should match the levels above
+# and is shown as an example:
+UTILS_LOGGER_LEVELS = {
+    'django':           'INFO',
+    'django.server':    'INFO',
 }
 
 # End logging
@@ -1160,3 +1184,4 @@ if SERVER_MODE != 'production':
         MIDDLEWARE = MIDDLEWARE + ['django_cprofile_middleware.middleware.ProfilerMiddleware', ]
     except ImportError:
         pass
+
