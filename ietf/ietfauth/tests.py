@@ -735,7 +735,6 @@ class OpenIDConnectTests(TestCase):
             session["state"] = rndstr()
             session["nonce"] = rndstr()
             args = {
-                "client_id": client.client_id,
                 "response_type": "code",
                 "scope": ['openid', 'profile', 'email', 'roles', 'registration', ],
                 "nonce": session["nonce"],
