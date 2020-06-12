@@ -251,7 +251,7 @@ LOGGING = {
             'class': 'logging.handlers.SysLogHandler',
             'facility': 'user',
             'formatter': 'plain',
-            'address': '/dev/log'
+            'address': '/dev/log',
         },
         'debug_console': {
             # Active only when DEBUG=True
@@ -313,7 +313,7 @@ LOGGING = {
 # other) custom log settings are wanted.  Use "ietf/manage.py showloggers -l"
 # to show registered loggers.  The content here should match the levels above
 # and is shown as an example:
-UTILS_LOGGER_LEVELS = {
+UTILS_LOGGER_LEVELS: Dict[str, str] = {
     'django':           'INFO',
     'django.server':    'INFO',
 }

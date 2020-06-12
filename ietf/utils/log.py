@@ -22,8 +22,8 @@ from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
-for logger, level in settings.UTILS_LOGGER_LEVELS.items():
-    logger = logging.getLogger(logger)
+for name, level in settings.UTILS_LOGGER_LEVELS.items():
+    logger = logging.getLogger(name)
     debug.say(" Setting %s logging level to %s" % (logger.name, level))
     logger.setLevel(level)
 
