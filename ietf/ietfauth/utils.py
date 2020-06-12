@@ -216,6 +216,13 @@ def openid_userinfo(claims, user):
     return claims
 
 
+
+
+oidc_provider.lib.claims.StandardScopeClaims.info_profile = (
+		'Basic profile',
+		'Access to your basic information: name.'
+	    )
+
 class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
 
     info_roles = (
