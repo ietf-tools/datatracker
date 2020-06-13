@@ -22,8 +22,16 @@ from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
+formatter = logging.Formatter('{levelname}: {name}:{lineno}: {message}', style='{')
 for name, level in settings.UTILS_LOGGER_LEVELS.items():
     logger = logging.getLogger(name)
+    if not logger.hasHandlers():
+        debug.say(' Adding handlers to logger %s' % logger.name)
+        handlers = [ logging.StreamHandler(), logging.handlers.SysLogHandler(address='/dev/log', facility='user') ]
+        for h in handlers:
+            h.setFormatter(formatter)
+            h.setLevel(level)
+            logger.addHandler(h)
     debug.say(" Setting %s logging level to %s" % (logger.name, level))
     logger.setLevel(level)
 
