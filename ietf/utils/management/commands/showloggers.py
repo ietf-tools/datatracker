@@ -12,7 +12,7 @@ import debug                            # pyflakes:ignore
 
 class Command(BaseCommand):
     """
-    Display a list or tree representation of python loggers.<BR>
+    Display a list or tree representation of python loggers.
 
     Add a UTILS_LOGGER_LEVELS setting in settings_local.py to configure
     non-default logging levels for any registered logger, for instance:
