@@ -78,8 +78,8 @@ trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; 
 # Option parsing
 
 # Options
-shortopts=hm:M:nvV
-longopts=help,meeting=,message=,dry-run,verbose,version
+shortopts=hm:M:nsvV
+longopts=help,meeting=,message=,dry-run,sprint,verbose,version
 
 # Default values
 num=""
@@ -105,6 +105,7 @@ while true ; do
 	-m| --meeting)	num=$2; shift;;		# Specify the IETF meeting number
 	-M| --message)	msg=$2; shift;;		# Specify extra message text
 	-n| --dry-run)  do="echo -- ==>";;	# Only show what would be done
+	-s| --sprint)	SPRINT=1;;		# Make branches for sprint sign-ups
 	-v| --verbose)	VERBOSE=1;;		# Be more talkative
 	-V| --version)	version; exit;;		# Show program version, then exit
 	--)		shift; break;;
@@ -141,13 +142,16 @@ function mksvndir() {
 # echo "Copying a database dump to www.ietf.org/lib/dt/sprint/$dump"
 # scp /www/tools.ietf.org/tools/$dump ietfa:/a/www/www6s/lib/dt/sprint/
 
+if [ -z "$who" -a -z "$SPRINT" ]; then die "Specify either individual developer name or --sprint"; fi
+
 cd $progdir
 
 if [ "$who" ]; then
     mksvndir $who
     $do svn cp https://svn.tools.ietf.org/svn/tools/ietfdb/$source https://svn.tools.ietf.org/svn/tools/ietfdb/personal/$who/$target/ -m "New branch for $target"
     echo "New branch: ^/personal/$who/$target"
-else
+fi
+if [ "$SPRINT" ]; then
     [ "$msg" ] && msg="
 $msg
 "
