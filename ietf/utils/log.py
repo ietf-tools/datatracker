@@ -4,6 +4,7 @@
 
 import sys
 import logging
+import logging.handlers
 import inspect
 import os.path
 import traceback
@@ -27,7 +28,12 @@ for name, level in settings.UTILS_LOGGER_LEVELS.items():
     logger = logging.getLogger(name)
     if not logger.hasHandlers():
         debug.say(' Adding handlers to logger %s' % logger.name)
-        handlers = [ logging.StreamHandler(), logging.handlers.SysLogHandler(address='/dev/log', facility='user') ]
+        
+        handlers = [
+                logging.StreamHandler(),
+                logging.handlers.SysLogHandler(address='/dev/log',
+                    facility=logging.handlers.SysLogHandler.LOG_USER),
+            ]
         for h in handlers:
             h.setFormatter(formatter)
             h.setLevel(level)
