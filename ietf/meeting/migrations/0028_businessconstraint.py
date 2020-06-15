@@ -35,7 +35,7 @@ def forward(apps, schema_editor):
     BusinessConstraint.objects.create(
         slug="area_overlapping_other_area",
         name="Area meetings cannot conflict with other area meetings",
-        penalty=1000,
+        penalty=100000,
     )
     BusinessConstraint.objects.create(
         slug="session_overlap_ad",
@@ -58,7 +58,7 @@ def forward(apps, schema_editor):
     ConstraintName.objects.filter(slug='conflic2').update(penalty=10000)
     ConstraintName.objects.filter(slug='conflic3').update(penalty=100000)
     ConstraintName.objects.filter(slug='bethere').update(penalty=10000)
-    ConstraintName.objects.filter(slug='timerange').update(penalty=10000)
+    ConstraintName.objects.filter(slug='timerange').update(penalty=1000000)
     ConstraintName.objects.filter(slug='time_relation').update(penalty=1000)
     ConstraintName.objects.filter(slug='wg_adjacent').update(penalty=1000)
 

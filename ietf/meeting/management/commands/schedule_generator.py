@@ -323,6 +323,7 @@ class Schedule(object):
         an entirely random timeslot, in which they fit.
         Parameter is an iterable of (timeslot, session) tuples.
         """
+        self.calculate_dynamic_cost()  # update all costs
         to_reschedule = [(t, s) for t, s in items if s.last_cost]
         random.shuffle(to_reschedule)
         if self.verbosity >= 2:

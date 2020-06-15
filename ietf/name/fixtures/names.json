@@ -5625,7 +5625,7 @@
       "desc": "",
       "name": "Can't meet within timerange",
       "order": 0,
-      "penalty": 10000,
+      "penalty": 1000000,
       "used": true
     },
     "model": "name.constraintname",
@@ -14541,7 +14541,7 @@
   "pk": "area_overlapping_other_area",
   "fields": {
     "name": "Area meetings cannot conflict with other area meetings",
-    "penalty": 1000
+    "penalty": 100000
   }
 },
 {

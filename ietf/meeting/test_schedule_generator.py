@@ -8,7 +8,7 @@ from django.core.management.base import CommandError
 from ietf.utils.test_utils import TestCase
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.person.factories import PersonFactory
-from ietf.meeting.models import Session, Constraint, TimerangeName, BusinessConstraint
+from ietf.meeting.models import Constraint, TimerangeName, BusinessConstraint
 from ietf.meeting.factories import MeetingFactory, RoomFactory, TimeSlotFactory, SessionFactory
 from ietf.meeting.management.commands.schedule_generator import ScheduleHandler
 
