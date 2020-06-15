@@ -77,7 +77,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('meeting', '0027_add_constraint_options_and_joint_groups'),
+        ('meeting', '0028_auto_20200501_0139'),
     ]
 
     operations = [

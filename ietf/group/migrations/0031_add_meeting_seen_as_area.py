@@ -19,7 +19,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('group', '0023_use_milestone_dates_default_to_true'),
+        ('group', '0030_populate_default_used_roles'),
     ]
 
     operations = [
