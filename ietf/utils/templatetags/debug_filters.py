@@ -9,10 +9,7 @@ register = template.Library()
 def timesum(value):
     """
     Sum the times in a list of dicts; used for sql query debugging info"""
-    sum = 0.0
-    for v in value:
-        sum += float(v['time'])
-    return sum
+    return round(sum(float(v['time']) for v in value), 3)
 
 
 @register.filter()
