@@ -1447,7 +1447,9 @@ class InterimTests(TestCase):
         self.assertEqual(len(outbox), len_before + 1)
         self.assertIn('WG Virtual Meeting', outbox[-1]['Subject'])
         self.assertIn('09:00 to 09:20 America/Los_Angeles', get_payload_text(outbox[-1]))
-        self.assertIn('(17:00 to 17:20 UTC)', get_payload_text(outbox[-1]))
+
+        timeslot = meeting.session_set.first().official_timeslotassignment().timeslot
+        self.assertIn('(%s to %s UTC)'%(timeslot.utc_start_time().strftime('%H:%M'),timeslot.utc_end_time().strftime('%H:%M')), get_payload_text(outbox[-1]))
 
     def test_interim_approve_by_ad(self):
         make_meeting_test_data()
