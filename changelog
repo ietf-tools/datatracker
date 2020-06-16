@@ -1,3 +1,47 @@
+ietfdb (7.3.2) ietf; urgency=medium
+
+  **Bugfixes**
+
+  * Fixed a bad regex in test-crawl
+
+  * Removed an unnecessary entry from the OIDC auth request arguments in 
+    test_oidc_code_auth().
+
+  * Reorganized the python logging setup slightly, and added a possibility 
+    to configure logging levels for individual loggers in settings_local.py
+
+  * Added a management command to list registered logging framewor entries
+    (loggers), in order to see which can be configured in settings_local
+    with the UTILS_LOGGER_LEVELS settings.
+
+  * Changed the OpenID profile data description to match what the
+    datatracker actually shares.  This eliminates mention of things the
+    datatracker doesn't know, and doesn't share, such as gender and
+    birth-date.
+
+  * The datatracker logs directly to syslog, but some python libraries send 
+    debug logging to the python logging module.  Added a python logging syslog 
+    handler to the django logging setup, in order to make it easier to turn on 
+    built-in logging from external modules when needed.
+
+  * Improved the handling of logger enabling entries in UTILS_LOGGER_LEVELS 
+    to set a handler if none exists for a given logger.
+
+  * Changed the required version of pyflakes to one that supports ANNASSIGN 
+    (python annotated assignments, now used in the code).
+
+  * Added a --sprint switch to mkdevbranch to avoid switching on the 
+    absence of a developer name when creating sprint branches
+
+  * Merged in [17992] from rjsparks@nostrum.com:
+    Improved the admin interface form validation for used_roles.  
+
+  * Merged in [17993] from rjsparks@nostrum.com:
+    Made test_interim_send_announcement a little more time_zone aware.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jun 2020 21:16:03 +0000
+
+
 ietfdb (7.3.1) ietf; urgency=medium
 
   **Updates to meeting registration handling and group editing; and bug fixes**
