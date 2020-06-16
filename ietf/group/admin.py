@@ -4,6 +4,8 @@
 
 from functools import update_wrapper
 
+from django import forms
+
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
 from django.core.exceptions import PermissionDenied
@@ -25,7 +27,20 @@ class RoleInline(admin.TabularInline):
 class GroupURLInline(admin.TabularInline):
     model = GroupURL
 
+class GroupForm(forms.ModelForm):
+    class Meta:
+        model = Group
+        fields = '__all__'
+
+    def clean_used_roles(self):
+        data = self.cleaned_data['used_roles']
+        if data is None or data == '':
+            raise forms.ValidationError("Must contain a valid json expression. To use the defaults prove an empty list: []")
+        return data
+            
+
 class GroupAdmin(admin.ModelAdmin):
+    form = GroupForm
     list_display = ["acronym", "name", "type", "state", "time", "role_list"]
     list_display_links = ["acronym", "name"]
     list_filter = ["type", "state", "time"]
