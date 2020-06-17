@@ -150,7 +150,13 @@ class Meeting(models.Model):
         start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day)
         local_tz = pytz.timezone(self.time_zone)
         local_date = local_tz.localize(start_date)
-        reopen_time = local_date + self.idsubmit_cutoff_time_utc
+        cutoff = self.get_00_cutoff()
+        if cutoff.date() == start_date:
+            # no cutoff, so no local-time re-open
+            reopen_time = cutoff
+        else:
+            # reopen time is in local timezone.  May need policy change??  XXX
+            reopen_time = local_date + self.idsubmit_cutoff_time_utc
         return reopen_time
 
     @classmethod
