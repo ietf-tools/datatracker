@@ -34,6 +34,7 @@ from ietf.ietfauth.utils import role_required
 from ietf.meeting.models import Meeting
 from ietf.stats.models import MeetingRegistration
 from ietf.utils.decorators import require_api_key
+from ietf.utils.log import log
 
 
 def top_level(request):
@@ -122,7 +123,8 @@ def api_new_meeting_registration(request):
     '''REST API to notify the datatracker about a new meeting registration'''
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
-    required_fields = [ 'meeting', 'first_name', 'last_name', 'affiliation', 'country_code', 'email', 'reg_type', 'ticket_type', ]
+    required_fields = [ 'meeting', 'first_name', 'last_name', 'affiliation', 'country_code',
+                        'email', 'reg_type', 'ticket_type', ]
     fields = required_fields + []
     if request.method == 'POST':
         # parameters:
@@ -140,6 +142,7 @@ def api_new_meeting_registration(request):
             if value is None and item in required_fields:
                 missing_fields.append(item)
             data[item] = value
+        log("Meeting registration notification: %s" % json.dumps(data))
         if missing_fields:
             return err(400, "Missing parameters: %s" % ', '.join(missing_fields))
         number = data['meeting']
@@ -159,8 +162,14 @@ def api_new_meeting_registration(request):
             object, created = MeetingRegistration.objects.get_or_create(meeting_id=meeting.pk, email=email)
             try:
                 # Set attributes not already in the object
-                for key in set(data.keys())-set(['apikey', 'meeting', 'email']):
-                    setattr(object, key, data.get(key))
+                for key in set(data.keys())-set(['attended', 'apikey', 'meeting', 'email',]):
+                    new = data.get(key)
+                    cur = getattr(object, key, None)
+                    if key in ['reg_type', 'ticket_type', ] and cur and not new in cur:
+                        # Special handling for multiple reg types
+                        setattr(object, key, cur+' '+new)
+                    else:
+                        setattr(object, key, new)
                 person = Person.objects.filter(email__address=email)
                 if person.exists():
                     object.person = person.first()

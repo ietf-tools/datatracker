@@ -210,7 +210,7 @@ class CustomApiTests(TestCase):
                 'last_name': 'Bar',
                 'meeting': meeting.number,
                 'reg_type': 'hackathon',
-                'ticket_type': 'regular',
+                'ticket_type': '',
             }
         url = urlreverse('ietf.api.views.api_new_meeting_registration')
         r = self.client.post(url, reg)
@@ -248,6 +248,18 @@ class CustomApiTests(TestCase):
         #
         # There should be no new outgoing mail
         self.assertEqual(len(outbox), 1)
+        #
+        # Test combination of reg types
+        reg['reg_type'] = 'remote'
+        reg['ticket_type'] = 'full_week_pass'
+        r = self.client.post(url, reg)
+        self.assertContains(r, "Accepted, Updated registration", status_code=202)
+        obj = MeetingRegistration.objects.get(email=reg['email'], meeting__number=reg['meeting'])
+        self.assertIn('hackathon', set(obj.reg_type.split()))
+        self.assertIn('remote', set(obj.reg_type.split()))
+        self.assertIn('full_week_pass', set(obj.ticket_type.split()))
+        self.assertEqual(len(outbox), 1)
+        #
         # Test incomplete POST
         drop_fields = ['affiliation', 'first_name', 'reg_type']
         for field in drop_fields:
