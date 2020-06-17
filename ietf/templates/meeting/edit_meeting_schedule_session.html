@@ -4,8 +4,10 @@
   </div>
 
   <div>
+    <span class="requested-duration">{{ session.requested_duration_in_hours|floatformat }}h</span>
+
     {% if session.attendees != None %}
-      <span class="attendees">{{ session.attendees }}</span>
+      <span class="attendees">&middot; {{ session.attendees }}</span>
     {% endif %}
 
     {% if session.comments %}
@@ -23,12 +25,15 @@
 
   {# the JS uses this to display session information in the bottom panel #}
   <div class="session-info">
-    <label>
-      {{ session.scheduling_label }}
-      &middot; {{ session.requested_duration_in_hours }} h
-      {% if session.group %}&middot; {% if session.group.is_bof %}BoF{% else %}{{ session.group.type.name }}{% endif %}{% endif %}
-      {% if session.attendees != None %}&middot; {{ session.attendees }} <i class="fa fa-user-o"></i>{% endif %}
-    </label>
+    <div>
+      <strong>
+        <span class="time pull-right"></span>
+        {{ session.scheduling_label }}
+        &middot; {{ session.requested_duration_in_hours }}h
+        {% if session.group %}&middot; {% if session.group.is_bof %}BoF{% else %}{{ session.group.type.name }}{% endif %}{% endif %}
+        {% if session.attendees != None %}&middot; {{ session.attendees }} <i class="fa fa-user-o"></i>{% endif %}
+      </strong>
+    </div>
 
     {% if session.group %}
       <div>
@@ -42,7 +47,7 @@
 
     {% if session.requested_by_person %}
       <div>
-        <i class="fa fa-user-circle-o"></i> {{ session.requested_by_person.plain_name }} {% if session.requested_time %}({{ session.requested_time|date:"Y-m-d" }}){% endif %}
+        <i title="Requested by" class="fa fa-user-circle-o"></i> {{ session.requested_by_person.plain_name }} {% if session.requested_time %}({{ session.requested_time|date:"Y-m-d" }}){% endif %}
       </div>
     {% endif %}
 

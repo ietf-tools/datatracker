@@ -10,6 +10,7 @@ jQuery(document).ready(function () {
 
     let sessions = content.find(".session");
     let timeslots = content.find(".timeslot");
+    let days = content.find(".day-flow .day");
 
     // hack to work around lack of position sticky support in old browsers, see https://caniuse.com/#feat=css-sticky
     if (content.find(".scheduling-panel").css("position") != "sticky") {
@@ -43,7 +44,11 @@ jQuery(document).ready(function () {
             sessions.not(element).removeClass("selected");
             jQuery(element).addClass("selected");
             showConstraintHints(element.id.slice("session".length));
-            content.find(".scheduling-panel .session-info-container").html(jQuery(element).find(".session-info").html()).find('[data-original-title]').tooltip();
+            let sessionInfoContainer = content.find(".scheduling-panel .session-info-container");
+            sessionInfoContainer.html(jQuery(element).find(".session-info").html());
+            sessionInfoContainer.find('[data-original-title]').tooltip();
+            let time = jQuery(element).closest(".timeslot").find(".time-label").text() || "";
+            sessionInfoContainer.find('.time').text(time.replace(new RegExp(" ", "g"), ""));
         }
         else {
             sessions.removeClass("selected");
@@ -107,13 +112,13 @@ jQuery(document).ready(function () {
         sessions.prop('draggable', true);
 
         // dropping
-        let dropElements = content.find(".timeslot,.unassigned-sessions");
+        let dropElements = content.find(".timeslot .drop-target,.unassigned-sessions .drop-target");
         dropElements.on('dragenter', function (event) {
             if ((event.originalEvent.dataTransfer.getData("text/plain") || "").slice(0, "session".length) != "session")
                 return;
 
             event.preventDefault(); // default action is signalling that this is not a valid target
-            jQuery(this).addClass("dropping");
+            jQuery(this).parent().addClass("dropping");
         });
 
         dropElements.on('dragover', function (event) {
@@ -128,11 +133,11 @@ jQuery(document).ready(function () {
             if (event.originalEvent.currentTarget.contains(event.originalEvent.relatedTarget))
                 return;
 
-            jQuery(this).removeClass("dropping");
+            jQuery(this).parent().removeClass("dropping");
         });
 
         dropElements.on('drop', function (event) {
-            jQuery(this).removeClass("dropping");
+            jQuery(this).parent().removeClass("dropping");
 
             let sessionId = event.originalEvent.dataTransfer.getData("text/plain");
             if ((event.originalEvent.dataTransfer.getData("text/plain") || "").slice(0, "session".length) != "session")
@@ -148,6 +153,7 @@ jQuery(document).ready(function () {
                 return;
 
             let dropElement = jQuery(this);
+            let dropParent = dropElement.parent();
 
             function done(response) {
                 if (response != "OK") {
@@ -157,11 +163,11 @@ jQuery(document).ready(function () {
 
                 dropElement.append(sessionElement); // move element
                 updateCurrentSchedulingHints();
-                if (dropElement.hasClass("unassigned-sessions"))
+                if (dropParent.hasClass("unassigned-sessions"))
                     sortUnassigned();
             }
 
-            if (dropElement.hasClass("unassigned-sessions")) {
+            if (dropParent.hasClass("unassigned-sessions")) {
                 jQuery.ajax({
                     url: ietfData.urls.assign,
                     method: "post",
@@ -179,7 +185,7 @@ jQuery(document).ready(function () {
                     data: {
                         action: "assign",
                         session: sessionId.slice("session".length),
-                        timeslot: dropElement.attr("id").slice("timeslot".length)
+                        timeslot: dropParent.attr("id").slice("timeslot".length)
                     },
                     timeout: 5 * 1000
                 }).fail(failHandler).done(done);
@@ -348,7 +354,7 @@ jQuery(document).ready(function () {
 
     sortUnassigned();
 
-    // toggling of sessions
+    // toggling visible sessions by session parents
     let sessionParentInputs = content.find(".session-parent-toggles input");
 
     function updateSessionParentToggling() {
@@ -362,7 +368,25 @@ jQuery(document).ready(function () {
     }
 
     sessionParentInputs.on("click", updateSessionParentToggling);
-
     updateSessionParentToggling();
+
+    // toggling visible timeslots
+    let timeslotGroupInputs = content.find("#timeslot-group-toggles-modal .modal-body input");
+    function updateTimeslotGroupToggling() {
+        let checked = [];
+        timeslotGroupInputs.filter(":checked").each(function () {
+            checked.push("." + this.value);
+        });
+
+        timeslots.filter(checked.join(",")).removeClass("hidden");
+        timeslots.not(checked.join(",")).addClass("hidden");
+
+        days.each(function () {
+            jQuery(this).toggle(jQuery(this).find(".timeslot:not(.hidden)").length > 0);
+        });
+    }
+
+    timeslotGroupInputs.on("click change", updateTimeslotGroupToggling);
+    updateTimeslotGroupToggling();
 });
 

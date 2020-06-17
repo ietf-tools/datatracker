@@ -1022,81 +1022,66 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 }
 
 .edit-meeting-schedule .edit-grid .day {
-  margin-right: 2.5em;
+  margin-left: 1em;
   margin-bottom: 2em;
+}
+
+.edit-meeting-schedule .edit-grid .room-label-column .day {
+  margin-left: 0;
 }
 
 .edit-meeting-schedule .edit-grid .day-label {
   height: 3em;
-  border-bottom: 2px solid transparent;
 }
 
 .edit-meeting-schedule .edit-grid .day-flow {
   margin-left: 8em;
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: flex-start;
 }
 
-@media only screen and (max-width: 120em) {
-  /* if there's only room for two days, it looks a bit odd with space-between */
-  .edit-meeting-schedule .edit-grid .day-flow {
-    justify-content: flex-start;
-  }
-}
-
-.edit-meeting-schedule .edit-grid .day-flow .day-label {
-  border-bottom: 2px solid #eee;
-}
-
-.edit-meeting-schedule .edit-grid .timeline {
+.edit-meeting-schedule .edit-grid .timeslots {
   position: relative;
-  height: 1.6em;
+  height: 4.5em;
+  padding-bottom: 0.15em;
 }
 
-.edit-meeting-schedule .edit-grid .timeline > div {
-  position: absolute;
-}
-
-.edit-meeting-schedule .edit-grid .timeline.timeslots {
-  height: 3.3em;
-}
-
-.edit-meeting-schedule .edit-grid .timeline .time-label {
-  font-size: smaller;
-  border-left: 2px solid #eee;
-  border-right: 2px solid #eee;
-  padding: 0 0.2em;
-  height: 1.3em;
-}
-
-.edit-meeting-schedule .edit-grid .timeline .time-label.text-left {
-  border-right: none;
-}
-
-.edit-meeting-schedule .edit-grid .timeline .time-label.text-right {
-  border-left: none;
-}
-
-.edit-meeting-schedule .timeslot {
-  display: flex;
-  flex-direction: row;
-  background-color: #eee;
+.edit-meeting-schedule .edit-grid .timeslot {
+  position: relative;
+  display: inline-block;
+  background-color: #f4f4f4;
   height: 100%;
-  border-bottom: 0.15em solid #fff;
   overflow: hidden;
 }
 
-.edit-meeting-schedule .timeslot.dropping {
+.edit-meeting-schedule .edit-grid .timeslot .time-label {
+  display: flex;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+}
+
+.edit-meeting-schedule .edit-grid .timeslot .drop-target {
+  position: relative; /* this is merely to make sure we are positioned above the time labels */
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+}
+
+.edit-meeting-schedule .edit-grid .timeslot.dropping {
   background-color: #ccc;
   transition: background-color 0.2s;
 }
 
-.edit-meeting-schedule .timeslot.overfull {
+.edit-meeting-schedule .edit-grid .timeslot.overfull {
   border-right: 2px dashed #fff; /* cut-off illusion */
 }
 
-.edit-meeting-schedule .timeslot.would-violate-hint {
+.edit-meeting-schedule .edit-grid .timeslot.would-violate-hint {
   background-color: #ffe0e0;
 }
 
@@ -1111,7 +1096,6 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 
 .edit-meeting-schedule .formatted-constraints .encircled {
   font-size: smaller;
-  cursor: help;
 }
 
 /* sessions */
@@ -1139,13 +1123,18 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 }
 
 .edit-meeting-schedule .session.dragging {
-  opacity: 0.3;
+  opacity: 0.1;
   transition: opacity 0.4s;
 }
 
 .edit-meeting-schedule .timeslot.overfull .session {
   border-radius: 0.4em 0 0 0.4em; /* remove bottom rounding to illude to being cut off */
   margin-right: 0;
+}
+
+.edit-meeting-schedule .edit-grid, .edit-meeting-schedule .session {
+  font-family: arial, helvetica, sans-serif;
+  font-size: 11px;
 }
 
 .edit-meeting-schedule .session .session-label {
@@ -1208,6 +1197,7 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   left: 0;
   width: 100%;
   border-top: 0.2em solid #ccc;
+  margin-bottom: 2em;
   background-color: #fff;
   opacity: 0.95;
 }
@@ -1217,19 +1207,22 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 }
 
 .edit-meeting-schedule .unassigned-sessions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
   margin-top: 0.5em;
   min-height: 4em;
   max-height: 13em;
   overflow-y: auto;
-  background-color: #eee;
+  background-color: #f4f4f4;
 }
 
 .edit-meeting-schedule .unassigned-sessions.dropping {
   background-color: #e5e5e5;
   transition: background-color 0.2s;
+}
+
+.edit-meeting-schedule .unassigned-sessions .drop-target {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
 }
 
 .edit-meeting-schedule .scheduling-panel .preferences {
@@ -1243,6 +1236,21 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 .edit-meeting-schedule .sort-unassigned select {
   width: auto;
   display: inline-block;
+}
+
+.edit-meeting-schedule #timeslot-group-toggles-modal .modal-body {
+  /*column-count: 3;*/
+  display: flex;
+  flex-flow: row wrap;
+}
+
+.edit-meeting-schedule #timeslot-group-toggles-modal .modal-body > * {
+  margin-right: 1.5em;
+}
+
+.edit-meeting-schedule #timeslot-group-toggles-modal .modal-body label {
+  display: block;
+  font-weight: normal;
 }
 
 .edit-meeting-schedule .session-parent-toggles {
@@ -1259,8 +1267,9 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 
 .edit-meeting-schedule .scheduling-panel .session-info-container {
   padding-left: 0.5em;
-  flex: 0 0 20em;
-  max-height: 15em;
+  flex: 0 0 25em;
+  max-height: 25em;
+  font-size: 14px;
   overflow-y: auto;
 }
 
