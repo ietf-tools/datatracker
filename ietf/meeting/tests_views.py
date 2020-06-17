@@ -970,7 +970,7 @@ class EditTests(TestCase):
             name=ConstraintName.objects.get(slug="conflict"),
         )
 
-        p = Person.objects.all().first()
+        p = Person.objects.order_by('pk')[1]
 
         Constraint.objects.create(
             meeting=meeting,
@@ -1003,7 +1003,7 @@ class EditTests(TestCase):
         for s in [s1, s2]:
             e = q("#session{}".format(s.pk))
 
-            # info in the movable entity
+            # info in the item representing the session that can be moved around
             self.assertIn(s.group.acronym, e.find(".session-label").text())
             if s.comments:
                 self.assertTrue(e.find(".comments"))
@@ -1011,8 +1011,16 @@ class EditTests(TestCase):
                 self.assertIn(str(s.attendees), e.find(".attendees").text())
             self.assertTrue(e.hasClass("parent-{}".format(s.group.parent.acronym)))
 
+            constraints = e.find(".constraints > span")
+            s_other = s2 if s == s1 else s1
+            self.assertEqual(len(constraints), 2)
+            self.assertEqual(constraints.eq(0).attr("data-sessions"), str(s_other.pk))
+            self.assertEqual(constraints.eq(1).attr("data-sessions"), str(s_other.pk))
+            self.assertEqual(constraints.find(".encircled").text(), "1" if s_other == s2 else "-1")
+            self.assertEqual(constraints.find(".fa-user-o").parent().text(), "1") # 1 person in the constraint
+
             # session info for the panel
-            self.assertIn(str(s.requested_duration.total_seconds() / 60.0 / 60), e.find(".session-info label").text())
+            self.assertIn(str(round(s.requested_duration.total_seconds() / 60.0 / 60, 1)), e.find(".session-info .title").text())
 
             event = SchedulingEvent.objects.filter(session=s).order_by("id").first()
             if event:
@@ -1021,14 +1029,12 @@ class EditTests(TestCase):
             if s.comments:
                 self.assertIn(s.comments, e.find(".comments").text())
 
-            # constraints
-            constraints = e.find(".constraints > span")
-            s_other = s2 if s == s1 else s1
-            self.assertEqual(len(constraints), 2)
-            self.assertEqual(constraints.eq(0).attr("data-sessions"), str(s_other.pk))
-            self.assertEqual(constraints.eq(1).attr("data-sessions"), str(s_other.pk))
-            self.assertEqual(constraints.find(".encircled").text(), "1")
-            self.assertEqual(constraints.find(".fa-user-o").parent().text(), "1") # 1 person in the constraint
+            formatted_constraints = e.find(".session-info .formatted-constraints > *")
+            if s == s1:
+                self.assertIn(s_other.group.acronym, formatted_constraints.eq(0).html())
+                self.assertIn(p.name, formatted_constraints.eq(1).html())
+            elif s == s2:
+                self.assertIn(p.name, formatted_constraints.eq(0).html())
 
         self.assertTrue(q("em:contains(\"You can't edit this schedule\")"))
 

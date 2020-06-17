@@ -5589,9 +5589,9 @@
   {
     "fields": {
       "desc": "",
-      "editor_label": "(person)",
+      "editor_label": "(person){count}",
       "name": "Person must be present",
-      "order": 0,
+      "order": 4,
       "penalty": 200000,
       "used": true
     },
@@ -5603,7 +5603,7 @@
       "desc": "",
       "editor_label": "(2)",
       "name": "Conflicts with (secondary)",
-      "order": 0,
+      "order": 2,
       "penalty": 10000,
       "used": true
     },
@@ -5615,7 +5615,7 @@
       "desc": "",
       "editor_label": "(3)",
       "name": "Conflicts with (tertiary)",
-      "order": 0,
+      "order": 3,
       "penalty": 1000,
       "used": true
     },
@@ -5627,7 +5627,7 @@
       "desc": "",
       "editor_label": "(1)",
       "name": "Conflicts with",
-      "order": 0,
+      "order": 1,
       "penalty": 100000,
       "used": true
     },
@@ -5639,7 +5639,7 @@
       "desc": "",
       "editor_label": "time_relation",
       "name": "Preference for time between sessions",
-      "order": 0,
+      "order": 6,
       "penalty": 1000,
       "used": true
     },
@@ -5651,7 +5651,7 @@
       "desc": "",
       "editor_label": "timerange",
       "name": "Can't meet within timerange",
-      "order": 0,
+      "order": 5,
       "penalty": 100000,
       "used": true
     },
@@ -5663,7 +5663,7 @@
       "desc": "",
       "editor_label": "wg_adjacent",
       "name": "Request for adjacent scheduling with another WG",
-      "order": 0,
+      "order": 7,
       "penalty": 10000,
       "used": true
     },

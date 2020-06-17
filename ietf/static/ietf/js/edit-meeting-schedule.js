@@ -268,7 +268,7 @@ jQuery(document).ready(function () {
 
     function updateAttendeesViolations() {
         sessions.each(function () {
-            let roomCapacity = jQuery(this).closest(".timeline").data("roomcapacity");
+            let roomCapacity = jQuery(this).closest(".timeslots").data("roomcapacity");
             if (roomCapacity && this.dataset.attendees)
                 jQuery(this).toggleClass("too-many-attendees", +this.dataset.attendees > +roomCapacity);
         });
@@ -341,7 +341,7 @@ jQuery(document).ready(function () {
         else if (sortBy == "comments")
             keyFunctions = [extractComments, extractParent, extractName, extractDuration];
 
-        let unassignedSessionsContainer = content.find(".unassigned-sessions");
+        let unassignedSessionsContainer = content.find(".unassigned-sessions .drop-target");
 
         let sortedSessions = sortArrayWithKeyFunctions(unassignedSessionsContainer.children(".session").toArray(), keyFunctions);
         for (let i = 0; i < sortedSessions.length; ++i)
