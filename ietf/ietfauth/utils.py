@@ -24,6 +24,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.group.models import Role, GroupFeatures
 from ietf.person.models import Person
+from ietf.utils.log import log
 
 def user_is_person(user, person):
     """Test whether user is associated with person."""
@@ -249,10 +250,19 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
         meeting = get_current_ietf_meeting()
         person = self.user.person
         reg = MeetingRegistration.objects.filter(person=person, meeting=meeting).first()
-        today = datetime.date.today()
+        debug.show('reg')
+        if not reg:
+            # No person match; try to match by email address.  They could
+            # have registered with a new address and added it to the account
+            # later.
+            email_list = person.email_set.values_list('address')
+            reg = MeetingRegistration.objects.filter(email__in=email_list, meeting=meeting).first()
+            reg.person = person
+            reg.save()
         info = {}
         if reg:
             # maybe register attendence if logged in to follow a meeting
+            today = datetime.date.today()
             if meeting.date <= today <= meeting.end_date():
                 client = ClientRecord.objects.get(client_id=self.client.client_id)
                 if client.name == 'Meetecho' and not reg.attended:
