@@ -62,11 +62,10 @@ def log(msg, e=None):
         pass
     _logfunc = logfunc
     if settings.SERVER_MODE == 'test':
-## Comment in when debugging for instance test smtp server failures:
-#        if e:
-#            _logfunc = debug.say
-#            _flushfunc = sys.stdout.flush   # pyflakes:ignore (intentional redefinition)
-#        else:
+        if settings.show_logging:
+            _logfunc = debug.say
+            _flushfunc = sys.stdout.flush   # pyflakes:ignore (intentional redefinition)
+        else:
             return
     elif settings.DEBUG == True:
         _logfunc = debug.say

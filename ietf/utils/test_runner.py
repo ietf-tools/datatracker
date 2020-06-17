@@ -516,13 +516,18 @@ class IetfTestRunner(DiscoverRunner):
         parser.add_argument('--permit-mixed-migrations',
             action='store_true', default=False,
             help='Permit interleaved unreleased migrations')
+        parser.add_argument('--show-logging',
+            action='store_true', default=False,
+            help='Show logging output going to LOG_USER in production mode')
 
-    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, **kwargs):
+    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, **kwargs):
         #
         self.check_coverage = not skip_coverage
         self.save_version_coverage = save_version_coverage
         self.html_report = html_report
         self.permit_mixed_migrations = permit_mixed_migrations
+        self.show_logging = show_logging
+        settings.show_logging = show_logging
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
         self.coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_MASTER_FILE)
