@@ -1977,6 +1977,10 @@ class InterimTests(TestCase):
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+        start_time = meeting.session_set.first().official_timeslotassignment().timeslot.time.strftime('%H:%M')
+        utc_start_time = meeting.session_set.first().official_timeslotassignment().timeslot.utc_start_time().strftime('%H:%M')
+        self.assertIn(start_time, unicontent(r))
+        self.assertIn(utc_start_time, unicontent(r))
 
     def test_interim_request_details_announcement(self):
         '''Test access to Announce / Skip Announce features'''

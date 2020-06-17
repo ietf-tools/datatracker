@@ -31,7 +31,7 @@
       <dt>Date</dt>
       <dd>{{ assignment.timeslot.time|date:"Y-m-d" }}
       <dt>Start Time</dt>
-      <dd>{{ assignment.timeslot.time|date:"H:i" }}
+      <dd>{{ assignment.timeslot.time|date:"H:i" }} {% if meeting.time_zone != 'UTC' %}( {{ assignment.timeslot.utc_start_time|date:"H:i"}} UTC ){% endif %}
       <dt>Duration</dt>
       <dd>{{ assignment.session.requested_duration|format_timedelta }}
       <dt>Remote Instructions</dt>
