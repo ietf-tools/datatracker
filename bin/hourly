@@ -72,8 +72,8 @@ mv $TMPFILE6 $DOWNLOAD/id-abstract.txt
 mv $TMPFILE7 $ID/all_id2.txt
 
 CHARTER=/a/www/ietf-ftp/charter
-wget https://datatracker.ietf.org/wg/1wg-charters-by-acronym.txt -O $CHARTER/1wg-charters-by-acronym.txt
-wget https://datatracker.ietf.org/wg/1wg-charters.txt            -O $CHARTER/1wg-charters.txt
+wget -q https://datatracker.ietf.org/wg/1wg-charters-by-acronym.txt -O $CHARTER/1wg-charters-by-acronym.txt
+wget -q https://datatracker.ietf.org/wg/1wg-charters.txt            -O $CHARTER/1wg-charters.txt
 
 # Create and update group wikis
 #$DTDIR/ietf/manage.py create_group_wikis
