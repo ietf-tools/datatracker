@@ -9,6 +9,7 @@ import os
 import random
 import shutil
 
+from functools import lru_cache
 from unidecode import unidecode
 
 from django.conf import settings
@@ -24,14 +25,18 @@ from ietf.person.name import normalize_name, unidecode_name
 
 fake = faker.Factory.create()
 
-def random_faker():
+@lru_cache(maxsize=1)
+def acceptable_fakers():
     # The transliteration of some arabic and devanagari names introduces
     # non-alphabetic characgters that don't work with the draft author
     # extraction code, and also don't seem to match the way people with arabic
     # names romanize arabic names.  Exlude those locales from name generation
     # in order to avoid test failures.
     locales = set( [ l for l in faker.config.AVAILABLE_LOCALES if not (l.startswith('ar_') or l.startswith('sg_')) ] )
-    return faker.Faker(random.sample(locales, 1)[0])
+    return [faker.Faker(locale) for locale in locales]
+
+def random_faker():
+    return random.sample(acceptable_fakers(), 1)[0]
 
 class UserFactory(factory.DjangoModelFactory):
     class Meta:
