@@ -10,11 +10,13 @@ import debug                            # pyflakes:ignore
 
 
 from ietf.doc.factories import DocumentFactory
-from ietf.group.models import Group
+from ietf.group.factories import GroupFactory, RoleFactory
+from ietf.group.models import Group 
 from ietf.meeting.models import (Meeting, Room, TimeSlot, Session, Schedule, SchedTimeSessAssignment,
     ResourceAssociation, SessionPresentation, UrlResource, SchedulingEvent)
 from ietf.meeting.helpers import create_interim_meeting
 from ietf.name.models import RoomResourceName
+from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
 
@@ -67,7 +69,7 @@ def make_interim_meeting(group,date,status='sched'):
     #
     return meeting
 
-def make_meeting_test_data(meeting=None):
+def make_meeting_test_data(meeting=None, create_interims=False):
     if not Group.objects.filter(acronym='mars'):
         make_test_data()
     system_person = Person.objects.get(name="(System)")
@@ -190,12 +192,31 @@ def make_meeting_test_data(meeting=None):
     date2 = datetime.date.today() + datetime.timedelta(days=1000)
     ames = Group.objects.get(acronym="ames")
 
+    if create_interims:
+        make_interim_meeting(group=mars,date=date,status='sched')
+        make_interim_meeting(group=mars,date=date2,status='apprw')
+        make_interim_meeting(group=ames,date=date,status='canceled')
+        make_interim_meeting(group=ames,date=date2,status='apprw')
+
+    return meeting
+
+def make_interim_test_data():
+    date = datetime.date.today() + datetime.timedelta(days=365)
+    date2 = datetime.date.today() + datetime.timedelta(days=1000)
+    PersonFactory(user__username='plain')
+    area = GroupFactory(type_id='area')
+    ad = Person.objects.get(user__username='ad')
+    RoleFactory(group=area,person=ad,name_id='ad')
+    mars = GroupFactory(acronym='mars',parent=area,name='Martian Special Interest Group')
+    ames = GroupFactory(acronym='ames',parent=area)
+    RoleFactory(group=mars,person__user__username='marschairman',name_id='chair')
+    RoleFactory(group=ames,person__user__username='ameschairman',name_id='chair')
+
     make_interim_meeting(group=mars,date=date,status='sched')
     make_interim_meeting(group=mars,date=date2,status='apprw')
     make_interim_meeting(group=ames,date=date,status='canceled')
     make_interim_meeting(group=ames,date=date2,status='apprw')
 
-    return meeting
-
+    return
 
 
