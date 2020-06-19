@@ -89,15 +89,23 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
             type_id='regular',
             location=room2,
             duration=datetime.timedelta(hours=2),
-            time=slot1.time - datetime.timedelta(seconds=10 * 60),
+            time=slot1.time - datetime.timedelta(minutes=10),
         )
 
+        slot3 = TimeSlot.objects.create(
+            meeting=meeting,
+            type_id='regular',
+            location=room2,
+            duration=datetime.timedelta(hours=2),
+            time=max(slot1.end_time(), slot2.end_time()) + datetime.timedelta(minutes=10),
+        )
+        
         s1, s2 = Session.objects.filter(meeting=meeting, type='regular')
         s2.requested_duration = slot2.duration + datetime.timedelta(minutes=10)
         s2.save()
         SchedTimeSessAssignment.objects.filter(session=s1).delete()
 
-        s2_b = Session.objects.create(meeting=meeting, group=s2.group, attendees=10, requested_duration=datetime.timedelta(minutes=60), type_id='regular')
+        s2b = Session.objects.create(meeting=meeting, group=s2.group, attendees=10, requested_duration=datetime.timedelta(minutes=60), type_id='regular')
 
         Constraint.objects.create(
             meeting=meeting,
@@ -124,7 +132,7 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
         # deselect
         self.driver.find_element_by_css_selector('.scheduling-panel').click()
 
-        self.assertEqual(self.driver.find_elements_by_css_selector('.session-info-container .title'), [])
+        self.assertEqual(session_info_container.find_elements_by_css_selector(".title"), [])
 
         # unschedule
 
@@ -150,19 +158,19 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
         self.assertEqual(list(SchedTimeSessAssignment.objects.filter(session=s2, schedule=schedule)), [])
 
         # sorting unassigned
-        sorted_pks = [s.pk for s in sorted([s1, s2, s2_b], key=lambda s: (s.group.acronym, s.requested_duration, s.pk))]
+        sorted_pks = [s.pk for s in sorted([s1, s2, s2b], key=lambda s: (s.group.acronym, s.requested_duration, s.pk))]
         self.driver.find_element_by_css_selector('[name=sort_unassigned] option[value=name]').click()
         self.assertTrue(self.driver.find_element_by_css_selector('.unassigned-sessions .drop-target #session{} + #session{} + #session{}'.format(*sorted_pks)))
 
-        sorted_pks = [s.pk for s in sorted([s1, s2, s2_b], key=lambda s: (s.group.parent.acronym, s.group.acronym, s.requested_duration, s.pk))]
+        sorted_pks = [s.pk for s in sorted([s1, s2, s2b], key=lambda s: (s.group.parent.acronym, s.group.acronym, s.requested_duration, s.pk))]
         self.driver.find_element_by_css_selector('[name=sort_unassigned] option[value=parent]').click()
         self.assertTrue(self.driver.find_element_by_css_selector('.unassigned-sessions .drop-target #session{} + #session{}'.format(*sorted_pks)))
         
-        sorted_pks = [s.pk for s in sorted([s1, s2, s2_b], key=lambda s: (s.requested_duration, s.group.parent.acronym, s.group.acronym, s.pk))]
+        sorted_pks = [s.pk for s in sorted([s1, s2, s2b], key=lambda s: (s.requested_duration, s.group.parent.acronym, s.group.acronym, s.pk))]
         self.driver.find_element_by_css_selector('[name=sort_unassigned] option[value=duration]').click()
         self.assertTrue(self.driver.find_element_by_css_selector('.unassigned-sessions .drop-target #session{} + #session{}'.format(*sorted_pks)))
         
-        sorted_pks = [s.pk for s in sorted([s1, s2, s2_b], key=lambda s: (int(bool(s.comments)), s.group.parent.acronym, s.group.acronym, s.requested_duration, s.pk))]
+        sorted_pks = [s.pk for s in sorted([s1, s2, s2b], key=lambda s: (int(bool(s.comments)), s.group.parent.acronym, s.group.acronym, s.requested_duration, s.pk))]
         self.driver.find_element_by_css_selector('[name=sort_unassigned] option[value=comments]').click()
         self.assertTrue(self.driver.find_element_by_css_selector('.unassigned-sessions .drop-target #session{} + #session{}'.format(*sorted_pks)))
 
@@ -173,6 +181,15 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
 
         assignment = SchedTimeSessAssignment.objects.get(session=s2, schedule=schedule)
         self.assertEqual(assignment.timeslot, slot1)
+
+        # timeslot constraint hints when selected
+        s1_element = self.driver.find_element_by_css_selector('#session{}'.format(s1.pk))
+        s1_element.click()
+
+        # violated due to constraints
+        self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{}.would-violate-hint'.format(slot1.pk)))
+        # violated due to missing capacity
+        self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{}.would-violate-hint'.format(slot3.pk)))
 
         # reschedule
         self.driver.execute_script("jQuery('#session{}').simulateDragDrop({{dropTarget: '#timeslot{} .drop-target'}});".format(s2.pk, slot2.pk))
@@ -189,9 +206,7 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
         self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{}.overfull'.format(slot2.pk)))
 
         # constraint hints
-        s1_element = self.driver.find_element_by_css_selector('#session{}'.format(s1.pk))
         s1_element.click()
-
         constraint_element = s2_element.find_element_by_css_selector(".constraints span[data-sessions=\"{}\"].would-violate-hint".format(s1.pk))
         self.assertTrue(constraint_element.is_displayed())
 

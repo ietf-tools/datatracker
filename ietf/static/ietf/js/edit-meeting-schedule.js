@@ -43,7 +43,7 @@ jQuery(document).ready(function () {
             sessions.not(element).removeClass("selected");
             jQuery(element).addClass("selected");
 
-            showConstraintHints(element.id.slice("session".length));
+            showConstraintHints(element);
 
             let sessionInfoContainer = content.find(".scheduling-panel .session-info-container");
             sessionInfoContainer.html(jQuery(element).find(".session-info").html());
@@ -68,11 +68,11 @@ jQuery(document).ready(function () {
         }
     }
 
-    function showConstraintHints(sessionIdStr) {
-        let intervals = [];
-
+    function showConstraintHints(selectedSession) {
+        let sessionId = selectedSession ? selectedSession.id.slice("session".length) : null;
+        // hints on the sessions
         sessions.find(".constraints > span").each(function () {
-            if (!sessionIdStr) {
+            if (!sessionId) {
                 jQuery(this).removeClass("would-violate-hint");
                 return;
             }
@@ -81,20 +81,31 @@ jQuery(document).ready(function () {
             if (!sessionIds)
                 return;
 
-            let wouldViolate = sessionIds.split(",").indexOf(sessionIdStr) != -1;
+            let wouldViolate = sessionIds.split(",").indexOf(sessionId) != -1;
             jQuery(this).toggleClass("would-violate-hint", wouldViolate);
-
-            if (wouldViolate) {
-                let timeslot = jQuery(this).closest(".timeslot");
-                if (timeslot.length > 0)
-                    intervals.push([timeslot.data("start"), timeslot.data("end")]);
-            }
         });
 
+        // hints on timeslots
         timeslots.removeClass("would-violate-hint");
-        let overlappingTimeslots = findTimeslotsOverlapping(intervals);
-        for (let i = 0; i < overlappingTimeslots.length; ++i)
-            overlappingTimeslots[i].addClass("would-violate-hint");
+        if (selectedSession) {
+            let intervals = [];
+            timeslots.filter(":has(.session .constraints > span.would-violate-hint)").each(function () {
+                intervals.push([this.dataset.start, this.dataset.end]);
+            });
+
+            let overlappingTimeslots = findTimeslotsOverlapping(intervals);
+            for (let i = 0; i < overlappingTimeslots.length; ++i)
+                overlappingTimeslots[i].addClass("would-violate-hint");
+
+            // check room sizes
+            let attendees = +selectedSession.dataset.attendees;
+            if (attendees) {
+                timeslots.not(".would-violate-hint").each(function () {
+                    if (attendees > +jQuery(this).closest(".timeslots").data("roomcapacity"))
+                        jQuery(this).addClass("would-violate-hint");
+                });
+            }
+        }
     }
 
     content.on("click", function (event) {

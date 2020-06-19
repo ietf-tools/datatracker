@@ -1276,7 +1276,7 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 .edit-meeting-schedule .scheduling-panel .session-info-container {
   padding-left: 0.5em;
   flex: 0 0 25em;
-  max-height: 25em;
+  height: 20em;
   font-size: 14px;
   overflow-y: auto;
 }
