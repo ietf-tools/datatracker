@@ -82,7 +82,7 @@
               <div class="timeslots" data-roomcapacity="{{ room.capacity }}">
 
                 {% for t in timeslots %}
-                  <div id="timeslot{{ t.pk }}" class="timeslot {{ t.start_end_group }}" data-start="{{ t.time.isoformat }}" data-end="{{ t.end_time.isoformat }}" data-duration="{{ t.duration.total_seconds }}" style="width: {{ t.layout_width }}rem;">
+                  <div id="timeslot{{ t.pk }}" class="timeslot {{ t.start_end_group }}" data-start="{{ t.time.isoformat }}" data-end="{{ t.end_time.isoformat }}" data-duration="{{ t.duration.total_seconds }}" data-scheduledatlabel="{{ t.time|date:"l G:i" }}-{{ t.end_time|date:"G:i" }}" style="width: {{ t.layout_width }}rem;">
                     <div class="time-label">
                       {{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}
                     </div>

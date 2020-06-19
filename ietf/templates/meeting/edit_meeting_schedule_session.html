@@ -30,8 +30,12 @@
         <span class="time pull-right"></span>
         {{ session.scheduling_label }}
         &middot; {{ session.requested_duration_in_hours }}h
-        {% if session.group %}&middot; {% if session.group.is_bof %}BoF{% else %}{{ session.group.type.name }}{% endif %}{% endif %}
-        {% if session.attendees != None %}&middot; {{ session.attendees }} <i class="fa fa-user-o"></i>{% endif %}
+        {% if session.group %}
+          &middot; {% if session.group.is_bof %}BoF{% else %}{{ session.group.type.name }}{% endif %}
+        {% endif %}
+        {% if session.attendees != None %}
+          &middot; {{ session.attendees }} <i class="fa fa-user-o"></i>
+        {% endif %}
       </strong>
     </div>
 
@@ -75,5 +79,9 @@
         {% endfor %}
       </div>
     {% endif %}
+
+    {% for s in session.other_sessions %}
+      <div class="other-session" data-othersessionid="{{ s.pk }}"><i class="fa fa-calendar"></i> Other session <span class="time" data-scheduled="scheduled: {time}" data-notscheduled="not yet scheduled"></span></div>
+    {% endfor %}
   </div>
 </div>

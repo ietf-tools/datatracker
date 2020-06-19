@@ -36,19 +36,30 @@ jQuery(document).ready(function () {
 
         return res;
     }
-    
 
     // selecting
     function selectSessionElement(element) {
         if (element) {
             sessions.not(element).removeClass("selected");
             jQuery(element).addClass("selected");
+
             showConstraintHints(element.id.slice("session".length));
+
             let sessionInfoContainer = content.find(".scheduling-panel .session-info-container");
             sessionInfoContainer.html(jQuery(element).find(".session-info").html());
-            sessionInfoContainer.find('[data-original-title]').tooltip();
-            let time = jQuery(element).closest(".timeslot").find(".time-label").text() || "";
-            sessionInfoContainer.find('.time').text(time.replace(new RegExp(" ", "g"), ""));
+
+            sessionInfoContainer.find("[data-original-title]").tooltip();
+
+            sessionInfoContainer.find(".time").text(jQuery(element).closest(".timeslot").data('scheduledatlabel'));
+
+            sessionInfoContainer.find(".other-session").each(function () {
+                let scheduledAt = sessions.filter("#session" + this.dataset.othersessionid).closest(".timeslot").data('scheduledatlabel');
+                let timeElement = jQuery(this).find(".time");
+                if (scheduledAt)
+                    timeElement.text(timeElement.data("scheduled").replace("{time}", ));
+                else
+                    timeElement.text(timeElement.data("notscheduled"));
+            });
         }
         else {
             sessions.removeClass("selected");
@@ -87,6 +98,8 @@ jQuery(document).ready(function () {
     }
 
     content.on("click", function (event) {
+        if (jQuery(event.target).is(".session-info-container") || jQuery(event.target).closest(".session-info-container").length > 0)
+            return;
         selectSessionElement(null);
     });
 
@@ -315,6 +328,10 @@ jQuery(document).ready(function () {
     function sortUnassigned() {
         let sortBy = content.find("select[name=sort_unassigned]").val();
 
+        function extractId(e) {
+            return e.id.slice("session".length);
+        }
+
         function extractName(e) {
             return e.querySelector(".session-label").innerHTML;
         }
@@ -333,13 +350,13 @@ jQuery(document).ready(function () {
 
         let keyFunctions = [];
         if (sortBy == "name")
-            keyFunctions = [extractName, extractDuration];
+            keyFunctions = [extractName, extractDuration, extractId];
         else if (sortBy == "parent")
-            keyFunctions = [extractParent, extractName, extractDuration];
+            keyFunctions = [extractParent, extractName, extractDuration, extractId];
         else if (sortBy == "duration")
-            keyFunctions = [extractDuration, extractParent, extractName];
+            keyFunctions = [extractDuration, extractParent, extractName, extractId];
         else if (sortBy == "comments")
-            keyFunctions = [extractComments, extractParent, extractName, extractDuration];
+            keyFunctions = [extractComments, extractParent, extractName, extractDuration, extractId];
 
         let unassignedSessionsContainer = content.find(".unassigned-sessions .drop-target");
 
@@ -388,5 +405,12 @@ jQuery(document).ready(function () {
 
     timeslotGroupInputs.on("click change", updateTimeslotGroupToggling);
     updateTimeslotGroupToggling();
+
+    // session info
+    content.find(".session-info-container").on("mouseover", ".other-session", function (event) {
+        sessions.filter("#session" + this.dataset.othersessionid).addClass("highlight");
+    }).on("mouseleave", ".other-session", function (event) {
+        sessions.filter("#session" + this.dataset.othersessionid).removeClass("highlight");
+    });
 });
 

@@ -466,7 +466,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             meeting=meeting,
             # Restrict graphical scheduling to regular meeting requests (Sessions) for now
             type='regular',
-        ),
+        ).order_by('pk'),
         requested_time=True,
         requested_by=True,
     ).exclude(current_status__in=['notmeet', 'disappr', 'deleted', 'apprw']).prefetch_related(
@@ -603,6 +603,10 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     # constraints
     constraints_for_sessions, formatted_constraints_for_sessions, constraint_names = preprocess_constraints_for_meeting_schedule_editor(meeting, sessions)
 
+    sessions_for_group = defaultdict(list)
+    for s in sessions:
+        sessions_for_group[s.group_id].append(s)
+
     unassigned_sessions = []
     for s in sessions:
         s.requested_by_person = requested_by_lookup.get(s.requested_by)
@@ -639,6 +643,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
         s.constrained_sessions = list(constrained_sessions_grouped_by_label.items())
         s.formatted_constraints = formatted_constraints_for_sessions.get(s.pk, {})
+
+        s.other_sessions = [s_other for s_other in sessions_for_group.get(s.group_id) if s != s_other]
 
         assigned = False
         for a in assignments_by_session.get(s.pk, []):

@@ -1122,6 +1122,14 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   font-weight: bold;
 }
 
+.edit-meeting-schedule .session.highlight {
+  background-color: #f3f3f3;
+}
+
+.edit-meeting-schedule .session.highlight .session-label {
+  font-weight: bold;
+}
+
 .edit-meeting-schedule .session.dragging {
   opacity: 0.1;
   transition: opacity 0.4s;
@@ -1277,3 +1285,7 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   font-style: italic;
 }
 
+.edit-meeting-schedule .scheduling-panel .session-info-container .other-session:hover {
+  cursor: default;
+  background-color: #eee;
+}
