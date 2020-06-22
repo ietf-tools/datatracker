@@ -14,7 +14,7 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.factories import CharterFactory, NewRevisionDocEventFactory
+from ietf.doc.factories import CharterFactory, NewRevisionDocEventFactory, TelechatDocEventFactory
 from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRevisionDocEvent,
     TelechatDocEvent, WriteupDocEvent )
 from ietf.doc.utils_charter import ( next_revision, default_review_text, default_action_text,
@@ -108,6 +108,9 @@ class EditCharterTests(TestCase):
             url = urlreverse('ietf.doc.views_charter.change_state', kwargs=dict(name=charter.name, option=option))
             login_testing_unauthorized(self, "secretary", url)
 
+            if option == 'recharter':
+                TelechatDocEventFactory(doc=charter)
+
             # normal get
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
@@ -119,6 +122,8 @@ class EditCharterTests(TestCase):
             self.assertEqual(r.status_code, 302)
             if option == "abandon":
                 self.assertTrue("abandoned" in charter.latest_event(type="changed_document").desc.lower())
+                telechat_doc_event = charter.latest_event(TelechatDocEvent)
+                self.assertIsNone(telechat_doc_event.telechat_date)
             else:
                 self.assertTrue("state changed" in charter.latest_event(type="changed_state").desc.lower())
 
