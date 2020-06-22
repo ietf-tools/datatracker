@@ -14,6 +14,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.db.models.expressions import Subquery, OuterRef
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
@@ -309,16 +310,14 @@ def data_for_meetings_overview(meetings, interim_status=None):
 
     return meetings
 
-def format_constraint_editor_label(label, inner_fmt="{}"):
-    m = re.match(r'(.*)\(person\)(.*)', label)
-    if m:
-        return format_html("{}<i class=\"fa fa-user-o\"></i>{}", format_html(inner_fmt, m.groups()[0]), m.groups()[1])
+def reverse_editor_label(label):
+    reverse_sign = "-"
 
-    m = re.match(r"\(([^()]+)\)", label)
+    m = re.match(r"(<[^>]+>)([^<].*)", label)
     if m:
-        return format_html("<span class=\"encircled\">{}</span>", format_html(inner_fmt, m.groups()[0]))
-
-    return format_html(inner_fmt, label)
+        return m.groups()[0] + reverse_sign + m.groups()[1]
+    else:
+        return reverse_sign + label
 
 def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
     constraints = Constraint.objects.filter(meeting=meeting).prefetch_related('target', 'person', 'timeranges')
@@ -332,10 +331,10 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
             slug=n.slug + "-reversed",
             name="{} - reversed".format(n.name),
         )
-        reverse_n.formatted_editor_label = format_constraint_editor_label(n.editor_label, inner_fmt="-{}")
+        reverse_n.formatted_editor_label = mark_safe(reverse_editor_label(n.editor_label))
         constraint_names[reverse_n.slug] = reverse_n
 
-        n.formatted_editor_label = format_constraint_editor_label(n.editor_label)
+        n.formatted_editor_label = mark_safe(n.editor_label)
         n.countless_formatted_editor_label = format_html(n.formatted_editor_label, count="") if "{count}" in n.formatted_editor_label else n.formatted_editor_label
 
     # convert human-readable rules in the database to constraints on actual sessions
@@ -362,7 +361,7 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
     seen_forward_constraints_for_groups = set()
 
     for c in constraints:
-        if c.target_id:
+        if c.target_id and c.name_id != 'wg_adjacent':
             add_group_constraints(c.source_id, c.target_id, c.name_id, c.person_id)
             seen_forward_constraints_for_groups.add((c.source_id, c.target_id, c.name_id))
             reverse_constraints.append(c)
@@ -394,5 +393,21 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
         cs = list(cs)
         for s_pk in sessions_for_group.get(group_pk, []):
             formatted_constraints_for_sessions[s_pk][constraint_names[cn_pk]] = [format_constraint(c) for c in cs]
+
+    # it's easier for the rest of the code if we treat
+    # joint_with_groups as a constraint, even if it's not modelled as
+    # one
+    joint_with_groups_constraint_name = ConstraintName(
+        slug='joint_with_groups',
+        name="Joint session with",
+        editor_label="<i class=\"fa fa-clone\"></i>",
+        order=8,
+    )
+    joint_with_groups_constraint_name.formatted_editor_label = mark_safe(joint_with_groups_constraint_name.editor_label)
+    joint_with_groups_constraint_name.countless_formatted_editor_label = joint_with_groups_constraint_name.formatted_editor_label
+    for s in sessions:
+        joint_groups = s.joint_with_groups.all()
+        if joint_groups:
+            formatted_constraints_for_sessions[s.pk][joint_with_groups_constraint_name] = [g.acronym for g in joint_groups]
 
     return constraints_for_sessions, formatted_constraints_for_sessions, constraint_names

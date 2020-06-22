@@ -470,7 +470,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         requested_time=True,
         requested_by=True,
     ).exclude(current_status__in=['notmeet', 'disappr', 'deleted', 'apprw']).prefetch_related(
-        'resources', 'group', 'group__parent', 'group__type',
+        'resources', 'group', 'group__parent', 'group__type', 'joint_with_groups',
     )
 
     if request.method == 'POST':
@@ -507,14 +507,14 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     for a in assignments:
         assignments_by_session[a.session_id].append(a)
 
-    # Prepare timeslot layout, making a timeline per day scaled in
-    # browser rem units to ensure that everything lines up even if the
-    # timeslots are not the same in the different rooms
+    # prepare timeslot layout
 
     min_duration = min(t.duration for t in timeslots_qs)
     max_duration = max(t.duration for t in timeslots_qs)
 
     def timedelta_to_css_ems(timedelta):
+        # we scale the session and slots a bit according to their
+        # length for an added visual clue
         capped_min_d = max(min_duration, datetime.timedelta(minutes=30))
         capped_max_d = min(max_duration, datetime.timedelta(hours=4))
         capped_timedelta = min(max(capped_min_d, timedelta), capped_max_d)
