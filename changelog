@@ -1,3 +1,42 @@
+ietfdb (7.4.0) ietf; urgency=medium
+
+  **Test suite and OpenID improvements**
+
+  * In the OpenID registration scope handler, look for registration matches
+    by email if no person link is available, in order to handle the case
+    where somebody registered with a new email and only added it to the
+    datatracker later.  
+
+  * Added a test suite switch to optionally show logging output.  Normally
+    this is suppressed while running tests.  In production, it goes to
+    syslog's user facility.  With --show-logging, it will go to the console
+    when running tests.
+
+  * The registration system creates separate records for hackathon and 
+    session registration, but we want just one consolidated record.  
+    Changed the handling of notifications from the registration system to 
+    aggregate reg_type and ticket_type information in one record.
+
+  * With the draft submission cutoff date before a meeting set to the
+    meeting start date (with the intention to have no blackout), the fact
+    that submission re-open time is midnight _local_ time led to a blackout
+    period of a few hours after midnight UTC for meeting timezones with
+    midnight later than UTC.  Changed this to give no blackout time when
+    cutoff-date==meeting.date.
+
+  * Merged in [18016] from rjsparks@nostrum.com:
+    Ensure UTC time is shown throughout the interim request, approval, and 
+    announcement workflow. Fixes issue #2974.  
+
+  * Merged in [18020] from rjsparks@nostrum.com:
+    Construct Faker objects used for person name generation only once. 
+    Results in a roughly 20% speedup of the test-suite.  
+
+  * Merged in [18021] from rjsparks@nostrum.com:
+    Refactoring for a little less waste creating meeting/interim test data.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Jun 2020 13:58:52 +0000
+
 ietfdb (7.3.2) ietf; urgency=medium
 
   **Bugfixes**
