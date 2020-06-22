@@ -56,7 +56,7 @@ jQuery(document).ready(function () {
                 let scheduledAt = sessions.filter("#session" + this.dataset.othersessionid).closest(".timeslot").data('scheduledatlabel');
                 let timeElement = jQuery(this).find(".time");
                 if (scheduledAt)
-                    timeElement.text(timeElement.data("scheduled").replace("{time}", ));
+                    timeElement.text(timeElement.data("scheduled").replace("{time}", scheduledAt));
                 else
                     timeElement.text(timeElement.data("notscheduled"));
             });
