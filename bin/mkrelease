@@ -236,6 +236,7 @@ $do svn commit static/lib/ -m "Updated static files under static/lib/"
 
 note "Upgrading the python library modules before checking migrations and running tests ..."
 $do pip install --upgrade -r requirements.txt
+$do pip check
 
 note "Checking that all model changes have been captured in migrations ..."
 $do ietf/manage.py makemigrations | tee /dev/stderr | $do grep -q "^No changes detected$" || die "Model changes without migrations found."
