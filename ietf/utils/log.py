@@ -62,7 +62,7 @@ def log(msg, e=None):
         pass
     _logfunc = logfunc
     if settings.SERVER_MODE == 'test':
-        if settings.get('show_logging', False) is True:
+        if getattr(settings, 'show_logging', False) is True:
             _logfunc = debug.say
             _flushfunc = sys.stdout.flush   # pyflakes:ignore (intentional redefinition)
         else:
