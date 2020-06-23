@@ -22,7 +22,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocHistory, State, DocEvent,
     BallotDocEvent, BallotPositionDocEvent, InitialReviewDocEvent, NewRevisionDocEvent,
-    WriteupDocEvent )
+    WriteupDocEvent, TelechatDocEvent )
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
     create_ballot, get_chartering_type )
 from ietf.doc.utils_charter import ( historic_milestones_for_charter,
@@ -105,7 +105,6 @@ def change_state(request, name, option=None):
                 oldstate = group.state
                 if oldstate.slug in ("proposed", "bof", "unknown"):
                     charter_state = State.objects.get(used=True, type="charter", slug="notrev")
-                    #TODO : set an abandoned state and leave some comments here
                     group.state = GroupStateName.objects.get(slug='abandon')
                     group.save()
                     e = ChangeStateGroupEvent(group=group, type="changed_state")
@@ -138,6 +137,11 @@ def change_state(request, name, option=None):
                 else:
                     # kill hanging ballots
                     close_open_ballots(charter, by)
+                    # take the doc off of a telechat if scheduled
+                    telechat_doc_event = charter.latest_event(TelechatDocEvent, type='scheduled_for_telechat')
+                    if telechat_doc_event and telechat_doc_event.telechat_date:
+                        e = TelechatDocEvent.objects.create(doc=charter, rev=charter.rev, by=by, type='scheduled_for_telechat', telechat_date=None, desc="Removed from agenda for telechat")
+                        events.append(e)
 
                     # Special log for abandoned efforts
                     e = DocEvent(type="changed_document", doc=charter, rev=charter.rev, by=by)
