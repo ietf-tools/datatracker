@@ -2,7 +2,7 @@
 {# Copyright The IETF Trust 2016, All Rights Reserved #}
 {% load origin bootstrap3 static %}
 
-{% block title %}{% if revising_review %}Revise{% elif assignment %}Complete{% else %}Submit unsolicited{% endif %} review of {{ review_req.doc.name }}{% endblock %}
+{% block title %}{% if revising_review %}Revise{% elif assignment %}Complete{% else %}Submit unsolicited{% endif %} review of {{ doc.name }}{% endblock %}
 
 {% block pagehead %}
   <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
