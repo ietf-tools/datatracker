@@ -232,6 +232,10 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
+        'django.security': {
+	    'handlers': ['syslog', ],
+            'level': 'INFO',
+        },
  	'oidc_provider': {
 	    'handlers': ['syslog', 'console', ],
 	    'level': 'DEBUG',
