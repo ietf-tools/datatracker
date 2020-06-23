@@ -27,6 +27,10 @@ CACHES = {
             'MAX_ENTRIES': 10000,
         },
     },
+    'sessions': {
+        'BACKEND': 'django.core.cache.backends.memcached.LocMemCache',
+        # No version-specific VERSION setting.
+    },
     'htmlized': {
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
         #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',

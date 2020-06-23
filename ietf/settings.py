@@ -332,6 +332,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_SAVE_EVERY_REQUEST = True
+SESSION_CACHE_ALIAS = 'sessions'
 
 PREFERENCES_COOKIE_AGE = 60 * 60 * 24 * 365 * 50 # Age of cookie, in seconds: 50 years
 
@@ -720,6 +721,12 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
         'LOCATION': '127.0.0.1:11211',
         'VERSION': __version__,
+        'KEY_PREFIX': 'ietf:dt',
+    },
+    'sessions': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+        # No release-specific VERSION setting.
         'KEY_PREFIX': 'ietf:dt',
     },
     'htmlized': {
@@ -1160,6 +1167,9 @@ if SERVER_MODE != 'production':
             #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
             'VERSION': __version__,
             'KEY_PREFIX': 'ietf:dt',
+        },
+        'sessions': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         },
         'htmlized': {
             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
