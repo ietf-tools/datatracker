@@ -588,20 +588,23 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     # dig out historic AD names
     ad_names = {}
+    ad_pks = {}
     session_groups = set(s.group for s in sessions if s.group and s.group.parent and s.group.parent.type_id == 'area')
     meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
 
-    for group_id, history_time, name in Person.objects.filter(rolehistory__name='ad', rolehistory__group__group__in=session_groups, rolehistory__group__time__lte=meeting_time).values_list('rolehistory__group__group', 'rolehistory__group__time', 'name').order_by('rolehistory__group__time'):
+    for group_id, history_time, name, pk in Person.objects.filter(rolehistory__name='ad', rolehistory__group__group__in=session_groups, rolehistory__group__time__lte=meeting_time).values_list('rolehistory__group__group', 'rolehistory__group__time', 'name', 'pk').order_by('rolehistory__group__time'):
         ad_names[group_id] = plain_name(name)
+        ad_pks[group_id] = pk
 
-    for group_id, name in Person.objects.filter(role__name='ad', role__group__in=session_groups, role__group__time__lte=meeting_time).values_list('role__group', 'name'):
+    for group_id, name, pk in Person.objects.filter(role__name='ad', role__group__in=session_groups, role__group__time__lte=meeting_time).values_list('role__group', 'name', 'pk'):
         ad_names[group_id] = plain_name(name)
+        ad_pks[group_id] = pk
 
     # requesters
     requested_by_lookup = {p.pk: p for p in Person.objects.filter(pk__in=set(s.requested_by for s in sessions if s.requested_by))}
 
     # constraints
-    constraints_for_sessions, formatted_constraints_for_sessions, constraint_names = preprocess_constraints_for_meeting_schedule_editor(meeting, sessions)
+    constraints_for_sessions, formatted_constraints_for_sessions, constraint_names = preprocess_constraints_for_meeting_schedule_editor(meeting, sessions, ad_pks)
 
     sessions_for_group = defaultdict(list)
     for s in sessions:

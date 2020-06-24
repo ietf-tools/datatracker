@@ -1013,11 +1013,13 @@ class EditTests(TestCase):
 
             constraints = e.find(".constraints > span")
             s_other = s2 if s == s1 else s1
-            self.assertEqual(len(constraints), 2)
+            self.assertEqual(len(constraints), 3)
             self.assertEqual(constraints.eq(0).attr("data-sessions"), str(s_other.pk))
+            self.assertEqual(constraints.eq(0).find(".fa-user-o").parent().text(), "1") # 1 person in the constraint
             self.assertEqual(constraints.eq(1).attr("data-sessions"), str(s_other.pk))
-            self.assertEqual(constraints.find(".encircled").text(), "1" if s_other == s2 else "-1")
-            self.assertEqual(constraints.find(".fa-user-o").parent().text(), "1") # 1 person in the constraint
+            self.assertEqual(constraints.eq(1).find(".encircled").text(), "1" if s_other == s2 else "-1")
+            self.assertEqual(constraints.eq(2).attr("data-sessions"), str(s_other.pk))
+            self.assertEqual(constraints.eq(2).find(".encircled").text(), "AD")
 
             # session info for the panel
             self.assertIn(str(round(s.requested_duration.total_seconds() / 60.0 / 60, 1)), e.find(".session-info .title").text())

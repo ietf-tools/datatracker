@@ -1089,7 +1089,7 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 .edit-meeting-schedule .formatted-constraints .encircled {
   border: 1px solid #000;
   border-radius: 1em;
-  min-width: 1.3em;
+  padding: 0 0.3em;
   text-align: center;
   display: inline-block;
 }

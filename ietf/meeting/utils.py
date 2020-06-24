@@ -24,7 +24,7 @@ from ietf.group.models import Group, Role
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName, ConstraintName
 from ietf.nomcom.utils import DISQUALIFYING_ROLE_QUERY_EXPRESSION
-from ietf.person.models import Email
+from ietf.person.models import Person, Email
 from ietf.secr.proceedings.proc_utils import import_audio_files
 
 def session_time_for_sorting(session, use_meeting_date):
@@ -319,12 +319,27 @@ def reverse_editor_label(label):
     else:
         return reverse_sign + label
 
-def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
-    constraints = Constraint.objects.filter(meeting=meeting).prefetch_related('target', 'person', 'timeranges')
-
-    # process constraint names
+def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions, responsible_ad_for_group):
+    # process constraint names - we synthesize extra names to be able
+    # to treat the concepts in the same manner as the modelled ones
     constraint_names = {n.pk: n for n in ConstraintName.objects.all()}
 
+    joint_with_groups_constraint_name = ConstraintName(
+        slug='joint_with_groups',
+        name="Joint session with",
+        editor_label="<i class=\"fa fa-clone\"></i>",
+        order=8,
+    )
+    constraint_names[joint_with_groups_constraint_name.slug] = joint_with_groups_constraint_name
+
+    ad_constraint_name = ConstraintName(
+        slug='responsible_ad',
+        name="Responsible AD",
+        editor_label="<span class=\"encircled\">AD</span>",
+        order=9,
+    )
+    constraint_names[ad_constraint_name.slug] = ad_constraint_name
+    
     for n in list(constraint_names.values()):
         # add reversed version of the name
         reverse_n = ConstraintName(
@@ -338,12 +353,23 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
         n.countless_formatted_editor_label = format_html(n.formatted_editor_label, count="") if "{count}" in n.formatted_editor_label else n.formatted_editor_label
 
     # convert human-readable rules in the database to constraints on actual sessions
+    constraints = list(Constraint.objects.filter(meeting=meeting).prefetch_related('target', 'person', 'timeranges'))
+
+    # synthesize AD constraints - we can treat them as a special kind of 'bethere'
+    ad_person_lookup = {p.pk: p for p in Person.objects.filter(pk__in=set(responsible_ad_for_group.values()))}
+    groups_at_meeting = {s.group for s in sessions}
+    for group in groups_at_meeting:
+        ad = ad_person_lookup.get(responsible_ad_for_group.get(group.pk))
+        if ad is not None:
+            constraints.append(Constraint(meeting=meeting, source=group, person=ad, name=ad_constraint_name))
+
+    # process must not be scheduled at the same time constraints
     constraints_for_sessions = defaultdict(list)
 
-    person_needed_for_groups = defaultdict(set)
+    person_needed_for_groups = {cn.slug: defaultdict(set) for cn in constraint_names.values()}
     for c in constraints:
-        if c.name_id == 'bethere' and c.person_id is not None:
-            person_needed_for_groups[c.person_id].add(c.source_id)
+        if c.person_id is not None:
+            person_needed_for_groups[c.name_id][c.person_id].add(c.source_id)
 
     sessions_for_group = defaultdict(list)
     for s in sessions:
@@ -367,7 +393,7 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
             reverse_constraints.append(c)
 
         elif c.person_id:
-            for g in person_needed_for_groups.get(c.person_id):
+            for g in person_needed_for_groups[c.name_id].get(c.person_id):
                 add_group_constraints(c.source_id, g, c.name_id, c.person_id)
 
     for c in reverse_constraints:
@@ -394,17 +420,7 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
         for s_pk in sessions_for_group.get(group_pk, []):
             formatted_constraints_for_sessions[s_pk][constraint_names[cn_pk]] = [format_constraint(c) for c in cs]
 
-    # it's easier for the rest of the code if we treat
-    # joint_with_groups as a constraint, even if it's not modelled as
-    # one
-    joint_with_groups_constraint_name = ConstraintName(
-        slug='joint_with_groups',
-        name="Joint session with",
-        editor_label="<i class=\"fa fa-clone\"></i>",
-        order=8,
-    )
-    joint_with_groups_constraint_name.formatted_editor_label = mark_safe(joint_with_groups_constraint_name.editor_label)
-    joint_with_groups_constraint_name.countless_formatted_editor_label = joint_with_groups_constraint_name.formatted_editor_label
+    # synthesize joint_with_groups constraints
     for s in sessions:
         joint_groups = s.joint_with_groups.all()
         if joint_groups:
