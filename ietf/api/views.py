@@ -165,9 +165,13 @@ def api_new_meeting_registration(request):
                 for key in set(data.keys())-set(['attended', 'apikey', 'meeting', 'email',]):
                     new = data.get(key)
                     cur = getattr(object, key, None)
-                    if key in ['reg_type', 'ticket_type', ] and cur and not new in cur:
+                    if key in ['reg_type', 'ticket_type', ] and new:
                         # Special handling for multiple reg types
-                        setattr(object, key, cur+' '+new)
+                        if cur:
+                            if not new in cur:
+                                setattr(object, key, cur+' '+new)
+                        else:
+                            setattr(object, key, new)
                     else:
                         setattr(object, key, new)
                 person = Person.objects.filter(email__address=email)
