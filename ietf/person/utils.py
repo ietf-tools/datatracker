@@ -9,7 +9,6 @@ import sys
 import syslog
 
 from django.contrib import admin
-from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -18,7 +17,7 @@ import debug                            # pyflakes:ignore
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail
 
-def merge_persons(source, target, file=sys.stdout, verbose=False):
+def merge_persons(request, source, target, file=sys.stdout, verbose=False):
     changes = []
 
     # write log
@@ -44,12 +43,8 @@ def merge_persons(source, target, file=sys.stdout, verbose=False):
 
     # check for any remaining relationships and exit if more found
     objs = [source]
-    opts = Person._meta
-    user = User.objects.filter(is_superuser=True).first()
-    admin_site = admin.site
-    using = 'default'
-    deletable_objects = admin.utils.get_deleted_objects(
-        objs, opts, user, admin_site, using)
+#    request.user = User.objects.filter(is_superuser=True).first()
+    deletable_objects = admin.utils.get_deleted_objects(objs, request, admin.site)
     deletable_objects_summary = deletable_objects[1]
     if len(deletable_objects_summary) > 1:    # should only inlcude one object (Person)
         print("Not Deleting Person: {}({})".format(source.ascii,source.pk), file=file)
@@ -194,7 +189,6 @@ def get_active_balloters(ballot_type):
     return active_balloters
 
 def get_active_ads():
-    from ietf.person.models import Person
     cache_key = "doc:active_ads"
     active_ads = cache.get(cache_key)
     if not active_ads:
@@ -203,7 +197,6 @@ def get_active_ads():
     return active_ads
 
 def get_active_irsg():
-    from ietf.person.models import Person
     cache_key = "doc:active_irsg_balloters"
     active_irsg_balloters = cache.get(cache_key)
     if not active_irsg_balloters:

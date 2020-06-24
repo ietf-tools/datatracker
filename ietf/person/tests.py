@@ -6,6 +6,8 @@ import datetime
 
 from pyquery import PyQuery
 from io import StringIO
+
+from django.http import HttpRequest
 from django.urls import reverse as urlreverse
 from django.utils.encoding import iri_to_uri
 
@@ -229,13 +231,17 @@ class PersonUtilsTests(TestCase):
         self.assertTrue(source_alias in target.alias_set.all())
 
     def test_merge_persons(self):
+        secretariat_role = RoleFactory(group__acronym='secretariat', name_id='secr')
+        user = secretariat_role.person.user
+        request = HttpRequest()
+        request.user = user
         source = PersonFactory()
         target = PersonFactory()
         source_id = source.pk
         source_email = source.email_set.first()
         source_alias = source.alias_set.first()
         source_user = source.user
-        merge_persons(source, target, file=StringIO())
+        merge_persons(request, source, target, file=StringIO())
         self.assertTrue(source_email in target.email_set.all())
         self.assertTrue(source_alias in target.alias_set.all())
         self.assertFalse(Person.objects.filter(id=source_id))
