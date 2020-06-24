@@ -24,7 +24,6 @@ from pyquery import PyQuery
 from unittest import skipIf
 from urllib.parse import urlsplit
 
-import django.contrib.auth.views
 from django.urls import reverse as urlreverse
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -91,7 +90,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
 
         # try logging out
-        r = self.client.get(urlreverse(django.contrib.auth.views.logout))
+        r = self.client.get(urlreverse('django.contrib.auth.views.logout'))
         self.assertEqual(r.status_code, 200)
 
         r = self.client.get(urlreverse(ietf.ietfauth.views.profile))
@@ -198,7 +197,7 @@ class IetfAuthTests(TestCase):
         self.assertContains(r, "Whitelist entry creation successful")
 
         # log out
-        r = self.client.get(urlreverse(django.contrib.auth.views.logout))
+        r = self.client.get(urlreverse('django.contrib.auth.views.logout'))
         self.assertEqual(r.status_code, 200)
 
         # register and verify whitelisted email
