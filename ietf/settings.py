@@ -1108,6 +1108,7 @@ CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/fix-oidc-access-token-post.patch',
     'patch/fix-jwkest-jwt-logging.patch',
     'patch/fix-oic-logging.patch',
+    'patch/fix-django-password-strength-kwargs.patch',
 ]
 if DEBUG:
     try:
