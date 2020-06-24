@@ -56,8 +56,6 @@ virtualenv_activation = os.path.join(path, "env", "bin", "activate_this.py")
 if os.path.exists(virtualenv_activation):
     syslog.syslog("Starting datatracker wsgi with virtualenv %s" % os.path.dirname(os.path.dirname(virtualenv_activation)))
     exec(compile(io.open(virtualenv_activation, "rb").read(), virtualenv_activation, 'exec'), dict(__file__=virtualenv_activation))
-else:
-    syslog.syslog("Starting datatracker wsgi without virtualenv")
 
 if not path in sys.path:
     sys.path.insert(0, path)
