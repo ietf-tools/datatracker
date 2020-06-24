@@ -44,7 +44,6 @@
         {{ session.group.name }}
         {% if session.group.parent %}
           &middot; <span class="session-parent">{{ session.group.parent.acronym }}</span>
-          {% if session.historic_group_ad_name %} ({{ session.historic_group_ad_name }}){% endif %}
         {% endif %}
       </div>
     {% endif %}

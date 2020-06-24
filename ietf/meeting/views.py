@@ -586,25 +586,11 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         p.scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round(x * 255)) for x in rgb_color))
         p.light_scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round((0.9 + 0.1 * x) * 255)) for x in rgb_color))
 
-    # dig out historic AD names
-    ad_names = {}
-    ad_pks = {}
-    session_groups = set(s.group for s in sessions if s.group and s.group.parent and s.group.parent.type_id == 'area')
-    meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
-
-    for group_id, history_time, name, pk in Person.objects.filter(rolehistory__name='ad', rolehistory__group__group__in=session_groups, rolehistory__group__time__lte=meeting_time).values_list('rolehistory__group__group', 'rolehistory__group__time', 'name', 'pk').order_by('rolehistory__group__time'):
-        ad_names[group_id] = plain_name(name)
-        ad_pks[group_id] = pk
-
-    for group_id, name, pk in Person.objects.filter(role__name='ad', role__group__in=session_groups, role__group__time__lte=meeting_time).values_list('role__group', 'name', 'pk'):
-        ad_names[group_id] = plain_name(name)
-        ad_pks[group_id] = pk
-
     # requesters
     requested_by_lookup = {p.pk: p for p in Person.objects.filter(pk__in=set(s.requested_by for s in sessions if s.requested_by))}
 
     # constraints
-    constraints_for_sessions, formatted_constraints_for_sessions, constraint_names = preprocess_constraints_for_meeting_schedule_editor(meeting, sessions, ad_pks)
+    constraints_for_sessions, formatted_constraints_for_sessions, constraint_names = preprocess_constraints_for_meeting_schedule_editor(meeting, sessions)
 
     sessions_for_group = defaultdict(list)
     for s in sessions:
@@ -625,7 +611,6 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         session_layout_margin = 0.2
         s.layout_width = timedelta_to_css_ems(s.requested_duration) - 2 * session_layout_margin
         s.parent_acronym = s.group.parent.acronym if s.group and s.group.parent else ""
-        s.historic_group_ad_name = ad_names.get(s.group_id)
 
         # compress the constraints, so similar constraint labels are
         # shared between the conflicting sessions they cover - the JS
