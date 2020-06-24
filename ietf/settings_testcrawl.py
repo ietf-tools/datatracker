@@ -28,7 +28,7 @@ CACHES = {
         },
     },
     'sessions': {
-        'BACKEND': 'django.core.cache.backends.memcached.LocMemCache',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         # No version-specific VERSION setting.
     },
     'htmlized': {
