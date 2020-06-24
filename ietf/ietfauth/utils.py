@@ -255,8 +255,9 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
             # later.
             email_list = person.email_set.values_list('address')
             reg = MeetingRegistration.objects.filter(email__in=email_list, meeting=meeting).first()
-            reg.person = person
-            reg.save()
+            if reg:
+                reg.person = person
+                reg.save()
         info = {}
         if reg:
             # maybe register attendence if logged in to follow a meeting
