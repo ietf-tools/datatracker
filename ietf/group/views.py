@@ -869,6 +869,17 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                 res.append(u.url)
         return fs.join(res)
 
+    def format_resources(resources, fs="\n"):
+        res = []
+        for r in resources:
+            if r.display_name:
+                res.append("%s %s (%s)" % (r.name.slug, r.value, r.display_name.strip('()')))
+            else:
+                res.append("%s %s" % (r.name.slug, r.value)) 
+                # TODO: This is likely problematic if value has spaces. How then to delineate value and display_name? Perhaps in the short term move to comma or pipe separation.
+                # Might be better to shift to a formset instead of parsing these lines.
+        return fs.join(res)
+
     def diff(attr, name):
         if field and attr != field:
             return
@@ -921,11 +932,6 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                 e.save()
             else:
                 save_group_in_history(group)
-
-
-## XXX Remove after testing
-#             if action == "charter" and not group.charter:  # make sure we have a charter
-#                 group.charter = get_or_create_initial_charter(group, group_type)
 
             changes = []
 
@@ -1013,6 +1019,19 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                                 url = GroupURL(url=m.group('url'), name='', group=group)
                             url.save()
 
+            if 'resources' in clean:
+                old_resources = sorted(format_resources(group.groupextresource_set.all()).splitlines())
+                new_resources = sorted(clean['resources'])
+                if old_resources != new_resources:
+                    group.groupextresource_set.all().delete()
+                    for u in new_resources:
+                        parts = u.split(None, 2)
+                        name = parts[0]
+                        value = parts[1]
+                        display_name = ' '.join(parts[2:]).strip('()')
+                        group.groupextresource_set.create(value=value, name_id=name, display_name=display_name)
+                    changes.append(('resources', new_resources, desc('Resources', ", ".join(new_resources), ", ".join(old_resources))))
+
             group.time = datetime.datetime.now()
 
             if changes and not new_group:
@@ -1065,6 +1084,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                         list_subscribe=group.list_subscribe if group.list_subscribe else None,
                         list_archive=group.list_archive if group.list_archive else None,
                         urls=format_urls(group.groupurl_set.all()),
+                        resources=format_resources(group.groupextresource_set.all()),
                         closing_note = closing_note,
                         )
 

@@ -1,0 +1,5 @@
+<ul class="nav nav-tabs" role="tablist">
+  {% for name, link, selected in tabs %}
+    <li {% if selected %}class="active"{% endif %}><a href="{{ link }}">{{ name }}</a></li>
+  {% endfor %}
+</ul>

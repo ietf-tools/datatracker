@@ -1,0 +1,196 @@
+{% extends "group/group_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}{% origin %}
+
+{% load ietf_filters staticfiles bootstrap3 %}
+
+{% block group_subtitle %}Review requests{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block group_content %}
+  {% origin %}
+
+  {% if can_access_stats %}
+    <h1 class="pull-right"><a href="{% url "ietf.stats.views.review_stats" %}" class="icon-link">&nbsp;<span class="small fa fa-bar-chart">&nbsp;</span></a></h1>
+  {% endif %}
+
+  {% if unassigned_review_requests %}
+
+    <h2 id="unassigned-review-requests">Unassigned review requests</h2>
+
+    <table class="table table-condensed table-striped tablesorter">
+      <thead>
+        <tr>
+          <th class="col-md-4">Request</th>
+          <th class="col-md-1">Type</th>
+          <th class="col-md-2">Requested</th>
+          <th class="col-md-1">Deadline</th>
+          {% if review_requests.0.reviewer %}
+            <th class="col-md-2">Reviewer</th>
+            <th class="col-md-1">Document state</th>
+          {% else %}
+            <th clas="col-md-3">Document state</th>
+          {% endif %}
+          <th class="col-md-1">IESG Telechat</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in unassigned_review_requests %}
+          <tr>
+            <td>{% if r.pk != None %}<a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">{% endif %}{{ r.doc.name }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}{% if r.pk != None %}</a>{% endif %}</td>
+            <td>{{ r.type.name }}</td>
+            <td><span style="display:none">X</span>{% if r.pk %}{{ r.time|date:"Y-m-d" }} by {{r.requested_by.plain_name}}{% else %}<em>auto-suggested</em>{% endif %}</td>
+            <td><span style="display:none">X</span>
+              {{ r.deadline|date:"Y-m-d" }}
+              {% if r.due %}<span class="label label-warning" title="{{ r.due }} day{{ r.due|pluralize }} past deadline">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
+            </td>
+            {% if r.reviewer %}
+              <td>
+                {{ r.reviewer.person }}
+                {% if r.state_id == "accepted" %}<span class="label label-default">Accepted</span>{% endif %}
+                {% if r.reviewer_unavailable %}<span class="label label-danger">Unavailable</span>{% endif %}
+              </td>
+            {% endif %}
+            <td>
+              {{ r.doc.friendly_state }}
+            </td>
+            <td>
+              {% if r.doc.telechat_date %}
+                {{ r.doc.telechat_date }}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  {% endif %}
+
+  {% if open_review_assignments %}
+    <h2 id="open_review_assignments">Open review assignments</h2>
+
+    <table class="table table-condensed table-striped tablesorter">
+      <thead>
+        <tr>
+          <th class="col-md-4">Request</th>
+          <th class="col-md-1">Type</th>
+          <th class="col-md-2">Assigned</th>
+          <th class="col-md-1">Deadline</th>
+          <th class="col-md-2">Reviewer</th>
+          <th class="col-md-1">Document state</th>
+          <th class="col-md-1">IESG Telechat</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in open_review_assignments %}
+          <tr>
+            <td><a href="{% url "ietf.doc.views_review.review_request" name=a.review_request.doc.name request_id=a.review_request.pk %}">{{ a.review_request.doc.name }}-{% if a.review_request.requested_rev %}{{ a.review_requests.requested_rev }}{% else %}{{ a.review_request.doc.rev }}{% endif %}</a></td>
+            <td>{{ a.review_request.type.name }}</td>
+            <td><span style="display:none">X</span>{{ a.assigned_on|date:"Y-m-d" }}</td>
+            <td><span style="display:none">X</span>
+              {{ a.review_request.deadline|date:"Y-m-d" }}
+              {% if a.due %}<span class="label label-warning" title="{{ a.due }} day{{ a.due|pluralize }} past deadline">{{ a.due }} day{{ a.due|pluralize }}</span>{% endif %}
+            </td>
+            <td>
+              {{ a.reviewer.person }}
+              {% if a.state_id == "accepted" %}<span class="label label-default">Accepted</span>{% endif %}
+              {% if a.reviewer_unavailable %}<span class="label label-danger">Unavailable</span>{% endif %}
+            </td>
+            <td>
+              {{ a.review_request.doc.friendly_state }}
+            </td>
+            <td>
+              {% if a.review_request.doc.telechat_date %}
+                {{ a.review_request.doc.telechat_date }}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <h2 id="closed-review-requests">Closed review requests and assignments</h2>
+
+  <form class="closed-review-filter" action="#closed-review-requests">
+    Past:
+    <div class="btn-group" role="group">
+      {% for key, label in since_choices %}
+        <button class="btn btn-default {% if since == key %}active{% endif %}" {% if key %}name="since" value="{{ key }}"{% endif %} type="submit">{{ label }}</button>
+      {% endfor %}
+    </div>
+  </form>
+
+  {% if closed_review_requests %}
+    <h3>Closed review requests</h3>
+    <table class="table table-condensed table-striped tablesorter">
+      <thead>
+        <tr>
+          <th>Request</th>
+          <th>Type</th>
+          <th>Requested</th>
+          <th>Deadline</th>
+          <th>Closed</th>
+          <th>State</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in closed_review_requests %}
+          <tr>
+            <td><a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">{{ r.doc.name }}{% if r.requested_rev %}-{{ r.requested_rev }}{% endif %}</a></td>
+            <td>{{ r.type }}</td>
+            <td><span style="display:none">X</span>{{ r.time|date:"Y-m-d" }} by {{ r.requested_by.plain_name }}</td>
+            <td>{{ r.deadline|date:"Y-m-d" }}</td>
+            <td>{{ r.request_closed_time|date:"Y-m-d" }}</td>
+            <td>{{ r.state.name }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  {% if closed_review_assignments %}
+    <h3>Closed review assignments</h3>
+    <table class="table table-condensed table-striped tablesorter">
+      <thead>
+        <tr>
+          <th>Request</th>
+          <th>Type</th>
+          <th>Assigned</th>
+          <th>Deadline</th>
+          <th>Closed</th>
+          <th>Reviewer</th>
+          <th>State</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in closed_review_assignments %}
+          <tr>
+            <td><a href="{% url "ietf.doc.views_review.review_request" name=a.review_request.doc.name request_id=a.review_request.pk %}">{{ a.review_request.doc.name }}{% if a.review_request.requested_rev %}-{{ a.review_request.requested_rev }}{% endif %}</a></td>
+            <td>{{ a.review_request.type }}</td>
+            <td>{{ a.assigned_on|date:"Y-m-d" }}</td>
+            <td>{{ a.review_request.deadline|date:"Y-m-d" }}</td>
+            <td>{{ a.completed_on|date:"Y-m-d" }}</td>
+            <td>{{ a.reviewer.person }}</td>
+            <td>{{ a.state }}</td>
+            <td>{% if a.result %}{{ a.result }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  {% endif %}
+
+  {% if not closed_review_requests and not closed_review_assignments %}
+  <div>None found</div>
+  {% endif %}
+
+{% endblock %}
+
+{% block js %}
+  <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

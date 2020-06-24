@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Approve {{doc.canonical_name }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Approve<br><small>{{ doc.canonical_name }}</small></h1>
+
+  <form method="post">
+    {% csrf_token %}
+    {% bootstrap_formset formset %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" >Send announcement & close ballot</button>
+      <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
+{% endblock %}

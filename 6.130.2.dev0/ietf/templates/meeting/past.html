@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load ietf_filters staticfiles %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+
+{% block title %}Past Meetings{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <div class="row">
+    <div class="col-md-10">
+
+      <h1>Past Meetings</h1>
+
+      {% if meetings %}
+        <h3></h3>
+        <table class="table table-condensed table-striped tablesorter">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Group</th>
+              <th>Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for meeting in meetings %}
+              <tr>
+                <td>{{ meeting.date }}</td>
+                <td>
+                  {% if meeting.responsible_group.type_id != 'ietf' %}
+                    <a href="{% url 'ietf.group.views.group_home' meeting.responsible_group.acronym %}">{{ meeting.responsible_group.acronym }}</a>
+                  {% else %}
+                    {{ meeting.responsible_group.acronym }}
+                  {% endif %}
+                </td>
+                <td>
+                  {% if meeting.type_id == "interim" %}
+                    <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.responsible_group.acronym %}">{{ meeting.number }}{% if meeting.interim_meeting_cancelled %}&nbsp;&nbsp;<span class="label label-warning">CANCELLED</span>{% endif %}</a>
+                  {% else %}
+                    <a href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">IETF - {{ meeting.number }}</a>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% if meeting.type_id == "interim" %}
+                  {% else %}
+		    {% if meeting.get_number > 97 %}
+		      <a href="{% url 'ietf.meeting.views.important_dates' num=meeting.number %}">Important dates</a>
+		    {% endif %}
+                  {% endif %}
+                  </td>
+
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <h3>No past meetings</h3>
+        {% endif %}
+
+    </div>
+  </div>
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+<script src="{% static 'ietf/js/toggle-visibility.js' %}"></script>
+{% endblock %}

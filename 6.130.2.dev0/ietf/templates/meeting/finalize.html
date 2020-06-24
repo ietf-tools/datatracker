@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load bootstrap3 %}
+
+{% block title %}Finalize IETF{{meeting.number}} Proceedings{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <div class="panel panel-default col-md-5">
+    <div class="panel-heading">  
+     Finalize IETF{{meeting.number}} Proceedings
+    </div>
+    <div class="panel-body">
+      <p>This will make the proceedings for IETF{{meeting.number}} final.</p>
+      <p>All drafts associated with sessions that are marked "current version" will have their version set to whatever the version was at the end of the meeting.</p>
+      {% comment %} This would be a good place to put any warnings about important things missing from the proceedings {% endcomment %}
+      <div class="pull-right">
+        <form method="post">
+          {% csrf_token %}
+          {% buttons %}
+            <button type="submit" class="btn btn-primary " name="finalize" value="Finalize">Finalize</button>
+            <a class="btn btn-default " href="{% url 'ietf.meeting.views.proceedings' num=meeting.number %}">Cancel</a>
+          {% endbuttons %}
+        </form>
+      </div>
+    </div 
+  </div>
+{% endblock %}

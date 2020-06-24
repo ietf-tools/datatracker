@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2018, All Rights Reserved #}
+{% load origin %}
+{% load bootstrap3 %}
+
+{% block title %}Edit timeslot type for {{timeslot}}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Edit timeslot type for {{timeslot}}</h1>
+  {% if sessions %}
+    <div class="alert alert-warning">
+      This timeslot currently has the following sessions assigned to it:
+      {% for s in sessions %}
+        <div>{{s}}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn btn-default" href="{% url 'ietf.meeting.views.edit_timeslots' num=timeslot.meeting.number %}">Cancel</a>
+    {% endbuttons %}
+  </form>
+{% endblock %}

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<reference anchor="{{doc_bibtype}}.{{doc.name|slice:"6:"}}">
+   <front>
+      <title>{{doc.title}}</title>{% if doc.submission %}{% for author in doc.submission.authors %}
+      <author fullname="{{ author.name }}">
+	 {% if author.affiliation %}<organization>{{ author.affiliation }}</organization>
+      {% endif %}</author>{% endfor %}{% else %}{% for author in doc.documentauthor_set.all %}
+      <author initials="{{ author.person.initials }}" surname="{{ author.person.last_name }}" fullname="{{ author.person.name }}">
+         {% if author.affiliation %}<organization>{{ author.affiliation }}</organization>
+      {% endif %}</author>{% endfor %}{% endif %}
+      <date month="{{doc.date|date:"F"}}" day="{{doc.date.day}}" year="{{doc.date.year}}" />
+      <abstract>
+	 <t>{{doc.abstract}}
+	 </t>
+      </abstract>
+   </front>
+   <seriesInfo name="Internet-Draft" value="{{doc.name}}-{{doc.rev}}" />
+   {% if doi %}<seriesInfo name="DOI" value="{{doi}}" />
+   {% endif %}<format type="TXT" target="https://www.ietf.org/internet-drafts/{{doc.name}}-{{doc.rev}}.txt" />
+</reference>

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Remove {{sp.document}} from session{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Confirm removing document from session {{sp.session}}</h1>
+
+  {% if sp.session.is_material_submission_cutoff %}
+    <p class="alert alert-warning">The deadline for submission corrections has passed. This may affect published proceedings.</p>
+  {% endif %}
+
+  <h2>Document</h2>
+  <p><strong>{{sp.document.name}}{% if sp.rev %}-{{sp.rev}}{% else %} (current version){% endif %}</strong></p>
+  <p>{{sp.document.title}}</p>
+  <h2>Session</h2>
+  <p>{{sp.session}}</p>
+
+  <form method="post">
+    {% csrf_token %}
+    {% buttons %}
+      <button type="submit" class="btn btn-{% if sp.session.is_material_submission_cutoff %}warning{% else %}primary{% endif %}" name="remove_session">Remove document from session</button>
+      <a class="btn btn-default href="{% url 'ietf.meeting.views.session_details' num=sp.session.meeting.number acronym=sp.session.group.acronym%}">Cancel</a>
+    {% endbuttons %}
+  </form>
+
+{% endblock %}

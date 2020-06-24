@@ -1,0 +1,81 @@
+{% extends "base_site.html" %}
+{% load staticfiles %}
+
+{% block title %}Meetings{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; <a href="{% url "ietf.secr.meetings.views.main" %}">Meetings</a>
+  &raquo; <a href="{% url "ietf.secr.meetings.views.view" meeting_id=meeting.number %}">{{ meeting.number }}</a>
+  &raquo; {{ session.group.acronym }}
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+    <h2>Edit Session</h2>
+
+        <form id="meetings-schedule-form" method="post" action="">{% csrf_token %}
+            <div class="inline-related{% if forloop.last %} last-related{% endif %}">
+              <table class="full-width amstable">
+                <col width="200">
+                <tr>
+                  <th>Day:</th>
+                  <td>{% if timeslot %}{{ timeslot.time|date:"l" }}{% endif %}</td>
+                </tr>
+                <tr>
+                  <th>Time:</th>
+                  <td>{% if timeslot %}{{ timeslot.time|time:"H:i" }}{% endif %}</td>
+                </tr>
+                <tr>
+                  <th>Room:</th>
+                  <td>{% if timeslot %}{{ timeslot.location.name }}{% endif %}</td>
+                </tr>
+                <tr>
+                  <th>Status:</th>
+                  <td>{{ current_status_name }}</td>
+                </tr>
+                {{ form }}
+              </table>
+            </div> <!-- inline-related -->
+    </div> <!-- inline-group -->
+    
+      <div class="button-group">
+       <ul>
+         <li><button type="submit" name="submit" value="Save">Save</button></li>
+         <li><button type="button" onclick="window.location='{% url "ietf.secr.meetings.views.regular_sessions" meeting_id=meeting.number schedule_name=schedule.name %}'">Back</button></li>
+        </ul>
+      </div> <!-- button-group -->
+      
+      </form>
+      
+</div> <!-- module -->
+
+{% endblock %}
+
+{% block footer-extras %}
+  {% include "includes/meetings_footer.html" %}
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

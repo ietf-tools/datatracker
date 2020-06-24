@@ -1,0 +1,41 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% block subtitle %} - Template: {{ template }}{% endblock %}
+
+{% load bootstrap3 %}
+
+{% block nomcom_content %}
+  {% origin %}
+  <h2>Template: {{ template }}</h2>
+
+  <dl>
+    <dt>Title</dt>
+    <dd>{{ template.title }}</dt>
+      <dt>Group</dt>
+      <dd>{{ template.group }}</dd>
+      <dt>Template type</dt>
+      <dd>{{ template.type.name }}:
+        {% if template.type.slug == "rst" %}
+          This template uses the syntax of reStructuredText. Get a quick reference at <a href="http://docutils.sourceforge.net/docs/user/rst/quickref.html">http://docutils.sourceforge.net/docs/user/rst/quickref.html</a>. You can do variable interpolation with $variable if the template allows any variable.
+        {% elif template.type.slug == "django" %}
+          This template uses the syntax of the default django template framework. Get more info at <a href="https://docs.djangoproject.com/en/dev/topics/templates/">https://docs.djangoproject.com/en/dev/topics/templates/</a>. You can do variable interpolation with the current django markup &#123;&#123;variable&#125;&#125; if the template allows any variable.
+        {% elif template.type.slug == "plain" %}
+          This template uses plain text, so no markup is used. You can do variable interpolation with $variable if the template allows any variable.
+        {% endif %}
+      </dd>
+      {% if template.variables %}
+        <dt>Variables allowed in this template</dt>
+        <dd>{{ template.variables|linebreaks }}</dd>
+      {% endif %}
+  </dl>
+
+  <div class = "panel panel-default">
+    <p class='pasted'>{{ template.content }}</p>
+  </div>
+
+    {% buttons %}
+      <a class="btn btn-default pull-right" href="{% if return_url %}{{ return_url }}{% else %}../{% endif %}">Back</a>
+    {% endbuttons %}
+{% endblock nomcom_content %}

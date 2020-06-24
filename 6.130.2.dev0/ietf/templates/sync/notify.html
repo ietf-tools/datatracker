@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% block title %}Trigger {{ notification }} sync for {{ org }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Trigger {{ notification }} sync for {{ org }}</h1>
+
+  <p>Update the Datatracker with {{ help_text|safe }} at {{ org }}.</p>
+
+  <form method="post">
+    {% csrf_token %}
+    <input class="btn btn-default" type="submit" value="Trigger {{ notification }} sync"/>
+  </form>
+{% endblock %}

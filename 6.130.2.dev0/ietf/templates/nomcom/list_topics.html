@@ -1,0 +1,41 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2017, All Rights Reserved #}
+{% load origin %}
+
+{% block subtitle %} - Topics{% endblock %}
+
+{% block nomcom_content %}
+  {% origin %}
+  <h2>Topics in {{ nomcom.group }}</h2>
+
+  {% if nomcom.group.state_id == 'active' %}
+    <a class="btn btn-default" href="{% url 'ietf.nomcom.views.edit_topic' year %}">Add new topic</a>
+  {% endif %}
+
+  {% if topics %}
+    <div>
+    {% for topic in topics %}
+      <h4>{{ topic.subject }}</h4>
+      <dl class="dl-horizontal">
+        <dt>Accepting feedback</dt>
+        <dd> {{topic.accepting_feedback|yesno}}</dd>
+        <dt>Description</dt>
+        <dd>
+            <a href="{% url 'ietf.nomcom.views.edit_template' year topic.description.id %}">{{ topic.description }}</a><br>
+        </dd>
+        <dt>Audience</dt>
+        <dd>{{topic.audience}}</dd>
+        {% if nomcom.group.state_id == 'active' %}
+        <dt>Actions</dt>
+        <dd>
+          <a class="btn btn-default" href="{% url 'ietf.nomcom.views.edit_topic' year topic.id %}">Edit</a>
+          <a class="btn btn-default" href="{% url 'ietf.nomcom.views.remove_topic' year topic.id %}">Remove</a>
+        </dd>
+        {% endif %}
+      </dl>
+    {% endfor %}
+    </div>
+  {% else %}
+    <p>There are no topics defined.</p>
+  {% endif %}
+{% endblock nomcom_content %}

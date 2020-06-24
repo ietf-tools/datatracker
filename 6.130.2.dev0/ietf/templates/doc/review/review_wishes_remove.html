@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin bootstrap3 static %}
+
+{% block title %}Remove {{ doc.name }} from your review wishes{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Remove {{ doc.name }} from your review wishes
+  </h1>
+
+  <form class="form-horizontal" method="post">
+    {% csrf_token %}
+  
+    {% buttons %}
+        <button type="submit" class="btn btn-primary">Remove from review wishes</button>
+    {% endbuttons %}
+  </form>
+
+{% endblock %}

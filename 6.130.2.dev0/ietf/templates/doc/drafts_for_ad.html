@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin staticfiles %}
+{% load ietf_filters %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block title %}Documents for {{ ad_name }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  {% if blocked_docs %}
+    <h1>Blocking positions held by {{ ad_name }}</h1>
+    <table class="table table-condensed table-striped tablesorter">
+      <thead>
+        <tr>
+          <th>Document</th>
+          <th>Status</th>
+          <th>Responsible AD</th>
+          <th>Discusses</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for doc in blocked_docs %}
+          <tr>
+            <td>{{ doc.displayname_with_link }}</td>
+            {% include "doc/search/status_columns.html" %}
+            <td>{{ doc.ad|default:"" }}</td>
+            <td>
+              {% for p in doc.blocking_positions %}
+                {{ p.balloter }}
+                ({% if p.discuss_time %}{{ p.discuss_time|timesince_days }}{% endif %}
+                days ago{% if doc.get_state_url != "rfc" and p.rev != doc.rev %}
+                  for -{{ p.rev }}{% endif %})<br>
+                {% if p.is_old_pos %}
+                  </span>
+                {% endif %}
+              {% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <h1>Documents for {{ ad_name }}</h1>
+  {% include "doc/search/search_results.html" %}
+{% endblock %}
+
+{% block morecss %}
+.is-blocking {box-shadow: 0 0 0 0 #000000;}
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

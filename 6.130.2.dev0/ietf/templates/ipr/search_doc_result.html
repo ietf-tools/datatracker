@@ -1,0 +1,125 @@
+{% extends "ipr/search_result.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}{% origin %}
+
+{% load ietf_filters staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block search_header %}Document IPR search results <small>for {{doc}}</small>{% endblock %}
+
+{% block search_result %}
+  <p class="alert alert-info">Total number of IPR disclosures found: <b>{{ iprs|length }}</b>.</p>
+
+  {% if iprs %}
+    <table class="table table-condensed table-striped tablesorter">
+      <thead>
+        <tr>
+          <th>Date</th>
+	  <th>ID</th>
+	  <th>Statement</th>
+	</tr>
+      </thead>
+
+      <tbody>
+        {% for ipr in iprs %}
+          <tr>
+            <td class="text-nowrap">{{ ipr.time|date:"Y-m-d" }}</td>
+            <td>{{ ipr.id }}</td>
+            <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">{{ ipr.title }}</a>{% if ipr.state_id == 'removed' %} (Removed) {% endif %}
+                {% if ipr.updates %} <br/>(Updates ID#: {% for upd in ipr.updates %}{{upd.target_id}}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if related_iprs %}
+      <p>
+	<i>IPR declarations exist for related documents, <a href="#related">see below</a>.
+	These cannot be assumed to apply to the current document without closer inspection.</i>
+      </p>
+    {% endif %}
+  {% endif %}
+
+  <p class="alert alert-info">Total number of documents searched: <b>{{ docs|length}}</b>.</p>
+
+  <table class="table table-condensed table-striped tablesorter">
+    <thead>
+      <tr>
+	<th>Date</th>
+	<th>ID</th>
+	<th>Statement</th>
+      </tr>
+    </thead>
+
+      {% for doc in docs %}
+    <tbody>
+        <tr>
+          <th class="warning" colspan="3">
+            Results for {{ doc.name|rfcspace|lstrip:"0"|rfcnospace }} ("{{ doc.document.title }}"){% if not forloop.first %}{% if doc.related %}, that was {{ doc.relation|lower }} {{ doc.related.source|rfcspace|lstrip:"0"|rfcnospace  }} ("{{ doc.related.source.title }}"){% endif %}{% endif %}:
+          </th>
+        </tr>
+    </tbody>
+    <tbody>
+        {% with doc.iprdocrel_set.all as doc_iprs %}
+          {% if doc_iprs %}
+            {% for ipr in doc_iprs %}
+              {% if ipr.disclosure.state_id in states %}
+                <tr>
+                  <td class="text-nowrap">{{ ipr.disclosure.time|date:"Y-m-d" }}</td>
+                  <td>{{ ipr.disclosure.id }}</td>
+                  <td><a href="{% url "ietf.ipr.views.show" id=ipr.disclosure.id %}">{{ ipr.disclosure.title }}</a>{% if ipr.disclosure.state_id == 'removed' %} (Removed) {% endif %}
+                      {% if ipr.disclosure.updates %} <br/>(Updates ID#: {% for upd in ipr.disclosure.updates %}{{upd.target_id}}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}
+                  </td>
+                </tr>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td></td>
+              <td></td>
+              <td>
+	        No IPR disclosures have been submitted directly on <i>{{ doc.name|rfcspace|lstrip:"0" }}</i>{% if iprs %},
+	        but there are disclosures on {% if docs|length == 2 %}a related document{% else %}related documents{% endif %}, listed on this page{% endif %}.
+              </td>
+            </tr>
+          {% endif %}
+        {% endwith %}
+    </tbody>
+      {% endfor %}
+  </table>
+
+  {% if related_iprs %}
+    <p class="alert alert-info" id="related">Total number of possibly related IPR disclosures found: <b>{{ related_iprs|length }}</b>.</p>
+
+    <table class="table table-condensed table-striped tablesorter">
+      <thead>
+        <tr>
+          <th>Date</th>
+	  <th>ID</th>
+	  <th>Statement</th>
+	</tr>
+      </thead>
+
+      <tbody>
+        {% for ipr in related_iprs %}
+          <tr>
+            <td class="text-nowrap">{{ ipr.time|date:"Y-m-d" }}</td>
+            <td>{{ ipr.id }}</td>
+            <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">{{ ipr.title }}</a>
+                {% if ipr.updates %} <br/>(Updates ID#: {% for upd in ipr.updates %}{{upd.target_id}}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

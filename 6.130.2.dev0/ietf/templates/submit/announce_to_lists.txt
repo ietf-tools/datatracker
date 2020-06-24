@@ -1,0 +1,31 @@
+{% autoescape off %}
+A New Internet-Draft is available from the on-line Internet-Drafts directories.
+{% if submission.group %}This draft is a work item of the {{ submission.group.name }}{% if submission.group.type.name %} {{ submission.group.type.name }}{% endif %} of the {% if submission.group.type_id == "rg" %}IRTF{% else %}IETF{% endif %}.{% endif %}
+
+        Title           : {{ submission.title }}
+        Author{{ submission.authors|pluralize:" ,s" }}         : {% for author in submission.authors %}{{ author.name }}{% if not forloop.last %}
+                          {% endif %}{% endfor %}
+	Filename        : {{ submission.name }}-{{ submission.rev }}.txt
+	Pages           : {{ submission.pages }}
+	Date            : {{ submission.submission_date|date:"Y-m-d" }}
+
+Abstract:
+{{ submission.abstract }}
+
+The IETF datatracker status page for this draft is:
+https://datatracker.ietf.org/doc/{{ submission.name }}/
+
+There are also htmlized versions available at:
+https://tools.ietf.org/html/{{ submission.name }}-{{ submission.rev }}
+https://datatracker.ietf.org/doc/html/{{ submission.name }}-{{ submission.rev }}
+{% if submission.rev != "00" %}
+A diff from the previous version is available at:
+{{settings.RFCDIFF_BASE_URL}}?url2={{ submission.name }}-{{ submission.rev }}
+{% endif %}
+
+Please note that it may take a couple of minutes from the time of submission
+until the htmlized version and diff are available at tools.ietf.org.
+
+Internet-Drafts are also available by anonymous FTP at:
+ftp://ftp.ietf.org/internet-drafts/
+{% endautoescape %}

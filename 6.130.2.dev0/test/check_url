@@ -1,0 +1,54 @@
+#!/usr/bin/env python
+
+import sys
+import os
+
+# Warning: The following code assumes that this file is located in the svn
+# checkout directory, and hasn't been moved:
+ietfpath = os.path.abspath(__file__.rsplit("/", 1)[0] + "/..")
+sys.path.append(ietfpath)
+
+os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
+
+from ietf.utils.soup2text import soup2text as html2text
+from difflib import unified_diff
+import urllib2 as urllib
+from ietf.tests import read_testurls
+
+django_server = os.environ.get("DJANGO_SERVER", "http://merlot.tools.ietf.org:31415")
+django_server.rstrip("/")
+
+testtuples = []
+for root, dirs, files in os.walk(ietfpath):
+    if "testurl.list" in files:
+        testtuples += read_testurls(root+"/testurl.list")
+    if "testurls.list" in files:
+        testtuples += read_testurls(root+"/testurls.list")
+testurls = dict([ (tuple[1], tuple) for tuple in testtuples ])
+
+def fetch(url):
+    file = urllib.urlopen(url)
+    html = file.read()
+    file.close()
+    return html
+
+for url in sys.argv[1:]:
+    tuple = testurls[url]
+    if len(tuple) > 2:
+        url1 = tuple[2]
+        url2 = django_server + tuple[1]
+        print "Fetching %s ..." % url1
+        text1 = html2text(fetch(url1), fill=False)
+        text1 = text1.replace('."', '".').replace(',"', '",')
+        list1 = text1.split("\n")
+        print "Fetching %s ..." % url2
+        text2 = html2text(fetch(url2), fill=False)
+        text2 = text2.replace('."', '".').replace(',"', '",')
+        list2 = text2.split("\n")
+        diff = "\n".join(unified_diff(list1, list2, url1, url2, "", "", 0, lineterm=""))
+        if diff:
+            print diff
+        else:
+            print "\nNo difference found"
+
+        

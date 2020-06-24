@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% block title %}Index of all Internet-Drafts and RFCs{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Index of all Internet-Drafts and RFCs</h1>
+
+  <p>This page lists all Internet-Drafts and RFCs. The main purpose of
+    this page is to ensure all pages can be found by search engines. For
+    normal use, it is recommended to use the <a href="{% url 'ietf.doc.views_search.search' %}">search
+    page</a>.</p>
+
+  <p>There is also an <a href="{% url 'ietf.doc.views_search.index_active_drafts' %}">index of
+    active Internet-Drafts</a> with more information.</p>
+
+  <p>In addition, the following files are available for download:</p>
+  <ul>
+    <li><a href="https://www.ietf.org/id/1id-index.txt">Active Internet-Drafts (text)</a></li>
+    <li><a href="https://www.ietf.org/id/1id-abstracts.txt">Active Internet-Drafts with abstracts (text)</a></li>
+    <li><a href="https://www.ietf.org/id/all_id2.txt">All Internet-Drafts (tab-separated)</a>, <a href="https://www.ietf.org/id/all_id.txt">older version (with fewer fields)</a></li>
+    <li><a href="https://www.rfc-editor.org/rfc/rfc-index.txt">All RFCs (text)</a></li>
+    <li><a href="https://www.rfc-editor.org/rfc/rfc-index.xml">All RFCs (XML)</a></li>
+  </ul>
+
+  <h2>Contents</h2>
+
+  <p>The documents are listed in the following categories:</p>
+
+  <ul>
+    {% for state, heading, count, _ in categories %}
+      <li><a href="#{{ state.slug }}">{{ heading }} ({{ count }})</a></li>
+    {% endfor %}
+  </ul>
+
+  {% for state, heading, count, links in categories %}
+    <h2 class="anchor-target" id="{{ state.slug }}">{{ heading }} ({{ count }})</h2>
+    <p class="links">{{ links|safe }}</p>
+  {% endfor %}
+
+{% endblock %}

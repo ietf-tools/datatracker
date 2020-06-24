@@ -1,0 +1,136 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+{% load widget_tweaks %}
+{% load ietf_filters %}
+{% load ballot_icon %}
+{% load person_filters %}
+
+<tr {% spaceless %}
+    {% if color_row_positions %}
+      {% with doc|ballotposition:user as pos %}
+          {% if pos %}class="position-{{pos.slug}}-row"{% endif %}
+      {% endwith %}
+    {% endif %}
+    {% endspaceless %}>
+
+  <td>
+    {% if user.is_authenticated %}
+      <a href="{% url "ietf.community.views.untrack_document" username=request.user.username name=doc.name %}" class="track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}" title="Remove from your personal ID list">
+        <span class="fa fa-bookmark"></span>
+      </a>
+      <a href="{% url "ietf.community.views.track_document" username=request.user.username name=doc.name %}" class="track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}" title="Add to your personal ID list">
+        <span class="fa fa-bookmark-o"></span>
+      </a>
+      <br>
+    {% endif %}
+    {% if user.review_teams %}
+      <a class="review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}hide{% endif %}" href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}" title="Remove from your review wishes for all teams">
+        <span class="fa fa-comments"></span>
+      </a>
+      <a class="review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %}{% if doc.has_review_wish %}hide{% endif %}" href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}" title="Add to your review wishes">
+        <span class="fa fa-comments-o"></span>
+      </a>
+      <br>
+    {% endif %}
+
+    {% for session in doc.sessions %}
+      <a href="{% url 'ietf.meeting.views.ical_agenda' num=session.meeting.number session_id=session.id %}"
+	title="Calendar entry: document is on the agenda for {{ session.group.acronym }}@{{ session.meeting }}">
+	{# font-size set to make the width of fa-calendar come out the same as fa-bookmark-o above: #}
+	<span class="fa fa-calendar" style="font-size: 75%"></span>
+      </a>
+    {% endfor %}
+  </td>
+
+  <td class="doc">
+    <div>
+      <a href="{{ doc.get_absolute_url }}">{% if doc.get_state_slug == "rfc" %}RFC {{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}</a>
+
+      {% if doc.get_state_slug == "rfc" and "draft" in doc.name %}
+        <i>(was {{ doc.name }})</i>
+      {% endif %}
+      <br>
+      <b>{{ doc.title }}</b>
+      {% if doc.has_errata %}
+        <a class="label label-danger pull-right" href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">Errata</a>
+      {% endif %}
+    </div>
+
+    {% if user|has_role:"Secretariat" and doc.reschedule_form %}
+      <div class="form-group">
+        <label for="{{ doc.reschedule_form.telechat_date.auto_id}}">Reschedule:</label>
+        {{ doc.reschedule_form.telechat_date|add_class:"form-control input-sm" }}
+      </div>
+      {% if doc.reschedule_form.show_clear %}
+        <div class="checkbox">
+          <label>{{ doc.reschedule_form.clear_returning_item }} <b>Clear "returning item"</b></label>
+        </div>
+      {% endif %}
+    {% endif %}
+  </td>
+
+  <td>
+    <span class="text-nowrap">
+
+    {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
+
+       {% if doc.rev != "00" %}<a href="{{ rfcdiff_base_url }}?url2={{ doc.name }}-{{ doc.rev }}">
+       {% elif doc.replaces %}<a href="{{ rfcdiff_base_url }}?url1={{ doc.replaces_canonical_name}}&url2={{ doc.name }}-{{ doc.rev }}">{% endif %}
+
+    {% endif %}
+          {% if doc.get_state_slug == "rfc" %}{{ doc.latest_revision_date|date:"Y-m" }}{% else %}{{ doc.latest_revision_date|date:"Y-m-d" }}{% endif %}
+    {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
+       {% if doc.rev != "00" or doc.replaces %}</a>{% endif %}
+    {% endif %}
+    </span>
+
+    {% for check in doc.submission.latest_checks %}
+      {% if check.passed != None and check.symbol.strip %}
+	{% if check.errors or check.warnings %}
+	   <span class="checker-warning pull-right" data-toggle="modal" data-target="#check-{{check.pk}}" title="{{check.checker|title}} returned warnings or errors." >{{ check.symbol|safe }}</span>
+	{% else %}
+	   <span class="checker-success pull-right" data-toggle="modal" data-target="#check-{{check.pk}}" title="{{check.checker|title}} passed">{{ check.symbol|safe }}</span>
+	{% endif %}
+	{% include "doc/yang-check-modal-overlay.html" %}
+      {% endif %}
+    {% endfor %}
+
+    {% if doc.pages %}
+      <br><small class="text-muted">{{doc.pages}} page{{ doc.pages|pluralize }}</small>
+    {% endif %}
+
+    {% if doc.latest_revision_date|timesince_days|new_enough:request %}
+    <wbr><span class="label label-success">New</span>
+    {% endif %}
+
+    {% if doc.get_state_slug == "active" and doc.expirable and doc.expires|timesince_days|expires_soon:request %}
+      <wbr><span class="label label-warning">Expires soon</span>
+    {% endif %}
+
+  </td>
+
+  {% include "doc/search/status_columns.html" %}
+
+  <td class="ipr text-center">
+    {% if doc.related_ipr %}
+      <a href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}">
+        <span class="label label-default">{{ doc.related_ipr|length }}</span>
+      </a>
+    {% endif %}
+  </td>
+
+  {% if ad_name == None or ad_name != doc.ad.plain_name %}
+    <td class="area-director">
+      {% if doc.ad %}
+        {% person_link doc.ad title="Area Director" %}<br>
+      {% endif %}
+      {% if doc.shepherd %}{% email_person_link doc.shepherd title="Shepherd" class="small text-muted" %}{% endif %}
+    </td>
+  {% endif %}
+
+  {% if color_row_positions %}
+    {% with doc|ballotposition:user as pos %}
+    <td {% if pos %}class="changebar position-{{pos.slug}}"{% endif %}></td>
+    {% endwith %}
+  {% endif %}
+  
+</tr>

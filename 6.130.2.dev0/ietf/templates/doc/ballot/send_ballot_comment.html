@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% load ietf_filters %}
+
+{% block title %}Send ballot position for {{ balloter }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Send ballot position for {{ balloter }} on <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></h1>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label>From</label>
+      <input class="form-control" type="text" placeholder="{{ frm }}" disabled>
+    </div>
+
+    <div class="form-group">
+      <label>To</label>
+      <input class="form-control" type="text" placeholder="{{ to }}" disabled>
+    </div>
+
+   <div class="form-group">
+   {% bootstrap_form cc_select_form %}
+   </div>
+
+    <div class="form-group">
+      <label>Additional Cc Addresses</label>
+      <input class="form-control" name="extra_cc" >
+      <div class="help-block">Separate email addresses with commas.</div>
+    </div>
+
+    <div class="form-group">
+      <label>Subject</label>
+      <input class="form-control" type="text" placeholder="{{ subject }}" disabled>
+    </div>
+
+    <div class="form-group">
+      <label>Body</label>
+      <pre>{{ body|maybewordwrap }}</pre>
+    </div>
+
+    {% buttons %}
+      <button type="submit" class="btn btn-danger">Send</button>
+    {% endbuttons %}
+  </form>
+
+{% endblock %}

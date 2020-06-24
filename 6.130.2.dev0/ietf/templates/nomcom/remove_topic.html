@@ -1,0 +1,35 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2017, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block nomcom_content %}
+  {% origin %}
+  <h2>Position: {{ topic }}</h2>
+
+  <p>This topic has {{topic.feedback_set.count|default:"no"}} feedback objects associated with it.</p>
+  {% if topic.feedback_set.count %}
+    <p>
+        <span class="alert alert-warning">Unless this is a topic created only for testing, deleting it is likely to be harmful. All of the feedback will also be deleted.</span>
+    </p>
+    <p>
+      If you are just wanting the topic to disappear from the lists available to the community for providing feedback, instead of deleting the topic, edit the topic and change accepting_feedback to False.
+    </p>
+    <p>If this is just a test topic, it is ok to delete it.</p>
+  {% else %}
+    <p>This topic is safe to delete.</p>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+
+    <input type="hidden" name="remove" value="1">
+
+    {% buttons %}
+      <button class="btn btn-primary btn-warning" type="submit">Delete</button>
+      <a class="btn btn-default" href="{% url 'ietf.nomcom.views.list_topics' year %}">Cancel</a>
+    {% endbuttons %}
+  </form>
+
+{% endblock nomcom_content %}

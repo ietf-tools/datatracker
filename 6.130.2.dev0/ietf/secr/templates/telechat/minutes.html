@@ -1,0 +1,25 @@
+{% extends "telechat/base_telechat.html" %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; {{ date }}
+{% endblock %}
+
+
+{% block subsection %}
+<div id="telechat-content">
+  <h1>Documents approved since last Telechat ({{ last_date }})</h1>
+  <h3>Protocol Action</h3>
+  <ul>
+    {% for doc in pa_docs %}
+      <li>{{ doc.name }}-{{ doc.rev }}&nbsp;&nbsp;({{ doc.intended_std_level }})</li>
+    {% endfor %}
+  </ul>
+  <h3>Document Action</h3>
+  <ul>
+    {% for doc in da_docs %}
+      <li>{{ doc.name }}-{{ doc.rev }}&nbsp;&nbsp;({{ doc.intended_std_level }})</li>
+    {% endfor %}
+  </ul>
+</div>
+
+{% endblock %}

@@ -1,0 +1,6 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+{% for p in parents %}
+  <li class="hidden-nojs dropdown-submenu group-menu group-parent-{{ p.id }}">
+    <a href="{{ p.menu_url }}">{{ p.short_name }}</a>
+  </li>
+{% endfor %}

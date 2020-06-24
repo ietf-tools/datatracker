@@ -1,0 +1,22 @@
+{% load humanize %}{% autoescape off %}{% load ietf_filters %}{% load cache %}{% cache 1800 ietf_meeting_agenda_ics schedule.meeting.number request.path request.GET %}BEGIN:VCALENDAR
+VERSION:2.0
+METHOD:PUBLISH
+PRODID:-//IETF//datatracker.ietf.org ical agenda//EN
+{{schedule.meeting.vtimezone}}{% for item in assignments %}{% if item.session.historic_group %}BEGIN:VEVENT
+UID:ietf-{{schedule.meeting.number}}-{{item.timeslot.pk}}-{{item.session.group.acronym}}
+SUMMARY:{% if item.session.name %}{{item.session.name|ics_esc}}{% else %}{% if not item.session.historic_group %}{{item.timeslot.name|ics_esc}}{% else %}{{item.session.historic_group.acronym|lower}} - {{item.session.historic_group.name}}{% endif%}{%endif%}{% if item.session.agenda_note %} ({{item.session.agenda_note}}){% endif %}
+{% if item.timeslot.show_location %}LOCATION:{{item.timeslot.get_location}}
+{% endif %}STATUS:{{item.session.ical_status}}
+CLASS:PUBLIC
+DTSTART{% if schedule.meeting.time_zone %};TZID="{{schedule.meeting.time_zone}}"{%endif%}:{{ item.timeslot.time|date:"Ymd" }}T{{item.timeslot.time|date:"Hi"}}00
+DTEND{% if schedule.meeting.time_zone %};TZID="{{schedule.meeting.time_zone}}"{%endif%}:{{ item.timeslot.end_time|date:"Ymd" }}T{{item.timeslot.end_time|date:"Hi"}}00
+DTSTAMP:{{ item.timeslot.modified|date:"Ymd" }}T{{ item.timeslot.modified|date:"His" }}Z{% if item.session.agenda %}
+URL:{{item.session.agenda.get_versionless_href}}{% endif %}
+DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
+ Note: {{item.session.agenda_note|ics_esc}}\n{% endif %}{% if item.timeslot.location.webex_url %}
+ Webex: {{ item.timeslot.location.webex_url }}\n{% endif %}{% for material in item.session.materials.all %}
+ \n{{material.type}}{% if material.type.name != "Agenda" %}
+  ({{material.title|ics_esc}}){% endif %}:
+  {{material.get_versionless_href}}\n{% endfor %}
+END:VEVENT
+{% endif %}{% endfor %}END:VCALENDAR{% endcache %}{% endautoescape %}

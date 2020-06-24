@@ -1,0 +1,43 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+{% for rfc,choice_slug in form.relations.items %}
+  <div class="form-group">
+    <div class="row">
+      <div class="col-md-5">
+        <input class="form-control" name="new_relation_row_{{rfc}}" type="text"	value="{{rfc}}">
+      </div>
+      <div class="col-md-5">
+        <select class="form-control" name="statchg_relation_row_{{rfc}}">
+	  <option value="" {% if choice_slug == "" %}selected{% endif %}>(None)</option>
+	  {% for rel in relation_slugs %}
+	    <option value="{{rel.slug}}" {% if choice_slug == rel.slug %}selected{%endif%}>{{rel.name}}</option>
+	  {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-danger delete">Delete</button>
+      </div>
+    </div>
+  </div>
+{% endfor %}
+
+<div class="form-group new-relation-row">
+  <div class="row">
+    <div class="col-md-5">
+      <input name="new_relation_row_" type="text" class="form-control" placeholder="rfc...">
+      <p class="help-block">Enter new affected RFC.</p>
+    </div>
+
+    <div class="col-md-5">
+      <select class="form-control" name="statchg_relation_row_">
+	<option value="" {% if choice_slug == "" %}selected{% endif %}>(None)</option>
+	{% for rel in relation_slugs %}
+	  <option value="{{rel.slug}}" {% if choice_slug == rel.slug %}selected{%endif%}>{{rel.name}}</option>
+	{% endfor %}
+      </select>
+      <p class="help-block">Select proposed new status.</p>
+    </div>
+    <div class="col-md-2">
+      <button class="btn btn-danger delete" style="display:none">Delete</button>
+    </div>
+  </div>
+</div>

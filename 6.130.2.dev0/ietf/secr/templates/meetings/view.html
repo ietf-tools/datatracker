@@ -1,0 +1,77 @@
+{% extends "base_site.html" %}
+{% load staticfiles %}
+
+{% block title %}Meetings{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; <a href="../">Meetings</a>
+  &raquo; {{ meeting.number }} 
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+     <h2>IETF  {{ meeting.number }} - View</h2>
+     {% if meeting.frozen == 1 %}
+      <ul class="errorlist"><li> THIS IS A FROZEN PROCEEDING</li></ul> 
+     {% endif %}
+      <table class="full-width">
+        <col id="proceedings-view-first-col" />
+        <tr><td>Start Date:</td><td> {{ meeting.date }}</td></tr>
+        <tr><td>City:</td><td> {{ meeting.city }} </td></tr>
+        <tr><td>Country:</td><td> {{ meeting.country }} </td></tr>
+        <tr><td>Time Zone:</td><td> {{ meeting.time_zone }} </td></tr>
+        <tr><td>Venue Name:</td><td> {{ meeting.venue_name }} </td></tr>
+        <tr><td>Venue Address:</td><td> {{ meeting.venue_addr }} </td></tr>
+        <tr><td>Break Area:</td><td> {{ meeting.break_area }} </td></tr>
+        <tr><td>Registration Area:</td><td> {{ meeting.reg_area }} </td></tr>
+      </table>
+    
+    
+    <div class="button-group">
+       <ul>
+         <li><button onclick="window.location='{% url "ietf.secr.meetings.views.edit_meeting" meeting_id=meeting.number %}'">Edit</button></li>
+         <li><button onclick="window.location='{% url "ietf.secr.meetings.views.notifications" meeting_id=meeting.number %}'">Notifications</button></li>
+         <li><button onclick="window.location='{% url "ietf.secr.meetings.views.blue_sheet" meeting_id=meeting.number %}'">Blue Sheets</button></li>
+         <li><button onclick="window.location='{% url "ietf.meeting.views.list_schedules" num=meeting.number %}'">Agenda List</button></li>
+         <li>
+           <form id="id_schedule_selector">
+             <select name="forma" onchange="location = this.options[this.selectedIndex].value;">
+               <option value="">Select a schedule...</option>
+               {% for sched in meeting.schedule_set.all %}
+                 <option value="{{ sched.name }}">{{ sched.name }}{% if sched == meeting.schedule %} (official){% endif %}</option>
+               {% endfor %}
+             </select>
+           </form>
+         </li>
+         <li><button onclick="window.location='{% url "ietf.secr.meetings.views.rooms" meeting_id=meeting.number schedule_name=meeting.schedule.name %}'">Official Schedule</button></li>
+       </ul>
+      </div> <!-- button-group -->
+      
+</div> <!-- module -->
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

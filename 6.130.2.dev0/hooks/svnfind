@@ -1,0 +1,159 @@
+#!/usr/bin/env python
+# -*- python -*-
+
+"""
+NAME
+	%(program)s - find a filename close to a given a SVN repository commit
+
+SYNOPSIS
+	%(program)s [OPTIONS] REPO REV NAME
+
+DESCRIPTION
+	Supposing we have a subversion repository containing a trunk and
+        various branches.  Given the repository url and the revision number of
+        a commit, what is the top of the branch?  $(program)s attempts to
+        answer this by letting you search for a specific file name which is
+        assumed to be unique within the branch and be situated at the top of
+        the branch subtree.
+
+%(options)s
+
+AUTHOR
+	Written by Henrik Levkowetz, <henrik@zinfandel.tools.ietf.org>
+
+COPYRIGHT
+	Copyright 2015 Henrik Levkowetz
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or (at
+	your option) any later version. There is NO WARRANTY; not even the
+	implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+	PURPOSE. See the GNU General Public License for more details.
+
+"""
+
+import sys, os.path, getopt, re
+
+version = "0.13"
+program = os.path.basename(sys.argv[0])
+progdir = os.path.dirname(sys.argv[0])
+
+# ----------------------------------------------------------------------
+# Parse options
+
+options = ""
+for line in re.findall("\n +(if|elif) +opt in \[(.+)\]:\s+#(.+)\n", open(sys.argv[0]).read()):
+    if not options:
+        options += "OPTIONS\n"
+    options += "        %-16s %s\n" % (line[1].replace('"', ''), line[2])
+options = options.strip()
+
+# with ' < 1:' on the next line, this is a no-op:
+if len(sys.argv) <= 1:
+    help()
+
+try:
+    opts, files = getopt.gnu_getopt(sys.argv[1:], "dfDhv", ["dirchange", "filechange", "dirpath", "help", "version",])
+except Exception, e:
+    print "%s: %s" % (program, e)
+    sys.exit(1)
+
+# ----------------------------------------------------------------------
+# Handle options
+
+# set default values, if any
+opt_dirpath = False
+opt_dirchange = False
+opt_filechange = False
+opt_verbose = False
+
+# ----------------------------------------------------------------------
+def help(msg=None, err=0):
+    if msg:
+        print(msg+'\n')
+    print(__doc__ % globals())
+    sys.exit(err)
+
+# handle individual options
+for opt, value in opts:
+    if   opt in ["-h", "--help"]: # Output this help, then exit
+        help()
+    elif opt in ["-v", "--version"]: # Output version information, then exit
+        print program, version
+        sys.exit(0)
+    elif opt in ["-d", "--dirchange"]: # Look only for directory changes
+        opt_dirchange = True
+    elif opt in ["-f", "--filechange"]: #Look only for file changes
+        opt_filechange = True
+    elif opt in ["-D", "--dirpath"]: # Output the directory path, not the file path 
+        opt_dirpath = True
+
+# if neither filechange nor dirchange have been specified, look for both
+if not opt_filechange and not opt_dirchange:
+    opt_filechange = True
+    opt_dirchange = True
+
+# ----------------------------------------------------------------------
+def help(msg=None, err=0):
+    if msg:
+        print(msg+'\n')
+    print(__doc__ % globals())
+    sys.exit(err)
+
+# ----------------------------------------------------------------------
+def say(s):
+    sys.stderr.write("%s\n" % (s))
+
+# ----------------------------------------------------------------------
+def note(s):
+    if opt_verbose:
+        sys.stderr.write("%s\n" % (s))
+
+# ----------------------------------------------------------------------
+def die(s, error=1):
+    sys.stderr.write("\n%s: Error: %s\n\n" % (program, s))
+    sys.exit(error)
+
+# ----------------------------------------------------------------------
+# Bad args
+
+if len(files) < 3:
+    help("Not enogh arguments\n\nExpected  %s REPO REV NAME" %program, 1)
+    
+# ----------------------------------------------------------------------
+# The program itself
+
+import pysvn
+#import debug
+
+repo, rev, name = files
+
+changeset = pysvn.Transaction(repo, rev, True)
+changed = changeset.changed()
+
+# Each dictionary entry is a tuple, with elements as follows:
+CHG_ACTION, CHG_KIND, CHG_TEXTMOD, CHG_PROPMOD = range(4)
+
+node = None
+for key in changed:
+    if opt_dirchange and changed[key][CHG_KIND] == pysvn.node_kind.dir:
+        node = key
+        break
+    if opt_filechange and changed[key][CHG_KIND] == pysvn.node_kind.file:
+        node = '/'.join(key.split('/')[:-1])
+        break
+
+while node:
+    #debug.show('node')
+    list = changeset.list(node)
+    if name in list:
+        if opt_dirpath:
+            print node
+        else:
+            sys.stdout.write(node)
+            sys.stdout.write('/')
+            sys.stdout.write(name)
+            sys.stdout.write('\n')
+        break
+    node = '/'.join(node.split('/')[:-1])

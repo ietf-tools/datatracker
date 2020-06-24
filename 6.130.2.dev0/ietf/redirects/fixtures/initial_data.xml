@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="utf-8"?>
+<django-objects version="1.0">
+  <object pk="1" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/liaisons.cgi</field>
+    <field type="CharField" name="url">liaison</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="2" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/liaison_detail.cgi</field>
+    <field type="CharField" name="url">liaison</field>
+    <field type="CharField" name="rest">%(detail_id)s</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="3" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/liaison_managers_list.cgi</field>
+    <field type="CharField" name="url">liaison/managers</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="4" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/liaison_guide_to_ietf.cgi</field>
+    <field type="CharField" name="url">liaison/help/to_ietf</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="5" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/liaison_guide_from_ietf.cgi</field>
+    <field type="CharField" name="url">liaison/help/from_ietf</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="6" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/liaison_field_help.cgi</field>
+    <field type="CharField" name="url">liaison/help/fields</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="7" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/idindex.cgi</field>
+    <field type="CharField" name="url">drafts</field>
+    <field type="CharField" name="rest">%(id)s/%(command)s</field>
+    <field type="CharField" name="remove">id_detail</field>
+  </object>
+  <object pk="8" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/show_nomcom_message.cgi</field>
+    <field type="CharField" name="url">ann/nomcom</field>
+    <field type="CharField" name="rest">%(id)s</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="9" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/states_table.cgi</field>
+    <field type="CharField" name="url">idtracker/help/state</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="10" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/pidtracker.cgi</field>
+    <field type="CharField" name="url">idtracker</field>
+    <field type="CharField" name="rest">%(dTag)s/%(command)s</field>
+    <field type="CharField" name="remove">view_id</field>
+  </object>
+  <object pk="11" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/status_of_item.cgi</field>
+    <field type="CharField" name="url">idtracker/status</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="12" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/lastcall.cgi</field>
+    <field type="CharField" name="url">idtracker/status/last-call</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="13" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/rfc_editor_announcement.cgi</field>
+    <field type="CharField" name="url">iesg/ann/ind</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="14" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/recent_announcement.cgi</field>
+    <field type="CharField" name="url">iesg/ann</field>
+    <field type="CharField" name="rest">new</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="15" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/previous_announcement.cgi</field>
+    <field type="CharField" name="url">iesg/ann</field>
+    <field type="CharField" name="rest">prev</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="16" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/view_telechat_minute.cgi</field>
+    <field type="CharField" name="url">iesg/telechat</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="17" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/ipr_detail_show.cgi</field>
+    <field type="CharField" name="url">ipr</field>
+    <field type="CharField" name="rest">%(ipr_id)s</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="18" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/ipr_list.cgi</field>
+    <field type="CharField" name="url">ipr</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="19" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/ipr_search.cgi</field>
+    <field type="CharField" name="url">ipr/search</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="20" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/ipr_generic.cgi</field>
+    <field type="CharField" name="url">ipr</field>
+    <field type="CharField" name="rest">new-generic</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="21" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/ipr_notify.cgi</field>
+    <field type="CharField" name="url">ipr</field>
+    <field type="CharField" name="rest">new-third-party</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="22" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/ipr.cgi</field>
+    <field type="CharField" name="url">ipr</field>
+    <field type="CharField" name="rest">new-specific</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="23" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/ipr_update_list.cgi</field>
+    <field type="CharField" name="url">ipr/update</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="24" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/all_id.cgi</field>
+    <field type="CharField" name="url">drafts/all_id_txt.html</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="25" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/all_id_html.cgi</field>
+    <field type="CharField" name="url">drafts/all_id.html</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="26" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/area_mailing_list.cgi</field>
+    <field type="CharField" name="url">list/area</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="27" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/nwg_list.cgi</field>
+    <field type="CharField" name="url">list/nonwg</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="28" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/nwg_list_submit.cgi</field>
+    <field type="CharField" name="url">list/nonwg/update</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="29" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/request_list.cgi</field>
+    <field type="CharField" name="url">list/request</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="30" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/desc.cgi</field>
+    <field type="CharField" name="url">list/help</field>
+    <field type="CharField" name="rest">%(id)s</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="31" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/ipr_disclosure.cgi</field>
+    <field type="CharField" name="url">ipr/about</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="32" model="redirects.redirect">
+    <field type="CharField" name="cgi"></field>
+    <field type="CharField" name="url">idtracker</field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="33" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/request_area_confirm.cgi</field>
+    <field type="CharField" name="url">list/approve</field>
+    <field type="CharField" name="rest">%(mailing_list_id)s</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="34" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/meeting_agenda_html.cgi</field>
+    <field type="CharField" name="url">meeting</field>
+    <field type="CharField" name="rest">%(meeting_num)s/agenda.html</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="35" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/meeting_agenda_text.cgi</field>
+    <field type="CharField" name="url">meeting</field>
+    <field type="CharField" name="rest">%(meeting_num)s/agenda.txt</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="36" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/meeting_materials.cgi</field>
+    <field type="CharField" name="url">meeting</field>
+    <field type="CharField" name="rest">%(meeting_num)s/materials.html</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="4" model="redirects.command">
+    <field type="CharField" name="command">show_ind_id</field>
+    <field type="CharField" name="url">ind</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">2</field>
+  </object>
+  <object pk="3" model="redirects.command">
+    <field type="CharField" name="command">show_wg</field>
+    <field type="CharField" name="url">wg</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">2</field>
+  </object>
+  <object pk="5" model="redirects.command">
+    <field type="CharField" name="command">show_list</field>
+    <field type="CharField" name="url"></field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">5</field>
+  </object>
+  <object pk="6" model="redirects.command">
+    <field type="CharField" name="command">view_state_desc</field>
+    <field type="CharField" name="url">help/state</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">4</field>
+  </object>
+  <object pk="9" model="redirects.command">
+    <field type="CharField" name="command">view_evaluation_desc</field>
+    <field type="CharField" name="url">help/evaluation</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel"><None></None></field>
+  </object>
+  <object pk="8" model="redirects.command">
+    <field type="CharField" name="command">view_key</field>
+    <field type="CharField" name="url">help/ballot</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel"><None></None></field>
+  </object>
+  <object pk="10" model="redirects.command">
+    <field type="CharField" name="command">send_email</field>
+    <field type="CharField" name="url">feedback</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel"><None></None></field>
+  </object>
+  <object pk="11" model="redirects.command">
+    <field type="CharField" name="command">view_comment</field>
+    <field type="CharField" name="url">comment</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">4</field>
+  </object>
+  <object pk="12" model="redirects.command">
+    <field type="CharField" name="command">view_minute</field>
+    <field type="CharField" name="url"></field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">16</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">4</field>
+  </object>
+  <object pk="13" model="redirects.command">
+    <field type="CharField" name="command">show_wg_id</field>
+    <field type="CharField" name="url">wgid</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">4</field>
+  </object>
+  <object pk="14" model="redirects.command">
+    <field type="CharField" name="command">show_other</field>
+    <field type="CharField" name="url">other</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">5</field>
+  </object>
+  <object pk="15" model="redirects.command">
+    <field type="CharField" name="command">show_detail</field>
+    <field type="CharField" name="url"></field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">14</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">6</field>
+  </object>
+  <object pk="16" model="redirects.command">
+    <field type="CharField" name="command">print_ballot</field>
+    <field type="CharField" name="url">ballot</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">6</field>
+  </object>
+  <object pk="17" model="redirects.command">
+    <field type="CharField" name="command">^sub_state^view_state_desc</field>
+    <field type="CharField" name="url">help/substate</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">4</field>
+  </object>
+  <object pk="18" model="redirects.command">
+    <field type="CharField" name="command">^rfc_flag</field>
+    <field type="CharField" name="url"></field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">7</field>
+  </object>
+  <object pk="19" model="redirects.command">
+    <field type="CharField" name="command">show_detail</field>
+    <field type="CharField" name="url"></field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">15</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">6</field>
+  </object>
+  <object pk="20" model="redirects.command">
+    <field type="CharField" name="command">view_related_docs</field>
+    <field type="CharField" name="url"></field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">8</field>
+  </object>
+  <object pk="21" model="redirects.command">
+    <field type="CharField" name="command">update_ipr</field>
+    <field type="CharField" name="url">update</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">20</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">9</field>
+  </object>
+  <object pk="22" model="redirects.command">
+    <field type="CharField" name="command">update_ipr</field>
+    <field type="CharField" name="url">update</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">22</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">9</field>
+  </object>
+  <object pk="23" model="redirects.command">
+    <field type="CharField" name="command">update_ipr</field>
+    <field type="CharField" name="url">update</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">21</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">9</field>
+  </object>
+  <object pk="24" model="redirects.command">
+    <field type="CharField" name="command">^filename^view_id</field>
+    <field type="CharField" name="url"></field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">10</field>
+  </object>
+  <object pk="25" model="redirects.command">
+    <field type="CharField" name="command">^filename^id_detail</field>
+    <field type="CharField" name="url"></field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">10</field>
+  </object>
+  <object pk="2" model="redirects.suffix">
+    <field type="CharField" name="rest">%(fl)s</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="4" model="redirects.suffix">
+    <field type="CharField" name="rest">%(id)s</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="5" model="redirects.suffix">
+    <field type="CharField" name="rest">%(cat)s</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="6" model="redirects.suffix">
+    <field type="CharField" name="rest">%(ballot_id)s</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="7" model="redirects.suffix">
+    <field type="CharField" name="rest">rfc%(dTag)s/%(command)s</field>
+    <field type="CharField" name="remove">view_id</field>
+  </object>
+  <object pk="8" model="redirects.suffix">
+    <field type="CharField" name="rest">%(id)s/related</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="9" model="redirects.suffix">
+    <field type="CharField" name="rest">%(ipr_id)s</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="10" model="redirects.suffix">
+    <field type="CharField" name="rest">%(filename)s</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+</django-objects>

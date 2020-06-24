@@ -1,0 +1,14 @@
+{% load ietf_filters %}{% autoescape off %}{% filter wordwrap:78 %}
+Team {{ team.acronym }} has {{ assignments|length }} accepted or assigned review{{ assignments|length|pluralize }} overdue by at least {{ min_overdue_days }} days.
+
+All reviews overdue by at least {{ min_overdue_days }} days are listed below, including links to mark each of them as no response. 
+  
+{% for assignment in assignments %}
+Review of {{ assignment.review_request.doc }} by {{ assignment.reviewer.person }}
+https://{{ domain }}{% url 'ietf.doc.views_review.mark_reviewer_assignment_no_response' name=assignment.review_request.doc.name assignment_id=assignment.pk %} 
+
+{% endfor %}
+
+This reminder will be sent daily.
+
+{% endfilter %}{% endautoescape %}

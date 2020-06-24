@@ -1,0 +1,15 @@
+#!/bin/bash
+
+version=0.10
+program=${0##*/}
+progdir=${0%/*}
+if [ "$progdir" = "$program" ]; then progdir="."; fi
+if [ "$progdir" = "." ]; then progdir="$PWD"; fi
+parent=$(dirname $progdir)
+if [ "$parent" = "." ]; then parent="$PWD"; fi
+
+# ----------------------------------------------------------------------
+
+$progdir/run ietf/manage.py runserver 0.0.0.0:8000
+
+

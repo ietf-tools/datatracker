@@ -1,0 +1,11 @@
+{% load ietf_filters %}{% with doc.rfc_number as rfc_number %}
+  o {{doc.canonical_name}}{% if not rfc_number %}-{{doc.rev}}{% endif %}{% endwith %}{%if doc.has_rfc_editor_note %} (Has RFC Editor Note){% endif %}{% if doc.stream %}  - {{ doc.stream }} stream{% endif %}
+    {% filter wordwrap:"68"|indent|indent %}{{ doc.title }} ({{ doc.intended_std_level }}){% endfilter %}
+{% if doc.note %}{# note: note is not escaped #}    {% filter wordwrap:"68"|indent|indent %}Note: {{ doc.note|striptags }}{% endfilter %}
+{% endif %}    Token: {{ doc.ad }}{% if doc.iana_review_state %}
+    IANA Review: {{ doc.iana_review_state }}{% endif %}{% if doc.consensus %}
+    Consensus: {{ doc.consensus }}{% endif %}{% if doc.lastcall_expires %}
+    Last call expires: {{ doc.lastcall_expires|date:"Y-m-d" }}{% endif %}{% if doc.review_assignments %}
+    Reviews: {% for assignment in doc.review_assignments %}{% with current_doc_name=doc.name current_rev=doc.rev %}{% if not forloop.first %}             {% endif %}{{ assignment.review_request.team.acronym|upper }} {{ assignment.review_request.type.name }} Review{% if assignment.state_id == "completed" or assignment.state_id == "part-completed" %}{% if assignment.reviewed_rev and assignment.reviewed_rev != current_rev or assignment.review_request.doc.name != current_doc_name %} (of {% if assignment.review_request.doc.name != current_doc_name %}{{ assignment.review_request.doc.name }}{% endif %}-{{ assignment.reviewed_rev }}){% endif %}{% if assignment.result %}: {{ assignment.result.name }}{% endif %} {% if assignment.state_id == "part-completed" %}(partially completed){% endif %}{% else %} - due: {{ assignment.review_request.deadline|date:"Y-m-d" }}{% endif %}{% endwith %}
+{% endfor %}{% endif %}
+{% with doc.active_defer_event as defer %}{% if defer %}    Was deferred by {{defer.by}} on {{defer.time|date:"Y-m-d"}}{% endif %}{% endwith %}

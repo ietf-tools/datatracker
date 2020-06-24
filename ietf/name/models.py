@@ -125,4 +125,8 @@ class ImportantDateName(NameModel):
     default_offset_days = models.SmallIntegerField()
 class DocUrlTagName(NameModel):
     "Repository, Wiki, Issue Tracker, ..."
-    
+class ExtResourceTypeName(NameModel):
+    """Url, Email, String"""
+class ExtResourceName(NameModel):
+    """GitHub Repository URL, GitHub Username, ..."""
+    type = ForeignKey(ExtResourceTypeName)

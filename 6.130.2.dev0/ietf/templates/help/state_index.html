@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block title %} Document state index{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>Document state index</h1>
+
+  <p>Document state information is available for the following document and document state groups:</p>
+
+  <table class="table table-condensed table-striped tablesorter">
+    <thead>
+      <tr>
+        <th>Document</th>
+        <th>State groups</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for type in types %}
+        {% if type.stategroups != None %}
+          <tr>
+            <td><a href="{% url 'ietf.help.views.state' doc=type.slug %}">{{type.slug}}</a></td>
+            <td>
+	      {% for group in type.stategroups %}
+	        <a href="{% url 'ietf.help.views.state' doc=type.slug type=group %}">{{ group }}</a>{% if not forloop.last %}, {% endif %}
+	      {% endfor %}
+            </td>
+          </tr>
+        {% endif %}
+      {% endfor %}
+
+    </tbody>
+  </table>
+
+
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

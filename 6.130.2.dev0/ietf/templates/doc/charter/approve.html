@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Approve {{ charter.canonical_name }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Approve {{ charter.canonical_name }}-{{ charter.rev }}</h1>
+
+  <form method="post">
+    {% csrf_token %}
+    <pre>{{ announcement }}</pre>
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Send announcement, close ballot & update revision</button>
+      <a class="btn btn-warning" href="{% url "ietf.doc.views_charter.action_announcement_text" name=charter.canonical_name %}?next=approve">Edit/regenerate announcement</a>
+      <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=charter.name %}">Back</a>
+    {% endbuttons %}
+  </form>
+{% endblock %}

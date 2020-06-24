@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}{% if submission == None %}Add new submission request email{% else %}Add submission request email to {{ submission.name }}{% endif %}{% endblock %}
+
+{% block content %}
+  {% origin %}
+    <h1>Add email</h1>
+
+  {% if submission == None %}
+    <p>
+      A new submission request will be created for the given name and revision. The
+      name must take the form "draft-xxx-nn" where xxx is lowercase letters, digits or dashes
+      and nn is the revision number - 00 for the initial revision. For example<br/>
+      &nbsp;&nbsp;&nbsp;draft-my-spec-00
+    </p>
+  {% else %}
+    <p>
+      The email will be added to the submission history for {{ submission.name }}
+    </p>
+  {% endif %}
+
+    <form class="add-email" method="post">
+        {% csrf_token %}
+
+        {% bootstrap_form form %}
+    
+        {% buttons %}
+            <button type="submit" class="btn btn-primary">Add Email</button>
+            <a class="btn btn-default pull-right" href="{% url "ietf.submit.views.manualpost" %}">Back</a>
+        {% endbuttons %}
+    </form>
+
+{% endblock %}

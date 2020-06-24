@@ -1,0 +1,11 @@
+{% autoescape off %}{% load ietf_filters %}
+           IETF Working Group Summary (By Area)
+
+
+{% for area in areas %}{{ area.name }} ({{ area.acronym }})
+{{ area.name|dashify }}------{% for ad in area.ads %}
+  {{ ad.person.plain_name }} <{{ ad.email.address }}>{% endfor %}
+
+{% for group in area.groups %}{{ group.name }} ({{ group.acronym }})
+{% include "group/group_entry.txt" %}
+{% endfor %}{% endfor %}{% endautoescape %}

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load ietf_filters %}
+
+{% block pagehead %}
+  <link rel="alternate" type="application/atom+xml" href="/feed/iesg-agenda/">
+{% endblock %}
+
+{% block morecss %}
+  .dl-horizontal dd:before, .dl-horizontal dd:after, .panel-body:after {
+  content: none;
+  }
+{% endblock %}
+
+{% block title %}IESG agenda: {{ date }}{% endblock %}
+
+{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <div class="row">
+    <div class="col-md-10">
+      <h1>IESG agenda: {{ date }} </h1>
+
+      <ul class="nav nav-tabs" role="tablist">
+	 <li class="active"><a href="{% url 'ietf.iesg.views.agenda' %}">IESG Agenda</a></li>
+	 <li class="      "><a href="{% url 'ietf.iesg.views.agenda_documents' %}">Documents on future agendas</a></li>
+	 <li class="      "><a href="{% url 'ietf.iesg.views.discusses' %}">DISCUSS positions</a></li>
+	 <li class="      "><a href="{% url 'ietf.iesg.views.past_documents' %}">Documents on recent agendas</a></li>
+	 <li class="      "><a href="{% url 'ietf.iesg.views.photos' %}">IESG Photos</a></li>
+      </ul>
+
+      {% for num, section in sections %}
+
+        {% if num|sectionlevel == 1 %}<h2 class="anchor-target" id="{{num}}">{{ num }}. {{ section.title|safe }}</h2>{% endif %}
+        {% if num|sectionlevel == 2 %}<h3 class="anchor-target" id="{{num}}">{{ num }} {{ section.title|safe }}</h3>{% endif %}
+        {% if num|sectionlevel == 3 %}<h4 class="anchor-target" id="{{num}}">{{ num }} {{ section.title|safe }}</h4>{% endif %}
+
+        {% if num == "1.4" %}
+          <pre>
+            {{ section.text }}
+          </pre>
+        {% endif %}
+
+        {% if num >= "2" and num < "5" %}
+	  {% if num == "2" %}
+	    <p class="alert alert-info">
+	      Reviews should focus on these questions: "Is this document a
+	      reasonable basis on which to build the salient part of the Internet
+	      infrastructure? If not, what changes would make it so?"
+	    </p>
+	  {% endif %}
+
+	  {% if num == "3.1" or num == "3.2" %}
+            <p class="alert alert-info">
+              Reviews should focus on these questions: "Is this document a
+              reasonable contribution to the area of Internet engineering
+              which it covers? If not, what changes would make it so?"
+            </p>
+          {% endif %}
+
+          {% if num == "3.3" %}
+            <p class="alert alert-info">
+              Reviews should focus on these questions: "Are the proposed
+              changes to document status appropriate? Have all requirements
+              for such a change been met? If not, what changes to the proposal
+              would make it appropriate?"
+            </p>
+          {% endif %}
+
+          {% if num == "3.4" %}
+            <p class="alert alert-info">
+              The IESG will use RFC 5742 responses:
+            </p>
+            <ol>
+              <li>The IESG has concluded
+	        that there is no conflict between this document and IETF work;</li>
+              <li>The IESG has concluded that this work is related to IETF work done
+	        in WG &lt;X&gt;, but this relationship does not prevent
+	        publishing;</li>
+              <li>The IESG has concluded that publication could
+	        potentially disrupt the IETF work done in WG &lt;X&gt; and
+	        recommends not publishing the document at this time;</li>
+              <li>The IESG
+	        has concluded that this document violates IETF procedures for
+	        &lt;Y&gt; and should therefore not be published without IETF
+	        review and IESG approval; or</li>
+              <li>The IESG has concluded that this
+	        document extends an IETF protocol in a way that requires IETF
+	        review and should therefore not be published without IETF review
+	        and IESG approval.</li>
+            </ol>
+            <p>
+              The document shepherd must propose one of these responses in the
+              conflict-review document, and the document shepherd may supply text
+              for an IESG Note in that document. The Area Director ballot positions
+              indicate consensus with the response proposed by the document shepherd
+              and agreement that the IESG should request inclusion of the IESG Note.</p>
+            <p>
+              Other matters may be recorded in comments, and the comments will
+              be passed on to the RFC Editor as community review of the document.
+            </p>
+          {% endif %}
+
+
+          {% if "docs" in section %}
+            {% for doc in section.docs %}
+              {% if doc.type_id == "draft" or doc.type_id == "statchg" %}{% include "iesg/agenda_doc.html" %}{% endif %}
+              {% if doc.type_id == "conflrev" %}{% include "iesg/agenda_conflict_doc.html" %}{% endif %}
+              {% if doc.type_id == "charter" %}{% include "iesg/agenda_charter.html" %}{% endif %}
+              {% if not forloop.last %}<hr>{% endif %}
+            {% empty %}
+              <p class="text-muted">(None)</p>
+            {% endfor %}
+          {% endif %}
+        {% endif %}
+
+        {% if num|startswith:"6." and user|has_role:"Area Director,IAB Chair,Secretariat" %}
+          <pre>{{ section.text|wordwrap:"80" }}</pre>
+        {% endif %}
+
+      {% endfor %}
+    </div>
+
+    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
+      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+	{% for num, section in sections %}
+	  {% if num|sectionlevel <= 1 %}
+	    <li><a href="#{{num}}">{{ section.title|safe }}</a></li>
+	  {% endif %}
+	{% endfor %}
+      </ul>
+    </div>
+
+  </div>
+{% endblock content %}

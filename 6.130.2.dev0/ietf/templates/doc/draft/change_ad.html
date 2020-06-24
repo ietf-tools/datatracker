@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Change shepherding AD for {{ doc.name }}-{{ doc.rev }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Change shepherding AD<br><small>{{ doc.name }}-{{ doc.rev }}</small></h1>
+
+  <form enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
+
+{% endblock %}

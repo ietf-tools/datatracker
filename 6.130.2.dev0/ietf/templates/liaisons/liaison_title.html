@@ -1,0 +1,8 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load ietf_filters %}
+
+{% if not liaison.from_contact %}
+  Liaison statement submitted by email from {{ liaison.from_groups.first.name }} to {{ liaison.to_groups.first.name }} on {{ liaison.submitted|date:"Y-m-d" }}
+{% else %}
+  {{ liaison.title }}
+{% endif %}

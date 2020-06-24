@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin bootstrap3 static %}
+
+{% block title %}Reject review assignment for {{ review_req.doc.name }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Reject review assignment<br><small>{{ review_req.doc.name }}</small></h1>
+
+  {% include "doc/review/request_info.html" %}
+
+  {% if not review_request_past_deadline %}
+    <p>Do you want to reject this assignment?</p>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% bootstrap_form form %}
+
+      {% buttons %}
+      <a class="btn btn-default" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=review_req.pk %}">Cancel</a>
+      <button type="submit" class="btn btn-primary" name="action" value="reject">Reject assignment</button>
+      {% endbuttons %}
+    </form>
+  {% else %}
+    <p class="alert alert-info">
+      This review assignment can not be rejected, as the deadline of the review request has already passed.
+    </p>
+  {% endif %}
+
+{% endblock %}
