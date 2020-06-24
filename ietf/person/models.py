@@ -48,7 +48,7 @@ class Person(models.Model):
     photo = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
     photo_thumb = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
     name_from_draft = models.CharField("Full Name (from submission)", null=True, max_length=255, editable=False, help_text="Name as found in a draft submission.")
-    consent = models.NullBooleanField("I hereby give my consent to the use of the personal details I have provided (photo, bio, name, email) within the IETF Datatracker", null=True, default=None)
+    consent = models.BooleanField("I hereby give my consent to the use of the personal details I have provided (photo, bio, name, email) within the IETF Datatracker", null=True, default=None)
 
     def __str__(self):
         return self.plain_name()

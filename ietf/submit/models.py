@@ -78,7 +78,7 @@ class SubmissionCheck(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
     submission = ForeignKey(Submission, related_name='checks')
     checker = models.CharField(max_length=256, blank=True)
-    passed = models.NullBooleanField(default=False)
+    passed = models.BooleanField(null=True, default=False)
     message = models.TextField(null=True, blank=True)
     errors = models.IntegerField(null=True, blank=True, default=None)
     warnings = models.IntegerField(null=True, blank=True, default=None)
