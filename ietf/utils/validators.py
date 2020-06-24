@@ -55,8 +55,8 @@ class RegexStringValidator(object):
 validate_regular_expression_string = RegexStringValidator()
 
 def validate_file_size(file):
-    if file._size > settings.SECR_MAX_UPLOAD_SIZE:
-        raise ValidationError('Please keep filesize under %s. Requested upload size was %s' % (filesizeformat(settings.SECR_MAX_UPLOAD_SIZE), filesizeformat(file._size)))
+    if file.size > settings.SECR_MAX_UPLOAD_SIZE:
+        raise ValidationError('Please keep filesize under %s. Requested upload size was %s' % (filesizeformat(settings.SECR_MAX_UPLOAD_SIZE), filesizeformat(file.size)))
 
 def validate_mime_type(file, valid):
     file.open()
