@@ -196,7 +196,7 @@ class CustomApiTests(TestCase):
         r = self.client.get(url, {'apikey': apikey.hash()})
         self.assertEqual(r.status_code, 200)
         data = r.json()
-        self.assertEqual(data['name'], person.name)
+        self.assertEqual(data['name'], person.plain_name())
         self.assertEqual(data['email'], person.email().address)
 
     def test_api_new_meeting_registration(self):
