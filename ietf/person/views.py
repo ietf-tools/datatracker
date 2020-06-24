@@ -111,7 +111,7 @@ def merge(request):
             target = form.cleaned_data.get('target')
             # Do merge with force
             output = StringIO()
-            success, changes = merge_persons(source, target, file=output)
+            success, changes = merge_persons(request, source, target, file=output)
             if success:
                 messages.success(request, 'Merged {} ({}) to {} ({}). {})'.format(
                     source.name, source_id, target.name, target.id, changes))

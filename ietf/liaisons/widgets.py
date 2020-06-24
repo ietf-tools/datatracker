@@ -17,7 +17,7 @@ class ButtonWidget(Widget):
         self.required_label = kwargs.pop('required_label', None)
         super(ButtonWidget, self).__init__(*args, **kwargs)
 
-    def render(self, name, value, attrs=None):
+    def render(self, name, value, **kwargs):
         html = '<span style="display: none" class="showAttachsOn">%s</span>' % conditional_escape(self.show_on)
         html += '<span style="display: none" class="attachEnabledLabel">%s</span>' % conditional_escape(self.label)
         if self.require:
@@ -30,7 +30,7 @@ class ButtonWidget(Widget):
 
 
 class ShowAttachmentsWidget(Widget):
-    def render(self, name, value, attrs=None):
+    def render(self, name, value, **kwargs):
         html = '<div id="id_%s">' % name
         html += '<span style="display: none" class="showAttachmentsEmpty form-control widget">No files attached</span>'
         html += '<div class="attachedFiles form-control widget">'

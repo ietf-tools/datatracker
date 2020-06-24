@@ -1073,7 +1073,7 @@ class StateDocEvent(DocEvent):
     state = ForeignKey(State, blank=True, null=True)
 
 class ConsensusDocEvent(DocEvent):
-    consensus = models.NullBooleanField(default=None)
+    consensus = models.BooleanField(null=True, default=None)
 
 # IESG events
 class BallotType(models.Model):
@@ -1164,7 +1164,7 @@ class BallotPositionDocEvent(DocEvent):
     discuss_time = models.DateTimeField(help_text="Time discuss text was written", blank=True, null=True)
     comment = models.TextField(help_text="Optional comment", blank=True)
     comment_time = models.DateTimeField(help_text="Time optional comment was written", blank=True, null=True)
-    send_email = models.NullBooleanField(default=None)
+    send_email = models.BooleanField(null=True, default=None)
 
     @memoize
     def any_email_sent(self):
