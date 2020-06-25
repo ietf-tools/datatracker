@@ -1,3 +1,55 @@
+ietfdb (7.5.0) ietf; urgency=medium
+
+  **Django 2.1 upgrade and bugfixes**
+
+  * Merged in [18036] from rjsparks@nostrum.com:
+    Tweaked the title of the page used to complete reviews. Fixes #2767.  
+
+  * Merged in [18037] from rjsparks@nostrum.com:
+    Removed abandoned charters from any future telechats. Fixes #3003.  
+
+  * Separated the session cache from the default cache, using slightly 
+    different settings, in order to not drop sessions when a new release is 
+    deployed.
+
+  * Added a default logger and level for 'django.security' log items, to 
+    route them to our regular syslog.  This will give us more information about 
+    failures to retrieve session info, and also things like 404 responses, 
+    which will already be captured in the apache log but with less info.  May 
+    need revisiting if it proves to cause excessive logging.
+
+  * Fixed a problem with the code to update a missing person record 
+    association in a meeting registration record.
+
+  * Fixed an issue in a test function that could occasionally fail 
+    incorrectly.
+
+  * Removed the wsgi.py warning about starting without virtualenv; this is 
+    normal under Py3.
+
+  * Fixed a problem with the handling of multiple registrations for the 
+    same person and meeting in api_new_meeting_registration().
+
+  Django 2.1 transition changes:
+
+  * Changed NullBoleanField() to BooleanField(null=True), according to the 
+    2.1 upgrade recommendations.
+
+  * Changed the removed django.contrib.auth.views.logout to LogoutView.
+
+  * Adjusted to the changed signature of admin.utils.get_deleted_objects()
+
+  * Adjusted the code to the attribute name change from ._size to .size in
+    file upload objects.
+
+  * Updated the requirements for Django 2.1
+
+  * The .render() method of widgets now must accept an additional keyword
+    argument 'renderer'; adjusted the code accordingly (including a library
+    patch -- pull request also submitted).
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 Jun 2020 20:45:14 +0000
+
 ietfdb (7.4.0) ietf; urgency=medium
 
   **Test suite and OpenID improvements**

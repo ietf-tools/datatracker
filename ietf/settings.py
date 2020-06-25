@@ -905,6 +905,8 @@ INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 FLOORPLAN_MEDIA_DIR = 'floor'
 FLOORPLAN_DIR = os.path.join(MEDIA_ROOT, FLOORPLAN_MEDIA_DIR)
 
+MEETING_USES_CODIMD_DATE = datetime.date(2020,7,6)
+
 # === OpenID Connect Provide Related Settings ==================================
 
 # Used by django-oidc-provider

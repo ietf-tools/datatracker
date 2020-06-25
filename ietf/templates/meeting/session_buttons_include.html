@@ -16,10 +16,18 @@
   {% endif %}
 
   <!-- etherpad -->
-  {% if item.timeslot.type.slug == 'plenary' %}
-    <a class="" href="https://etherpad.ietf.org:9009/p/notes-ietf-{{ meeting.number }}-plenary?useMonospaceFont=true" title="Etherpad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
+  {% if use_codimd %}
+    {% if item.timeslot.type.slug == 'plenary' %}
+      <a class="" href="https://codimd.ietf.org/notes-ietf-{{ meeting.number }}-plenary title="Etherpad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
+    {% else %}
+      <a class="" href="https://codimd.ietf.org/notes-ietf-{{ meeting.number }}-{{session.historic_group.acronym}}" title="Etherpad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
+    {% endif %}
   {% else %}
-    <a class="" href="https://etherpad.ietf.org:9009/p/notes-ietf-{{ meeting.number }}-{{session.historic_group.acronym}}?useMonospaceFont=true" title="Etherpad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
+    {% if item.timeslot.type.slug == 'plenary' %}
+      <a class="" href="https://etherpad.ietf.org:9009/p/notes-ietf-{{ meeting.number }}-plenary?useMonospaceFont=true" title="Etherpad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
+    {% else %}
+      <a class="" href="https://etherpad.ietf.org:9009/p/notes-ietf-{{ meeting.number }}-{{session.historic_group.acronym}}?useMonospaceFont=true" title="Etherpad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
+    {% endif %}
   {% endif %}
 
   {# show stream buttons up till end of session, then show archive buttons #}

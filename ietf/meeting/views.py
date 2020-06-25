@@ -957,6 +957,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         "group_parents": group_parents,
         "now": datetime.datetime.now(),
         "is_current_meeting": bool(num == get_current_ietf_meeting_num()),
+        "use_codimd": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
     }, content_type=mimetype[ext])
 
     # If the agenda is for the current meeting, only cache for 2 minutes
@@ -1625,6 +1626,7 @@ def session_details(request, num, acronym):
                     'can_view_request': can_view_request,
                     'thisweek': datetime.date.today()-datetime.timedelta(days=7),
                     'now': datetime.datetime.now(),
+                    'use_codimd': True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
                   })
 
 class SessionDraftsForm(forms.Form):
@@ -2733,7 +2735,8 @@ def upcoming(request):
                   'menu_actions': actions,
                   'menu_entries': menu_entries,
                   'selected_menu_entry': selected_menu_entry,
-                  'now': datetime.datetime.now()
+                  'now': datetime.datetime.now(),
+                  'use_codimd': True if datetime.date.today()>=settings.MEETING_USES_CODIMD_DATE else False,
                   })
 
 
