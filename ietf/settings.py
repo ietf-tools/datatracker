@@ -630,6 +630,7 @@ URL_REGEXPS = {
     "rev": r"(?P<rev>[0-9]{1,2}(-[0-9]{2})?)",
     "owner": r"(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)",
     "schedule_name": r"(?P<name>[A-Za-z0-9-:_]+)",
+    "group_edit_field": r"(?P<field>[\w-]+)",
 }
 
 # Override this in settings_local.py if needed
