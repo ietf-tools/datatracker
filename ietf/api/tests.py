@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+import json
 import os
 import sys
 
@@ -21,7 +22,7 @@ import debug                            # pyflakes:ignore
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.test_data import make_meeting_test_data
-from ietf.person.factories import PersonFactory
+from ietf.person.factories import PersonFactory, random_faker
 from ietf.person.models import PersonalApiKey
 from ietf.stats.models import MeetingRegistration
 from ietf.utils.mail import outbox, get_payload_text
@@ -134,6 +135,93 @@ class CustomApiTests(TestCase):
         self.assertEqual(doc.external_url, video)
         event = doc.latest_event()
         self.assertEqual(event.by, recman)
+
+    def test_api_upload_bluesheet(self):
+        url = urlreverse('ietf.meeting.views.api_upload_bluesheet')
+        recmanrole = RoleFactory(group__type_id='ietf', name_id='recman')
+        recman = recmanrole.person
+        meeting = MeetingFactory(type_id='ietf')
+        session = SessionFactory(group__type_id='wg', meeting=meeting)
+        group = session.group
+        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        
+        people = [
+                {"name":"Andrea Andreotti", "affiliation": "Azienda"},
+                {"name":"Bosse Bernadotte", "affiliation": "Bolag"},
+                {"name":"Charles Charlemagne", "affiliation": "Compagnie"},
+            ]
+        for i in range(3):
+            faker = random_faker()
+            people.append(dict(name=faker.name(), affiliation=faker.company()))
+        bluesheet = json.dumps(people)
+
+        # error cases
+        r = self.client.post(url, {})
+        self.assertContains(r, "Missing apikey parameter", status_code=400)
+
+        badrole  = RoleFactory(group__type_id='ietf', name_id='ad')
+        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badrole.person.user.last_login = timezone.now()
+        badrole.person.user.save()
+        r = self.client.post(url, {'apikey': badapikey.hash()} )
+        self.assertContains(r, "Restricted to roles Recording Manager, Secretariat", status_code=403)
+
+        r = self.client.post(url, {'apikey': apikey.hash()} )
+        self.assertContains(r, "Too long since last regular login", status_code=400)
+        recman.user.last_login = timezone.now()
+        recman.user.save()
+
+        r = self.client.get(url, {'apikey': apikey.hash()} )
+        self.assertContains(r, "Method not allowed", status_code=405)
+
+        r = self.client.post(url, {'apikey': apikey.hash()} )
+        self.assertContains(r, "Missing meeting parameter", status_code=400)
+
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, } )
+        self.assertContains(r, "Missing group parameter", status_code=400)
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym} )
+        self.assertContains(r, "Missing item parameter", status_code=400)
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym, 'item': '1'} )
+        self.assertContains(r, "Missing bluesheet parameter", status_code=400)
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': '1', 'group': group.acronym,
+                                    'item': '1', 'bluesheet': bluesheet, })
+        self.assertContains(r, "No sessions found for meeting", status_code=400)
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': 'bogous',
+                                    'item': '1', 'bluesheet': bluesheet, })
+        self.assertContains(r, "No sessions found in meeting '%s' for group 'bogous'"%meeting.number, status_code=400)
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
+                                    'item': '1', 'bluesheet': "foobar", })
+        self.assertContains(r, "Invalid json value: 'foobar'", status_code=400)
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
+                                    'item': '5', 'bluesheet': bluesheet, })
+        self.assertContains(r, "No item '5' found in list of sessions for group", status_code=400)
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
+                                    'item': 'foo', 'bluesheet': bluesheet, })
+        self.assertContains(r, "Expected a numeric value for 'item', found 'foo'", status_code=400)
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
+                                    'item': '1', 'bluesheet': bluesheet, })
+        self.assertContains(r, "Done", status_code=200)
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
+                                    'item': '1', 'bluesheet': bluesheet, })
+        debug.show('bluesheet')
+        self.assertContains(r, "Done", status_code=200)
+
+        bluesheet = session.sessionpresentation_set.filter(document__type__slug='bluesheets').first().document
+        with open(bluesheet.get_file_name()) as file:
+            text = file.read()
+            for p in people:
+                self.assertIn(p['name'], text)
+                self.assertIn(p['affiliation'], text)
 
     def test_person_export(self):
         person = PersonFactory()

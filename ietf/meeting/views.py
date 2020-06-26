@@ -13,6 +13,7 @@ import os
 import pytz
 import re
 import tarfile
+import tempfile
 import markdown2
 
 
@@ -1702,54 +1703,26 @@ def upload_session_bluesheets(request, session_id, num):
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
-    bluesheet_sp = session.sessionpresentation_set.filter(document__type='bluesheets').first()
-    
     if request.method == 'POST':
         form = UploadBlueSheetForm(request.POST,request.FILES)
         if form.is_valid():
             file = request.FILES['file']
-            _, ext = os.path.splitext(file.name)
-            if bluesheet_sp:
-                doc = bluesheet_sp.document
-                doc.rev = '%02d' % (int(doc.rev)+1)
-                bluesheet_sp.rev = doc.rev
-                bluesheet_sp.save()
-            else:
-                ota = session.official_timeslotassignment()
-                sess_time = ota and ota.timeslot.time
-                if not sess_time:
-                    return HttpResponse("Cannot receive uploads for an unscheduled session.  Please check the session ID.", status=410, content_type="text/plain")
-                if session.meeting.type_id=='ietf':
-                    name = 'bluesheets-%s-%s-%s' % (session.meeting.number, 
-                                                    session.group.acronym, 
-                                                    sess_time.strftime("%Y%m%d%H%M"))
-                    title = 'Bluesheets IETF%s: %s : %s' % (session.meeting.number, 
-                                                            session.group.acronym, 
-                                                            sess_time.strftime("%a %H:%M"))
-                else:
-                    name = 'bluesheets-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
-                    title = 'Bluesheets %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
-                doc = Document.objects.create(
-                          name = name,
-                          type_id = 'bluesheets',
-                          title = title,
-                          group = session.group,
-                          rev = '00',
-                      )
-                doc.states.add(State.objects.get(type_id='bluesheets',slug='active'))
-                DocAlias.objects.create(name=doc.name).docs.add(doc)
-                session.sessionpresentation_set.create(document=doc,rev='00')
-            filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
-            doc.uploaded_filename = filename
-            e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
-            save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=form.file_encoding[file.name])
+
+            ota = session.official_timeslotassignment()
+            sess_time = ota and ota.timeslot.time
+            if not sess_time:
+                return HttpResponse("Cannot receive uploads for an unscheduled session.  Please check the session ID.", status=410, content_type="text/plain")
+
+
+            save_error = save_bluesheet(request, session, file, encoding=form.file_encoding[file.name])
             if save_error:
                 form.add_error(None, save_error)
             else:
-                doc.save_with_history([e])
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
         form = UploadBlueSheetForm()
+
+    bluesheet_sp = session.sessionpresentation_set.filter(document__type='bluesheets').first()
 
     return render(request, "meeting/upload_session_bluesheets.html", 
                   {'session': session,
@@ -1758,6 +1731,47 @@ def upload_session_bluesheets(request, session_id, num):
                    'form': form,
                   })
 
+
+def save_bluesheet(request, session, file, encoding='utf-8'):
+    bluesheet_sp = session.sessionpresentation_set.filter(document__type='bluesheets').first()
+    _, ext = os.path.splitext(file.name)
+
+    if bluesheet_sp:
+        doc = bluesheet_sp.document
+        doc.rev = '%02d' % (int(doc.rev)+1)
+        bluesheet_sp.rev = doc.rev
+        bluesheet_sp.save()
+    else:
+        ota = session.official_timeslotassignment()
+        sess_time = ota and ota.timeslot.time
+
+        if session.meeting.type_id=='ietf':
+            name = 'bluesheets-%s-%s-%s' % (session.meeting.number, 
+                                            session.group.acronym, 
+                                            sess_time.strftime("%Y%m%d%H%M"))
+            title = 'Bluesheets IETF%s: %s : %s' % (session.meeting.number, 
+                                                    session.group.acronym, 
+                                                    sess_time.strftime("%a %H:%M"))
+        else:
+            name = 'bluesheets-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
+            title = 'Bluesheets %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+        doc = Document.objects.create(
+                  name = name,
+                  type_id = 'bluesheets',
+                  title = title,
+                  group = session.group,
+                  rev = '00',
+              )
+        doc.states.add(State.objects.get(type_id='bluesheets',slug='active'))
+        DocAlias.objects.create(name=doc.name).docs.add(doc)
+        session.sessionpresentation_set.create(document=doc,rev='00')
+    filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
+    doc.uploaded_filename = filename
+    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
+    save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=encoding)
+    if not save_error:
+        doc.save_with_history([e])
+    return save_error
 
 class UploadMinutesForm(FileUploadForm):
     apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
@@ -3018,6 +3032,64 @@ def api_set_session_video_url(request):
             time = session.official_timeslotassignment().timeslot.time
             title = 'Video recording for %s on %s at %s' % (acronym, time.date(), time.time())
             create_recording(session, url, title=title, user=user)
+    else:
+        return err(405, "Method not allowed")
+
+    return HttpResponse("Done", status=200, content_type='text/plain')
+
+
+@require_api_key
+@role_required('Recording Manager', 'Secretariat')
+@csrf_exempt
+def api_upload_bluesheet(request):
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+    if request.method == 'POST':
+        # parameters:
+        #   apikey: the poster's personal API key
+        #   meeting: number as string, i.e., '101', or 'interim-2018-quic-02'
+        #   group: acronym or special, i.e., 'quic' or 'plenary'
+        #   item: '1', '2', '3' (the group's first, second, third etc.
+        #                           session during the week)
+        #   bluesheet: json blob with [{'name': 'Name', 'affiliation': 'Organization', }, ...]
+        for item in ['meeting', 'group', 'item', 'bluesheet',]:
+            value = request.POST.get(item)
+            if not value:
+                return err(400, "Missing %s parameter" % item)
+        number = request.POST.get('meeting')
+        sessions = Session.objects.filter(meeting__number=number)
+        if not sessions.exists():
+            return err(400, "No sessions found for meeting '%s'" % (number, ))
+        acronym = request.POST.get('group')
+        sessions = sessions.filter(group__acronym=acronym)
+        if not sessions.exists():
+            return err(400, "No sessions found in meeting '%s' for group '%s'" % (number, acronym))
+        session_times = [ (s.official_timeslotassignment().timeslot.time, s) for s in sessions if s.official_timeslotassignment() ]
+        session_times.sort()
+        item = request.POST.get('item')
+        if not item.isdigit():
+            return err(400, "Expected a numeric value for 'item', found '%s'" % (item, ))
+        n = int(item)-1              # change 1-based to 0-based
+        try:
+            time, session = session_times[n]
+        except IndexError:
+            return err(400, "No item '%s' found in list of sessions for group" % (item, ))
+        bjson = request.POST.get('bluesheet')
+        try:
+            data = json.loads(bjson)
+        except json.decoder.JSONDecodeError:
+            return err(400, "Invalid json value: '%s'" % (bjson, ))
+
+        fd, name = tempfile.mkstemp(suffix=".txt", text=True)
+        os.close(fd)
+        with open(name, "w") as file:
+            file.write("Bluesheets for %s\n\n" % session)
+            for item in data:
+                file.write("{name}\t{affiliation}\n".format(**item))
+        with open(name, "br") as file:
+            save_err = save_bluesheet(request, session, file)
+        if save_err:
+            return err(400, save_err)
     else:
         return err(405, "Method not allowed")
 

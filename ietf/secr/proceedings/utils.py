@@ -59,8 +59,11 @@ def handle_upload_file(file,filename,meeting,subdir, request=None, encoding=None
                                       "Your upload %s was changed by the sanitization; please check the "
                                        "resulting content.  " % (filename, ))
     else:
-        for chunk in file.chunks():
-            destination.write(chunk)
+        if hasattr(file, 'chunks'):
+            for chunk in file.chunks():
+                destination.write(chunk)
+        else:
+            destination.write(file.read())
     destination.close()
 
     # unzip zipfile
