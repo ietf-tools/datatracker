@@ -240,7 +240,7 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
     info_registration = (
             "IETF Meeting Registration Info",
             "Access to public IETF meeting registration information for the current meeting. "
-            "Includes meeting number, registration type and ticket type.",
+            "Includes meeting number, affiliation, registration type and ticket type.",
         )
 
     def scope_registration(self):
@@ -274,6 +274,7 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
                 'ticket_type':  reg.ticket_type,
                 # in_person, onliine, hackathon:
                 'reg_type':     reg.reg_type,
+                'affiliation':  reg.affiliation,
             }
 
         return info

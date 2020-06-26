@@ -715,7 +715,7 @@ class OpenIDConnectTests(TestCase):
             # Get provider info
             client.provider_config( 'http://%s/api/openid' % host)
 
-            # No registration step -- we only supported this out-of-band
+            # No registration step -- we only support this out-of-band
 
             # Set shared client/provider information in the client
             client_reg = RegistrationResponse(  client_id= oid_client_record.client_id,
@@ -727,7 +727,9 @@ class OpenIDConnectTests(TestCase):
             RoleFactory(name_id='chair', person=person)
             meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
             MeetingRegistration.objects.create(
-                meeting=meeting, person=None, first_name=person.first_name(), last_name=person.last_name(), email=person.email())
+                    meeting=meeting, person=None, first_name=person.first_name(), last_name=person.last_name(),
+                    email=person.email(), ticket_type='full_week', reg_type='remote', affiliation='Some Company',
+                )
 
             # Get access authorisation
             session = {}
@@ -783,7 +785,8 @@ class OpenIDConnectTests(TestCase):
 
             # Get userinfo, check keys present
             userinfo = client.do_user_info_request(state=params["state"], scope=args['scope'])
-            for key in [ 'email', 'family_name', 'given_name', 'meeting', 'name', 'roles', ]:
+            for key in [ 'email', 'family_name', 'given_name', 'meeting', 'name', 'roles',
+                         'ticket_type', 'reg_type', 'affiliation', ]:
                 self.assertIn(key, userinfo)
 
             r = client.do_end_session_request(state=params["state"], scope=args['scope'])
