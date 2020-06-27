@@ -250,9 +250,11 @@ class InterimSessionModelForm(forms.ModelForm):
     def save(self, *args, **kwargs):
         """NOTE: as the baseform of an inlineformset self.save(commit=True)
         never gets called"""
-        session = super(InterimSessionModelForm, self).save(commit=kwargs.get('commit', True))
+        session = super(InterimSessionModelForm, self).save(commit=False)
         session.group = self.group
         session.type_id = 'regular'
+        if kwargs.get('commit', True) is True:
+            super(InterimSessionModelForm, self).save(commit=True)
         return session
 
     def save_agenda(self):
