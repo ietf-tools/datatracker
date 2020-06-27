@@ -56,7 +56,6 @@ if os.path.exists(settings.GHOSTSCRIPT_COMMAND):
     skip_pdf_tests = False
     skip_message = ""
 else:
-    import sys
     skip_pdf_tests = True
     skip_message = ("Skipping pdf test: The binary for ghostscript wasn't found in the\n       "
                     "location indicated in settings.py.")

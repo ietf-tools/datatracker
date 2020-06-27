@@ -30,7 +30,6 @@ elif (  os.path.exists(settings.DOT_BINARY) and
     skip_dot_to_pdf = False
     skip_message = ""
 else:
-    import sys
     skip_dot_to_pdf = True
     skip_message = ("Skipping dependency graph tests: One or more of the binaries for dot\n       "
                     "and unflatten weren't found in the locations indicated in settings.py")
