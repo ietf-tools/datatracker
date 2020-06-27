@@ -16,7 +16,7 @@ warnings.simplefilter("always", DeprecationWarning)
 warnings.filterwarnings("ignore", message="Add the `renderer` argument to the render\(\) method of", module="bootstrap3")
 warnings.filterwarnings("ignore", message="The logout\(\) view is superseded by")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
-
+warnings.filterwarnings("ignore", message="{% load staticfiles %} is deprecated")
 
 try:
     import syslog
@@ -378,9 +378,6 @@ if DEBUG:
 
 
 MIDDLEWARE = [
-    # Must be first to measure correct request timing
-    'request_profiler.middleware.ProfilingMiddleware',
-    #
     'django.middleware.csrf.CsrfViewMiddleware',
     'corsheaders.middleware.CorsMiddleware', # see docs on CORS_REPLACE_HTTPS_REFERER before using it
     'django.middleware.common.CommonMiddleware',
@@ -429,7 +426,6 @@ INSTALLED_APPS = [
     'djangobwr',
     'form_utils',
     'oidc_provider',
-    'request_profiler',
     'simple_history',
     'tastypie',
     'widget_tweaks',
