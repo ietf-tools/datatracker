@@ -1,6 +1,6 @@
 ietfdb (7.5.0) ietf; urgency=medium
 
-  **Django 2.1 upgrade and bugfixes**
+  **Django 2.1 upgrade, CodiMD support, bluesheet support for Meetecho, and bugfixes**
 
   * Merged in [18036] from rjsparks@nostrum.com:
     Tweaked the title of the page used to complete reviews. Fixes #2767.  
@@ -8,31 +8,45 @@ ietfdb (7.5.0) ietf; urgency=medium
   * Merged in [18037] from rjsparks@nostrum.com:
     Removed abandoned charters from any future telechats. Fixes #3003.  
 
-  * Separated the session cache from the default cache, using slightly 
-    different settings, in order to not drop sessions when a new release is 
+  * Separated the session cache from the default cache, using slightly
+    different settings, in order to not drop sessions when a new release is
     deployed.
 
-  * Added a default logger and level for 'django.security' log items, to 
-    route them to our regular syslog.  This will give us more information about 
-    failures to retrieve session info, and also things like 404 responses, 
-    which will already be captured in the apache log but with less info.  May 
-    need revisiting if it proves to cause excessive logging.
+  * Added a default logger and level for 'django.security' log items, to
+    route them to our regular syslog.  This will give us more information
+    about failures to retrieve session info, and also things like 404
+    responses, which will already be captured in the apache log but with
+    less info.  May need revisiting if it proves to cause excessive logging.
 
-  * Fixed a problem with the code to update a missing person record 
+  * Fixed a problem with the code to update a missing person record
     association in a meeting registration record.
 
-  * Fixed an issue in a test function that could occasionally fail 
-    incorrectly.
+  * Fixed a problem with the handling of multiple registrations for the same
+    person and meeting in api_new_meeting_registration().
 
-  * Removed the wsgi.py warning about starting without virtualenv; this is 
-    normal under Py3.
+  * Added a switchover date (currently July 6th) for Etherpad to CodiMD use,
+    and modified views and templates to provide links to codimd.ietf.org
+    for meetings (including interims) after that date.
 
-  * Fixed a problem with the handling of multiple registrations for the 
-    same person and meeting in api_new_meeting_registration().
+  * Added an API endpoint for bluesheet information upload.  Factored out
+    code in common with manual upload_session_bluesheets().  Tweaked
+    ietf.secr.proceedings.utils.handle_upload_file() to handle temp files in
+    addition to HTTP file objects, to support the API endpoint.
+
+  * Updated bin/mkpatch to use a --name switch, and normalize the name to
+    use '-' rather than '_', and give more feedback.
+
+  * Added the meeting registration 'affiliation' field to the OAuth2
+    'registration' scope, so that Meetecho will have the information needed
+    to build bluesheets.
+
+  * Merged in [18064] from rjsparks@nostrum.com:
+    Changed the group edit field url regexp to accept the field names
+    (specifically role names) we use by allowing hyphens.
 
   Django 2.1 transition changes:
 
-  * Changed NullBoleanField() to BooleanField(null=True), according to the 
+  * Changed NullBoleanField() to BooleanField(null=True), according to the
     2.1 upgrade recommendations.
 
   * Changed the removed django.contrib.auth.views.logout to LogoutView.
@@ -42,13 +56,14 @@ ietfdb (7.5.0) ietf; urgency=medium
   * Adjusted the code to the attribute name change from ._size to .size in
     file upload objects.
 
-  * Updated the requirements for Django 2.1
+  * Updated various component requirements to match Django 2.1.
 
-  * The .render() method of widgets now must accept an additional keyword
+  * The .render() method of widgets must now accept an additional keyword
     argument 'renderer'; adjusted the code accordingly (including a library
     patch -- pull request also submitted).
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  24 Jun 2020 20:45:14 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Jun 2020 12:20:30 +0000
+
 
 ietfdb (7.4.0) ietf; urgency=medium
 
