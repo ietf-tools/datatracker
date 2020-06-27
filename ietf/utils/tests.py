@@ -51,7 +51,7 @@ try:
 except ImportError as e:
     skip_wiki_glue_testing = True
     skip_message = "Skipping trac tests: %s" % e
-    sys.stderr.write("     "+skip_message+'\n')
+    print("     "+skip_message)
 
 class SendingMail(TestCase):
 

@@ -41,7 +41,7 @@ if code != 0:
     skip_selenium = True
     skip_message = "Skipping selenium tests: '{}' executable not found.".format(executable_name)
 if skip_selenium:
-    sys.stderr.write("     "+skip_message+'\n')
+    print("     "+skip_message)
 
 def start_web_driver():
     options = webdriver.ChromeOptions()

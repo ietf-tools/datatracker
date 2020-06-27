@@ -34,7 +34,7 @@ else:
     skip_dot_to_pdf = True
     skip_message = ("Skipping dependency graph tests: One or more of the binaries for dot\n       "
                     "and unflatten weren't found in the locations indicated in settings.py")
-    sys.stderr.write("     "+skip_message+'\n')
+    print("     "+skip_message)
 
 class StreamTests(TestCase):
     def test_streams(self):

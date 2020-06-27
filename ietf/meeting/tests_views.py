@@ -60,7 +60,7 @@ else:
     skip_pdf_tests = True
     skip_message = ("Skipping pdf test: The binary for ghostscript wasn't found in the\n       "
                     "location indicated in settings.py.")
-    sys.stderr.write("     "+skip_message+'\n')
+    print("     "+skip_message)
 
 class MeetingTests(TestCase):
     def setUp(self):
