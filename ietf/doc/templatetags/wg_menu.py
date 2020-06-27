@@ -43,10 +43,14 @@ area_short_names = {
     'rai':'RAI'
     }
 
+parents = Group.objects.filter(
+                models.Q(type="area") | models.Q(type="irtf", acronym="irtf"),
+                state="active"
+            ).order_by('type_id', 'acronym')
+
 @register.simple_tag
 def wg_menu():
-    parents = Group.objects.filter(models.Q(type="area") | models.Q(type="irtf", acronym="irtf"),
-                                   state="active").order_by('type_id', 'acronym')
+    global parents
 
     for p in parents:
         p.short_name = area_short_names.get(p.acronym) or p.name

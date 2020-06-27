@@ -1673,7 +1673,6 @@ Thank you
         q = PyQuery(r.content)
         post_button = q('[type=submit]:contains("Send Email")')
         self.assertEqual(len(post_button), 1)
-        action = post_button.parents("form").find('input[type=hidden][name="action"]').val()
         subject = post_button.parents("form").find('input[name="subject"]').val()
         frm = post_button.parents("form").find('input[name="frm"]').val()
         cc = post_button.parents("form").find('input[name="cc"]').val()
@@ -1683,7 +1682,6 @@ Thank you
         
         # post submitter info
         r = self.client.post(the_url, {
-            "action": action,
             "subject": subject,
             "frm": frm,
             "to": to,

@@ -61,7 +61,7 @@ class RolodexTestCase(TestCase):
         post_data = {
             'name': person.name,
             'ascii': person.ascii,
-            'ascii_short': person.ascii_short,
+            'ascii_short': person.ascii_short or '',
             'user': user.username,
             'email-0-person':person.pk,
             'email-0-address': email.address,

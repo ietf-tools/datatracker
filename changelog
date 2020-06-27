@@ -1,3 +1,42 @@
+ietfdb (7.6.0) ietf; urgency=medium
+
+  Django 2.2 transition changes:
+
+  * New branch for 7.5.1.dev0
+
+  * Changed deprecated 'load staticfiles' to recommended 'load static'
+
+  * Added a warnings filter.  Removed the use request_profiler, which is 
+    not compatible with Django 2.2.
+
+  * Removed an unused parameter from submit.tests.do_submission_email().
+
+  * Updated requirements for Django 2.2.
+
+  * Fixed an issue where a session was saved without a type_id, found by 
+    the Django 2.2 checks.  The code set the value just after the first save, 
+    and then did a second save, but this is 1) more costly, and 2) keeps an 
+    invalid session object in the database for a short time.
+
+  * Fixed a place where data provider for a POST in contained None, which 
+    cannot be serialized into POST data.  Found by Django 2.2 checks.
+
+  * Django 2.2 does not wrap single queries in transactions, for 
+    performance reasons.  This caused some template tags that did database 
+    lookups to trigger exceptions.  Fixed by moving the lookups (which would 
+    not normally change between apache reloads) out from the template tag code 
+    to module scope.  Adding new groups of type 
+    ['ag','area','team','dir','program'] will now require a reload to show up 
+    in the group menu.
+
+  Other changes:
+
+  * Changed skip messages from test suites to use print() instead of
+    sys.stderr.write(), to match other output from the test runner.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Jun 2020 17:33:10 +0000
+
+
 ietfdb (7.5.0) ietf; urgency=medium
 
   **Django 2.1 upgrade, CodiMD support, bluesheet support for Meetecho, and bugfixes**
