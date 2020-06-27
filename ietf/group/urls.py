@@ -29,7 +29,7 @@ info_detail_urls = [
     url(r'^deps/(?P<output_type>[\w-]+)/$', views.dependencies),
     url(r'^meetings/$', views.meetings),
     url(r'^edit/$', views.edit, {'action': "edit"}),
-    url(r'^edit/(?P<field>\w+)/?$', views.edit, {'action': "edit"}),
+    url(r'^edit/(?P<field>[-a-z0-9_]+)/?$', views.edit, {'action': "edit"}),
     url(r'^conclude/$', views.conclude),
     url(r'^milestones/$', milestone_views.edit_milestones, {'milestone_set': "current"}, name='ietf.group.milestones.edit_milestones;current'),
     url(r'^milestones/charter/$', milestone_views.edit_milestones, {'milestone_set': "charter"}, name='ietf.group.milestones.edit_milestones;charter'),

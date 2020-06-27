@@ -626,6 +626,8 @@ GROUP_REVIEW_DAYS_TO_SHOW_IN_REVIEWER_LIST = 365
 DATE_FORMAT = "Y-m-d"
 DATETIME_FORMAT = "Y-m-d H:i T"
 
+# Add reusable URL regexps here, for consistency.  No need to do so if the
+# regex can reasonably be expected to be a unique one-off.
 URL_REGEXPS = {
     "acronym": r"(?P<acronym>[-a-z0-9]+)",
     "charter": r"(?P<name>charter-[-a-z0-9]+)",
