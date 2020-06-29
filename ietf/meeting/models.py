@@ -822,9 +822,22 @@ class SchedTimeSessAssignment(models.Model):
 
         return "-".join(components).lower()
 
+
+class BusinessConstraint(models.Model):
+    """
+    Constraints on the scheduling that apply across all qualifying
+    sessions in all meetings. Used by the ScheduleGenerator.
+    """
+    slug = models.CharField(max_length=32, primary_key=True)
+    name = models.CharField(max_length=255)
+    penalty = models.IntegerField(default=0, help_text="The penalty for violating this kind of constraint; for instance 10 (small penalty) or 10000 (large penalty)")
+
+    
 class Constraint(models.Model):
     """
     Specifies a constraint on the scheduling.
+    These constraints apply to a specific group during a specific meeting.
+
     Available types are:
     - conflict/conflic2/conflic3: a conflict between source and target WG/session,
       with varying priority. The first is used for a chair conflict, the second for
@@ -834,6 +847,7 @@ class Constraint(models.Model):
     - time_relation: preference for a time difference between sessions
     - wg_adjacent: request for source WG to be adjacent (directly before or after,
       no breaks, same room) the target WG
+      
     """
     TIME_RELATION_CHOICES = (
         ('subsequent-days', 'Schedule the sessions on subsequent days'),

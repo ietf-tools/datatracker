@@ -216,6 +216,51 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=115244, )  # Tim Wicinski
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=111656, )  # Warren Kumari
                 
+                ## session for dnssd ##
+                s = Session.objects.create(
+                    meeting=m,
+                    type_id="regular",
+                    group_id=1895,  # dnssd
+                    attendees=75,
+                    agenda_note="Joint with HOMENET",
+                    requested_duration=datetime.timedelta(seconds=7200),  # 2:00:00
+                    comments="""dnssd and homenet would like to do a single joint 2 hour meeting. We'll figure out how to divide the time.""",
+                    remote_instructions="",
+                )
+                ## session for dnssd ##
+                s = Session.objects.create(
+                    meeting=m,
+                    type_id="regular",
+                    group_id=1895,  # dnssd
+                    attendees=75,
+                    agenda_note="",
+                    requested_duration=datetime.timedelta(seconds=3600),  # 1:00:00
+                    comments="""dnssd and homenet would like to do a single joint 2 hour meeting. We'll figure out how to divide the time.""",
+                    remote_instructions="",
+                )
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflict', target_id=1452, )  # dnsop
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflict', target_id=2150, )  # babel
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflict', target_id=1326, )  # tls
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflict', target_id=2161, )  # quic
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflict', target_id=1578, )  # v6ops
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflict', target_id=1803, )  # homenet
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflict', target_id=1723, )  # 6man
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflict', target_id=1958, )  # dprive
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflict', target_id=1718, )  # httpbis
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflict', target_id=2208, )  # doh
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflict', target_id=1665, )  # intarea
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=1789, )  # core
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=2220, )  # mls
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=1956, )  # anima
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic3', target_id=2231, )  # rats
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic3', target_id=1903, )  # 6tisch
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic3', target_id=2249, )  # lake
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic3', target_id=1730, )  # roll
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=119562, )  # David Schinazi
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=114464, )  # Barbara Stark
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=105099, )  # Éric Vyncke
+                c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=19177, )  # Stephen Farrell
+
                 ## session for lsvr ##
                 s = Session.objects.create(
                     meeting=m,
@@ -425,18 +470,6 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='timerange')
                 c.timeranges.set(TimerangeName.objects.exclude(slug='monday-morning'))
                 
-                ## session for tram ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=1926,  # tram
-                    attendees=None,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(0),  # 0:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
-                
                 ## session for v6ops ##
                 s = Session.objects.create(
                     meeting=m,
@@ -618,18 +651,6 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=103930, )  # Marie-Jose Montpetit
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='timerange')
                 c.timeranges.set(TimerangeName.objects.exclude(slug__startswith='friday').exclude(slug__startswith='thursday'))
-                
-                ## session for mtgvenue ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=2147,  # mtgvenue
-                    attendees=None,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(0),  # 0:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
                 
                 ## session for tcpm ##
                 s = Session.objects.create(
@@ -1031,18 +1052,6 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=108279, )  # Martin Vigoureux
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=105786, )  # Matthew Bocci
                 
-                ## session for cellar ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=2022,  # cellar
-                    attendees=None,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(0),  # 0:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
-                
                 ## session for homenet and dnssd ##
                 s = Session.objects.create(
                     meeting=m,
@@ -1077,18 +1086,6 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=114464, )  # Barbara Stark
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=105099, )  # Éric Vyncke
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=19177, )  # Stephen Farrell
-                
-                ## session for curdle ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=2143,  # curdle
-                    attendees=None,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(0),  # 0:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
                 
                 ## session for acme ##
                 s = Session.objects.create(
@@ -1510,18 +1507,6 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=105620, )  # Peter Van der Stok
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=102254, )  # Michael Richardson
                 
-                ## session for bfcpbis ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=1832,  # bfcpbis
-                    attendees=None,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(0),  # 0:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
-                
                 ## session for saag ##
                 s = Session.objects.create(
                     meeting=m,
@@ -1565,7 +1550,7 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=115214, )  # Benjamin Kaduk
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=105815, )  # Roman Danyliw
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='timerange')
-                c.timeranges.set(TimerangeName.objects.exclude(slug__startswith='thursday-early-afternoon'))
+                c.timeranges.set(TimerangeName.objects.exclude(slug__startswith='thursday-afternoon-early'))
                 
                 ## session for mpls ##
                 s = Session.objects.create(
@@ -1949,42 +1934,6 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=101923, )  # Jonathan Lennox
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=21684, )  # Barry Leiba
                 
-                ## session for kitten ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=1634,  # kitten
-                    attendees=None,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(0),  # 0:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
-                
-                ## session for clue ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=1816,  # clue
-                    attendees=None,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(0),  # 0:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
-                
-                ## session for payload ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=1814,  # payload
-                    attendees=None,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(0),  # 0:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
-                
                 ## session for bfd ##
                 s = Session.objects.create(
                     meeting=m,
@@ -2259,18 +2208,6 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=121666, )  # Jérôme François
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=108591, )  # Laurent Ciavaglia
                 
-                ## session for softwire ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=1678,  # softwire
-                    attendees=None,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(0),  # 0:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
-                
                 ## session for intarea ##
                 s = Session.objects.create(
                     meeting=m,
@@ -2389,18 +2326,6 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=109802, )  # Alvaro Retana
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=112405, )  # Jeff Tantsura
                 
-                ## session for uta ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=1918,  # uta
-                    attendees=None,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(0),  # 0:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
-                
                 ## session for spring ##
                 s = Session.objects.create(
                     meeting=m,
@@ -2431,18 +2356,6 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=108279, )  # Martin Vigoureux
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=107172, )  # Bruno Decraene
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=116387, )  # Rob Shakir
-                
-                ## session for nfsv4 ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=1152,  # nfsv4
-                    attendees=None,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(0),  # 0:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
                 
                 ## session for dhc ##
                 s = Session.objects.create(
@@ -2790,18 +2703,6 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=102154, )  # Alexey Melnikov
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=21684, )  # Barry Leiba
                 
-                ## session for sipcore ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=1762,  # sipcore
-                    attendees=None,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(0),  # 0:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
-                
                 ## session for manet ##
                 s = Session.objects.create(
                     meeting=m,
@@ -2896,18 +2797,6 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='timerange')
                 c.timeranges.set(TimerangeName.objects.filter(slug__startswith='friday'))
                 
-                ## session for mmusic ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=1138,  # mmusic
-                    attendees=None,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(0),  # 0:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
-                
                 ## session for ntp ##
                 s = Session.objects.create(
                     meeting=m,
@@ -2932,18 +2821,6 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=113902, )  # Dieter Sibold
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=106412, )  # Suresh Krishnan
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=4857, )  # Karen O'Donoghue
-                
-                ## session for tictoc ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=1709,  # tictoc
-                    attendees=None,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(0),  # 0:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
                 
                 ## session for oauth ##
                 s = Session.objects.create(
@@ -3201,18 +3078,6 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=11843, )  # Carsten Bormann
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=108990, )  # Ari Keränen
                 
-                ## session for i2nsf ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=1965,  # i2nsf
-                    attendees=None,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(0),  # 0:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
-                
                 ## session for ace ##
                 s = Session.objects.create(
                     meeting=m,
@@ -3412,31 +3277,7 @@ class Command(BaseCommand):
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=1996, )  # dots
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=1831, )  # mile
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=105815, )  # Roman Danyliw
-                
-                ## session for rseme ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=2259,  # rseme
-                    attendees=150,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(seconds=5400),  # 1:30:00
-                    comments="""Please avoid other BoFs, and minimize conflicts for attendees.""",
-                    remote_instructions="",
-                )
-                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=2233, )  # git
-                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=2147, )  # mtgvenue
-                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=2221, )  # iasa2
-                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=2252, )  # gendispatch
-                c = Constraint.objects.create(meeting=m, source=s.group, name_id='bethere', person_id=113431, )  # Heather Flanagan
-                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=2253, )  # abcd
-                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=2256, )  # raw
-                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=2254, )  # wpack
-                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=2258, )  # mathmesh
-                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=2257, )  # txauth
-                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=2255, )  # tmrid
-                c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflic2', target_id=2260, )  # webtrans
-                
+                                
                 ## session for gendispatch ##
                 s = Session.objects.create(
                     meeting=m,
@@ -3547,18 +3388,6 @@ class Command(BaseCommand):
                 c.timeranges.set(TimerangeName.objects.filter(slug__in=[
                     'tuesday-afternoon-early', 'tuesday-afternoon-late', 'wednesday-morning',
                     'wednesday-afternoon-early', 'wednesday-afternoon-late', 'thursday-morning']))
-                
-                ## session for hotrfc ##
-                s = Session.objects.create(
-                    meeting=m,
-                    type_id="regular",
-                    group_id=2225,  # hotrfc
-                    attendees=200,
-                    agenda_note="",
-                    requested_duration=datetime.timedelta(seconds=7200),  # 2:00:00
-                    comments="""""",
-                    remote_instructions="",
-                )
                 
                 ## session for nvo3 ##
                 s = Session.objects.create(
@@ -4297,55 +4126,55 @@ class Command(BaseCommand):
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in None ##
                 TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=None, show_location=False)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 10:00:00 in Convention Foyer size: None ##
                 TimeSlot.objects.create(meeting=m, type_id="reg", name="IETF Registration", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=36000), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-19 08:00:00 length 1:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##

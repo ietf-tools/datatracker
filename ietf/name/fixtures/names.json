@@ -5470,6 +5470,134 @@
   },
   {
     "fields": {
+      "name": "Area meetings cannot conflict with anything else in their area",
+      "penalty": 1000
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "area_overlapping_in_area"
+  },
+  {
+    "fields": {
+      "name": "Area meetings cannot conflict with anything else in their area",
+      "penalty": 10000
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "area_overlapping_in_area"
+  },
+  {
+    "fields": {
+      "name": "Area meetings cannot conflict with other area meetings",
+      "penalty": 500
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "area_overlapping_other_area"
+  },
+  {
+    "fields": {
+      "name": "Area meetings cannot conflict with other area meetings",
+      "penalty": 100000
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "area_overlapping_other_area"
+  },
+  {
+    "fields": {
+      "name": "BoFs cannot conflict with any area-wide meetings (of any area)",
+      "penalty": 1000
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "bof_overlapping_area_meeting"
+  },
+  {
+    "fields": {
+      "name": "BoFs cannot conflict with any area-wide meetings (of any area)",
+      "penalty": 10000
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "bof_overlapping_area_meeting"
+  },
+  {
+    "fields": {
+      "name": "BoFs cannot conflict with any other WGs in their area",
+      "penalty": 10000
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "bof_overlapping_area_wg"
+  },
+  {
+    "fields": {
+      "name": "BoFs cannot conflict with any other WGs in their area",
+      "penalty": 100000
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "bof_overlapping_area_wg"
+  },
+  {
+    "fields": {
+      "name": "BoFs cannot conflict with any other BoFs",
+      "penalty": 10000
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "bof_overlapping_bof"
+  },
+  {
+    "fields": {
+      "name": "BoFs cannot conflict with any other BoFs",
+      "penalty": 100000
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "bof_overlapping_bof"
+  },
+  {
+    "fields": {
+      "name": "BoFs cannot conflict with PRGs",
+      "penalty": 10000
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "bof_overlapping_prg"
+  },
+  {
+    "fields": {
+      "name": "BoFs cannot conflict with PRGs",
+      "penalty": 100000
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "bof_overlapping_prg"
+  },
+  {
+    "fields": {
+      "name": "WGs overseen by the same Area Director should not conflict",
+      "penalty": 100
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "session_overlap_ad"
+  },
+  {
+    "fields": {
+      "name": "WGs overseen by the same Area Director should not conflict",
+      "penalty": 100
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "session_overlap_ad"
+  },
+  {
+    "fields": {
+      "name": "Sessions should be scheduled according to requested duration and attendees",
+      "penalty": 100000
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "session_requires_trim"
+  },
+  {
+    "fields": {
+      "name": "Sessions should be scheduled in requested order",
+      "penalty": 100000
+    },
+    "model": "meeting.businessconstraint",
+    "pk": "sessions_out_of_order"
+  },
+  {
+    "fields": {
       "desc": "",
       "name": "AD Office Hours",
       "order": 0,
@@ -5613,7 +5741,7 @@
       "editor_label": "(person)",
       "name": "Person must be present",
       "order": 0,
-      "penalty": 200000,
+      "penalty": 10000,
       "used": true
     },
     "model": "name.constraintname",
@@ -5637,7 +5765,7 @@
       "editor_label": "(3)",
       "name": "Conflicts with (tertiary)",
       "order": 0,
-      "penalty": 1000,
+      "penalty": 100000,
       "used": true
     },
     "model": "name.constraintname",
@@ -5673,7 +5801,7 @@
       "editor_label": "timerange",
       "name": "Can't meet within timerange",
       "order": 0,
-      "penalty": 100000,
+      "penalty": 1000000,
       "used": true
     },
     "model": "name.constraintname",
@@ -5685,7 +5813,7 @@
       "editor_label": "wg_adjacent",
       "name": "Request for adjacent scheduling with another WG",
       "order": 0,
-      "penalty": 10000,
+      "penalty": 1000,
       "used": true
     },
     "model": "name.constraintname",

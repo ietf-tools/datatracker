@@ -39,7 +39,8 @@ class GroupInfo(models.Model):
     list_subscribe = models.CharField(max_length=255, blank=True)
     list_archive = models.CharField(max_length=255, blank=True)
     comments = models.TextField(blank=True)
-
+    meeting_seen_as_area = models.BooleanField(default=False, help_text='For meeting scheduling, should be considered an area meeting, even if the type is WG')
+    
     unused_states = models.ManyToManyField('doc.State', help_text="Document states that have been disabled for the group.", blank=True)
     unused_tags = models.ManyToManyField(DocTagName, help_text="Document tags that have been disabled for the group.", blank=True)
 

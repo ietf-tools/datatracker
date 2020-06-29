@@ -13,7 +13,8 @@ from ietf import api
 
 from ietf.meeting.models import ( Meeting, ResourceAssociation, Constraint, Room, Schedule, Session,
                                 TimeSlot, SchedTimeSessAssignment, SessionPresentation, FloorPlan,
-                                UrlResource, ImportantDate, SlideSubmission, SchedulingEvent )
+                                UrlResource, ImportantDate, SlideSubmission, SchedulingEvent,
+                                BusinessConstraint)
 
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
@@ -357,3 +358,18 @@ class SlideSubmissionResource(ModelResource):
             "submitter": ALL_WITH_RELATIONS,
         }
 api.meeting.register(SlideSubmissionResource())
+
+
+class BusinessConstraintResource(ModelResource):
+    class Meta:
+        queryset = BusinessConstraint.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'businessconstraint'
+        ordering = ['slug', ]
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "penalty": ALL,
+        }
+api.meeting.register(BusinessConstraintResource())
