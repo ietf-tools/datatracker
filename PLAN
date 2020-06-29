@@ -7,9 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Transition to Django 2.2 (via 2.0 and 2.1).  This depends on Python 3.x.
-  Security updates to Django 1.11 will cease around April 2020.
-
 * Transition to PostgreSQL.  This will make it easier to start using
   timezone-aware timestamps throughout the code, which will make it easy
   to present localized times on web-pages.  It will also provide additional
