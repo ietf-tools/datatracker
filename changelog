@@ -34,7 +34,7 @@ ietfdb (7.6.0) ietf; urgency=medium
   * Changed skip messages from test suites to use print() instead of
     sys.stderr.write(), to match other output from the test runner.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  27 Jun 2020 17:33:10 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  29 Jun 2020 10:56:15 +0000
 
 
 ietfdb (7.5.0) ietf; urgency=medium
