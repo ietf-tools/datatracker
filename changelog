@@ -2,8 +2,6 @@ ietfdb (7.6.0) ietf; urgency=medium
 
   Django 2.2 transition changes:
 
-  * New branch for 7.5.1.dev0
-
   * Changed deprecated 'load staticfiles' to recommended 'load static'
 
   * Added a warnings filter.  Removed the use request_profiler, which is 
@@ -33,6 +31,9 @@ ietfdb (7.6.0) ietf; urgency=medium
 
   * Changed skip messages from test suites to use print() instead of
     sys.stderr.write(), to match other output from the test runner.
+
+  * Updated MyPy to 0.770 and django-stubs to 1.5.0 for improved type
+    checking of the Django interface calls.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  29 Jun 2020 10:56:15 +0000
 
