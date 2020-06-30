@@ -212,9 +212,14 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
     parents = Group.objects.filter(pk__in=parent_id_set)
     parent_replacements = find_history_replacements_active_at(parents, meeting_time)
 
+    timeslot_by_session_pk = {a.session_id: a.timeslot for a in assignments}
+
     for a in assignments:
         if a.session and a.session.historic_group and a.session.historic_group.parent_id:
             a.session.historic_group.historic_parent = parent_replacements.get(a.session.historic_group.parent_id)
+
+        if a.session.current_status == 'resched':
+            a.session.rescheduled_to = timeslot_by_session_pk.get(a.session.tombstone_for_id)
 
         for d in a.session.prefetched_active_materials:
             # make sure these are precomputed with the meeting instead

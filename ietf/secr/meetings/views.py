@@ -659,17 +659,21 @@ def regular_sessions(request, meeting_id, schedule_name):
         if 'cancel' in request.POST:
             pk = request.POST.get('pk')
             session = get_object_or_404(sessions, pk=pk)
-            SchedulingEvent.objects.create(
-                session=session,
-                status=SessionStatusName.objects.get(slug='canceled'),
-                by=request.user.person,
-            )
-            messages.success(request, 'Session cancelled')
+            if session.current_status not in ['canceled', 'resched']:
+                SchedulingEvent.objects.create(
+                    session=session,
+                    status=SessionStatusName.objects.get(slug='canceled'),
+                    by=request.user.person,
+                )
+                messages.success(request, 'Session cancelled')
+
+        return redirect('ietf.secr.meetings.views.regular_sessions', meeting_id=meeting_id, schedule_name=schedule_name)
 
     status_names = {n.slug: n.name for n in SessionStatusName.objects.all()}
 
     for s in sessions:
         s.current_status_name = status_names.get(s.current_status, s.current_status)
+        s.can_cancel = s.current_status not in ['canceled', 'resched']
 
     return render(request, 'meetings/sessions.html', {
         'meeting': meeting,

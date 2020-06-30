@@ -234,7 +234,7 @@
 		    <span class="hidden-xs">
 		      {% if item.timeslot.type.slug == 'other' %}
 		        {% if item.session.agenda %}
-			  {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
+                          {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
 			{% else %}
 			  {% for slide in item.session.slides %}
 			    <a href="{{slide.get_href}}">{{ slide.title|clean_whitespace }}</a>
@@ -323,6 +323,20 @@
                       <span class="label label-danger pull-right">CANCELLED</span>
                     {% endif %}
 
+                    {% if item.session.current_status == 'resched' %}
+                      <span class="label label-danger pull-right">
+                        RESCHEDULED
+                        {% if item.session.rescheduled_to %}
+                          TO
+		          {% if "-utc" in request.path %}
+                            {{ item.session.rescheduled_to.utc_start_time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.utc_end_time|date:"G:i" }}
+		          {% else %}
+                            {{ item.session.rescheduled_to.time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.end_time|date:"G:i" }}
+		          {% endif %}
+                        {% endif %}
+                      </span>
+                    {% endif %}
+
                     {% if item.session.agenda_note|first_url %}
                       <br><a href={{item.session.agenda_note|first_url}}>{{item.session.agenda_note|slice:":23"}}</a>
                     {% elif item.session.agenda_note %}
@@ -332,7 +346,7 @@
 		  </td>
 		  <td class="text-nowrap text-right">
 		  <span class="hidden-xs">
-		    {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
+                    {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
 		  </span>
 		  </td>
 		</tr>

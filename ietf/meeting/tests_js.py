@@ -16,9 +16,11 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.factories import DocumentFactory
 from ietf.group import colors
+from ietf.person.models import Person
 from ietf.meeting.factories import SessionFactory
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.meeting.models import Schedule, SchedTimeSessAssignment, Session, Room, TimeSlot, Constraint, ConstraintName
+from ietf.meeting.models import SchedulingEvent, SessionStatusName
 from ietf.utils.test_runner import IetfLiveServerTestCase
 from ietf.utils.pipe import pipe
 from ietf import settings
@@ -106,6 +108,12 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
         SchedTimeSessAssignment.objects.filter(session=s1).delete()
 
         s2b = Session.objects.create(meeting=meeting, group=s2.group, attendees=10, requested_duration=datetime.timedelta(minutes=60), type_id='regular')
+
+        SchedulingEvent.objects.create(
+            session=s2b,
+            status=SessionStatusName.objects.get(slug='appr'),
+            by=Person.objects.get(name='(System)'),
+        )
 
         Constraint.objects.create(
             meeting=meeting,
@@ -226,7 +234,7 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
         self.assertTrue(s1_element.is_displayed())
 
         # hide timeslots
-        self.driver.find_element_by_css_selector(".timeslot-group-toggles button".format(s1.group.parent.acronym)).click()
+        self.driver.find_element_by_css_selector(".timeslot-group-toggles button").click()
         self.assertTrue(self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal").is_displayed())
         self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal [value=\"{}\"]".format("ts-group-{}-{}".format(slot2.time.strftime("%Y%m%d-%H%M"), int(slot2.duration.total_seconds() / 60)))).click()
         self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal [data-dismiss=\"modal\"]").click()

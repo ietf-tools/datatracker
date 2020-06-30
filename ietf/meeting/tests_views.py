@@ -1049,10 +1049,14 @@ class EditTests(TestCase):
         self.assertEqual(r.status_code, 403)
         
         # turn us into owner
-        meeting.schedule.owner = Person.objects.get(user__username="secretary")
-        meeting.schedule.save()
+        schedule = meeting.schedule
+        schedule.owner = Person.objects.get(user__username="secretary")
+        schedule.save()
 
-        url = urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs=dict(num=meeting.number, owner=meeting.schedule.owner_email(), name=meeting.schedule.name))
+        meeting.schedule = None
+        meeting.save()
+
+        url = urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs=dict(num=meeting.number, owner=schedule.owner_email(), name=schedule.name))
         r = self.client.get(url)
         q = PyQuery(r.content)
         self.assertTrue(not q("em:contains(\"You can't edit this schedule\")"))
@@ -1065,25 +1069,52 @@ class EditTests(TestCase):
             'timeslot': timeslots[0].pk,
             'session': s1.pk,
         })
-        self.assertEqual(r.content, b"OK")
-        self.assertEqual(SchedTimeSessAssignment.objects.get(schedule=meeting.schedule, session=s1).timeslot, timeslots[0])
+        self.assertEqual(json.loads(r.content)['success'], True)
+        self.assertEqual(SchedTimeSessAssignment.objects.get(schedule=schedule, session=s1).timeslot, timeslots[0])
 
-        # move assignment
+        # move assignment on unofficial schedule
         r = self.client.post(url, {
             'action': 'assign',
             'timeslot': timeslots[1].pk,
             'session': s1.pk,
         })
-        self.assertEqual(r.content, b"OK")
-        self.assertEqual(SchedTimeSessAssignment.objects.get(schedule=meeting.schedule, session=s1).timeslot, timeslots[1])
+        self.assertEqual(json.loads(r.content)['success'], True)
+        self.assertEqual(SchedTimeSessAssignment.objects.get(schedule=schedule, session=s1).timeslot, timeslots[1])
+
+        # move assignment on official schedule, leaving tombstone
+        meeting.schedule = schedule
+        meeting.save()
+        SchedulingEvent.objects.create(
+            session=s1,
+            status=SessionStatusName.objects.get(slug='sched'),
+            by=Person.objects.get(name='(System)')
+        )
+        r = self.client.post(url, {
+            'action': 'assign',
+            'timeslot': timeslots[0].pk,
+            'session': s1.pk,
+        })
+        json_content = json.loads(r.content)
+        self.assertEqual(json_content['success'], True)
+        self.assertEqual(SchedTimeSessAssignment.objects.get(schedule=schedule, session=s1).timeslot, timeslots[0])
+
+        sessions_for_group = Session.objects.filter(group=s1.group, meeting=meeting)
+        self.assertEqual(len(sessions_for_group), 2)
+        s_tombstone = [s for s in sessions_for_group if s != s1][0]
+        self.assertEqual(s_tombstone.tombstone_for, s1)
+        tombstone_event = SchedulingEvent.objects.get(session=s_tombstone)
+        self.assertEqual(tombstone_event.status_id, 'resched')
+
+        self.assertEqual(SchedTimeSessAssignment.objects.get(schedule=schedule, session=s_tombstone).timeslot, timeslots[1])
+        self.assertTrue(PyQuery(json_content['tombstone'])("#session{}.tombstone".format(s_tombstone.pk)).html())
 
         # unassign
         r = self.client.post(url, {
             'action': 'unassign',
             'session': s1.pk,
         })
-        self.assertEqual(r.content, b"OK")
-        self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=meeting.schedule, session=s1)), [])
+        self.assertEqual(json.loads(r.content)['success'], True)
+        self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s1)), [])
 
 
     def test_copy_meeting_schedule(self):

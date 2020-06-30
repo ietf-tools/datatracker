@@ -1118,6 +1118,11 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   cursor: default;
 }
 
+.edit-meeting-schedule .session.tombstone {
+  cursor: default;
+  background-color: #ddd;
+}
+
 .edit-meeting-schedule .session.selected .session-label {
   font-weight: bold;
 }

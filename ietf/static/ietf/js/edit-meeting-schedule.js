@@ -1,14 +1,14 @@
 jQuery(document).ready(function () {
     let content = jQuery(".edit-meeting-schedule");
 
-    function failHandler(xhr, textStatus, error) {
-        let errorText = error;
+    function reportServerError(xhr, textStatus, error) {
+        let errorText = error || textStatus;
         if (xhr && xhr.responseText)
             errorText += "\n\n" + xhr.responseText;
         alert("Error: " + errorText);
     }
 
-    let sessions = content.find(".session");
+    let sessions = content.find(".session").not(".tombstone");
     let timeslots = content.find(".timeslot");
     let days = content.find(".day-flow .day");
 
@@ -130,7 +130,6 @@ jQuery(document).ready(function () {
         });
         sessions.on("dragend", function () {
             jQuery(this).removeClass("dragging");
-
         });
 
         sessions.prop('draggable', true);
@@ -161,31 +160,50 @@ jQuery(document).ready(function () {
         });
 
         dropElements.on('drop', function (event) {
-            jQuery(this).parent().removeClass("dropping");
+            let dropElement = jQuery(this);
 
             let sessionId = event.originalEvent.dataTransfer.getData("text/plain");
-            if ((event.originalEvent.dataTransfer.getData("text/plain") || "").slice(0, "session".length) != "session")
+            if ((event.originalEvent.dataTransfer.getData("text/plain") || "").slice(0, "session".length) != "session") {
+                dropElement.parent().removeClass("dropping");
                 return;
+            }
 
             let sessionElement = sessions.filter("#" + sessionId);
-            if (sessionElement.length == 0)
+            if (sessionElement.length == 0) {
+                dropElement.parent().removeClass("dropping");
                 return;
+            }
 
             event.preventDefault(); // prevent opening as link
 
-            if (sessionElement.parent().is(this))
+            let dragParent = sessionElement.parent();
+            if (dragParent.is(this)) {
+                dropElement.parent().removeClass("dropping");
                 return;
+            }
 
-            let dropElement = jQuery(this);
             let dropParent = dropElement.parent();
 
+            function failHandler(xhr, textStatus, error) {
+                dropElement.parent().removeClass("dropping");
+                console.log("xhr", xhr)
+                console.log("textstatus", textStatus)
+                console.log("error", error)
+                reportServerError(xhr, textStatus, error);
+            }
+
             function done(response) {
-                if (response != "OK") {
-                    failHandler(null, null, response);
+                dropElement.parent().removeClass("dropping");
+
+                if (!response.success) {
+                    reportServerError(null, null, response);
                     return;
                 }
 
                 dropElement.append(sessionElement); // move element
+                if (response.tombstone)
+                    dragParent.append(response.tombstone);
+
                 updateCurrentSchedulingHints();
                 if (dropParent.hasClass("unassigned-sessions"))
                     sortUnassigned();

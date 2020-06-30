@@ -26,14 +26,14 @@ import debug                            # pyflakes:ignore
 
 from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404, JsonResponse
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.urls import reverse,reverse_lazy
-from django.db.models import F, Min, Max, Prefetch, Q
+from django.db.models import F, Min, Max, Q
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
@@ -51,7 +51,6 @@ from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocA
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
 from ietf.person.models import Person
-from ietf.person.name import plain_name
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
@@ -459,7 +458,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     assignments = get_all_assignments_from_schedule(schedule)
 
     rooms = meeting.room_set.filter(session_types__slug='regular').distinct().order_by("capacity")
-    timeslots_qs = meeting.timeslot_set.filter(type='regular').prefetch_related('type', 'sessions').order_by('location', 'time', 'name')
+
+    tombstone_states = ['canceled', 'canceledpa', 'resched']
 
     sessions = add_event_info_to_session_qs(
         Session.objects.filter(
@@ -469,45 +469,14 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         ).order_by('pk'),
         requested_time=True,
         requested_by=True,
-    ).exclude(current_status__in=['notmeet', 'disappr', 'deleted', 'apprw']).prefetch_related(
+    ).filter(
+        Q(current_status__in=['appr', 'schedw', 'scheda', 'sched'])
+        | Q(current_status__in=tombstone_states, pk__in={a.session_id for a in assignments})
+    ).prefetch_related(
         'resources', 'group', 'group__parent', 'group__type', 'joint_with_groups',
     )
 
-    if request.method == 'POST':
-        if not can_edit:
-            return HttpResponseForbidden("Can't edit this schedule")
-
-        action = request.POST.get('action')
-
-        if action == 'assign' and request.POST.get('session', '').isdigit() and request.POST.get('timeslot', '').isdigit():
-            session = get_object_or_404(sessions, pk=request.POST['session'])
-            timeslot = get_object_or_404(timeslots_qs, pk=request.POST['timeslot'])
-
-            existing_assignments = SchedTimeSessAssignment.objects.filter(session=session, schedule=schedule)
-            if existing_assignments:
-                existing_assignments.update(timeslot=timeslot, modified=datetime.datetime.now())
-            else:
-                SchedTimeSessAssignment.objects.create(
-                    session=session,
-                    schedule=schedule,
-                    timeslot=timeslot,
-                )
-
-            return HttpResponse("OK")
-
-        elif action == 'unassign' and request.POST.get('session', '').isdigit():
-            session = get_object_or_404(sessions, pk=request.POST['session'])
-            SchedTimeSessAssignment.objects.filter(session=session, schedule=schedule).delete()
-
-            return HttpResponse("OK")
-
-        return HttpResponse("Invalid parameters", status_code=400)
-
-    assignments_by_session = defaultdict(list)
-    for a in assignments:
-        assignments_by_session[a.session_id].append(a)
-
-    # prepare timeslot layout
+    timeslots_qs = meeting.timeslot_set.filter(type='regular').prefetch_related('type', 'sessions').order_by('location', 'time', 'name')
 
     min_duration = min(t.duration for t in timeslots_qs)
     max_duration = max(t.duration for t in timeslots_qs)
@@ -524,6 +493,119 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         # interpolate
         scale = (capped_timedelta - capped_min_d) / (capped_max_d - capped_min_d) if capped_min_d != capped_max_d else 1
         return min_d_css_rems + (max_d_css_rems - min_d_css_rems) * scale
+
+    def prepare_sessions_for_display(sessions):
+        # requesters
+        requested_by_lookup = {p.pk: p for p in Person.objects.filter(pk__in=set(s.requested_by for s in sessions if s.requested_by))}
+
+        # constraints
+        constraints_for_sessions, formatted_constraints_for_sessions, constraint_names = preprocess_constraints_for_meeting_schedule_editor(meeting, sessions)
+
+        sessions_for_group = defaultdict(list)
+        for s in sessions:
+            sessions_for_group[s.group_id].append(s)
+
+        for s in sessions:
+            s.requested_by_person = requested_by_lookup.get(s.requested_by)
+
+            s.scheduling_label = "???"
+            if s.group:
+                s.scheduling_label = s.group.acronym
+            elif s.name:
+                s.scheduling_label = s.name
+
+            s.requested_duration_in_hours = round(s.requested_duration.seconds / 60.0 / 60.0, 1)
+
+            session_layout_margin = 0.2
+            s.layout_width = timedelta_to_css_ems(s.requested_duration) - 2 * session_layout_margin
+            s.parent_acronym = s.group.parent.acronym if s.group and s.group.parent else ""
+
+            # compress the constraints, so similar constraint labels are
+            # shared between the conflicting sessions they cover - the JS
+            # then simply has to detect violations and show the
+            # preprocessed labels
+            constrained_sessions_grouped_by_label = defaultdict(set)
+            for name_id, ts in itertools.groupby(sorted(constraints_for_sessions.get(s.pk, [])), key=lambda t: t[0]):
+                ts = list(ts)
+                session_pks = (t[1] for t in ts)
+                constraint_name = constraint_names[name_id]
+                if "{count}" in constraint_name.formatted_editor_label:
+                    for session_pk, grouped_session_pks in itertools.groupby(session_pks):
+                        count = sum(1 for i in grouped_session_pks)
+                        constrained_sessions_grouped_by_label[format_html(constraint_name.formatted_editor_label, count=count)].add(session_pk)
+
+                else:
+                    constrained_sessions_grouped_by_label[constraint_name.formatted_editor_label].update(session_pks)
+
+            s.constrained_sessions = list(constrained_sessions_grouped_by_label.items())
+            s.formatted_constraints = formatted_constraints_for_sessions.get(s.pk, {})
+
+            s.other_sessions = [s_other for s_other in sessions_for_group.get(s.group_id) if s != s_other]
+
+            s.is_tombstone = s.current_status in tombstone_states
+
+
+    if request.method == 'POST': # handle ajax requests
+        if not can_edit:
+            return HttpResponseForbidden("Can't edit this schedule")
+
+        action = request.POST.get('action')
+
+        if action == 'assign' and request.POST.get('session', '').isdigit() and request.POST.get('timeslot', '').isdigit():
+            session = get_object_or_404(sessions, pk=request.POST['session'])
+            timeslot = get_object_or_404(timeslots_qs, pk=request.POST['timeslot'])
+
+            tombstone_session = None
+
+            existing_assignments = SchedTimeSessAssignment.objects.filter(session=session, schedule=schedule)
+            if existing_assignments:
+                if schedule.pk == meeting.schedule_id and session.current_status == 'sched':
+                    old_timeslot = existing_assignments[0].timeslot
+                    # clone session and leave it as a tombstone
+                    tombstone_session = session
+                    tombstone_session.tombstone_for_id = session.pk
+                    tombstone_session.pk = None
+                    tombstone_session.save()
+
+                    session = None
+
+                    SchedulingEvent.objects.create(
+                        session=tombstone_session,
+                        status=SessionStatusName.objects.get(slug='resched'),
+                        by=request.user.person,
+                    )
+
+                    tombstone_session.current_status = 'resched' # rematerialize status for the rendering
+
+                    SchedTimeSessAssignment.objects.create(
+                        session=tombstone_session,
+                        schedule=schedule,
+                        timeslot=old_timeslot,
+                    )
+
+                existing_assignments.update(timeslot=timeslot, modified=datetime.datetime.now())
+            else:
+                SchedTimeSessAssignment.objects.create(
+                    session=session,
+                    schedule=schedule,
+                    timeslot=timeslot,
+                )
+
+            r = {'success': True}
+            if tombstone_session:
+                prepare_sessions_for_display([tombstone_session])
+                r['tombstone'] = render_to_string("meeting/edit_meeting_schedule_session.html", {'session': tombstone_session})
+            return JsonResponse(r)
+
+        elif action == 'unassign' and request.POST.get('session', '').isdigit():
+            session = get_object_or_404(sessions, pk=request.POST['session'])
+            SchedTimeSessAssignment.objects.filter(session=session, schedule=schedule).delete()
+
+            return JsonResponse({'success': True})
+
+        return HttpResponse("Invalid parameters", status_code=400)
+
+    # prepare timeslot layout
 
     timeslots_by_room_and_day = defaultdict(list)
     room_has_timeslots = set()
@@ -559,9 +641,27 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         timeslot_groups[ts.time.date()].add((ts.time, ts.end_time(), ts.start_end_group))
 
     # prepare sessions
+    prepare_sessions_for_display(sessions)
+
     for ts in timeslots_qs:
         ts.session_assignments = []
     timeslots_by_pk = {ts.pk: ts for ts in timeslots_qs}
+
+    assignments_by_session = defaultdict(list)
+    for a in assignments:
+        assignments_by_session[a.session_id].append(a)
+
+    unassigned_sessions = []
+    for s in sessions:
+        assigned = False
+        for a in assignments_by_session.get(s.pk, []):
+            timeslot = timeslots_by_pk.get(a.timeslot_id)
+            if timeslot:
+                timeslot.session_assignments.append((a, s))
+                assigned = True
+
+        if not assigned:
+            unassigned_sessions.append(s)
 
     # group parent colors
     def cubehelix(i, total, hue=1.2, start_angle=0.5):
@@ -585,64 +685,6 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         rgb_color = cubehelix(i, len(session_parents))
         p.scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round(x * 255)) for x in rgb_color))
         p.light_scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round((0.9 + 0.1 * x) * 255)) for x in rgb_color))
-
-    # requesters
-    requested_by_lookup = {p.pk: p for p in Person.objects.filter(pk__in=set(s.requested_by for s in sessions if s.requested_by))}
-
-    # constraints
-    constraints_for_sessions, formatted_constraints_for_sessions, constraint_names = preprocess_constraints_for_meeting_schedule_editor(meeting, sessions)
-
-    sessions_for_group = defaultdict(list)
-    for s in sessions:
-        sessions_for_group[s.group_id].append(s)
-
-    unassigned_sessions = []
-    for s in sessions:
-        s.requested_by_person = requested_by_lookup.get(s.requested_by)
-
-        s.scheduling_label = "???"
-        if s.group:
-            s.scheduling_label = s.group.acronym
-        elif s.name:
-            s.scheduling_label = s.name
-
-        s.requested_duration_in_hours = round(s.requested_duration.seconds / 60.0 / 60.0, 1)
-
-        session_layout_margin = 0.2
-        s.layout_width = timedelta_to_css_ems(s.requested_duration) - 2 * session_layout_margin
-        s.parent_acronym = s.group.parent.acronym if s.group and s.group.parent else ""
-
-        # compress the constraints, so similar constraint labels are
-        # shared between the conflicting sessions they cover - the JS
-        # then simply has to detect violations and show the
-        # preprocessed labels
-        constrained_sessions_grouped_by_label = defaultdict(set)
-        for name_id, ts in itertools.groupby(sorted(constraints_for_sessions.get(s.pk, [])), key=lambda t: t[0]):
-            ts = list(ts)
-            session_pks = (t[1] for t in ts)
-            constraint_name = constraint_names[name_id]
-            if "{count}" in constraint_name.formatted_editor_label:
-                for session_pk, grouped_session_pks in itertools.groupby(session_pks):
-                    count = sum(1 for i in grouped_session_pks)
-                    constrained_sessions_grouped_by_label[format_html(constraint_name.formatted_editor_label, count=count)].add(session_pk)
-
-            else:
-                constrained_sessions_grouped_by_label[constraint_name.formatted_editor_label].update(session_pks)
-
-        s.constrained_sessions = list(constrained_sessions_grouped_by_label.items())
-        s.formatted_constraints = formatted_constraints_for_sessions.get(s.pk, {})
-
-        s.other_sessions = [s_other for s_other in sessions_for_group.get(s.group_id) if s != s_other]
-
-        assigned = False
-        for a in assignments_by_session.get(s.pk, []):
-            timeslot = timeslots_by_pk.get(a.timeslot_id)
-            if timeslot:
-                timeslot.session_assignments.append((a, s))
-                assigned = True
-
-        if not assigned:
-            unassigned_sessions.append(s)
 
     js_data = {
         'can_edit': can_edit,
@@ -1214,9 +1256,19 @@ def room_view(request, num=None, name=None, owner=None):
     template = "meeting/room-view.html"
     return render(request, template,{"meeting":meeting,"schedule":schedule,"unavailable":unavailable,"assignments":assignments,"rooms":rooms,"days":days})
 
-def ical_session_status(session_with_current_status):
-    if session_with_current_status == 'canceled':
+def ical_session_status(assignment):
+    if assignment.session.current_status == 'canceled':
         return "CANCELLED"
+    elif assignment.session.current_status == 'resched':
+        t = "RESCHEDULED"
+        if assignment.session.tombstone_for_id is not None:
+            other_assignment = SchedTimeSessAssignment.objects.filter(schedule=assignment.schedule_id, session=assignment.session.tombstone_for_id).first()
+            if other_assignment:
+                t = "RESCHEDULED TO {}-{}".format(
+                    other_assignment.timeslot.time.strftime("%A %H:%M").upper(),
+                    other_assignment.timeslot.end_time().strftime("%H:%M")
+                )
+        return t
     else:
         return "CONFIRMED"
 
@@ -1268,7 +1320,7 @@ def ical_agenda(request, num=None, name=None, acronym=None, session_id=None):
 
     for a in assignments:
         if a.session:
-            a.session.ical_status = ical_session_status(a.session.current_status)
+            a.session.ical_status = ical_session_status(a)
 
     return render(request, "meeting/agenda.ics", {
         "schedule": schedule,
@@ -2655,7 +2707,7 @@ def upcoming_ical(request):
     for a in assignments:
         if a.session_id is not None:
             a.session = sessions.get(a.session_id) or a.session
-            a.session.ical_status = ical_session_status(a.session.current_status)
+            a.session.ical_status = ical_session_status(a)
 
     # gather vtimezones
     vtimezones = set()
