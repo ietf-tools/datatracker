@@ -1287,11 +1287,6 @@ def json_agenda(request, num=None ):
     # Update the assignments with historic information, i.e., valid at the
     # time of the meeting
     assignments = preprocess_assignments_for_agenda(assignments, meeting, extra_prefetches=[
-        # sadly, these prefetches aren't enough to get rid of all implicit queries below
-        Prefetch("session__materials",
-                 queryset=Document.objects.exclude(states__type=F("type"),states__slug='deleted').select_related("group").order_by("sessionpresentation__order"),
-                 to_attr="prefetched_active_materials",
-        ),
         "session__materials__docevent_set",
         "session__sessionpresentation_set",
         "timeslot__meeting"
