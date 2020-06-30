@@ -8,11 +8,16 @@ import datetime
 import math
 import random
 import string
+import time
+
 from collections import defaultdict
 from functools import lru_cache
 
+from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
+
+import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person
 from ietf.meeting import models
@@ -24,36 +29,56 @@ class Command(BaseCommand):
     help = 'Create a meeting schedule'
 
     def add_arguments(self, parser):
-        parser.add_argument('--meeting', default=None, dest='meeting',
-                            help='Number of the meeting to generate schedule for')
+        parser.add_argument('-m', '--meeting', default=None,
+                            help='the number of the meeting to generate a schedule for')
+        parser.add_argument('-n', '--name', default=None,
+                            help='a name for the generated schedule')
+        parser.add_argument('-r', '--max-runs', type=int, dest='max_cycles',
+                            default=OPTIMISER_MAX_CYCLES,
+                            help='maximum optimiser runs')
 
-    def handle(self, meeting, verbosity, *args, **kwargs):
-        ScheduleHandler(self.stdout, meeting, verbosity).run()
+    def handle(self, meeting, name, max_cycles, verbosity, *args, **kwargs):
+        ScheduleHandler(self.stdout, meeting, name, max_cycles, verbosity).run()
 
 
 class ScheduleHandler(object):
-    def __init__(self, stdout, meeting_number, verbosity):
+    def __init__(self, stdout, meeting_number, name, max_cycles, verbosity):
         self.stdout = stdout
         self.verbosity = verbosity
-        try:
-            self.meeting = models.Meeting.objects.get(number=meeting_number)
-        except models.Meeting.DoesNotExist:
-            raise CommandError('Unknown meeting number {}'.format(meeting_number))
+        self.name = name
+        self.max_cycles = max_cycles
+        if meeting_number:
+            try:
+                self.meeting = models.Meeting.objects.get(type="ietf", number=meeting_number)
+            except models.Meeting.DoesNotExist:
+                raise CommandError('Unknown meeting number {}'.format(meeting_number))
+        else:
+            self.meeting = models.Meeting.get_current_meeting()
+        if self.verbosity >= 1:
+            self.stdout.write("\nRunning automatic schedule layout for meeting IETF %s\n\n" % self.meeting.number)
         self._load_meeting()
 
     def run(self):
         """Schedule all sessions"""
+
+        beg_time = time.time()
         self.schedule.fill_initial_schedule()
         violations, cost = self.schedule.total_schedule_cost()
+        end_time = time.time()
+        tot_time = end_time - beg_time
         if self.verbosity >= 1:
-            self.stdout.write('Initial schedule completed with {} violations, total cost {}'
-                              .format(len(violations), cost))
-            
-        self.schedule.optimise_schedule()
+            self.stdout.write('Initial schedule completed with %s violations, total cost %s, in %dm %.2fs'
+                               % (len(violations), intcomma(cost), tot_time//60, tot_time%60))
+
+        beg_time = time.time()
+        runs = self.schedule.optimise_schedule()
         violations, cost = self.schedule.total_schedule_cost()
+        end_time = time.time()
+        tot_time = end_time - beg_time
         if self.verbosity >= 1:
-            self.stdout.write('Optimisation completed with {} violations, total cost {}'
-                              .format(len(violations), cost))
+            vc = len(violations)
+            self.stdout.write('Optimisation completed with %s violation%s, cost %s, %s runs in %dm %.2fs'
+                               % (vc, '' if vc==1 else 's', intcomma(cost), runs, tot_time//60, tot_time%60))
         if self.verbosity >= 1 and violations:
             self.stdout.write('Remaining violations:')
             for v in violations:
@@ -65,17 +90,22 @@ class ScheduleHandler(object):
         return violations, cost
     
     def _save_schedule(self, cost):
-        name = 'Auto-' + ''.join(random.choice(string.ascii_uppercase) for i in range(10))
+        if not self.name:
+            count = models.Schedule.objects.filter(name__startswith='auto-%s-'%self.meeting.number).count()
+            self.name = 'auto-%s-%02d' % (self.meeting.number, count)
+        if models.Schedule.objects.filter(name=self.name).exists():
+            self.stdout.write("WARNING: A schedule with the name '%s' already exists.  Picking another random one." % self.name)
+            self.name = 'auto-%s-%s' % (self.meeting.number, ''.join(random.choice(string.ascii_lowercase) for i in range(10)))
         schedule_db = models.Schedule.objects.create(
             meeting=self.meeting,
-            name=name,
+            name=self.name,
             owner=Person.objects.get(name='(System)'),
             public=False,
             visible=True,
             badness=cost,
         )
         self.schedule.save_assignments(schedule_db)
-        self.stdout.write('Scheduled saved as {}'.format(name))
+        self.stdout.write('Schedule saved as {}'.format(self.name))
         
     def _load_meeting(self):
         """Load all timeslots and sessions into in-memory objects."""
@@ -108,7 +138,7 @@ class ScheduleHandler(object):
             session.update_complexity(sessions)
 
         self.schedule = Schedule(
-            self.stdout, timeslots, sessions, business_constraint_costs, self.verbosity)
+            self.stdout, timeslots, sessions, business_constraint_costs, self.max_cycles, self.verbosity)
         self.schedule.adjust_for_timeslot_availability()
 
 
@@ -118,7 +148,7 @@ class Schedule(object):
     The schedule is internally represented as a dict, timeslots being keys, sessions being values.
     Note that "timeslot" means the combination of a timeframe and a location.
     """
-    def __init__(self, stdout, timeslots, sessions, business_constraint_costs, verbosity):
+    def __init__(self, stdout, timeslots, sessions, business_constraint_costs, max_cycles, verbosity):
         self.stdout = stdout
         self.timeslots = timeslots
         self.sessions = sessions
@@ -129,6 +159,7 @@ class Schedule(object):
         self.best_schedule = None
         self.fixed_cost = 0
         self.fixed_violations = []
+        self.max_cycles = max_cycles
         
     def save_assignments(self, schedule_db):
         for timeslot, session in self.schedule.items():
@@ -271,13 +302,13 @@ class Schedule(object):
         shuffle_next_run = False
         last_run_cost = None
         
-        for run_count in range(OPTIMISER_MAX_CYCLES):
+        for run_count in range(1, self.max_cycles+1):
             items = list(self.schedule.items())
             random.shuffle(items)
 
             if self.verbosity >= 2:
                 self.stdout.write('== Optimiser starting run {}, dynamic cost after last run {} =='
-                                  .format(run_count, last_run_cost))
+                                  .format(run_count,  intcomma(last_run_cost)))
                 self.stdout.write('Dynamic violations in last optimiser run: {}'
                                   .format(last_run_violations))
             if shuffle_next_run:
@@ -290,7 +321,7 @@ class Schedule(object):
                 if best_cost == 0:
                     if self.verbosity >= 2:
                         self.stdout.write('Optimiser found an optimal schedule')
-                    return
+                    return run_count
                 best_timeslot = None
 
                 for possible_new_slot in self.timeslots:
@@ -309,12 +340,14 @@ class Schedule(object):
             if last_run_cost == best_cost:
                 shuffle_next_run = True
             last_run_violations, last_run_cost = self.calculate_dynamic_cost()
-            self._save_schedule()
+            self._save_schedule(last_run_cost)
 
         if self.verbosity >= 2:
             self.stdout.write('Optimiser did not find perfect schedule, using best schedule at dynamic cost {}'
                               .format(self.best_cost))
         self.schedule = self.best_schedule
+
+        return run_count
 
     def _shuffle_conflicted_sessions(self, items):
         """
@@ -420,8 +453,7 @@ class Schedule(object):
             del self.schedule[timeslot1]
         return session2
     
-    def _save_schedule(self):
-        violations, cost = self.calculate_dynamic_cost()
+    def _save_schedule(self, cost):
         if cost < self.best_cost:
             self.best_cost = cost
             self.best_schedule = self.schedule.copy()
