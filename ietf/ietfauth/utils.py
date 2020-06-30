@@ -206,12 +206,13 @@ def is_individual_draft_author(user, doc):
 def openid_userinfo(claims, user):
     # Populate claims dict.
     person = get_object_or_404(Person, user=user)
+    email = person.email()
     claims.update( {
             'name':         person.plain_name(),
             'given_name':   person.first_name(),
             'family_name':  person.last_name(),
             'nickname':     '-',
-            'email':        person.email().address,
+            'email':        email.address if email else '',
         } )
     return claims
 
