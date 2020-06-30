@@ -904,12 +904,6 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         else:
             raise Http404("No such meeting")
 
-    if name == None and owner == None:
-        cache_key = ("meeting:%s:%s%s" % (meeting.number, base, ext))[:228]
-        rendered_page = caches['slowpages'].get(cache_key)
-        if rendered_page:
-            return rendered_page
-
     if name is None:
         schedule = get_schedule(meeting, name)
     else:
@@ -951,24 +945,17 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
 
         p.group_list.sort(key=lambda g: g.acronym)
 
+    is_current_meeting = bool(num == get_current_ietf_meeting_num())
     rendered_page = render(request, "meeting/"+base+ext, {
         "schedule": schedule,
         "filtered_assignments": filtered_assignments,
         "updated": updated,
         "group_parents": group_parents,
         "now": datetime.datetime.now(),
-        "is_current_meeting": bool(num == get_current_ietf_meeting_num()),
+        "is_current_meeting": is_current_meeting,
         "use_codimd": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
+        "cache_time": 150 if is_current_meeting else 3600,
     }, content_type=mimetype[ext])
-
-    # If the agenda is for the current meeting, only cache for 2 minutes
-    if name == None and owner == None:
-        cache_key = ("meeting:%s:%s%s" % (meeting.number, base, ext))[:228]
-        if meeting.number == get_current_ietf_meeting_num():
-            timeout = 60 * 2
-        else:
-            timeout = 60 * 60 * 24
-        caches['slowpages'].set(cache_key, rendered_page, timeout)
 
     return rendered_page
 
