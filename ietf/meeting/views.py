@@ -45,7 +45,6 @@ from django.views.decorators.cache import cache_page
 from django.utils.html import format_html
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
-from django.core.cache import caches
 
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocAlias
