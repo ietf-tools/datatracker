@@ -622,9 +622,10 @@ class Schedule(models.Model):
     meeting  = ForeignKey(Meeting, null=True, related_name='schedule_set')
     name     = models.CharField(max_length=16, blank=False, help_text="Letters, numbers and -:_ allowed.", validators=[RegexValidator(r'^[A-Za-z0-9-:_]*$')])
     owner    = ForeignKey(Person)
-    visible  = models.BooleanField(default=True, help_text="Make this agenda available to those who know about it.")
-    public   = models.BooleanField(default=True, help_text="Make this agenda publically available.")
+    visible  = models.BooleanField("Show in agenda list", default=True, help_text="Show in the list of possible agendas for the meeting.")
+    public   = models.BooleanField(default=True, help_text="Allow others to see this agenda.")
     badness  = models.IntegerField(null=True, blank=True)
+    notes    = models.TextField(blank=True)
     # considering copiedFrom = ForeignKey('Schedule', blank=True, null=True)
 
     def __str__(self):
@@ -651,20 +652,6 @@ class Schedule(models.Model):
             return email.address
         else:
             return "noemail"
-
-    @property
-    def visible_token(self):
-        if self.visible:
-            return "visible"
-        else:
-            return "hidden"
-
-    @property
-    def public_token(self):
-        if self.public:
-            return "public"
-        else:
-            return "private"
 
     @property
     def is_official(self):

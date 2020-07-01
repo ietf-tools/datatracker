@@ -12,7 +12,7 @@
   {% endfor %}
 {% endblock morecss %}
 
-{% block title %}{{ schedule.name }}: IETF {{ meeting.number }} meeting schedule{% endblock %}
+{% block title %}{{ schedule.name }}: IETF {{ meeting.number }} meeting agenda{% endblock %}
 
 {% block js %}
   <script type='text/javascript'>
@@ -27,14 +27,20 @@
   <div class="edit-meeting-schedule">
 
     <p class="pull-right">
-      <a href="{% url "ietf.meeting.views.copy_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">Copy schedule</a>
+      {% if can_edit_properties %}
+        <a href="{% url "ietf.meeting.views.edit_schedule_properties" schedule.meeting.number schedule.owner_email schedule.name %}">Edit properties</a>
+        
+        &middot;
+      {% endif %}
+
+      <a href="{% url "ietf.meeting.views.copy_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">Copy agenda</a>
       &middot;
 
-      <a href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">All schedules for meeting</a>
+      <a href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">Other Agendas</a>
     </p>
 
     <p>
-      Schedule name: {{ schedule.name }}
+      Agenda name: {{ schedule.name }}
 
       &middot;
 
@@ -43,7 +49,7 @@
       {% if not can_edit %}
         &middot;
 
-        <em>You can't edit this schedule. Take a copy first.</em>
+        <strong><em>You can't edit this schedule. Take a copy first.</em></strong>
       {% endif %}
     </p>
 

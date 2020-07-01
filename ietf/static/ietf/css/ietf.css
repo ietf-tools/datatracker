@@ -1003,6 +1003,14 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   border-top: 1px solid #ddd;
 }
 
+/* === List Meeting Schedules ====================================== */
+
+.table a.edit-schedule-properties {
+  display: inline-block;
+  margin-left: 0.2em;
+}
+
+
 /* === Edit Meeting Schedule ====================================== */
 
 .edit-meeting-schedule .edit-grid {

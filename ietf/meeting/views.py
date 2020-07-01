@@ -51,7 +51,7 @@ from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocA
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
 from ietf.person.models import Person
-from ietf.ietfauth.utils import role_required, has_role
+from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
 from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment
@@ -374,7 +374,7 @@ class CopyScheduleForm(forms.ModelForm):
             counter += 1
 
         self.fields['name'].initial = name_suggestion
-        self.fields['name'].label = "Name of new schedule"
+        self.fields['name'].label = "Name of new agenda"
 
     def clean_name(self):
         name = self.cleaned_data.get('name')
@@ -697,6 +697,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'meeting': meeting,
         'schedule': schedule,
         'can_edit': can_edit,
+        'can_edit_properties': can_edit or secretariat,
+        'secretariat': secretariat,
         'js_data': json.dumps(js_data, indent=2),
         'days': days,
         'room_labels': room_labels,
@@ -777,64 +779,86 @@ def edit_schedule(request, num=None, owner=None, name=None):
                                           "assignments": assignments,
                                           "show_inline": set(["txt","htm","html"]),
                                           "hide_menu": True,
+                                          "can_edit_properties": can_edit or secretariat,
                                       })
 
 
-##############################################################################
-#  show the properties associated with a schedule (visible, public)
-#
-SchedulePropertiesForm = modelform_factory(Schedule, fields=('name','visible', 'public'))
-
-# The meeing urls.py won't allow empy num, owmer, or name values
+SchedulePropertiesForm = modelform_factory(Schedule, fields=['name', 'notes', 'visible', 'public'])
 
 @role_required('Area Director','Secretariat')
-def edit_schedule_properties(request, num=None, owner=None, name=None):
+def edit_schedule_properties(request, num, owner, name):
     meeting  = get_meeting(num)
     person   = get_person_by_email(owner)
     schedule = get_schedule_by_name(meeting, person, name)
     if schedule is None:
-        raise Http404("No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
+        raise Http404("No agenda information for meeting %s owner %s schedule %s available" % (num, owner, name))
 
-    cansee, canedit, secretariat = schedule_permissions(meeting, schedule, request.user)
+    can_see, can_edit, secretariat = schedule_permissions(meeting, schedule, request.user)
 
-    if not (canedit or has_role(request.user,'Secretariat')):
+    can_edit_properties = can_edit or secretariat
+
+    if not can_edit_properties:
         return HttpResponseForbidden("You may not edit this schedule")
-    else:
-        if request.method == 'POST':
-            form = SchedulePropertiesForm(instance=schedule,data=request.POST)
-            if form.is_valid():
-               form.save()
-               return HttpResponseRedirect(reverse('ietf.meeting.views.list_schedules',kwargs={'num': num}))
-        else:
-            form = SchedulePropertiesForm(instance=schedule)
-        return render(request, "meeting/properties_edit.html",
-                                             {"schedule":schedule,
-                                              "form":form,
-                                              "meeting":meeting,
-                                          })
 
-##############################################################################
-# show list of schedules.
-#
+    if request.method == 'POST':
+        form = SchedulePropertiesForm(instance=schedule, data=request.POST)
+        if form.is_valid():
+           form.save()
+           return redirect('ietf.meeting.views.edit_schedule', num=num, owner=owner, name=name)
+    else:
+        form = SchedulePropertiesForm(instance=schedule)
+
+    return render(request, "meeting/properties_edit.html", {
+        "schedule": schedule,
+        "form": form,
+        "meeting": meeting,
+    })
+
+
+nat_sort_re = re.compile('([0-9]+)')
+def natural_sort_key(s): # from https://stackoverflow.com/questions/4836710/is-there-a-built-in-function-for-string-natural-sort
+    return [int(text) if text.isdecimal() else text.lower() for text in nat_sort_re.split(s)]
 
 @role_required('Area Director','Secretariat')
-def list_schedules(request, num=None ):
-
+def list_schedules(request, num):
     meeting = get_meeting(num)
-    user = request.user
 
-    schedules = meeting.schedule_set
-    if not has_role(user, 'Secretariat'):
-        schedules = schedules.filter(visible = True) | schedules.filter(owner = user.person)
+    schedules = Schedule.objects.filter(meeting=meeting).prefetch_related('owner').order_by('owner', '-name', '-public').distinct()
+    if not has_role(request.user, 'Secretariat'):
+        schedules = schedules.filter(Q(visible=True) | Q(owner=request.user.person))
 
-    schedules = schedules.order_by('owner', 'name')
+    official_schedules = []
+    own_schedules = []
+    other_public_schedules = []
+    other_private_schedules = []
 
-    schedules = sorted(list(schedules),key=lambda x:not x.is_official)
+    is_secretariat = has_role(request.user, 'Secretariat')
 
-    return render(request, "meeting/schedule_list.html",
-                                         {"meeting":   meeting,
-                                          "schedules": schedules,
-                                          })
+    for s in schedules:
+        s.can_edit_properties = is_secretariat or user_is_person(request.user, s.owner)
+
+        if s.pk == meeting.schedule_id:
+            official_schedules.append(s)
+        elif user_is_person(request.user, s.owner):
+            own_schedules.append(s)
+        elif s.public:
+            other_public_schedules.append(s)
+        else:
+            other_private_schedules.append(s)
+
+    schedule_groups = [
+        ("Official Agenda", official_schedules),
+        ("Own Draft Agendas", own_schedules),
+        ("Other Draft Agendas", other_public_schedules),
+        ("Other Private Draft Agendas", other_private_schedules),
+    ]
+
+    schedule_groups = [(label, sorted(l, reverse=True, key=lambda s: natural_sort_key(s.name))) for label, l in schedule_groups if l]
+
+    return render(request, "meeting/schedule_list.html", {
+        'meeting': meeting,
+        'schedule_groups': schedule_groups,
+    })
 
 @ensure_csrf_cookie
 def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
