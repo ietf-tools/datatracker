@@ -8,6 +8,7 @@ import datetime
 import math
 import random
 import string
+import sys
 import time
 
 from collections import defaultdict
@@ -22,7 +23,7 @@ import debug                            # pyflakes:ignore
 from ietf.person.models import Person
 from ietf.meeting import models
 
-OPTIMISER_MAX_CYCLES = 100
+OPTIMISER_MAX_CYCLES = 80
 
 
 class Command(BaseCommand):
@@ -42,7 +43,7 @@ class Command(BaseCommand):
 
 
 class ScheduleHandler(object):
-    def __init__(self, stdout, meeting_number, name, max_cycles, verbosity):
+    def __init__(self, stdout, meeting_number, name=None, max_cycles=OPTIMISER_MAX_CYCLES, verbosity=1):
         self.stdout = stdout
         self.verbosity = verbosity
         self.name = name
@@ -301,6 +302,7 @@ class Schedule(object):
         best_cost = math.inf
         shuffle_next_run = False
         last_run_cost = None
+        switched_with = None
         
         for run_count in range(1, self.max_cycles+1):
             items = list(self.schedule.items())
@@ -334,14 +336,20 @@ class Schedule(object):
                     switched_with = self._switch_sessions(original_timeslot, best_timeslot)
                     switched_with = switched_with.group if switched_with else '<empty slot>'
                     if self.verbosity >= 3:
-                        self.stdout.write('Found cost reduction to {} by switching {} with {}'
-                                          .format(best_cost, session.group, switched_with))
+                        self.stdout.write('Run {:2}: found cost reduction to {:,} by switching {} with {}'
+                                          .format(run_count, best_cost, session.group, switched_with))
 
             if last_run_cost == best_cost:
                 shuffle_next_run = True
             last_run_violations, last_run_cost = self.calculate_dynamic_cost()
-            self._save_schedule(last_run_cost)
+            self._save(last_run_cost)
 
+            if self.verbosity >= 1 and self.stdout.isatty():
+                sys.stderr.write('*' if last_run_cost < self.best_cost else '.')
+                sys.stderr.flush()
+
+        if self.verbosity >= 1 and self.stdout.isatty():
+            sys.stderr.write('\n')
         if self.verbosity >= 2:
             self.stdout.write('Optimiser did not find perfect schedule, using best schedule at dynamic cost {}'
                               .format(self.best_cost))
@@ -453,7 +461,7 @@ class Schedule(object):
             del self.schedule[timeslot1]
         return session2
     
-    def _save_schedule(self, cost):
+    def _save(self, cost):
         if cost < self.best_cost:
             self.best_cost = cost
             self.best_schedule = self.schedule.copy()
