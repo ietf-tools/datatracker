@@ -63,7 +63,7 @@ ietfdb (7.7.0) ietf; urgency=medium
 
 ietfdb (7.6.0) ietf; urgency=medium
 
-  Django 2.2 transition changes:
+  **Django 2.2 upgrade**
 
   * Changed deprecated 'load staticfiles' to recommended 'load static'
 
