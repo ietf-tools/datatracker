@@ -4,7 +4,7 @@
 {% load textfilters %}
 {% origin %}
 
-<div id="session-buttons-{{session.pk}}">
+<span id="session-buttons-{{session.pk}}">
   {% if session.agenda and show_agenda %}
     {% include "meeting/session_agenda_include.html" %}
     <!-- agenda pop-up button -->
@@ -101,4 +101,4 @@
       {% endif %}
     {% endif %}
   {% endif %}
-</div>
+</span>

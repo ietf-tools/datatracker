@@ -1243,7 +1243,7 @@ class SessionDetailsTests(TestCase):
         self.assertNotContains(r, 'deleted')
 
         q = PyQuery(r.content)
-        self.assertTrue(q('h2#session_%s div#session-buttons-%s' % (session.id, session.id)), 
+        self.assertTrue(q('h2#session_%s span#session-buttons-%s' % (session.id, session.id)), 
                                'Session detail page does not contain session tool buttons') 
         self.assertFalse(q('h2#session_%s div#session-buttons-%s span.fa-arrows-alt' % (session.id, session.id)), 
                          'The session detail page is incorrectly showing the "Show meeting materials" button')
