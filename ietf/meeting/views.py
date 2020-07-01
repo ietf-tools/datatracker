@@ -1416,7 +1416,9 @@ def agenda_json(request, num=None ):
             sessdict['agenda_note'] = asgn.session.agenda_note
         if asgn.session.remote_instructions:
             sessdict['remote_instructions'] = asgn.session.remote_instructions
-        sessdict['start'] = asgn.timeslot.utc_start_time().strftime("%Y-%m-%dT%H:%M:%SZ")
+        utc_start = asgn.timeslot.utc_start_time()
+        if utc_start:
+            sessdict['start'] = utc_start.strftime("%Y-%m-%dT%H:%M:%SZ")
         sessdict['duration'] = str(asgn.timeslot.duration)
         sessdict['location'] = asgn.room_name
         if asgn.timeslot.location:      # Some socials have an assignment but no location
