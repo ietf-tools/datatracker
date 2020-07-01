@@ -10,7 +10,7 @@ from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.person.factories import PersonFactory
 from ietf.meeting.models import Constraint, TimerangeName, BusinessConstraint
 from ietf.meeting.factories import MeetingFactory, RoomFactory, TimeSlotFactory, SessionFactory
-from ietf.meeting.management.commands.schedule_generator import ScheduleHandler
+from ietf.meeting.management.commands.generate_schedule import ScheduleHandler
 
 
 class ScheduleGeneratorTest(TestCase):
@@ -70,7 +70,7 @@ class ScheduleGeneratorTest(TestCase):
         output = stdout.read()
         self.assertIn('WARNING: session wg2 (pk 13) has no attendees set', output)
         self.assertIn('scheduling 13 sessions in 20 timeslots', output)
-        self.assertIn('Optimiser starting run 0', output)
+        self.assertIn('Optimiser starting run 1', output)
         self.assertIn('Optimiser found an optimal schedule', output)
         
         schedule = self.meeting.schedule_set.get(name__startswith='Auto-')
