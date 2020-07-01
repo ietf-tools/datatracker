@@ -289,6 +289,7 @@ class SecrMeetingTestCase(TestCase):
             'type':'reg',
             'group':group.pk,
             'location': room.pk,
+            'remote_instructions': 'http://webex.com/foobar',
         })
         self.assertRedirects(response, url)
         session = Session.objects.filter(meeting=meeting, name='Testing').first()
@@ -332,6 +333,7 @@ class SecrMeetingTestCase(TestCase):
             'duration':'01:00',
             'day':'2',
             'type':'other',
+            'remote_instructions': 'http://webex.com/foobar',
         })
         self.assertRedirects(response, redirect_url)
         timeslot = session.official_timeslotassignment().timeslot
