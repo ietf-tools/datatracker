@@ -345,7 +345,7 @@ class Schedule(object):
             self._save(last_run_cost)
 
             if self.verbosity >= 1 and self.stdout.isatty():
-                sys.stderr.write('*' if last_run_cost < self.best_cost else '.')
+                sys.stderr.write('*' if last_run_cost == self.best_cost else '.')
                 sys.stderr.flush()
 
         if self.verbosity >= 1 and self.stdout.isatty():
