@@ -1122,6 +1122,7 @@ if DEBUG:
 
 STATS_NAMES_LIMIT = 25
 
+UTILS_MEETING_CONFERENCE_DOMAINS = ['webex.com', 'zoom.us', 'jitsi.org', 'meetecho.com', ]
 UTILS_TEST_RANDOM_STATE_FILE = '.factoryboy_random_state'
 UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS = 30
 

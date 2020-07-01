@@ -32,13 +32,13 @@
   {% if now < item.timeslot.end_time %}
       <!-- Jabber -->
       <a class="" href="xmpp:{{session.jabber_room_name}}@jabber.ietf.org?join" title="Jabber room for {{session.jabber_room_name}}"><span class="fa fa-fw fa-lightbulb-o"></span></a>
-      <!-- webex -->
-      {% if "webex.com/" in session.agenda_note|first_url %}
+      <!-- Remote call-in -->
+      {% if session.agenda_note|first_url|conference_url %}
 	<a class=""
 	  href="{{ session.agenda_note|first_url }}"
-	  title="Webex session"><span class="fa fa-fw fa-phone"></span>
+	  title="Session call-in"><span class="fa fa-fw fa-phone"></span>
 	</a>
-      {% elif session.remote_instructions|first_url %}
+      {% elif session.remote_instructions|first_url|conference_url %}
 	<a class=""
 	  href="{{ session.remote_instructions|first_url }}"
 	  title="Session call-in"><span class="fa fa-fw fa-phone"></span>
@@ -57,7 +57,7 @@
       {% else %}
 	<span class="">
 	  <span class="fa fa-fw fa-phone" style="color: #ddd;"
-		title="No webex or meetecho info found in remote instructions or agenda note"></span>
+		title="No remote call-in info found in remote instructions or agenda note"></span>
 	</span>
       {% endif %}
   {% else %}

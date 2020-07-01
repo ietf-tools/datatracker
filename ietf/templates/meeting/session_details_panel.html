@@ -40,15 +40,15 @@
       {% if meeting.type.slug == 'interim' and session.remote_instructions %}
       <div>
          <b>Remote instructions:</b>
-         {% if "https://ietf.webex.com" in session.agenda_note|first_url %}
+         {% if session.agenda_note|first_url|conference_url %}
            <a class=""
              href="{{ session.agenda_note|first_url }}"
-             title="Webex session"><span class="fa fa-fw fa-phone"></span>
+             title="Session call-in"><span class="fa fa-fw fa-phone"></span>
            </a>
-         {% elif "https://ietf.webex.com" in session.remote_instructions|first_url %}
+         {% elif session.remote_instructions|first_url|conference_url %}
            <a class=""
              href="{{ session.remote_instructions|first_url }}"
-             title="Webex session"><span class="fa fa-fw fa-phone"></span>
+             title="Session call-in"><span class="fa fa-fw fa-phone"></span>
            </a>
          {% endif %}
          {{ session.remote_instructions }}

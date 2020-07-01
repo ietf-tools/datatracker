@@ -324,7 +324,7 @@
                       <span class="label label-danger pull-right">CANCELLED</span>
                     {% endif %}
 
-                    {% if item.session.agenda_note|first_url %}
+                    {% if item.session.agenda_note|first_url|conference_url %}
                       <br><a href={{item.session.agenda_note|first_url}}>{{item.session.agenda_note|slice:":23"}}</a>
                     {% elif item.session.agenda_note %}
                       <br><span class="text-danger">{{item.session.agenda_note}}</span>

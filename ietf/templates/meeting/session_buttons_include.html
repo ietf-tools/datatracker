@@ -50,11 +50,16 @@
         title="Audio stream"><span class="glyphicon glyphicon-headphones"></span>
       </a>
     {% endif %}
-    <!-- WebEx -->
-    {% if "webex.com/" in session.agenda_note|first_url %}
+    <!-- Remote call-in -->
+    {% if session.agenda_note|first_url|conference_url %}
       <a class=""
         href="{{ session.agenda_note|first_url }}"
-        title="Webex session"><span class="fa fa-fw fa-phone"></span>
+        title="Session call-in"><span class="fa fa-fw fa-phone"></span>
+      </a>
+    {% elif session.remote_instructions|first_url|conference_url %}
+      <a class=""
+        href="{{ session.remote_instructions|first_url }}"
+        title="Session call-in"><span class="fa fa-fw fa-phone"></span>
       </a>
     {% elif item.timeslot.location.webex_url %}
         <a class=""

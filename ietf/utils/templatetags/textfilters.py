@@ -6,6 +6,7 @@ import re
 import bleach
 
 from django import template
+from django.conf import settings
 from django.template.defaultfilters import stringfilter
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
@@ -84,3 +85,12 @@ def first_url(value):
     urls = re.findall(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+", value)
     url = urls[0] if urls else None
     return url
+
+@register.filter
+@stringfilter
+def conference_url(value):
+    conf_re = r"http[s]?://\S*(%s)/" % ('|'.join(settings.UTILS_MEETING_CONFERENCE_DOMAINS), )
+    return value if re.match(conf_re, value) else None
+
+
+    
