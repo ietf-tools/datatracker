@@ -43,8 +43,8 @@ ietfdb (7.7.0) ietf; urgency=medium
   * Added a guard against trying to serialize session UTC start time for a 
     meeting with unknown timezone.
 
-  * Renamed a test module to conform to our name convention ('test_...' to 
-    'tests_...').
+  * Renamed a test module to conform to our name convention ('test_*' to 
+    'tests_*').
 
   * Tweaked the HTML that puts session links and calendar links on the session
     details page so as to put them on the same line.
