@@ -804,6 +804,8 @@ def edit_schedule_properties(request, num, owner, name):
         form = SchedulePropertiesForm(instance=schedule, data=request.POST)
         if form.is_valid():
            form.save()
+           if request.GET.get('next'):
+               return HttpResponseRedirect(request.GET.get('next'))
            return redirect('ietf.meeting.views.edit_schedule', num=num, owner=owner, name=name)
     else:
         form = SchedulePropertiesForm(instance=schedule)

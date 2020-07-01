@@ -31,7 +31,7 @@
               <td>
                 <a href="{% url "ietf.meeting.views.edit_schedule" schedule.meeting.number schedule.owner_email schedule.name %}">{{ schedule.name }}</a>
                 {% if schedule.can_edit_properties %}
-                  <a class="edit-schedule-properties" href="{% url "ietf.meeting.views.edit_schedule_properties" schedule.meeting.number schedule.owner_email schedule.name %}">
+                  <a class="edit-schedule-properties" href="{% url "ietf.meeting.views.edit_schedule_properties" schedule.meeting.number schedule.owner_email schedule.name %}?next={{ request.get_full_path|urlencode }}">
                     <i title="Edit agenda properties" class="fa fa-edit"></i>
                   </a>
                 {% endif %}
