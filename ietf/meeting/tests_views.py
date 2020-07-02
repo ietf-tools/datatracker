@@ -293,6 +293,18 @@ class MeetingTests(TestCase):
         self.assertEqual(r.status_code,200)
         self.assertTrue(all([x in unicontent(r) for x in ['var all_items', 'maximize', 'draw_calendar', ]]))
 
+    @override_settings(SERVE_MEETING_MATERIALS_LOCALLY=False)
+    def test_materials_through_cdn(self):
+        meeting = make_meeting_test_data()
+        session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
+        self.write_materials_files(meeting, session)
+        for document in (session.agenda(),session.minutes(),session.slides()[0]):
+            url = urlreverse("ietf.meeting.views.materials_document",
+                                           kwargs=dict(num=meeting.number, document=document))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code,302)
+            self.assertEqual(r['Location'],document.get_href())
+
     def test_materials(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
@@ -307,6 +319,7 @@ class MeetingTests(TestCase):
 
         self.do_test_materials(meeting, session)
 
+    @override_settings(SERVE_MEETING_MATERIALS_LOCALLY=True)
     def do_test_materials(self, meeting, session):
 
         self.write_materials_files(meeting, session)
@@ -2523,6 +2536,7 @@ class MaterialsTests(TestCase):
             r = self.client.post(url,dict(file=test_file,apply_to_all=False))
             self.assertEqual(r.status_code, 410)
 
+    @override_settings(SERVE_MEETING_MATERIALS_LOCALLY=True)
     def test_upload_minutes_agenda_interim(self):
         session=SessionFactory(meeting__type_id='interim')
         for doctype in ('minutes','agenda'):

@@ -687,13 +687,29 @@ DOC_HREFS = {
     "liai-att": "%s{doc.uploaded_filename}" % LIAISON_ATTACH_URL,
 }
 
-MEETING_DOC_HREFS = {
+SERVE_MEETING_MATERIALS_LOCALLY = False
+
+# If you override SERVE_MEETING_MATERIALS_LOCALLY in your settings_local.conf, you will need to
+# set the right value for MEETING_DOC_HREFS there as well. LOCAL_MEETING_DOC_HREFS and 
+# CDN_MEETING_DOC_HREFS are defined here to make that simpler.
+
+LOCAL_MEETING_DOC_HREFS = {
     "agenda": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "minutes": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "slides": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "recording": "{doc.external_url}",
     "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
 }
+
+CDN_MEETING_DOC_HREFS = {
+    "agenda": "https://www.ietf.org/proceedings/{meeting.number}/agenda/{doc.name}-{doc.rev}",
+    "minutes": "https://www.ietf.org/proceedings/{meeting.number}/minutes/{doc.name}-{doc.rev}",
+    "slides": "https://www.ietf.org/proceedings/{meeting.number}/slides/{doc.name}-{doc.rev}",
+    "recording": "{doc.external_url}",
+    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
+}
+
+MEETING_DOC_HREFS = LOCAL_MEETING_DOC_HREFS if SERVE_MEETING_MATERIALS_LOCALLY else CDN_MEETING_DOC_HREFS
 
 MEETING_DOC_OLD_HREFS = {
     "agenda": "/meeting/{meeting.number}/materials/{doc.name}",
@@ -711,6 +727,7 @@ MEETING_DOC_GREFS = {
     "recording": "{doc.external_url}",
     "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
 }
+
 
 # Valid MIME types for cases where text is uploaded and immediately extracted,
 # e.g. a charter or a review. Must be a tuple, not a list.

@@ -220,29 +220,33 @@ def materials_document(request, document, num=None, ext=None):
     _, basename = os.path.split(filename)
     if not os.path.exists(filename):
         raise Http404("File not found: %s" % filename)
-    with io.open(filename, 'rb') as file:
-        bytes = file.read()
-    
-    mtype, chset = get_mime_type(bytes)
-    content_type = "%s; charset=%s" % (mtype, chset)
 
-    file_ext = os.path.splitext(filename)
-    if len(file_ext) == 2 and file_ext[1] == '.md' and mtype == 'text/plain':
-        sorted_accept = sort_accept_tuple(request.META.get('HTTP_ACCEPT'))
-        for atype in sorted_accept:
-            if atype[0] == 'text/markdown':
-                content_type = content_type.replace('plain', 'markdown', 1)
-                break;
-            elif atype[0] == 'text/html':
-                bytes = "<html>\n<head></head>\n<body>\n%s\n</body>\n</html>\n" % markdown2.markdown(bytes)
-                content_type = content_type.replace('plain', 'html', 1)
-                break;
-            elif atype[0] == 'text/plain':
-                break;
+    if settings.SERVE_MEETING_MATERIALS_LOCALLY :
+        with io.open(filename, 'rb') as file:
+            bytes = file.read()
+        
+        mtype, chset = get_mime_type(bytes)
+        content_type = "%s; charset=%s" % (mtype, chset)
 
-    response = HttpResponse(bytes, content_type=content_type)
-    response['Content-Disposition'] = 'inline; filename="%s"' % basename
-    return response
+        file_ext = os.path.splitext(filename)
+        if len(file_ext) == 2 and file_ext[1] == '.md' and mtype == 'text/plain':
+            sorted_accept = sort_accept_tuple(request.META.get('HTTP_ACCEPT'))
+            for atype in sorted_accept:
+                if atype[0] == 'text/markdown':
+                    content_type = content_type.replace('plain', 'markdown', 1)
+                    break;
+                elif atype[0] == 'text/html':
+                    bytes = "<html>\n<head></head>\n<body>\n%s\n</body>\n</html>\n" % markdown2.markdown(bytes)
+                    content_type = content_type.replace('plain', 'html', 1)
+                    break;
+                elif atype[0] == 'text/plain':
+                    break;
+
+        response = HttpResponse(bytes, content_type=content_type)
+        response['Content-Disposition'] = 'inline; filename="%s"' % basename
+        return response
+    else:
+        return HttpResponseRedirect(redirect_to=doc.get_href())
 
 @login_required
 def materials_editable_groups(request, num=None):
