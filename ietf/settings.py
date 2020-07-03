@@ -17,6 +17,7 @@ warnings.filterwarnings("ignore", message="Add the `renderer` argument to the re
 warnings.filterwarnings("ignore", message="The logout\(\) view is superseded by")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="{% load staticfiles %} is deprecated")
+warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
 
 try:
     import syslog
