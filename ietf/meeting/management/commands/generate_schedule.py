@@ -23,7 +23,13 @@ import debug                            # pyflakes:ignore
 from ietf.person.models import Person
 from ietf.meeting import models
 
-OPTIMISER_MAX_CYCLES = 80
+# 40 runs of the optimiser for IETF 106 with cycles=160 resulted in 16
+# zero-violation invocations, with a mean number of runs of 91 and 
+# std-dev 41.  On the machine used, 160 cycles had a runtime of about
+# 30 minutes.  Setting default to 160, as 80 or 100 seems too low to have
+# a reasonable rate of success in generating zero-cost schedules.
+
+OPTIMISER_MAX_CYCLES = 160
 
 
 class Command(BaseCommand):
@@ -61,6 +67,7 @@ class ScheduleHandler(object):
 
     def run(self):
         """Schedule all sessions"""
+
 
         beg_time = time.time()
         self.schedule.fill_initial_schedule()
@@ -309,8 +316,8 @@ class Schedule(object):
             random.shuffle(items)
 
             if self.verbosity >= 2:
-                self.stdout.write('== Optimiser starting run {}, dynamic cost after last run {} =='
-                                  .format(run_count,  intcomma(last_run_cost)))
+                self.stdout.write('== Optimiser starting run {}, dynamic cost after last run {:,} =='
+                                  .format(run_count,  last_run_cost))
                 self.stdout.write('Dynamic violations in last optimiser run: {}'
                                   .format(last_run_violations))
             if shuffle_next_run:
@@ -321,8 +328,11 @@ class Schedule(object):
             for original_timeslot, session in items:
                 best_cost = self.calculate_dynamic_cost()[1]
                 if best_cost == 0:
+                    if self.verbosity >= 1 and self.stdout.isatty():
+                        sys.stderr.write('\n')
                     if self.verbosity >= 2:
                         self.stdout.write('Optimiser found an optimal schedule')
+
                     return run_count
                 best_timeslot = None
 
@@ -351,7 +361,7 @@ class Schedule(object):
         if self.verbosity >= 1 and self.stdout.isatty():
             sys.stderr.write('\n')
         if self.verbosity >= 2:
-            self.stdout.write('Optimiser did not find perfect schedule, using best schedule at dynamic cost {}'
+            self.stdout.write('Optimiser did not find perfect schedule, using best schedule at dynamic cost {:,}'
                               .format(self.best_cost))
         self.schedule = self.best_schedule
 
