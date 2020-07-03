@@ -136,7 +136,7 @@ def send_notifications(meeting, groups, person):
         template = 'meetings/session_schedule_notification.txt'
 
         # easier to populate template from timeslot perspective. assuming one-to-one timeslot-session
-        items = [ {'session':s, 'timeslot':get_timeslot(s)} for s in sessions ]
+        items = [ {'session':s, 'timeslot':get_timeslot(s)} for s in sessions if get_timeslot(s) ]
         items.sort(key=lambda d: d['timeslot'].time)
         for i,d in enumerate(items):
             s = d['session']
