@@ -316,8 +316,6 @@ class Schedule(object):
             random.shuffle(items)
 
             if self.verbosity >= 2:
-                debug.show('run_count')
-                debug.show('last_run_cost')
                 self.stdout.write('== Optimiser starting run {}, dynamic cost after last run {} =='
                                   .format(run_count,  last_run_cost))
                 self.stdout.write('Dynamic violations in last optimiser run: {}'
