@@ -152,7 +152,7 @@ def check_yang_model_directories(app_configs, **kwargs):
         return []
     #
     errors = []
-    for s in ("SUBMIT_YANG_RFC_MODEL_DIR", "SUBMIT_YANG_DRAFT_MODEL_DIR", "SUBMIT_YANG_IANA_MODEL_DIR", ):
+    for s in ("SUBMIT_YANG_RFC_MODEL_DIR", "SUBMIT_YANG_DRAFT_MODEL_DIR", "SUBMIT_YANG_IANA_MODEL_DIR", "SUBMIT_YANG_CATALOG_MODEL_DIR",):
         p = getattr(settings, s)
         if not os.path.exists(p):
             errors.append(checks.Critical(

@@ -32,6 +32,9 @@ $DTDIR/ietf/manage.py update_external_command_info
 # Hardcode the rsync target to avoid any unwanted deletes:
 rsync -avzq --delete rsync.ietf.org::iana/yang-parameters/ /a/www/ietf-ftp/yang/ianamod/
 
+# Get Yang models from Yangcatalog.
+rsync -avzq rsync://yangcatalog.org:10873/yangdeps /a/www/ietf-ftp/yang/catalogmod/
+
 # Populate the yang repositories
 $DTDIR/ietf/manage.py populate_yang_model_dirs -v0
 

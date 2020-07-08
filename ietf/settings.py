@@ -819,13 +819,14 @@ IDSUBMIT_DEFAULT_CUTOFF_WARNING_DAYS = datetime.timedelta(days=21)
 SUBMIT_YANG_RFC_MODEL_DIR = '/a/www/ietf-ftp/yang/rfcmod/'
 SUBMIT_YANG_DRAFT_MODEL_DIR = '/a/www/ietf-ftp/yang/draftmod/'
 SUBMIT_YANG_IANA_MODEL_DIR = '/a/www/ietf-ftp/yang/ianamod/'
+SUBMIT_YANG_CATALOG_MODEL_DIR = '/a/www/ietf-ftp/yang/catalogmod/'
 
 IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 IDSUBMIT_STAGING_PATH = '/a/www/www6s/staging/'
 IDSUBMIT_STAGING_URL = '//www.ietf.org/staging/'
 IDSUBMIT_IDNITS_BINARY = '/a/www/ietf-datatracker/scripts/idnits'
 SUBMIT_PYANG_COMMAND = 'pyang --verbose --ietf -p {libs} {model}'
-SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {tmplib} -p {rfclib} -p {draftlib} -p {ianalib} {model} -i'
+SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {tmplib} -p {rfclib} -p {draftlib} -p {ianalib} -p {cataloglib} {model} -i'
 SUBMIT_YANGLINT_COMMAND = ''        # use the value above if you have yanglint installed
 
 SUBMIT_YANG_CATALOG_MODULEARG = "modules[]={module}"

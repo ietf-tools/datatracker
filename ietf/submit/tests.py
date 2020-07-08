@@ -103,6 +103,10 @@ class SubmitTests(TestCase):
         self.yang_iana_model_dir = self.tempdir('yang-iana-model')
         settings.SUBMIT_YANG_IANA_MODEL_DIR = self.yang_iana_model_dir
 
+        self.saved_yang_catalog_model_dir = settings.SUBMIT_YANG_CATALOG_MODEL_DIR
+        self.yang_catalog_model_dir = self.tempdir('yang-catalog-model')
+        settings.SUBMIT_YANG_CATALOG_MODEL_DIR = self.yang_catalog_model_dir
+
         # Submit views assume there is a "next" IETF to look for cutoff dates against
         MeetingFactory(type_id='ietf', date=datetime.date.today()+datetime.timedelta(days=180))
 
@@ -113,6 +117,7 @@ class SubmitTests(TestCase):
         shutil.rmtree(self.yang_rfc_model_dir)
         shutil.rmtree(self.yang_draft_model_dir)
         shutil.rmtree(self.yang_iana_model_dir)
+        shutil.rmtree(self.yang_catalog_model_dir)
         settings.IDSUBMIT_STAGING_PATH = self.saved_idsubmit_staging_path
         settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
         settings.IDSUBMIT_REPOSITORY_PATH = self.saved_idsubmit_repository_path
@@ -120,6 +125,7 @@ class SubmitTests(TestCase):
         settings.SUBMIT_YANG_RFC_MODEL_DIR = self.saved_yang_rfc_model_dir
         settings.SUBMIT_YANG_DRAFT_MODEL_DIR = self.saved_yang_draft_model_dir
         settings.SUBMIT_YANG_IANA_MODEL_DIR = self.saved_yang_iana_model_dir
+        settings.SUBMIT_YANG_CATALOG_MODEL_DIR = self.saved_yang_catalog_model_dir
 
 
     def do_submission(self, name, rev, group=None, formats=["txt",], author=None):

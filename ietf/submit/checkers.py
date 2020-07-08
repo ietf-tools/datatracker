@@ -201,6 +201,7 @@ class DraftYangChecker(object):
                                 settings.SUBMIT_YANG_RFC_MODEL_DIR,
                                 settings.SUBMIT_YANG_DRAFT_MODEL_DIR,
                                 settings.SUBMIT_YANG_IANA_MODEL_DIR,
+                                settings.SUBMIT_YANG_CATALOG_MODEL_DIR,
                             ])
             if os.path.exists(path):
                 with io.open(path) as file:
@@ -242,7 +243,8 @@ class DraftYangChecker(object):
                     command = [ w for w in cmd_template.split() if not '=' in w ][0]
                     cmd_version = VersionInfo.objects.get(command=command).version
                     cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, tmplib=workdir,
-                        draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, ianalib=settings.SUBMIT_YANG_IANA_MODEL_DIR, )
+                        draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, ianalib=settings.SUBMIT_YANG_IANA_MODEL_DIR,
+                        cataloglib=settings.SUBMIT_YANG_CATALOG_MODEL_DIR, )
                     code, out, err = pipe(cmd)
                     out = out.decode('utf-8')
                     err = err.decode('utf-8')
