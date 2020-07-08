@@ -1404,8 +1404,9 @@ def agenda_json(request, num=None ):
             if asgn.session.historic_group.is_bof():
                 sessdict['is_bof'] = True
             if asgn.session.historic_group.type_id in ['wg','rg', 'ag',] or asgn.session.historic_group.acronym in ['iesg',]:
-                sessdict['group']['parent'] = asgn.session.historic_group.historic_parent.acronym
-                parent_acronyms.add(asgn.session.historic_group.historic_parent.acronym)
+                if asgn.session.historic_group.historic_parent:
+                    sessdict['group']['parent'] = asgn.session.historic_group.historic_parent.acronym
+                    parent_acronyms.add(asgn.session.historic_group.historic_parent.acronym)
         if asgn.session.name:
             sessdict['name'] = asgn.session.name
         else:
