@@ -62,11 +62,6 @@ PASSWORD_HASHERS = [
 
 ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", "127.0.0.1", "localhost:8000", ]
 
-X_FRAME_OPTIONS = 'ALLOW-FROM meetecho.com *.meetecho.com *.ietf.org'
-CSRF_TRUSTED_ORIGINS = ['meetecho.com', '*.meetecho.com', '*.ietf.org', ]
-CSRF_COOKIE_SAMESITE = None
-
-
 # Server name of the tools server
 TOOLS_SERVER = 'tools.' + IETF_DOMAIN
 TOOLS_SERVER_URL = 'https://' + TOOLS_SERVER
@@ -331,8 +326,16 @@ UTILS_LOGGER_LEVELS: Dict[str, str] = {
 # ------------------------------------------------------------------------
 
 
+X_FRAME_OPTIONS = 'ALLOW-FROM meetecho.com *.meetecho.com *.ietf.org'
+CSRF_TRUSTED_ORIGINS = ['meetecho.com', '*.meetecho.com', '*.ietf.org', ]
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True
+
 # SESSION_COOKIE_AGE = 60 * 60 * 24 * 7 * 2 # Age of cookie, in seconds: 2 weeks (django default)
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 7 * 4 # Age of cookie, in seconds: 4 weeks
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
+
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 # We want to use the JSON serialisation, as it's safer -- but there is /secr/
 # code which stashes objects in the session that can't be JSON serialized.
@@ -1113,6 +1116,7 @@ CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/fix-jwkest-jwt-logging.patch',
     'patch/fix-oic-logging.patch',
     'patch/fix-django-password-strength-kwargs.patch',
+    'patch/add-django-http-cookie-value-none.patch',
 ]
 if DEBUG:
     try:
@@ -1212,3 +1216,6 @@ if SERVER_MODE != 'production':
     except ImportError:
         pass
 
+    # Cannot have this set to True if we're using http: from the dev-server:
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
