@@ -67,12 +67,15 @@ from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordF
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.mailinglists.models import Subscribed, Whitelisted
+from ietf.name.models import ExtResourceName
 from ietf.person.models import Person, Email, Alias, PersonalApiKey, PERSON_API_KEY_VALUES
 from ietf.review.models import ReviewerSettings, ReviewWish, ReviewAssignment
 from ietf.review.utils import unavailable_periods_to_list, get_default_filter_re
 from ietf.doc.fields import SearchableDocumentField
 from ietf.utils.decorators import person_required
 from ietf.utils.mail import send_mail
+from ietf.utils.validators import validate_external_resource_value
+
 
 def index(request):
     return render(request, 'registration/index.html')
@@ -287,6 +290,79 @@ def profile(request):
         'new_email_forms': new_email_forms,
         'settings':settings,
     })
+
+@login_required
+@person_required
+def edit_person_externalresources(request):
+    class PersonExtResourceForm(forms.Form):
+        resources = forms.CharField(widget=forms.Textarea, label="Additional Resources", required=False,
+            help_text=("Format: 'tag value (Optional description)'."
+                " Separate multiple entries with newline. When the value is a URL, use https:// where possible.") )
+
+        def clean_resources(self):
+            lines = [x.strip() for x in self.cleaned_data["resources"].splitlines() if x.strip()]
+            errors = []
+            for l in lines:
+                parts = l.split()
+                if len(parts) == 1:
+                    errors.append("Too few fields: Expected at least tag and value: '%s'" % l)
+                elif len(parts) >= 2:
+                    name_slug = parts[0]
+                    try:
+                        name = ExtResourceName.objects.get(slug=name_slug)
+                    except ObjectDoesNotExist:
+                        errors.append("Bad tag in '%s': Expected one of %s" % (l, ', '.join([ o.slug for o in ExtResourceName.objects.all() ])))
+                        continue
+                    value = parts[1]
+                    try:
+                        validate_external_resource_value(name, value)
+                    except ValidationError as e:
+                        e.message += " : " + value
+                        errors.append(e)
+            if errors:
+                raise ValidationError(errors)
+            return lines
+
+    def format_resources(resources, fs="\n"):
+        res = []
+        for r in resources:
+            if r.display_name:
+                res.append("%s %s (%s)" % (r.name.slug, r.value, r.display_name.strip('()')))
+            else:
+                res.append("%s %s" % (r.name.slug, r.value)) 
+                # TODO: This is likely problematic if value has spaces. How then to delineate value and display_name? Perhaps in the short term move to comma or pipe separation.
+                # Might be better to shift to a formset instead of parsing these lines.
+        return fs.join(res)
+
+    person = request.user.person
+
+    old_resources = format_resources(person.personextresource_set.all())
+
+    if request.method == 'POST':
+        form = PersonExtResourceForm(request.POST)
+        if form.is_valid():
+            old_resources = sorted(old_resources.splitlines())
+            new_resources = sorted(form.cleaned_data['resources'])
+            if old_resources != new_resources:
+                person.personextresource_set.all().delete()
+                for u in new_resources:
+                    parts = u.split(None, 2)
+                    name = parts[0]
+                    value = parts[1]
+                    display_name = ' '.join(parts[2:]).strip('()')
+                    person.personextresource_set.create(value=value, name_id=name, display_name=display_name)
+                new_resources = format_resources(person.personextresource_set.all())
+                messages.success(request,"Person resources updated.")
+            else:
+                messages.info(request,"No change in Person resources.")
+            return redirect('ietf.ietfauth.views.profile')
+    else:
+        form = PersonExtResourceForm(initial={'resources': old_resources, })
+
+    info = "Valid tags:<br><br> %s" % ', '.join([ o.slug for o in ExtResourceName.objects.all().order_by('slug') ])
+    # May need to explain the tags more - probably more reason to move to a formset.
+    title = "Additional person resources"
+    return render(request, 'ietfauth/edit_field.html',dict(person=person, form=form, title=title, info=info) )
 
 def confirm_new_email(request, auth):
     try:

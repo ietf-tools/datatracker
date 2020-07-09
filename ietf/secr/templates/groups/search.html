@@ -14,7 +14,7 @@
 {% block content %}
 
 <div class="module group-container">
-    <h2>Groups - Search <span class="unlocked"><a href="add/" class="addlink">Add</a></span></h2>
+    <h2>Groups - Search</h2>
     <form enctype="multipart/form-data" action="" method="post">{% csrf_token %}
       <table class="full-width amstable">
         {{ form.as_table }}

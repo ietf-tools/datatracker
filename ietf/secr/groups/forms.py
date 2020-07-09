@@ -6,7 +6,6 @@ from django.db.models import Count
 from ietf.group.models import Group, Role
 from ietf.name.models import GroupStateName, GroupTypeName, RoleName
 from ietf.person.models import Person, Email
-from ietf.liaisons.models import LiaisonStatementGroupContacts
 
 
 # ---------------------------------------------
@@ -48,83 +47,6 @@ class DescriptionForm (forms.Form):
     description = forms.CharField(widget=forms.Textarea(attrs={'rows':'20'}),required=True, strip=False)
 
 
-class GroupModelForm(forms.ModelForm):
-    type = forms.ModelChoiceField(queryset=GroupTypeName.objects.all(),empty_label=None)
-    parent = forms.ModelChoiceField(queryset=Group.objects.all(),required=False)
-    ad = forms.ModelChoiceField(queryset=Person.objects.filter(role__name='ad',role__group__state='active',role__group__type='area'),required=False)
-    state = forms.ModelChoiceField(queryset=GroupStateName.objects.exclude(slug__in=('dormant','unknown')),empty_label=None)
-    liaison_contacts = forms.CharField(max_length=255,required=False,label='Default Liaison Contacts')
-    
-    class Meta:
-        model = Group
-        fields = ('acronym','name','type','state','parent','ad','list_email','list_subscribe','list_archive','description','comments')
-    
-    def __init__(self, *args, **kwargs):
-        super(GroupModelForm, self).__init__(*args, **kwargs)
-        self.fields['list_email'].label = 'List Email'
-        self.fields['list_subscribe'].label = 'List Subscribe'
-        self.fields['list_archive'].label = 'List Archive'
-        self.fields['ad'].label = 'Area Director'
-        self.fields['comments'].widget.attrs['rows'] = 3
-        self.fields['parent'].label = 'Area / Parent'
-        self.fields['parent'].choices = get_parent_group_choices()
-
-        if self.instance.pk:
-            lsgc = self.instance.liaisonstatementgroupcontacts_set.first() # there can only be one
-            if lsgc:
-                self.fields['liaison_contacts'].initial = lsgc.contacts
-        
-    def clean_acronym(self):
-        acronym = self.cleaned_data['acronym']
-        if any(x.isupper() for x in acronym):
-            raise forms.ValidationError('Capital letters not allowed in group acronym')
-        return acronym
-
-    def clean_parent(self):
-        parent = self.cleaned_data['parent']
-        type = self.cleaned_data['type']
-        
-        if type.features.acts_like_wg and not parent:
-            raise forms.ValidationError("This field is required.")
-        
-        return parent
-        
-    def clean(self):
-        if any(self.errors):
-            return self.cleaned_data
-        super(GroupModelForm, self).clean()
-            
-        type = self.cleaned_data['type']
-        parent = self.cleaned_data['parent']
-        state = self.cleaned_data['state']
-        irtf_area = Group.objects.get(acronym='irtf')
-        
-        # ensure proper parent for group type
-        if type.slug == 'rg' and parent != irtf_area:
-            raise forms.ValidationError('The Area for a research group must be %s' % irtf_area)
-            
-        # an RG can't be proposed
-        if type.slug == 'rg' and state.slug not in ('active','conclude'):
-            raise forms.ValidationError('You must choose "active" or "concluded" for research group state')
-            
-        return self.cleaned_data
-    
-    def save(self, force_insert=False, force_update=False, commit=True):
-        obj = super(GroupModelForm, self).save(commit=False)
-        if commit:
-            obj.save()
-        contacts = self.cleaned_data.get('liaison_contacts')
-        if contacts:
-            try:
-                lsgc = LiaisonStatementGroupContacts.objects.get(group=self.instance)
-                lsgc.contacts = contacts
-                lsgc.save()
-            except LiaisonStatementGroupContacts.DoesNotExist:
-                LiaisonStatementGroupContacts.objects.create(group=self.instance,contacts=contacts)
-        elif LiaisonStatementGroupContacts.objects.filter(group=self.instance):
-            LiaisonStatementGroupContacts.objects.filter(group=self.instance).delete()
-        
-        return obj
 
 class RoleForm(forms.Form):
     name = forms.ModelChoiceField(RoleName.objects.filter(slug__in=('chair','editor','secr','techadv')),empty_label=None)

@@ -21,7 +21,7 @@ from simple_history.models import HistoricalRecords
 import debug                            # pyflakes:ignore
 
 from ietf.group.colors import fg_group_colors, bg_group_colors
-from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName, AgendaTypeName
+from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName, AgendaTypeName, ExtResourceName
 from ietf.person.models import Email, Person
 from ietf.utils.mail import formataddr, send_mail_text
 from ietf.utils import log
@@ -41,6 +41,7 @@ class GroupInfo(models.Model):
     comments = models.TextField(blank=True)
     meeting_seen_as_area = models.BooleanField(default=False, help_text='For meeting scheduling, should be considered an area meeting, even if the type is WG')
     
+
     unused_states = models.ManyToManyField('doc.State', help_text="Document states that have been disabled for the group.", blank=True)
     unused_tags = models.ManyToManyField(DocTagName, help_text="Document tags that have been disabled for the group.", blank=True)
 
@@ -260,6 +261,15 @@ class GroupURL(models.Model):
     def __str__(self):
         return u"%s (%s)" % (self.url, self.name)
 
+class GroupExtResource(models.Model):
+    group = ForeignKey(Group) # Should this really be to GroupInfo?
+    name = models.ForeignKey(ExtResourceName, on_delete=models.CASCADE)
+    display_name = models.CharField(max_length=255, default='', blank=True)
+    value = models.CharField(max_length=2083) # 2083 is the maximum legal URL length
+    def __str__(self):
+        priority = self.display_name or self.name.name
+        return u"%s (%s) %s" % (priority, self.name.slug, self.value)
+        
 class GroupMilestoneInfo(models.Model):
     group = ForeignKey(Group)
     # a group has two sets of milestones, current milestones

@@ -11,8 +11,9 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     StateDocEvent, ConsensusDocEvent, BallotType, BallotDocEvent, WriteupDocEvent, LastCallDocEvent,
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
-    ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent )
+    ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource )
 
+from ietf.utils.validators import validate_external_resource_value
 
 class StateTypeAdmin(admin.ModelAdmin):
     list_display = ["slug", "label"]
@@ -183,3 +184,14 @@ class DocumentUrlAdmin(admin.ModelAdmin):
     search_fields = ['doc__name', 'url', ]
     raw_id_fields = ['doc', ]
 admin.site.register(DocumentURL, DocumentUrlAdmin)
+
+class DocExtResourceAdminForm(forms.ModelForm):
+    def clean(self):
+        validate_external_resource_value(self.cleaned_data['name'],self.cleaned_data['value'])
+
+class DocExtResourceAdmin(admin.ModelAdmin):
+    form = DocExtResourceAdminForm
+    list_display = ['id', 'doc', 'name', 'display_name', 'value',]
+    search_fields = ['doc__name', 'value', 'display_name', 'name__slug',]
+    raw_id_fields = ['doc', ]
+admin.site.register(DocExtResource, DocExtResourceAdmin)

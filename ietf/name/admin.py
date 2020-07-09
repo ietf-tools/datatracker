@@ -10,7 +10,9 @@ from ietf.name.models import (
     LiaisonStatementState, LiaisonStatementTagName, MeetingTypeName, NomineePositionStateName,
     ReviewRequestStateName, ReviewResultName, ReviewTypeName, RoleName, RoomResourceName,
     SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName, TopicAudienceName,
-    DocUrlTagName, ReviewAssignmentStateName, ReviewerQueuePolicyName, TimerangeName)
+    DocUrlTagName, ReviewAssignmentStateName, ReviewerQueuePolicyName, TimerangeName,
+    ExtResourceName, ExtResourceTypeName, )
+
 
 from ietf.stats.models import CountryAlias
 
@@ -45,6 +47,10 @@ class ImportantDateNameAdmin(NameAdmin):
     list_display = ["slug", "name", "desc", "used", "default_offset_days"]
     ordering = ('-used','default_offset_days',)
 admin.site.register(ImportantDateName,ImportantDateNameAdmin)
+
+class ExtResourceNameAdmin(NameAdmin):
+    list_display = ["slug", "name", "type", "desc", "used",]
+admin.site.register(ExtResourceName,ExtResourceNameAdmin)
 
 admin.site.register(AgendaTypeName, NameAdmin)
 admin.site.register(BallotPositionName, NameAdmin)
@@ -82,3 +88,4 @@ admin.site.register(TimeSlotTypeName, NameAdmin)
 admin.site.register(TimerangeName, NameAdmin)
 admin.site.register(TopicAudienceName, NameAdmin)
 admin.site.register(DocUrlTagName, NameAdmin)
+admin.site.register(ExtResourceTypeName, NameAdmin)
