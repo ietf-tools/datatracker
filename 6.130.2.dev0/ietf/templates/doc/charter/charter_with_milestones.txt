@@ -1,8 +1,0 @@
-{% load ietf_filters %}{% autoescape off %}{% filter maybewordwrap %}{{ charter_text }}{% endfilter %}
-
-Milestones
-
-{% for milestone in milestones %}{% if milestone.resolved %}{{ milestone.resolved|ljust:8 }}{% else %}{{ milestone.due|date:"M Y" }}{% endif %} - {{ milestone.desc_filled }}{% for d in milestone.docs.all %}
-           o {{ d.name }}{% endfor %}
-
-{% endfor %}{% endautoescape %}

@@ -1,5 +1,0 @@
-{% autoescape off %}{{ text }}
-
-The document can be found at
-Datatracker URL: {{ url }}
-{% endautoescape %}

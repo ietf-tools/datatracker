@@ -1,9 +1,0 @@
-This directory will be used to set up packages used for testing if they need any
-special handling which should not be applied to the system-wide setup.
-
-For instance, many of the tests to be run on the Django application should be run
-with a standard Django environment; but there are some Django test features which
-are broken in 0.9.6, and need patching in order to do the testing, like the ability
-to create a test database to run unit tests, according to this issue and patch:
-http://code.djangoproject.com/changeset/5106
-

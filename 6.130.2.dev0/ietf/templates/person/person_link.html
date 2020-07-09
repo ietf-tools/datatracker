@@ -1,7 +1,0 @@
-{# Copyright The IETF Trust 2020, All Rights Reserved #}{% spaceless %}
-<a {% if title %}title="{{ title }}"{% endif %} href="{% url 'ietf.person.views.profile' email_or_name=name %}">
-  <span class="{{class}}">{{ plain_name }}</span>
-</a>&nbsp;<a href="mailto:{{ email|urlencode }}">
-  <span class="fa fa-envelope-o tiny"></span>
-</a>
-{% endspaceless %}

@@ -610,7 +610,6 @@ class GroupEditTests(TestCase):
                                   list_email="mars@mail",
                                   list_subscribe="subscribe.mars",
                                   list_archive="archive.mars",
-                                  urls="http://mars.mars (MARS site)"
                                   ))
         self.assertEqual(r.status_code, 302)
 
@@ -624,8 +623,7 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.list_email, "mars@mail")
         self.assertEqual(group.list_subscribe, "subscribe.mars")
         self.assertEqual(group.list_archive, "archive.mars")
-        self.assertEqual(group.groupurl_set.all()[0].url, "http://mars.mars")
-        self.assertEqual(group.groupurl_set.all()[0].name, "MARS site")
+
         self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))))
         self.assertEqual(len(outbox), 2)
         self.assertTrue('Personnel change' in outbox[0]['Subject'])

@@ -1,2 +1,0 @@
-{% load ietf_filters %}
-  o {{ doc.group.name }} ({{ doc.group.acronym }})

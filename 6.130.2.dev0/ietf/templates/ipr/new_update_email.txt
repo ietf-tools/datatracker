@@ -1,6 +1,0 @@
-{% autoescape off %}A new IPR disclosure has been submitted.
-Please check it and post it.
-https://datatracker.ietf.org/ipr/admin/pending/
-
-{% include "ipr/details.txt" %}
-{% endautoescape %}

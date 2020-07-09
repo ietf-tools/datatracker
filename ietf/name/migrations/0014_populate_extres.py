@@ -16,7 +16,6 @@ def forward(apps, schema_editor):
     ExtResourceTypeName.objects.create(slug='url', name="URL", desc="URL", used=True, order=0)
     ExtResourceTypeName.objects.create(slug='string', name="string", desc="string", used=True, order=0)
 
-    # TODO: It might be better to reuse DocumentUrl.tag values for these slugs
     resourcename = namedtuple('resourcename', ['slug', 'name', 'type'])
     resourcenames= [
         resourcename("webpage", "Additional Web Page", "url"),

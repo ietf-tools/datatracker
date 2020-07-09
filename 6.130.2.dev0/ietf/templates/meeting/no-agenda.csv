@@ -1,2 +1,0 @@
-{% load humanize %}{% autoescape off %}{% load ietf_filters %}"Date","Start","End","Session","Room","Area","Acronym","Type","Description","Session ID","Agenda","Slides"
-{% endautoescape %}

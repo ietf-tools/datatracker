@@ -114,31 +114,6 @@
 	</tr>
       {% endif %}
 
-      {% with group.groupurl_set.all as urls %}
-        {% if urls or can_edit_group %}
-	<tr>
-          <td></td>
-          <th>Additional URLs</th>
-	  <td class="edit">
-	    {% if can_edit_group %}
-	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='urls' %}">Edit</a>
-	    {% endif %}
-	  </td>
-          <td>
-            {% if urls %}
-	    <table class="col-md-12 col-sm-12 col-xs-12">
-	      <tbody>
-		{% for url in urls %}
-		<tr><td> - <a href="{{ url.url }}">{% firstof url.name url.url %}</a></td></tr>
-		{% endfor %}
-	      </tbody>
-	    </table>
-            {% endif %}
-          </td>
-	</tr>
-        {% endif %}
-      {% endwith %}
-
        {% with group.groupextresource_set.all as resources %}
         {% if resources or can_edit_group %}
           <tr>

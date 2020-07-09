@@ -1,4 +1,0 @@
-{% load ietf_filters %}{% autoescape off %}{% filter wordwrap:78 %}Ballot of {{ doc.file_tag }} has been {{action}} by {{ by }}.{% endfilter %}
-
-This ballot will be on the IESG agenda of {{ telechat_date }}.
-{% endautoescape %}

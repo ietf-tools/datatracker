@@ -73,7 +73,7 @@ from ietf.group.forms import (GroupForm, StatusUpdateForm, ConcludeGroupForm, St
                               ManageReviewRequestForm, EmailOpenAssignmentsForm, ReviewerSettingsForm,
                               AddUnavailablePeriodForm, EndUnavailablePeriodForm, ReviewSecretarySettingsForm, )
 from ietf.group.mails import email_admin_re_charter, email_personnel_change, email_comment
-from ietf.group.models import ( Group, Role, GroupEvent, GroupStateTransitions, GroupURL,
+from ietf.group.models import ( Group, Role, GroupEvent, GroupStateTransitions,
                               ChangeStateGroupEvent, GroupFeatures )
 from ietf.group.utils import (get_charter_text, can_manage_group_type, 
                               milestone_reviewer_for_group_type, can_provide_status_update,
@@ -346,7 +346,7 @@ def active_wgs(request):
                     + list(sorted(roles(area, "pre-ad"), key=extract_last_name)))
 
         area.groups = Group.objects.filter(parent=area, type="wg", state="active").order_by("acronym")
-        area.urls = area.groupurl_set.all().order_by("name")
+        area.urls = area.groupextresource_set.all().order_by("name")
         for group in area.groups:
             group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
             group.ad_out_of_area = group.ad_role() and group.ad_role().person not in [role.person for role in area.ads]
@@ -1002,23 +1002,6 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                 personnel_change_text = "%s has updated %s personnel:\n\n" % (request.user.person.plain_name(), group.acronym.upper() ) + personnel_change_text
                 email_personnel_change(request, group, personnel_change_text, changed_personnel)
 
-            # update urls
-            if 'urls' in clean:
-                new_urls = clean['urls']
-                old_urls = format_urls(group.groupurl_set.order_by('url'), ", ")
-                if ", ".join(sorted(new_urls)) != old_urls:
-                    changes.append(('urls', new_urls, desc('Urls', ", ".join(sorted(new_urls)), old_urls)))
-                    group.groupurl_set.all().delete()
-                    # Add new ones
-                    for u in new_urls:
-                        m = re.search(r'(?P<url>[\w\d:#@%/;$()~_?\+-=\\\.&]+)( \((?P<name>.+)\))?', u)
-                        if m:
-                            if m.group('name'):
-                                url = GroupURL(url=m.group('url'), name=m.group('name'), group=group)
-                            else:
-                                url = GroupURL(url=m.group('url'), name='', group=group)
-                            url.save()
-
             if 'resources' in clean:
                 old_resources = sorted(format_resources(group.groupextresource_set.all()).splitlines())
                 new_resources = sorted(clean['resources'])
@@ -1083,7 +1066,6 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                         list_email=group.list_email if group.list_email else None,
                         list_subscribe=group.list_subscribe if group.list_subscribe else None,
                         list_archive=group.list_archive if group.list_archive else None,
-                        urls=format_urls(group.groupurl_set.all()),
                         resources=format_resources(group.groupextresource_set.all()),
                         closing_note = closing_note,
                         )

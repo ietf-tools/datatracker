@@ -45,7 +45,7 @@
 
     {% for fieldset in form.fieldsets %}
       {% if forloop.first and user|has_role:"Secretariat" %}
-        <h2><div class="col-md-2">{{ fieldset.name }}</div><div class="col-md-10"><a class="small" target="_blank" href="{% url 'ietf.secr.groups.views.add' %}">Add new group &gt&gt</a></div></h2>
+        <h2><div class="col-md-2">{{ fieldset.name }}</div><div class="col-md-10"></div></h2>
       {% else %}
         <h2>{{ fieldset.name }}</h2>
       {% endif %}

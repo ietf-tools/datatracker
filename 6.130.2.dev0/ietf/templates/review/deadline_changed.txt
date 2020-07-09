@@ -1,5 +1,0 @@
-{% load ietf_filters %}{% autoescape off %}
-{{by.plain_name }} has changed the deadline for this review request to: {{ review_req.deadline|date:"Y-m-d" }}
-
-(The original deadline was {{old_deadline|date:"Y-m-d"}})
-{% endautoescape %}

@@ -1104,25 +1104,6 @@ class IndividualInfoFormsTests(TestCase):
         q = PyQuery(r.content)
         self.assertTrue(q('textarea')[0].text.strip().startswith("As required by RFC 4858"))
 
-    def test_doc_change_document_urls(self):
-        url = urlreverse('ietf.doc.views_draft.edit_document_urls', kwargs=dict(name=self.docname))
-  
-        # get
-        login_testing_unauthorized(self, "secretary", url)
-
-        r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q('form textarea[id=id_urls]')),1)
-
-        # direct edit
-        r = self.client.post(url, dict(urls='wiki https://wiki.org/ Wiki\nrepository https://repository.org/ Repo\n', submit="1"))
-        self.assertEqual(r.status_code,302)
-        doc = Document.objects.get(name=self.docname)
-        self.assertTrue(doc.latest_event(DocEvent,type="changed_document").desc.startswith('Changed document URLs'))
-        self.assertIn('wiki https://wiki.org/', doc.latest_event(DocEvent,type="changed_document").desc)
-        self.assertIn('https://wiki.org/', [ u.url for u in doc.documenturl_set.all() ])
-
     def test_edit_doc_extresources(self):
         url = urlreverse('ietf.doc.views_draft.edit_doc_extresources', kwargs=dict(name=self.docname))
 

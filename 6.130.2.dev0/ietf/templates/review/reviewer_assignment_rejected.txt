@@ -1,6 +1,0 @@
-{% autoescape off %}Reviewer assignment rejected by {{ by }}.{% if message_to_secretary %}
-
-Explanation:
-
-{{ message_to_secretary }}
-{% endif %}{% endautoescape %}

@@ -1,9 +1,0 @@
-{% autoescape off %}{{ doc.name }} is no longer in the {{ prev_state.name }} state.
-
-{% if comment %}Explanation:
-
-{{ comment }}
-{% endif %}
-
-URL: {{ url }}
-{% endautoescape %}

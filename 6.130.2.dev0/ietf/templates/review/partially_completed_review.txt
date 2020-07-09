@@ -1,7 +1,0 @@
-{% autoescape off %}Review was partially completed by {{ by }}.
-
-A new reviewer may need to be assigned to get a complete review.
-{% if existing_assignments %}
-The following are already assigned to review this document:{% for assignment in existing_assignments %}
-{{ assignment.reviewer.name }} : {{ assignment.state }}{% endfor %}
-{% endif %}{% endautoescape %}

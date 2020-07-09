@@ -1,4 +1,0 @@
-{% for chair in group.chairs %}{% if forloop.first %}   Chair{{ forloop.revcounter|pluralize:": ,s:" }}     {% else %}               {% endif %}{{ chair.person.plain_name }} <{{ chair.email.address }}>
-{% endfor %}   WG Mail:    {{ group.list_email }}
-   To Join:    {{ group.list_subscribe }}
-   Archive:    {{ group.list_archive }}
