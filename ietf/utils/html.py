@@ -57,6 +57,10 @@ def sanitize_fragment(html):
 
 class Cleaner(lxml.html.clean.Cleaner):
     charset = 'utf-8'
+    def __init__(self, charset='utf-8', **kw):
+        self.charset = charset
+        super(Cleaner, self).__init__(**kw)
+        
     # Copied from lxml 4.2.0 and modified to insert charset meta:
     def clean_html(self, html):
         result_type = type(html)
