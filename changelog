@@ -1,3 +1,44 @@
+ietfdb (7.8.0) ietf; urgency=medium
+
+  **Changes to cookie settings, yang checking improvement, and bugfixes**
+
+  * Added a warnings filter for a deprecated message triggered by a library 
+    module, to get rid of unhelpful deprecation messages.
+
+  * Increased the generate_schedule optimiser run count to 160, and tweaked 
+    some output messages, after several days of testing various run counts.
+
+  * Fixed a bad string formatting directive.
+
+  * Fixed an issue with secr.meetings.views.send_notifications() that could 
+    occur if a session didn't have a timeslot set.
+
+  * Merged in [18130] from rjsparks@nostrum.com:
+    Fixed some test scaffolding that used non-existent keys (uncovered by 
+    recent improvements in sqlite3 integrity checking).  
+
+  * Added a patch for Django to permit cookie 'samesite' setting to be 
+    explicitly set to 'None'.
+
+  * Added some cookie settings and changed others, in order to support 
+    login and operation from a Meetecho iframe.
+
+  * Added a guard against trying to use historic group parent information 
+    when parent is None
+
+  * Added support for pulling yang modules from yangcatalog.org, and use
+    them when running yang checks on drafts.
+
+  * Changed the subclass of lxml.html.clean.Cleaner() to adapt to changes 
+    in the superclass in v4.5.2
+
+  * Added a new field Person.plain as a fallback for names where 
+    plain_name() produces the wrong result.  Fixes issue #3020.
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  11 Jul 2020 20:46:14 +0000
+
+
 ietfdb (7.7.0) ietf; urgency=medium
 
   **Automatic meeting scheduler, improved support for remote instructions**
