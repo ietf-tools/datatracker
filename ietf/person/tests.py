@@ -49,7 +49,7 @@ class PersonTests(TestCase):
         EmailFactory(person=person, primary=False, active=False)
         self.assertTrue(primary.address in person.formatted_email())
 
-    def test_profile(self):
+    def test_person_profile(self):
         person = PersonFactory(with_bio=True)
         
         self.assertTrue(person.photo is not None)

@@ -39,7 +39,8 @@ class Person(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)      # When this Person record entered the system
     # The normal unicode form of the name.  This must be
     # set to the same value as the ascii-form if equal.
-    name = models.CharField("Full Name (Unicode)", max_length=255, db_index=True, help_text="Preferred form of name.")
+    name = models.CharField("Full Name (Unicode)", max_length=255, db_index=True, help_text="Preferred long form of name.")
+    plain = models.CharField("Plain Name (Unicode)", max_length=64, default='', blank=True, help_text="Preferred plain form of name, if different from the automatic plain form.")
     # The normal ascii-form of the name.
     ascii = models.CharField("Full Name (ASCII)", max_length=255, help_text="Name as rendered in ASCII (Latin, unaccented) characters.")
     # The short ascii-form of the name.  Also in alias table if non-null
@@ -66,7 +67,10 @@ class Person(models.Model):
             return (first and first[0]+"." or "")+(middle or "")+" "+last+(suffix and " "+suffix or "")
     def plain_name(self):
         if not hasattr(self, '_cached_plain_name'):
-            self._cached_plain_name = plain_name(self.name)
+            if self.plain:
+                self._cached_plain_name = self.plain
+            else:
+                self._cached_plain_name = plain_name(self.name)
         return self._cached_plain_name
     def ascii_name(self):
         if not hasattr(self, '_cached_ascii_name'):

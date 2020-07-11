@@ -214,7 +214,7 @@ class IetfAuthTests(TestCase):
         self.register_and_verify(email)
         settings.LIST_ACCOUNT_DELAY = saved_delay
 
-    def test_profile(self):
+    def test_ietfauth_profile(self):
         EmailFactory(person__user__username='plain')
         GroupFactory(acronym='mars')
 
@@ -234,6 +234,7 @@ class IetfAuthTests(TestCase):
 
         base_data = {
             "name": "Test Nãme",
+            "plain": "",
             "ascii": "Test Name",
             "ascii_short": "T. Name",
             "affiliation": "Test Org",
@@ -247,7 +248,7 @@ class IetfAuthTests(TestCase):
         r = self.client.post(url, faulty_ascii)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .has-error")) > 0)
+        self.assertTrue(len(q("form .has-error")) == 1)
 
         # edit details - blank ASCII
         blank_ascii = base_data.copy()
@@ -255,13 +256,14 @@ class IetfAuthTests(TestCase):
         r = self.client.post(url, blank_ascii)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .has-error")) > 0) # we get a warning about reconstructed name
+        self.assertTrue(len(q("form div.has-error ")) == 1) # we get a warning about reconstructed name
         self.assertEqual(q("input[name=ascii]").val(), base_data["ascii"])
 
         # edit details
         r = self.client.post(url, base_data)
         self.assertEqual(r.status_code, 200)
         person = Person.objects.get(user__username=username)
+
         self.assertEqual(person.name, "Test Nãme")
         self.assertEqual(person.ascii, "Test Name")
         self.assertEqual(Person.objects.filter(alias__name="Test Name", user__username=username).count(), 1)
