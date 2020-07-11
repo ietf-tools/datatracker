@@ -34,7 +34,7 @@ httplib2>=0.10.3
 jsonfield>=3.0		# for SubmissionCheck.  This is https://github.com/bradjasper/django-jsonfield/.
 jwcrypto>=0.4.0			# for signed notifications
 logging_tree>=1.8.1
-#lxml>=3.4.0                    # from PyQuery; 
+lxml>=3.4.0,<5
 markdown2>=2.3.8
 mock>=2.0.0
 mypy==0.750			# Version requirements determined by django-stubs.
