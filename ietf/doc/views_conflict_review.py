@@ -147,7 +147,7 @@ def send_conflict_eval_email(request,review):
                                  doc_url = settings.IDTRACKER_BASE_URL+review.get_absolute_url(),
                                  )
                            )
-    addrs = gather_address_lists('ballot_issued',doc=review).as_strings()
+    addrs = gather_address_lists('iesg_ballot_issued',doc=review).as_strings()
     override = {'To':addrs.to}
     if addrs.cc:
         override['Cc']=addrs.cc

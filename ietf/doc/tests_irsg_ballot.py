@@ -334,10 +334,22 @@ class BaseManipulationTests():
         self.assertEqual(r.status_code, 302)
         self.assertIsNone(draft.ballot_open('irsg-approve'))
 
+        # No notifications should have been generated yet
+        self.assertEqual(len(outbox), 0)
+
         r = self.client.post(url,{'irsg_button':'Yes', 'duedate':due })
         self.assertEqual(r.status_code,302)
         self.assertIsNotNone(draft.ballot_open('irsg-approve'))
-        self.assertEqual(len(outbox),0)
+
+        # Should have sent a notification about the new ballot
+        self.assertEqual(len(outbox), 1)
+        msg = outbox[0]
+        self.assertIn('IRSG ballot issued', msg['Subject'])
+        self.assertIn('iesg-secretary@ietf.org', msg['From'])
+        # Notifications are also sent to various doc-related addresses, not tested here
+        self.assertIn('irsg@irtf.org', msg['To'])
+        self.assertIn('irtf-chair@irtf.org', msg['CC'])
+        self.assertIn(str(due), get_payload_text(msg))  # ensure duedate is included
 
     def test_take_and_email_position(self):
         draft = RgDraftFactory()
@@ -379,11 +391,21 @@ class BaseManipulationTests():
         self.assertEqual(r.status_code, 302)
         self.assertIsNotNone(draft.ballot_open('irsg-approve'))
 
+        # Should not have generated a notification yet
+        self.assertEqual(len(outbox), 0)
+
         r = self.client.post(url,dict(irsg_button='Yes'))
         self.assertEqual(r.status_code, 302)
         self.assertIsNone(draft.ballot_open('irsg-approve'))
 
-        self.assertEqual(len(outbox), 0)
+        # Closing the ballot should have generated a notification
+        self.assertEqual(len(outbox), 1)
+        msg = outbox[0]
+        self.assertIn('IRSG ballot closed', msg['Subject'])
+        self.assertIn('iesg-secretary@ietf.org', msg['From'])
+        # Notifications are also sent to various doc-related addresses, not tested here
+        self.assertIn('irsg@irtf.org', msg['To'])
+        self.assertIn('irtf-chair@irtf.org', msg['CC'])
 
     def test_view_outstanding_ballots(self):
         draft = RgDraftFactory()

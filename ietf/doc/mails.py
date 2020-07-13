@@ -13,6 +13,7 @@ from django.urls import reverse as urlreverse
 from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
+from ietf.doc.templatetags.mail_filters import std_level_prompt
 
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ipr.utils import iprs_from_docs, related_docs
@@ -401,7 +402,7 @@ def generate_issue_ballot_mail(request, doc, ballot):
     last_call_expires = e.expires if e else None
     last_call_has_expired = last_call_expires and last_call_expires < datetime.datetime.now()
 
-    return render_to_string("doc/mail/issue_ballot_mail.txt",
+    return render_to_string("doc/mail/issue_iesg_ballot_mail.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                                  last_call_expires=last_call_expires,
@@ -412,6 +413,58 @@ def generate_issue_ballot_mail(request, doc, ballot):
                                    ),
                                  )
                             )
+
+def _send_irsg_ballot_email(request, doc, ballot, subject, template):
+    """Send email notification when IRSG ballot is issued"""
+    (to, cc) = gather_address_lists('irsg_ballot_issued', doc=doc)
+    sender = 'IESG Secretary <iesg-secretary@ietf.org>'
+
+    ballot_expired = ballot.duedate < datetime.datetime.now()
+    active_ballot = doc.active_ballot()
+    if active_ballot is None:
+        needed_bps = ''
+    else:
+        needed_bps = needed_ballot_positions(
+            doc,
+            list(active_ballot.active_balloter_positions().values())
+        )
+
+    return send_mail(
+        request=request,
+        frm=sender,
+        to=to,
+        cc=cc,
+        subject=subject,
+        extra={'Reply-To': [sender]},
+        template=template,
+        context=dict(
+            doc=doc,
+            doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+            ballot_duedate=ballot.duedate,
+            ballot_expired=ballot_expired,
+            needed_ballot_positions=needed_bps,
+        ))
+
+
+def email_irsg_ballot_issued(request, doc, ballot):
+    """Send email notification when IRSG ballot is issued"""
+    return _send_irsg_ballot_email(
+        request,
+        doc,
+        ballot,
+        'IRSG ballot issued: %s to %s'%(doc.file_tag(), std_level_prompt(doc)),
+        'doc/mail/issue_irsg_ballot_mail.txt',
+    )
+
+def email_irsg_ballot_closed(request, doc, ballot):
+    """Send email notification when IRSG ballot is closed"""
+    return _send_irsg_ballot_email(
+        request,
+        doc,
+        ballot,
+        'IRSG ballot closed: %s to %s'%(doc.file_tag(), std_level_prompt(doc)),
+        "doc/mail/close_irsg_ballot_mail.txt",
+    )
 
 def email_iana(request, doc, to, msg, cc=None):
     # fix up message and send it with extra info on doc in headers

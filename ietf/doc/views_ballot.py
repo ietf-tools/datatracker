@@ -26,7 +26,7 @@ from ietf.doc.utils import ( add_state_change_event, close_ballot, close_open_ba
 from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred, 
     extra_automation_headers, generate_last_call_announcement, 
     generate_issue_ballot_mail, generate_ballot_writeup, generate_ballot_rfceditornote,
-    generate_approval_mail )
+    generate_approval_mail, email_irsg_ballot_closed, email_irsg_ballot_issued )
 from ietf.doc.lastcall import request_last_call
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
@@ -635,7 +635,7 @@ def ballot_writeupnotes(request, name):
 
                 msg = generate_issue_ballot_mail(request, doc, ballot)
 
-                addrs = gather_address_lists('ballot_issued',doc=doc).as_strings()
+                addrs = gather_address_lists('iesg_ballot_issued',doc=doc).as_strings()
                 override = {'To':addrs.to}
                 if addrs.cc:
                     override['CC'] = addrs.cc
@@ -1095,6 +1095,8 @@ def issue_irsg_ballot(request, name):
             prev_tags = []
             new_tags = []
 
+            email_irsg_ballot_issued(request, doc, ballot=e)  # Send notification email
+
             if doc.type_id == 'draft':
                 new_state = State.objects.get(used=True, type="draft-stream-irtf", slug='irsgpoll')
 
@@ -1130,7 +1132,10 @@ def close_irsg_ballot(request, name):
     if request.method == 'POST':
         button = request.POST.get("irsg_button")
         if button == 'Yes':
-            close_ballot(doc, by, "irsg-approve")
+            ballot = close_ballot(doc, by, "irsg-approve")
+            email_irsg_ballot_closed(request,
+                                     doc=doc,
+                                     ballot=IRSGBallotDocEvent.objects.get(pk=ballot.pk))
 
         return HttpResponseRedirect(doc.get_absolute_url())
 

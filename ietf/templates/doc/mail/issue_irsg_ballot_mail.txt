@@ -1,0 +1,7 @@
+{% load ietf_filters %}{% load mail_filters %}{% autoescape off %}{% filter wordwrap:78 %}Evaluation for {{ doc.file_tag }} can be found at {{ doc_url }}
+
+Ballot expire{% if ballot_expired %}d{% else %}s{% endif %} on: {{ ballot_duedate }}
+{% endfilter %}
+{% filter wordwrap:78 %}{{ needed_ballot_positions }}{% endfilter %}
+
+{% endautoescape%}

@@ -3267,18 +3267,6 @@
   {
     "fields": {
       "cc": [],
-      "desc": "Recipients when a ballot is issued",
-      "to": [
-        "iesg",
-        "iesg_secretary"
-      ]
-    },
-    "model": "mailtrigger.mailtrigger",
-    "pk": "ballot_issued"
-  },
-  {
-    "fields": {
-      "cc": [],
       "desc": "Recipients for IANA message when a ballot is issued",
       "to": [
         "iana_eval"
@@ -3688,6 +3676,18 @@
   },
   {
     "fields": {
+      "cc": [],
+      "desc": "Recipients when a ballot is issued",
+      "to": [
+        "iesg",
+        "iesg_secretary"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "iesg_ballot_issued"
+  },
+  {
+    "fields": {
       "cc": [
         "conflict_review_stream_manager",
         "doc_affecteddoc_authors",
@@ -3797,6 +3797,27 @@
     },
     "model": "mailtrigger.mailtrigger",
     "pk": "ipr_posting_confirmation"
+  },
+  {
+    "fields": {
+      "cc": [
+        "doc_affecteddoc_authors",
+        "doc_affecteddoc_group_chairs",
+        "doc_affecteddoc_notify",
+        "doc_authors",
+        "doc_group_chairs",
+        "doc_group_mail_list",
+        "doc_notify",
+        "doc_shepherd",
+        "doc_stream_manager"
+      ],
+      "desc": "Recipients when a new IRSG ballot is issued",
+      "to": [
+        "irsg"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "irsg_ballot_issued"
   },
   {
     "fields": {

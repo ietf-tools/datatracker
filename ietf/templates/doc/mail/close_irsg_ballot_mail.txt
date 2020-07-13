@@ -1,0 +1,3 @@
+{% load ietf_filters %}{% load mail_filters %}{% autoescape off %} {% filter wordwrap:78 %}The IRSG ballot for {{ doc.file_tag }} has been closed. The evaluation for this document can be found at {{ doc_url }}{% endfilter %}
+
+{% endautoescape%}
