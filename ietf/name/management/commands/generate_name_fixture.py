@@ -75,6 +75,7 @@ class Command(BaseCommand):
         from ietf.doc.models import BallotType, State, StateType
         from ietf.group.models import GroupFeatures
         from ietf.mailtrigger.models import MailTrigger, Recipient
+        from ietf.meeting.models import BusinessConstraint
         from ietf.stats.models import CountryAlias
         from ietf.utils.models import VersionInfo
 
@@ -85,8 +86,8 @@ class Command(BaseCommand):
                 if not item._meta.abstract:
                     model_objects[model_name(item)] = list(item.objects.all().order_by('pk'))
 
-
-        for m in ( BallotType, State, StateType, GroupFeatures, MailTrigger, Recipient, CountryAlias, VersionInfo ):
+        for m in ( BallotType, State, StateType, GroupFeatures, MailTrigger, Recipient,
+                    CountryAlias, VersionInfo, BusinessConstraint ):
             model_objects[model_name(m)] = list(m.objects.all().order_by('pk'))
 
         for m in ( DBTemplate, ):
