@@ -245,33 +245,31 @@
         </tr>
       {% endif %}
 
-      {% with doc.documenturl_set.all as urls %}
-        {% if urls or can_edit_stream_info or can_edit_individual %}
-        <tr>
-          <td></td>
-          <th>Additional URLs</th>
-          <td class="edit">
-            {% if can_edit_stream_info or can_edit_individual %}
-              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_document_urls' name=doc.name %}">Edit</a>
-            {% endif %}
-          </td>
-          <td>
-            {% if urls or doc.group and doc.group.list_archive %}
-            <table class="col-md-12 col-sm-12 col-xs-12">
-              <tbody>
-                {% for url in urls|dictsort:"desc" %}
-                  <tr><td> - <a href="{{ url.url }}">{% firstof url.desc url.tag.name %}</a></td></tr>
-                {% endfor %}
-                {% if doc.group and doc.group.list_archive %}
-                  <tr><td> - <a href="{{doc.group.list_archive}}?q={{doc.name}}">Mailing list discussion</a><td></tr>
-                {% endif %}
-              </tbody>
-            </table>
-            {% endif %}
-          </td>
-        </tr>
+    {% if additional_urls or can_edit_stream_info or can_edit_individual %}
+    <tr>
+      <td></td>
+      <th>Additional URLs</th>
+      <td class="edit">
+        {% if can_edit_stream_info or can_edit_individual %}
+          <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_document_urls' name=doc.name %}">Edit</a>
         {% endif %}
-      {% endwith %}
+      </td>
+      <td>
+        {% if additional_urls or doc.group and doc.group.list_archive %}
+        <table class="col-md-12 col-sm-12 col-xs-12">
+          <tbody>
+            {% for url in additional_urls|dictsort:"desc" %}
+              <tr><td> - <a href="{{ url.url }}">{% firstof url.desc url.tag.name %}</a></td></tr>
+            {% endfor %}
+            {% if doc.group and doc.group.list_archive %}
+              <tr><td> - <a href="{{doc.group.list_archive}}?q={{doc.name}}">Mailing list discussion</a><td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+        {% endif %}
+      </td>
+    </tr>
+    {% endif %}
 
 
     </tbody>
@@ -592,7 +590,29 @@
           <th>RFC Editor</th>
           <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">RFC Editor state</a></th>
           <td class="edit"></td>
-          <td><a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">{{ rfc_editor_state }}</a></td>
+          <td>
+            {{ rfc_editor_state }}
+          </td>
+        </tr>
+        <tr>
+          <th></th>
+          <th>Details</th>
+          <td class="edit"></td>
+          <td>
+            <div>
+              <a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">
+                Publication queue entry
+              </a>
+            </div>
+            {% if rfc_editor_auth48_url %}
+              <div>
+                <a href="{{ rfc_editor_auth48_url }}">
+                  Auth48 status
+                </a>
+              </div>
+            {% endif %}
+          </td>
+          <td></td>
         </tr>
       {% endif %}
 

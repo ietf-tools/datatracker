@@ -780,6 +780,44 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, "%s-00"%docname)
 
+    def test_rfcqueue_auth48_views(self):
+        """Test view handling of RFC editor queue auth48 state"""
+        def _change_state(doc, state):
+            event = StateDocEventFactory(doc=doc, state=state)
+            doc.set_state(event.state)
+            doc.save_with_history([event])
+
+        draft = IndividualDraftFactory()
+
+        # Put in an rfceditor state other than auth48
+        for state in [('draft-iesg', 'rfcqueue'), ('draft-rfceditor', 'rfc-edit')]:
+            _change_state(draft, state)
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'Auth48 status')
+
+        # Put in auth48 state without a URL
+        _change_state(draft, ('draft-rfceditor', 'auth48'))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'Auth48 status')
+
+        # Now add a URL
+        documenturl = draft.documenturl_set.create(tag_id='auth48', 
+                                                   url='http://rfceditor.example.com/auth48-url')
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Auth48 status')
+        self.assertContains(r, documenturl.url)
+
+        # Put in auth48-done state and delete auth48 DocumentURL
+        draft.documenturl_set.filter(tag_id='auth48').delete()
+        _change_state(draft, ('draft-rfceditor', 'auth48-done'))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'Auth48 status')
+
+
 class DocTestCase(TestCase):
     def test_document_charter(self):
         CharterFactory(name='charter-ietf-mars')

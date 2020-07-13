@@ -420,6 +420,15 @@ def document_main(request, name, rev=None):
         exp_comment = doc.latest_event(IanaExpertDocEvent,type="comment")
         iana_experts_comment = exp_comment and exp_comment.desc
 
+        # See if we should show an Auth48 URL
+        auth48_url = None  # stays None unless we are in the auth48 state
+        if doc.get_state_slug('draft-rfceditor') == 'auth48':
+            document_url = doc.documenturl_set.filter(tag_id='auth48').first()
+            auth48_url = document_url.url if document_url else ''
+
+        # Do not show the Auth48 URL in the "Additional URLs" section
+        additional_urls = doc.documenturl_set.exclude(tag_id='auth48')
+
         return render(request, "doc/document_draft.html",
                                   dict(doc=doc,
                                        group=group,
@@ -469,6 +478,7 @@ def document_main(request, name, rev=None):
                                        has_errata=doc.tags.filter(slug="errata"),
                                        published=published,
                                        file_urls=file_urls,
+                                       additional_urls=additional_urls,
                                        stream_state_type_slug=stream_state_type_slug,
                                        stream_state=stream_state,
                                        stream_tags=stream_tags,
@@ -477,6 +487,7 @@ def document_main(request, name, rev=None):
                                        iesg_state=iesg_state,
                                        iesg_state_summary=iesg_state_summary,
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
+                                       rfc_editor_auth48_url=auth48_url,
                                        iana_review_state=doc.get_state("draft-iana-review"),
                                        iana_action_state=doc.get_state("draft-iana-action"),
                                        iana_experts_state=doc.get_state("draft-iana-experts"),
