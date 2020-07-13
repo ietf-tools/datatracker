@@ -860,15 +860,6 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
 
         return entry % dict(attr=attr, new=new, old=old)
 
-    def format_urls(urls, fs="\n"):
-        res = []
-        for u in urls:
-            if u.name:
-                res.append("%s (%s)" % (u.url, u.name))
-            else:
-                res.append(u.url)
-        return fs.join(res)
-
     def format_resources(resources, fs="\n"):
         res = []
         for r in resources:

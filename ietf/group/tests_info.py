@@ -31,7 +31,7 @@ from ietf.group.factories import (GroupFactory, RoleFactory, GroupEventFactory,
 from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions, Role
 from ietf.group.utils import save_group_in_history, setup_default_community_list_for_group
 from ietf.meeting.factories import SessionFactory
-from ietf.name.models import DocTagName, GroupStateName, GroupTypeName
+from ietf.name.models import DocTagName, GroupStateName, GroupTypeName, ExtResourceName
 from ietf.person.models import Person, Email
 from ietf.person.factories import PersonFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
@@ -634,6 +634,7 @@ class GroupEditTests(TestCase):
     def test_edit_extresources(self):
         group = GroupFactory(acronym='mars',parent=GroupFactory(type_id='area'))
         CharterFactory(group=group)
+        ExtResourceName.objects.create(slug='keymaster', name='Keymaster', type_id='email')
 
         url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit", field="resources"))
         login_testing_unauthorized(self, "secretary", url)
@@ -646,8 +647,9 @@ class GroupEditTests(TestCase):
         badlines = (
             'github_repo https://github3.com/some/repo',
             'github_notify  badaddr',
-            'website /not/a/good/url'
-            'notavalidtag blahblahblah'
+            'website /not/a/good/url',
+            'notavalidtag blahblahblah',
+            'github_repo',
         )
 
         for line in badlines:
@@ -660,6 +662,8 @@ class GroupEditTests(TestCase):
             github_repo https://github.com/some/repo Some display text
             github_username githubuser
             webpage http://example.com/http/is/fine
+            jabber_room xmpp:mars@jabber.example.com
+            keymaster keymaster@example.org Group Rooter
         """
 
         r = self.client.post(url, dict(resources=goodlines, submit="1"))
@@ -667,8 +671,13 @@ class GroupEditTests(TestCase):
         group = Group.objects.get(acronym=group.acronym)
         self.assertEqual(group.latest_event(GroupEvent,type="info_changed").desc[:20], 'Resources changed to')
         self.assertIn('github_username githubuser', group.latest_event(GroupEvent,type="info_changed").desc)
-        self.assertEqual(group.groupextresource_set.count(), 3)
+        self.assertEqual(group.groupextresource_set.count(), 5)
         self.assertEqual(group.groupextresource_set.get(name__slug='github_repo').display_name, 'Some display text')
+        self.assertIn(group.groupextresource_set.first().name.slug, str(group.groupextresource_set.first()))
+
+        # exercise format_resources
+        r = self.client.get(url)
+        self.assertIn('Group Rooter', unicontent(r))
 
 
     def test_edit_field(self):

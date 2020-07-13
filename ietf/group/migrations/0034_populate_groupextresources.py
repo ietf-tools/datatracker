@@ -68,7 +68,7 @@ def forward(apps, schema_editor):
                 name = ExtResourceName.objects.get(slug=slug)
                 try:
                     validate_external_resource_value(name, group_url.url)
-                    GroupExtResource.objects.create(group=group_url.group, name_id=slug, value=group_url.url, display_name=group_url.name) # TODO: validate this value against name.type
+                    GroupExtResource.objects.create(group=group_url.group, name_id=slug, value=group_url.url, display_name=group_url.name)
                 except ValidationError as e: # pyflakes:ignore
                     print("Failed validation:", group_url.url, e, file=stats_file)
                     stats['failed_validation'] +=1

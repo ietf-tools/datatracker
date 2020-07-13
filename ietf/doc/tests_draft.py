@@ -1117,8 +1117,8 @@ class IndividualInfoFormsTests(TestCase):
         badlines = (
             'github_repo https://github3.com/some/repo',
             'github_notify  badaddr',
-            'website /not/a/good/url'
-            'notavalidtag blahblahblah'
+            'website /not/a/good/url',
+            'notavalidtag blahblahblah',
         )
 
         for line in badlines:
@@ -1140,6 +1140,7 @@ class IndividualInfoFormsTests(TestCase):
         self.assertIn('github_username githubuser', doc.latest_event(DocEvent,type="changed_document").desc)
         self.assertEqual(doc.docextresource_set.count(), 3)
         self.assertEqual(doc.docextresource_set.get(name__slug='github_repo').display_name, 'Some display text')
+        self.assertIn(doc.docextresource_set.first().name.slug,str(doc.docextresource_set.first()))
 
 
 class SubmitToIesgTests(TestCase):

@@ -681,8 +681,9 @@ class IetfAuthTests(TestCase):
         badlines = (
             'github_repo https://github3.com/some/repo',
             'github_notify  badaddr',
-            'website /not/a/good/url'
-            'notavalidtag blahblahblah'
+            'website /not/a/good/url',
+            'notavalidtag blahblahblah',
+            'website',
         )
 
         for line in badlines:
@@ -701,6 +702,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code,302)
         self.assertEqual(person.personextresource_set.count(), 3)
         self.assertEqual(person.personextresource_set.get(name__slug='github_repo').display_name, 'Some display text')
+        self.assertIn(person.personextresource_set.first().name.slug, str(person.personextresource_set.first()))
 
 
 class OpenIDConnectTests(TestCase):
