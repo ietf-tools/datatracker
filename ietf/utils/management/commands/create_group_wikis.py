@@ -22,7 +22,7 @@ from django.template.loader import render_to_string
 
 import debug                            # pyflakes:ignore
 
-from ietf.group.models import Group, GroupURL, GroupFeatures
+from ietf.group.models import Group, GroupFeatures
 from ietf.utils.pipe import pipe
 
 logtag = __name__.split('.')[-1]
@@ -217,8 +217,8 @@ class Command(BaseCommand):
                 env = Environment(group.trac_dir, create=True, options=options)
                 self.remove_demo_components(env)
                 self.remove_demo_milestones(env)
-                self.maybe_add_group_url(group, 'Wiki', settings.TRAC_WIKI_URL_PATTERN % group.acronym)
-                self.maybe_add_group_url(group, 'Issue tracker', settings.TRAC_ISSUE_URL_PATTERN % group.acronym)
+                self.maybe_add_group_url(group, 'wiki', settings.TRAC_WIKI_URL_PATTERN % group.acronym)
+                self.maybe_add_group_url(group, 'tracker', settings.TRAC_ISSUE_URL_PATTERN % group.acronym)
                 # Use custom assets (if any) from the master setup
                 self.symlink_to_master_assets(group.trac_dir, env)
                 if group.features.acts_like_wg:
@@ -301,12 +301,10 @@ class Command(BaseCommand):
                     comp.owner = "%s@ietf.org" % doc.name
                     comp.insert()
 
-    def maybe_add_group_url(self, group, name, url):
-        urls = [ u for u in group.groupurl_set.all() if name.lower() in u.name.lower() ]
-        if not urls:
-            self.note("  adding %s %s URL ..." % (group.acronym, name.lower()))
-            url = GroupURL.objects.create(group=group, name=name, url=url)
-            group.groupurl_set.add(url)
+    def maybe_add_group_url(self, group, slug, url):
+        if not group.groupextresource_set.filter(name__slug=slug).exists():
+            self.note("  adding %s %s URL ..." % (group.acronym, slug))
+            group.groupextresource_set.create(name_id=slug,value=url)
 
     def add_custom_pages(self, group, env):
         for template_name in settings.TRAC_WIKI_PAGES_TEMPLATES:

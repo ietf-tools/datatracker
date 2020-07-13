@@ -658,9 +658,8 @@ class GroupEditTests(TestCase):
 
         goodlines = """
             github_repo https://github.com/some/repo Some display text
-            github_notify notify@example.com
             github_username githubuser
-            website http://example.com/http/is/fine
+            webpage http://example.com/http/is/fine
         """
 
         r = self.client.post(url, dict(resources=goodlines, submit="1"))
@@ -668,7 +667,7 @@ class GroupEditTests(TestCase):
         group = Group.objects.get(acronym=group.acronym)
         self.assertEqual(group.latest_event(GroupEvent,type="info_changed").desc[:20], 'Resources changed to')
         self.assertIn('github_username githubuser', group.latest_event(GroupEvent,type="info_changed").desc)
-        self.assertEqual(group.groupextresource_set.count(), 4)
+        self.assertEqual(group.groupextresource_set.count(), 3)
         self.assertEqual(group.groupextresource_set.get(name__slug='github_repo').display_name, 'Some display text')
 
 

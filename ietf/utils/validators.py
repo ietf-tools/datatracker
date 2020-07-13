@@ -174,7 +174,8 @@ def validate_external_resource_value(name, value):
 
         if name.slug in ( 'github_org', 'github_repo' ):
             validate_http_url(value)
-            if urlparse(value).netloc.lower() != 'github.com':
+            hostname = urlparse(value).netloc.lower()
+            if not any([ hostname.endswith(x) for x in ('github.com','github.io' ) ]):
                 raise ValidationError('URL must be a github url')
         elif name.slug == 'jabber_room':
             validate_xmpp(value)

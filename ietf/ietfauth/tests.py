@@ -693,14 +693,13 @@ class IetfAuthTests(TestCase):
 
         goodlines = """
             github_repo https://github.com/some/repo Some display text
-            github_notify notify@example.com
             github_username githubuser
-            website http://example.com/http/is/fine
+            webpage http://example.com/http/is/fine
         """
 
         r = self.client.post(url, dict(resources=goodlines, submit="1"))
         self.assertEqual(r.status_code,302)
-        self.assertEqual(person.personextresource_set.count(), 4)
+        self.assertEqual(person.personextresource_set.count(), 3)
         self.assertEqual(person.personextresource_set.get(name__slug='github_repo').display_name, 'Some display text')
 
 

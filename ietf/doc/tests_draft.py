@@ -1129,9 +1129,8 @@ class IndividualInfoFormsTests(TestCase):
 
         goodlines = """
             github_repo https://github.com/some/repo Some display text
-            github_notify notify@example.com
             github_username githubuser
-            website http://example.com/http/is/fine
+            webpage http://example.com/http/is/fine
         """
 
         r = self.client.post(url, dict(resources=goodlines, submit="1"))
@@ -1139,7 +1138,7 @@ class IndividualInfoFormsTests(TestCase):
         doc = Document.objects.get(name=self.docname)
         self.assertEqual(doc.latest_event(DocEvent,type="changed_document").desc[:35], 'Changed document external resources')
         self.assertIn('github_username githubuser', doc.latest_event(DocEvent,type="changed_document").desc)
-        self.assertEqual(doc.docextresource_set.count(), 4)
+        self.assertEqual(doc.docextresource_set.count(), 3)
         self.assertEqual(doc.docextresource_set.get(name__slug='github_repo').display_name, 'Some display text')
 
 

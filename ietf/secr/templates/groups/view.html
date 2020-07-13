@@ -58,9 +58,6 @@
         <tr><td>Last Modified Date:</td><td>{{ group.time }}</td></tr>
       </table>
       
-      {% with group.groupurl_set.all as awps %}
-          {% include "includes/awp_view.html" %}
-      {% endwith %}
 
   </div> <!-- groups-view-col1 -->
   <div id="groups-view-col2">

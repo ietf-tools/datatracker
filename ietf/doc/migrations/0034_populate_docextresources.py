@@ -5,9 +5,10 @@ from __future__ import unicode_literals
 
 import re
 
-import debug
+import debug # pyflakes:ignore
 
 from collections import OrderedDict, Counter
+from io import StringIO
 
 from django.db import migrations
 
@@ -30,14 +31,12 @@ name_map = {
     "Github page":            "github_repo",
     "GitHub repo.*":          "github_repo",
     "Github repository.*":    "github_repo",
-    "GitHub notifications":   "github_notify",
     "GitHub org.*":           "github_org",
     "GitHub User.*":          "github_username",
     "GitLab User":            "gitlab_username",
     "GitLab User Name":       "gitlab_username",
 }
 
-# TODO: Review all the None values below and make sure ignoring the URLs they match is really the right thing to do.
 url_map = OrderedDict({
    "https?://github\\.com": "github_repo",
    "https://git.sr.ht/": "repo",
@@ -62,19 +61,25 @@ def forward(apps, schema_editor):
     DocumentUrl = apps.get_model('doc', 'DocumentUrl')
 
     stats = Counter()
+    stats_file = StringIO()
 
     for doc_url in DocumentUrl.objects.all():
+        doc_url.url = doc_url.url.strip()
         match_found = False
         for regext,slug in name_map.items():
-            if re.match(regext, doc_url.desc):
+            if re.fullmatch(regext, doc_url.desc):
                 match_found = True
                 stats['mapped'] += 1
                 name = ExtResourceName.objects.get(slug=slug)
-                DocExtResource.objects.create(doc=doc_url.doc, name_id=slug, value=doc_url.url, display_name=doc_url.desc) # TODO: validate this value against name.type
+                try:
+                    validate_external_resource_value(name, doc_url.url)
+                    DocExtResource.objects.create(doc=doc_url.doc, name_id=slug, value=doc_url.url, display_name=doc_url.desc)
+                except ValidationError as e: # pyflakes:ignore
+                    print("Failed validation:", doc_url.url, e, file=stats_file)
+                    stats['failed_validation'] +=1
                 break
         if not match_found:
             for regext, slug in url_map.items():
-                doc_url.url = doc_url.url.strip()
                 if re.search(regext, doc_url.url):
                     match_found = True
                     if slug:
@@ -90,16 +95,18 @@ def forward(apps, schema_editor):
                             doc_url.url = re.sub('/blob/master.*$', '', doc_url.url)
                         try:
                             validate_external_resource_value(name, doc_url.url)
-                            DocExtResource.objects.create(doc=doc_url.doc, name=name, value=doc_url.url, display_name=doc_url.desc) # TODO: validate this value against name.type
+                            DocExtResource.objects.create(doc=doc_url.doc, name=name, value=doc_url.url, display_name=doc_url.desc) 
                         except ValidationError as e: # pyflakes:ignore
-                            debug.show('("Failed validation:", doc_url.url, e)')
+                            print("Failed validation:", doc_url.url, e, file=stats_file)
                             stats['failed_validation'] +=1
                     else:
                         stats['ignored'] +=1
                     break
         if not match_found:
-            debug.show('("Not Mapped:",doc_url.desc, doc_url.tag.slug, doc_url.doc.name, doc_url.url)')
+            print("Not Mapped:",doc_url.desc, doc_url.tag.slug, doc_url.doc.name, doc_url.url, file=stats_file)
             stats['not_mapped'] += 1
+    print('')
+    print(stats_file.getvalue())
     print (stats)
 
 def reverse(apps, schema_editor):

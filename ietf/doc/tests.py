@@ -1056,9 +1056,9 @@ class DocTestCase(TestCase):
         self.assertNotIn('day', entry)
 
         april1 = IndividualRfcFactory.create(
-                  stream_id =       'rse',
+                  stream_id =       'ise',
                   states =          [('draft','rfc'),('draft-iesg','pub')],
-                  std_level_id =    'ind',
+                  std_level_id =    'inf',
                   time =            datetime.datetime(1990,0o4,0o1),
               )
         num = april1.rfc_number()

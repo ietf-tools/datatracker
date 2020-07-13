@@ -382,10 +382,9 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
                 moduleargs = '&'.join([ f.format(module=m) for m in modules])
                 url  = settings.SUBMIT_YANG_CATALOG_IMPACT_URL.format(moduleargs=moduleargs, draft=draft.name)
                 desc = settings.SUBMIT_YANG_CATALOG_IMPACT_DESC.format(modules=','.join(modules), draft=draft.name)
-                draft.docextresource_set.create(value=url, name_id='yang-impact-analysis', display_name=desc)
+                draft.docextresource_set.create(value=url, name_id='yc_impact', display_name=desc)
                 # Yang module metadata URLs
-                old_urls = draft.documenturl_set.filter(tag_id='yc_entry')
-                old_urls.delete()
+                draft.docextresource_set.filter(name_id='yc_entry').delete()
                 for module in modules:
                     url  = settings.SUBMIT_YANG_CATALOG_MODULE_URL.format(module=module)
                     desc = settings.SUBMIT_YANG_CATALOG_MODULE_DESC.format(module=module)
