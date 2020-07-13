@@ -306,12 +306,65 @@ class ConflictReviewTests(TestCase):
         else:
             self.assertIn( 'NOT be published', ''.join(wrap(get_payload_text(outbox[0]), 2**16)))
 
-
     def test_approve_reqnopub(self):
+        """Test secretariat approving a conf review FROM the appr-reqnopub-pend state"""
         self.approve_test_helper('appr-reqnopub')
 
     def test_approve_noprob(self):
+        """Test secretariat approving a conf review FROM the appr-reqnopub-pend state"""
         self.approve_test_helper('appr-noprob')
+
+    def approval_pend_notice_test_helper(self, approve_type, role):
+        """Test notification email when review state changed to a -pend state
+
+        Sets up, clears outbox, and changes state. If notifications are sent,
+        asserts basic properties common to all approve_types.
+
+        Caller should inspect outbox to access notifications if any.
+        """
+        doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
+        url = urlreverse('ietf.doc.views_conflict_review.change_state',kwargs=dict(name=doc.name))
+
+        login_testing_unauthorized(self, role, url)
+        empty_outbox()
+
+        # Issue the request
+        pending_pk = str(State.objects.get(used=True,
+                                                 slug=approve_type+'-pend',
+                                                 type__slug='conflrev').pk)
+        r = self.client.post(url,dict(review_state=pending_pk,comment='some comment or other'))
+
+        # Check the results
+        self.assertEqual(r.status_code, 302)
+
+        # If we received a notification, check the common features for all approve_types
+        if len(outbox) > 0:
+            notification = outbox[0]
+            self.assertIn(doc.title, notification['Subject'])
+            self.assertIn('iesg-secretary@ietf.org', notification['To'])
+            self.assertTrue(notification['Subject'].startswith('Approved:'))
+
+    def test_approval_pend_notice_ad_reqnopub(self):
+        """Test notification email when AD puts doc in appr-reqnopub-pend state"""
+        self.approval_pend_notice_test_helper('appr-reqnopub', 'ad')
+        self.assertEqual(len(outbox), 1)
+        self.assertIn('NOT be published', get_payload_text(outbox[0]))
+
+    def test_no_approval_pend_notice_secr_reqnopub(self):
+        """Test notification email when secretariat puts doc in appr-reqnopub-pend state"""
+        self.approval_pend_notice_test_helper('appr-reqnopub', 'secretariat')
+        self.assertEqual(len(outbox), 0)  # no notification should be sent
+
+    def test_approval_pend_notice_ad_noprob(self):
+        """Test notification email when AD puts doc in appr-noprob-pend state"""
+        self.approval_pend_notice_test_helper('appr-noprob', 'ad')
+        self.assertEqual(len(outbox), 1)
+        self.assertIn('IESG has no problem', get_payload_text(outbox[0]))
+
+    def test_no_approval_pend_notice_secr_noprob(self):
+        """Test notification email when secretariat puts doc in appr-noprob-pend state"""
+        self.approval_pend_notice_test_helper('appr-noprob', 'secretariat')
+        self.assertEqual(len(outbox), 0)
 
     def setUp(self):
         IndividualDraftFactory(name='draft-imaginary-independent-submission')

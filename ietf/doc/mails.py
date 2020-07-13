@@ -46,7 +46,36 @@ def email_ad_approved_doc(request, doc, text):
                           dict(text=text,
                                    docname=doc.filename_with_rev()),
                           bcc=bcc)
-    
+
+def email_ad_approved_conflict_review(request, review, ok_to_publish):
+    """Email notification when AD approves a conflict review"""
+    conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document
+    (to, cc) = gather_address_lists("ad_approved_conflict_review")
+    frm = request.user.person.formatted_email()
+    send_mail(request,
+              to,
+              frm,
+              "Approved: %s" % review.title,
+              "doc/conflict_review/ad_approval_pending_email.txt",
+              dict(ok_to_publish=ok_to_publish,
+                   review=review,
+                   conflictdoc=conflictdoc),
+              cc=cc)
+
+def email_ad_approved_status_change(request, status_change, related_doc_info):
+    """Email notification when AD approves a status change"""
+    (to, cc) = gather_address_lists("ad_approved_status_change")
+    frm = request.user.person.formatted_email()
+    send_mail(request,
+              to,
+              frm,
+              "Approved: %s" % status_change.title,
+              "doc/status_change/ad_approval_pending_email.txt",
+              dict(
+                  related_doc_info=related_doc_info
+              ),
+              cc=cc)
+
 def email_stream_changed(request, doc, old_stream, new_stream, text=""):
     """Email the change text to the notify group and to the stream chairs"""
     streams = []

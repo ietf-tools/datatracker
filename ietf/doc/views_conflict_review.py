@@ -19,7 +19,7 @@ from ietf.doc.models import ( BallotDocEvent, BallotPositionDocEvent, DocAlias, 
     Document, NewRevisionDocEvent, State )
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
     create_ballot_if_not_open, update_telechat )
-from ietf.doc.mails import email_iana
+from ietf.doc.mails import email_iana, email_ad_approved_conflict_review
 from ietf.doc.forms import AdForm 
 from ietf.group.models import Role, Group
 from ietf.iesg.models import TelechatDate
@@ -79,6 +79,15 @@ def change_state(request, name, option=None):
                         pos.save()
                         # Consider mailing that position to 'iesg_ballot_saved'
                     send_conflict_eval_email(request,review)
+                elif (new_state.slug in ("appr-reqnopub-pend", "appr-noprob-pend")
+                      and has_role(request.user, "Area Director")):
+                    if new_state.slug == "appr-noprob-pend":
+                        ok_to_publish = True
+                    else:
+                        ok_to_publish = False
+                    email_ad_approved_conflict_review(request,
+                                                      review,
+                                                      ok_to_publish)
 
 
             return redirect('ietf.doc.views_doc.document_main', name=review.name)

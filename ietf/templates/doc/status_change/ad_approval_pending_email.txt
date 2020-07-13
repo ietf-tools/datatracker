@@ -1,0 +1,9 @@
+{% load ietf_filters %}{% load mail_filters %}{% autoescape off %}
+{% filter wordwrap:78 %}The AD has approved changing the status of the following {% if related_doc_info|length == 1 %}document{% else %}documents{% endif %}:
+{% for relateddoc in related_doc_info %}- {{relateddoc.title }}
+  ({{relateddoc.canonical_name }}) to {{ relateddoc.newstatus }}
+{% endfor %}
+An announcement has not yet been sent.
+{% endfilter %}
+
+{% endautoescape %}
