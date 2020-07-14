@@ -691,48 +691,6 @@ DOC_HREFS = {
     "liai-att": "%s{doc.uploaded_filename}" % LIAISON_ATTACH_URL,
 }
 
-SERVE_MEETING_MATERIALS_LOCALLY = False
-
-# If you override SERVE_MEETING_MATERIALS_LOCALLY in your settings_local.conf, you will need to
-# set the right value for MEETING_DOC_HREFS there as well. LOCAL_MEETING_DOC_HREFS and 
-# CDN_MEETING_DOC_HREFS are defined here to make that simpler.
-
-LOCAL_MEETING_DOC_HREFS = {
-    "agenda": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
-    "minutes": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
-    "slides": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
-    "recording": "{doc.external_url}",
-    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
-}
-
-CDN_MEETING_DOC_HREFS = {
-    "agenda": "https://www.ietf.org/proceedings/{meeting.number}/agenda/{doc.name}-{doc.rev}",
-    "minutes": "https://www.ietf.org/proceedings/{meeting.number}/minutes/{doc.name}-{doc.rev}",
-    "slides": "https://www.ietf.org/proceedings/{meeting.number}/slides/{doc.name}-{doc.rev}",
-    "recording": "{doc.external_url}",
-    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
-}
-
-MEETING_DOC_HREFS = LOCAL_MEETING_DOC_HREFS if SERVE_MEETING_MATERIALS_LOCALLY else CDN_MEETING_DOC_HREFS
-
-MEETING_DOC_OLD_HREFS = {
-    "agenda": "/meeting/{meeting.number}/materials/{doc.name}",
-    "minutes": "/meeting/{meeting.number}/materials/{doc.name}",
-    "slides": "/meeting/{meeting.number}/materials/{doc.name}",
-    "recording": "{doc.external_url}",
-    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
-}
-
-# For http references to documents without a version number (that is, to the current version at the time of reference)
-MEETING_DOC_GREFS = {
-    "agenda": "/meeting/{meeting.number}/materials/{doc.name}",
-    "minutes": "/meeting/{meeting.number}/materials/{doc.name}",
-    "slides": "/meeting/{meeting.number}/materials/{doc.name}",
-    "recording": "{doc.external_url}",
-    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
-}
-
-
 # Valid MIME types for cases where text is uploaded and immediately extracted,
 # e.g. a charter or a review. Must be a tuple, not a list.
 DOC_TEXT_FILE_VALID_UPLOAD_MIME_TYPES = ('text/plain', 'text/markdown', 'text/x-rst')
@@ -892,6 +850,47 @@ IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE = 2000 # in MB
 XML_LIBRARY = "/www/tools.ietf.org/tools/xml2rfc/web/public/rfc/"
 
 # === Meeting Related Settings =================================================
+
+MEETING_MATERIALS_SERVE_LOCALLY = False
+
+# If you override MEETING_MATERIALS_SERVE_LOCALLY in your settings_local.conf, you will need to
+# set the right value for MEETING_DOC_HREFS there as well. MEETING_DOC_LOCAL_HREFS and 
+# CDN_MEETING_DOC_HREFS are defined here to make that simpler.
+
+MEETING_DOC_LOCAL_HREFS = {
+    "agenda": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
+    "minutes": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
+    "slides": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
+    "recording": "{doc.external_url}",
+    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
+}
+
+MEETING_DOC_CDN_HREFS = {
+    "agenda": "https://www.ietf.org/proceedings/{meeting.number}/agenda/{doc.name}-{doc.rev}",
+    "minutes": "https://www.ietf.org/proceedings/{meeting.number}/minutes/{doc.name}-{doc.rev}",
+    "slides": "https://www.ietf.org/proceedings/{meeting.number}/slides/{doc.name}-{doc.rev}",
+    "recording": "{doc.external_url}",
+    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
+}
+
+MEETING_DOC_HREFS = MEETING_DOC_LOCAL_HREFS if MEETING_MATERIALS_SERVE_LOCALLY else MEETING_DOC_CDN_HREFS
+
+MEETING_DOC_OLD_HREFS = {
+    "agenda": "/meeting/{meeting.number}/materials/{doc.name}",
+    "minutes": "/meeting/{meeting.number}/materials/{doc.name}",
+    "slides": "/meeting/{meeting.number}/materials/{doc.name}",
+    "recording": "{doc.external_url}",
+    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
+}
+
+# For http references to documents without a version number (that is, to the current version at the time of reference)
+MEETING_DOC_GREFS = {
+    "agenda": "/meeting/{meeting.number}/materials/{doc.name}",
+    "minutes": "/meeting/{meeting.number}/materials/{doc.name}",
+    "slides": "/meeting/{meeting.number}/materials/{doc.name}",
+    "recording": "{doc.external_url}",
+    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
+}
 
 MEETING_MATERIALS_DEFAULT_SUBMISSION_START_DAYS = 90
 MEETING_MATERIALS_DEFAULT_SUBMISSION_CUTOFF_DAYS = 26

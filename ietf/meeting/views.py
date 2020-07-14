@@ -221,7 +221,7 @@ def materials_document(request, document, num=None, ext=None):
     if not os.path.exists(filename):
         raise Http404("File not found: %s" % filename)
 
-    if settings.SERVE_MEETING_MATERIALS_LOCALLY :
+    if settings.MEETING_MATERIALS_SERVE_LOCALLY :
         with io.open(filename, 'rb') as file:
             bytes = file.read()
         
