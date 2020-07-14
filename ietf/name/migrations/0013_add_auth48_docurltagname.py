@@ -20,7 +20,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
     """Add DocUrlTagName entry for RFC Ed Auth48 URL"""
     dependencies = [
-        ('name', '0011_constraintname_editor_label'),
+        ('name', '0012_role_name_robots'),
     ]
 
     operations = [

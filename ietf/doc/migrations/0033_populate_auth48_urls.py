@@ -58,8 +58,8 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('doc', '0031_set_state_for_charters_of_replaced_groups'),
-        ('name', '0012_add_auth48_docurltagname'),
+        ('doc', '0032_auto_20200624_1332'),
+        ('name', '0013_add_auth48_docurltagname'),
     ]
 
     operations = [
