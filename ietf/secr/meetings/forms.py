@@ -149,7 +149,7 @@ class TimeSlotForm(forms.Form):
         '''Get day choices for form based on meeting duration'''
         choices = []
         start = self.meeting.date 
-        for n in range(self.meeting.days):
+        for n in range(-self.meeting.days, self.meeting.days):
             date = start + datetime.timedelta(days=n)
             choices.append((n, date.strftime("%a %b %d")))
         return choices
