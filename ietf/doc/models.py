@@ -916,6 +916,7 @@ class DocHistory(DocumentInfo):
     def related_ipr(self):
         return self.doc.related_ipr()
 
+    @property
     def documenturl_set(self):
         return self.doc.documenturl_set
 

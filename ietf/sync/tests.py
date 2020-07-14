@@ -381,17 +381,15 @@ class RFCSyncTests(TestCase):
         changed = list(rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)))
         self.assertEqual(len(changed), 0)
 
-
-    def test_rfc_queue(self):
-        draft = WgDraftFactory(states=[('draft-iesg','ann')])
-
+    def _generate_rfc_queue_xml(self, draft, state, auth48_url=None):
+        """Generate an RFC queue xml string for a draft"""
         t = '''<rfc-editor-queue xmlns="http://www.rfc-editor.org/rfc-editor-queue">
 <section name="IETF STREAM: WORKING GROUP STANDARDS TRACK">
 <entry xml:id="%(name)s">
 <draft>%(name)s-%(rev)s.txt</draft>
 <date-received>2010-09-08</date-received>
-<state>EDIT*R*A(1G)</state>
-<auth48-url>http://www.rfc-editor.org/auth48/rfc1234</auth48-url>
+<state>%(state)s</state>
+<auth48-url>%(auth48_url)s</auth48-url>
 <normRef>
 <ref-name>%(ref)s</ref-name>
 <ref-state>IN-QUEUE</ref-state>
@@ -408,25 +406,23 @@ class RFCSyncTests(TestCase):
                               rev=draft.rev,
                               title=draft.title,
                               group=draft.group.name,
-                              ref="draft-ietf-test")
+                              ref="draft-ietf-test",
+                              state=state,
+                              auth48_url=(auth48_url or ''))
+        t = t.replace('<auth48-url></auth48-url>\n', '')  # strip empty auth48-url tags
+        return t
+
+    def test_rfc_queue(self):
+        draft = WgDraftFactory(states=[('draft-iesg','ann')])
+        expected_auth48_url = "http://www.rfc-editor.org/auth48/rfc1234"
+        t = self._generate_rfc_queue_xml(draft,
+                                         state='EDIT*R*A(1G)',
+                                         auth48_url=expected_auth48_url)
 
         drafts, warnings = rfceditor.parse_queue(io.StringIO(t))
+        # rfceditor.parse_queue() is tested independently; just sanity check here
         self.assertEqual(len(drafts), 1)
         self.assertEqual(len(warnings), 0)
-
-        # Test with TI state introduced 11 Sep 2019
-        t = t.replace("<state>EDIT*R*A(1G)</state>", "<state>TI</state>")
-        __, warnings = rfceditor.parse_queue(io.StringIO(t))
-        self.assertEqual(len(warnings), 0)
-
-        draft_name, date_received, state, tags, missref_generation, stream, auth48, cluster, refs = drafts[0]
-
-        # currently, we only check what we actually use
-        self.assertEqual(draft_name, draft.name)
-        self.assertEqual(state, "EDIT")
-        self.assertEqual(set(tags), set(["iana", "ref"]))
-        self.assertEqual(auth48, "http://www.rfc-editor.org/auth48/rfc1234")
-
 
         mailbox_before = len(outbox)
 
@@ -449,6 +445,83 @@ class RFCSyncTests(TestCase):
         changed, warnings = rfceditor.update_drafts_from_queue(drafts)
         self.assertEqual(len(changed), 0)
         self.assertEqual(len(warnings), 0)
+
+    def test_rfceditor_parse_queue(self):
+        """Test that rfceditor.parse_queue() behaves as expected.
+
+        Currently does a limited test - old comment was 
+        "currently, we only check what we actually use".
+        """
+        draft = WgDraftFactory(states=[('draft-iesg','ann')])
+        t = self._generate_rfc_queue_xml(draft,
+                                         state='EDIT*R*A(1G)',
+                                         auth48_url="http://www.rfc-editor.org/auth48/rfc1234")
+
+        drafts, warnings = rfceditor.parse_queue(io.StringIO(t))
+        self.assertEqual(len(drafts), 1)
+        self.assertEqual(len(warnings), 0)
+
+        draft_name, date_received, state, tags, missref_generation, stream, auth48, cluster, refs = drafts[0]
+        self.assertEqual(draft_name, draft.name)
+        self.assertEqual(state, "EDIT")
+        self.assertEqual(set(tags), set(["iana", "ref"]))
+        self.assertEqual(auth48, "http://www.rfc-editor.org/auth48/rfc1234")
+
+    def test_rfceditor_parse_queue_TI_state(self):
+        # Test with TI state introduced 11 Sep 2019
+        draft = WgDraftFactory(states=[('draft-iesg','ann')])
+        t = self._generate_rfc_queue_xml(draft,
+                                         state='TI',
+                                         auth48_url="http://www.rfc-editor.org/auth48/rfc1234")
+        __, warnings = rfceditor.parse_queue(io.StringIO(t))
+        self.assertEqual(len(warnings), 0)
+
+    def _generate_rfceditor_update(self, draft, state, tags=None, auth48_url=None):
+        """Helper to generate fake output from rfceditor.parse_queue()"""
+        return [[
+            draft.name, # draft_name
+            '2020-06-03',  # date_received
+            state,
+            tags or [],
+            '1',  # missref_generation
+            'ietf',  # stream
+            auth48_url or '',
+            '',  # cluster
+            ['draft-ietf-test'],  # refs
+        ]]
+
+    def test_update_draft_auth48_url(self):
+        """Test that auth48 URLs are handled correctly."""
+        draft = WgDraftFactory(states=[('draft-iesg','ann')])
+
+        # Step 1 setup: update to a state with no auth48 URL
+        changed, warnings = rfceditor.update_drafts_from_queue(
+            self._generate_rfceditor_update(draft, state='EDIT')
+        )
+        self.assertEqual(len(changed), 1)
+        self.assertEqual(len(warnings), 0)
+        auth48_docurl = draft.documenturl_set.filter(tag_id='auth48').first()
+        self.assertIsNone(auth48_docurl)
+
+        # Step 2: update to auth48 state with auth48 URL
+        changed, warnings = rfceditor.update_drafts_from_queue(
+            self._generate_rfceditor_update(draft, state='AUTH48', auth48_url='http://www.rfc-editor.org/rfc1234')
+        )
+        self.assertEqual(len(changed), 1)
+        self.assertEqual(len(warnings), 0)
+        auth48_docurl = draft.documenturl_set.filter(tag_id='auth48').first()
+        self.assertIsNotNone(auth48_docurl)
+        self.assertEqual(auth48_docurl.url, 'http://www.rfc-editor.org/rfc1234')
+
+        # Step 3: update to auth48-done state without auth48 URL
+        changed, warnings = rfceditor.update_drafts_from_queue(
+            self._generate_rfceditor_update(draft, state='AUTH48-DONE')
+        )
+        self.assertEqual(len(changed), 1)
+        self.assertEqual(len(warnings), 0)
+        auth48_docurl = draft.documenturl_set.filter(tag_id='auth48').first()
+        self.assertIsNone(auth48_docurl)
+
 
 class DiscrepanciesTests(TestCase):
     def test_discrepancies(self):

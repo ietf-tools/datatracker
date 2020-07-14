@@ -199,7 +199,14 @@ def update_drafts_from_queue(drafts):
             if auth48:
                 e.desc = re.sub(r"(<b>.*</b>)", "<a href=\"%s\">\\1</a>" % auth48, e.desc)
                 e.save()
-
+                # Create or update the auth48 URL whether or not this is a state expected to have one.
+                d.documenturl_set.update_or_create(
+                    tag_id='auth48',  # look up existing based on this field
+                    defaults=dict(url=auth48)  # create or update with this field
+                )
+            else:
+                # Remove any existing auth48 URL when an update does not have one.
+                d.documenturl_set.filter(tag_id='auth48').delete()
             if e:
                 events.append(e)
 
