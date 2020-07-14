@@ -640,6 +640,7 @@ class Document(DocumentInfo):
         """
         if not hasattr(self, '_cached_absolute_url'):
             name = self.name
+            url = None
             if self.type_id == "draft" and self.get_state_slug() == "rfc":
                 name = self.canonical_name()
                 url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ 'name': name }, urlconf="ietf.urls")
