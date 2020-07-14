@@ -18,6 +18,7 @@ from django.conf import settings
 from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
+from ietf.doc.mails import email_ad_approved_status_change
 
 from ietf.doc.models import ( Document, DocAlias, State, DocEvent, BallotDocEvent,
     BallotPositionDocEvent, NewRevisionDocEvent, WriteupDocEvent, STATUSCHANGE_RELATIONS )
@@ -90,6 +91,21 @@ def change_state(request, name, option=None):
                                               dict(doc=status_change,
                                                    url = status_change.get_absolute_url(),
                                                   ))
+                elif new_state.slug == 'appr-pend' and has_role(request.user, "Area Director"):
+                    related_docs = status_change.relateddocument_set.filter(
+                        relationship__slug__in=STATUSCHANGE_RELATIONS
+                    )
+                    related_doc_info = [
+                        dict(title=rel_doc.target.document.title,
+                             canonical_name=rel_doc.target.document.canonical_name(),
+                             newstatus=newstatus(rel_doc))
+                        for rel_doc in related_docs
+                    ]
+                    email_ad_approved_status_change(
+                        request,
+                        status_change,
+                        related_doc_info=related_doc_info,
+                    )
 
             return redirect('ietf.doc.views_doc.document_main', name=status_change.name)
     else:

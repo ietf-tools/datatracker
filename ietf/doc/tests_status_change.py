@@ -23,7 +23,7 @@ from ietf.doc.views_status_change import default_approval_text
 from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
 from ietf.utils.test_utils import TestCase
-from ietf.utils.mail import outbox
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized
 
 
@@ -334,6 +334,52 @@ class StatusChangeTests(TestCase):
         self.assertTrue('(rfc9999) to Internet Standard' in ''.join(wrap(outbox[-1].as_string()+outbox[-2].as_string(),2**16)))
 
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('The following approval message was sent'))
+
+    def approval_pend_notice_test_helper(self, role):
+        """Test notification email when review state changed to the appr-pend state"""
+        doc = Document.objects.get(name='status-change-imaginary-mid-review')
+        url = urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name))
+
+        # Add some status change related documents
+        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9999'),relationship_id='tois')
+        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
+        # And a non-status change related document
+        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc14'),relationship_id='updates')
+
+        login_testing_unauthorized(self, role, url)
+        empty_outbox()
+
+        # Issue the request
+        appr_pend_pk = str(State.objects.get(used=True,
+                                                 slug='appr-pend',
+                                                 type__slug='statchg').pk)
+        r = self.client.post(url,dict(new_state=appr_pend_pk,comment='some comment or other'))
+
+        # Check the results
+        self.assertEqual(r.status_code, 302)
+
+        if role == 'ad':
+            self.assertEqual(len(outbox), 1)
+            notification = outbox[0]
+            self.assertIn(doc.title, notification['Subject'])
+            self.assertIn('iesg-secretary@ietf.org', notification['To'])
+            self.assertTrue(notification['Subject'].startswith('Approved:'))
+            notification_text = get_payload_text(notification)
+            self.assertIn('The AD has approved changing the status', notification_text)
+            self.assertIn(DocAlias.objects.get(name='rfc9999').document.canonical_name(), notification_text)
+            self.assertIn(DocAlias.objects.get(name='rfc9998').document.canonical_name(), notification_text)
+            self.assertNotIn(DocAlias.objects.get(name='rfc14').document.canonical_name(), notification_text)
+            self.assertNotIn('No value found for', notification_text)  # make sure all interpolation values were set
+        else:
+            self.assertEqual(len(outbox), 0)
+
+    def test_approval_pend_notice_ad(self):
+        """Test that an approval notice is sent to secretariat when AD approves status change"""
+        self.approval_pend_notice_test_helper('ad')
+
+    def test_no_approval_pend_notice_secr(self):
+        """Test that no approval notice is sent when secretariat approves status change"""
+        self.approval_pend_notice_test_helper('secretariat')
 
     def test_edit_relations(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')

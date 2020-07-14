@@ -3147,6 +3147,28 @@
   },
   {
     "fields": {
+      "cc": [],
+      "desc": "Recipients when AD approves a conflict review pending announcement",
+      "to": [
+        "iesg_secretary"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "ad_approved_conflict_review"
+  },
+  {
+    "fields": {
+      "cc": [],
+      "desc": "Recipients when AD approves a status change pending announcement",
+      "to": [
+        "iesg_secretary"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "ad_approved_status_change"
+  },
+  {
+    "fields": {
       "cc": [
         "doc_notify",
         "group_chairs",
