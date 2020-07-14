@@ -192,7 +192,7 @@
             {% endif %}
 
             {% if item.timeslot.type.slug == 'break' or item.timeslot.type.slug == 'reg' or item.timeslot.type.slug == 'other' %}
-                <tr id="row-{{ item.slug }}">
+                <tr id="row-{{ item.slug }}" timeslot-type="{{item.timeslot.type.slug}}">
 	          <td class="text-nowrap text-right">
 	            {% if "-utc" in request.path %}
 	              {{item.timeslot.utc_start_time|date:"G:i"}}-{{item.timeslot.utc_end_time|date:"G:i"}}
@@ -234,7 +234,7 @@
 		  <td class="col-md-2 text-right">
 		    <span class="hidden-xs">
 		      {% if item.timeslot.type.slug == 'other' %}
-		        {% if item.session.agenda %}
+		        {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
 			  {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
 			{% else %}
 			  {% for slide in item.session.slides %}
@@ -250,7 +250,7 @@
 
             {% if item.timeslot.type_id == 'regular' or item.timeslot.type.slug == 'plenary' %}
               {% if item.session.historic_group %}
-                <tr id="row-{{item.slug}}" data-ske="row-{{ item.slug }}" {% if item.timeslot.type.slug == 'plenary' %}class="{{item.timeslot.type.slug}}danger"{% endif %}>
+                <tr id="row-{{item.slug}}"  timeslot-type="{{item.timeslot.type.slug}}" data-ske="row-{{ item.slug }}" {% if item.timeslot.type.slug == 'plenary' %}class="{{item.timeslot.type.slug}}danger"{% endif %}>
 		  {% if item.timeslot.type.slug == 'plenary' %}
 	            <th class="text-nowrap text-right">
 		      {% if "-utc" in request.path %}
