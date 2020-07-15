@@ -129,7 +129,7 @@ def send_status_change_eval_email(request,doc):
                                  doc_url = settings.IDTRACKER_BASE_URL+doc.get_absolute_url(),
                                  )
                            )
-    addrs = gather_address_lists('ballot_issued',doc=doc)
+    addrs = gather_address_lists('iesg_ballot_issued',doc=doc)
     override = {'To':addrs.to }
     if addrs.cc:
         override['Cc'] = addrs.cc

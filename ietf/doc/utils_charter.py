@@ -235,7 +235,7 @@ def default_review_text(group, charter, by):
 
 def generate_issue_ballot_mail(request, doc, ballot):
     
-    addrs=gather_address_lists('ballot_issued',doc=doc).as_strings()
+    addrs=gather_address_lists('iesg_ballot_issued',doc=doc).as_strings()
 
     return render_to_string("doc/charter/issue_ballot_mail.txt",
                             dict(doc=doc,
