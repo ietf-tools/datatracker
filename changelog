@@ -1,3 +1,56 @@
+ietfdb (7.9.0) ietf; urgency=medium
+
+  **Extended support for the remote-instructions field to all session types;
+  Cookie settings and other changes for Meetecho integration; and bugfixes**
+
+  * Updated the generate_name_fixture management command to include
+    BusinessConstraint; necessary after the automatic meeting scheduler
+    tests came in.
+
+  * Updated fixtures based on the updated generate_name_fixture command.
+
+  * Updated the Django patch for SameSite cookie settings to give a
+    more informative error message from Django when the cookie setting
+    is unacceptable.
+
+  * Merged in [18131] from rjsparks@nostrum.com:
+    Add configuration and mechanisms to allow meeting materials to be 
+    served via a CDN. Fixes #2935.  
+
+  * Merged in [18157] from jennifer@painless-security.com:
+    Store Auth48 URL as DocumentURL and display in RFC-Editor state. 
+    Migrates old data when possible. Alternative to 17563. Fixes #2722.  
+
+  * Fixed an UnboundLocalError issue.
+
+  * Merged in [18159] from jennifer@painless-security.com:
+    Notify secretariat when conflict review/status change doc enters an 
+    announcement pending state. Fixes #2962.  
+
+  * Tweaked the agenda HTML template, adding additional conditions
+    (agenda-note, remote instructions) that will make session-related links
+    show.
+
+  * Tweaked the list of days in secr session edit forms to allow setting 
+    the date to a day before the start of the meeting, necessary for IETF 108.
+
+  * Renamed some settings so as to start with the relevant app name
+    (MEETING_*)
+
+  * Added support for a meeting session order_number (denoting first session
+    for this group in the meeting, second session, etc.) when filling in URL
+    templates with session info using the 'format' filter.  Used for the
+    Meetecho video straming url for a session.
+
+  * Changed the logger level settings override in settings.py so as to not
+    actually apply the example settings.
+
+  * Merged in [18162] from jennifer@painless-security.com:
+    Notify IRSG when an IRSG ballot is created. Fixes #2978.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 Jul 2020 15:33:35 +0000
+
+
 ietfdb (7.8.0) ietf; urgency=medium
 
   **Changes to cookie settings, yang checking improvement, and bugfixes**
