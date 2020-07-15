@@ -318,8 +318,8 @@ LOGGING = {
 # to show registered loggers.  The content here should match the levels above
 # and is shown as an example:
 UTILS_LOGGER_LEVELS: Dict[str, str] = {
-    'django':           'INFO',
-    'django.server':    'INFO',
+#    'django':           'INFO',
+#    'django.server':    'INFO',
 }
 
 # End logging
