@@ -802,7 +802,6 @@ IDSUBMIT_STAGING_URL = '//www.ietf.org/staging/'
 IDSUBMIT_IDNITS_BINARY = '/a/www/ietf-datatracker/scripts/idnits'
 SUBMIT_PYANG_COMMAND = 'pyang --verbose --ietf -p {libs} {model}'
 SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {tmplib} -p {rfclib} -p {draftlib} -p {ianalib} -p {cataloglib} {model} -i'
-SUBMIT_YANGLINT_COMMAND = ''        # use the value above if you have yanglint installed
 
 SUBMIT_YANG_CATALOG_MODULEARG = "modules[]={module}"
 SUBMIT_YANG_CATALOG_IMPACT_URL = "https://www.yangcatalog.org/yang-search/impact_analysis.php?{moduleargs}&recurse=0&rfcs=1&show_subm=1&show_dir=both"

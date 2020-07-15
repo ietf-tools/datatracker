@@ -51,10 +51,10 @@ PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 
 DOCUMENT_PATH_PATTERN = 'data/developers/ietf-ftp/{doc.type_id}/'
 
-SUBMIT_YANG_RFC_MODEL_DIR   = 'data/developers/ietf-ftp/yang/rfcmod/'
+SUBMIT_YANG_CATALOG_MODEL_DIR = 'data/developers/ietf-ftp/yang/catalogmod/'
 SUBMIT_YANG_DRAFT_MODEL_DIR = 'data/developers/ietf-ftp/yang/draftmod/'
 SUBMIT_YANG_INVAL_MODEL_DIR = 'data/developers/ietf-ftp/yang/invalmod/'
 SUBMIT_YANG_IANA_MODEL_DIR = 'data/developers/ietf-ftp/yang/ianamod/'
-SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {rfclib} -p {draftlib} -p {tmplib} {model}'
+SUBMIT_YANG_RFC_MODEL_DIR   = 'data/developers/ietf-ftp/yang/rfcmod/'
 
 
