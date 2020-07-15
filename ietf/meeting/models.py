@@ -1004,6 +1004,12 @@ class Session(models.Model):
         else:
             return [self]
 
+    def order_in_meeting(self):
+        if not hasattr(self, '_order_in_meeting'):
+            session_list = self.all_meeting_sessions_for_group()
+            self._order_in_meeting = session_list.index(self) + 1
+        return self._order_in_meeting
+
     def all_meeting_sessions_cancelled(self):
         return set(s.current_status for s in self.all_meeting_sessions_for_group()) == {'canceled'}
 

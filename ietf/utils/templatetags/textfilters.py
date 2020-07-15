@@ -31,10 +31,10 @@ def xslugify(value):
 @stringfilter
 def format(format, values):
     if not isinstance(values, dict):
-        tmp = {}
-        for f in values._meta.fields:
-            tmp[f.name] = getattr(values, f.name)
-        values = tmp
+        obj = values
+        values = obj.__dict__
+        for f in obj._meta.fields:
+            values[f.name] = getattr(obj, f.name)
     return format.format(**values)
 
 # ----------------------------------------------------------------------
