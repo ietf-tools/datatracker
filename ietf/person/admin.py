@@ -24,10 +24,13 @@ class AliasInline(admin.StackedInline):
 
 class PersonAdmin(simple_history.admin.SimpleHistoryAdmin):
     def plain_name(self, obj):
-        prefix, first, middle, last, suffix = name_parts(obj.name)
-        return "%s %s" % (first, last)
+        if obj.plain:
+            return obj.plain
+        else:
+            prefix, first, middle, last, suffix = name_parts(obj.name)
+            return "%s %s" % (first, last)
     list_display = ["name", "short", "plain_name", "time", "user", ]
-    fields = ("user", "time", "name", "name_from_draft", "ascii", "ascii_short", "biography", "photo", "photo_thumb", "consent",)
+    fields = ("user", "time", "name", "plain", "name_from_draft", "ascii", "ascii_short", "biography", "photo", "photo_thumb", "consent",)
     readonly_fields = ("name_from_draft", )
     search_fields = ["name", "ascii"]
     raw_id_fields = ["user"]
