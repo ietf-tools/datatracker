@@ -6,10 +6,8 @@
 
     var all_items = {{ items|safe }};
 
-    /* Saturday events need to be moved to the day -1 */
     /* Also, process clock times to "minutes past midnight" */
     all_items.forEach(function(item) {
-      if (item.day == 6) { item.day = -1; }
       item.start_time = parseInt(item.time.substr(0,2),10) * 60 +
                                  parseInt(item.time.substr(2,2),10);
       item.end_time = item.start_time + (item.duration / 60)
@@ -210,7 +208,7 @@
         e.style.textAlign="center";
 
         var div = document.createElement("div");
-        div.appendChild(document.createTextNode(day[j+1]));
+        div.appendChild(document.createTextNode(day[((j+1)%7+7)%7])); // js % is remainder, not modulus
         j++;
         e.appendChild(div);
         document.body.appendChild(e);

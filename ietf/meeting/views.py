@@ -1202,8 +1202,8 @@ def week_view(request, num=None, name=None, owner=None):
     # We'll determine this using the saturday before the first scheduled regular session.
     first_regular_session_time = meeting.schedule.qs_assignments_with_sessions.filter(session__type_id='regular').order_by('timeslot__time').first().timeslot.time
     saturday_before = first_regular_session_time - datetime.timedelta(days=(first_regular_session_time.weekday() - 5)%7)
-    saturday_after = saturday_before + datetime.timedelta(days=7)
-    filtered_assignments = filtered_assignments.filter(timeslot__time__gte=saturday_before,timeslot__time__lt=saturday_after)
+#    saturday_after = saturday_before + datetime.timedelta(days=7)
+#    filtered_assignments = filtered_assignments.filter(timeslot__time__gte=saturday_before,timeslot__time__lt=saturday_after)
     filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
     
     items = []
@@ -1211,7 +1211,7 @@ def week_view(request, num=None, name=None, owner=None):
         # we don't HTML escape any of these as the week-view code is using createTextNode
         item = {
             "key": str(a.timeslot.pk),
-            "day": a.timeslot.time.strftime("%w"),
+            "day": (a.timeslot.time - saturday_before).days - 1,
             "time": a.timeslot.time.strftime("%H%M") + "-" + a.timeslot.end_time().strftime("%H%M"),
             "duration": a.timeslot.duration.seconds,
             "time_id": a.timeslot.time.strftime("%m%d%H%M"),
