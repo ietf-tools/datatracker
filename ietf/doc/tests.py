@@ -249,7 +249,19 @@ class SearchTests(TestCase):
         self.assertContains(r, charter.name)
 
         self.assertContains(r, discuss_other.doc.name)
-        
+
+    def test_auth48_doc_for_ad(self):
+        """Docs in AUTH48 state should have a decoration"""
+        ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
+        draft = IndividualDraftFactory(ad=ad,
+                                       states=[('draft', 'active'),
+                                               ('draft-iesg', 'rfcqueue'),
+                                               ('draft-rfceditor', 'auth48')])
+        r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad',
+                                       kwargs=dict(name=ad.full_name_as_key())))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, draft.name)
+        self.assertContains(r, 'title="AUTH48"')  # title attribute of AUTH48 badge in state_alert_badge filter
 
     def test_drafts_in_last_call(self):
         draft = IndividualDraftFactory(pages=1)
