@@ -530,8 +530,9 @@ class IetfAuthTests(TestCase):
         self.assertTrue(user.check_password('password'))
 
     def test_apikey_management(self):
-        person = PersonFactory()
-        
+        # Create a person with a role that will give at least one valid apikey
+        person =  RoleFactory(name_id='secr', group__acronym='secretariat').person
+
         url = urlreverse('ietf.ietfauth.views.apikey_index')
 
         # Check that the url is protected, then log in
@@ -632,7 +633,7 @@ class IetfAuthTests(TestCase):
         from ietf.ietfauth.management.commands.send_apikey_usage_emails import Command
         from ietf.utils.mail import outbox, empty_outbox
 
-        person = PersonFactory()
+        person =  RoleFactory(name_id='secr', group__acronym='secretariat').person
 
         url = urlreverse('ietf.ietfauth.views.apikey_create')
         # Check that the url is protected, then log in

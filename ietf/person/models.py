@@ -340,7 +340,6 @@ PERSON_API_KEY_VALUES = [
     ("/api/iesg/position", "/api/iesg/position", "Area Director"),
     ("/api/v2/person/person", "/api/v2/person/person", "Secretariat"),
     ("/api/meeting/session/video/url", "/api/meeting/session/video/url", "Recording Manager"),
-    ("/api/person/access/meetecho", "/api/person/access/meetecho", None), 
     ("/api/notify/meeting/registration", "/api/notify/meeting/registration", "Robot"), 
 ]
 PERSON_API_KEY_ENDPOINTS = [ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES ]

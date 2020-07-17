@@ -102,19 +102,26 @@ class ApiV2PersonExportView(DetailView, JsonExportMixin):
 
         return self.json_view(request, filter=querydict.dict(), expand=expand)
 
-@require_api_key
-@csrf_exempt
-def person_access_meetecho(request):
-    person = get_object_or_404(Person, user=request.user)
-    
-    return HttpResponse(json.dumps({
-            'name' : person.plain_name(),
-            'email': person.email().address,
-            'roles': {
-                    'chair': list(person.role_set.filter(name='chair', group__state__in=['active', 'bof', 'proposed']).values_list('group__acronym', flat=True)),
-                    'secr': list(person.role_set.filter(name='secr', group__state__in=['active', 'bof', 'proposed']).values_list('group__acronym', flat=True)),
-                }
-        }), content_type='application/json')
+# @require_api_key
+# @csrf_exempt
+# def person_access_token(request):
+#     person = get_object_or_404(Person, user=request.user)
+#     
+#     if request.method == 'POST':
+#         client_id = request.POST.get('client_id', None)
+#         client_secret = request.POST.get('client_secret', None)
+#         client = get_object_or_404(ClientRecord, client_id=client_id, client_secret=client_secret)
+# 
+#         return HttpResponse(json.dumps({
+#                 'name' : person.plain_name(),
+#                 'email': person.email().address,
+#                 'roles': {
+#                         'chair': list(person.role_set.filter(name='chair', group__state__in=['active', 'bof', 'proposed']).values_list('group__acronym', flat=True)),
+#                         'secr': list(person.role_set.filter(name='secr', group__state__in=['active', 'bof', 'proposed']).values_list('group__acronym', flat=True)),
+#                     }
+#             }), content_type='application/json')
+#     else:
+#         return HttpResponse(status=405)
 
 @require_api_key
 @role_required('Robot')

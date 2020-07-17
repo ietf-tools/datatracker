@@ -277,24 +277,6 @@ class CustomApiTests(TestCase):
         self.assertEqual(data['user']['email'], secretariat.user.email)
 
 
-    def test_api_v2_person_access_meetecho(self):
-        url = urlreverse('ietf.api.views.person_access_meetecho')
-        person = PersonFactory()
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=person)
-
-        # error cases
-        r = self.client.get(url, {'apikey': apikey.hash()})
-        self.assertContains(r, "Too long since last regular login", status_code=400)
-        person.user.last_login = timezone.now()
-        person.user.save()
-
-        # working case
-        r = self.client.get(url, {'apikey': apikey.hash()})
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertEqual(data['name'], person.plain_name())
-        self.assertEqual(data['email'], person.email().address)
-
     def test_api_new_meeting_registration(self):
         meeting = MeetingFactory(type_id='ietf')
         reg = {

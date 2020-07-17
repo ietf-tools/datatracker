@@ -34,8 +34,6 @@ urlpatterns = [
     url(r'^notify/meeting/registration/?', api_views.api_new_meeting_registration),
     # OpenID authentication provider
     url(r'^openid/', include('oidc_provider.urls', namespace='oidc_provider')),
-    # For meetecho access
-    url(r'^person/access/meetecho', api_views.person_access_meetecho),
     # Draft submission API
     url(r'^submit/?$', submit_views.api_submit),
 ]
