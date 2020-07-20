@@ -934,7 +934,7 @@ class Session(models.Model):
     short = models.CharField(blank=True, max_length=32, help_text="Short version of 'name' above, for use in filenames.")
     type = ForeignKey(TimeSlotTypeName)
     group = ForeignKey(Group)    # The group type historically determined the session type.  BOFs also need to be added as a group. Note that not all meeting requests have a natural group to associate with.
-    joint_with_groups = models.ManyToManyField(Group, related_name='sessions_joint_in')
+    joint_with_groups = models.ManyToManyField(Group, related_name='sessions_joint_in',blank=True)
     attendees = models.IntegerField(null=True, blank=True)
     agenda_note = models.CharField(blank=True, max_length=255)
     requested_duration = models.DurationField(default=datetime.timedelta(0))
