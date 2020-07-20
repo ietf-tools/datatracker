@@ -243,10 +243,11 @@ class DocumentInfo(models.Model):
                     meeting = sess.meeting
                 # After IETF 96, meeting materials acquired revision
                 # handling, and the document naming changed.
-                if meeting.number.isdigit() and int(meeting.number) > 96:
-                    format = meeting_doc_refs[self.type_id]
-                else:
+                if meeting.number.isdigit() and int(meeting.number) <= 96:
                     format = settings.MEETING_DOC_OLD_HREFS[self.type_id]
+                else:
+                    # This branch includes interims
+                    format = meeting_doc_refs[self.type_id]
                 info = dict(doc=self, meeting=meeting)
             else:
                 info = dict(doc=self)
