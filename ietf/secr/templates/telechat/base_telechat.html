@@ -18,7 +18,7 @@
     <h2>Agenda {{ date }}</h2>
     {% if agenda %}
     <ul>
-      {% for num, section in agenda.sections.iteritems %}
+      {% for num, section in agenda.sections.items %}
       {% if num >= "2" and num < "5" %}
       <li class="level{{ num|sectionlevel }}">{{ num }} {{ section.title }}
 
