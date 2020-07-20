@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+import re
 
 from functools import update_wrapper
 
@@ -31,6 +32,15 @@ class GroupForm(forms.ModelForm):
     class Meta:
         model = Group
         fields = '__all__'
+
+    def clean_acronym(self):
+        ''' Constrain the acronym form. Note that this doesn't look for collisions.
+            See ietf.group.forms.GroupForm.clean_acronym()
+        '''
+        acronym = self.cleaned_data['acronym'].strip().lower()
+        if not re.match(r'^[a-z][a-z0-9]+$', acronym):
+            raise forms.ValidationError("Acronym is invalid, must be at least two characters and only contain lowercase letters and numbers starting with a letter.")
+        return acronym
 
     def clean_used_roles(self):
         data = self.cleaned_data['used_roles']
