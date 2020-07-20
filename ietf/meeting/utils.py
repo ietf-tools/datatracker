@@ -74,6 +74,7 @@ def group_sessions(sessions):
 
     # List future and in_progress meetings with ascending time, but past
     # meetings with descending time
+    recent.reverse()
     past.reverse()
 
     return future, in_progress, recent, past
