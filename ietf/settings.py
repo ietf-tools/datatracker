@@ -227,6 +227,11 @@ LOGGING = {
             'handlers': ['debug_console', 'mail_admins'],
             'level': 'INFO',
         },
+        'django.request': {
+            'handlers': ['debug_console', 'syslog'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
         'django.server': {
             'handlers': ['django.server'],
             'level': 'INFO',
