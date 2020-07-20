@@ -6,7 +6,8 @@
 
 <h1>Request for Permission</h1>
 
-<p>Client <strong>{{ client.name }}</strong> would like to access this information of you ...</p>
+<p>Client <strong>{{ client.name }}</strong> would like to access this information
+from your IETF database records ...</p>
 
 <form method="post" action="{% url 'oidc_provider:authorize' %}">
 
