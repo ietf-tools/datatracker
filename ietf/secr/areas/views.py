@@ -1,17 +1,14 @@
-import datetime
 import json
  
 from django.contrib import messages
-from django.forms.formsets import formset_factory
-from django.forms.models import inlineformset_factory
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 
-from ietf.group.models import Group, GroupEvent, GroupURL, Role, ChangeStateGroupEvent
+from ietf.group.models import Group, GroupEvent, Role
 from ietf.group.utils import save_group_in_history
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person
-from ietf.secr.areas.forms import AWPAddModelForm, AWPForm, AddAreaModelForm, AreaDirectorForm, AreaForm
+from ietf.secr.areas.forms import AreaDirectorForm
 
 # --------------------------------------------------
 # AJAX FUNCTIONS
@@ -49,114 +46,7 @@ def getemails(request):
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
-@role_required('Secretariat')
-def add(request):
-    """ 
-    Add a new IETF Area
 
-    **Templates:**
-
-    * ``areas/add.html``
-
-    **Template Variables:**
-
-    * area_form
-
-    """
-    AWPFormSet = formset_factory(AWPAddModelForm, extra=2)
-    if request.method == 'POST':
-        area_form = AddAreaModelForm(request.POST)
-        awp_formset = AWPFormSet(request.POST, prefix='awp')
-        if area_form.is_valid() and awp_formset.is_valid():
-            area = area_form.save()
-            
-            #save groupevent 'started' record
-            start_date = area_form.cleaned_data.get('start_date')
-            login = request.user.person
-            group_event = GroupEvent(group=area,time=start_date,type='started',by=login)
-            group_event.save()
-            
-            # save AWPs
-            for item in awp_formset.cleaned_data:
-                if item.get('url', 0):
-                    group_url = GroupURL(group=area,name=item['name'],url=item['url'])
-                    group_url.save()
-
-            messages.success(request, 'The Area was created successfully!')
-            return redirect('ietf.secr.areas.views.list_areas')
-    else:
-        # display initial forms
-        area_form = AddAreaModelForm()
-        awp_formset = AWPFormSet(prefix='awp')
-
-    return render(request, 'areas/add.html', {
-        'area_form': area_form,
-        'awp_formset': awp_formset},
-    )
-
-@role_required('Secretariat')
-def edit(request, name):
-    """ 
-    Edit IETF Areas 
-
-    **Templates:**
-
-    * ``areas/edit.html``
-
-    **Template Variables:**
-
-    * acronym, area_formset, awp_formset, acronym_form 
-
-    """
-    area = get_object_or_404(Group, acronym=name, type='area')
-
-    AWPFormSet = inlineformset_factory(Group, GroupURL, form=AWPForm, max_num=2)
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Save':
-            form = AreaForm(request.POST, instance=area)
-            awp_formset = AWPFormSet(request.POST, instance=area)
-            if form.is_valid() and awp_formset.is_valid():
-                state = form.cleaned_data['state']
-                
-                # save group
-                save_group_in_history(area)
-                
-                new_area = form.save()
-                new_area.time = datetime.datetime.now()
-                new_area.save()
-                awp_formset.save()
-                
-                # create appropriate GroupEvent
-                if 'state' in form.changed_data:
-                    ChangeStateGroupEvent.objects.create(group=new_area,
-                                                         type='changed_state',
-                                                         by=request.user.person,
-                                                         state=state,
-                                                         time=new_area.time)
-                    form.changed_data.remove('state')
-                    
-                # if anything else was changed
-                if form.changed_data:
-                    GroupEvent.objects.create(group=new_area,
-                                              type='info_changed',
-                                              by=request.user.person,
-                                              time=new_area.time)
-                
-                messages.success(request, 'The Area entry was changed successfully')
-                return redirect('ietf.secr.areas.views.view', name=name)
-        else:
-            return redirect('ietf.secr.areas.views.view', name=name)
-    else:
-        form = AreaForm(instance=area)
-        awp_formset = AWPFormSet(instance=area)
-
-    return render(request, 'areas/edit.html', {
-        'area': area,
-        'form': form,
-        'awp_formset': awp_formset,
-        },
-    )
 
 @role_required('Secretariat')
 def list_areas(request):

@@ -57,7 +57,19 @@
     </div>
   {% endif %}
 
-
+  {% if person.personextresource_set.exists %}
+    <div class="col-md-12">
+      <h2 id="extresources">External Resources</h2>
+      <table class="table">
+        {% for extres in person.personextresource_set.all %}
+          <tr>
+            <td class="col-md-1"><span title="{{ extres.name.name }}">{% firstof extres.display_name extres.name.name %}</span></td>
+            <td class="col-md-11">{{extres.value}}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+  {% endif %}
 
   <div class="col-md-6">
      <h2 id="rfcs">RFCs</h2>

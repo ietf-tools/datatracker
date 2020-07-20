@@ -9750,6 +9750,212 @@
   },
   {
     "fields": {
+      "desc": "Frequently Asked Questions",
+      "name": "Frequently Asked Questions",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "faq"
+  },
+  {
+    "fields": {
+      "desc": "GitHub Organization",
+      "name": "GitHub Organization",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "github_org"
+  },
+  {
+    "fields": {
+      "desc": "GitHub Repository",
+      "name": "GitHub Repository",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "github_repo"
+  },
+  {
+    "fields": {
+      "desc": "GitHub Username",
+      "name": "GitHub Username",
+      "order": 0,
+      "type": "string",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "github_username"
+  },
+  {
+    "fields": {
+      "desc": "GitLab Username",
+      "name": "GitLab Username",
+      "order": 0,
+      "type": "string",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "gitlab_username"
+  },
+  {
+    "fields": {
+      "desc": "Jabber Log",
+      "name": "Jabber Log",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "jabber_log"
+  },
+  {
+    "fields": {
+      "desc": "Jabber Room",
+      "name": "Jabber Room",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "jabber_room"
+  },
+  {
+    "fields": {
+      "desc": "Mailing List",
+      "name": "Mailing List",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "mailing_list"
+  },
+  {
+    "fields": {
+      "desc": "Mailing List Archive",
+      "name": "Mailing List Archive",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "mailing_list_archive"
+  },
+  {
+    "fields": {
+      "desc": "Other Repository",
+      "name": "Other Repository",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "repo"
+  },
+  {
+    "fields": {
+      "desc": "Slack Channel",
+      "name": "Slack Channel",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "slack"
+  },
+  {
+    "fields": {
+      "desc": "Issuer Tracker",
+      "name": "Issuer Tracker",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "tracker"
+  },
+  {
+    "fields": {
+      "desc": "Additional Web Page",
+      "name": "Additional Web Page",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "webpage"
+  },
+  {
+    "fields": {
+      "desc": "Wiki",
+      "name": "Wiki",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "wiki"
+  },
+  {
+    "fields": {
+      "desc": "Yang Catalog Entry",
+      "name": "Yang Catalog Entry",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "yc_entry"
+  },
+  {
+    "fields": {
+      "desc": "Yang Impact Analysis",
+      "name": "Yang Impact Analysis",
+      "order": 0,
+      "type": "url",
+      "used": true
+    },
+    "model": "name.extresourcename",
+    "pk": "yc_impact"
+  },
+  {
+    "fields": {
+      "desc": "Email address",
+      "name": "Email address",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.extresourcetypename",
+    "pk": "email"
+  },
+  {
+    "fields": {
+      "desc": "string",
+      "name": "string",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.extresourcetypename",
+    "pk": "string"
+  },
+  {
+    "fields": {
+      "desc": "URL",
+      "name": "URL",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.extresourcetypename",
+    "pk": "url"
+  },
+  {
+    "fields": {
       "desc": "",
       "name": "Comment",
       "order": 0,
@@ -14637,7 +14843,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2020-05-29T00:13:35.959",
+      "time": "2020-07-09T00:12:56.528",
       "used": true,
       "version": "xym 0.4.8"
     },
@@ -14648,7 +14854,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2020-05-29T00:13:38.724",
+      "time": "2020-07-09T00:12:58.135",
       "used": true,
       "version": "pyang 2.2.1"
     },
@@ -14659,7 +14865,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2020-05-29T00:13:39.026",
+      "time": "2020-07-09T00:12:58.398",
       "used": true,
       "version": "yanglint SO 1.6.7"
     },
@@ -14670,7 +14876,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2020-05-29T00:13:40.790",
+      "time": "2020-07-09T00:13:00.193",
       "used": true,
       "version": "xml2rfc 2.46.0"
     },

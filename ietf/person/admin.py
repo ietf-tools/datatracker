@@ -1,8 +1,13 @@
 from django.contrib import admin
 import simple_history
 
-from ietf.person.models import Email, Alias, Person, PersonalApiKey, PersonEvent, PersonApiKeyEvent
+from django import forms
+
+from ietf.person.models import Email, Alias, Person, PersonalApiKey, PersonEvent, PersonApiKeyEvent, PersonExtResource
 from ietf.person.name import name_parts
+
+from ietf.utils.validators import validate_external_resource_value
+
 
 class EmailAdmin(simple_history.admin.SimpleHistoryAdmin):
     list_display = ["address", "person", "time", "active", "origin"]
@@ -58,3 +63,14 @@ class PersonApiKeyEventAdmin(admin.ModelAdmin):
 admin.site.register(PersonApiKeyEvent, PersonApiKeyEventAdmin)
 
 
+
+class PersonExtResourceAdminForm(forms.ModelForm):
+    def clean(self):
+        validate_external_resource_value(self.cleaned_data['name'],self.cleaned_data['value'])
+
+class PersonExtResourceAdmin(admin.ModelAdmin):
+    form = PersonExtResourceAdminForm
+    list_display = ['id', 'person', 'name', 'display_name', 'value',]
+    search_fields = ['person__name', 'value', 'display_name', 'name__slug',]
+    raw_id_fields = ['person', ]
+admin.site.register(PersonExtResource, PersonExtResourceAdmin) 

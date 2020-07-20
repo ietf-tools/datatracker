@@ -24,7 +24,7 @@ import debug                            # pyflakes:ignore
 from ietf.group.models import Group
 from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdLevelName, StdLevelName,
     DocRelationshipName, DocReminderTypeName, BallotPositionName, ReviewRequestStateName, ReviewAssignmentStateName, FormalLanguageName,
-    DocUrlTagName)
+    DocUrlTagName, ExtResourceName)
 from ietf.person.models import Email, Person
 from ietf.person.utils import get_active_balloters
 from ietf.utils import log
@@ -861,6 +861,15 @@ class DocumentURL(models.Model):
     tag  = ForeignKey(DocUrlTagName)
     desc = models.CharField(max_length=255, default='', blank=True)
     url  = models.URLField(max_length=2083) # 2083 is the legal max for URLs
+
+class DocExtResource(models.Model):
+    doc = ForeignKey(Document) # Should this really be to DocumentInfo rather than Document?
+    name = models.ForeignKey(ExtResourceName, on_delete=models.CASCADE)
+    display_name = models.CharField(max_length=255, default='', blank=True)
+    value = models.CharField(max_length=2083) # 2083 is the maximum legal URL length
+    def __str__(self):
+        priority = self.display_name or self.name.name
+        return u"%s (%s) %s" % (priority, self.name.slug, self.value)
 
 class RelatedDocHistory(models.Model):
     source = ForeignKey('DocHistory')

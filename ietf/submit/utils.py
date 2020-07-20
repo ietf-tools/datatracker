@@ -377,19 +377,18 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
             if 'yang' in code:
                 modules = code['yang']
                 # Yang impact analysis URL
-                draft.documenturl_set.filter(tag_id='yang-impact-analysis').delete()
+                draft.docextresource_set.filter(name_id='yc_impact').delete()
                 f = settings.SUBMIT_YANG_CATALOG_MODULEARG
                 moduleargs = '&'.join([ f.format(module=m) for m in modules])
                 url  = settings.SUBMIT_YANG_CATALOG_IMPACT_URL.format(moduleargs=moduleargs, draft=draft.name)
                 desc = settings.SUBMIT_YANG_CATALOG_IMPACT_DESC.format(modules=','.join(modules), draft=draft.name)
-                draft.documenturl_set.create(url=url, tag_id='yang-impact-analysis', desc=desc)
+                draft.docextresource_set.create(value=url, name_id='yc_impact', display_name=desc)
                 # Yang module metadata URLs
-                old_urls = draft.documenturl_set.filter(tag_id='yang-module-metadata')
-                old_urls.delete()
+                draft.docextresource_set.filter(name_id='yc_entry').delete()
                 for module in modules:
                     url  = settings.SUBMIT_YANG_CATALOG_MODULE_URL.format(module=module)
                     desc = settings.SUBMIT_YANG_CATALOG_MODULE_DESC.format(module=module)
-                    draft.documenturl_set.create(url=url, tag_id='yang-module-metadata', desc=desc)
+                    draft.docextresource_set.create(value=url, name_id='yc_entry', display_name=desc)
 
     if not draft.get_state('draft-iesg'):
         draft.states.add(State.objects.get(type_id='draft-iesg', slug='idexists'))

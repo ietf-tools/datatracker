@@ -1,14 +1,12 @@
 from django.contrib import messages
 from django.conf import settings
-from django.forms.models import inlineformset_factory
 from django.shortcuts import render, get_object_or_404, redirect
 
-from ietf.group.models import Group, ChangeStateGroupEvent, GroupEvent, GroupURL, Role
-from ietf.group.utils import save_group_in_history, get_charter_text, setup_default_community_list_for_group
+from ietf.group.models import Group, GroupEvent, Role
+from ietf.group.utils import save_group_in_history, get_charter_text
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person
-from ietf.secr.groups.forms import GroupModelForm, RoleForm, SearchForm
-from ietf.secr.areas.forms import AWPForm
+from ietf.secr.groups.forms import RoleForm, SearchForm
 from ietf.secr.utils.meeting import get_current_meeting
 
 # -------------------------------------------------
@@ -71,58 +69,7 @@ def get_ads(request):
 # Standard View Functions
 # -------------------------------------------------
 
-@role_required('Secretariat')
-def add(request):
-    '''
-    Add a new IETF or IRTF Group
 
-    **Templates:**
-
-    * ``groups/add.html``
-
-    **Template Variables:**
-
-    * form, awp_formset
-
-    '''
-    AWPFormSet = inlineformset_factory(Group, GroupURL, form=AWPForm, max_num=2, can_delete=False)
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            return redirect('ietf.secr.groups.views.search')
-
-        form = GroupModelForm(request.POST)
-        awp_formset = AWPFormSet(request.POST, prefix='awp')
-        if form.is_valid() and awp_formset.is_valid():
-            group = form.save()
-            for form in awp_formset.forms:
-                if form.has_changed():
-                    awp = form.save(commit=False)
-                    awp.group = group
-                    awp.save()
-
-            if group.features.has_documents:
-                setup_default_community_list_for_group(group)
-
-            # create GroupEvent(s)
-            # always create started event
-            ChangeStateGroupEvent.objects.create(group=group,
-                                                 type='changed_state',
-                                                 by=request.user.person,
-                                                 state=group.state,
-                                                 desc='Started group')
-
-            messages.success(request, 'The Group was created successfully!')
-            return redirect('ietf.secr.groups.views.view', acronym=group.acronym)
-
-    else:
-        form = GroupModelForm(initial={'state':'active','type':'wg'})
-        awp_formset = AWPFormSet(prefix='awp')
-
-    return render(request, 'groups/add.html', {
-        'form': form,
-        'awp_formset': awp_formset},
-    )
 
 @role_required('Secretariat')
 def blue_dot(request):
@@ -203,83 +150,6 @@ def delete_role(request, acronym, id):
 
 
 @role_required('Secretariat')
-def edit(request, acronym):
-    """
-    Edit Group details
-
-    **Templates:**
-
-    * ``groups/edit.html``
-
-    **Template Variables:**
-
-    * group, form, awp_formset
-
-    """
-
-    group = get_object_or_404(Group, acronym=acronym)
-    AWPFormSet = inlineformset_factory(Group, GroupURL, form=AWPForm, max_num=2)
-
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            return redirect('ietf.secr.groups.views.view', acronym=acronym)
-
-        form = GroupModelForm(request.POST, instance=group)
-        awp_formset = AWPFormSet(request.POST, instance=group)
-        if form.is_valid() and awp_formset.is_valid():
-
-            awp_formset.save()
-            if form.changed_data:
-                state = form.cleaned_data['state']
-
-                # save group
-                save_group_in_history(group)
-
-                form.save()
-
-                # create appropriate GroupEvent
-                if 'state' in form.changed_data:
-                    if state.name == 'Active':
-                        desc = 'Started group'
-                    else:
-                        desc = state.name + ' group'
-                    ChangeStateGroupEvent.objects.create(group=group,
-                                                         type='changed_state',
-                                                         by=request.user.person,
-                                                         state=state,
-                                                         desc=desc)
-                    form.changed_data.remove('state')
-
-                # if anything else was changed
-                if form.changed_data:
-                    GroupEvent.objects.create(group=group,
-                                              type='info_changed',
-                                              by=request.user.person,
-                                              desc='Info Changed')
-
-                # if the acronym was changed we'll want to redirect using the new acronym below
-                if 'acronym' in form.changed_data:
-                    acronym = form.cleaned_data['acronym']
-
-                messages.success(request, 'The Group was changed successfully')
-
-            return redirect('ietf.secr.groups.views.view', acronym=acronym)
-
-    else:
-        form = GroupModelForm(instance=group)
-        awp_formset = AWPFormSet(instance=group)
-
-    messages.warning(request, "WARNING: don't use this tool to change group names.  Use Datatracker when possible.")
-
-    return render(request, 'groups/edit.html', {
-        'group': group,
-        'awp_formset': awp_formset,
-        'form': form},
-    )
-
-
-@role_required('Secretariat')
 def people(request, acronym):
     """
     Edit Group Roles (Chairs, Secretary, etc)
@@ -343,8 +213,6 @@ def search(request):
     results = []
     if request.method == 'POST':
         form = SearchForm(request.POST)
-        if request.POST['submit'] == 'Add':
-            return redirect('ietf.secr.groups.views.add')
 
         if form.is_valid():
             kwargs = {}

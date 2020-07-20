@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}
+  {{ title }} {{ person.plain_name }}
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>{{ title }}<br><small>{{ person.plain_name }}</small></h1>
+
+  <p>
+    <b>
+    {{ info|safe }}
+    </b>
+  </p>
+
+
+  <form enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <!-- Regarding placement of buttons: https://www.lukew.com/ff/entry.asp?571 -->
+      <button type="submit" class="btn btn-primary" name="submit" value="Save">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url "ietf.ietfauth.views.profile" %}">Back</a>
+    {% endbuttons %}
+  </form>
+
+{% endblock %}

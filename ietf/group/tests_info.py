@@ -31,7 +31,7 @@ from ietf.group.factories import (GroupFactory, RoleFactory, GroupEventFactory,
 from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions, Role
 from ietf.group.utils import save_group_in_history, setup_default_community_list_for_group
 from ietf.meeting.factories import SessionFactory
-from ietf.name.models import DocTagName, GroupStateName, GroupTypeName
+from ietf.name.models import DocTagName, GroupStateName, GroupTypeName, ExtResourceName
 from ietf.person.models import Person, Email
 from ietf.person.factories import PersonFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
@@ -610,7 +610,6 @@ class GroupEditTests(TestCase):
                                   list_email="mars@mail",
                                   list_subscribe="subscribe.mars",
                                   list_archive="archive.mars",
-                                  urls="http://mars.mars (MARS site)"
                                   ))
         self.assertEqual(r.status_code, 302)
 
@@ -624,14 +623,61 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.list_email, "mars@mail")
         self.assertEqual(group.list_subscribe, "subscribe.mars")
         self.assertEqual(group.list_archive, "archive.mars")
-        self.assertEqual(group.groupurl_set.all()[0].url, "http://mars.mars")
-        self.assertEqual(group.groupurl_set.all()[0].name, "MARS site")
+
         self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))))
         self.assertEqual(len(outbox), 2)
         self.assertTrue('Personnel change' in outbox[0]['Subject'])
         for prefix in ['ad1','ad2','aread','marschairman','marsdelegate']:
             self.assertTrue(prefix+'@' in outbox[0]['To'])
         self.assertTrue(get_payload_text(outbox[0]).startswith('Sec Retary'))
+
+    def test_edit_extresources(self):
+        group = GroupFactory(acronym='mars',parent=GroupFactory(type_id='area'))
+        CharterFactory(group=group)
+        ExtResourceName.objects.create(slug='keymaster', name='Keymaster', type_id='email')
+
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit", field="resources"))
+        login_testing_unauthorized(self, "secretary", url)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form textarea[id=id_resources]')),1)
+
+        badlines = (
+            'github_repo https://github3.com/some/repo',
+            'github_notify  badaddr',
+            'website /not/a/good/url',
+            'notavalidtag blahblahblah',
+            'github_repo',
+        )
+
+        for line in badlines:
+            r = self.client.post(url, dict(resources=line, submit="1"))
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertTrue(q('.alert-danger'))
+
+        goodlines = """
+            github_repo https://github.com/some/repo Some display text
+            github_username githubuser
+            webpage http://example.com/http/is/fine
+            jabber_room xmpp:mars@jabber.example.com
+            keymaster keymaster@example.org Group Rooter
+        """
+
+        r = self.client.post(url, dict(resources=goodlines, submit="1"))
+        self.assertEqual(r.status_code,302)
+        group = Group.objects.get(acronym=group.acronym)
+        self.assertEqual(group.latest_event(GroupEvent,type="info_changed").desc[:20], 'Resources changed to')
+        self.assertIn('github_username githubuser', group.latest_event(GroupEvent,type="info_changed").desc)
+        self.assertEqual(group.groupextresource_set.count(), 5)
+        self.assertEqual(group.groupextresource_set.get(name__slug='github_repo').display_name, 'Some display text')
+        self.assertIn(group.groupextresource_set.first().name.slug, str(group.groupextresource_set.first()))
+
+        # exercise format_resources
+        r = self.client.get(url)
+        self.assertIn('Group Rooter', unicontent(r))
 
 
     def test_edit_field(self):

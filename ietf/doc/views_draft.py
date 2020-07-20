@@ -14,7 +14,6 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.core.validators import URLValidator
 from django.db.models import Q
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.shortcuts import render, get_object_or_404, redirect
@@ -43,11 +42,12 @@ from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person, is_individual_draft_author
 from ietf.ietfauth.utils import role_required
 from ietf.message.models import Message
-from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName, DocUrlTagName
+from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName, ExtResourceName
 from ietf.person.fields import SearchableEmailField
 from ietf.person.models import Person, Email
 from ietf.utils.mail import send_mail, send_mail_message, on_behalf_of
 from ietf.utils.textupload import get_cleaned_text_file_content
+from ietf.utils.validators import validate_external_resource_value
 from ietf.utils import log
 from ietf.mailtrigger.utils import gather_address_lists
 
@@ -1177,42 +1177,46 @@ def edit_consensus(request, name):
                               },
                           )
 
-def edit_document_urls(request, name):
-    class DocumentUrlForm(forms.Form):
-        urls = forms.CharField(widget=forms.Textarea, label="Additional URLs", required=False,
-            help_text=("Format: 'tag https://site/path (Optional description)'."
-                " Separate multiple entries with newline. Prefer HTTPS URLs where possible.") )
 
-        def clean_urls(self):
-            lines = [x.strip() for x in self.cleaned_data["urls"].splitlines() if x.strip()]
-            url_validator = URLValidator()
+def edit_doc_extresources(request, name):
+    class DocExtResourceForm(forms.Form):
+        resources = forms.CharField(widget=forms.Textarea, label="Additional Resources", required=False,
+            help_text=("Format: 'tag value (Optional description)'."
+                " Separate multiple entries with newline. When the value is a URL, use https:// where possible.") )
+
+        def clean_resources(self):
+            lines = [x.strip() for x in self.cleaned_data["resources"].splitlines() if x.strip()]
             errors = []
             for l in lines:
                 parts = l.split()
                 if len(parts) == 1:
-                    errors.append("Too few fields: Expected at least url and tag: '%s'" % l)
+                    errors.append("Too few fields: Expected at least tag and value: '%s'" % l)
                 elif len(parts) >= 2:
-                    tag = parts[0]
-                    url = parts[1]
+                    name_slug = parts[0]
                     try:
-                        url_validator(url)
-                    except ValidationError as e:
-                        errors.append(e)
-                    try:
-                        DocUrlTagName.objects.get(slug=tag)
+                        name = ExtResourceName.objects.get(slug=name_slug)
                     except ObjectDoesNotExist:
-                        errors.append("Bad tag in '%s': Expected one of %s" % (l, ', '.join([ o.slug for o in DocUrlTagName.objects.all() ])))
+                        errors.append("Bad tag in '%s': Expected one of %s" % (l, ', '.join([ o.slug for o in ExtResourceName.objects.all() ])))
+                        continue
+                    value = parts[1]
+                    try:
+                        validate_external_resource_value(name, value)
+                    except ValidationError as e:
+                        e.message += " : " + value
+                        errors.append(e)
             if errors:
                 raise ValidationError(errors)
             return lines
 
-    def format_urls(urls, fs="\n"):
+    def format_resources(resources, fs="\n"):
         res = []
-        for u in urls:
-            if u.desc:
-                res.append("%s %s (%s)" % (u.tag.slug, u.url, u.desc.strip('()')))
+        for r in resources:
+            if r.display_name:
+                res.append("%s %s (%s)" % (r.name.slug, r.value, r.display_name.strip('()')))
             else:
-                res.append("%s %s" % (u.tag.slug, u.url))
+                res.append("%s %s" % (r.name.slug, r.value)) 
+                # TODO: This is likely problematic if value has spaces. How then to delineate value and display_name? Perhaps in the short term move to comma or pipe separation.
+                # Might be better to shift to a formset instead of parsing these lines.
         return fs.join(res)
 
     doc = get_object_or_404(Document, name=name)
@@ -1222,36 +1226,38 @@ def edit_document_urls(request, name):
             or is_individual_draft_author(request.user, doc)):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
-    old_urls = format_urls(doc.documenturl_set.all())
+    old_resources = format_resources(doc.docextresource_set.all())
 
     if request.method == 'POST':
-        form = DocumentUrlForm(request.POST)
+        form = DocExtResourceForm(request.POST)
         if form.is_valid():
-            old_urls = sorted(old_urls.splitlines())
-            new_urls = sorted(form.cleaned_data['urls'])
-            if old_urls != new_urls:
-                doc.documenturl_set.all().delete()
-                for u in new_urls:
+            old_resources = sorted(old_resources.splitlines())
+            new_resources = sorted(form.cleaned_data['resources'])
+            if old_resources != new_resources:
+                doc.docextresource_set.all().delete()
+                for u in new_resources:
                     parts = u.split(None, 2)
-                    tag = parts[0]
-                    url = parts[1]
-                    desc = ' '.join(parts[2:]).strip('()')
-                    doc.documenturl_set.create(url=url, tag_id=tag, desc=desc)
-                    new_urls = format_urls(doc.documenturl_set.all())
-                    e = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type='changed_document')
-                    e.desc = "Changed document URLs from:\n\n%s\n\nto:\n\n%s" % (old_urls, new_urls)
-                    e.save()
-                    doc.save_with_history([e])
-                messages.success(request,"Document URLs updated.")
+                    name = parts[0]
+                    value = parts[1]
+                    display_name = ' '.join(parts[2:]).strip('()')
+                    doc.docextresource_set.create(value=value, name_id=name, display_name=display_name)
+                new_resources = format_resources(doc.docextresource_set.all())
+                e = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type='changed_document')
+                e.desc = "Changed document external resources from:\n\n%s\n\nto:\n\n%s" % (old_resources, new_resources)
+                e.save()
+                doc.save_with_history([e])
+                messages.success(request,"Document resources updated.")
             else:
-                messages.info(request,"No change in Document URLs.")
+                messages.info(request,"No change in Document resources.")
             return redirect('ietf.doc.views_doc.document_main', name=doc.name)
     else:
-        form = DocumentUrlForm(initial={'urls': old_urls, })
+        form = DocExtResourceForm(initial={'resources': old_resources, })
 
-    info = "Valid tags:<br><br> %s" % ', '.join([ o.slug for o in DocUrlTagName.objects.all() ])
-    title = "Additional document URLs"
+    info = "Valid tags:<br><br> %s" % ', '.join([ o.slug for o in ExtResourceName.objects.all().order_by('slug') ])
+    # May need to explain the tags more - probably more reason to move to a formset.
+    title = "Additional document resources"
     return render(request, 'doc/edit_field.html',dict(doc=doc, form=form, title=title, info=info) )
+
 
 def request_publication(request, name):
     """Request publication by RFC Editor for a document which hasn't
