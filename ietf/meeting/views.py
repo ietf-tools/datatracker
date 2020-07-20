@@ -190,8 +190,8 @@ def current_materials(request):
 
 @cache_page(1 * 60)
 def materials_document(request, document, num=None, ext=None):
-    if num is None:
-        num = get_meeting(num).number
+    meeting=get_meeting(num,type_in=['ietf','interim'])
+    num = meeting.number
     if (re.search(r'^\w+-\d+-.+-\d\d$', document) or
         re.search(r'^\w+-interim-\d+-.+-\d\d-\d\d$', document) or
         re.search(r'^\w+-interim-\d+-.+-sess[a-z]-\d\d$', document) or
@@ -221,7 +221,9 @@ def materials_document(request, document, num=None, ext=None):
     if not os.path.exists(filename):
         raise Http404("File not found: %s" % filename)
 
-    if settings.MEETING_MATERIALS_SERVE_LOCALLY :
+    old_proceedings_format = meeting.number.isdigit() and int(meeting.number) <= 96
+
+    if settings.MEETING_MATERIALS_SERVE_LOCALLY or old_proceedings_format:
         with io.open(filename, 'rb') as file:
             bytes = file.read()
         
@@ -246,7 +248,7 @@ def materials_document(request, document, num=None, ext=None):
         response['Content-Disposition'] = 'inline; filename="%s"' % basename
         return response
     else:
-        return HttpResponseRedirect(redirect_to=doc.get_href())
+        return HttpResponseRedirect(redirect_to=doc.get_href(meeting=meeting))
 
 @login_required
 def materials_editable_groups(request, num=None):
