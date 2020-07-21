@@ -15,7 +15,7 @@ from mock import patch
 from pyquery import PyQuery
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -293,17 +293,41 @@ class MeetingTests(TestCase):
         self.assertEqual(r.status_code,200)
         self.assertTrue(all([x in unicontent(r) for x in ['var all_items', 'maximize', 'draw_calendar', ]]))
 
-    @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=False)
+    @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=False, MEETING_DOC_HREFS = settings.MEETING_DOC_CDN_HREFS)
     def test_materials_through_cdn(self):
-        meeting = make_meeting_test_data()
-        session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
-        self.write_materials_files(meeting, session)
-        for document in (session.agenda(),session.minutes(),session.slides()[0]):
-            url = urlreverse("ietf.meeting.views.materials_document",
-                                           kwargs=dict(num=meeting.number, document=document))
-            r = self.client.get(url)
-            self.assertEqual(r.status_code,302)
-            self.assertEqual(r['Location'],document.get_href())
+        meeting = make_meeting_test_data(create_interims=True)
+
+        session107 = SessionFactory(meeting__number='172',group__acronym='mars')
+        doc = DocumentFactory.create(name='agenda-172-mars', type_id='agenda', title="Agenda",
+            uploaded_filename="agenda-172-mars.txt", group=session107.group, rev='00', states=[('agenda','active')])
+        pres = SessionPresentation.objects.create(session=session107,document=doc,rev=doc.rev)
+        session107.sessionpresentation_set.add(pres) # 
+        doc = DocumentFactory.create(name='minutes-172-mars', type_id='minutes', title="Minutes",
+            uploaded_filename="minutes-172-mars.md", group=session107.group, rev='00', states=[('minutes','active')])
+        pres = SessionPresentation.objects.create(session=session107,document=doc,rev=doc.rev)
+        session107.sessionpresentation_set.add(pres)
+        doc = DocumentFactory.create(name='slides-172-mars-1-active', type_id='slides', title="Slideshow",
+            uploaded_filename="slides-172-mars.txt", group=session107.group, rev='00',
+            states=[('slides','active'), ('reuse_policy', 'single')])
+        pres = SessionPresentation.objects.create(session=session107,document=doc,rev=doc.rev)
+        session107.sessionpresentation_set.add(pres)
+
+        for session in (
+            Session.objects.filter(meeting=meeting, group__acronym="mars").first(),
+            session107,
+            Session.objects.filter(meeting__type_id='interim', group__acronym='mars', schedulingevent__status='sched').first(),
+        ):
+            self.write_materials_files(session.meeting, session)
+            for document in (session.agenda(),session.minutes(),session.slides()[0]):
+                url = urlreverse("ietf.meeting.views.materials_document",
+                                               kwargs=dict(num=session.meeting.number, document=document))
+                r = self.client.get(url)
+                if session.meeting.number.isdigit() and int(session.meeting.number)<=96:
+                    self.assertEqual(r.status_code,200)
+                else:
+                    self.assertEqual(r.status_code,302)
+                    self.assertEqual(r['Location'],document.get_href())
+                    self.assertNotEqual(urlsplit(r['Location'])[2],url)
 
     def test_materials(self):
         meeting = make_meeting_test_data()
