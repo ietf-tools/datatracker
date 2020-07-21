@@ -1007,7 +1007,7 @@ class Session(models.Model):
     def order_in_meeting(self):
         if not hasattr(self, '_order_in_meeting'):
             session_list = self.all_meeting_sessions_for_group()
-            self._order_in_meeting = session_list.index(self) + 1
+            self._order_in_meeting = session_list.index(self) + 1 if self in session_list else 0
         return self._order_in_meeting
 
     def all_meeting_sessions_cancelled(self):
