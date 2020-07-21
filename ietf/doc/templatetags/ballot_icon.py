@@ -218,3 +218,19 @@ def state_age_colored(doc):
                 's' if days != 1 else ''))
     else:
         return ""
+
+@register.filter
+def state_alert_badge(doc):
+    """Return alert badge, if any, for a document"""
+    if doc.type_id != 'draft':
+        return ''
+
+    iesg_state = doc.get_state('draft-iesg')
+    if iesg_state.slug != 'rfcqueue':
+        return ''
+
+    rfced_state = doc.get_state('draft-rfceditor')
+    if rfced_state.slug == 'auth48':
+        return mark_safe('<span class="label label-info" title="AUTH48">AUTH48</span>')
+
+    return ''
