@@ -56,9 +56,6 @@ class Migration(migrations.Migration):
         ('group', '0033_extres'),
         ('doc', '0034_extres'),
         ('person', '0015_extres'),
-        # this is only for the purpose of grouping schema migrations together
-        # in a release, not because there's an actual dependency:
-        ('meeting', '0030_allow_empty_joint_with_sessions'), 
     ]
 
     operations = [
