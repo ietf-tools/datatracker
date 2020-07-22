@@ -1,3 +1,64 @@
+ietfdb (7.10.0) ietf; urgency=medium
+
+  **Generalised external resourses for Groups, Documents, and People**
+
+  * Merged in the ExtResource work from rjsparks@nostrum.com, based on a
+    feature request and contributions from rsalz@akamai.com.  This provides
+    external resource models for Person, Group, and Document models, as a
+    generalisation of the previous related-URL concept.  It has a consistent
+    labelling and classification of URLs and other resources related to a
+    Group, Document, or Person.  The GroupURL (and similar) classes will be
+    removed in a later step. Some DocumentURL instances (such as auth48 URLs)
+    remain to convert to the new scheme, as they have come in with other
+    merged-in work while the ExtResource work was in transit.
+
+  * Corrected and improved some language in the OIDC userinfo 'Request for 
+    Permission' view.
+
+  * Provided the new session attribute 'order_number' to the template
+    used to set the link to the Meetecho live video stream for sessions,
+    in order to implement a requested change of URL format.
+
+  * Merged in [18198] from rjsparks@nostrum.com:
+    Return the right reference for interim meeting materials.  
+
+  * Merged in [18185] from rjsparks@nostrum.com:
+    Only show sessions from the traditional week in the 'week view' used 
+    for customized calendars. Partially addresses #3022 until a more general 
+    solution can be constructed. 
+
+  * Merged in [18186] from rjsparks@nostrum.com:
+    Let the weekview in the customized agenda show more than just the 
+    traditional meeting 'week'. Fixes #3022.  
+
+  * Merged in [18189] from jennifer@painless-security.com:
+    Make docs in Auth48 state visually distinct. Fixes #2925.  
+
+  * Fixed an issue for Session.order_in_meeting() if the session was 
+    cancelled.
+
+  * Merged in [18201] from rcross@amsl.com: Fixed an issue with the
+    Secretariat Telechat app where the left pane would have missing sections.
+
+  * Merged in [18202] from rjsparks@nostrum.com:
+    Serve older ietf meetings locally. Add tests to verify we have not set 
+    up a redirect to self.  
+
+  * Merged in [18204] from rjsparks@nostrum.com:
+    Recent past meetings are shown as past meetings, so sort them like past 
+    meetings. Fixes side-comment in #3101.  
+
+  * Merged in [18205] from rjsparks@nostrum.com:
+    Added rudimentary validation to the admin group form acronym field. 
+    Partially addresses #3026.  
+
+  * Merged in [18206] from rjsparks@nostrum.com:
+    Allowed modelforms, particularly the admin, to treat joint_with_groups as 
+    a optional field. Fixes #3029.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Jul 2020 14:00:31 +0000
+
+
 ietfdb (7.9.0) ietf; urgency=medium
 
   **Extended support for the remote-instructions field to all session types;

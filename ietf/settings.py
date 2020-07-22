@@ -331,8 +331,8 @@ UTILS_LOGGER_LEVELS: Dict[str, str] = {
 # ------------------------------------------------------------------------
 
 
-X_FRAME_OPTIONS = 'ALLOW-FROM meetecho.com *.meetecho.com *.ietf.org'
-CSRF_TRUSTED_ORIGINS = ['meetecho.com', '*.meetecho.com', '*.ietf.org', ]
+X_FRAME_OPTIONS = 'ALLOW-FROM ietf.org *.ietf.org meetecho.com *.meetecho.com gather.town *.gather.town'
+CSRF_TRUSTED_ORIGINS = ['ietf.org', '*.ietf.org', 'meetecho.com', '*.meetecho.com', 'gather.town', '*.gather.town', ]
 CSRF_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_SECURE = True
 
