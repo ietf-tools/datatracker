@@ -56,7 +56,7 @@ ietfdb (7.10.0) ietf; urgency=medium
     Allowed modelforms, particularly the admin, to treat joint_with_groups as 
     a optional field. Fixes #3029.  
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  22 Jul 2020 14:00:31 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Jul 2020 20:42:06 +0000
 
 
 ietfdb (7.9.0) ietf; urgency=medium
