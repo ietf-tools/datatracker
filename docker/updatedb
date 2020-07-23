@@ -151,7 +151,7 @@ fi
 
 if [ "$DROP" ]; then
     echo "Dropping tables not in the dump (so migrations can succeed) ..."
-    diff <(zcat $DATADIR/ietf_utf8.sql.gz | grep '^DROP TABLE IF EXISTS' | tr -d '`;' | field 5) \
+    diff <(zcat $DATADIR/ietf_utf8.sql.gz | grep '^DROP TABLE IF EXISTS' | tr -d '`;' | awk '{ print $5 }') \
          <($parent/ietf/manage.py dbshell <<< 'show tables;' | tail -n +2) \
 	   | grep '^>' | awk '{print "drop table if exists", $2, ";";}' \
            | tee /dev/stderr | $parent/ietf/manage.py dbshell
