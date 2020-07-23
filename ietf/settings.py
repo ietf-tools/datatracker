@@ -806,8 +806,8 @@ IDSUBMIT_STAGING_PATH = '/a/www/www6s/staging/'
 IDSUBMIT_STAGING_URL = '//www.ietf.org/staging/'
 IDSUBMIT_IDNITS_BINARY = '/a/www/ietf-datatracker/scripts/idnits'
 SUBMIT_PYANG_COMMAND = 'pyang --verbose --ietf -p {libs} {model}'
-SUBMIT_YANGLINT_BINARY
-SUBMIT_YANGLINT_COMMAND = '%s --verbose -p {tmplib} -p {rfclib} -p {draftlib} -p {ianalib} -p {cataloglib} {model} -i' % YANGLINT_BINARY
+SUBMIT_YANGLINT_BINARY = '/usr/bin/yanglint'
+SUBMIT_YANGLINT_COMMAND = '%s --verbose -p {tmplib} -p {rfclib} -p {draftlib} -p {ianalib} -p {cataloglib} {model} -i' % SUBMIT_YANGLINT_BINARY
 
 SUBMIT_YANG_CATALOG_MODULEARG = "modules[]={module}"
 SUBMIT_YANG_CATALOG_IMPACT_URL = "https://www.yangcatalog.org/yang-search/impact_analysis.php?{moduleargs}&recurse=0&rfcs=1&show_subm=1&show_dir=both"
@@ -948,7 +948,6 @@ OIDC_EXTRA_SCOPE_CLAIMS = 'ietf.ietfauth.utils.OidcExtraScopeClaims'
 DOT_BINARY = '/usr/bin/dot'
 UNFLATTEN_BINARY= '/usr/bin/unflatten'
 RSYNC_BINARY = '/usr/bin/rsync'
-YANGLINT_BINARY = '/usr/bin/yanglint'
 
 # Account settings
 DAYS_TO_EXPIRE_REGISTRATION_LINK = 3
