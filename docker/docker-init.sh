@@ -107,7 +107,7 @@ fi
 
 if [ ! -f $CWD/ietf/settings_local.py ]; then
     echo "Setting up a default settings_local.py ..."
-    cp /usr/local/share/datatracker/settings_local.py /home/$USER/$CWD/ietf/settings_local.py
+    cp /home/$USER/$CWD/docker/settings_local.py /home/$USER/$CWD/ietf/settings_local.py
 fi
 
 for sub in test/id/ test/staging/ test/archive/ test/rfc test/media test/wiki/ietf; do
@@ -126,6 +126,7 @@ for sub in					\
 	developers/ietf-ftp/internet-drafts	\
 	developers/ietf-ftp/rfc			\
 	developers/ietf-ftp/status-changes	\
+	developers/ietf-ftp/yang/catalogmod	\
 	developers/ietf-ftp/yang/draftmod	\
 	developers/ietf-ftp/yang/ianamod	\
 	developers/ietf-ftp/yang/invalmod	\
