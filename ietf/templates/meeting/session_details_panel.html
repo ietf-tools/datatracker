@@ -43,12 +43,12 @@
          {% if session.agenda_note|first_url|conference_url %}
            <a class=""
              href="{{ session.agenda_note|first_url }}"
-             title="Session call-in"><span class="fa fa-fw fa-phone"></span>
+             title="Online conference"><span class="fa fa-fw fa-users"></span>
            </a>
          {% elif session.remote_instructions|first_url|conference_url %}
            <a class=""
              href="{{ session.remote_instructions|first_url }}"
-             title="Session call-in"><span class="fa fa-fw fa-phone"></span>
+             title="Online conference"><span class="fa fa-fw fa-users"></span>
            </a>
          {% endif %}
          {{ session.remote_instructions }}
