@@ -2635,6 +2635,23 @@ class MaterialsTests(TestCase):
         self.assertEqual(sp.rev,'01')
         self.assertEqual(sp.document.rev,'01')
  
+    def test_upload_slide_title_bad_unicode(self):
+        session1 = SessionFactory(meeting__type_id='ietf')
+        url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session1.meeting.number,'session_id':session1.id})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn('Upload', str(q("title")))
+        self.assertFalse(session1.sessionpresentation_set.filter(document__type_id='slides'))
+        test_file = BytesIO(b'this is not really a slide')
+        test_file.name = 'not_really.txt'
+        r = self.client.post(url,dict(file=test_file,title='title with bad character \U0001fabc '))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('form .has-error'))
+        self.assertIn("Unicode BMP", q('form .has-error div').text())
+
     def test_remove_sessionpresentation(self):
         session = SessionFactory(meeting__type_id='ietf')
         doc = DocumentFactory(type_id='slides')

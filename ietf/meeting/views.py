@@ -1993,6 +1993,9 @@ class UploadSlidesForm(FileUploadForm):
 
     def clean_title(self):
         title = self.cleaned_data['title']
+        # THe current tables only handles Unicode BMP:
+        if ord(max(title)) > 0xffff:
+            raise forms.ValidationError("The title contains characters outside the Unicode BMP, which is not currently supported")
         if self.session.meeting.type_id=='interim':
             if re.search(r'-\d{2}$', title):
                 raise forms.ValidationError("Interim slides currently may not have a title that ends with something that looks like a revision number (-nn)")
