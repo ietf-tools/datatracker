@@ -7,7 +7,7 @@
   "ascent": 850,
   "glyphs": [
     {
-      "uid": "26ee22854c398f64295baf8a5dcc7a71",
+      "uid": "2e705421770210ffdce62e2a92093aff",
       "css": "meetecho",
       "code": 59392,
       "src": "custom_icons",
@@ -19,6 +19,12 @@
       "search": [
         "meetecho-icon"
       ]
+    },
+    {
+      "uid": "05ef9b5e8742971aa85b23cfcbe71594",
+      "css": "users",
+      "code": 59393,
+      "src": "mfglabs"
     }
   ]
 }

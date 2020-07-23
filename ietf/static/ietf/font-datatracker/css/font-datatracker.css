@@ -1,20 +1,30 @@
 @font-face {
   font-family: 'font-datatracker';
-  src: url('../font/font-datatracker.eot?60587374');
-  src: url('../font/font-datatracker.eot?60587374#iefix') format('embedded-opentype'),
-       url('../font/font-datatracker.woff2?60587374') format('woff2'),
-       url('../font/font-datatracker.woff?60587374') format('woff'),
-       url('../font/font-datatracker.ttf?60587374') format('truetype'),
-       url('../font/font-datatracker.svg?60587374#font-datatracker') format('svg');
+  src: url('../font/font-datatracker.eot?74830924');
+  src: url('../font/font-datatracker.eot?74830924#iefix') format('embedded-opentype'),
+       url('../font/font-datatracker.woff2?74830924') format('woff2'),
+       url('../font/font-datatracker.woff?74830924') format('woff'),
+       url('../font/font-datatracker.ttf?74830924') format('truetype'),
+       url('../font/font-datatracker.svg?74830924#font-datatracker') format('svg');
   font-weight: normal;
   font-style: normal;
 }
+/* Chrome hack: SVG is rendered more smooth in Windozze. 100% magic, uncomment if you need it. */
+/* Note, that will break hinting! In other OS-es font will be not as sharp as it could be */
+/*
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  @font-face {
+    font-family: 'font-datatracker';
+    src: url('../font/font-datatracker.svg?74830924#font-datatracker') format('svg');
+  }
+}
+*/
  
-.fd {
+ [class^="fd-"]:before, [class*=" fd-"]:before {
   font-family: "font-datatracker";
   font-style: normal;
   font-weight: normal;
-  speak: none;
+  speak: never;
  
   display: inline-block;
   text-decoration: inherit;
@@ -46,3 +56,4 @@
 }
  
 .fd-meetecho:before { content: '\e800'; } /* '' */
+.fd-users:before { content: '\e801'; } /* '' */

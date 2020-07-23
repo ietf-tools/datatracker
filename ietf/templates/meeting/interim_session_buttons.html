@@ -36,17 +36,17 @@
       {% if session.agenda_note|first_url|conference_url %}
 	<a class=""
 	  href="{{ session.agenda_note|first_url }}"
-	  title="Online conference"><span class="fa fa-fw fa-users"></span>
+	  title="Online conference"><span class="fa fa-fw fd-users"></span>
 	</a>
       {% elif session.remote_instructions|first_url|conference_url %}
 	<a class=""
 	  href="{{ session.remote_instructions|first_url }}"
-	  title="Online conference"><span class="fa fa-fw fa-users"></span>
+	  title="Online conference"><span class="fa fa-fw fd-users"></span>
 	</a>
       {% elif item.timeslot.location.webex_url %}
 	  <a class=""
 	    href="{{item.timeslot.location.webex_url|format:session }}"
-	    title="Webex session"><span class="fa fa-fw fa-users"></span>
+	    title="Webex session"><span class="fa fa-fw fd-users"></span>
 	  </a>
       <!-- Video stream (meetecho) -->
       {% elif item.timeslot.location.video_stream_url %}
@@ -56,7 +56,7 @@
 	  </a>
       {% else %}
 	<span class="">
-	  <span class="fa fa-fw fa-users" style="color: #ddd;"
+	  <span class="fa fa-fw fd-users" style="color: #ddd;"
 		title="No online conference info found in remote instructions or agenda note"></span>
 	</span>
       {% endif %}
