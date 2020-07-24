@@ -33,7 +33,7 @@
 {% if future %}
   <div class="panel panel-default" id="futuremeets">
     <div class="panel-heading">
-        Future Meetings 
+        Future Meetings
         <a class="regular pull-right" title="icalendar entry for all scheduled future {{group.acronym}} meetings" href="{% url 'ietf.meeting.views.upcoming_ical' %}?filters={{group.acronym}}"><span class="fa fa-calendar"></span></a>
     </div>
     <div class="panel-body">

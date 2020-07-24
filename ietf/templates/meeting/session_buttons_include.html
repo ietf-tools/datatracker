@@ -5,14 +5,15 @@
 {% origin %}
 
 <span id="session-buttons-{{session.pk}}">
+  {% with acronym=session.historic_group.acronym %}
   {% if session.agenda and show_agenda %}
     {% include "meeting/session_agenda_include.html" %}
     <!-- agenda pop-up button -->
     <a class="" data-toggle="modal" data-target="#modal-{{item.slug}}" title="Show meeting materials"><span class="fa fa-fw fa-arrows-alt"></span></a>
     <!-- materials tar file -->
-    <a class="" href="/meeting/{{meeting.number}}/agenda/{{session.historic_group.acronym}}-drafts.tgz" title="Download meeting materials as .tar archive"><span class="fa fa-fw fa-file-archive-o"></span></a>
+    <a class="" href="/meeting/{{meeting.number}}/agenda/{{acronym}}-drafts.tgz" title="Download meeting materials as .tar archive"><span class="fa fa-fw fa-file-archive-o"></span></a>
     <!-- materials PDF file -->
-    <a class="" href="/meeting/{{ meeting.number }}/agenda/{{session.historic_group.acronym}}-drafts.pdf" title="Download meeting materials as PDF file"><span class="fa fa-fw fa-file-pdf-o"></span></a>
+    <a class="" href="/meeting/{{ meeting.number }}/agenda/{{acronym}}-drafts.pdf" title="Download meeting materials as PDF file"><span class="fa fa-fw fa-file-pdf-o"></span></a>
   {% endif %}
 
   <!-- etherpad -->
@@ -20,13 +21,13 @@
     {% if item.timeslot.type.slug == 'plenary' %}
       <a class="" href="https://codimd.ietf.org/notes-ietf-{{ meeting.number }}-plenary title="Etherpad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
     {% else %}
-      <a class="" href="https://codimd.ietf.org/notes-ietf-{{ meeting.number }}-{{session.historic_group.acronym}}" title="Etherpad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
+      <a class="" href="https://codimd.ietf.org/notes-ietf-{{ meeting.number }}-{{acronym}}" title="Etherpad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
     {% endif %}
   {% else %}
     {% if item.timeslot.type.slug == 'plenary' %}
       <a class="" href="https://etherpad.ietf.org:9009/p/notes-ietf-{{ meeting.number }}-plenary?useMonospaceFont=true" title="Etherpad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
     {% else %}
-      <a class="" href="https://etherpad.ietf.org:9009/p/notes-ietf-{{ meeting.number }}-{{session.historic_group.acronym}}?useMonospaceFont=true" title="Etherpad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
+      <a class="" href="https://etherpad.ietf.org:9009/p/notes-ietf-{{ meeting.number }}-{{acronym}}?useMonospaceFont=true" title="Etherpad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
     {% endif %}
   {% endif %}
 
@@ -54,19 +55,25 @@
     {% if session.agenda_note|first_url|conference_url %}
       <a class=""
         href="{{ session.agenda_note|first_url }}"
-        title="Online conference"><span class="fa fa-fw fd-users"></span>
+        title="Online conference"><span class="fa fa-fw fd-group"></span>
       </a>
     {% elif session.remote_instructions|first_url|conference_url %}
       <a class=""
         href="{{ session.remote_instructions|first_url }}"
-        title="Online conference"><span class="fa fa-fw fd-users"></span>
+        title="Online conference"><span class="fa fa-fw fd-group"></span>
       </a>
     {% elif item.timeslot.location.webex_url %}
         <a class=""
           href="{{item.timeslot.location.webex_url|format:session }}"
-          title="Webex session"><span class="fa fa-fw fd-users"></span>
+          title="Webex session"><span class="fa fa-fw fd-group"></span>
         </a>
     {% endif %}
+    <!-- iCalendar item -->
+    <a
+      href="{% url 'ietf.meeting.views.agenda_ical' num=meeting.number session_id=session.id %}"
+      title="icalendar entry for {{acronym}} session on {{item.timeslot.utc_start_time|date:'Y-m-d H:i'}} UTC">
+        <span class="fa fa-fw fa-calendar-o"></span>
+    </a>
   {% else %}
     <!-- Jabber logs -->
     {% if meeting.number|add:"0" >= 60 %}
@@ -101,9 +108,10 @@
       {% endwith %}
       {% if item.timeslot.location.video_stream_url %}
         <a class=""
-          href="http://www.meetecho.com/ietf{{meeting.number}}/recordings#{{session.historic_group.acronym.upper}}"
+          href="http://www.meetecho.com/ietf{{meeting.number}}/recordings#{{acronym.upper}}"
          title="Meetecho session recording"><span class="fd fa-fw fd-meetecho"></span></a>
       {% endif %}
     {% endif %}
   {% endif %}
+  {% endwith %}
 </span>
