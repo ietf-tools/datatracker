@@ -45,13 +45,19 @@ from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase
 
 skip_wiki_glue_testing = False
-skip_message = ""
+skip_message_svn = ""
+skip_message_trac = ""
 try:
     import svn                          # pyflakes:ignore
 except ImportError as e:
     skip_wiki_glue_testing = True
-    skip_message = "Skipping trac tests: %s" % e
-    print("     "+skip_message)
+    skip_message_svn = "Skipping trac tests: %s" % e
+    print("     "+skip_message_svn)
+
+if sys.version_info.major==3:
+    skip_version_trac = True
+    skip_message_trac = "Skipping trac tests: Trac not available for Python3 as of 14 Jul 2019, 04 Jul 2020"
+    print("     "+skip_message_trac)
 
 class SendingMail(TestCase):
 
@@ -282,8 +288,8 @@ class TemplateChecksTestCase(TestCase):
         r = self.client.get(url)        
         self.assertTemplateUsed(r, '500.html')
 
-@skipIf(sys.version_info.major==3, "Trac not available for Python3 as of 14 Jul 2019")
-@skipIf(skip_wiki_glue_testing, skip_message)
+@skipIf(skip_version_trac, skip_message_trac)
+@skipIf(skip_wiki_glue_testing, skip_message_svn)
 class TestWikiGlueManagementCommand(TestCase):
 
     def setUp(self):

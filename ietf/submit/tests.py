@@ -266,7 +266,7 @@ class SubmitTests(TestCase):
 
         self.assertContains(r, 'xym')
         self.assertContains(r, 'pyang')
-        if settings.SUBMIT_YANGLINT_COMMAND:
+        if settings.SUBMIT_YANGLINT_COMMAND and os.path.exists(settings.YANGLINT_BINARY):
             self.assertContains(r, 'yanglint')
 
         q = PyQuery(r.content)
@@ -1249,11 +1249,11 @@ class SubmitTests(TestCase):
         m = q('#yang-validation-message').text()
         for command in ['xym', 'pyang', 'yanglint']:
             version = VersionInfo.objects.get(command=command).version
-            if command != 'yanglint' or settings.SUBMIT_YANGLINT_COMMAND:
+            if command != 'yanglint' or (settings.SUBMIT_YANGLINT_COMMAND and os.path.exists(settings.YANGLINT_BINARY)):
                 self.assertIn(version, m)
         self.assertIn("draft-yang-testing-invalid-00.txt", m)
         self.assertIn("error: syntax error: illegal keyword: ;", m)
-        if settings.SUBMIT_YANGLINT_COMMAND:
+        if settings.SUBMIT_YANGLINT_COMMAND and os.path.exists(settings.YANGLINT_BINARY):
             self.assertIn("No validation errors", m)
 
 

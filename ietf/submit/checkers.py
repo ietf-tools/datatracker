@@ -238,7 +238,7 @@ class DraftYangChecker(object):
 
                 # yanglint
                 set_coverage_checking(False) # we can't count the following as it may or may not be run, depending on setup
-                if settings.SUBMIT_YANGLINT_COMMAND:
+                if settings.SUBMIT_YANGLINT_COMMAND and os.path.exists(settings.YANGLINT_BINARY):
                     cmd_template = settings.SUBMIT_YANGLINT_COMMAND
                     command = [ w for w in cmd_template.split() if not '=' in w ][0]
                     cmd_version = VersionInfo.objects.get(command=command).version
