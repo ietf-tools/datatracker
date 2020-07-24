@@ -38,6 +38,12 @@ if ! /etc/init.d/mysql status; then
     /etc/init.d/mysql start
 fi
 
+echo "Checking if syslog is running ..."
+if ! /etc/init.d/rsyslog status; then
+    echo "Starting syslog ..."
+    /etc/init.d/rsyslog start
+fi
+
 # Give debian-sys-maint access, to avoid complaints later
 mysql mysql <<< "GRANT ALL PRIVILEGES on *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '$(awk '/^password/ {print $3; exit}' /etc/mysql/debian.cnf )' WITH GRANT OPTION; FLUSH PRIVILEGES;"
 

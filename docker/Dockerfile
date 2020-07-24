@@ -19,7 +19,7 @@
 # but the database has *not* been loaded with a dump, and supporting files (drafts, charters, etc.)
 # have *not* been downloaded.
 
-FROM dyne/devuan:ascii
+FROM dyne/devuan:beowulf
 LABEL maintainer="Henrik Levkowetz <henrik@levkowetz.com>"
 
 # Default django runserver port
@@ -29,14 +29,23 @@ EXPOSE	8000
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEVUAN_FRONTEND=noninteractive
 
-RUN apt-get update
+# Uncomment this to be able to install and run apt-show-versions:
+RUN rm -v /etc/apt/apt.conf.d/docker-compress
+RUN rm -v /var/lib/apt/lists/*lz4
+
+RUN apt-get update --allow-releaseinfo-change
 RUN apt-get install -qy apt-transport-https
 
 # Use backports, updates, and security updates
-RUN echo "deb http://deb.devuan.org/merged ascii main contrib non-free"  > /etc/apt/sources.list
-RUN echo "deb http://deb.devuan.org/merged ascii-security main contrib non-free" >> /etc/apt/sources.list
-RUN echo "deb http://deb.devuan.org/merged ascii-updates main contrib non-free" >> /etc/apt/sources.list
-RUN echo "deb http://deb.devuan.org/merged ascii-backports main contrib non-free" >> /etc/apt/sources.list
+RUN echo "deb http://deb.devuan.org/merged beowulf main contrib non-free"  > /etc/apt/sources.list
+RUN echo "deb http://deb.devuan.org/merged beowulf-security main contrib non-free" >> /etc/apt/sources.list
+RUN echo "deb http://deb.devuan.org/merged beowulf-updates main contrib non-free" >> /etc/apt/sources.list
+RUN echo "deb http://deb.devuan.org/merged beowulf-backports main contrib non-free" >> /etc/apt/sources.list
+
+# Remove some excludes for the docker image
+RUN sed -i -e '/^path-exclude=.*\/groff/d' \
+           -e '/^path-exclude=.*\/locale/d' \
+           -e '/^path-exclude=.*\/man/d' /etc/dpkg/dpkg.cfg.d/docker-excludes
 
 # Install needed packages
 #
@@ -88,12 +97,8 @@ RUN apt-get install -qy \
 	patch \
 	procps \
 	pv \
-	python \
-	python-dev \
-	python-m2crypto \
-	python-subversion \
-	realpath \
 	rsync \
+        rsyslog \
 	subversion \
 	sudo \
 	uuid-dev  \
@@ -132,19 +137,17 @@ RUN echo "root:root" | chpasswd
 # MySQL
 VOLUME /var/lib/mysql
 
-# Pip
-ENV PYTHONWARNINGS="ignore:a true SSLContext object,ignore:An HTTPS request has been made"
-WORKDIR /usr/src
-RUN wget -q https://bootstrap.pypa.io/get-pip.py && python get-pip.py && rm get-pip.py
-RUN pip install certifi
-RUN pip install virtualenv
-
 # idnits and dependencies
 ADD https://tools.ietf.org/tools/idnits/idnits /usr/local/bin/
 RUN chmod +rx /usr/local/bin/idnits
 
+# Directory for Mac certs
+RUN mkdir /etc/certificates
+
 # # Python 3
-ENV PYVER=3.6.9
+# # Comment in if OS does not provide python3.6, which is the current
+# # production version
+ENV PYVER=3.6.10
 ENV PYREV=3.6
 
 WORKDIR /usr/src
