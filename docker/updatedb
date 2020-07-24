@@ -154,5 +154,5 @@ if [ "$DROP" ]; then
     diff <(zcat $DATADIR/ietf_utf8.sql.gz | grep '^DROP TABLE IF EXISTS' | tr -d '`;' | awk '{ print $5 }') \
          <($parent/ietf/manage.py dbshell <<< 'show tables;' | tail -n +2) \
 	   | grep '^>' | awk '{print "drop table if exists", $2, ";";}' \
-           | tee /dev/stderr | $parent/ietf/manage.py dbshell
+           | tee >(cat >&2) | $parent/ietf/manage.py dbshell
 fi
