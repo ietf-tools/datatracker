@@ -38,9 +38,9 @@ if ! /etc/init.d/mysql status; then
     /etc/init.d/mysql start
 fi
 
-echo "Checking if syslog is running ..."
-if ! /etc/init.d/rsyslog status; then
-    echo "Starting syslog ..."
+echo "Checking if syslogd is running ..."
+if ! /etc/init.d/rsyslog status > /dev/null; then
+    echo "Starting syslogd ..."
     /etc/init.d/rsyslog start
 fi
 
@@ -106,12 +106,20 @@ fi
 echo "Activating the virtual python environment ..."
 . $VIRTDIR/bin/activate
 
-if ! python -c "import django"; then
+
+if ! $VIRTDIR/bin/python -c "import django"; then
     echo "Installing requirements ..."
-    pip install -r /usr/local/share/datatracker/requirements.txt
+    if [ ! -f /home/$USER/$CWD/requirements.txt ]; then
+        echo "   Using /home/$USER/$CWD/requirements.txt"
+        pip install -r /home/$USER/$CWD/requirements.txt
+    else
+        echo "   Didn't find /home/$USER/$CWD/requirements.txt"
+        echo "   Using /usr/local/share/datatracker/requirements.txt"
+        pip install -r /usr/local/share/datatracker/requirements.txt
+    fi
 fi
 
-if [ ! -f $CWD/ietf/settings_local.py ]; then
+if [ ! -f /home/$USER/$CWD/ietf/settings_local.py ]; then
     echo "Setting up a default settings_local.py ..."
     cp /home/$USER/$CWD/docker/settings_local.py /home/$USER/$CWD/ietf/settings_local.py
 fi
