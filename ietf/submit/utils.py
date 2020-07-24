@@ -165,6 +165,24 @@ def validate_submission_document_date(submission_date, document_date):
 
     return None
 
+def check_submission_data_consistency(submission):
+    """Test submission for data consistency
+
+    Returns None if revision is consistent or an error message describing the problem.
+    """
+    unexpected_events = SubmissionDocEvent.objects.filter(
+        submission__name=submission.name, rev__gte=submission.rev
+    )
+    if len(unexpected_events) != 0:
+        conflicts = [evt.rev for evt in unexpected_events]
+        return "Rev %s conflicts with existing %s (%s). This indicates a database inconsistency that requires investigation." %(
+            submission.rev,
+            "submission" if len(conflicts) == 1 else "submissions",
+            ", ".join(conflicts)
+        )
+    return None
+
+
 def create_submission_event(request, submission, desc):
     by = None
     if request and request.user.is_authenticated:
