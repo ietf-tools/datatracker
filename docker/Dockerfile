@@ -131,6 +131,9 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN sed -i -e 's/^. en_US/en_US/' -e 's/^. en_GB/en_GB/' -e 's/^. en_IE/en_IE/' /etc/locale.gen
 RUN locale-gen
 
+# Remove an rsyslog module that we don't need, which also requires extra permissions
+RUN sed -i -e '/load="imklog"/d' /etc/rsyslog.conf
+
 # Set up root password
 RUN echo "root:root" | chpasswd
 
@@ -168,9 +171,6 @@ RUN mkdir -p $DDIR
 WORKDIR $DDIR
 
 COPY requirements.txt ./
-RUN pip$PYREV --no-cache-dir install -r requirements.txt
-
-COPY settings_local.py ./
 COPY setprompt ./
 
 COPY docker-init.sh /docker-init.sh
