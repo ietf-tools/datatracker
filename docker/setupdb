@@ -105,5 +105,10 @@ done
 
 cd $(dirname $MYSQLDIR)
 echo "Downloading a MySQL database image ..."
-rsync -v $URL ./ && echo -e "\nUnpacking database ..." && tar xjf ietf_utf8.bin.tar.bz2 && echo "Fixing permissions ..." && chmod -R go+rwX mysql
-
+set $(rsync --version | head -n1 | awk '{print $3}' | tr '.' ' ')
+maj=$1; min=$2; fix=$3
+if [ "$maj" -ge "3" -a "$min" -ge "1" ]; then
+    rsync --info=progress2 $URL ./ && echo -e "\nUnpacking database ..." && tar xjf ietf_utf8.bin.tar.bz2 && echo "Fixing permissions ..." && chmod -R go+rwX mysql
+else
+    rsync -v $URL ./ && echo -e "\nUnpacking database ..." && tar xjf ietf_utf8.bin.tar.bz2 && echo "Fixing permissions ..." && chmod -R go+rwX mysql
+fi
