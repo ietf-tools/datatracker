@@ -1,3 +1,60 @@
+ietfdb (7.10.1) ietf; urgency=medium
+
+  **Tweaks related to agenda display and docker-image build and start-up**
+
+  This is a small release to clear the slate before today's code sprint.
+
+  * Added a check for inallowable characters in slide titles at upload time.
+
+  * Added 'gather.town' to the domains recognized as conference service 
+    domains.
+
+  * Swapped out the conference URL icon from 'fa-phone' to 'fd-users', and 
+    changed the tooltip to 'Online conference'.
+
+  * Added a setting for an explicit path to yanglint, in order to be able 
+    to detect its presence or absence.
+
+  * Reformulated a filter step in docker/updatedb to use a more commonly 
+    available command.
+
+  * Added yang/catalogmod to the yang module directories created by 
+    docker-init.sh.
+
+  * Fixed a problem with writing to /dev/stderr in some environments, in 
+    docker/updatedb.
+
+  * Added download progress information (where available) to docker/setupdb.
+
+  * Updated Dockerfile to use latest Devuan release (beowulf) as base 
+    image.  Added syslog support.
+
+  * Tweaked the handling of yanglint settings.
+
+  * Made test parts that depends on yanglint conditional.  Added some 
+    informational messages about tests skipped due to missing resources.
+
+  * Removed pip install into old virtualenv location from Dockerfile, and 
+    fixed an rsyslog config issue.
+
+  * Made the docker-container syslog startup less noisy.  Refined the
+    installation of virtualenv requirements to test for an existing django
+    more correctly, and to use the repository requirements file if available.
+
+  * Updated font-datatracker, removing the fd-users and adding the fd-group
+    glyph.
+
+  * Added individual ical links for meeting sessions on the agenda, and 
+    changed the phone handset icon to a group icon for the various online 
+    conference links.
+
+  * Merged in [18246] from rcross@amsl.com:
+    Changed 'BOF or IRTF Sessions' to just 'BOF Sessions' at secretariat's
+    request.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jul 2020 13:36:31 +0000
+
+
 ietfdb (7.10.0) ietf; urgency=medium
 
   **Generalised external resourses for Groups, Documents, and People**
