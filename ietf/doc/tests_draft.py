@@ -794,6 +794,31 @@ class ExpireLastCallTests(TestCase):
         self.assertTrue('aread@' in outbox[-1]['To'])
         self.assertTrue('draft-ietf-mars-test@' in outbox[-1]['To'])
 
+    def test_expire_last_call_with_downref(self):
+        from ietf.doc.lastcall import get_expired_last_calls, expire_last_call
+
+        secretary = Person.objects.get(name="Sec Retary")
+        ad = Person.objects.get(user__username='ad')
+        draft = WgDraftFactory(ad=ad,name='draft-ietf-mars-test')
+        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="lc"))
+
+        e = LastCallDocEvent(doc=draft, rev=draft.rev, type="sent_last_call", by=secretary)
+        e.text = "Last call sent"
+        e.desc = "Blah, blah, blah.\n\nThis document makes the following downward references (downrefs):\n  ** Downref: Normative reference to an Experimental RFC: RFC 4764"
+        e.expires = datetime.datetime.now()
+        e.save()
+        
+        drafts = list(get_expired_last_calls())
+        self.assertEqual(len(drafts), 1)
+
+        mailbox_before = len(outbox)    
+        expire_last_call(drafts[0])
+
+        d = Document.objects.get(name=draft.name)
+        self.assertEqual(len(outbox), mailbox_before + 2)
+        self.assertTrue("Review Downrefs From Expired Last Call" in outbox[-1]["Subject"])
+        self.assertTrue(d.ad.email().address in outbox[-1]['To'])
+
 class IndividualInfoFormsTests(TestCase):
 
     def setUp(self):

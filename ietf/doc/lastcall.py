@@ -9,7 +9,7 @@ from ietf.doc.models import IESG_SUBSTATE_TAGS
 from ietf.person.models import Person
 from ietf.doc.utils import add_state_change_event
 from ietf.doc.mails import generate_ballot_writeup, generate_approval_mail, generate_last_call_announcement
-from ietf.doc.mails import send_last_call_request, email_last_call_expired
+from ietf.doc.mails import send_last_call_request, email_last_call_expired, email_last_call_expired_with_downref
 
 def request_last_call(request, doc):
     if not doc.latest_event(type="changed_ballot_writeup_text"):
@@ -65,3 +65,8 @@ def expire_last_call(doc):
         doc.save_with_history([e])
 
     email_last_call_expired(doc)
+
+    if doc.type_id == 'draft':
+        lc_text = doc.latest_event(LastCallDocEvent, type="sent_last_call").desc
+        if "document makes the following downward references" in lc_text:
+            email_last_call_expired_with_downref(doc, lc_text)           
