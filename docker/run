@@ -7,6 +7,7 @@ if [ "$progdir" = "$program" ]; then progdir="."; fi
 if [ "$progdir" = "." ]; then progdir="$PWD"; fi
 parent=$(dirname $progdir)
 if [ "$parent" = "." ]; then parent="$PWD"; fi
+if [[ $(uname) =~ CYGWIN.* ]]; then parent=$(echo $parent | sed -e 's/^\/cygdrive\/\(.\)/\1:/'); fi
 
 # ----------------------------------------------------------------------
 function usage() {
@@ -84,8 +85,6 @@ PORT=8000
 REPO="ietf/datatracker-environment"
 DBURL=https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2
 WHO=$(whoami)
-WHOUID=$(id -u $WHO)
-WHOGID=$(id -g $WHO)
 CACHED=''
 
 if   [ "$(uname)" = "Linux" ]; then
@@ -141,16 +140,43 @@ elif [ "$(uname)" = "Linux" ]; then
     echo "Running on Linux."
 elif [[ $(uname) =~ CYGWIN.* ]]; then
     echo "Running under Cygwin."
-    APP="Don't know how to start Docker when running under Cygwin"
     CMD="echo"
     MYSQLDIR=$(echo $MYSQLDIR | sed -e 's/^\/cygdrive\/\(.\)/\1:/')
     WHO=$(echo $WHO | sed -e 's/^.*\\//' | tr -d \\r)
+    DRIVE=$(echo $USERPROFILE | sed -e 's/\(.\).*/\1/' -e 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefdhijklmnopqartuvwxyz/')
+    HOME=$DRIVE$(echo $USERPROFILE | sed -e 's/\\/\//g' -e's/.\(.*\)/\1/')
+    echo "Using home dir $HOME"
+    PWD=$(echo $PWD | sed -e 's/^\/cygdrive\/\(.\)/\1:/')
+    if [ "${PWD#$HOME}" = "$PWD" ]; then
+        die "You must work inside your home directory ($HOME)"
+    fi
+    CGWPARENT=$(echo $parent | sed -e 's/^\(.\)\:/\/cygdrive\/\1/')
+    ICSFILES=$(/usr/bin/find $CGWPARENT/vzic/zoneinfo/ -name '*.ics' -print)
+    for ICSFILE in $ICSFILES
+    do
+        LINK=$(head -n1 $ICSFILE | sed -e '/link .*/!d' -e 's/link \(.*\)/\1/')
+        if [ "$LINK" ]; then
+            WDIR=$(dirname $ICSFILE)
+            echo "Replacing $(basename $ICSFILE) with $LINK"
+            cp -f $WDIR/$LINK $ICSFILE
+        fi
+    done
 else
     die "This script does not have support for your architecture ($(uname)); sorry :-("
 fi
 
+WHOUID=$(id -u $WHO)
+WHOGID=$(id -g $WHO)
+
 if   [ "$(uname)" = "Linux" ]; then
     echo "Not trying to start a virtual docker machine on Linux"
+elif [[ $(uname) =~ CYGWIN.* ]]; then
+    if ! docker info 1> /dev/null 2>&1; then
+	    echo -e "The docker VM doesn't seem to be running; docker info gave:\n  $info"
+        die "Don't know how to start docker when running under Cygwin"
+    fi
+    TAG=$(echo $TAG | tr -d \\r)
+    URL="http://localhost:$PORT/"
 elif [ -e "$APP" ]; then
     info=$(docker info 2>&1 || true)
     if ! docker info 1> /dev/null 2>&1; then
