@@ -497,18 +497,23 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
                     DocAlias.objects.create(name=a).docs.add(doc)
                     changes.append("created alias %s" % prettify_std_name(a))
 
-        if has_errata:
+        doc_errata = errata.get('RFC%04d'%rfc_number, [])
+        all_rejected = doc_errata and all( er['errata_status_code']=='Rejected' for er in doc_errata )
+        if has_errata and not all_rejected:
             if not doc.tags.filter(pk=tag_has_errata.pk).exists():
                 doc.tags.add(tag_has_errata)
                 changes.append("added Errata tag")
-            has_verified_errata = name.upper() in errata and any([ er['errata_status_code']=='Verified' for er in errata[name.upper()] ])
+            has_verified_errata = any([ er['errata_status_code']=='Verified' for er in doc_errata ])
             if has_verified_errata and not doc.tags.filter(pk=tag_has_verified_errata.pk).exists():
                 doc.tags.add(tag_has_verified_errata)
                 changes.append("added Verified Errata tag")
         else:
             if doc.tags.filter(pk=tag_has_errata.pk):
                 doc.tags.remove(tag_has_errata)
-                changes.append("removed Errata tag")
+                if all_rejected:
+                    changes.append("removed Errata tag (all errata rejected)")
+                else:
+                    changes.append("removed Errata tag")
             if doc.tags.filter(pk=tag_has_verified_errata.pk):
                 doc.tags.remove(tag_has_verified_errata)
                 changes.append("removed Verified Errata tag")
