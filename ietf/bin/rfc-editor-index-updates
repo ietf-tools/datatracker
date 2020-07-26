@@ -45,7 +45,7 @@ skip_date = datetime.date.today() - datetime.timedelta(days=365)
 if options.skip_date:
     skip_date = datetime.datetime.strptime(options.skip_date, "%Y-%m-%d").date()
 
-log("Updating document metadata from RFC index from %s" % settings.RFC_EDITOR_INDEX_URL)
+log("Updating document metadata from RFC index going back to %s, from %s" % (skip_date, settings.RFC_EDITOR_INDEX_URL))
 
 
 socket.setdefaulttimeout(30)
@@ -68,7 +68,7 @@ for changes, doc, rfc_published in ietf.sync.rfceditor.update_docs_from_rfc_inde
         new_rfcs.append(doc)
 
     for c in changes:
-        log("%s: %s" % (doc.name, c))
+        log("RFC%s, %s: %s" % (doc.rfcnum, doc.name, c))
 
 sys.exit(0)
 
