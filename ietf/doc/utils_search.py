@@ -119,9 +119,11 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     # RFCs
 
     # errata
-    erratas = set(Document.objects.filter(tags="errata", name__in=list(rfc_aliases.keys())).distinct().values_list("name", flat=True))
+    erratas = set(Document.objects.filter(tags="errata", id__in=list(rfc_aliases.keys())).distinct().values_list("name", flat=True))
+    verified_erratas = set(Document.objects.filter(tags="verified-errata", id__in=list(rfc_aliases.keys())).distinct().values_list("name", flat=True))
     for d in docs:
         d.has_errata = d.name in erratas
+        d.has_verified_errata = d.name in verified_erratas
 
     # obsoleted/updated by
     for a in rfc_aliases:
