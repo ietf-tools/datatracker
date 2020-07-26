@@ -38,7 +38,7 @@ from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_fo
     recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
     post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
     get_submission, fill_in_submission, apply_checkers, send_confirmation_emails, save_files,
-    get_person_from_name_email )
+    get_person_from_name_email, check_submission_revision_consistency )
 from ietf.stats.utils import clean_country_name
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.log import log
@@ -63,7 +63,17 @@ def upload_submission(request):
 
                 apply_checkers(submission, file_name)
 
-                create_submission_event(request, submission, desc="Uploaded submission")
+                consistency_error = check_submission_revision_consistency(submission)
+                if consistency_error:
+                    # A data consistency problem diverted this to manual processing - send notification
+                    submission.state = DraftSubmissionStateName.objects.get(slug="manual")
+                    submission.save()
+                    create_submission_event(request, submission, desc="Uploaded submission (diverted to manual process)")
+                    send_manual_post_request(request, submission, errors=dict(consistency=consistency_error))
+                else:
+                    # This is the usual case
+                    create_submission_event(request, submission, desc="Uploaded submission")
+
                 # Don't add an "Uploaded new revision doevent yet, in case of cancellation
 
                 return redirect("ietf.submit.views.submission_status", submission_id=submission.pk, access_token=submission.access_token())
@@ -148,6 +158,11 @@ def api_submit(request):
                 errors = validate_submission(submission)
                 if errors:
                     raise ValidationError(errors)
+
+                # must do this after validate_submission() or data needed for check may be invalid
+                if check_submission_revision_consistency(submission):
+                    return err( 409, "Submission failed due to a document revision inconsistency error "
+                                     "in the database. Please contact the secretariat for assistance.")
 
                 errors = [ c.message for c in submission.checks.all() if c.passed==False ]
                 if errors:

@@ -22,7 +22,8 @@ import debug                            # pyflakes:ignore
 
 from ietf.submit.utils import expirable_submissions, expire_submission
 from ietf.doc.factories import DocumentFactory, WgDraftFactory, IndividualDraftFactory
-from ietf.doc.models import Document, DocAlias, DocEvent, State, BallotPositionDocEvent, DocumentAuthor
+from ietf.doc.models import ( Document, DocAlias, DocEvent, State,
+    BallotPositionDocEvent, DocumentAuthor, SubmissionDocEvent )
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group
@@ -76,6 +77,40 @@ def submission_file(name, rev, group, format, templatename, author=None, email=N
     file.name = "%s-%s.%s" % (name, rev, format)
     return file, author
 
+def create_draft_submission_with_rev_mismatch(rev='01'):
+    """Create a draft and submission with mismatched version
+
+    Creates a rev '00' draft and Submission / SubmissionDocEvent in the 'posted'
+    state with the requested rev.
+    """
+    draft_name = 'draft-authorname-testing-tests'
+    author = PersonFactory()
+
+    # draft with rev 00
+    draft = IndividualDraftFactory(
+        name=draft_name,
+        authors=[author],
+        rev='00',
+    )
+
+    # submission with rev mismatched to the draft
+    sub = Submission.objects.create(
+        name=draft_name,
+        group=None,
+        submission_date=datetime.date.today() - datetime.timedelta(days=1),
+        rev=rev,
+        state_id='posted',
+    )
+    SubmissionDocEvent.objects.create(
+        doc=draft,
+        submission=sub,
+        by=author,
+        desc='Existing SubmissionDocEvent with mismatched revision',
+        rev=sub.rev,
+    )
+    return draft, sub
+
+
 class SubmitTests(TestCase):
     def setUp(self):
         self.saved_idsubmit_staging_path = settings.IDSUBMIT_STAGING_PATH
@@ -128,6 +163,26 @@ class SubmitTests(TestCase):
         settings.SUBMIT_YANG_CATALOG_MODEL_DIR = self.saved_yang_catalog_model_dir
 
 
+    def create_and_post_submission(self, name, rev, author, group=None, formats=("txt",)):
+        """Helper to create and post a submission"""
+        url = urlreverse('ietf.submit.views.upload_submission')
+        files = dict()
+        for format in formats:
+            files[format], __ = submission_file(name, rev, group, format, "test_submission.%s" % format, author=author)
+
+        r = self.client.post(url, files)
+        if r.status_code != 302:
+            q = PyQuery(r.content)
+            print(q('div.has-error div.alert').text())
+
+        self.assertNoFormPostErrors(r, ".has-error,.alert-danger")
+
+        for format in formats:
+            self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, format))))
+            if format == 'xml':
+                self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, 'html'))))
+        return r
+
     def do_submission(self, name, rev, group=None, formats=["txt",], author=None):
         # break early in case of missing configuration
         self.assertTrue(os.path.exists(settings.IDSUBMIT_IDNITS_BINARY))
@@ -141,24 +196,11 @@ class SubmitTests(TestCase):
         self.assertEqual(len(q('input[type=file][name=xml]')), 1)
 
         # submit
-        files = {}
         if author is None:
             author = PersonFactory()
-        for format in formats:
-            files[format], __ = submission_file(name, rev, group, format, "test_submission.%s" % format, author=author)
-
-        r = self.client.post(url, files)
-        if r.status_code != 302:
-            q = PyQuery(r.content)
-            print(q('div.has-error div.alert').text())
-
-        self.assertNoFormPostErrors(r, ".has-error,.alert-danger")
-
+        r = self.create_and_post_submission(name, rev, author, group, formats)
         status_url = r["Location"]
-        for format in formats:
-            self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, format))))
-            if format == 'xml':
-                self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, 'html'))))
+
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
         submission = Submission.objects.get(name=name)
         if len(submission.authors) != 1:
@@ -1256,6 +1298,39 @@ class SubmitTests(TestCase):
         if settings.SUBMIT_YANGLINT_COMMAND and os.path.exists(settings.YANGLINT_BINARY):
             self.assertIn("No validation errors", m)
 
+    def submit_conflicting_submissiondocevent_rev(self, new_rev='01', existing_rev='01'):
+        """Test submitting a rev when an equal or later SubmissionDocEvent rev exists
+
+        The situation tested here "should" never come up. However, it may occur due to data
+        corruption or other unexpected situations.
+        """
+        draft, existing_sub = create_draft_submission_with_rev_mismatch(existing_rev)
+        mailbox_before = len(outbox)
+
+        # Submit a "real" rev
+        self.create_and_post_submission(draft.name, new_rev, PersonFactory())
+
+        # Submission should have gone into the manual state
+        self.assertEqual(Submission.objects.filter(name=draft.name).count(), 2)
+        sub = Submission.objects.exclude(pk=existing_sub.pk).get(name=draft.name, rev=new_rev)
+        self.assertIsNotNone(sub)
+        self.assertEqual(sub.state_id, 'manual')
+
+        # Ensure that an email notification was sent
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue("Manual Post Requested" in outbox[-1]["Subject"])
+        self.assertTrue(draft.name in outbox[-1]["Subject"])
+        expected_error = "Rev %s conflicts with existing submission (%s)"%(new_rev, existing_rev)
+        self.assertTrue(expected_error in get_payload_text(outbox[-1]))
+
+    def test_submit_update_existing_submissiondocevent_rev(self):
+        """An existing SubmissionDocEvent with same rev should trigger manual processing"""
+        self.submit_conflicting_submissiondocevent_rev('01', '01')
+
+    def test_submit_update_later_submissiondocevent_rev(self):
+        """An existing SubmissionDocEvent with later rev should trigger manual processing"""
+        self.submit_conflicting_submissiondocevent_rev('01', '02')
+
 
 class ApprovalsTestCase(TestCase):
     def test_approvals(self):
@@ -1876,6 +1951,18 @@ class ApiSubmitTests(TestCase):
         r, author, name = self.do_post_submission('01')
         expected = "Invalid revision (revision 00 is expected)"
         self.assertContains(r, expected, status_code=400)
+
+    def test_api_submit_update_existing_submissiondocevent_rev(self):
+        draft, _ = create_draft_submission_with_rev_mismatch(rev='01')
+        r, _, __ = self.do_post_submission(rev='01', name=draft.name)
+        expected = "Submission failed"
+        self.assertContains(r, expected, status_code=409)
+
+    def test_api_submit_update_later_submissiondocevent_rev(self):
+        draft, _ = create_draft_submission_with_rev_mismatch(rev='02')
+        r, _, __ = self.do_post_submission(rev='01', name=draft.name)
+        expected = "Submission failed"
+        self.assertContains(r, expected, status_code=409)
 
     def test_api_submit_pending_submission(self):
         r, author, name = self.do_post_submission('00')
