@@ -815,7 +815,7 @@ class SchedTimeSessAssignment(models.Model):
                     components.append("1plenary")
                 else:
                     p = getattr(g, "historic_parent", None) or g.parent
-                    if p and p.type_id in ("area", "irtf"):
+                    if p and p.type_id in ("area", "irtf", 'ietf'):
                         components.append(p.acronym)
 
                 components.append(g.acronym)

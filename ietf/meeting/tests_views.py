@@ -226,6 +226,47 @@ class MeetingTests(TestCase):
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, slot.location.name)       
 
+    def test_agenda_iab_session(self):
+        date = datetime.date.today()
+        meeting = MeetingFactory(type_id='ietf', date=date )
+        make_meeting_test_data(meeting=meeting)
+        
+        iab = Group.objects.get(acronym='iab')
+        venus = Group.objects.create(
+            name="Three letter acronym",
+            acronym="venus",
+            description="This group discusses exploration of Venus",
+            state_id="active",
+            type_id="program",
+            parent=iab,
+            list_email="venus@ietf.org",
+        )
+        venus_session = Session.objects.create(
+            meeting=meeting,
+            group=venus,
+            attendees=10,
+            requested_duration=datetime.timedelta(minutes=60),
+            type_id='regular',
+        )
+        system_person = Person.objects.get(name="(System)")
+        SchedulingEvent.objects.create(session=venus_session, status_id='schedw', by=system_person)
+        room = Room.objects.create(meeting=meeting,
+                                   name="Aphrodite",
+                                   capacity=100,
+                                   functional_name="Aphrodite Room")
+        room.session_types.add('regular')
+        session_date = meeting.date + datetime.timedelta(days=1)
+        slot3 = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
+                                        duration=datetime.timedelta(minutes=60),
+                                        time=datetime.datetime.combine(session_date, datetime.time(13, 30)))
+        SchedTimeSessAssignment.objects.create(timeslot=slot3, session=venus_session, schedule=meeting.schedule)
+        url = urlreverse('ietf.meeting.views.agenda', kwargs=dict(num=meeting.number))
+        r = self.client.get(url)
+        self.assertContains(r, 'venus')
+        q = PyQuery(r.content)
+        venus_row = q('[id*="-iab-"]').html()
+        self.assertIn('venus', venus_row)
+        
     def test_agenda_current_audio(self):
         date = datetime.date.today()
         meeting = MeetingFactory(type_id='ietf', date=date )
