@@ -442,6 +442,8 @@
                var t = xhr.getResponseHeader("content-type");
                if (t.indexOf("text/plain") > -1) {
                    data = "<pre class='agenda'>" + data + "</pre>";
+               } else if (t.indexOf("text/markdown") > -1) {
+                   data = "<pre class='agenda'>" + data + "</pre>";
                } else if(t.indexOf("text/html") > -1) {
                    // nothing to do here
                } else {
@@ -455,6 +457,8 @@
            $.get($(j).data("src"), function (data, status, xhr) {
                var t = xhr.getResponseHeader("content-type");
                if (t.indexOf("text/plain") > -1) {
+                   data = "<pre class='agenda'>" + data + "</pre>";
+               } else if (t.indexOf("text/markdown") > -1) {
                    data = "<pre class='agenda'>" + data + "</pre>";
                } else if(t.indexOf("text/html") > -1) {
                    // nothing to do here
