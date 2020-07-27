@@ -448,6 +448,16 @@ class MeetingTests(TestCase):
         self.assertContains(r, meeting.number)
         self.assertContains(r, "You cannot manage the meeting materials for any groups")
 
+    @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
+    def test_materials_name_endswith_hyphen_number_number(self):
+        sp = SessionPresentationFactory(document__name='slides-junk-15',document__type_id='slides',document__states=[('reuse_policy','single')])
+        sp.document.uploaded_filename = '%s-%s.pdf'%(sp.document.name,sp.document.rev)
+        sp.document.save()
+        self.write_materials_file(sp.session.meeting, sp.document, 'Fake slide contents')
+        url = urlreverse("ietf.meeting.views.materials_document", kwargs=dict(document=sp.document.name,num=sp.session.meeting.number))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
     def test_proceedings(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
