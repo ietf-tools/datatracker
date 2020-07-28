@@ -230,12 +230,10 @@ LOGGING = {
         'django.request': {
             'handlers': ['debug_console', 'syslog'],
             'level': 'ERROR',
-            'propagate': False,
         },
         'django.server': {
             'handlers': ['django.server'],
             'level': 'INFO',
-            'propagate': False,
         },
         'django.security': {
 	    'handlers': ['syslog', ],
