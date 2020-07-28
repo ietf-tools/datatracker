@@ -31,7 +31,7 @@ from ietf.secr.proceedings.proc_utils import (create_recording)
 # -------------------------------------------------
 # Globals 
 # -------------------------------------------------
-AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','RG Secretary', 'AG Secretary','IRTF Chair','IETF Trust Chair','IAB Group Chair','IAOC Chair','IAD','Area Director','Secretariat','Team Chair')
+AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','RG Secretary', 'AG Secretary', 'RAG Secretary', 'IRTF Chair','IETF Trust Chair','IAB Group Chair','IAOC Chair','IAD','Area Director','Secretariat','Team Chair')
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
@@ -104,17 +104,6 @@ def get_next_slide_num(session):
     next slide number to use for a newly added slide as a string.
     '''
 
-    """
-    slides = session.materials.filter(type='slides').order_by('-name')
-    if slides:
-        # we need this special case for non wg/rg sessions because the name format is different
-        # it should be changed to match the rest
-        # TODO - why isn't 'ag' in this list (also, is this function still used?)
-        if session.group.type.slug not in ('wg','rg'):
-            nums = [ s.name.split('-')[3] for s in slides ]
-        else:
-            nums = [ s.name.split('-')[-1] for s in slides ]
-    """
     if session.meeting.type_id == 'ietf':
         pattern = 'slides-%s-%s' % (session.meeting.number,session.group.acronym)
     elif session.meeting.type_id == 'interim':

@@ -293,9 +293,8 @@ def blue_sheet_generate(request, meeting_id):
     meeting = get_object_or_404(Meeting, number=meeting_id)
 
     if request.method == "POST":
-        # TODO: Why aren't 'ag' in here as well?
         groups = Group.objects.filter(
-            type__in=['wg','rg'],
+            type__in=['wg','rg','ag','rag','program'],
             session__timeslotassignments__schedule=meeting.schedule).order_by('acronym')
         create_blue_sheets(meeting, groups)
 

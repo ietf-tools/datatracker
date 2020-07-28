@@ -22,7 +22,7 @@ class GroupFactory(factory.DjangoModelFactory):
     def parent(self):
         if self.type_id in ['wg','ag']:
             return GroupFactory(type_id='area')
-        elif self.type_id in ['rg']:
+        elif self.type_id in ['rg','rag']:
             return GroupFactory(acronym='irtf', type_id='irtf')
         else:
             return None

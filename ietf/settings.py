@@ -626,7 +626,6 @@ MAX_WG_DELEGATES = 3
 # These states aren't available in forms with drop-down choices for new
 # document state:
 GROUP_STATES_WITH_EXTRA_PROCESSING = ["sub-pub", "rfc-edit", ]
-GROUP_TYPES_LISTED_ACTIVE = ['wg', 'rg', 'ag', 'team', 'dir', 'review', 'area', 'program', ]
 
 # Review team releated settings
 GROUP_REVIEW_MAX_ITEMS_TO_SHOW_IN_REVIEWER_LIST = 10

@@ -311,10 +311,10 @@ class TestWikiGlueManagementCommand(TestCase):
         set_coverage_checking(True)
 
     def test_wiki_create_output(self):
-        for group_type in ['wg','rg','ag','area']:
+        for group_type in ['wg','rg','ag','area','rag']:
             GroupFactory(type_id=group_type)
         groups = Group.objects.filter(
-                        type__slug__in=['wg','rg','ag','area'],
+                        type__slug__in=['wg','rg','ag','area','rag'],
                         state__slug='active'
                     ).order_by('acronym')
         out = io.StringIO()

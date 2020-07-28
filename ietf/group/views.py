@@ -289,6 +289,8 @@ def active_groups(request, group_type=None):
         return active_rgs(request)
     elif group_type == "ag":
         return active_ags(request)
+    elif group_type == "rag":
+        return active_rags(request)
     elif group_type == "area":
         return active_areas(request)
     elif group_type == "team":
@@ -303,7 +305,7 @@ def active_groups(request, group_type=None):
         raise Http404
 
 def active_group_types(request):
-    grouptypes = GroupTypeName.objects.filter(slug__in=['wg','rg','ag','team','dir','review','area','program']).filter(group__state='active').annotate(group_count=Count('group'))
+    grouptypes = GroupTypeName.objects.filter(slug__in=['wg','rg','ag','rag','team','dir','review','area','program']).filter(group__state='active').annotate(group_count=Count('group'))
     return render(request, 'group/active_groups.html', {'grouptypes':grouptypes})
 
 def active_dirs(request):
@@ -378,6 +380,14 @@ def active_ags(request):
         group.ads = sorted(roles(group, "ad"), key=extract_last_name)
 
     return render(request, 'group/active_ags.html', { 'groups': groups })
+
+def active_rags(request):
+
+    groups = Group.objects.filter(type="rag", state="active").order_by("acronym")
+    for group in groups:
+        group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
+
+    return render(request, 'group/active_rags.html', { 'groups': groups })
     
 def bofs(request, group_type):
     groups = Group.objects.filter(type=group_type, state="bof")
@@ -408,6 +418,7 @@ def concluded_groups(request):
     sections['RGs'] = Group.objects.filter(type='rg', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
     sections['BOFs'] = Group.objects.filter(type='wg', state="bof-conc").select_related("state", "charter").order_by("parent__name","acronym")
     sections['AGs'] = Group.objects.filter(type='ag', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
+    sections['RAGs'] = Group.objects.filter(type='rag', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
     sections['Directorates'] = Group.objects.filter(type='dir', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
     sections['Review teams'] = Group.objects.filter(type='review', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
     sections['Teams'] = Group.objects.filter(type='team', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")

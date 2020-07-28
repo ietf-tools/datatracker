@@ -24,7 +24,7 @@ from ietf.group.models import Role
 addresses = set()
 for role in Role.objects.filter(
                     group__state__slug='active',
-                    group__type__in=['ag','area','dir','iab','ietf','irtf','nomcom','rg','team','wg',]):
+                    group__type__in=['ag','area','dir','iab','ietf','irtf','nomcom','rg','team','wg','rag']):
     #sys.stderr.write(str(role)+'\n')
     for e in role.person.email_set.all():
         if e.active and not e.address.startswith('unknown-email-'):

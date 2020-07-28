@@ -466,7 +466,7 @@ class SubmitTests(TestCase):
         if change_authors:
             # Since authors changed, ensure chairs are copied (and that the message says why)
             self.assertTrue("chairs have been copied" in str(confirm_email))
-            if group_type in ['wg','rg','ag']:
+            if group_type in ['wg','rg','ag','rag']:
                 self.assertTrue("mars-chairs@" in confirm_email["To"].lower())
             elif group_type == 'area':
                 self.assertTrue("aread@" in confirm_email["To"].lower())

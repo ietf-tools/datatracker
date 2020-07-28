@@ -7,7 +7,7 @@ from ietf.name.models import GroupTypeName
 
 register = template.Library()
 
-parents = GroupTypeName.objects.filter(slug__in=['ag','area','team','dir','program'])
+parents = GroupTypeName.objects.filter(slug__in=['ag','area','rag','team','dir','program'])
 
 others = []
 for group in Group.objects.filter(acronym__in=('rsoc',), state_id='active'):

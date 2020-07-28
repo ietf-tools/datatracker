@@ -76,6 +76,7 @@ def has_role(user, role_names, *args, **kwargs):
             "RG Chair": Q(person=person,name="chair", group__type="rg", group__state__in=["active","proposed"]),
             "RG Secretary": Q(person=person,name="secr", group__type="rg", group__state__in=["active","proposed"]),
             "AG Secretary": Q(person=person,name="secr", group__type="ag", group__state__in=["active"]),
+            "RAG Secretary": Q(person=person,name="secr", group__type="rag", group__state__in=["active"]),
             "Team Chair": Q(person=person,name="chair", group__type="team", group__state="active"),
             "Program Lead": Q(person=person,name="lead", group__type="program", group__state="active"),
             "Program Secretary": Q(person=person,name="secr", group__type="program", group__state="active"),

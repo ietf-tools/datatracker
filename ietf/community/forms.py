@@ -45,7 +45,7 @@ class SearchRuleForm(forms.ModelForm):
                 self.fields["group"].label = "Area"
                 self.fields["group"].queryset = self.fields["group"].queryset.filter(Q(type="area") | Q(acronym="irtf")).order_by("acronym")
             else:
-                self.fields["group"].queryset = self.fields["group"].queryset.filter(type__in=("wg", "rg", "ag", )).order_by("acronym")
+                self.fields["group"].queryset = self.fields["group"].queryset.filter(type__in=("wg", "rg", "ag", "rag", "program" )).order_by("acronym")
 
             del self.fields["person"]
             del self.fields["text"]
