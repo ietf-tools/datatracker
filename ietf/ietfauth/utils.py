@@ -249,33 +249,32 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
         from ietf.stats.models import MeetingRegistration
         meeting = get_current_ietf_meeting()
         person = self.user.person
-        reg = MeetingRegistration.objects.filter(person=person, meeting=meeting).first()
-        if not reg:
-            # No person match; try to match by email address.  They could
-            # have registered with a new address and added it to the account
-            # later.
-            email_list = person.email_set.values_list('address')
-            reg = MeetingRegistration.objects.filter(email__in=email_list, meeting=meeting).first()
-            if reg:
+        email_list = person.email_set.values_list('address')
+        q = Q(person=person, meeting=meeting) | Q(email__in=email_list, meeting=meeting)
+        regs = MeetingRegistration.objects.filter(q).distinct()
+        for reg in regs:
+            if not reg.person_id:
                 reg.person = person
                 reg.save()
         info = {}
-        if reg:
-            # maybe register attendence if logged in to follow a meeting
+        if regs:
+            # maybe register attendance if logged in to follow a meeting
             today = datetime.date.today()
             if meeting.date <= today <= meeting.end_date():
                 client = ClientRecord.objects.get(client_id=self.client.client_id)
-                if client.name == 'Meetecho' and not reg.attended:
-                    reg.attended = True
-                    reg.save()
+                if client.name == 'Meetecho':
+                    for reg in regs:
+                        if not reg.attended:
+                            reg.attended = True
+                            reg.save()
             # fill in info to return
             info = {
-                'meeting':      reg.meeting.number,
+                'meeting':      meeting.number,
                 # full_week, one_day, student:
-                'ticket_type':  reg.ticket_type,
+                'ticket_type':  ' '.join(set( reg.ticket_type for reg in regs )),
                 # in_person, onliine, hackathon:
-                'reg_type':     reg.reg_type,
-                'affiliation':  reg.affiliation,
+                'reg_type':     ' '.join(set( reg.reg_type for reg in regs )),
+                'affiliation':  ([ reg.affiliation for reg in regs if reg.affiliation ] or [''])[0],
             }
 
         return info

@@ -767,10 +767,13 @@ class OpenIDConnectTests(TestCase):
             # Get a user for which we want to get access
             person = PersonFactory()
             RoleFactory(name_id='chair', person=person)
+            # an additional email
+            EmailFactory(person=person)
+            email_list = person.email_set.all().values_list('address', flat=True)
             meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
             MeetingRegistration.objects.create(
                     meeting=meeting, person=None, first_name=person.first_name(), last_name=person.last_name(),
-                    email=person.email(), ticket_type='full_week', reg_type='remote', affiliation='Some Company',
+                    email=email_list[0], ticket_type='full_week', reg_type='remote', affiliation='Some Company',
                 )
 
             # Get access authorisation
@@ -830,7 +833,21 @@ class OpenIDConnectTests(TestCase):
             for key in [ 'email', 'family_name', 'given_name', 'meeting', 'name', 'roles',
                          'ticket_type', 'reg_type', 'affiliation', ]:
                 self.assertIn(key, userinfo)
+            self.assertIn('remote', set(userinfo['reg_type'].split()))
+            self.assertNotIn('hackathon', set(userinfo['reg_type'].split()))
 
+            # Create another registration, with a different email
+            MeetingRegistration.objects.create(
+                    meeting=meeting, person=None, first_name=person.first_name(), last_name=person.last_name(),
+                    email=email_list[1], ticket_type='one_day', reg_type='hackathon', affiliation='Some Company, Inc',
+                )
+            userinfo = client.do_user_info_request(state=params["state"], scope=args['scope'])
+            self.assertIn('hackathon', set(userinfo['reg_type'].split()))
+            self.assertIn('remote', set(userinfo['reg_type'].split()))
+            self.assertIn('full_week', set(userinfo['ticket_type'].split()))
+            self.assertIn('Some Company', userinfo['affiliation'])
+
+            # Check that ending a session works
             r = client.do_end_session_request(state=params["state"], scope=args['scope'])
             self.assertEqual(r.status_code, 302)
             self.assertEqual(r.headers["Location"], urlreverse('ietf.ietfauth.views.login'))
