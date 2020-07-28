@@ -268,12 +268,19 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
                             reg.attended = True
                             reg.save()
             # fill in info to return
+            ticket_types = set([])
+            reg_types = set([])
+            for reg in regs:
+                for t in reg.ticket_type.split():
+                    ticket_types.add(t)
+                for r in reg.reg_type.split():
+                    reg_types.add(r)
             info = {
                 'meeting':      meeting.number,
                 # full_week, one_day, student:
-                'ticket_type':  ' '.join(set( reg.ticket_type for reg in regs )),
+                'ticket_type':  ' '.join(ticket_types),
                 # in_person, onliine, hackathon:
-                'reg_type':     ' '.join(set( reg.reg_type for reg in regs )),
+                'reg_type':     ' '.join(reg_types),
                 'affiliation':  ([ reg.affiliation for reg in regs if reg.affiliation ] or [''])[0],
             }
 

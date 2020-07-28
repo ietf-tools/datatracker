@@ -847,6 +847,14 @@ class OpenIDConnectTests(TestCase):
             self.assertIn('full_week', set(userinfo['ticket_type'].split()))
             self.assertIn('Some Company', userinfo['affiliation'])
 
+            # Create a third registration, with a composite reg type
+            MeetingRegistration.objects.create(
+                    meeting=meeting, person=None, first_name=person.first_name(), last_name=person.last_name(),
+                    email=email_list[1], ticket_type='one_day', reg_type='hackathon remote', affiliation='Some Company, Inc',
+                )
+            userinfo = client.do_user_info_request(state=params["state"], scope=args['scope'])
+            self.assertEqual(set(userinfo['reg_type'].split()), set(['remote', 'hackathon']))
+
             # Check that ending a session works
             r = client.do_end_session_request(state=params["state"], scope=args['scope'])
             self.assertEqual(r.status_code, 302)
