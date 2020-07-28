@@ -1,3 +1,50 @@
+ietfdb (7.11.0) ietf; urgency=medium
+
+  **Codesprint 108 release 1, bugfixes and tweaks**
+
+  This release contains the first set of code sprint merges, and some
+  important fixes; additional code sprint contributions will come in
+  another release.
+
+  * Changed the URL to use for meeting attendees information in the new 
+    registration system.
+
+  * Merged in [18250] from jennifer@painless-security.com:
+    Reject or require manual processing for submissions when inconsistent 
+    SubmissionDocEvent revs exist. Fixes #2909.  
+
+  * Tweaked the messages from bin/rfc-editor-index-updates to be slightly 
+    more informative.
+
+  * Refined the code in ietf.sync.rfceditor that deals with errata to 
+    distinguish between rejected errata and other errata.
+
+  * Merged in [18270] from valery@smyslov.net:
+    Added display of verified errata in red, not verified in orange in 
+    document lists.  Fixes issue #2997.
+
+  * Merged in [18271] from valery@smyslov.net:
+    Improved support of CygWin environment for the docker image.
+
+  * Added a few extra modules (in particular enscript and ghostscript, 
+    which is needed for the agenda pdf materials) to the docker/install-extras 
+    script.
+
+  * Added a workaround to display text/markdown as text in agenda popups.  
+    More work is needed to convert markdown to HTML for this view.
+    See issue #3039.
+
+  * Improved the handling in the OpenID Connect userinfo response where there
+    are multiple meeting registrations with different email addresses for the
+    same person.
+
+  * Merged in [18285] from rjsparks@nostrum.com:
+    Better handle materials with names that end with a string that looks 
+    like a version (-nn). May address #3040.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jul 2020 14:52:35 +0000
+
+
 ietfdb (7.10.1) ietf; urgency=medium
 
   **Tweaks related to agenda display and docker-image build and start-up**
