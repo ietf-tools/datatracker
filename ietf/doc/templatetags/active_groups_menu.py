@@ -11,7 +11,8 @@ parents = GroupTypeName.objects.filter(slug__in=['ag','area','team','dir','progr
 
 others = []
 for group in Group.objects.filter(acronym__in=('rsoc',), state_id='active'):
-    group.menu_url = reverse('ietf.group.views.group_home', kwargs=dict(acronym=group.acronym)) # could use group.about_url() instead
+    group.menu_url = reverse('ietf.group.views.group_home', kwargs=dict(acronym=group.acronym)) # type: ignore
+    # could use group.about_url() instead
     others.append(group)
 
 @register.simple_tag
