@@ -1,8 +1,10 @@
 # -*- conf-mode -*-
 
-^/personal/markd/v6.127.1.dev1@17694    # Review still shows issues, henrik will rework (29 Apr 2020)
-^/personal/markd/v6.120.0.dev0@17570    # Review issues to be resolved (08 Apr 2020)
-^/personal/mahoney/6.121.1.dev0@17473   # Test commit
+/personal/rjs/7.11.1.dev0@18298         # Hold for reconsideration and discussion; 28 Jul 2020
+
+/personal/markd/v6.127.1.dev1@17694     # Review still shows issues, henrik will rework (29 Apr 2020)
+/personal/markd/v6.120.0.dev0@17570     # Review issues to be resolved (08 Apr 2020)
+/personal/mahoney/6.121.1.dev0@17473    # Test commit
 /personal/kivinen/6.94.2.dev0@16091	# Replaced by later commit
 /personal/rjs/6.104.1.dev0@16809	# Local changes, not for merge
 /personal/rjs/6.103.1.dev0@16761	# Fixed in a different manner in [16757]
