@@ -18,7 +18,7 @@ from ietf.doc.utils import get_chartering_type
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.group.models import GroupMilestone, MilestoneGroupEvent
 from ietf.group.utils import (save_milestone_in_history, can_manage_group_type, can_manage_group,
-                              milestone_reviewer_for_group_type, get_group_or_404)
+                              milestone_reviewer_for_group_type, get_group_or_404, has_role)
 from ietf.name.models import GroupMilestoneStateName
 from ietf.group.mails import email_milestones_changed
 from ietf.utils.fields import DatepickerDateField
@@ -39,7 +39,7 @@ class MilestoneForm(forms.Form):
                                choices=(("accept", "Accept"), ("reject", "Reject and delete"), ("noaction", "No action")),
                                required=False, initial="noaction", widget=forms.RadioSelect)
 
-    def __init__(self, needs_review, reviewer, *args, **kwargs):
+    def __init__(self, needs_review, reviewer, desc_editable, *args, **kwargs):
         m = self.milestone = kwargs.pop("instance", None)
 
         uses_dates = kwargs.pop("uses_dates", True)
@@ -83,6 +83,9 @@ class MilestoneForm(forms.Form):
 
         self.needs_review = needs_review
 
+        if not desc_editable:
+            self.fields["desc"].widget.attrs["readonly"] = True
+
     def clean_resolved(self):
         r = self.cleaned_data["resolved"].strip()
 
@@ -116,6 +119,8 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                 needs_review = True
     else:
         return HttpResponseForbidden("You are not authorized to edit the milestones of this group.")
+
+    desc_editable = has_role(request.user,["Secretariat","Area Director","IRTF Chair"])
 
     if milestone_set == "current":
         title = "Edit milestones for %s %s" % (group.acronym, group.type.name)
@@ -211,7 +216,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                     changes.append("set state to deleted from review, rejecting new milestone")
 
 
-            if c["desc"] != m.desc and not needs_review:
+            if c["desc"] != m.desc and not needs_review and desc_editable:
                 if not history:
                     history = save_milestone_in_history(m)
                 m.desc = c["desc"]
@@ -313,7 +318,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                     group.uses_milestone_dates=True
                     group.save()
                 for m in milestones:
-                    forms.append(MilestoneForm(needs_review, reviewer, instance=m, uses_dates=group.uses_milestone_dates))
+                    forms.append(MilestoneForm(needs_review, reviewer, desc_editable, instance=m, uses_dates=group.uses_milestone_dates))
             else:
                 raise PermissionDenied
         else:
@@ -324,7 +329,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
 
                 # new milestones have non-existing ids so instance end up as None
                 instance = milestones_dict.get(request.POST.get(prefix + "-id", ""), None)
-                f = MilestoneForm(needs_review, reviewer, request.POST, prefix=prefix, instance=instance, uses_dates=group.uses_milestone_dates)
+                f = MilestoneForm(needs_review, reviewer, True, request.POST, prefix=prefix, instance=instance, uses_dates=group.uses_milestone_dates)
                 forms.append(f)
 
                 form_errors = form_errors or not f.is_valid()
@@ -369,11 +374,11 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                     return HttpResponseRedirect(group.about_url())
     else:
         for m in milestones:
-            forms.append(MilestoneForm(needs_review, reviewer, instance=m, uses_dates=group.uses_milestone_dates))
+            forms.append(MilestoneForm(needs_review, reviewer, desc_editable, instance=m, uses_dates=group.uses_milestone_dates))
 
     can_reset = milestone_set == "charter" and get_chartering_type(group.charter) == "rechartering"
 
-    empty_form = MilestoneForm(needs_review, reviewer, uses_dates=group.uses_milestone_dates)
+    empty_form = MilestoneForm(needs_review, reviewer, True, uses_dates=group.uses_milestone_dates)
 
     if group.uses_milestone_dates:
         forms.sort(key=lambda f: f.milestone.due if f.milestone else datetime.date.max)
