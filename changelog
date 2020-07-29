@@ -1,6 +1,47 @@
+ietfdb (7.12.0) ietf; urgency=medium
+
+  **IETF 108 Code Sprint release 2, bugfixes and tweaks**
+
+  This release contains the second bunch of datatracker bug fixes and
+  enhancements from the IETF-108 Virtual Code Sprint.  Again, there has 
+  been a lot of good contributions :-)
+
+  Thanks to everyone who contributed!
+
+  * Changed the error logging propagation setting for some errors.
+
+  * Added some normalisation of the reg_type and ticket_type entries in the 
+    OIDC registration scope.
+
+  * Merged in [18272] from fenton@bluepopcorn.net:
+    This is an interim change to prevent chairs from editing milestone 
+    description.  Fixes #3036.  
+
+  * Merged in [18275] from fenton@bluepopcorn.net:
+    Added programs to concluded groups page. Fixes #3023.  
+
+  * Merged in [18276] from housley@vigilsec.com:
+    Send email to AD when an IETF Last Call expires that contains downrefs. 
+    Fixes #2472 
+
+  * Merged in [18282] from mark@painless-security.com:
+    Added IETF sessions to the types that emit parent group name in the session
+    assignment slug, so that the parent group name will be present on the HTML
+    row ID in the agenda for IAB sessions.  Also update the wording on special
+    sessions.  Fixes #3034.  
+
+  * Merged in [18296], [18297], and [18299] from rjsparks@nostrum.com:
+    Show RSOC from the Group menu.  Fixes #3024.  
+
+  * Added 'text/x-markdown' as an accepted MIME type for agenda and minutes 
+    uploads.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  29 Jul 2020 20:52:06 +0000
+
+
 ietfdb (7.11.0) ietf; urgency=medium
 
-  **Codesprint 108 release 1, bugfixes and tweaks**
+  **IETF 108 Code Sprint release 1, bugfixes and tweaks**
 
   This release contains the first set of code sprint merges, and some
   important fixes; additional code sprint contributions will come in
