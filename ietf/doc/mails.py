@@ -504,6 +504,18 @@ def email_last_call_expired(doc):
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               cc = addrs.cc)
 
+def email_last_call_expired_with_downref(doc, last_call_text):
+    if doc.type_id != 'draft':
+        return
+    send_mail(None,
+              (doc.ad.email().address, ),
+              "DraftTracker Mail System <iesg-secretary@ietf.org>",
+              "Review Downrefs From Expired Last Call: %s" % doc.file_tag(),
+              "doc/mail/downrefs_notice.txt",
+              dict(last_call_text=last_call_text,
+                   doc=doc,
+                   url=settings.IDTRACKER_BASE_URL + "/downref/add/"))
+
 def email_intended_status_changed(request, doc, text):
     (to,cc) = gather_address_lists('doc_intended_status_changed',doc=doc)
 
