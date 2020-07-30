@@ -957,7 +957,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
 
         p.group_list.sort(key=lambda g: g.acronym)
 
-    is_current_meeting = bool(num == get_current_ietf_meeting_num())
+    is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
     rendered_page = render(request, "meeting/"+base+ext, {
         "schedule": schedule,
         "filtered_assignments": filtered_assignments,
