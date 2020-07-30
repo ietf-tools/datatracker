@@ -211,6 +211,10 @@ class DraftYangChecker(object):
                 command = [ w for w in cmd_template.split() if not '=' in w ][0]
                 cmd_version = VersionInfo.objects.get(command=command).version
                 cmd = cmd_template.format(libs=modpath, model=path)
+                venv_path = os.environ.get('VIRTUAL_ENV') or os.path.join(os.getcwd(), 'env')
+                venv_bin = os.path.join(venv_path, 'bin')
+                if not venv_bin in os.environ.get('PATH', '').split(':'):
+                    os.environ['PATH'] = os.environ.get('PATH', '') + ":" + venv_bin
                 code, out, err = pipe(cmd)
                 out = out.decode('utf-8')
                 err = err.decode('utf-8')
