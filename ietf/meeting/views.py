@@ -204,7 +204,7 @@ def materials_document(request, document, num=None, ext=None):
     doc = Document.objects.filter(name=name).first()
     # Handle edge case where the above name, rev splitter misidentifies the end of a document name as a revision mumber
     if not doc:
-        name = name + '-' + rev
+        name = name + (('-' + rev) if rev else '')
         rev = None
         doc = get_object_or_404(Document, name=name)
 
