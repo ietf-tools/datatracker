@@ -1,7 +1,5 @@
 # -*- conf-mode -*-
 
-/personal/rjs/7.11.1.dev0@18298         # Hold for reconsideration and discussion; 28 Jul 2020
-
 /personal/markd/v6.127.1.dev1@17694     # Review still shows issues, henrik will rework (29 Apr 2020)
 /personal/markd/v6.120.0.dev0@17570     # Review issues to be resolved (08 Apr 2020)
 /personal/mahoney/6.121.1.dev0@17473    # Test commit
