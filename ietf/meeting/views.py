@@ -203,8 +203,8 @@ def materials_document(request, document, num=None, ext=None):
     # This view does not allow the use of DocAliases. Right now we are probably only creating one (identity) alias, but that may not hold in the future.
     doc = Document.objects.filter(name=name).first()
     # Handle edge case where the above name, rev splitter misidentifies the end of a document name as a revision mumber
-    if not doc:
-        name = name + (('-' + rev) if rev else '')
+    if rev and not doc:
+        name = name + '-' + rev
         rev = None
         doc = get_object_or_404(Document, name=name)
 
