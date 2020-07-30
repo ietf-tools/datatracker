@@ -26,7 +26,8 @@ from ietf.doc.utils import ( add_state_change_event, close_ballot, close_open_ba
 from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred, 
     extra_automation_headers, generate_last_call_announcement, 
     generate_issue_ballot_mail, generate_ballot_writeup, generate_ballot_rfceditornote,
-    generate_approval_mail, email_irsg_ballot_closed, email_irsg_ballot_issued )
+    generate_approval_mail, email_irsg_ballot_closed, email_irsg_ballot_issued,
+    email_lc_to_yang_doctors )
 from ietf.doc.lastcall import request_last_call
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
@@ -1044,6 +1045,10 @@ def make_last_call(request, name):
                         events.append(e)
 
             doc.save_with_history(events)
+
+            sub = doc.submission()
+            if sub and sub.has_yang():
+                email_lc_to_yang_doctors(request, doc)
 
             return HttpResponseRedirect(doc.get_absolute_url())
     else:

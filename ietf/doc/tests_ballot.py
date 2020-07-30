@@ -16,7 +16,7 @@ from ietf.doc.models import ( Document, State, DocEvent,
 from ietf.doc.factories import DocumentFactory, IndividualDraftFactory, IndividualRfcFactory, WgDraftFactory
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.models import Group, Role
-from ietf.group.factories import GroupFactory, RoleFactory
+from ietf.group.factories import GroupFactory, RoleFactory, ReviewTeamFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
 from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
@@ -803,6 +803,42 @@ class MakeLastCallTests(TestCase):
         self.assertTrue("drafts-lastcall@icann.org" in outbox[-1]['To'])
 
         self.assertTrue("Last Call" in draft.message_set.order_by("-time")[0].subject)
+
+    def test_make_last_call_yang_document(self):
+        yd = ReviewTeamFactory(acronym='yangdoctors')
+        secr_email = RoleFactory(group=yd,name_id='secr').person.email().address
+        draft = WgDraftFactory()
+        submission = draft.submission_set.create(
+            state_id = 'posted',
+            name = draft.name,
+            group = draft.group,
+            rev = draft.rev,
+            authors = '[]',
+        )
+        submission.checks.create(
+            checker = 'yang validation',
+            passed = True,
+        )
+
+
+        url = urlreverse('ietf.doc.views_ballot.make_last_call', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, 'secretary', url)
+
+        mailbox_before = len(outbox)
+
+        last_call_sent_date = datetime.date.today()
+        expire_date = last_call_sent_date+datetime.timedelta(days=14)
+        
+        r = self.client.post(url,
+                             dict(last_call_sent_date=last_call_sent_date,
+                                  last_call_expiration_date=expire_date
+                                  ))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(len(outbox), mailbox_before + 3) 
+        self.assertIn("ietf-announce@", outbox[-3]['To'])
+        self.assertIn("drafts-lastcall@icann.org", outbox[-2]['To'])
+        self.assertIn(secr_email, outbox[-1]['To'])
+
 
 class DeferUndeferTestCase(TestCase):
     def helper_test_defer(self,name):

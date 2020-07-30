@@ -73,6 +73,9 @@ class Submission(models.Model):
     def latest_checks(self):
         checks = [ self.checks.filter(checker=c).latest('time') for c in self.checks.values_list('checker', flat=True).distinct() ]
         return checks
+
+    def has_yang(self):
+        return any ( [ c.checker=='yang validation' and c.passed is not None for c in self.latest_checks()] )
         
 class SubmissionCheck(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)

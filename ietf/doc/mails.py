@@ -623,3 +623,12 @@ def email_charter_internal_review(request, charter):
               cc=addrs.cc,
               extra={'Reply-To': ["irsg@irtf.org" if charter.group.type_id == 'rg' else "iesg@ietf.org", ]},
              )
+
+def email_lc_to_yang_doctors(request, doc):
+    addrs = gather_address_lists('last_call_of_doc_with_yang_issued')
+    send_mail(request, addrs.to, settings.DEFAULT_FROM_EMAIL,
+              'Attn YangDoctors: IETF LC issued for %s' % doc.name ,
+              'doc/mail/lc_to_yang_doctors.txt',
+              dict(doc=doc, url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url() ),
+              cc = addrs.cc,
+             )
