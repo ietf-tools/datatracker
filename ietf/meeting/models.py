@@ -996,7 +996,7 @@ class Session(models.Model):
     # pages.
     def all_meeting_sessions_for_group(self):
         from ietf.meeting.utils import add_event_info_to_session_qs
-        if self.group.type_id in ['wg','rg','ag']:
+        if self.group.features.has_meetings:
             if not hasattr(self, "_all_meeting_sessions_for_group_cache"):
                 sessions = [s for s in add_event_info_to_session_qs(self.meeting.session_set.filter(group=self.group,type=self.type)) if s.official_timeslotassignment()]
                 self._all_meeting_sessions_for_group_cache = sorted(sessions, key = lambda x: x.official_timeslotassignment().timeslot.time)
