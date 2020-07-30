@@ -4,6 +4,6 @@
 {%comment%}
         <a class="button btn-default btn-sm" href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}{% if gt == 'wg' or gt == 'rg' or gt == 'ag' %}{% else %}#session_{{session.pk}}{% endif %}">Edit</a>
 {%endcomment%}
-        <a class="" href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}{% if gt == 'wg' or gt == 'rg' or gt == 'ag' %}{% else %}#session_{{session.pk}}{% endif %}">Edit materials</a>
+        <a class="" href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}{% if gt == 'wg' or gt == 'rg' or gt == 'ag' or gt == 'rag' %}{% else %}#session_{{session.pk}}{% endif %}">Edit materials</a>
 {% endwith %}
 {% endif %}

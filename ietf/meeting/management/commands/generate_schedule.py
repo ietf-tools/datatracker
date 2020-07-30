@@ -550,6 +550,7 @@ class Session(object):
         self.is_area_meeting = any([
             session_db.group.type_id == 'area',
             session_db.group.type_id == 'ag',
+            session_db.group.type_id == 'rag',
             session_db.group.meeting_seen_as_area,
         ])
         self.is_bof = session_db.group.state_id == 'bof'

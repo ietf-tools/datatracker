@@ -246,7 +246,7 @@ def generate_approval_mail_approved(request, doc):
 
     # the second check catches some area working groups (like
     # Transport Area Working Group)
-    if doc.group.type_id not in ("area", "individ", "ag", "rg") and not doc.group.name.endswith("Working Group"):
+    if doc.group.type_id not in ("area", "individ", "ag", "rg", "rag") and not doc.group.name.endswith("Working Group"):
         doc.group.name_with_wg = doc.group.name + " Working Group"
     else:
         doc.group.name_with_wg = doc.group.name

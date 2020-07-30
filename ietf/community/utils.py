@@ -51,7 +51,7 @@ def can_manage_community_list(user, clist):
         if has_role(user, 'Secretariat'):
             return True
 
-        if clist.group.type_id in ['area', 'wg', 'rg', 'ag', 'program', ]:
+        if clist.group.type_id in ['area', 'wg', 'rg', 'ag', 'rag', 'program', ]:
             return Role.objects.filter(name__slug__in=clist.group.features.groupman_roles, person__user=user, group=clist.group).exists()
 
     return False

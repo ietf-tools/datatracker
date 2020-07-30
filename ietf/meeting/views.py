@@ -939,7 +939,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     groups = [a.session.historic_group for a in filtered_assignments
               if a.session
               and a.session.historic_group
-              and a.session.historic_group.type_id in ('wg', 'rg', 'ag', 'iab')
+              and a.session.historic_group.type_id in ('wg', 'rg', 'ag', 'rag', 'iab', 'program')
               and a.session.historic_group.historic_parent]
     group_parents = []
     for g in groups:
@@ -1422,7 +1422,7 @@ def agenda_json(request, num=None ):
                 }
             if asgn.session.historic_group.is_bof():
                 sessdict['is_bof'] = True
-            if asgn.session.historic_group.type_id in ['wg','rg', 'ag',] or asgn.session.historic_group.acronym in ['iesg',]:
+            if asgn.session.historic_group.type_id in ['wg','rg', 'ag', 'rag'] or asgn.session.historic_group.acronym in ['iesg',]: # TODO: should that first list be groupfeatures driven?
                 if asgn.session.historic_group.historic_parent:
                     sessdict['group']['parent'] = asgn.session.historic_group.historic_parent.acronym
                     parent_acronyms.add(asgn.session.historic_group.historic_parent.acronym)
@@ -1542,7 +1542,7 @@ def meeting_requests(request, num=None):
         s.current_status_name = status_names.get(s.current_status, s.current_status)
         s.requested_by_person = session_requesters.get(s.requested_by)
 
-    groups_not_meeting = Group.objects.filter(state='Active',type__in=['wg','rg','ag','bof','program']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym").prefetch_related("parent")
+    groups_not_meeting = Group.objects.filter(state='Active',type__in=['wg','rg','ag','rag','bof','program']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym").prefetch_related("parent")
 
     return render(request, "meeting/requests.html",
         {"meeting": meeting, "sessions":sessions,
@@ -3174,7 +3174,7 @@ def request_minutes(request, num=None):
             Session.objects.filter(
                 timeslotassignments__schedule__meeting=meeting,
                 timeslotassignments__schedule__meeting__schedule=F('timeslotassignments__schedule'),
-                group__type__in=['wg','rg','ag'],
+                group__type__in=['wg','rg','ag','rag','program'],
             )
         ).filter(~Q(current_status='canceled')).select_related('group', 'group__parent')
         for session in session_qs:

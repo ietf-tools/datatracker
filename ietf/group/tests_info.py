@@ -71,7 +71,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, group.name)
         self.assertContains(r, group.ad_role().person.plain_name())
 
-        for t in ('rg','area','ag','dir','review','team','program'):
+        for t in ('rg','area','ag', 'rag', 'dir','review','team','program'):
             g = GroupFactory.create(type_id=t,state_id='active') 
             if t in ['dir','review']:
                 g.parent = GroupFactory.create(type_id='area',state_id='active')
@@ -87,7 +87,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, "Directorate")
         self.assertContains(r, "AG")
 
-        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','area','dir','review','team','program','adhoc','ise']).values_list('slug',flat=True):
+        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','rag','area','dir','review','team','program','adhoc','ise']).values_list('slug',flat=True):
             with self.assertRaises(NoReverseMatch):
                 url=urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type=slug))
 
@@ -265,6 +265,7 @@ class GroupPagesTests(TestCase):
             'wg'   : ['secretary','ad'],
             'rg'   : ['secretary','irtf-chair'],
             'ag'   : ['secretary', 'ad' ],
+            'rag'  : ['secretary', 'irtf-chair'],
             'team' : ['secretary',], # The code currently doesn't let ads edit teams or directorates. Maybe it should.
             'dir'  : ['secretary',],
             'review'  : ['secretary',],
@@ -279,7 +280,7 @@ class GroupPagesTests(TestCase):
 
         test_groups = []
 
-        for t in ['wg','rg','ag','team']:
+        for t in ['wg','rg','ag','rag','team']:
             g = GroupFactory(type_id=t)
             setup_role(g,'chair')
             test_groups.append(g)
@@ -1472,7 +1473,7 @@ class StatusUpdateTests(TestCase):
             self.assertEqual(response.status_code, 404)
             self.client.logout()
 
-        for type_id in GroupTypeName.objects.exclude(slug__in=('wg','rg','ag','team')).values_list('slug',flat=True):
+        for type_id in GroupTypeName.objects.exclude(slug__in=('wg','rg','ag','rag','team')).values_list('slug',flat=True):
             group = GroupFactory.create(type_id=type_id)
             for user in (None,User.objects.get(username='secretary')):
                 ensure_updates_dont_show(group,user)

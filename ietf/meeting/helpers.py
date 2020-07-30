@@ -338,7 +338,7 @@ def can_approve_interim_request(meeting, user):
     if group.type.slug in ['wg','ag']:
         if group.parent.role_set.filter(name='ad', person=person) or group.role_set.filter(name='ad', person=person):
             return True
-    if group.type.slug == 'rg' and group.parent.role_set.filter(name='chair', person=person):
+    if group.type.slug in ['rg','rag'] and group.parent.role_set.filter(name='chair', person=person):
         return True
     if group.type.slug == 'program':
         if person.role_set.filter(group__acronym='iab', name='member'):

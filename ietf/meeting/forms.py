@@ -157,7 +157,7 @@ class InterimMeetingModelForm(forms.ModelForm):
         if has_role(self.user, "Area Director"):
             q_objects.add(Q(type__in=["wg", "ag"], state__in=("active", "proposed", "bof")), Q.OR)
         if has_role(self.user, "IRTF Chair"):
-            q_objects.add(Q(type="rg", state__in=("active", "proposed")), Q.OR)
+            q_objects.add(Q(type__in=["rg", "rag"], state__in=("active", "proposed")), Q.OR)
         if has_role(self.user, "WG Chair"):
             q_objects.add(Q(type="wg", state__in=("active", "proposed", "bof"), role__person=self.person, role__name="chair"), Q.OR)
         if has_role(self.user, "RG Chair"):

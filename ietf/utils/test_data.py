@@ -217,6 +217,17 @@ def make_test_data():
         parent=irtf,
         list_email="irg-rg@ietf.org",
         )
+
+    # A research area group
+    rag = Group.objects.create(
+        name="Internet Research Area Group",
+        acronym="irag",
+        description="This area group groups internet research.",
+        state_id="active",
+        type_id="rag",
+        parent=irtf,
+        list_email="irag@ietf.org",
+        )
     #charter = Document.objects.create(
     #    name="charter-ietf-" + group.acronym,
     #    type_id="charter",
@@ -254,6 +265,7 @@ def make_test_data():
     frfarea.save()
 
     create_person(irg_rg, "chair", name="Irg Chair Man", username="irgchairman")
+    create_person(rag, "chair", name="Rag Chair Man", username="ragchairman")
 
     # old draft
     old_draft = Document.objects.create(
