@@ -7,13 +7,13 @@ import itertools
 
 from django.conf import settings
 from django.contrib import messages
-from django.urls import reverse as urlreverse
 from django.db.models import Q
 from django.forms.models import inlineformset_factory, model_to_dict
 from django.forms.formsets import formset_factory
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
+from django.urls import reverse as urlreverse
 from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
@@ -41,6 +41,7 @@ from ietf.person.models import Person
 from ietf.secr.utils.document import get_rfc_num, is_draft
 from ietf.utils.draft_search import normalize_draftname
 from ietf.utils.mail import send_mail, send_mail_message
+from ietf.utils.response import permission_denied
 from ietf.utils.text import text_to_dict
 
 # ----------------------------------------------------------------
@@ -779,7 +780,7 @@ def show(request, id):
                 'ipr': ipr
             })
         elif ipr.state.slug != 'posted':
-            raise Http404
+            permission_denied(request, "Restricted to role: Secretariat.")
 
     updates_iprs = ipr.relatedipr_source_set.all().order_by('source__time')
     prev_rel = updates_iprs.last()

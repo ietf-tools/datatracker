@@ -100,17 +100,17 @@ class IprTests(TestCase):
     def test_show_parked(self):
         ipr = HolderIprDisclosureFactory(state_id='parked')
         r = self.client.get(urlreverse("ietf.ipr.views.show", kwargs=dict(id=ipr.pk)))
-        self.assertEqual(r.status_code, 404)
+        self.assertEqual(r.status_code, 403)
 
     def test_show_pending(self):
         ipr = HolderIprDisclosureFactory(state_id='pending')
         r = self.client.get(urlreverse("ietf.ipr.views.show", kwargs=dict(id=ipr.pk)))
-        self.assertEqual(r.status_code, 404)
+        self.assertEqual(r.status_code, 403)
         
     def test_show_rejected(self):
         ipr = HolderIprDisclosureFactory(state_id='rejected')
         r = self.client.get(urlreverse("ietf.ipr.views.show", kwargs=dict(id=ipr.pk)))
-        self.assertEqual(r.status_code, 404)
+        self.assertEqual(r.status_code, 403)
         
     def test_show_removed(self):
         ipr = HolderIprDisclosureFactory(state_id='removed')
