@@ -355,7 +355,7 @@ def edit_timeslots(request, num=None):
 class CopyScheduleForm(forms.ModelForm):
     class Meta:
         model = Schedule
-        fields = ['name', 'visible', 'public']
+        fields = ['name', 'visible', 'public', 'notes']
 
     def __init__(self, schedule, new_owner, *args, **kwargs):
         super(CopyScheduleForm, self).__init__(*args, **kwargs)
