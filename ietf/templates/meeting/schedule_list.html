@@ -22,21 +22,28 @@
             <tr>
               <th class="col-md-2">Name</th>
               <th class="col-md-2">Owner</th>
-              <th class="col-md-5">Notes</th>
+              <th class="col-md-1">Origin</th>
+              <th class="col-md-4">Notes</th>
               <th class="col-md-1">Visible</th>
               <th class="col-md-1">Public</th>
             </tr>
             {% for schedule in schedules %}
-            <tr>
-              <td>
-                <a href="{% url "ietf.meeting.views.edit_schedule" schedule.meeting.number schedule.owner_email schedule.name %}">{{ schedule.name }}</a>
-                {% if schedule.can_edit_properties %}
-                  <a class="edit-schedule-properties" href="{% url "ietf.meeting.views.edit_schedule_properties" schedule.meeting.number schedule.owner_email schedule.name %}?next={{ request.get_full_path|urlencode }}">
-                    <i title="Edit agenda properties" class="fa fa-edit"></i>
-                  </a>
+              <tr>
+                <td>
+                  <a href="{% url "ietf.meeting.views.edit_schedule" meeting.number schedule.owner_email schedule.name %}">{{ schedule.name }}</a>
+                  {% if schedule.can_edit_properties %}
+                    <a class="edit-schedule-properties" href="{% url "ietf.meeting.views.edit_schedule_properties" meeting.number schedule.owner_email schedule.name %}?next={{ request.get_full_path|urlencode }}">
+                      <i title="Edit agenda properties" class="fa fa-edit"></i>
+                    </a>
+                  {% endif %}
+                </td>
+                <td>{{ schedule.owner }}</td>
+                <td>
+                  {% if schedule.origin %}
+                    <a href="{% url "ietf.meeting.views.edit_schedule" meeting.number schedule.origin.owner_email schedule.name %}">{{ schedule.origin.name }}</a>
+                    <a href="{% url "ietf.meeting.views.diff_schedules" meeting.number %}?from_schedule={{ schedule.origin.name|urlencode }}&to_schedule={{ schedule.name|urlencode }}" title="{{ schedule.changes_from_origin }} change{{ schedule.changes_from_origin|pluralize }} from {{ schedule.origin.name }}">+{{ schedule.changes_from_origin }}</a>
                 {% endif %}
               </td>
-              <td>{{ schedule.owner }}</td>
               <td>{{ schedule.notes|linebreaksbr }}</td>
               <td>
                 {% if schedule.visible %}

@@ -1359,6 +1359,77 @@ class EditScheduleListTests(TestCase):
         r = self.client.get(url)
         self.assertTrue(r.status_code, 200)
 
+    def test_diff_schedules(self):
+        meeting = make_meeting_test_data()
+
+        url = urlreverse('ietf.meeting.views.diff_schedules',kwargs={'num':meeting.number})
+        login_testing_unauthorized(self,"secretary", url)
+        r = self.client.get(url)
+        self.assertTrue(r.status_code, 200)
+
+        from_schedule = Schedule.objects.get(meeting=meeting, name="test-unofficial-schedule")
+
+        session1 = Session.objects.filter(meeting=meeting, group__acronym='mars').first()
+        session2 = Session.objects.filter(meeting=meeting, group__acronym='ames').first()
+        session3 = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym='mars'),
+                               attendees=10, requested_duration=datetime.timedelta(minutes=70),
+                               type_id='regular')
+        SchedulingEvent.objects.create(session=session3, status_id='schedw', by=Person.objects.first())
+
+        slot2 = TimeSlot.objects.filter(meeting=meeting, type='regular').order_by('-time').first()
+        slot3 = TimeSlot.objects.create(
+            meeting=meeting, type_id='regular', location=slot2.location,
+            duration=datetime.timedelta(minutes=60),
+            time=slot2.time + datetime.timedelta(minutes=60),
+        )
+
+        # copy
+        copy_url = urlreverse("ietf.meeting.views.copy_meeting_schedule", kwargs=dict(num=meeting.number, owner=from_schedule.owner_email(), name=from_schedule.name))
+        r = self.client.post(copy_url, {
+            'name': "newtest",
+            'public': "on",
+        })
+        self.assertNoFormPostErrors(r)
+
+        to_schedule = Schedule.objects.get(meeting=meeting, name='newtest')
+
+        # make some changes
+
+        edit_url = urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs=dict(num=meeting.number, owner=to_schedule.owner_email(), name=to_schedule.name))
+
+        # schedule
+        r = self.client.post(edit_url, {
+            'action': 'assign',
+            'timeslot': slot3.pk,
+            'session': session3.pk,
+        })
+        self.assertEqual(json.loads(r.content)['success'], True)
+
+        # unschedule
+        r = self.client.post(edit_url, {
+            'action': 'unassign',
+            'session': session1.pk,
+        })
+        self.assertEqual(json.loads(r.content)['success'], True)
+
+        # move
+        r = self.client.post(edit_url, {
+            'action': 'assign',
+            'timeslot': slot2.pk,
+            'session': session2.pk,
+        })
+        self.assertEqual(json.loads(r.content)['success'], True)
+
+        # get differences
+        r = self.client.get(url, {
+            'from_schedule': from_schedule.name,
+            'to_schedule': to_schedule.name,
+        })
+        self.assertTrue(r.status_code, 200)
+
+        q = PyQuery(r.content)
+        self.assertEqual(len(q(".schedule-diffs tr")), 3)
+
     def test_delete_schedule(self):
         url = urlreverse('ietf.meeting.views.delete_schedule',
                          kwargs={'num':self.mtg.number,

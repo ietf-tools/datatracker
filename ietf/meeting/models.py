@@ -626,7 +626,7 @@ class Schedule(models.Model):
     public   = models.BooleanField(default=True, help_text="Allow others to see this agenda.")
     badness  = models.IntegerField(null=True, blank=True)
     notes    = models.TextField(blank=True)
-    # considering copiedFrom = ForeignKey('Schedule', blank=True, null=True)
+    origin   = ForeignKey('Schedule', blank=True, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return u"%s:%s(%s)" % (self.meeting, self.name, self.owner)

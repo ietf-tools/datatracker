@@ -436,3 +436,80 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
             formatted_constraints_for_sessions[s.pk][joint_with_groups_constraint_name] = [g.acronym for g in joint_groups]
 
     return constraints_for_sessions, formatted_constraints_for_sessions, constraint_names
+
+
+def diff_meeting_schedules(from_schedule, to_schedule):
+    """Compute the difference between the two meeting schedules as a list
+    describing the set of actions that will turn the schedule of from into
+    the schedule of to, like:
+
+    [
+      {'change': 'schedule', 'session': session_id, 'to': timeslot_id},
+      {'change': 'move', 'session': session_id, 'from': timeslot_id, 'to': timeslot_id2},
+      {'change': 'unschedule', 'session': session_id, 'from': timeslot_id},
+    ]
+
+    Uses .assignments.all() so that it can be prefetched.
+    """
+    diffs = []
+
+    from_session_timeslots = {
+        a.session_id: a.timeslot_id
+        for a in from_schedule.assignments.all()
+    }
+
+    session_ids_in_to = set()
+
+    for a in to_schedule.assignments.all():
+        session_ids_in_to.add(a.session_id)
+
+        from_timeslot_id = from_session_timeslots.get(a.session_id)
+
+        if from_timeslot_id is None:
+            diffs.append({'change': 'schedule', 'session': a.session_id, 'to': a.timeslot_id})
+        elif a.timeslot_id != from_timeslot_id:
+            diffs.append({'change': 'move', 'session': a.session_id, 'from': from_timeslot_id, 'to': a.timeslot_id})
+
+    for from_session_id, from_timeslot_id in from_session_timeslots.items():
+        if from_session_id not in session_ids_in_to:
+            diffs.append({'change': 'unschedule', 'session': from_session_id, 'from': from_timeslot_id})
+
+    return diffs
+
+
+def prefetch_schedule_diff_objects(diffs):
+    session_ids = set()
+    timeslot_ids = set()
+
+    for d in diffs:
+        session_ids.add(d['session'])
+
+        if d['change'] == 'schedule':
+            timeslot_ids.add(d['to'])
+        elif d['change'] == 'move':
+            timeslot_ids.add(d['from'])
+            timeslot_ids.add(d['to'])
+        elif d['change'] == 'unschedule':
+            timeslot_ids.add(d['from'])
+
+    session_lookup = {s.pk: s for s in Session.objects.filter(pk__in=session_ids)}
+    timeslot_lookup = {t.pk: t for t in TimeSlot.objects.filter(pk__in=timeslot_ids).prefetch_related('location')}
+
+    res = []
+    for d in diffs:
+        d_objs = {
+            'change': d['change'],
+            'session': session_lookup.get(d['session'])
+        }
+
+        if d['change'] == 'schedule':
+            d_objs['to'] = timeslot_lookup.get(d['to'])
+        elif d['change'] == 'move':
+            d_objs['from'] = timeslot_lookup.get(d['from'])
+            d_objs['to'] = timeslot_lookup.get(d['to'])
+        elif d['change'] == 'unschedule':
+            d_objs['from'] = timeslot_lookup.get(d['from'])
+
+        res.append(d_objs)
+
+    return res

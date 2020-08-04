@@ -48,6 +48,7 @@ type_ietf_only_patterns = [
     url(r'^agenda/by-type/(?P<type>[a-z]+)/ics$', views.agenda_by_type_ics),
     url(r'^agendas/list$', views.list_schedules),
     url(r'^agendas/edit$', RedirectView.as_view(pattern_name='ietf.meeting.views.list_schedules', permanent=True)),
+    url(r'^agendas/diff/$', views.diff_schedules),
     url(r'^timeslots/edit$',                     views.edit_timeslots),
     url(r'^timeslot/(?P<slot_id>\d+)/edittype$', views.edit_timeslot_type),
     url(r'^rooms$',                              ajax.timeslot_roomsurl),

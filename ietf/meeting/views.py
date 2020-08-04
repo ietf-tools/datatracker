@@ -77,6 +77,7 @@ from ietf.meeting.utils import session_requested_by
 from ietf.meeting.utils import current_session_status
 from ietf.meeting.utils import data_for_meetings_overview
 from ietf.meeting.utils import preprocess_constraints_for_meeting_schedule_editor
+from ietf.meeting.utils import diff_meeting_schedules, prefetch_schedule_diff_objects
 from ietf.message.utils import infer_message
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
@@ -825,7 +826,9 @@ def natural_sort_key(s): # from https://stackoverflow.com/questions/4836710/is-t
 def list_schedules(request, num):
     meeting = get_meeting(num)
 
-    schedules = Schedule.objects.filter(meeting=meeting).prefetch_related('owner').order_by('owner', '-name', '-public').distinct()
+    schedules = Schedule.objects.filter(
+        meeting=meeting
+    ).prefetch_related('owner', 'assignments', 'origin', 'origin__assignments').order_by('owner', '-name', '-public').distinct()
     if not has_role(request.user, 'Secretariat'):
         schedules = schedules.filter(Q(visible=True) | Q(owner=request.user.person))
 
@@ -838,6 +841,9 @@ def list_schedules(request, num):
 
     for s in schedules:
         s.can_edit_properties = is_secretariat or user_is_person(request.user, s.owner)
+
+        if s.origin:
+            s.changes_from_origin = len(diff_meeting_schedules(s.origin, s))
 
         if s.pk == meeting.schedule_id:
             official_schedules.append(s)
@@ -861,6 +867,58 @@ def list_schedules(request, num):
         'meeting': meeting,
         'schedule_groups': schedule_groups,
     })
+
+class DiffSchedulesForm(forms.Form):
+    from_schedule = forms.ChoiceField()
+    to_schedule = forms.ChoiceField()
+
+    def __init__(self, meeting, user, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        qs = Schedule.objects.filter(meeting=meeting).prefetch_related('owner').order_by('-public').distinct()
+
+        if not has_role(user, 'Secretariat'):
+            qs = qs.filter(Q(visible=True) | Q(owner__user=user))
+
+        sorted_schedules = sorted(qs, reverse=True, key=lambda s: natural_sort_key(s.name))
+
+        schedule_choices = [(schedule.name, "{} ({})".format(schedule.name, schedule.owner)) for schedule in sorted_schedules]
+
+        self.fields['from_schedule'].choices = schedule_choices
+        self.fields['to_schedule'].choices = schedule_choices
+
+@role_required('Area Director','Secretariat')
+def diff_schedules(request, num):
+    meeting = get_meeting(num)
+
+    diffs = None
+    from_schedule = None
+    to_schedule = None
+
+    if 'from_schedule' in request.GET:
+        form = DiffSchedulesForm(meeting, request.user, request.GET)
+        if form.is_valid():
+            from_schedule = get_object_or_404(Schedule, name=form.cleaned_data['from_schedule'], meeting=meeting)
+            to_schedule = get_object_or_404(Schedule, name=form.cleaned_data['to_schedule'], meeting=meeting)
+            raw_diffs = diff_meeting_schedules(from_schedule, to_schedule)
+
+            diffs = prefetch_schedule_diff_objects(raw_diffs)
+            for d in diffs:
+                s = d['session']
+                s.session_label = s.short_name
+                if s.requested_duration:
+                    s.session_label = "{} ({}h)".format(s.session_label, round(s.requested_duration.seconds / 60.0 / 60.0, 1))
+    else:
+        form = DiffSchedulesForm(meeting, request.user)
+
+    return render(request, "meeting/diff_schedules.html", {
+        'meeting': meeting,
+        'form': form,
+        'diffs': diffs,
+        'from_schedule': from_schedule,
+        'to_schedule': to_schedule,
+    })
+
 
 @ensure_csrf_cookie
 def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
@@ -2282,6 +2340,10 @@ def delete_schedule(request, num, owner, name):
         return HttpResponseForbidden("You may not delete other user's schedules")
 
     if request.method == 'POST':
+        # remove schedule from origin tree
+        replacement_origin = schedule.origin
+        Schedule.objects.filter(origin=schedule).update(origin=replacement_origin)
+
         schedule.delete()
         return HttpResponseRedirect(reverse('ietf.meeting.views.list_schedules',kwargs={'num':num}))
 
