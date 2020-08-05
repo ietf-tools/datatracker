@@ -1130,12 +1130,15 @@ class EditTests(TestCase):
         r = self.client.post(url, {
             'name': "newtest",
             'public': "on",
+            'notes': "New test",
         })
         self.assertNoFormPostErrors(r)
 
         new_schedule = Schedule.objects.get(meeting=meeting, owner__user__username='secretary', name='newtest')
         self.assertEqual(new_schedule.public, True)
         self.assertEqual(new_schedule.visible, False)
+        self.assertEqual(new_schedule.notes, "New test")
+        self.assertEqual(new_schedule.origin, meeting.schedule)
 
         old_assignments = {(a.session_id, a.timeslot_id) for a in SchedTimeSessAssignment.objects.filter(schedule=meeting.schedule)}
         for a in SchedTimeSessAssignment.objects.filter(schedule=new_schedule):

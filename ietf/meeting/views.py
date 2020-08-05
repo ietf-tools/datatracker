@@ -395,6 +395,7 @@ def copy_meeting_schedule(request, num, owner, name):
             new_schedule = form.save(commit=False)
             new_schedule.meeting = schedule.meeting
             new_schedule.owner = request.user.person
+            new_schedule.origin = schedule
             new_schedule.save()
 
             # keep a mapping so that extendedfrom references can be chased
