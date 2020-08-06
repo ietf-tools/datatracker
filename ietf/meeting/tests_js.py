@@ -5,7 +5,6 @@
 import sys
 import time
 import datetime
-from pyquery import PyQuery 
 from unittest import skipIf
 
 import django
@@ -102,6 +101,14 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
             time=max(slot1.end_time(), slot2.end_time()) + datetime.timedelta(minutes=10),
         )
         
+        slot4 = TimeSlot.objects.create(
+            meeting=meeting,
+            type_id='regular',
+            location=room1,
+            duration=datetime.timedelta(hours=2),
+            time=slot1.time + datetime.timedelta(days=1),
+        )
+        
         s1, s2 = Session.objects.filter(meeting=meeting, type='regular')
         s2.requested_duration = slot2.duration + datetime.timedelta(minutes=10)
         s2.save()
@@ -126,8 +133,7 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
         url = self.absreverse('ietf.meeting.views.edit_meeting_schedule', kwargs=dict(num=meeting.number, name=schedule.name, owner=schedule.owner_email()))
         self.driver.get(url)
 
-        q = PyQuery(self.driver.page_source)
-        self.assertEqual(len(q('.session')), 3)
+        self.assertEqual(len(self.driver.find_elements_by_css_selector('.session')), 3)
 
         # select - show session info
         s2_element = self.driver.find_element_by_css_selector('#session{}'.format(s2.pk))
@@ -239,6 +245,14 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
         self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal [value=\"{}\"]".format("ts-group-{}-{}".format(slot2.time.strftime("%Y%m%d-%H%M"), int(slot2.duration.total_seconds() / 60)))).click()
         self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal [data-dismiss=\"modal\"]").click()
         self.assertTrue(not self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal").is_displayed())
+
+        # swap days
+        self.driver.find_element_by_css_selector(".day [data-target=\"#swap-days-modal\"][data-dayid=\"{}\"]".format(slot4.time.date().isoformat())).click()
+        self.assertTrue(self.driver.find_element_by_css_selector("#swap-days-modal").is_displayed())
+        self.driver.find_element_by_css_selector("#swap-days-modal input[name=\"target_day\"][value=\"{}\"]".format(slot1.time.date().isoformat())).click()
+        self.driver.find_element_by_css_selector("#swap-days-modal button[type=\"submit\"]").click()
+
+        self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{} #session{}'.format(slot4.pk, s1.pk)))
 
 
 @skipIf(skip_selenium, skip_message)

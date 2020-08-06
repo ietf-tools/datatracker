@@ -78,6 +78,7 @@ from ietf.meeting.utils import current_session_status
 from ietf.meeting.utils import data_for_meetings_overview
 from ietf.meeting.utils import preprocess_constraints_for_meeting_schedule_editor
 from ietf.meeting.utils import diff_meeting_schedules, prefetch_schedule_diff_objects
+from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments
 from ietf.message.utils import infer_message
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
@@ -432,6 +433,10 @@ def copy_meeting_schedule(request, num, owner, name):
     })
 
 
+class SwapDaysForm(forms.Form):
+    source_day = forms.DateField(required=True)
+    target_day = forms.DateField(required=True)
+
 @ensure_csrf_cookie
 def edit_meeting_schedule(request, num=None, owner=None, name=None):
     meeting = get_meeting(num)
@@ -547,12 +552,13 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             s.is_tombstone = s.current_status in tombstone_states
 
 
-    if request.method == 'POST': # handle ajax requests
+    if request.method == 'POST':
         if not can_edit:
             return HttpResponseForbidden("Can't edit this schedule")
 
         action = request.POST.get('action')
 
+        # handle ajax requests
         if action == 'assign' and request.POST.get('session', '').isdigit() and request.POST.get('timeslot', '').isdigit():
             session = get_object_or_404(sessions, pk=request.POST['session'])
             timeslot = get_object_or_404(timeslots_qs, pk=request.POST['timeslot'])
@@ -605,7 +611,22 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
             return JsonResponse({'success': True})
 
-        return HttpResponse("Invalid parameters", status_code=400)
+        elif action == 'swapdays':
+            # updating the client side is a bit complicated, so just
+            # do a full refresh
+
+            swap_days_form = SwapDaysForm(request.POST)
+            if not swap_days_form.is_valid():
+                return HttpResponse("Invalid swap: {}".format(swap_days_form.errors), status=400)
+
+            source_day = swap_days_form.cleaned_data['source_day']
+            target_day = swap_days_form.cleaned_data['target_day']
+
+            swap_meeting_schedule_timeslot_assignments(schedule, [ts for ts in timeslots_qs if ts.time.date() == source_day], [ts for ts in timeslots_qs if ts.time.date() == target_day], target_day - source_day)
+
+            return HttpResponseRedirect(request.get_full_path())
+
+        return HttpResponse("Invalid parameters", status=400)
 
     # prepare timeslot layout
 
@@ -688,20 +709,12 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         p.scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round(x * 255)) for x in rgb_color))
         p.light_scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round((0.9 + 0.1 * x) * 255)) for x in rgb_color))
 
-    js_data = {
-        'can_edit': can_edit,
-        'urls': {
-            'assign': request.get_full_path()
-        }
-    }
-
     return render(request, "meeting/edit_meeting_schedule.html", {
         'meeting': meeting,
         'schedule': schedule,
         'can_edit': can_edit,
         'can_edit_properties': can_edit or secretariat,
         'secretariat': secretariat,
-        'js_data': json.dumps(js_data, indent=2),
         'days': days,
         'room_labels': room_labels,
         'timeslot_groups': sorted((d, list(sorted(t_groups))) for d, t_groups in timeslot_groups.items()),

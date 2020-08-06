@@ -997,7 +997,7 @@ class EditTests(TestCase):
         self.assertTrue(q(".room-name:contains(\"{}\")".format(room.name)))
         self.assertTrue(q(".room-name:contains(\"{}\")".format(room.capacity)))
 
-        timeslots = TimeSlot.objects.filter(meeting=meeting, type='regular')
+        timeslots = list(TimeSlot.objects.filter(meeting=meeting, type='regular'))
         self.assertTrue(q("#timeslot{}".format(timeslots[0].pk)))
 
         for s in [s1, s2]:
@@ -1116,7 +1116,43 @@ class EditTests(TestCase):
         self.assertEqual(json.loads(r.content)['success'], True)
         self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s1)), [])
 
+        # try swapping days
+        timeslots.append(TimeSlot.objects.create(
+            meeting=meeting, type_id='regular', location=timeslots[0].location,
+            duration=timeslots[0].duration - datetime.timedelta(minutes=5),
+            time=timeslots[0].time + datetime.timedelta(days=1),
+        ))
 
+        SchedTimeSessAssignment.objects.create(schedule=schedule, session=s1, timeslot=timeslots[1])
+
+        self.assertEqual(len(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s2, timeslot=timeslots[0])), 1)
+        self.assertEqual(len(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s1, timeslot=timeslots[1])), 1)
+        self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot=timeslots[2])), [])
+
+        r = self.client.post(url, {
+            'action': 'swapdays',
+            'source_day': timeslots[0].time.date().isoformat(),
+            'target_day': timeslots[2].time.date().isoformat(),
+        })
+        self.assertEqual(r.status_code, 302)
+
+        self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot=timeslots[0])), [])
+        self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot=timeslots[1])), [])
+        self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s1)), [])
+        self.assertEqual(len(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s2, timeslot=timeslots[2])), 1)
+
+        # swap back
+        r = self.client.post(url, {
+            'action': 'swapdays',
+            'source_day': timeslots[2].time.date().isoformat(),
+            'target_day': timeslots[0].time.date().isoformat(),
+        })
+        self.assertEqual(r.status_code, 302)
+
+        self.assertEqual(len(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s2, timeslot=timeslots[0])), 1)
+        self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot=timeslots[1])), [])
+        self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot=timeslots[2])), [])
+        
     def test_copy_meeting_schedule(self):
         meeting = make_meeting_test_data()
 

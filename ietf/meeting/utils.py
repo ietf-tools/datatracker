@@ -19,7 +19,7 @@ from django.utils.safestring import mark_safe
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.meeting.models import Session, Meeting, SchedulingEvent, TimeSlot, Constraint
+from ietf.meeting.models import Session, Meeting, SchedulingEvent, TimeSlot, Constraint, SchedTimeSessAssignment
 from ietf.group.models import Group, Role
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName, ConstraintName
@@ -513,3 +513,44 @@ def prefetch_schedule_diff_objects(diffs):
         res.append(d_objs)
 
     return res
+
+def swap_meeting_schedule_timeslot_assignments(schedule, source_timeslots, target_timeslots, source_target_offset):
+    """Swap the assignments of the two meeting schedule timeslots in one
+    go, automatically matching them up based on the specified offset,
+    e.g. timedelta(days=1). For timeslots where no suitable swap match
+    is found, the sessions are unassigned. Doesn't take tombstones into
+    account."""
+
+    assignments_by_timeslot = defaultdict(list)
+
+    for a in SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot__in=source_timeslots + target_timeslots):
+        assignments_by_timeslot[a.timeslot_id].append(a)
+
+    timeslots_to_match_up = [(source_timeslots, target_timeslots, source_target_offset), (target_timeslots, source_timeslots, -source_target_offset)]
+    for lhs_timeslots, rhs_timeslots, lhs_offset in timeslots_to_match_up:
+        timeslots_by_location = defaultdict(list)
+        for rts in rhs_timeslots:
+            timeslots_by_location[rts.location_id].append(rts)
+
+        for lts in lhs_timeslots:
+            lts_assignments = assignments_by_timeslot.pop(lts.pk, [])
+            if not lts_assignments:
+                continue
+
+            swapped = False
+
+            most_overlapping_rts, max_overlap = max([
+                (rts, max(datetime.timedelta(0), min(lts.end_time() + lhs_offset, rts.end_time()) - max(lts.time + lhs_offset, rts.time)))
+                for rts in timeslots_by_location.get(lts.location_id, [])
+            ] + [(None, datetime.timedelta(0))], key=lambda t: t[1])
+
+            if max_overlap > datetime.timedelta(minutes=5):
+                for a in lts_assignments:
+                    a.timeslot = most_overlapping_rts
+                    a.modified = datetime.datetime.now()
+                    a.save()
+                swapped = True
+
+            if not swapped:
+                for a in lts_assignments:
+                    a.delete()

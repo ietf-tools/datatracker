@@ -15,9 +15,6 @@
 {% block title %}{{ schedule.name }}: IETF {{ meeting.number }} meeting agenda{% endblock %}
 
 {% block js %}
-  <script type='text/javascript'>
-   var ietfData = {{ js_data|safe }};
-  </script>
   <script type="text/javascript" src="{% static 'ietf/js/edit-meeting-schedule.js' %}"></script>
 {% endblock js %}
 
@@ -80,7 +77,7 @@
         {% for day in days %}
           <div class="day">
             <div class="day-label">
-              <strong>{{ day.day|date:"l" }}</strong><br>
+              <strong>{{ day.day|date:"l" }}</strong> <i class="fa fa-exchange swap-days" data-dayid="{{ day.day.isoformat }}" data-toggle="modal" data-target="#swap-days-modal"></i><br>
               {{ day.day|date:"N j, Y" }}
             </div>
 
@@ -94,9 +91,9 @@
                     </div>
 
                     <div class="drop-target">
-                    {% for assignment, session in t.session_assignments %}
-                      {% include "meeting/edit_meeting_schedule_session.html" %}
-                    {% endfor %}
+                      {% for assignment, session in t.session_assignments %}
+                        {% include "meeting/edit_meeting_schedule_session.html" %}
+                      {% endfor %}
                     </div>
                   </div>
                 {% endfor %}
@@ -170,6 +167,35 @@
             <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div id="swap-days-modal" class="modal" role="dialog" aria-labelledby="swap-days-modal-title">
+      <div class="modal-dialog modal-lg" role="document">
+        <form class="modal-content" method="post">{% csrf_token %}
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">
+              <span aria-hidden="true">&times;</span>
+              <span class="sr-only">Close</span>
+            </button>
+            <h4 class="modal-title" id="swap-days-modal-title">Swap <span class="day"></span> with</h4>
+          </div>
+
+          <input type="hidden" name="source_day" value="">
+
+          <div class="modal-body">
+            {% for day in days %}
+              <label>
+                <input type="radio" name="target_day" value="{{ day.day.isoformat }}"> {{ day.day|date:"l, N j, Y" }}
+              </label>
+            {% endfor %}
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <button type="submit" name="action" value="swapdays" class="btn btn-primary">Swap days</button>
+          </div>
+        </form>
       </div>
     </div>
 

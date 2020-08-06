@@ -1042,6 +1042,18 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   height: 3em;
 }
 
+.edit-meeting-schedule .edit-grid .day-label .swap-days {
+  cursor: pointer;
+}
+
+.edit-meeting-schedule .edit-grid .day-label .swap-days:hover {
+  color: #666;
+}
+
+.edit-meeting-schedule #swap-days-modal .modal-body label {
+  display: block;
+}
+
 .edit-meeting-schedule .edit-grid .day-flow {
   margin-left: 8em;
   display: flex;
