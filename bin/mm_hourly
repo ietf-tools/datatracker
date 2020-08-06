@@ -13,7 +13,8 @@ export PYTHONIOENCODING=utf-8
 program=${0##*/}
 trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; exit 1' ERR
 
-DTDIR=/a/www/ietf-datatracker/web
+# Note that we're using the last 2.7 release here, not the current release
+DTDIR=/a/www/ietf-datatracker/py27
 cd $DTDIR/
 
 # Set up the virtual environment
@@ -22,4 +23,4 @@ source $DTDIR/env/bin/activate
 logger -p user.info -t cron "Running $DTDIR/bin/mm_hourly"
 
 ## XXX commented out pending rewrite -- mailman 2 python interface is not available under Python 3
-# $DTDIR/ietf/manage.py import_mailman_listinfo
+$DTDIR/ietf/manage.py import_mailman_listinfo
