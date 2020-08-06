@@ -8,7 +8,7 @@ import datetime, json
 
 from django import forms
 from django.conf import settings
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.defaultfilters import striptags
 from django.template.loader import render_to_string
@@ -28,6 +28,7 @@ from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred,
     generate_issue_ballot_mail, generate_ballot_writeup, generate_ballot_rfceditornote,
     generate_approval_mail, email_irsg_ballot_closed, email_irsg_ballot_issued )
 from ietf.doc.lastcall import request_last_call
+from ietf.doc.templatetags.ietf_filters import can_ballot
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
 from ietf.mailtrigger.utils import gather_address_lists
@@ -38,7 +39,7 @@ from ietf.person.models import Person
 from ietf.utils import log
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.utils.decorators import require_api_key
-from ietf.doc.templatetags.ietf_filters import can_ballot
+from ietf.utils.response import permission_denied
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -213,7 +214,7 @@ def edit_position(request, name, ballot_id):
         old_pos = None
         if not has_role(request.user, "Secretariat") and not can_ballot(request.user, doc):
             # prevent pre-ADs from voting
-            return HttpResponseForbidden("Must be a proper Area Director in an active area or IRSG Member to cast ballot")
+            permission_denied(request, "Must be a proper Area Director in an active area or IRSG Member to cast ballot")
         
         form = EditPositionForm(request.POST, ballot_type=ballot.ballot_type)
         if form.is_valid():
@@ -682,7 +683,7 @@ def ballot_rfceditornote(request, name):
     doc = get_object_or_404(Document, docalias__name=name)
 
     if not is_authorized_in_doc_stream(request.user, doc):
-        return HttpResponseForbidden("You do not have the necessary permissions to change the RFC Editor Note for this document")
+        permission_denied(request, "You do not have the necessary permissions to change the RFC Editor Note for this document")
 
     login = request.user.person
 

@@ -51,7 +51,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
-from django.http import HttpResponse, HttpResponseForbidden, Http404, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
@@ -119,6 +119,7 @@ from ietf.mailtrigger.utils import gather_address_lists
 from ietf.mailtrigger.models import Recipient
 from ietf.settings import MAILING_LIST_INFO_URL
 from ietf.utils.pipe import pipe
+from ietf.utils.response import permission_denied
 from ietf.utils.text import strip_suffix
 
 
@@ -853,7 +854,7 @@ def group_photos(request, group_type=None, acronym=None):
 #     group_type = group.type_id
 # 
 #     if not can_manage_group(request.user, group):
-#         return HttpResponseForbidden("You don't have permission to access this view")
+#         permission_denied(request, "You don't have permission to access this view")
 # 
 #     if not group.charter:
 #         group.charter = get_or_create_initial_charter(group, group_type)
@@ -905,7 +906,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
             group_type = group.type_id
         if not (can_manage_group(request.user, group)
                 or group.has_role(request.user, group.features.groupman_roles)):
-            return HttpResponseForbidden("You don't have permission to access this view")
+            permission_denied(request, "You don't have permission to access this view")
 
     if request.method == 'POST':
         form = GroupForm(request.POST, group=group, group_type=group_type, field=field)
@@ -1089,7 +1090,7 @@ def conclude(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
 
     if not can_manage_group_type(request.user, group):
-        return HttpResponseForbidden("You don't have permission to access this view")
+        permission_denied(request, "You don't have permission to access this view")
 
     if request.method == 'POST':
         form = ConcludeGroupForm(request.POST)
@@ -1136,7 +1137,7 @@ def customize_workflow(request, group_type=None, acronym=None):
 
     if not (can_manage_group(request.user, group)
             or group.has_role(request.user, group.features.groupman_roles)):
-        return HttpResponseForbidden("You don't have permission to access this view")
+        permission_denied(request, "You don't have permission to access this view")
 
     if group_type == "rg":
         stream_id = "irtf"
@@ -1246,7 +1247,7 @@ def stream_edit(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
 
     if not (has_role(request.user, "Secretariat") or group.has_role(request.user, "chair")):
-        return HttpResponseForbidden("You don't have permission to access this page.")
+        permission_denied(request, "You don't have permission to access this page.")
 
     chairs = Email.objects.filter(role__group=group, role__name="chair").select_related("person")
 
@@ -1487,7 +1488,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
         raise Http404
 
     if not can_manage_review_requests_for_team(request.user, group):
-        return HttpResponseForbidden("You do not have permission to perform this action")
+        permission_denied(request, "You do not have permission to perform this action")
 
     review_requests = get_open_review_requests_for_team(group, assignment_status=assignment_status)
 
@@ -1622,7 +1623,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
         raise Http404
 
     if not can_manage_review_requests_for_team(request.user, group):
-        return HttpResponseForbidden("You do not have permission to perform this action")
+        permission_denied(request, "You do not have permission to perform this action")
 
     review_assignments = list(ReviewAssignment.objects.filter(
         review_request__team=group,
@@ -1731,7 +1732,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
 
     if not (user_is_person(request.user, reviewer)
             or can_manage_review_requests_for_team(request.user, group)):
-        return HttpResponseForbidden("You do not have permission to perform this action")
+        permission_denied(request, "You do not have permission to perform this action")
 
     exclude_fields = []
     if not can_manage_review_requests_for_team(request.user, group):
@@ -1918,7 +1919,7 @@ def add_comment(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
 
     if not is_authorized_in_group(request.user,group):
-        return HttpResponseForbidden("You need to a chair, secretary, or delegate of this group to add a comment.")
+        permission_denied(request, "You need to a chair, secretary, or delegate of this group to add a comment.")
     
     if request.method == 'POST':
         form = AddCommentForm(request.POST)
@@ -1949,7 +1950,7 @@ def reset_next_reviewer(request, acronym, group_type=None):
         raise Http404
 
     if not Role.objects.filter(name="secr", group=group, person__user=request.user).exists() and not has_role(request.user, "Secretariat"):
-        return HttpResponseForbidden("You don't have permission to access this view")
+        permission_denied(request, "You don't have permission to access this view")
 
     instance = group.nextreviewerinteam_set.first()
     if not instance:

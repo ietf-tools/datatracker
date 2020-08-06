@@ -43,7 +43,7 @@ import re
 
 from urllib.parse import quote
 
-from django.http import HttpResponse, Http404 , HttpResponseForbidden
+from django.http import HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
@@ -76,6 +76,7 @@ from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
 from ietf.utils import markup_txt
+from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
 
 
@@ -1199,7 +1200,7 @@ def add_comment(request, name):
         can_add_comment = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair"))
     if not can_add_comment:
         # The user is a chair or secretary, but not for this WG or RG
-        return HttpResponseForbidden("You need to be a chair or secretary of this group to add a comment.")
+        permission_denied(request, "You need to be a chair or secretary of this group to add a comment.")
 
     if request.method == 'POST':
         form = AddCommentForm(request.POST)
@@ -1272,7 +1273,7 @@ def edit_notify(request, name):
     doc = get_object_or_404(Document, name=name)
 
     if not ( is_authorized_in_doc_stream(request.user, doc) or user_is_person(request.user, doc.shepherd and doc.shepherd.person) or has_role(request.user, ["Area Director"]) ):
-        return HttpResponseForbidden("You do not have permission to perform this action")
+        permission_denied(request, "You do not have permission to perform this action")
 
     init = { "notify" : doc.notify }
 

@@ -83,7 +83,7 @@ class CustomApiTests(TestCase):
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
         r = self.client.post(url, {'apikey': badapikey.hash()} )
-        self.assertContains(r, "Restricted to role Recording Manager", status_code=403)
+        self.assertContains(r, "Restricted to role: Recording Manager", status_code=403)
 
         r = self.client.post(url, {'apikey': apikey.hash()} )
         self.assertContains(r, "Too long since last regular login", status_code=400)
@@ -173,7 +173,7 @@ class CustomApiTests(TestCase):
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
         r = self.client.post(url, {'apikey': badapikey.hash()} )
-        self.assertContains(r, "Restricted to roles Recording Manager, Secretariat", status_code=403)
+        self.assertContains(r, "Restricted to roles: Recording Manager, Secretariat", status_code=403)
 
         r = self.client.post(url, {'apikey': apikey.hash()} )
         self.assertContains(r, "Too long since last regular login", status_code=400)
@@ -257,7 +257,7 @@ class CustomApiTests(TestCase):
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
         r = self.client.post(url, {'apikey': badapikey.hash()})
-        self.assertContains(r, "Restricted to role Secretariat", status_code=403)
+        self.assertContains(r, "Restricted to role: Secretariat", status_code=403)
 
         r = self.client.post(url, {'apikey': apikey.hash()})
         self.assertContains(r, "Too long since last regular login", status_code=400)
@@ -292,7 +292,7 @@ class CustomApiTests(TestCase):
             }
         url = urlreverse('ietf.api.views.api_new_meeting_registration')
         r = self.client.post(url, reg)
-        self.assertContains(r, 'Invalid apikey', status_code=400)
+        self.assertContains(r, 'Invalid apikey', status_code=403)
         oidcp = PersonFactory(user__is_staff=True)
         # Make sure 'oidcp' has an acceptable role
         RoleFactory(name_id='robot', person=oidcp, email=oidcp.email(), group__acronym='secretariat')

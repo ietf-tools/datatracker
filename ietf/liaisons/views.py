@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.urls import reverse as urlreverse
 from django.core.validators import validate_email, ValidationError
 from django.db.models import Q, Prefetch
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 
 import debug                            # pyflakes:ignore
@@ -26,6 +26,7 @@ from ietf.liaisons.forms import liaison_form_factory, SearchLiaisonForm, EditAtt
 from ietf.liaisons.mails import notify_pending_by_email, send_liaison_by_email
 from ietf.liaisons.fields import select2_id_liaison_json
 from ietf.name.models import LiaisonStatementTagName
+from ietf.utils.response import permission_denied
 
 EMAIL_ALIASES = {
     'IETFCHAIR':'The IETF Chair <chair@ietf.org>',
@@ -322,9 +323,9 @@ def add_comment(request, object_id):
 @can_submit_liaison_required
 def liaison_add(request, type=None, **kwargs):
     if type == 'incoming' and not can_add_incoming_liaison(request.user):
-        return HttpResponseForbidden("Restricted to users who are authorized to submit incoming liaison statements")
+        permission_denied(request, "Restricted to users who are authorized to submit incoming liaison statements.")
     if type == 'outgoing' and not can_add_outgoing_liaison(request.user):
-        return HttpResponseForbidden("Restricted to users who are authorized to submit outgoing liaison statements")
+        permission_denied(request, "Restricted to users who are authorized to submit outgoing liaison statements.")
 
     if request.method == 'POST':
         form = liaison_form_factory(request, data=request.POST.copy(),
@@ -372,7 +373,7 @@ def liaison_delete_attachment(request, object_id, attach_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
     attach = get_object_or_404(LiaisonStatementAttachment, pk=attach_id)
     if not can_edit_liaison(request.user, liaison):
-        return HttpResponseForbidden("You are not authorized for this action")
+        permission_denied(request, "You are not authorized for this action.")
 
     # FIXME: this view should use POST instead of GET when deleting
     attach.removed = True
@@ -430,7 +431,7 @@ def liaison_detail(request, object_id):
 def liaison_edit(request, object_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
     if not can_edit_liaison(request.user, liaison):
-        return HttpResponseForbidden('You do not have permission to edit this liaison statement')
+        permission_denied(request, 'You do not have permission to edit this liaison statement.')
     return liaison_add(request, instance=liaison)
 
 def liaison_edit_attachment(request, object_id, doc_id):
@@ -438,7 +439,7 @@ def liaison_edit_attachment(request, object_id, doc_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
     doc = get_object_or_404(Document, pk=doc_id)
     if not can_edit_liaison(request.user, liaison):
-        return HttpResponseForbidden("You are not authorized for this action")
+        permission_denied(request, "You are not authorized for this action.")
 
     if request.method == 'POST':
         form = EditAttachmentForm(request.POST)
@@ -480,8 +481,8 @@ def liaison_list(request, state='posted'):
     
     # check authorization for pending and dead tabs
     if state in ('pending','dead') and not can_add_liaison(request.user):
-        msg = "Restricted to participants who are authorized to submit liaison statements on behalf of the various IETF entities"
-        return HttpResponseForbidden(msg)
+        msg = "Restricted to participants who are authorized to submit liaison statements on behalf of the various IETF entities."
+        permission_denied(request, msg)
 
     if 'tags' in request.GET:
         value = request.GET.get('tags')

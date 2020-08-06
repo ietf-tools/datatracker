@@ -27,7 +27,7 @@ import debug                            # pyflakes:ignore
 
 from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -86,10 +86,11 @@ from ietf.utils.decorators import require_api_key
 from ietf.utils.history import find_history_replacements_active_at
 from ietf.utils.log import assertion
 from ietf.utils.mail import send_mail_message, send_mail_text
+from ietf.utils.mime import get_mime_type
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
+from ietf.utils.response import permission_denied
 from ietf.utils.text import xslugify
-from ietf.utils.mime import get_mime_type
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
     InterimCancelForm, InterimSessionInlineFormSet, FileUploadForm, RequestMinutesForm,)
@@ -462,7 +463,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     if not can_see:
         if request.method == 'POST':
-            return HttpResponseForbidden("Can't view this schedule")
+            permission_denied(request, "Can't view this schedule.")
 
         # FIXME: check this
         return render(request, "meeting/private_schedule.html",
@@ -491,7 +492,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     if request.method == 'POST':
         if not can_edit:
-            return HttpResponseForbidden("Can't edit this schedule")
+            permission_denied(request, "Can't edit this schedule.")
 
         action = request.POST.get('action')
 
@@ -859,7 +860,7 @@ def edit_schedule_properties(request, num=None, owner=None, name=None):
     cansee, canedit, secretariat = schedule_permissions(meeting, schedule, request.user)
 
     if not (canedit or has_role(request.user,'Secretariat')):
-        return HttpResponseForbidden("You may not edit this schedule")
+        permission_denied(request, "You may not edit this schedule.")
     else:
         if request.method == 'POST':
             form = SchedulePropertiesForm(instance=schedule,data=request.POST)
@@ -1704,12 +1705,12 @@ def upload_session_bluesheets(request, session_id, num):
     session = get_object_or_404(Session,pk=session_id)
 
     if not session.can_manage_materials(request.user):
-        return HttpResponseForbidden("You don't have permission to upload bluesheets for this session.")
+        permission_denied(request, "You don't have permission to upload bluesheets for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
     if session.meeting.type.slug == 'ietf' and not has_role(request.user, 'Secretariat'):
-        return HttpResponseForbidden('Restricted to role Secretariat')
+        permission_denied(request, 'Restricted to role Secretariat')
         
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
@@ -1801,9 +1802,9 @@ def upload_session_minutes(request, session_id, num):
     session = get_object_or_404(Session,pk=session_id)
 
     if not session.can_manage_materials(request.user):
-        return HttpResponseForbidden("You don't have permission to upload minutes for this session.")
+        permission_denied(request, "You don't have permission to upload minutes for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
@@ -1901,9 +1902,9 @@ def upload_session_agenda(request, session_id, num):
     session = get_object_or_404(Session,pk=session_id)
 
     if not session.can_manage_materials(request.user):
-        return HttpResponseForbidden("You don't have permission to upload an agenda for this session.")
+        permission_denied(request, "You don't have permission to upload an agenda for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
@@ -2015,9 +2016,9 @@ def upload_session_slides(request, session_id, num, name):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session,pk=session_id)
     if not session.can_manage_materials(request.user):
-        return HttpResponseForbidden("You don't have permission to upload slides for this session.")
+        permission_denied(request, "You don't have permission to upload slides for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
@@ -2111,7 +2112,7 @@ def upload_session_slides(request, session_id, num, name):
 def propose_session_slides(request, session_id, num):
     session = get_object_or_404(Session,pk=session_id)
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
@@ -2175,9 +2176,9 @@ def remove_sessionpresentation(request, session_id, num, name):
     sp = get_object_or_404(SessionPresentation,session_id=session_id,document__name=name)
     session = sp.session
     if not session.can_manage_materials(request.user):
-        return HttpResponseForbidden("You don't have permission to manage materials for this session.")
+        permission_denied(request, "You don't have permission to manage materials for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
     if request.method == 'POST':
         session.sessionpresentation_set.filter(pk=sp.pk).delete()
         c = DocEvent(type="added_comment", doc=sp.document, rev=sp.document.rev, by=request.user.person)
@@ -2191,9 +2192,9 @@ def ajax_add_slides_to_session(request, session_id, num):
     session = get_object_or_404(Session,pk=session_id)
 
     if not session.can_manage_materials(request.user):
-        return HttpResponseForbidden("You don't have permission to upload slides for this session.")
+        permission_denied(request, "You don't have permission to upload slides for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
     if request.method != 'POST' or not request.POST:
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'No data submitted or not POST' }),content_type='application/json')
@@ -2224,9 +2225,9 @@ def ajax_remove_slides_from_session(request, session_id, num):
     session = get_object_or_404(Session,pk=session_id)
 
     if not session.can_manage_materials(request.user):
-        return HttpResponseForbidden("You don't have permission to upload slides for this session.")
+        permission_denied(request, "You don't have permission to upload slides for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
     if request.method != 'POST' or not request.POST:
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'No data submitted or not POST' }),content_type='application/json')  
@@ -2262,9 +2263,9 @@ def ajax_reorder_slides_in_session(request, session_id, num):
     session = get_object_or_404(Session,pk=session_id)
 
     if not session.can_manage_materials(request.user):
-        return HttpResponseForbidden("You don't have permission to upload slides for this session.")
+        permission_denied(request, "You don't have permission to upload slides for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
 
     if request.method != 'POST' or not request.POST:
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'No data submitted or not POST' }),content_type='application/json')  
@@ -2341,13 +2342,13 @@ def delete_schedule(request, num, owner, name):
     schedule = get_schedule_by_name(meeting, person, name)
 
     if schedule.name=='Empty-Schedule':
-        return HttpResponseForbidden('You may not delete the default empty schedule')
+        permission_denied(request, 'You may not delete the default empty schedule')
 
     if schedule == meeting.schedule:
-        return HttpResponseForbidden('You may not delete the official schedule for %s'%meeting)
+        permission_denied(request, 'You may not delete the official schedule for %s'%meeting)
 
     if not ( has_role(request.user, 'Secretariat') or person.user == request.user ):
-        return HttpResponseForbidden("You may not delete other user's schedules")
+        permission_denied(request, "You may not delete other user's schedules")
 
     if request.method == 'POST':
         schedule.delete()
@@ -2466,7 +2467,7 @@ def interim_skip_announcement(request, number):
 def interim_pending(request):
 
     if not can_manage_some_groups(request.user):
-        return HttpResponseForbidden()
+        permission_denied(request, "You are not authorized to access this view")
 
     '''View which shows interim meeting requests pending approval'''
     meetings = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='apprw')
@@ -2489,7 +2490,7 @@ def interim_pending(request):
 def interim_request(request):
 
     if not can_manage_some_groups(request.user):
-        return HttpResponseForbidden("You don't have permission to request any interims")
+        permission_denied(request, "You don't have permission to request any interims")
 
     '''View for requesting an interim meeting'''
     SessionFormset = inlineformset_factory(
@@ -2582,7 +2583,7 @@ def interim_request_cancel(request, number):
     first_session = meeting.session_set.first()
     group = first_session.group
     if not can_manage_group(request.user, group):
-        return HttpResponseForbidden("You do not have permissions to cancel this meeting request")
+        permission_denied(request, "You do not have permissions to cancel this meeting request")
     session_status = current_session_status(first_session)
 
     if request.method == 'POST':
@@ -2622,7 +2623,7 @@ def interim_request_details(request, number):
     meeting = get_object_or_404(Meeting, number=number)
     group = meeting.session_set.first().group
     if not can_manage_group(request.user, group):
-        return HttpResponseForbidden("You do not have permissions to manage this meeting request")
+        permission_denied(request, "You do not have permissions to manage this meeting request")
     sessions = meeting.session_set.all()
     can_edit = can_edit_interim_request(meeting, request.user)
     can_approve = can_approve_interim_request(meeting, request.user)
@@ -2668,7 +2669,7 @@ def interim_request_edit(request, number):
     '''Edit details of an interim meeting reqeust'''
     meeting = get_object_or_404(Meeting, number=number)
     if not can_edit_interim_request(meeting, request.user):
-        return HttpResponseForbidden("You do not have permissions to edit this meeting request")
+        permission_denied(request, "You do not have permissions to edit this meeting request")
 
     SessionFormset = inlineformset_factory(
         Meeting,
@@ -3067,7 +3068,8 @@ def api_upload_bluesheet(request):
         #   group: acronym or special, i.e., 'quic' or 'plenary'
         #   item: '1', '2', '3' (the group's first, second, third etc.
         #                           session during the week)
-        #   bluesheet: json blob with [{'name': 'Name', 'affiliation': 'Organization', }, ...]
+        #   bluesheet: json blob with
+        #       [{'name': 'Name', 'affiliation': 'Organization', }, ...]
         for item in ['meeting', 'group', 'item', 'bluesheet',]:
             value = request.POST.get(item)
             if not value:
@@ -3214,9 +3216,9 @@ class ApproveSlidesForm(forms.Form):
 def approve_proposed_slides(request, slidesubmission_id, num):
     submission = get_object_or_404(SlideSubmission,pk=slidesubmission_id)
     if not submission.session.can_manage_materials(request.user):
-        return HttpResponseForbidden("You don't have permission to manage slides for this session.")
+        permission_denied(request, "You don't have permission to manage slides for this session.")
     if submission.session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")   
+        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")   
     
     session_number = None
     sessions = get_sessions(submission.session.meeting.number,submission.session.group.acronym)

@@ -15,7 +15,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db.models import Q
-from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
+from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.forms.utils import ErrorList
@@ -41,6 +41,7 @@ from ietf.group.models import Group, Role, GroupFeatures
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person, is_individual_draft_author
 from ietf.ietfauth.utils import role_required
+from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName, ExtResourceName
 from ietf.person.fields import SearchableEmailField
@@ -49,7 +50,7 @@ from ietf.utils.mail import send_mail, send_mail_message, on_behalf_of
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.validators import validate_external_resource_value
 from ietf.utils import log
-from ietf.mailtrigger.utils import gather_address_lists
+from ietf.utils.response import permission_denied
 
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg"), empty_label=None, required=True)
@@ -267,7 +268,7 @@ def change_stream(request, name):
              Role.objects.filter(name="chair",
                                  group__acronym__in=StreamName.objects.values_list("slug", flat=True),
                                  person__user=request.user))):
-        return HttpResponseForbidden("You do not have permission to view this page")
+        permission_denied(request, "You do not have permission to view this page")
 
     login = request.user.person
 
@@ -344,7 +345,7 @@ def replaces(request, name):
         raise Http404
     if not (has_role(request.user, ("Secretariat", "Area Director", "WG Chair", "RG Chair", "WG Secretary", "RG Secretary"))
             or is_authorized_in_doc_stream(request.user, doc)):
-        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+        permission_denied(request, "You do not have the necessary permissions to view this page.")
 
     if request.method == 'POST':
         form = ReplacesForm(request.POST, doc=doc)
@@ -388,7 +389,7 @@ def review_possibly_replaces(request, name):
         raise Http404
     if not (has_role(request.user, ("Secretariat", "Area Director"))
             or is_authorized_in_doc_stream(request.user, doc)):
-        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+        permission_denied(request, "You do not have the necessary permissions to view this page")
 
     suggested = list(doc.related_that_doc("possibly-replaces"))
     if not suggested:
@@ -444,7 +445,7 @@ def change_intention(request, name):
 
     if not (has_role(request.user, ("Secretariat", "Area Director"))
             or is_authorized_in_doc_stream(request.user, doc)):
-        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+        permission_denied(request, "You do not have the necessary permissions to view this page.")
 
     login = request.user.person
 
@@ -928,7 +929,7 @@ def edit_shepherd_writeup(request, name):
         or has_role(request.user, ["Area Director"]))
 
     if not can_edit_shepherd_writeup:
-        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+        permission_denied(request, "You do not have the necessary permissions to view this page")
 
     login = request.user.person
 
@@ -996,7 +997,7 @@ def edit_shepherd(request, name):
 
     can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
     if not can_edit_stream_info:
-        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+        permission_denied(request, "You do not have the necessary permissions to view this page.")
 
     if request.method == 'POST':
         form = ShepherdForm(request.POST)
@@ -1055,7 +1056,7 @@ def change_shepherd_email(request, name):
     can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
     is_shepherd = user_is_person(request.user, doc.shepherd and doc.shepherd.person)
     if not can_edit_stream_info and not is_shepherd:
-        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+        permission_denied(request, "You do not have the necessary permissions to view this page")
 
     initial = { "shepherd": doc.shepherd_id }
     if request.method == 'POST':
@@ -1147,7 +1148,7 @@ def edit_consensus(request, name):
 
     if not (has_role(request.user, ("Secretariat", "Area Director"))
             or is_authorized_in_doc_stream(request.user, doc)):
-        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+        permission_denied(request, "You do not have the necessary permissions to view this page.")
 
     e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
     prev_consensus = e.consensus if e else default_consensus(doc)
@@ -1159,7 +1160,7 @@ def edit_consensus(request, name):
                 e = ConsensusDocEvent(doc=doc, rev=doc.rev, type="changed_consensus", by=request.user.person)
                 e.consensus = {"Unknown":None,"Yes":True,"No":False}[form.cleaned_data["consensus"]]
                 if not e.consensus and doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
-                    return HttpResponseForbidden("BCPs and Standards Track documents must include the consensus boilerplate")
+                    permission_denied(request, "BCPs and Standards Track documents must include the consensus boilerplate.")
 
                 e.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(e.consensus),
                                                                      nice_consensus(prev_consensus))
@@ -1224,7 +1225,7 @@ def edit_doc_extresources(request, name):
     if not (has_role(request.user, ("Secretariat", "Area Director"))
             or is_authorized_in_doc_stream(request.user, doc)
             or is_individual_draft_author(request.user, doc)):
-        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+        permission_denied(request, "You do not have the necessary permissions to view this page.")
 
     old_resources = format_resources(doc.docextresource_set.all())
 
@@ -1270,7 +1271,7 @@ def request_publication(request, name):
     doc = get_object_or_404(Document, type="draft", name=name, stream__in=("iab", "ise", "irtf"))
 
     if not is_authorized_in_doc_stream(request.user, doc):
-        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+        permission_denied(request, "You do not have the necessary permissions to view this page.")
 
     consensus_event = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
 
@@ -1410,7 +1411,7 @@ def adopt_draft(request, name):
     doc = get_object_or_404(Document, type="draft", name=name)
 
     if not can_adopt_draft(request.user, doc):
-        return HttpResponseForbidden("You don't have permission to access this page")
+        permission_denied(request, "You don't have permission to access this page.")
 
     if request.method == 'POST':
         form = AdoptDraftForm(request.POST, user=request.user)
@@ -1501,7 +1502,7 @@ def release_draft(request, name):
         raise Http404
 
     if not can_unadopt_draft(request.user, doc):
-        return HttpResponseForbidden("You don't have permission to access this page")
+        permission_denied(request, "You don't have permission to access this page.")
 
     if request.method == 'POST':
         form = ReleaseDraftForm(request.POST)
@@ -1632,7 +1633,7 @@ def change_stream_state(request, name, state_type):
     state_type = get_object_or_404(StateType, slug=state_type)
 
     if not is_authorized_in_doc_stream(request.user, doc):
-        return HttpResponseForbidden("You don't have permission to access this page")
+        permission_denied(request, "You don't have permission to access this page.")
 
     prev_state = doc.get_state(state_type.slug)
     next_states = next_states_for_stream_state(doc, state_type, prev_state)

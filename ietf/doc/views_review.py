@@ -15,7 +15,7 @@ from simple_history.utils import update_change_reason
 
 import debug    # pyflakes:ignore
 
-from django.http import HttpResponseForbidden, JsonResponse, Http404, HttpResponse, HttpResponseRedirect
+from django.http import JsonResponse, Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django import forms
 from django.conf import settings
@@ -49,6 +49,7 @@ from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.mail import send_mail_message
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.fields import MultiEmailField
+from ietf.utils.response import permission_denied
 
 def clean_doc_revision(doc, rev):
     if rev:
@@ -112,7 +113,7 @@ def request_review(request, name):
     doc = get_object_or_404(Document, name=name)
 
     if not can_request_review_of_doc(request.user, doc):
-        return HttpResponseForbidden("You do not have permission to perform this action")
+        permission_denied(request, "You do not have permission to perform this action")
 
     now = datetime.datetime.now()
 
@@ -280,7 +281,7 @@ def close_request(request, name, request_id):
     can_manage_request = can_manage_review_requests_for_team(request.user, review_req.team)
 
     if not (can_request or can_manage_request):
-        return HttpResponseForbidden("You do not have permission to perform this action")
+        permission_denied(request, "You do not have permission to perform this action")
 
     if request.method == "POST":
         form = CloseReviewRequestForm(can_manage_request, request.POST)
@@ -315,7 +316,7 @@ def assign_reviewer(request, name, request_id):
     review_req = get_object_or_404(ReviewRequest, pk=request_id, state__in=["requested", "assigned"])
 
     if not can_manage_review_requests_for_team(request.user, review_req.team):
-        return HttpResponseForbidden("You do not have permission to perform this action")
+        permission_denied(request, "You do not have permission to perform this action")
 
     if request.method == "POST" and request.POST.get("action") == "assign":
         form = AssignReviewerForm(review_req, request.POST)
@@ -351,7 +352,7 @@ def reject_reviewer_assignment(request, name, assignment_id):
     can_manage_request = can_manage_review_requests_for_team(request.user, review_assignment.review_request.team)
 
     if not (is_reviewer or can_manage_request):
-        return HttpResponseForbidden("You do not have permission to perform this action")
+        permission_denied(request, "You do not have permission to perform this action")
 
     if request.method == "POST" and request.POST.get("action") == "reject" and not review_request_past_deadline:
         form = RejectReviewerAssignmentForm(request.POST)
@@ -406,7 +407,7 @@ def withdraw_reviewer_assignment(request, name, assignment_id):
 
     can_manage_request = can_manage_review_requests_for_team(request.user, review_assignment.review_request.team)
     if not can_manage_request:
-        return HttpResponseForbidden("You do not have permission to perform this action")
+        permission_denied(request, "You do not have permission to perform this action")
 
     if request.method == "POST" and request.POST.get("action") == "withdraw":
         review_assignment.state_id = 'withdrawn'
@@ -447,7 +448,7 @@ def mark_reviewer_assignment_no_response(request, name, assignment_id):
 
     can_manage_request = can_manage_review_requests_for_team(request.user, review_assignment.review_request.team)
     if not can_manage_request:
-        return HttpResponseForbidden("You do not have permission to perform this action")
+        permission_denied(request, "You do not have permission to perform this action")
 
     if request.method == "POST" and request.POST.get("action") == "noresponse":
         review_assignment.state_id = 'no-response'
@@ -649,7 +650,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
         can_manage_request = can_manage_review_requests_for_team(request.user, assignment.review_request.team)
     
         if not (is_reviewer or can_manage_request):
-            return HttpResponseForbidden("You do not have permission to perform this action")
+            permission_denied(request, "You do not have permission to perform this action")
     
         team = assignment.review_request.team
         team_acronym = assignment.review_request.team.acronym.lower()
@@ -666,7 +667,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
     else:
         team = get_object_or_404(Group, acronym=acronym)
         if not can_manage_review_requests_for_team(request.user, team):
-            return HttpResponseForbidden("You do not have permission to perform this action")
+            permission_denied(request, "You do not have permission to perform this action")
         assignment = None
         is_reviewer = False
         revising_review = False
@@ -918,7 +919,7 @@ def search_mail_archive(request, name, acronym=None, assignment_id=None):
     can_manage_request = can_manage_review_requests_for_team(request.user, team)
 
     if not (is_reviewer or can_manage_request):
-        return HttpResponseForbidden("You do not have permission to perform this action")
+        permission_denied(request, "You do not have permission to perform this action")
 
     res = mailarch.construct_query_urls(doc, team, query=request.GET.get("query"))
     if not res:
@@ -951,7 +952,7 @@ class EditReviewRequestCommentForm(forms.ModelForm):
 def edit_comment(request, name, request_id):
     review_req = get_object_or_404(ReviewRequest, pk=request_id)
     if not can_request_review_of_doc(request.user, review_req.doc):
-        return HttpResponseForbidden("You do not have permission to perform this action")
+        permission_denied(request, "You do not have permission to perform this action")
 
     if request.method == "POST":
         form = EditReviewRequestCommentForm(request.POST, instance=review_req)
@@ -982,7 +983,7 @@ class EditReviewRequestDeadlineForm(forms.ModelForm):
 def edit_deadline(request, name, request_id):
     review_req = get_object_or_404(ReviewRequest, pk=request_id)
     if not can_request_review_of_doc(request.user, review_req.doc):
-        return HttpResponseForbidden("You do not have permission to perform this action")
+        permission_denied(request, "You do not have permission to perform this action")
 
     old_deadline = review_req.deadline
 

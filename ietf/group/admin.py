@@ -9,7 +9,6 @@ from django import forms
 
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
-from django.core.exceptions import PermissionDenied
 from django.core.management import load_command_class
 from django.http import Http404
 from django.shortcuts import render
@@ -22,6 +21,7 @@ from ietf.group.models import (Group, GroupFeatures, GroupHistory, GroupEvent, G
     MilestoneGroupEvent, GroupExtResource, )
 
 from ietf.utils.validators import validate_external_resource_value
+from ietf.utils.response import permission_denied
 
 class RoleInline(admin.TabularInline):
     model = Role
@@ -121,7 +121,7 @@ class GroupAdmin(admin.ModelAdmin):
             obj = None
 
         if not self.has_change_permission(request, obj):
-            raise PermissionDenied
+            permission_denied(request, "You don't have edit permissions for this change.")
 
         if obj is None:
             raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {'name': force_text(opts.verbose_name), 'key': escape(object_id)})

@@ -1,6 +1,8 @@
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
+
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
 from django.shortcuts import render, redirect
 
 from ietf.group.models import Role
@@ -9,6 +11,8 @@ from ietf.ietfauth.utils import has_role
 from ietf.secr.announcement.forms import AnnounceForm
 from ietf.secr.utils.decorators import check_for_cancel
 from ietf.utils.mail import send_mail_text
+from ietf.utils.response import permission_denied
+
 
 # -------------------------------------------------
 # Helper Functions
@@ -49,7 +53,7 @@ def main(request):
     and send.
     '''
     if not check_access(request.user):
-        return HttpResponseForbidden('Restricted to: Secretariat, IAD, or chair of IETF, IAB, RSOC, RSE, IAOC, ISOC, NomCom.')
+        permission_denied(request, 'Restricted to: Secretariat, IAD, or chair of IETF, IAB, RSOC, RSE, IAOC, ISOC, NomCom.')
 
     form = AnnounceForm(request.POST or None,user=request.user)
 
@@ -74,7 +78,7 @@ def main(request):
 def confirm(request):
 
     if not check_access(request.user):
-        return HttpResponseForbidden('Restricted to: Secretariat, IAD, or chair of IETF, IAB, RSOC, RSE, IAOC, ISOC, NomCom.')
+        permission_denied(request, 'Restricted to: Secretariat, IAD, or chair of IETF, IAB, RSOC, RSE, IAOC, ISOC, NomCom.')
 
     if request.method == 'POST':
         form = AnnounceForm(request.POST, user=request.user)

@@ -6,5 +6,6 @@ from django.utils.safestring import mark_safe
 
 def permission_denied(request, msg):
     "A wrapper around the PermissionDenied exception"
-    msg += "  <br/>You can <a href='/accounts/login?next=%s'><u>Log in</u></a> if you have that role but aren't logged in." % request.path
+    if not request.user.is_authenticated:
+        msg += "  <br/>You may want to <a href='/accounts/login?next=%s'><u>Log in</u></a> if you have a datatracker role that lets you access this page." % request.path
     raise PermissionDenied(mark_safe(msg))

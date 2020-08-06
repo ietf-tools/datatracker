@@ -55,7 +55,7 @@ def require_api_key(f, request, *args, **kwargs):
     # Check hash
     key = PersonalApiKey.validate_key(force_bytes(hash))
     if not key:
-        return err(400, "Invalid apikey")
+        return err(403, "Invalid apikey")
     # Check endpoint
     urlpath = request.META.get('PATH_INFO')
     if not (urlpath and urlpath == key.endpoint):

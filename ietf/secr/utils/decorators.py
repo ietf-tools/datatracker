@@ -1,9 +1,10 @@
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 from functools import wraps
 
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpResponseRedirect, HttpResponseForbidden
+from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.utils.http import urlquote
 
@@ -12,6 +13,7 @@ from ietf.doc.models import Document
 from ietf.group.models import Group, Role
 from ietf.meeting.models import Session
 from ietf.secr.utils.meeting import get_timeslot
+from ietf.utils.response import permission_denied
 
             
 def check_for_cancel(redirect_url):
@@ -61,7 +63,7 @@ def check_permissions(func):
         try:
             login = request.user.person
         except ObjectDoesNotExist:
-            return HttpResponseForbidden("User not authorized to access group: %s" % group.acronym)
+            permission_denied(request, "User not authorized to access group: %s" % group.acronym)
             
         groups = [group]
         if group.parent:
@@ -78,7 +80,7 @@ def check_permissions(func):
                 return func(request, *args, **kwargs)
 
         # if we get here access is denied
-        return HttpResponseForbidden("User not authorized to access group: %s" % group.acronym)
+        permission_denied(request, "User not authorized to access group: %s" % group.acronym)
         
     return wraps(func)(wrapper)
 

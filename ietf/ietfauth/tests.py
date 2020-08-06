@@ -613,7 +613,7 @@ class IetfAuthTests(TestCase):
 
             # invalid apikey
             r = self.client.post(key.endpoint, {'apikey':BAD_KEY, 'dummy':'dummy',})
-            self.assertContains(r, 'Invalid apikey', status_code=400)
+            self.assertContains(r, 'Invalid apikey', status_code=403)
 
             # too long since regular login
             person.user.last_login = datetime.datetime.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS+1)

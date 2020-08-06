@@ -8,7 +8,7 @@ import json
 import os
 import textwrap
 
-from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden, Http404
+from django.http import HttpResponseRedirect, HttpResponseNotFound, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse as urlreverse
 from django import forms
@@ -32,16 +32,17 @@ from ietf.doc.utils_charter import ( historic_milestones_for_charter,
     change_group_state_after_charter_approval, fix_charter_revision_after_approval,
     split_charter_name)
 from ietf.doc.mails import email_state_changed, email_charter_internal_review
+from ietf.group.mails import email_admin_re_charter
 from ietf.group.models import Group, ChangeStateGroupEvent, MilestoneGroupEvent
 from ietf.group.utils import save_group_in_history, save_milestone_in_history, can_manage_group_type
+from ietf.group.views import fill_in_charter_info
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.name.models import GroupStateName
 from ietf.person.models import Person
 from ietf.utils.history import find_history_active_at
 from ietf.utils.mail import send_mail_preformatted 
 from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.group.mails import email_admin_re_charter
-from ietf.group.views import fill_in_charter_info
+from ietf.utils.response import permission_denied
 
 class ChangeStateForm(forms.Form):
     charter_state = forms.ModelChoiceField(State.objects.filter(used=True, type="charter"), label="Charter state", empty_label=None, required=False)
@@ -70,7 +71,7 @@ def change_state(request, name, option=None):
     group = charter.group
 
     if not can_manage_group_type(request.user, group):
-        return HttpResponseForbidden("You don't have permission to access this view")
+        permission_denied(request, "You don't have permission to access this view.")
 
     chartering_type = get_chartering_type(charter)
 
@@ -261,7 +262,7 @@ def change_title(request, name, option=None):
     charter = get_object_or_404(Document, type="charter", name=name)
     group = charter.group
     if not can_manage_group_type(request.user, group):
-        return HttpResponseForbidden("You don't have permission to access this view")
+        permission_denied(request, "You don't have permission to access this view.")
     by = request.user.person
     if request.method == 'POST':
         form = ChangeTitleForm(request.POST, charter=charter)
@@ -374,7 +375,7 @@ def submit(request, name, option=None):
         charter_rev = "00-00"
 
     if not can_manage_group_type(request.user, group) or not group.features.has_chartering_process:
-        return HttpResponseForbidden("You don't have permission to access this view")
+        permission_denied(request, "You don't have permission to access this view.")
 
 
     path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter_canonical_name, charter_rev))

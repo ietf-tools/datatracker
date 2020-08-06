@@ -7,11 +7,11 @@ import subprocess
 import os
 import json
 
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect, Http404
-from django.shortcuts import render
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
 from ietf.doc.models import DeletedEvent, StateDocEvent, DocEvent
@@ -19,6 +19,8 @@ from ietf.ietfauth.utils import role_required, has_role
 from ietf.sync.discrepancies import find_discrepancies
 from ietf.utils.serialize import object_as_shallow_dict
 from ietf.utils.log import log
+from ietf.utils.response import permission_denied
+
 
 SYNC_BIN_PATH = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../bin"))
 
@@ -51,7 +53,7 @@ def notify(request, org, notification):
 
     if username != None and password != None:
         if settings.SERVER_MODE == "production" and not request.is_secure():
-            return HttpResponseForbidden("You must use HTTPS when sending username/password")
+            permission_denied(request, "You must use HTTPS when sending username/password.")
 
         if not user.is_authenticated:
             try:
@@ -63,7 +65,7 @@ def notify(request, org, notification):
                 return HttpResponse("Invalid username/password")
 
     if not has_role(user, ("Secretariat", known_orgs[org])):
-        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+        permission_denied(request, "You do not have the necessary permissions to view this page.")
 
     known_notifications = {
         "protocols": "an added reference to an RFC at <a href=\"%s\">the IANA protocols page</a>" % settings.IANA_SYNC_PROTOCOLS_URL,

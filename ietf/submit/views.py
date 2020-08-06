@@ -43,6 +43,7 @@ from ietf.stats.utils import clean_country_name
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.log import log
 from ietf.utils.mail import parseaddr, send_mail_message
+from ietf.utils.response import permission_denied
 
 def upload_submission(request):
     if request.method == 'POST':
@@ -298,7 +299,7 @@ def submission_status(request, submission_id, access_token=None):
         action = request.POST.get('action')
         if action == "autopost" and submission.state_id == "uploaded":
             if not can_edit:
-                return HttpResponseForbidden("You do not have permission to perform this action")
+                permission_denied(request, "You do not have permission to perform this action")
 
             submitter_form = SubmitterForm(request.POST, prefix="submitter")
             replaces_form = ReplacesForm(request.POST, name=submission.name)
@@ -313,7 +314,7 @@ def submission_status(request, submission_id, access_token=None):
                 
                 if approvals_received:
                     if not is_secretariat:
-                        return HttpResponseForbidden('You do not have permission to perform this action')
+                        permission_denied(request, 'You do not have permission to perform this action')
 
                     # go directly to posting submission
                     docevent_from_submission(request, submission, desc="Uploaded new revision")
@@ -362,7 +363,7 @@ def submission_status(request, submission_id, access_token=None):
 
         elif action == "cancel" and submission.state.next_states.filter(slug="cancel"):
             if not can_cancel:
-                return HttpResponseForbidden('You do not have permission to perform this action')
+                permission_denied(request, 'You do not have permission to perform this action.')
 
             cancel_submission(submission)
 
@@ -373,7 +374,7 @@ def submission_status(request, submission_id, access_token=None):
 
         elif action == "approve" and submission.state_id == "grp-appr":
             if not can_group_approve:
-                return HttpResponseForbidden('You do not have permission to perform this action')
+                permission_denied(request, 'You do not have permission to perform this action.')
 
             post_submission(request, submission, "WG -00 approved", "Approved and posted submission")
 
@@ -382,7 +383,7 @@ def submission_status(request, submission_id, access_token=None):
 
         elif action == "forcepost" and submission.state.next_states.filter(slug="posted"):
             if not can_force_post:
-                return HttpResponseForbidden('You do not have permission to perform this action')
+                permission_denied(request, 'You do not have permission to perform this action.')
 
             if submission.state_id == "manual":
                 desc = "Posted submission manually"
@@ -424,7 +425,7 @@ def edit_submission(request, submission_id, access_token=None):
     submission = get_object_or_404(Submission, pk=submission_id, state="uploaded")
 
     if not can_edit_submission(request.user, submission, access_token):
-        return HttpResponseForbidden('You do not have permission to access this page')
+        permission_denied(request, 'You do not have permission to access this page.')
 
     errors = validate_submission(submission)
     form_errors = False
@@ -638,7 +639,7 @@ def cancel_waiting_for_draft(request):
         can_cancel = has_role(request.user, "Secretariat")
         
         if not can_cancel:
-            return HttpResponseForbidden('You do not have permission to perform this action')
+            permission_denied(request, 'You do not have permission to perform this action.')
 
         submission_id = request.POST.get('submission_id', '')
         access_token = request.POST.get('access_token', '')

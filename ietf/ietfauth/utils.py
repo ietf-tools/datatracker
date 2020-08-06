@@ -14,8 +14,9 @@ from functools import wraps
 
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.http import HttpResponseRedirect, HttpResponseForbidden
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import available_attrs
 from django.utils.http import urlquote
@@ -117,7 +118,7 @@ def passes_test_decorator(test_func, message):
             elif test_func(request.user, *args, **kwargs):
                 return view_func(request, *args, **kwargs)
             else:
-                return HttpResponseForbidden(message)
+                raise PermissionDenied(message)
         return inner
     return decorate
 
@@ -126,7 +127,7 @@ def role_required(*role_names):
     """View decorator for checking that the user is logged in and
     has one of the listed roles."""
     return passes_test_decorator(lambda u, *args, **kwargs: has_role(u, role_names, *args, **kwargs),
-                                 "Restricted to role%s %s" % ("s" if len(role_names) != 1 else "", ", ".join(role_names)))
+                                 "Restricted to role%s: %s" % ("s" if len(role_names) != 1 else "", ", ".join(role_names)))
 
 # specific permissions
 

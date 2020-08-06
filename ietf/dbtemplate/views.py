@@ -1,4 +1,6 @@
-from django.http import HttpResponseForbidden, HttpResponseRedirect
+# Copyright The IETF Trust 2012-2020, All Rights Reserved
+
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 
 import debug                            # pyflakes:ignore
@@ -7,13 +9,14 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
+from ietf.utils.response import permission_denied
 
 
 def group_template_list(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
     chairs = group.role_set.filter(name__slug='chair')
     if not has_role(request.user, "Secretariat") and not (request.user.id and chairs.filter(person__user=request.user).count()):
-        return HttpResponseForbidden("You are not authorized to access this view")
+        permission_denied(request, "You are not authorized to access this view.")
 
     template_list = DBTemplate.objects.filter(group=group)
     return render(request, 'dbtemplate/template_list.html',
@@ -28,7 +31,7 @@ def group_template_edit(request, acronym, template_id, base_template='dbtemplate
     extra_context = extra_context or {}
 
     if not has_role(request.user, "Secretariat") and not (request.user.id and chairs.filter(person__user=request.user).count()):
-        return HttpResponseForbidden("You are not authorized to access this view")
+        permission_denied(request, "You are not authorized to access this view.")
 
     template = get_object_or_404(DBTemplate, id=template_id, group=group)
     if request.method == 'POST':
@@ -52,7 +55,7 @@ def group_template_show(request, acronym, template_id, base_template='dbtemplate
     extra_context = extra_context or {}
 
     if not has_role(request.user, "Secretariat") and not (request.user.id and chairs.filter(person__user=request.user).count()):
-        return HttpResponseForbidden("You are not authorized to access this view")
+        permission_denied(request, "You are not authorized to access this view.")
 
     template = get_object_or_404(DBTemplate, id=template_id, group=group)
 

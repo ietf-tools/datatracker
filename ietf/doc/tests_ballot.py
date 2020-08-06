@@ -739,7 +739,7 @@ class ApproveBallotTests(TestCase):
         # Only Secretariat can use this URL
         login_testing_unauthorized(self, "ad", url)
         r = self.client.get(url)
-        self.assertContains(r, "Restricted to role Secretariat", status_code=403)
+        self.assertContains(r, "Restricted to role: Secretariat", status_code=403)
 
         # There are no downrefs, the page should say so
         login_testing_unauthorized(self, "secretary", url)

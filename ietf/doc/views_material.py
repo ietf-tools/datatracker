@@ -8,10 +8,10 @@ import os
 import re
 
 from django import forms
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponseForbidden, Http404
-from django.utils.html import mark_safe # type:ignore
 from django.contrib.auth.decorators import login_required
+from django.http import Http404
+from django.shortcuts import render, get_object_or_404, redirect
+from django.utils.html import mark_safe # type:ignore
 from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
@@ -21,6 +21,7 @@ from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.utils import add_state_change_event, check_common_doc_name_rules
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
+from ietf.utils.response import permission_denied
 
 @login_required
 def choose_material_type(request, acronym):
@@ -106,7 +107,7 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
        
 
     if not can_manage_materials(request.user, group):
-        return HttpResponseForbidden("You don't have permission to access this view")
+        permission_denied(request, "You don't have permission to access this view")
 
     if request.method == 'POST':
         form = UploadMaterialForm(document_type, action, group, doc, request.POST, request.FILES)

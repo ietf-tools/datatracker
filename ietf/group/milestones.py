@@ -6,8 +6,7 @@ import calendar
 
 from django import forms
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
-from django.http import HttpResponseForbidden, HttpResponseBadRequest, HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, HttpResponseBadRequest, Http404
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
@@ -22,6 +21,7 @@ from ietf.group.utils import (save_milestone_in_history, can_manage_group_type, 
 from ietf.name.models import GroupMilestoneStateName
 from ietf.group.mails import email_milestones_changed
 from ietf.utils.fields import DatepickerDateField
+from ietf.utils.response import permission_denied
 
 class MilestoneForm(forms.Form):
     id = forms.IntegerField(required=True, widget=forms.HiddenInput)
@@ -118,7 +118,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
             if milestone_set == "current":
                 needs_review = True
     else:
-        return HttpResponseForbidden("You are not authorized to edit the milestones of this group.")
+        permission_denied(request, "You are not authorized to edit the milestones of this group.")
 
     desc_editable = has_role(request.user,["Secretariat","Area Director","IRTF Chair"])
 
@@ -320,7 +320,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                 for m in milestones:
                     forms.append(MilestoneForm(needs_review, reviewer, desc_editable, instance=m, uses_dates=group.uses_milestone_dates))
             else:
-                raise PermissionDenied
+                permission_denied(request, "You don't have the required permissions to change the 'uses milestone dates' setting")
         else:
             # parse out individual milestone forms
             for prefix in request.POST.getlist("prefix"):
@@ -405,7 +405,7 @@ def reset_charter_milestones(request, group_type, acronym):
         raise Http404
 
     if not can_manage_group(request.user, group):
-        return HttpResponseForbidden("You are not authorized to change the milestones for this group.")
+        permission_denied(request, "You are not authorized to change the milestones for this group.")
 
     current_milestones = group.groupmilestone_set.filter(state="active")
     charter_milestones = group.groupmilestone_set.filter(state="charter")

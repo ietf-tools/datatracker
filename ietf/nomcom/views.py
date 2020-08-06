@@ -12,7 +12,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.forms.models import modelformset_factory, inlineformset_factory
-from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
+from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -42,6 +42,7 @@ from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key,
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person
 from ietf.utils import log
+from ietf.utils.response import permission_denied
 
 import debug                  # pyflakes:ignore
 
@@ -661,20 +662,20 @@ def private_questionnaire(request, year):
 def process_nomination_status(request, year, nominee_position_id, state, date, hash):
     valid = get_hash_nominee_position(date, nominee_position_id) == hash
     if not valid:
-        return HttpResponseForbidden("Bad hash!")
+        permission_denied(request, "Bad hash!")
     expiration_days = getattr(settings, 'DAYS_TO_EXPIRE_NOMINATION_LINK', None)
     if expiration_days:
         request_date = datetime.date(int(date[:4]), int(date[4:6]), int(date[6:]))
         if datetime.date.today() > (request_date + datetime.timedelta(days=settings.DAYS_TO_EXPIRE_NOMINATION_LINK)):
-            return HttpResponseForbidden("Link expired")
+            permission_denied(request, "Link expired.")
 
     need_confirmation = True
     nomcom = get_nomcom_by_year(year)
     if nomcom.group.state_id == 'conclude':
-        return HttpResponseForbidden("This nomcom is concluded.")
+        permission_denied(request, "This nomcom is concluded.")
     nominee_position = get_object_or_404(NomineePosition, id=nominee_position_id)
     if nominee_position.state.slug != "pending":
-        return HttpResponseForbidden("The nomination already was %s" % nominee_position.state)
+        permission_denied(request, "The nomination already was %s" % nominee_position.state)
 
     state = get_object_or_404(NomineePositionStateName, slug=state)
     messages.info(request, "Click on 'Save' to set the state of your nomination to %s to %s (this is not a final commitment - you can notify us later if you need to change this)." % (nominee_position.position.name, state.name))
@@ -791,7 +792,7 @@ def view_feedback(request, year):
 def view_feedback_pending(request, year):
     nomcom = get_nomcom_by_year(year)
     if nomcom.group.state_id == 'conclude':
-        return HttpResponseForbidden("This nomcom is concluded.")
+        permission_denied(request, "This nomcom is concluded.")
     extra_ids = None
     FeedbackFormSet = modelformset_factory(Feedback,
                                            form=PendingFeedbackForm,
@@ -987,7 +988,7 @@ def edit_nomcom(request, year):
     if request.method == 'POST':
 
         if nomcom.group.state_id=='conclude':
-            return HttpResponseForbidden('This nomcom is closed.')
+            permission_denied(request, 'This nomcom is closed.')
 
         formset = ReminderDateInlineFormSet(request.POST, instance=nomcom)
         form = EditNomcomForm(request.POST,
@@ -1069,7 +1070,7 @@ def list_positions(request, year):
 def remove_position(request, year, position_id):
     nomcom = get_nomcom_by_year(year)
     if nomcom.group.state_id=='conclude':
-        return HttpResponseForbidden('This nomcom is closed.')
+        permission_denied(request, 'This nomcom is closed.')
     try:
         position = nomcom.position_set.get(id=position_id)
     except Position.DoesNotExist:
@@ -1091,7 +1092,7 @@ def edit_position(request, year, position_id=None):
     nomcom = get_nomcom_by_year(year)
 
     if nomcom.group.state_id=='conclude':
-        return HttpResponseForbidden('This nomcom is closed.')
+        permission_denied(request, 'This nomcom is closed.')
 
     if position_id:
         try:
@@ -1136,7 +1137,7 @@ def list_topics(request, year):
 def remove_topic(request, year, topic_id):
     nomcom = get_nomcom_by_year(year)
     if nomcom.group.state_id=='conclude':
-        return HttpResponseForbidden('This nomcom is closed.')
+        permission_denied(request, 'This nomcom is closed.')
     try:
         topic = nomcom.topic_set.get(id=topic_id)
     except Topic.DoesNotExist:
@@ -1158,7 +1159,7 @@ def edit_topic(request, year, topic_id=None):
     nomcom = get_nomcom_by_year(year)
 
     if nomcom.group.state_id=='conclude':
-        return HttpResponseForbidden('This nomcom is closed.')
+        permission_denied(request, 'This nomcom is closed.')
 
     if topic_id:
         try:
@@ -1194,7 +1195,7 @@ def edit_members(request, year):
     nomcom = get_nomcom_by_year(year)
 
     if nomcom.group.state_id=='conclude':
-        return HttpResponseForbidden('This nomcom is closed.')
+        permission_denied(request, 'This nomcom is closed.')
 
     old_members_email = [r.email for r in nomcom.group.role_set.filter(name='member')]
 

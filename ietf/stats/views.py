@@ -15,7 +15,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.db.models import Count, Q
-from django.http import HttpResponseRedirect, HttpResponseForbidden
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse as urlreverse
 from django.utils.safestring import mark_safe
@@ -39,6 +39,7 @@ from ietf.stats.models import MeetingRegistration, CountryAlias
 from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries, compute_hirsch_index
 from ietf.ietfauth.utils import has_role
 from ietf.utils.log import log
+from ietf.utils.response import permission_denied
 
 def stats_index(request):
     return render(request, "stats/index.html")
@@ -1080,7 +1081,7 @@ def review_stats(request, stats_type=None, acronym=None):
                     reviewer_only_access.add(r.group_id)
 
         if not secr_access and not reviewer_only_access:
-            return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+            permission_denied(request, "You do not have the necessary permissions to view this page")
 
         teams = [t for t in teams if t.pk in secr_access or t.pk in reviewer_only_access]
 

@@ -7,7 +7,7 @@ import datetime
 import json
 import uuid
 
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.decorators import login_required
 from django.utils.html import strip_tags
@@ -21,6 +21,7 @@ from ietf.community.utils import docs_tracked_by_community_list, docs_matching_c
 from ietf.community.utils import states_of_significant_change, reset_name_contains_index_for_rule
 from ietf.doc.models import DocEvent, Document
 from ietf.doc.utils_search import prepare_document_table
+from ietf.utils.response import permission_denied
 
 def view_list(request, username=None):
     clist = lookup_community_list(username)
@@ -45,7 +46,7 @@ def manage_list(request, username=None, acronym=None, group_type=None):
     clist = lookup_community_list(username, acronym)
 
     if not can_manage_community_list(request.user, clist):
-        return HttpResponseForbidden("You do not have permission to access this view")
+        permission_denied(request, "You do not have permission to access this view")
 
     action = request.POST.get('action')
 
@@ -129,7 +130,7 @@ def track_document(request, name, username=None, acronym=None):
     if request.method == "POST":
         clist = lookup_community_list(username, acronym)
         if not can_manage_community_list(request.user, clist):
-            return HttpResponseForbidden("You do not have permission to access this view")
+            permission_denied(request, "You do not have permission to access this view")
 
         if clist.pk is None:
             clist.save()
@@ -151,7 +152,7 @@ def untrack_document(request, name, username=None, acronym=None):
     doc = get_object_or_404(Document, docalias__name=name)
     clist = lookup_community_list(username, acronym)
     if not can_manage_community_list(request.user, clist):
-        return HttpResponseForbidden("You do not have permission to access this view")
+        permission_denied(request, "You do not have permission to access this view")
 
     if request.method == "POST":
         if clist.pk is not None:
