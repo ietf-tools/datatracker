@@ -3020,14 +3020,14 @@ def api_set_session_video_url(request):
         sessions = sessions.filter(group__acronym=acronym)
         if not sessions.exists():
             return err(400, "No sessions found in meeting '%s' for group '%s'" % (number, acronym))
-        session_times = [ (s.official_timeslotassignment().timeslot.time, s) for s in sessions if s.official_timeslotassignment() ]
+        session_times = [ (s.official_timeslotassignment().timeslot.time, s.id, s) for s in sessions if s.official_timeslotassignment() ]
         session_times.sort()
         item = request.POST.get('item')
         if not item.isdigit():
             return err(400, "Expected a numeric value for 'item', found '%s'" % (item, ))
         n = int(item)-1              # change 1-based to 0-based
         try:
-            time, session = session_times[n]
+            time, __, session = session_times[n]
         except IndexError:
             return err(400, "No item '%s' found in list of sessions for group" % (item, ))
         url = request.POST.get('url')
