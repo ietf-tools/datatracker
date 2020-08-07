@@ -1,3 +1,54 @@
+ietfdb (7.13.0) ietf; urgency=medium
+
+  **Enhancements to upload pages and APIs, new Research Area Groups, better 
+  403 pages, bugfixes.**
+
+  * Changed a list of group types in all_meeting_sessions_for_group() to 
+    instead use group.features.
+
+  * Fixed a bug in determining if the agenda page being rendered belongs to 
+    the current meeting (which affects caching time).
+
+  * Merged in [18298] from rjsparks@nostrum.com:
+    Converted IRTF area groups into their own group type rather than 
+    attempting to overload AG. Fixes #3027.  
+
+  * Improved the handling of the meeting materials page if unknown upload 
+    names without revision numbers are given.
+
+  * Provided a local environment path for pyang, which is installed with pip 
+    and may not be available globally.  Fixes issue #3018.
+
+  * Simplified some recent code a little bit.
+
+  * Added a custom 403 page, extending the datatracker base.html template.
+
+  * Added a utility function around the PermissionDenied exception, in 
+    order to easily be able to provide relevant information to the 403 template.
+
+  * Based on feedback from the Secretariat, changed the 404 for IPR 
+    declarations in other states than 'posted' to a 403 with a login link.
+
+  * Added a missing 404 response
+
+  * Converted many cases of plain-text 403 messages to use a properly styled
+    page instead of a text/plain message; adding a login link when
+    appropriate.  Also changed some API endpoint 400 responses to a more
+    correct 403.
+
+  * Changed a list of tuples so as to always make them sortable.  This fixes
+    an issue with bluesheet uploads for 'groups' like 'ietf' that could have
+    multiple sessions starting at the same time.
+
+  * Changed mm_hourly to run the mailman cronjobs under Py27 until mailman has
+    been upgraded to version 3.x (running under Py3).
+
+  * Changed to using a template to generate bluesheets, and added a count of 
+    participants at the top.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 Aug 2020 15:27:42 +0000
+
+
 ietfdb (7.12.0) ietf; urgency=medium
 
   **IETF 108 Code Sprint release 2, bugfixes and tweaks**
