@@ -3098,12 +3098,15 @@ def api_upload_bluesheet(request):
         except json.decoder.JSONDecodeError:
             return err(400, "Invalid json value: '%s'" % (bjson, ))
 
+        text = render_to_string('meeting/bluesheet.txt', {
+                'data': data,
+                'session': session,
+            })
+
         fd, name = tempfile.mkstemp(suffix=".txt", text=True)
         os.close(fd)
         with open(name, "w") as file:
-            file.write("Bluesheets for %s\n\n" % session)
-            for item in data:
-                file.write("{name}\t{affiliation}\n".format(**item))
+            file.write(text)
         with open(name, "br") as file:
             save_err = save_bluesheet(request, session, file)
         if save_err:
