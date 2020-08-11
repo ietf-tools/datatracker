@@ -359,16 +359,32 @@
 
 {% block js %}
   <script>
+   function parse_query_params(qs) {
+       var params = {};
+       qs = qs.replace(/^\?/, '');
+       $.each(qs.split('&'), function(i, v) {
+           var toks = v.split('=', 2)
+           params[toks[0]] = toks[1];
+       });
+       return params;
+   }
+   
+   /* filt = 'show' or 'hide' */
+   function get_filter_from_qparams(qparams, filt) {
+       return qparams[filt] ? qparams[filt].split(',') :  [];
+   }
+
    function toggle_visibility() {
-       var h = window.location.hash;
-       h = h.replace(/^#?,?/, '');
+       var qparams = parse_query_params(window.location.search);
+       var show_groups = get_filter_from_qparams(qparams, 'show');
+       var hide_groups = get_filter_from_qparams(qparams, 'hide');
 
        // reset UI elements to default state
        $(".pickview").removeClass("active disabled");
        $(".pickviewneg").addClass("active");
 
-       if (h) {
-           // if there are items in the hash, hide all rows that are
+       if (show_groups.length || hide_groups.length) {
+           // if groups were selected for filtering, hide all rows that are
            // hidden by default, show all rows that are shown by default
            $('[id^="row-"]').hide();
            $.each($(".pickviewneg").text().trim().split(/ +/), function (i, v) {
@@ -380,26 +396,26 @@
            $("#customize").collapse("show");
 
            // loop through the has items and change the UI element and row visibilities accordingly
-           $.each(h.split(","), function (i, v) {
-               if (v.indexOf("-") == 0) {
-                   // this is a "negative" item: when present, hide these rows
-                   v = v.replace(/^-/, '');
-                   $('[id^="row-"]').filter('[id*="-' + v + '"]').hide();
-                   $(".view." + v).find("button").removeClass("active disabled");
-                   $("button.pickviewneg." + v).removeClass("active");
-               } else {
-                   // this is a regular item: when present, show these rows
-                   $('[id^="row-"]').filter('[id*="-' + v + '"]').show();
-                   $(".view." + v).find("button").addClass("active disabled");
-                   $("button.pickview." + v).addClass("active");
-               }
+           $.each(hide_groups, function (i, v) {
+//               if (v.indexOf("-") == 0) {
+               // this is a "negative" item: when present, hide these rows
+//                   v = v.replace(/^-/, '');
+               $('[id^="row-"]').filter('[id*="-' + v + '"]').hide();
+               $(".view." + v).find("button").removeClass("active disabled");
+               $("button.pickviewneg." + v).removeClass("active");
+           });
+           $.each(show_groups, function (i, v) {
+               // this is a regular item: when present, show these rows
+               $('[id^="row-"]').filter('[id*="-' + v + '"]').show();
+               $(".view." + v).find("button").addClass("active disabled");
+               $("button.pickview." + v).addClass("active");
            });
 
            // show the week view
            $("#weekview").attr("src", "week-view.html" + window.location.hash).removeClass("hidden");
 
            // show the custom .ics link
-           $("#ical-link").attr("href",$("#ical-link").attr("href").split("?")[0]+"?"+h);
+           $("#ical-link").attr("href",$("#ical-link").attr("href").split("?")[0]+window.location.search);
            $("#ical-link").removeClass("hidden");
 
        } else {
@@ -410,26 +426,53 @@
    }
 
    $(".pickview, .pickviewneg").click(function () {
-       var h = window.location.hash;
+       // Get clicked item label
        var item = $(this).text().trim().toLowerCase();
+       var qparams = parse_query_params(window.location.search);
+       var show_groups = get_filter_from_qparams(qparams, 'show');
+       var hide_groups = get_filter_from_qparams(qparams, 'hide');
+
        if ($(this).hasClass("pickviewneg")) {
-           item = "-" + item;
+           toggle_list_item(hide_groups, item);
+       } else {
+           toggle_list_item(show_groups, item);
+       }
+       update_filters(show_groups, hide_groups);
+   });
+   
+   /* Add to list if not present, remove if present */
+   function toggle_list_item(list, item) {
+       var item_index = $.inArray(item, list);
+       if (item_index === -1) {
+           list.push(item);
+       } else {
+           list.splice(item_index, 1);
+       }
+   }
+
+   function update_filters(show, hide) {
+       var qparams = [];
+       var search = '';
+       if (show.length > 0) {
+           qparams.push('show=' + show.join());
+       }
+       if (hide.length > 0) {
+           qparams.push('hide=' + hide.join());
+       }
+       if (qparams.length > 0) {
+           search = '?' + qparams.join('&');
        }
 
-       re = new RegExp('(^|#|,)' + item + "(,|$)");
-       if (h.match(re) == null) {
-           if (h.replace("#", "").length == 0) {
-               h = item;
-           } else {
-               h += "," + item;
-           }
-           h = h.replace(/^#?,/, '');
+       var new_url = window.location.href.replace(/(\?.*)?$/, search);
+       if (window.history && window.history.replaceState) {
+           // Keep current origin, replace search string, no page reload
+           history.replaceState({}, document.title, new_url);
+           toggle_visibility();
        } else {
-           h = h.replace(re, "$2").replace(/^#?,/, '');
+           // No window.history.replaceState support, page reload required
+           window.location = new_url;
        }
-       window.location.hash = h.replace(/^#$/, '');
-       toggle_visibility();
-   });
+   }
 
    $(document).ready(function () {
        toggle_visibility();

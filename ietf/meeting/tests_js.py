@@ -30,6 +30,7 @@ try:
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions
+    from selenium.common.exceptions import NoSuchElementException
 except ImportError as e:
     skip_selenium = True
     skip_message = "Skipping selenium tests: %s" % e
@@ -50,29 +51,37 @@ def start_web_driver():
     options.add_argument("no-sandbox") # docker needs this
     return webdriver.Chrome(options=options, service_log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
 
-@skipIf(skip_selenium, skip_message)
-class EditMeetingScheduleTests(IetfLiveServerTestCase):
+class MeetingTestCase(IetfLiveServerTestCase):
+    def __init__(self, *args, **kwargs):
+        super(MeetingTestCase, self).__init__(*args, **kwargs)
+        self.login_view = 'ietf.ietfauth.views.login'
+
     def setUp(self):
+        super(MeetingTestCase, self).setUp()
         self.driver = start_web_driver()
         self.driver.set_window_size(1024,768)
 
     def tearDown(self):
         self.driver.close()
 
+    def absreverse(self,*args,**kwargs):
+        return '%s%s'%(self.live_server_url,urlreverse(*args,**kwargs))
+
+    def login(self, username='plain'):
+        url = self.absreverse(self.login_view)
+        password = '%s+password' % username
+        self.driver.get(url)
+        self.driver.find_element_by_name('username').send_keys(username)
+        self.driver.find_element_by_name('password').send_keys(password)
+        self.driver.find_element_by_xpath('//button[@type="submit"]').click()
+
     def debug_snapshot(self,filename='debug_this.png'):
         self.driver.execute_script("document.body.bgColor = 'white';")
         self.driver.save_screenshot(filename)
 
-    def absreverse(self,*args,**kwargs):
-        return '%s%s'%(self.live_server_url,urlreverse(*args,**kwargs))
 
-    def login(self):
-        url = self.absreverse('ietf.ietfauth.views.login')
-        self.driver.get(url)
-        self.driver.find_element_by_name('username').send_keys('plain')
-        self.driver.find_element_by_name('password').send_keys('plain+password')
-        self.driver.find_element_by_xpath('//button[@type="submit"]').click()
-
+@skipIf(skip_selenium, skip_message)
+class EditMeetingScheduleTests(MeetingTestCase):
     def test_edit_meeting_schedule(self):
         meeting = make_meeting_test_data()
 
@@ -206,28 +215,7 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
 
 @skipIf(skip_selenium, skip_message)
 @skipIf(django.VERSION[0]==2, "Skipping test with race conditions under Django 2")
-class ScheduleEditTests(IetfLiveServerTestCase):
-    def setUp(self):
-        self.driver = start_web_driver()
-        self.driver.set_window_size(1024,768)
-
-    def tearDown(self):
-        self.driver.close()
-
-    def debug_snapshot(self,filename='debug_this.png'):
-        self.driver.execute_script("document.body.bgColor = 'white';")
-        self.driver.save_screenshot(filename)
-
-    def absreverse(self,*args,**kwargs):
-        return '%s%s'%(self.live_server_url,urlreverse(*args,**kwargs))
-
-    def login(self):
-        url = self.absreverse('ietf.ietfauth.views.login')
-        self.driver.get(url)
-        self.driver.find_element_by_name('username').send_keys('plain')
-        self.driver.find_element_by_name('password').send_keys('plain+password')
-        self.driver.find_element_by_xpath('//button[@type="submit"]').click()
-
+class ScheduleEditTests(MeetingTestCase):
     def testUnschedule(self):
 
         meeting = make_meeting_test_data()
@@ -265,27 +253,16 @@ class ScheduleEditTests(IetfLiveServerTestCase):
         self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting__number=72,session__group__acronym='mars',schedule__name='test-schedule').count(),0)
 
 @skipIf(skip_selenium, skip_message)
-class SlideReorderTests(IetfLiveServerTestCase):
+class SlideReorderTests(MeetingTestCase):
     def setUp(self):
-        self.driver = start_web_driver()
-        self.driver.set_window_size(1024,768)
+        super(SlideReorderTests, self).setUp()
         self.session = SessionFactory(meeting__type_id='ietf', status_id='sched')
         self.session.sessionpresentation_set.create(document=DocumentFactory(type_id='slides',name='one'),order=1)
         self.session.sessionpresentation_set.create(document=DocumentFactory(type_id='slides',name='two'),order=2)
         self.session.sessionpresentation_set.create(document=DocumentFactory(type_id='slides',name='three'),order=3)
 
-    def tearDown(self):
-        self.driver.close()
-
-    def absreverse(self,*args,**kwargs):
-        return '%s%s'%(self.live_server_url,urlreverse(*args,**kwargs))
-
     def secr_login(self):
-        url = '%s%s'%(self.live_server_url, urlreverse('ietf.ietfauth.views.login'))
-        self.driver.get(url)
-        self.driver.find_element_by_name('username').send_keys('secretary')
-        self.driver.find_element_by_name('password').send_keys('secretary+password')
-        self.driver.find_element_by_xpath('//button[@type="submit"]').click()
+        self.login('secretary')
 
     #@override_settings(DEBUG=True)
     def testReorderSlides(self):
@@ -305,6 +282,223 @@ class SlideReorderTests(IetfLiveServerTestCase):
         names=self.session.sessionpresentation_set.values_list('document__name',flat=True) 
         self.assertEqual(list(names),['one','three','two'])
 
+
+@skipIf(skip_selenium, skip_message)
+class AgendaTests(MeetingTestCase):
+    # Groups whose display logic is inverted in agenda.html. These have
+    # toggles with class 'pickviewneg' in the template.
+    PICKVIEWNEG = ['iepg', 'tools', 'edu', 'ietf', 'iesg', 'iab']
+    
+    def setUp(self):
+        super(AgendaTests, self).setUp()
+        self.meeting = make_meeting_test_data()
+
+    def row_id_for_item(self, item):
+        return 'row-%s' % item.slug()
+
+    def get_expected_items(self):
+        expected_items = self.meeting.schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
+        self.assertGreater(len(expected_items), 0, 'Test setup generated an empty schedule')
+        return expected_items
+    
+    def test_agenda_view_displays_all_items(self):
+        """By default, all agenda items should be displayed"""
+        self.login()
+        self.driver.get(self.absreverse('ietf.meeting.views.agenda'))
+
+        for item in self.get_expected_items():
+            row_id = 'row-%s' % item.slug()
+            try:
+                item_row = self.driver.find_element_by_id(row_id)
+            except NoSuchElementException:
+                item_row = None
+            self.assertIsNotNone(item_row, 'No row for schedule item "%s"' % row_id)
+            self.assertTrue(item_row.is_displayed(), 'Row for schedule item "%s" is not displayed' % row_id)
+
+    def test_agenda_view_js_func_parse_query_params(self):
+        """Test parse_query_params() function"""
+        self.driver.get(self.absreverse('ietf.meeting.views.agenda'))
+        
+        # Only 'show' param
+        result = self.driver.execute_script(
+            'return parse_query_params("?show=group1,group2,group3");'
+        )
+        self.assertEqual(result, dict(show='group1,group2,group3'))
+
+        # Only 'hide' param
+        result = self.driver.execute_script(
+            'return parse_query_params("?hide=group4,group5,group6");'
+        )
+        self.assertEqual(result, dict(hide='group4,group5,group6'))
+        
+        # Both 'show' and 'hide'
+        result = self.driver.execute_script(
+            'return parse_query_params("?show=group1,group2,group3&hide=group4,group5,group6");'
+        )
+        self.assertEqual(result, dict(show='group1,group2,group3', hide='group4,group5,group6'))
+
+    def test_agenda_view_js_func_toggle_list_item(self):
+        """Test toggle_list_item() function"""
+        self.driver.get(self.absreverse('ietf.meeting.views.agenda'))
+
+        result = self.driver.execute_script(
+            """
+            // start empty, add item
+            var list0=[];
+            toggle_list_item(list0, 'item');
+            
+            // one item, remove it
+            var list1=['item'];
+            toggle_list_item(list1, 'item');
+            
+            // one item, add another
+            var list2=['item1'];
+            toggle_list_item(list2, 'item2');
+            
+            // multiple items, remove first
+            var list3=['item1', 'item2', 'item3'];
+            toggle_list_item(list3, 'item1');
+            
+            // multiple items, remove middle
+            var list4=['item1', 'item2', 'item3'];
+            toggle_list_item(list4, 'item2');
+            
+            // multiple items, remove last
+            var list5=['item1', 'item2', 'item3'];
+            toggle_list_item(list5, 'item3');
+            
+            return [list0, list1, list2, list3, list4, list5];
+            """
+        )
+        self.assertEqual(result[0], ['item'], 'Adding item to empty list failed')
+        self.assertEqual(result[1], [], 'Removing only item in a list failed')
+        self.assertEqual(result[2], ['item1', 'item2'], 'Adding second item to list failed')
+        self.assertEqual(result[3], ['item2', 'item3'], 'Removing first item from list failed')
+        self.assertEqual(result[4], ['item1', 'item3'], 'Removing middle item from list failed')
+        self.assertEqual(result[5], ['item1', 'item2'], 'Removing last item from list failed')
+
+    def test_agenda_view_filter_show_one(self):
+        """Filtered agenda view should display only matching rows (one group selected)"""
+        self.login()
+        self.driver.get(self.absreverse('ietf.meeting.views.agenda') + '?show=mars')
+        self.assert_agenda_item_visibility(['mars'] + self.PICKVIEWNEG)  # ames and secretariat not selected
+
+    def test_agenda_view_filter_show_two(self):
+        """Filtered agenda view should display only matching rows (two groups selected)"""
+        self.login()
+        self.driver.get(self.absreverse('ietf.meeting.views.agenda') + '?show=mars,ames')
+        self.assert_agenda_item_visibility(['mars', 'ames'] + self.PICKVIEWNEG)  # secretariat not selected
+
+    def test_agenda_view_filter_all(self):
+        """Filtered agenda view should display only matching rows (all groups selected)"""
+        self.login()
+        self.driver.get(self.absreverse('ietf.meeting.views.agenda'))
+        self.assert_agenda_item_visibility()
+
+    def test_agenda_view_filter_hide(self):
+        self.login()
+        self.driver.get(self.absreverse('ietf.meeting.views.agenda') + '?hide=ietf')
+        self.assert_agenda_item_visibility([g for g in self.PICKVIEWNEG if g != 'ietf'])
+
+    def test_agenda_view_filter_show_and_hide(self):
+        self.login()
+        self.driver.get(self.absreverse('ietf.meeting.views.agenda') + '?show=mars&hide=ietf')
+        self.assert_agenda_item_visibility(
+            ['mars'] + [g for g in self.PICKVIEWNEG if g != 'ietf']
+        )
+
+    def assert_agenda_item_visibility(self, visible_groups=()):
+        """Assert that correct items are visible in current browser window
+        
+        If visible_groups is empty (the default), expects all items to be visible.
+        """
+        for item in self.get_expected_items():
+            row_id = self.row_id_for_item(item)
+            try:
+                item_row = self.driver.find_element_by_id(row_id)
+            except NoSuchElementException:
+                item_row = None
+            self.assertIsNotNone(item_row, 'No row for schedule item "%s"' % row_id)
+            if len(visible_groups) == 0 or item.session.group.acronym in visible_groups:
+                self.assertTrue(item_row.is_displayed(), 'Row for schedule item "%s" is not displayed but should be' % row_id)
+            else:
+                self.assertFalse(item_row.is_displayed(), 'Row for schedule item "%s" is displayed but should not be' % row_id)
+
+    def test_agenda_view_group_filter_toggle(self):
+        """Clicking a group toggle enables/disables agenda filtering"""
+        group_acronym = 'mars'
+
+        self.login()
+        url = self.absreverse('ietf.meeting.views.agenda')
+        self.driver.get(url)
+        
+        # Click the 'customize' anchor to reveal the group buttons
+        customize_anchor = WebDriverWait(self.driver, 2).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '#accordion a[data-toggle="collapse"]')
+            )
+        )
+        customize_anchor.click()
+        
+        # Click the group button
+        group_button = WebDriverWait(self.driver, 2).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, 'button.pickview.%s' % group_acronym)
+            )
+        )
+        group_button.click()
+
+        # Check visibility
+        self.assert_agenda_item_visibility([group_acronym] + self.PICKVIEWNEG)
+        
+        # Click the group button again
+        group_button = WebDriverWait(self.driver, 2).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, 'button.pickview.%s' % group_acronym)
+            )
+        )
+        group_button.click()
+
+        # Check visibility
+        self.assert_agenda_item_visibility()
+
+    def test_agenda_view_group_filter_toggle_without_replace_state(self):
+        """Toggle should function for browsers without window.history.replaceState"""
+        group_acronym = 'mars'
+
+        self.login()
+        url = self.absreverse('ietf.meeting.views.agenda')
+        self.driver.get(url)
+        
+        # Rather than digging up an ancient browser, simulate absence of history.replaceState
+        self.driver.execute_script('window.history.replaceState = undefined;')
+
+        
+        # Click the 'customize' anchor to reveal the group buttons
+        customize_anchor = WebDriverWait(self.driver, 2).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '#accordion a[data-toggle="collapse"]')
+            )
+        )
+        customize_anchor.click()
+
+        
+        # Get ready to click the group button
+        group_button = WebDriverWait(self.driver, 2).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, 'button.pickview.%s' % group_acronym)
+            )
+        )
+
+        # Be sure we're at the URL we think we're at before we click
+        self.assertEqual(self.driver.current_url, url)
+        group_button.click()  # click!
+
+        expected_url = '%s?show=%s' % (url, group_acronym)
+        WebDriverWait(self.driver, 2).until(expected_conditions.url_to_be(expected_url))
+        # no assertion here - if WebDriverWait raises an exception, the test will fail.
+        # We separately test whether this URL will filter correctly.
+        
 # The following are useful debugging tools
 
 # If you add this to a LiveServerTestCase and run just this test, you can browse
