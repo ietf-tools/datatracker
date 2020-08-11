@@ -76,8 +76,9 @@ def make_meeting_test_data(meeting=None):
 
     if not meeting:
         meeting = Meeting.objects.get(number="72", type="ietf")
-    schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-schedule", visible=True, public=True)
-    unofficial_schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-unofficial-schedule", visible=True, public=True)
+    base_schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="base", visible=True, public=True)
+    schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-schedule", visible=True, public=True, base=base_schedule)
+    unofficial_schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-unofficial-schedule", visible=True, public=True, base=base_schedule)
 
     # test room
     pname = RoomResourceName.objects.create(name='projector',slug='proj')
@@ -146,7 +147,7 @@ def make_meeting_test_data(meeting=None):
                                          requested_duration=datetime.timedelta(minutes=480),
                                          type_id="reg")
     SchedulingEvent.objects.create(session=reg_session, status_id='schedw', by=system_person)
-    SchedTimeSessAssignment.objects.create(timeslot=reg_slot, session=reg_session, schedule=schedule)
+    SchedTimeSessAssignment.objects.create(timeslot=reg_slot, session=reg_session, schedule=base_schedule)
     
     # Break
     break_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="secretariat"),
@@ -154,7 +155,7 @@ def make_meeting_test_data(meeting=None):
                                            requested_duration=datetime.timedelta(minutes=30),
                                            type_id="break")
     SchedulingEvent.objects.create(session=break_session, status_id='schedw', by=system_person)
-    SchedTimeSessAssignment.objects.create(timeslot=break_slot, session=break_session, schedule=schedule)
+    SchedTimeSessAssignment.objects.create(timeslot=break_slot, session=break_session, schedule=base_schedule)
 
     meeting.schedule = schedule
     meeting.save()

@@ -85,8 +85,11 @@ class Command(BaseCommand):
                     date=datetime.date(2019, 11, 16),
                     days=7,
                 )
-                schedule = Schedule.objects.create(meeting=m, name='Empty-Schedule', owner_id=1, 
-                                                   visible=True, public=True)
+                base_schedule = Schedule.objects.create(meeting=m, name='base', owner_id=1,
+                                                        visible=True, public=True)
+
+                schedule = Schedule.objects.create(meeting=m, name='first1', owner_id=1,
+                                                   visible=True, public=True, base=base_schedule)
                 m.schedule = schedule
                 m.save()
                 

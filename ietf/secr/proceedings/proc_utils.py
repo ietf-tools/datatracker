@@ -32,11 +32,10 @@ VIDEO_TITLE_RE = re.compile(r'IETF(?P<number>[\d]+)-(?P<name>.*)-(?P<date>\d{8})
 def _get_session(number,name,date,time):
     '''Lookup session using data from video title'''
     meeting = Meeting.objects.get(number=number)
-    schedule = meeting.schedule
     timeslot_time = datetime.datetime.strptime(date + time,'%Y%m%d%H%M')
     try:
         assignment = SchedTimeSessAssignment.objects.get(
-            schedule = schedule,
+            schedule__in = [meeting.schedule, meeting.schedule.base],
             session__group__acronym = name.lower(),
             timeslot__time = timeslot_time,
         )
@@ -108,7 +107,7 @@ def get_timeslot_for_filename(filename):
                 meeting=meeting,
                 location__name=room_mapping[match.groupdict()['room']],
                 time=time,
-                sessionassignments__schedule=meeting.schedule,
+                sessionassignments__schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None],
             ).distinct()
             uncancelled_slots = [t for t in slots if not add_event_info_to_session_qs(t.sessions.all()).filter(current_status='canceled').exists()]
             return uncancelled_slots[0]

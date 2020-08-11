@@ -28,7 +28,7 @@ from ietf.person.models import Person, Email
 from ietf.secr.proceedings.proc_utils import import_audio_files
 
 def session_time_for_sorting(session, use_meeting_date):
-    official_timeslot = TimeSlot.objects.filter(sessionassignments__session=session, sessionassignments__schedule=session.meeting.schedule).first()
+    official_timeslot = TimeSlot.objects.filter(sessionassignments__session=session, sessionassignments__schedule__in=[session.meeting.schedule, session.meeting.schedule.base if session.meeting.schedule else None]).first()
     if official_timeslot:
         return official_timeslot.time
     elif use_meeting_date and session.meeting.date:

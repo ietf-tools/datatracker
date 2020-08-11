@@ -5,25 +5,34 @@
 
 {% block content %}
   {% origin %}
+
   <h1>{% block title %}Possible Meeting Agendas for IETF {{ meeting.number }}{% endblock %}</h1>
 
-{% comment %}
-  <div> 
-    <p><a href="{% url "ietf.meeting.views.edit_timeslots" meeting.number %}">Edit Timeslots</a></p>
+  {% comment %}
+  <div>
+  <p><a href="{% url "ietf.meeting.views.edit_timeslots" meeting.number %}">Edit Timeslots</a></p>
   </div>
-{% endcomment %}
+  {% endcomment %}
 
   <div>
-    {% for label, schedules in schedule_groups %}
+    {% for schedules, own, label in schedule_groups %}
       <div class="panel panel-default">
-        <div class="panel-heading">{{ label }}</div>
+        <div class="panel-heading">
+          {{ label }}
+          {% if own %}
+            <div class="pull-right" >
+              <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number %}"><i class="fa fa-plus"></i> New Agenda</a>
+            </div>
+          {% endif %}
+        </div>
         <div class="panel-body">
           <table class="table table-condensed table-striped">
             <tr>
               <th class="col-md-2">Name</th>
               <th class="col-md-2">Owner</th>
               <th class="col-md-1">Origin</th>
-              <th class="col-md-4">Notes</th>
+              <th class="col-md-1">Base</th>
+              <th class="col-md-3">Notes</th>
               <th class="col-md-1">Visible</th>
               <th class="col-md-1">Public</th>
             </tr>
@@ -40,14 +49,19 @@
                 <td>{{ schedule.owner }}</td>
                 <td>
                   {% if schedule.origin %}
-                    <a href="{% url "ietf.meeting.views.edit_schedule" meeting.number schedule.origin.owner_email schedule.name %}">{{ schedule.origin.name }}</a>
+                    <a href="{% url "ietf.meeting.views.edit_schedule" meeting.number schedule.origin.owner_email schedule.origin.name %}">{{ schedule.origin.name }}</a>
                     <a href="{% url "ietf.meeting.views.diff_schedules" meeting.number %}?from_schedule={{ schedule.origin.name|urlencode }}&to_schedule={{ schedule.name|urlencode }}" title="{{ schedule.changes_from_origin }} change{{ schedule.changes_from_origin|pluralize }} from {{ schedule.origin.name }}">+{{ schedule.changes_from_origin }}</a>
-                {% endif %}
-              </td>
-              <td>{{ schedule.notes|linebreaksbr }}</td>
-              <td>
-                {% if schedule.visible %}
-                  <div class="label label-success">visible</div>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if schedule.base %}
+                    <a href="{% url "ietf.meeting.views.edit_schedule" meeting.number schedule.base.owner_email schedule.base.name %}">{{ schedule.base.name }}</a>
+                  {% endif %}
+                </td>
+                <td>{{ schedule.notes|linebreaksbr }}</td>
+                <td>
+                  {% if schedule.visible %}
+                    <div class="label label-success">visible</div>
                 {% else %}
                   <div class="label label-danger">hidden</div>
                 {% endif %}

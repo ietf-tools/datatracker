@@ -22,7 +22,6 @@ from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.meeting.utils import only_sessions_that_can_meet
 from ietf.name.models import SessionStatusName
 from ietf.group.models import Group, GroupEvent
-from ietf.person.models import Person
 from ietf.secr.meetings.blue_sheets import create_blue_sheets
 from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm, MeetingSelectForm,
     MeetingRoomForm, MiscSessionForm, TimeSlotForm, RegularSessionEditForm,
@@ -85,21 +84,19 @@ def check_misc_sessions(meeting,schedule):
     Ensure misc session timeslots exist and have appropriate SchedTimeSessAssignment objects
     for the specified schedule.
     '''
+    # FIXME: this is a legacy function: delete it once base schedules are rolled out
+
+    if Schedule.objects.filter(meeting=meeting, base__isnull=False).exists():
+        return
+
     slots = TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other','plenary','lead','offagenda'))
     plenary = slots.filter(type='plenary').first()
     if plenary:
         assignments = plenary.sessionassignments.all()
         if not assignments.filter(schedule=schedule):
             source = assignments.first().schedule
-            copy_assignments(slots,source,schedule)
-
-def copy_assignments(slots,source,target):
-    '''
-    Copy SchedTimeSessAssignment objects from source schedule to target schedule.  Slots is
-    a queryset of slots
-    '''
-    for ss in SchedTimeSessAssignment.objects.filter(schedule=source,timeslot__in=slots):
-        SchedTimeSessAssignment.objects.create(schedule=target,session=ss.session,timeslot=ss.timeslot)
+            for ss in SchedTimeSessAssignment.objects.filter(schedule=source,timeslot__in=slots):
+                SchedTimeSessAssignment.objects.create(schedule=schedule,session=ss.session,timeslot=ss.timeslot)
 
 def get_last_meeting(meeting):
     last_number = int(meeting.number) - 1
@@ -221,13 +218,23 @@ def add(request):
         if form.is_valid():
             meeting = form.save()
 
+            base_schedule = Schedule.objects.create(
+                meeting=meeting,
+                name='base',
+                owner=request.user.person,
+                visible=True,
+                public=True
+            )
+
             schedule = Schedule.objects.create(meeting = meeting,
-                                               name    = 'Empty-Schedule',
-                                               owner   = Person.objects.get(name='(System)'),
+                                               name    = "{}1".format(request.user.username),
+                                               owner   = request.user.person,
                                                visible = True,
-                                               public  = True)
+                                               public  = True,
+                                               base    = base_schedule,
+            )
             meeting.schedule = schedule
-            
+
             # we want to carry session request lock status over from previous meeting
             previous_meeting = get_meeting( int(meeting.number) - 1 )
             meeting.session_request_lock_message = previous_meeting.session_request_lock_message
@@ -296,7 +303,7 @@ def blue_sheet_generate(request, meeting_id):
         # TODO: Why aren't 'ag' in here as well?
         groups = Group.objects.filter(
             type__in=['wg','rg'],
-            session__timeslotassignments__schedule=meeting.schedule).order_by('acronym')
+            session__timeslotassignments__schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None]).order_by('acronym')
         create_blue_sheets(meeting, groups)
 
         messages.success(request, 'Blue Sheets generated')
@@ -380,7 +387,7 @@ def misc_sessions(request, meeting_id, schedule_name):
     check_misc_sessions(meeting,schedule)
 
     misc_session_types = ['break','reg','other','plenary','lead']
-    assignments = schedule.assignments.filter(timeslot__type__in=misc_session_types)
+    assignments = SchedTimeSessAssignment.objects.filter(schedule__in=[schedule, schedule.base], timeslot__type__in=misc_session_types)
     assignments = assignments.order_by('-timeslot__type__name','timeslot__time')
     
     if request.method == 'POST':
@@ -571,7 +578,7 @@ def notifications(request, meeting_id):
     meeting = get_object_or_404(Meeting, number=meeting_id)
     last_notice = GroupEvent.objects.filter(type='sent_notification').first()
     groups = set()
-    for ss in meeting.schedule.assignments.filter(timeslot__type='regular'):
+    for ss in SchedTimeSessAssignment.objects.filter(schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None], timeslot__type='regular'):
         last_notice = ss.session.group.latest_event(type='sent_notification')
         if last_notice and ss.modified > last_notice.time:
             groups.add(ss.session.group)
@@ -652,7 +659,7 @@ def regular_sessions(request, meeting_id, schedule_name):
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
 
     sessions = add_event_info_to_session_qs(
-        only_sessions_that_can_meet(schedule.meeting.session_set)
+        only_sessions_that_can_meet(meeting.session_set)
     ).order_by('group__acronym')
 
     if request.method == 'POST':

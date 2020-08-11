@@ -144,7 +144,7 @@ def materials(request, num=None):
 
     sessions  = add_event_info_to_session_qs(Session.objects.filter(
         meeting__number=meeting.number,
-        timeslotassignments__schedule=schedule
+        timeslotassignments__schedule__in=[schedule, schedule.base if schedule else None]
     ).distinct().select_related('meeting__schedule', 'group__state', 'group__parent'))
 
     plenaries = sessions.filter(name__icontains='plenary')
@@ -297,6 +297,8 @@ def schedule_create(request, num=None, owner=None, name=None):
     newschedule = Schedule(name=savedname,
                            owner=request.user.person,
                            meeting=meeting,
+                           base=schedule.base,
+                           origin=schedule,
                            visible=False,
                            public=False)
 
@@ -354,14 +356,15 @@ def edit_timeslots(request, num=None):
                                           "ts_list":ts_list,
                                       })
 
-class CopyScheduleForm(forms.ModelForm):
+class NewScheduleForm(forms.ModelForm):
     class Meta:
         model = Schedule
-        fields = ['name', 'visible', 'public', 'notes']
+        fields = ['name', 'visible', 'public', 'notes', 'base']
 
-    def __init__(self, schedule, new_owner, *args, **kwargs):
-        super(CopyScheduleForm, self).__init__(*args, **kwargs)
+    def __init__(self, meeting, schedule, new_owner, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
+        self.meeting = meeting
         self.schedule = schedule
         self.new_owner = new_owner
 
@@ -370,7 +373,7 @@ class CopyScheduleForm(forms.ModelForm):
         name_suggestion = username
         counter = 2
 
-        existing_names = set(Schedule.objects.filter(meeting=schedule.meeting_id, owner=new_owner).values_list('name', flat=True))
+        existing_names = set(Schedule.objects.filter(meeting=meeting, owner=new_owner).values_list('name', flat=True))
         while name_suggestion in existing_names:
             name_suggestion = username + str(counter)
             counter += 1
@@ -378,55 +381,68 @@ class CopyScheduleForm(forms.ModelForm):
         self.fields['name'].initial = name_suggestion
         self.fields['name'].label = "Name of new agenda"
 
+        self.fields['base'].queryset = self.fields['base'].queryset.filter(meeting=meeting)
+
+        if schedule:
+            self.fields['visible'].initial = schedule.visible
+            self.fields['public'].initial = schedule.public
+            self.fields['base'].queryset = self.fields['base'].queryset.exclude(pk=schedule.pk)
+            self.fields['base'].initial = schedule.base_id
+        else:
+            base = Schedule.objects.filter(meeting=meeting, name='base').first()
+            if base:
+                self.fields['base'].initial = base.pk
+
     def clean_name(self):
         name = self.cleaned_data.get('name')
-        if name and Schedule.objects.filter(meeting=self.schedule.meeting_id, owner=self.new_owner, name=name):
+        if name and Schedule.objects.filter(meeting=self.meeting, owner=self.new_owner, name=name):
             raise forms.ValidationError("Schedule with this name already exists.")
         return name
 
 @role_required('Area Director','Secretariat')
-def copy_meeting_schedule(request, num, owner, name):
+def new_meeting_schedule(request, num, owner=None, name=None):
     meeting  = get_meeting(num)
-    schedule = get_object_or_404(meeting.schedule_set, owner__email__address=owner, name=name)
+    schedule = get_schedule_by_name(meeting, get_person_by_email(owner), name)
 
     if request.method == 'POST':
-        form = CopyScheduleForm(schedule, request.user.person, request.POST)
+        form = NewScheduleForm(meeting, schedule, request.user.person, request.POST)
 
         if form.is_valid():
             new_schedule = form.save(commit=False)
-            new_schedule.meeting = schedule.meeting
+            new_schedule.meeting = meeting
             new_schedule.owner = request.user.person
             new_schedule.origin = schedule
             new_schedule.save()
 
-            # keep a mapping so that extendedfrom references can be chased
-            old_pk_to_new_pk = {}
-            extendedfroms = {}
-            for assignment in schedule.assignments.all():
-                extendedfrom_id = assignment.extendedfrom_id
+            if schedule:
+                # keep a mapping so that extendedfrom references can be chased
+                old_pk_to_new_pk = {}
+                extendedfroms = {}
+                for assignment in schedule.assignments.all():
+                    extendedfrom_id = assignment.extendedfrom_id
 
-                # clone by resetting primary key
-                old_pk = assignment.pk
-                assignment.pk = None
-                assignment.schedule = new_schedule
-                assignment.extendedfrom = None
-                assignment.save()
+                    # clone by resetting primary key
+                    old_pk = assignment.pk
+                    assignment.pk = None
+                    assignment.schedule = new_schedule
+                    assignment.extendedfrom = None
+                    assignment.save()
 
-                old_pk_to_new_pk[old_pk] = assignment.pk
-                if extendedfrom_id is not None:
-                    extendedfroms[assignment.pk] = extendedfrom_id
+                    old_pk_to_new_pk[old_pk] = assignment.pk
+                    if extendedfrom_id is not None:
+                        extendedfroms[assignment.pk] = extendedfrom_id
 
-            for pk, extendedfrom_id in extendedfroms.values():
-                if extendedfrom_id in old_pk_to_new_pk:
-                    SchedTimeSessAssignment.objects.filter(pk=pk).update(extendedfrom=old_pk_to_new_pk[extendedfrom_id])
+                for pk, extendedfrom_id in extendedfroms.values():
+                    if extendedfrom_id in old_pk_to_new_pk:
+                        SchedTimeSessAssignment.objects.filter(pk=pk).update(extendedfrom=old_pk_to_new_pk[extendedfrom_id])
 
             # now redirect to this new schedule
             return redirect(edit_meeting_schedule, meeting.number, new_schedule.owner_email(), new_schedule.name)
             
     else:
-        form = CopyScheduleForm(schedule, request.user.person)
+        form = NewScheduleForm(meeting, schedule, request.user.person)
 
-    return render(request, "meeting/copy_meeting_schedule.html", {
+    return render(request, "meeting/new_meeting_schedule.html", {
         'meeting': meeting,
         'schedule': schedule,
         'form': form,
@@ -462,7 +478,15 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
                                               "hide_menu": True
                                           }, status=403, content_type="text/html")
 
-    assignments = get_all_assignments_from_schedule(schedule)
+    assignments = SchedTimeSessAssignment.objects.filter(
+        schedule__in=[schedule, schedule.base],
+        timeslot__location__isnull=False,
+        session__type='regular',
+    ).order_by('timeslot__time','timeslot__name')
+
+    assignments_by_session = defaultdict(list)
+    for a in assignments:
+        assignments_by_session[a.session_id].append(a)
 
     rooms = meeting.room_set.filter(session_types__slug='regular').distinct().order_by("capacity")
 
@@ -483,7 +507,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'resources', 'group', 'group__parent', 'group__type', 'joint_with_groups',
     )
 
-    timeslots_qs = meeting.timeslot_set.filter(type='regular').prefetch_related('type', 'sessions').order_by('location', 'time', 'name')
+    timeslots_qs = TimeSlot.objects.filter(meeting=meeting, type='regular').prefetch_related('type').order_by('location', 'time', 'name')
 
     min_duration = min(t.duration for t in timeslots_qs)
     max_duration = max(t.duration for t in timeslots_qs)
@@ -549,7 +573,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
             s.other_sessions = [s_other for s_other in sessions_for_group.get(s.group_id) if s != s_other]
 
-            s.is_tombstone = s.current_status in tombstone_states
+            s.readonly = s.current_status in tombstone_states or any(a.schedule_id != schedule.pk for a in assignments_by_session.get(s.pk, []))
 
 
     if request.method == 'POST':
@@ -622,7 +646,9 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             source_day = swap_days_form.cleaned_data['source_day']
             target_day = swap_days_form.cleaned_data['target_day']
 
-            swap_meeting_schedule_timeslot_assignments(schedule, [ts for ts in timeslots_qs if ts.time.date() == source_day], [ts for ts in timeslots_qs if ts.time.date() == target_day], target_day - source_day)
+            source_timeslots = [ts for ts in timeslots_qs if ts.time.date() == source_day]
+            target_timeslots = [ts for ts in timeslots_qs if ts.time.date() == target_day]
+            swap_meeting_schedule_timeslot_assignments(schedule, source_timeslots, target_timeslots, target_day - source_day)
 
             return HttpResponseRedirect(request.get_full_path())
 
@@ -669,10 +695,6 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     for ts in timeslots_qs:
         ts.session_assignments = []
     timeslots_by_pk = {ts.pk: ts for ts in timeslots_qs}
-
-    assignments_by_session = defaultdict(list)
-    for a in assignments:
-        assignments_by_session[a.session_id].append(a)
 
     unassigned_sessions = []
     for s in sessions:
@@ -798,7 +820,17 @@ def edit_schedule(request, num=None, owner=None, name=None):
                                       })
 
 
-SchedulePropertiesForm = modelform_factory(Schedule, fields=['name', 'notes', 'visible', 'public'])
+class SchedulePropertiesForm(forms.ModelForm):
+    class Meta:
+        model = Schedule
+        fields = ['name', 'notes', 'visible', 'public', 'base']
+
+    def __init__(self, meeting, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['base'].queryset = self.fields['base'].queryset.filter(meeting=meeting)
+        if self.instance.pk is not None:
+            self.fields['base'].queryset = self.fields['base'].queryset.exclude(pk=self.instance.pk)
 
 @role_required('Area Director','Secretariat')
 def edit_schedule_properties(request, num, owner, name):
@@ -816,14 +848,14 @@ def edit_schedule_properties(request, num, owner, name):
         return HttpResponseForbidden("You may not edit this schedule")
 
     if request.method == 'POST':
-        form = SchedulePropertiesForm(instance=schedule, data=request.POST)
+        form = SchedulePropertiesForm(meeting, instance=schedule, data=request.POST)
         if form.is_valid():
            form.save()
            if request.GET.get('next'):
                return HttpResponseRedirect(request.GET.get('next'))
            return redirect('ietf.meeting.views.edit_schedule', num=num, owner=owner, name=name)
     else:
-        form = SchedulePropertiesForm(instance=schedule)
+        form = SchedulePropertiesForm(meeting, instance=schedule)
 
     return render(request, "meeting/properties_edit.html", {
         "schedule": schedule,
@@ -842,7 +874,7 @@ def list_schedules(request, num):
 
     schedules = Schedule.objects.filter(
         meeting=meeting
-    ).prefetch_related('owner', 'assignments', 'origin', 'origin__assignments').order_by('owner', '-name', '-public').distinct()
+    ).prefetch_related('owner', 'assignments', 'origin', 'origin__assignments', 'base').order_by('owner', '-name', '-public').distinct()
     if not has_role(request.user, 'Secretariat'):
         schedules = schedules.filter(Q(visible=True) | Q(owner=request.user.person))
 
@@ -859,7 +891,7 @@ def list_schedules(request, num):
         if s.origin:
             s.changes_from_origin = len(diff_meeting_schedules(s.origin, s))
 
-        if s.pk == meeting.schedule_id:
+        if s in [meeting.schedule, meeting.schedule.base if meeting.schedule else None]:
             official_schedules.append(s)
         elif user_is_person(request.user, s.owner):
             own_schedules.append(s)
@@ -869,13 +901,13 @@ def list_schedules(request, num):
             other_private_schedules.append(s)
 
     schedule_groups = [
-        ("Official Agenda", official_schedules),
-        ("Own Draft Agendas", own_schedules),
-        ("Other Draft Agendas", other_public_schedules),
-        ("Other Private Draft Agendas", other_private_schedules),
+        (official_schedules, False, "Official Agenda"),
+        (own_schedules, True, "Own Draft Agendas"),
+        (other_public_schedules, False, "Other Draft Agendas"),
+        (other_private_schedules, False, "Other Private Draft Agendas"),
     ]
 
-    schedule_groups = [(label, sorted(l, reverse=True, key=lambda s: natural_sort_key(s.name))) for label, l in schedule_groups if l]
+    schedule_groups = [(sorted(l, reverse=True, key=lambda s: natural_sort_key(s.name)), own, *t) for l, own, *t in schedule_groups if l or own]
 
     return render(request, "meeting/schedule_list.html", {
         'meeting': meeting,
@@ -967,7 +999,11 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         return render(request, "meeting/no-"+base+ext, {'meeting':meeting }, content_type=mimetype[ext])
 
     updated = meeting.updated()
-    filtered_assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
+    filtered_assignments = SchedTimeSessAssignment.objects.filter(
+        schedule__in=[schedule, schedule.base]
+    ).exclude(
+        timeslot__type__in=['lead', 'offagenda']
+    )
     filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
 
     if ext == ".csv":
@@ -1095,10 +1131,15 @@ def agenda_by_room(request, num=None, name=None, owner=None):
     else:
         person   = get_person_by_email(owner)
         schedule = get_schedule_by_name(meeting, person, name)
+
+    assignments = SchedTimeSessAssignment.objects.filter(
+        schedule__in=[schedule, schedule.base if schedule else None]
+    ).prefetch_related('timeslot', 'timeslot__location', 'session', 'session__group', 'session__group__parent')
+
     ss_by_day = OrderedDict()
-    for day in schedule.assignments.dates('timeslot__time','day'):
+    for day in assignments.dates('timeslot__time','day'):
         ss_by_day[day]=[]
-    for ss in schedule.assignments.order_by('timeslot__location__functional_name','timeslot__location__name','timeslot__time'):
+    for ss in assignments.order_by('timeslot__location__functional_name','timeslot__location__name','timeslot__time'):
         day = ss.timeslot.time.date()
         ss_by_day[day].append(ss)
     return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"schedule":schedule,"ss_by_day":ss_by_day})
@@ -1111,7 +1152,12 @@ def agenda_by_type(request, num=None, type=None, name=None, owner=None):
     else:
         person   = get_person_by_email(owner)
         schedule = get_schedule_by_name(meeting, person, name)
-    assignments = schedule.assignments.order_by('session__type__slug','timeslot__time','session__group__acronym')
+    assignments = SchedTimeSessAssignment.objects.filter(
+        schedule__in=[schedule, schedule.base if schedule else None]
+    ).prefetch_related(
+        'timeslot', 'timeslot__location', 'session', 'session__group', 'session__group__parent'
+    ).order_by('session__type__slug','timeslot__time','session__group__acronym')
+
     if type:
         assignments = assignments.filter(session__type__slug=type)
     return render(request,"meeting/agenda_by_type.html",{"meeting":meeting,"schedule":schedule,"assignments":assignments})
@@ -1120,7 +1166,11 @@ def agenda_by_type(request, num=None, type=None, name=None, owner=None):
 def agenda_by_type_ics(request,num=None,type=None):
     meeting = get_meeting(num) 
     schedule = get_schedule(meeting)
-    assignments = schedule.assignments.order_by('session__type__slug','timeslot__time')
+    assignments = SchedTimeSessAssignment.objects.filter(
+        schedule__in=[schedule, schedule.base if schedule else None]
+    ).prefetch_related(
+        'timeslot', 'timeslot__location', 'session', 'session__group', 'session__group__parent'
+    ).order_by('session__type__slug','timeslot__time')
     if type:
         assignments = assignments.filter(session__type__slug=type)
     updated = meeting.updated()
@@ -1240,7 +1290,11 @@ def week_view(request, num=None, name=None, owner=None):
     if not schedule:
         raise Http404
 
-    filtered_assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
+    filtered_assignments = SchedTimeSessAssignment.objects.filter(
+        schedule__in=[schedule, schedule.base]
+    ).exclude(
+        timeslot__type__in=['lead','offagenda']
+    )
     filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
     
     items = []
@@ -1309,7 +1363,11 @@ def room_view(request, num=None, name=None, owner=None):
         person   = get_person_by_email(owner)
         schedule = get_schedule_by_name(meeting, person, name)
 
-    assignments = schedule.assignments.all()
+    assignments = SchedTimeSessAssignment.objects.filter(
+        schedule__in=[schedule, schedule.base if schedule else None]
+    ).prefetch_related(
+        'timeslot', 'timeslot__location', 'session', 'session__group', 'session__group__parent'
+    )
     unavailable = meeting.timeslot_set.filter(type__slug='unavail')
     if not (assignments.exists() or unavailable.exists()):
         return HttpResponse("No sessions/timeslots available yet")
@@ -1401,7 +1459,7 @@ def ical_agenda(request, num=None, name=None, acronym=None, session_id=None):
         elif len(item) > 1 and item[0] == '~':
             include_types |= set([item[1:]])
 
-    assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
+    assignments = SchedTimeSessAssignment.objects.filter(schedule__in=[schedule, schedule.base]).exclude(timeslot__type__in=['lead','offagenda'])
     assignments = preprocess_assignments_for_agenda(assignments, meeting)
 
     if q:
@@ -1427,13 +1485,17 @@ def ical_agenda(request, num=None, name=None, acronym=None, session_id=None):
     }, content_type="text/calendar")
 
 @cache_page(15 * 60)
-def json_agenda(request, num=None ):
+def json_agenda(request, num=None):
     meeting = get_meeting(num, type_in=['ietf','interim'])
 
     sessions = []
     locations = set()
     parent_acronyms = set()
-    assignments = meeting.schedule.assignments.exclude(session__type__in=['lead','offagenda','break','reg'])
+    assignments = SchedTimeSessAssignment.objects.filter(
+        schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None]
+    ).exclude(
+        session__type__in=['lead','offagenda','break','reg']
+    )
     # Update the assignments with historic information, i.e., valid at the
     # time of the meeting
     assignments = preprocess_assignments_for_agenda(assignments, meeting, extra_prefetches=[
@@ -1609,7 +1671,7 @@ def session_details(request, num, acronym):
                 session.historic_group.historic_parent = None 
 
         session.type_counter = Counter()
-        ss = session.timeslotassignments.filter(schedule=meeting.schedule).order_by('timeslot__time')
+        ss = session.timeslotassignments.filter(schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None]).order_by('timeslot__time')
         if ss:
             if meeting.type_id == 'interim' and not (meeting.city or meeting.country):
                 session.times = [ x.timeslot.utc_start_time() for x in ss ]                
@@ -2320,15 +2382,23 @@ def make_schedule_official(request, num, owner, name):
             schedule.public = True
             schedule.visible = True
             schedule.save()
+        if schedule.base and not (schedule.base.public and schedule.base.visible):
+            schedule.base.public = True
+            schedule.base.visible = True
+            schedule.base.save()
         meeting.schedule = schedule
         meeting.save()
         return HttpResponseRedirect(reverse('ietf.meeting.views.list_schedules',kwargs={'num':num}))
 
     if not schedule.public:
         messages.warning(request,"This schedule will be made public as it is made official.")
-
     if not schedule.visible:
         messages.warning(request,"This schedule will be made visible as it is made official.")
+    if schedule.base:
+        if not schedule.base.public:
+            messages.warning(request,"The base schedule will be made public as it is made official.")
+        if not schedule.base.visible:
+            messages.warning(request,"The base schedule will be made visible as it is made official.")
 
     return render(request, "meeting/make_schedule_official.html",
                   { 'schedule' : schedule,
@@ -2344,11 +2414,13 @@ def delete_schedule(request, num, owner, name):
     person   = get_person_by_email(owner)
     schedule = get_schedule_by_name(meeting, person, name)
 
-    if schedule.name=='Empty-Schedule':
-        return HttpResponseForbidden('You may not delete the default empty schedule')
-
+    # FIXME: we ought to put these checks in a function and only show
+    # the delete button if the checks pass
     if schedule == meeting.schedule:
         return HttpResponseForbidden('You may not delete the official schedule for %s'%meeting)
+
+    if Schedule.objects.filter(base=schedule).exists():
+        return HttpResponseForbidden('You may not delete a schedule serving as the base for other schedules')
 
     if not ( has_role(request.user, 'Secretariat') or person.user == request.user ):
         return HttpResponseForbidden("You may not delete other user's schedules")
@@ -2660,10 +2732,12 @@ def interim_request_details(request, number):
             return redirect(interim_pending)
 
     first_session = sessions.first()
+    assignments = SchedTimeSessAssignment.objects.filter(schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None])
 
     return render(request, "meeting/interim_request_details.html", {
         "meeting": meeting,
         "sessions": sessions,
+        "assignments": assignments,
         "group": first_session.group,
         "requester": session_requested_by(first_session),
         "session_status": current_session_status(first_session),
@@ -2783,10 +2857,10 @@ def upcoming_ical(request):
     today = datetime.date.today()
 
     # get meetings starting 7 days ago -- we'll filter out sessions in the past further down
-    meetings = data_for_meetings_overview(Meeting.objects.filter(date__gte=today-datetime.timedelta(days=7)).order_by('date'))
+    meetings = data_for_meetings_overview(Meeting.objects.filter(date__gte=today-datetime.timedelta(days=7)).prefetch_related('schedule').order_by('date'))
 
     assignments = list(SchedTimeSessAssignment.objects.filter(
-        schedule__meeting__schedule=F('schedule'),
+        schedule__in=[m.schedule_id for m in meetings] + [m.schedule.base_id for m in meetings if m.schedule],
         session__in=[s.pk for m in meetings for s in m.sessions],
         timeslot__time__gte=today,
     ).order_by(
@@ -2879,7 +2953,7 @@ def proceedings(request, num=None):
     sessions  = add_event_info_to_session_qs(
         Session.objects.filter(meeting__number=meeting.number)
     ).filter(
-        Q(timeslotassignments__schedule=schedule) | Q(current_status='notmeet')
+        Q(timeslotassignments__schedule__in=[schedule, schedule.base if schedule else None]) | Q(current_status='notmeet')
     ).select_related().order_by('-current_status')
     plenaries = sessions.filter(name__icontains='plenary').exclude(current_status='notmeet')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
@@ -3101,7 +3175,7 @@ def edit_timeslot_type(request, num, slot_id):
     else:
         form = TimeSlotTypeForm(instance=timeslot)
         
-    sessions = timeslot.sessions.filter(timeslotassignments__schedule=meeting.schedule)
+    sessions = timeslot.sessions.filter(timeslotassignments__schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None])
 
     return render(request, 'meeting/edit_timeslot_type.html', {'timeslot':timeslot,'form':form,'sessions':sessions})
 

@@ -461,6 +461,11 @@ input.draft-file-input {
    Meeting Tool
    ========================================================================== */
 
+#misc-sessions .from-base-schedule {
+    text-align: centeR;
+    opacity: 0.7;
+}
+
 #misc-session-edit-form input[type="text"] {
     width: 30em;
 }

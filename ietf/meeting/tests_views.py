@@ -127,6 +127,8 @@ class MeetingTests(TestCase):
         future_meeting = Meeting.objects.create(date=datetime.date(future_year, 7, 22), number=future_num, type_id='ietf',
                                 city="Panama City", country="PA", time_zone='America/Panama')
 
+        registration_text = "Registration"
+
         # utc
         time_interval = "%s-%s" % (slot.utc_start_time().strftime("%H:%M").lstrip("0"), (slot.utc_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
 
@@ -152,6 +154,7 @@ class MeetingTests(TestCase):
         self.assertIn(session.group.parent.acronym.upper(), agenda_content)
         self.assertIn(slot.location.name, agenda_content)
         self.assertIn(time_interval, agenda_content)
+        self.assertIn(registration_text, agenda_content)
 
         # Make sure there's a frame for the agenda and it points to the right place
         self.assertTrue(any([session.materials.get(type='agenda').get_href() in x.attrib["data-src"] for x in q('tr div.modal-body  div.frame')])) 
@@ -191,6 +194,7 @@ class MeetingTests(TestCase):
         self.assertContains(r, session.group.name)
         self.assertContains(r, session.group.parent.acronym.upper())
         self.assertContains(r, slot.location.name)
+        self.assertContains(r, registration_text)
 
         self.assertContains(r, session.materials.get(type='agenda').uploaded_filename)
         self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
@@ -215,6 +219,7 @@ class MeetingTests(TestCase):
         self.assertNotContains(r, 'CANCELLED')
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, slot.location.name)
+        self.assertContains(r, registration_text)
 
         # week view with a cancelled session
         SchedulingEvent.objects.create(
@@ -585,16 +590,22 @@ class MeetingTests(TestCase):
         self.client.login(username='secretary',password='secretary+password')
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
+
+        new_base = Schedule.objects.create(name="newbase", owner=schedule.owner, meeting=schedule.meeting)
         response = self.client.post(url, {
                 'name':schedule.name,
                 'visible':True,
                 'public':True,
+                'notes': "New Notes",
+                'base': new_base.pk,
             }
         )
-        self.assertEqual(response.status_code,302)
-        schedule = Schedule.objects.get(pk=schedule.pk)
+        self.assertNoFormPostErrors(response)
+        schedule.refresh_from_db()
         self.assertTrue(schedule.visible)
         self.assertTrue(schedule.public)
+        self.assertEqual(schedule.notes, "New Notes")
+        self.assertEqual(schedule.base_id, new_base.pk)
 
     def test_agenda_by_type_ics(self):
         session=SessionFactory(meeting__type_id='ietf',type_id='lead')
@@ -985,7 +996,21 @@ class EditTests(TestCase):
             person=p,
             name=ConstraintName.objects.get(slug="bethere"),
         )
-        
+
+        room = Room.objects.get(meeting=meeting, session_types='regular')
+        base_timeslot = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
+                                                duration=datetime.timedelta(minutes=50),
+                                                time=datetime.datetime.combine(meeting.date + datetime.timedelta(days=2), datetime.time(9, 30)))
+
+        timeslots = list(TimeSlot.objects.filter(meeting=meeting, type='regular').order_by('time'))
+
+        base_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="irg"),
+                                              attendees=20, requested_duration=datetime.timedelta(minutes=30),
+                                              type_id='regular')
+        SchedulingEvent.objects.create(session=base_session, status_id='schedw', by=Person.objects.get(user__username='secretary'))
+        SchedTimeSessAssignment.objects.create(timeslot=base_timeslot, session=base_session, schedule=meeting.schedule.base)
+
+
         # check we have the grid and everything set up as a baseline -
         # the Javascript tests check that the Javascript can work with
         # it
@@ -993,11 +1018,9 @@ class EditTests(TestCase):
         r = self.client.get(url)
         q = PyQuery(r.content)
 
-        room = Room.objects.get(meeting=meeting, session_types='regular')
         self.assertTrue(q(".room-name:contains(\"{}\")".format(room.name)))
         self.assertTrue(q(".room-name:contains(\"{}\")".format(room.capacity)))
 
-        timeslots = list(TimeSlot.objects.filter(meeting=meeting, type='regular'))
         self.assertTrue(q("#timeslot{}".format(timeslots[0].pk)))
 
         for s in [s1, s2]:
@@ -1031,12 +1054,14 @@ class EditTests(TestCase):
             if s.comments:
                 self.assertIn(s.comments, e.find(".comments").text())
 
-            formatted_constraints = e.find(".session-info .formatted-constraints > *")
-            if s == s1:
-                self.assertIn(s_other.group.acronym, formatted_constraints.eq(0).html())
-                self.assertIn(p.name, formatted_constraints.eq(1).html())
-            elif s == s2:
-                self.assertIn(p.name, formatted_constraints.eq(0).html())
+        formatted_constraints1 = q("#session{} .session-info .formatted-constraints > *".format(s1.pk))
+        self.assertIn(s2.group.acronym, formatted_constraints1.eq(0).html())
+        self.assertIn(p.name, formatted_constraints1.eq(1).html())
+
+        formatted_constraints2 = q("#session{} .session-info .formatted-constraints > *".format(s2.pk))
+        self.assertIn(p.name, formatted_constraints2.eq(0).html())
+
+        self.assertEqual(len(q("#session{}.readonly".format(base_session.pk))), 1)
 
         self.assertTrue(q("em:contains(\"You can't edit this schedule\")"))
 
@@ -1106,7 +1131,7 @@ class EditTests(TestCase):
         self.assertEqual(tombstone_event.status_id, 'resched')
 
         self.assertEqual(SchedTimeSessAssignment.objects.get(schedule=schedule, session=s_tombstone).timeslot, timeslots[1])
-        self.assertTrue(PyQuery(json_content['tombstone'])("#session{}.tombstone".format(s_tombstone.pk)).html())
+        self.assertTrue(PyQuery(json_content['tombstone'])("#session{}.readonly".format(s_tombstone.pk)).html())
 
         # unassign
         r = self.client.post(url, {
@@ -1117,16 +1142,9 @@ class EditTests(TestCase):
         self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s1)), [])
 
         # try swapping days
-        timeslots.append(TimeSlot.objects.create(
-            meeting=meeting, type_id='regular', location=timeslots[0].location,
-            duration=timeslots[0].duration - datetime.timedelta(minutes=5),
-            time=timeslots[0].time + datetime.timedelta(days=1),
-        ))
-
-        SchedTimeSessAssignment.objects.create(schedule=schedule, session=s1, timeslot=timeslots[1])
-
-        self.assertEqual(len(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s2, timeslot=timeslots[0])), 1)
-        self.assertEqual(len(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s1, timeslot=timeslots[1])), 1)
+        SchedTimeSessAssignment.objects.create(schedule=schedule, session=s1, timeslot=timeslots[0])
+        self.assertEqual(len(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s1, timeslot=timeslots[0])), 1)
+        self.assertEqual(len(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s2, timeslot=timeslots[1])), 1)
         self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot=timeslots[2])), [])
 
         r = self.client.post(url, {
@@ -1138,8 +1156,8 @@ class EditTests(TestCase):
 
         self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot=timeslots[0])), [])
         self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot=timeslots[1])), [])
-        self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s1)), [])
-        self.assertEqual(len(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s2, timeslot=timeslots[2])), 1)
+        self.assertEqual(len(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s1, timeslot=timeslots[2])), 1)
+        self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s2)), [])
 
         # swap back
         r = self.client.post(url, {
@@ -1149,37 +1167,59 @@ class EditTests(TestCase):
         })
         self.assertEqual(r.status_code, 302)
 
-        self.assertEqual(len(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s2, timeslot=timeslots[0])), 1)
+        self.assertEqual(len(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s1, timeslot=timeslots[0])), 1)
         self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot=timeslots[1])), [])
         self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot=timeslots[2])), [])
         
-    def test_copy_meeting_schedule(self):
+    def test_new_meeting_schedule(self):
         meeting = make_meeting_test_data()
 
         self.client.login(username="secretary", password="secretary+password")
 
-        url = urlreverse("ietf.meeting.views.copy_meeting_schedule", kwargs=dict(num=meeting.number, owner=meeting.schedule.owner_email(), name=meeting.schedule.name))
+        # new from scratch
+        url = urlreverse("ietf.meeting.views.new_meeting_schedule", kwargs=dict(num=meeting.number))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        # copy
         r = self.client.post(url, {
-            'name': "newtest",
+            'name': "scratch",
             'public': "on",
-            'notes': "New test",
+            'visible': "on",
+            'notes': "New scratch",
+            'base': meeting.schedule.base_id,
         })
         self.assertNoFormPostErrors(r)
 
-        new_schedule = Schedule.objects.get(meeting=meeting, owner__user__username='secretary', name='newtest')
+        new_schedule = Schedule.objects.get(meeting=meeting, owner__user__username='secretary', name='scratch')
+        self.assertEqual(new_schedule.public, True)
+        self.assertEqual(new_schedule.visible, True)
+        self.assertEqual(new_schedule.notes, "New scratch")
+        self.assertEqual(new_schedule.origin, None)
+        self.assertEqual(new_schedule.base_id, meeting.schedule.base_id)
+
+        # copy
+        url = urlreverse("ietf.meeting.views.new_meeting_schedule", kwargs=dict(num=meeting.number, owner=meeting.schedule.owner_email(), name=meeting.schedule.name))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.post(url, {
+            'name': "copy",
+            'public': "on",
+            'notes': "New copy",
+            'base': meeting.schedule.base_id,
+        })
+        self.assertNoFormPostErrors(r)
+
+        new_schedule = Schedule.objects.get(meeting=meeting, owner__user__username='secretary', name='copy')
         self.assertEqual(new_schedule.public, True)
         self.assertEqual(new_schedule.visible, False)
-        self.assertEqual(new_schedule.notes, "New test")
+        self.assertEqual(new_schedule.notes, "New copy")
         self.assertEqual(new_schedule.origin, meeting.schedule)
+        self.assertEqual(new_schedule.base_id, meeting.schedule.base_id)
 
         old_assignments = {(a.session_id, a.timeslot_id) for a in SchedTimeSessAssignment.objects.filter(schedule=meeting.schedule)}
         for a in SchedTimeSessAssignment.objects.filter(schedule=new_schedule):
             self.assertIn((a.session_id, a.timeslot_id), old_assignments)
-            # FIXME: test extendedfrom is copied correctly
 
     def test_save_agenda_as_and_read_permissions(self):
         meeting = make_meeting_test_data()
@@ -1390,7 +1430,7 @@ class SessionDetailsTests(TestCase):
 class EditScheduleListTests(TestCase):
     def setUp(self):
         self.mtg = MeetingFactory(type_id='ietf')
-        ScheduleFactory(meeting=self.mtg,name='Empty-Schedule')
+        ScheduleFactory(meeting=self.mtg, name='secretary1')
 
     def test_list_schedules(self):
         url = urlreverse('ietf.meeting.views.list_schedules',kwargs={'num':self.mtg.number})
@@ -1423,8 +1463,8 @@ class EditScheduleListTests(TestCase):
         )
 
         # copy
-        copy_url = urlreverse("ietf.meeting.views.copy_meeting_schedule", kwargs=dict(num=meeting.number, owner=from_schedule.owner_email(), name=from_schedule.name))
-        r = self.client.post(copy_url, {
+        new_url = urlreverse("ietf.meeting.views.new_meeting_schedule", kwargs=dict(num=meeting.number, owner=from_schedule.owner_email(), name=from_schedule.name))
+        r = self.client.post(new_url, {
             'name': "newtest",
             'public': "on",
         })
@@ -1436,22 +1476,20 @@ class EditScheduleListTests(TestCase):
 
         edit_url = urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs=dict(num=meeting.number, owner=to_schedule.owner_email(), name=to_schedule.name))
 
-        # schedule
+        # schedule session
         r = self.client.post(edit_url, {
             'action': 'assign',
             'timeslot': slot3.pk,
             'session': session3.pk,
         })
         self.assertEqual(json.loads(r.content)['success'], True)
-
-        # unschedule
+        # unschedule session
         r = self.client.post(edit_url, {
             'action': 'unassign',
             'session': session1.pk,
         })
         self.assertEqual(json.loads(r.content)['success'], True)
-
-        # move
+        # move session
         r = self.client.post(edit_url, {
             'action': 'assign',
             'timeslot': slot2.pk,
@@ -1459,7 +1497,7 @@ class EditScheduleListTests(TestCase):
         })
         self.assertEqual(json.loads(r.content)['success'], True)
 
-        # get differences
+        # now get differences
         r = self.client.get(url, {
             'from_schedule': from_schedule.name,
             'to_schedule': to_schedule.name,
@@ -1584,6 +1622,7 @@ class InterimTests(TestCase):
         meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
         meeting.time_zone = 'America/Los_Angeles'
         meeting.save()
+
         url = urlreverse("ietf.meeting.views.interim_send_announcement", kwargs={'number': meeting.number})
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)

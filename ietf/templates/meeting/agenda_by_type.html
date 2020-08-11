@@ -29,7 +29,7 @@ li.daylistentry { margin-left:2em; font-weight: 400; }
 {% block content %}
 {% include "meeting/meeting_heading.html" with updated=meeting.updated selected="by-type"  title_extra="by Session Type" %}
 
-{% regroup assignments by session.type.slug as type_list %}
+{% regroup assignments by session.type_id as type_list %}
 <ul class="typelist">
 {% for type in type_list %}
   <li class="typelistentry {% cycle 'even' 'odd' %}">
@@ -41,11 +41,11 @@ li.daylistentry { margin-left:2em; font-weight: 400; }
         <h3>{{ day.grouper }}</h3>
         <table class="sessiontable">
         {% for ss in day.list %}
-          <tr>
+          <tr {% if ss.schedule_id != meeting.schedule_id %}class="from-base-schedule"{% endif %}>
             <td>{{ss.timeslot.time|date:"H:i"}}-{{ss.timeslot.end_time|date:"H:i"}}</td>
             <td>{{ss.timeslot.get_hidden_location}}</td>
-            <td class="type-{{ss.session.type.slug}}">{{ss.session.short_name}} </td>
-            <td>{% if ss.session.type_id == 'regular' or ss.session.type_id == 'plenary' or ss.session.type_id == 'other' %} <a href="{% url 'ietf.meeting.views.session_details' num=ss.session.meeting.number acronym=ss.session.group.acronym %}">Materials</a>{% else %}&nbsp;{% endif %}</td>
+            <td class="type-{{ss.session.type_id}}">{{ss.session.short_name}} </td>
+            <td>{% if ss.session.type_id == 'regular' or ss.session.type_id == 'plenary' or ss.session.type_id == 'other' %} <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=ss.session.group.acronym %}">Materials</a>{% else %}&nbsp;{% endif %}</td>
           </tr>
         {% endfor %} 
         </table>

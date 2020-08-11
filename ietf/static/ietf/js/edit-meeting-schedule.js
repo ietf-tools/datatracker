@@ -8,7 +8,7 @@ jQuery(document).ready(function () {
         alert("Error: " + errorText);
     }
 
-    let sessions = content.find(".session").not(".tombstone");
+    let sessions = content.find(".session").not(".readonly");
     let timeslots = content.find(".timeslot");
     let days = content.find(".day-flow .day");
 

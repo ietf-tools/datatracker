@@ -7,14 +7,14 @@
 
 {% block content %}
   {% origin %}
-  <h1>{% block title %}Copy agenda {{ schedule.name }}{% endblock %}</h1>
+  <h1>{% block title %}{% if schedule %}Copy agenda {{ schedule.name }} to new agenda{% else %}New agenda{% endif %}{% endblock %}</h1>
 
   <form method="post">
     {% csrf_token %}
     {% bootstrap_form form %}
 
     {% buttons %}
-    <button type="submit" class="btn btn-default">Copy agenda</button>
+    <button type="submit" class="btn btn-primary">Create agenda</button>
     {% endbuttons %}
   </form>
 {% endblock %}

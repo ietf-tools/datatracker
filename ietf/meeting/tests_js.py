@@ -133,6 +133,8 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
         url = self.absreverse('ietf.meeting.views.edit_meeting_schedule', kwargs=dict(num=meeting.number, name=schedule.name, owner=schedule.owner_email()))
         self.driver.get(url)
 
+        WebDriverWait(self.driver, 2).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, '.edit-meeting-schedule')))
+
         self.assertEqual(len(self.driver.find_elements_by_css_selector('.session')), 3)
 
         # select - show session info
