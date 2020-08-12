@@ -36,7 +36,8 @@ def preferences(request, **kwargs):
     request.COOKIES.update(preferences)
     response = render(request, "cookies/settings.html", preferences )
     for key in new_cookies:
-        response.set_cookie(key, new_cookies[key], settings.PREFERENCES_COOKIE_AGE)
+        response.set_cookie(key, new_cookies[key],
+            max_age=settings.PREFERENCES_COOKIE_AGE, secure=True, samesite='None')
     for key in del_cookies:
         response.delete_cookie(key)
     return response
