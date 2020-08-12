@@ -51,11 +51,10 @@ from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocA
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
 from ietf.person.models import Person
-from ietf.person.name import plain_name
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
-from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Constraint, ConstraintName
+from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment
 from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
@@ -78,6 +77,7 @@ from ietf.meeting.utils import session_time_for_sorting
 from ietf.meeting.utils import session_requested_by
 from ietf.meeting.utils import current_session_status
 from ietf.meeting.utils import data_for_meetings_overview
+from ietf.meeting.utils import preprocess_constraints_for_meeting_schedule_editor
 from ietf.message.utils import infer_message
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
@@ -483,11 +483,11 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             meeting=meeting,
             # Restrict graphical scheduling to regular meeting requests (Sessions) for now
             type='regular',
-        ),
+        ).order_by('pk'),
         requested_time=True,
         requested_by=True,
     ).exclude(current_status__in=['notmeet', 'disappr', 'deleted', 'apprw']).prefetch_related(
-        'resources', 'group', 'group__parent', 'group__type',
+        'resources', 'group', 'group__parent', 'group__type', 'joint_with_groups',
     )
 
     if request.method == 'POST':
@@ -524,21 +524,23 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     for a in assignments:
         assignments_by_session[a.session_id].append(a)
 
-    # Prepare timeslot layout, making a timeline per day scaled in
-    # browser em units to ensure that everything lines up even if the
-    # timeslots are not the same in the different rooms
+    # prepare timeslot layout
+
+    min_duration = min(t.duration for t in timeslots_qs)
+    max_duration = max(t.duration for t in timeslots_qs)
 
     def timedelta_to_css_ems(timedelta):
-        css_ems_per_hour = 5
-        return timedelta.seconds / 60.0 / 60.0 * css_ems_per_hour
+        # we scale the session and slots a bit according to their
+        # length for an added visual clue
+        capped_min_d = max(min_duration, datetime.timedelta(minutes=30))
+        capped_max_d = min(max_duration, datetime.timedelta(hours=4))
+        capped_timedelta = min(max(capped_min_d, timedelta), capped_max_d)
 
-    timeslots_by_day = defaultdict(list)
-    for t in timeslots_qs:
-        timeslots_by_day[t.time.date()].append(t)
-
-    day_min_max = []
-    for day, timeslots in sorted(timeslots_by_day.items()):
-        day_min_max.append((day, min(t.time for t in timeslots), max(t.end_time() for t in timeslots)))
+        min_d_css_rems = 8
+        max_d_css_rems = 10
+        # interpolate
+        scale = (capped_timedelta - capped_min_d) / (capped_max_d - capped_min_d) if capped_min_d != capped_max_d else 1
+        return min_d_css_rems + (max_d_css_rems - min_d_css_rems) * scale
 
     timeslots_by_room_and_day = defaultdict(list)
     room_has_timeslots = set()
@@ -547,34 +549,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         timeslots_by_room_and_day[(t.location_id, t.time.date())].append(t)
 
     days = []
-    for day, day_min_time, day_max_time in day_min_max:
-        day_labels = []
-        day_width = timedelta_to_css_ems(day_max_time - day_min_time)
-
-        label_width = 4 # em
-
-        hourly_delta = 2
-
-        first_hour = int(math.ceil((day_min_time.hour + day_min_time.minute / 60.0) / hourly_delta) * hourly_delta)
-        t = day_min_time.replace(hour=first_hour, minute=0, second=0, microsecond=0)
-
-        last_hour = int(math.floor((day_max_time.hour + day_max_time.minute / 60.0) / hourly_delta) * hourly_delta)
-        end = day_max_time.replace(hour=last_hour, minute=0, second=0, microsecond=0)
-
-        while t <= end:
-            left_offset = timedelta_to_css_ems(t - day_min_time)
-            right_offset = day_width - left_offset
-            if right_offset > label_width:
-                # there's room for the label
-                day_labels.append((t, 'left', left_offset))
-            else:
-                day_labels.append((t, 'right', right_offset))
-
-            t += datetime.timedelta(seconds=hourly_delta * 60 * 60)
-
-        if not day_labels:
-            day_labels.append((day_min_time, 'left', 0))
-
+    for day in sorted(set(t.time.date() for t in timeslots_qs)):
         room_timeslots = []
         for r in rooms:
             if r.pk not in room_has_timeslots:
@@ -582,22 +557,23 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
             timeslots = []
             for t in timeslots_by_room_and_day.get((r.pk, day), []):
-                timeslots.append({
-                    'timeslot': t,
-                    'offset': timedelta_to_css_ems(t.time - day_min_time),
-                    'width': timedelta_to_css_ems(t.end_time() - t.time),
-                })
+                t.layout_width = timedelta_to_css_ems(t.end_time() - t.time)
+                timeslots.append(t)
 
             room_timeslots.append((r, timeslots))
 
         days.append({
             'day': day,
-            'width': day_width,
-            'time_labels': day_labels,
             'room_timeslots': room_timeslots,
         })
 
     room_labels = [[r for r in rooms if r.pk in room_has_timeslots] for i in range(len(days))]
+
+    # possible timeslot start/ends
+    timeslot_groups = defaultdict(set)
+    for ts in timeslots_qs:
+        ts.start_end_group = "ts-group-{}-{}".format(ts.time.strftime("%Y%m%d-%H%M"), int(ts.duration.total_seconds() / 60))
+        timeslot_groups[ts.time.date()].add((ts.time, ts.end_time(), ts.start_end_group))
 
     # prepare sessions
     for ts in timeslots_qs:
@@ -624,86 +600,18 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     ), key=lambda p: p.acronym)
     for i, p in enumerate(session_parents):
         rgb_color = cubehelix(i, len(session_parents))
-        p.scheduling_color = "#" + "".join( hex(int(round(x * 255)))[2:] for x in rgb_color)
-
-    # dig out historic AD names
-    ad_names = {}
-    session_groups = set(s.group for s in sessions if s.group and s.group.parent and s.group.parent.type_id == 'area')
-    meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
-
-    for group_id, history_time, name in Person.objects.filter(rolehistory__name='ad', rolehistory__group__group__in=session_groups, rolehistory__group__time__lte=meeting_time).values_list('rolehistory__group__group', 'rolehistory__group__time', 'name').order_by('rolehistory__group__time'):
-        ad_names[group_id] = plain_name(name)
-
-    for group_id, name in Person.objects.filter(role__name='ad', role__group__in=session_groups, role__group__time__lte=meeting_time).values_list('role__group', 'name'):
-        ad_names[group_id] = plain_name(name)
+        p.scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round(x * 255)) for x in rgb_color))
+        p.light_scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round((0.9 + 0.1 * x) * 255)) for x in rgb_color))
 
     # requesters
     requested_by_lookup = {p.pk: p for p in Person.objects.filter(pk__in=set(s.requested_by for s in sessions if s.requested_by))}
 
-    # constraints - convert the human-readable rules in the database
-    # to constraints on the actual sessions, compress them and output
-    # them, so that the JS simply has to detect violations and show
-    # the relevant preprocessed label
-    constraints = Constraint.objects.filter(meeting=meeting)
-    person_needed_for_groups = defaultdict(set)
-    for c in constraints:
-        if c.name_id == 'bethere' and c.person_id is not None:
-            person_needed_for_groups[c.person_id].add(c.source_id)
+    # constraints
+    constraints_for_sessions, formatted_constraints_for_sessions, constraint_names = preprocess_constraints_for_meeting_schedule_editor(meeting, sessions)
 
     sessions_for_group = defaultdict(list)
     for s in sessions:
-        if s.group_id is not None:
-            sessions_for_group[s.group_id].append(s.pk)
-
-    constraint_names = {n.pk: n for n in ConstraintName.objects.all()}
-    constraint_names_with_count = set()
-    constraint_label_replacements = [
-        (re.compile(r"\(person\)"), lambda match_groups: format_html("<i class=\"fa fa-user-o\"></i>")),
-        (re.compile(r"\(([^()])\)"), lambda match_groups: format_html("<span class=\"encircled\">{}</span>", match_groups[0])),
-    ]
-    for n in list(constraint_names.values()):
-        # spiff up the labels a bit
-        for pattern, replacer in constraint_label_replacements:
-            m = pattern.match(n.editor_label)
-            if m:
-                n.editor_label = replacer(m.groups())
-
-        # add reversed version of the name
-        reverse_n = ConstraintName(
-            slug=n.slug + "-reversed",
-            name="{} - reversed".format(n.name),
-        )
-        reverse_n.editor_label = format_html("<i>{}</i>", n.editor_label)
-        constraint_names[reverse_n.slug] = reverse_n
-
-    constraints_for_sessions = defaultdict(list)
-
-    def add_group_constraints(g1_pk, g2_pk, name_id, person_id):
-        if g1_pk != g2_pk:
-            for s1_pk in sessions_for_group.get(g1_pk, []):
-                for s2_pk in sessions_for_group.get(g2_pk, []):
-                    if s1_pk != s2_pk:
-                        constraints_for_sessions[s1_pk].append((name_id, s2_pk, person_id))
-
-    reverse_constraints = []
-    seen_forward_constraints_for_groups = set()
-
-    for c in constraints:
-        if c.target_id:
-            add_group_constraints(c.source_id, c.target_id, c.name_id, c.person_id)
-            seen_forward_constraints_for_groups.add((c.source_id, c.target_id, c.name_id))
-            reverse_constraints.append(c)
-
-        elif c.person_id:
-            constraint_names_with_count.add(c.name_id)
-
-            for g in person_needed_for_groups.get(c.person_id):
-                add_group_constraints(c.source_id, g, c.name_id, c.person_id)
-
-    for c in reverse_constraints:
-        # suppress reverse constraints in case we have a forward one already
-        if (c.target_id, c.source_id, c.name_id) not in seen_forward_constraints_for_groups:
-            add_group_constraints(c.target_id, c.source_id, c.name_id + "-reversed", c.person_id)
+        sessions_for_group[s.group_id].append(s)
 
     unassigned_sessions = []
     for s in sessions:
@@ -715,29 +623,33 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         elif s.name:
             s.scheduling_label = s.name
 
-        s.requested_duration_in_hours = s.requested_duration.seconds / 60.0 / 60.0
+        s.requested_duration_in_hours = round(s.requested_duration.seconds / 60.0 / 60.0, 1)
 
         session_layout_margin = 0.2
         s.layout_width = timedelta_to_css_ems(s.requested_duration) - 2 * session_layout_margin
         s.parent_acronym = s.group.parent.acronym if s.group and s.group.parent else ""
-        s.historic_group_ad_name = ad_names.get(s.group_id)
 
-        # compress the constraints, so similar constraint explanations
-        # are shared between the conflicting sessions they cover
-        constrained_sessions_grouped_by_explanation = defaultdict(set)
+        # compress the constraints, so similar constraint labels are
+        # shared between the conflicting sessions they cover - the JS
+        # then simply has to detect violations and show the
+        # preprocessed labels
+        constrained_sessions_grouped_by_label = defaultdict(set)
         for name_id, ts in itertools.groupby(sorted(constraints_for_sessions.get(s.pk, [])), key=lambda t: t[0]):
             ts = list(ts)
             session_pks = (t[1] for t in ts)
             constraint_name = constraint_names[name_id]
-            if name_id in constraint_names_with_count:
+            if "{count}" in constraint_name.formatted_editor_label:
                 for session_pk, grouped_session_pks in itertools.groupby(session_pks):
                     count = sum(1 for i in grouped_session_pks)
-                    constrained_sessions_grouped_by_explanation[format_html("{}{}", constraint_name.editor_label, count)].add(session_pk)
+                    constrained_sessions_grouped_by_label[format_html(constraint_name.formatted_editor_label, count=count)].add(session_pk)
 
             else:
-                constrained_sessions_grouped_by_explanation[constraint_name.editor_label].update(session_pks)
+                constrained_sessions_grouped_by_label[constraint_name.formatted_editor_label].update(session_pks)
 
-        s.constrained_sessions = list(constrained_sessions_grouped_by_explanation.items())
+        s.constrained_sessions = list(constrained_sessions_grouped_by_label.items())
+        s.formatted_constraints = formatted_constraints_for_sessions.get(s.pk, {})
+
+        s.other_sessions = [s_other for s_other in sessions_for_group.get(s.group_id) if s != s_other]
 
         assigned = False
         for a in assignments_by_session.get(s.pk, []):
@@ -763,6 +675,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'js_data': json.dumps(js_data, indent=2),
         'days': days,
         'room_labels': room_labels,
+        'timeslot_groups': sorted((d, list(sorted(t_groups))) for d, t_groups in timeslot_groups.items()),
         'unassigned_sessions': unassigned_sessions,
         'session_parents': session_parents,
         'hide_menu': True,

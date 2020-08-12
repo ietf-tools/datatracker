@@ -88,13 +88,23 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
             type_id='regular',
             location=room2,
             duration=datetime.timedelta(hours=2),
-            time=slot1.time - datetime.timedelta(seconds=10 * 60),
+            time=slot1.time - datetime.timedelta(minutes=10),
         )
 
+        slot3 = TimeSlot.objects.create(
+            meeting=meeting,
+            type_id='regular',
+            location=room2,
+            duration=datetime.timedelta(hours=2),
+            time=max(slot1.end_time(), slot2.end_time()) + datetime.timedelta(minutes=10),
+        )
+        
         s1, s2 = Session.objects.filter(meeting=meeting, type='regular')
         s2.requested_duration = slot2.duration + datetime.timedelta(minutes=10)
         s2.save()
         SchedTimeSessAssignment.objects.filter(session=s1).delete()
+
+        s2b = Session.objects.create(meeting=meeting, group=s2.group, attendees=10, requested_duration=datetime.timedelta(minutes=60), type_id='regular')
 
         Constraint.objects.create(
             meeting=meeting,
@@ -108,19 +118,20 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
         self.driver.get(url)
 
         q = PyQuery(self.driver.page_source)
-        self.assertEqual(len(q('.session')), 2)
+        self.assertEqual(len(q('.session')), 3)
 
         # select - show session info
         s2_element = self.driver.find_element_by_css_selector('#session{}'.format(s2.pk))
         s2_element.click()
 
-        session_info_element = self.driver.find_element_by_css_selector('.session-info-container label')
-        self.assertIn(s2.group.acronym, session_info_element.text)
+        session_info_container = self.driver.find_element_by_css_selector('.session-info-container')
+        self.assertIn(s2.group.acronym, session_info_container.find_element_by_css_selector(".title").text)
+        self.assertEqual(session_info_container.find_element_by_css_selector(".other-session .time").text, "not yet scheduled")
 
         # deselect
-        self.driver.find_element_by_css_selector('.session-info-container').click()
+        self.driver.find_element_by_css_selector('.scheduling-panel').click()
 
-        self.assertEqual(self.driver.find_elements_by_css_selector('.session-info-container label'), [])
+        self.assertEqual(session_info_container.find_elements_by_css_selector(".title"), [])
 
         # unschedule
 
@@ -139,39 +150,48 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
 
         self.driver.execute_script('!function(s){s.fn.simulateDragDrop=function(t){return this.each(function(){new s.simulateDragDrop(this,t)})},s.simulateDragDrop=function(t,a){this.options=a,this.simulateEvent(t,a)},s.extend(s.simulateDragDrop.prototype,{simulateEvent:function(t,a){var e="dragstart",n=this.createEvent(e);this.dispatchEvent(t,e,n),e="drop";var r=this.createEvent(e,{});r.dataTransfer=n.dataTransfer,this.dispatchEvent(s(a.dropTarget)[0],e,r),e="dragend";var i=this.createEvent(e,{});i.dataTransfer=n.dataTransfer,this.dispatchEvent(t,e,i)},createEvent:function(t){var a=document.createEvent("CustomEvent");return a.initCustomEvent(t,!0,!0,null),a.dataTransfer={data:{},setData:function(t,a){this.data[t]=a},getData:function(t){return this.data[t]}},a},dispatchEvent:function(t,a,e){t.dispatchEvent?t.dispatchEvent(e):t.fireEvent&&t.fireEvent("on"+a,e)}})}(jQuery);')
 
-        self.driver.execute_script("jQuery('#session{}').simulateDragDrop({{dropTarget: '.unassigned-sessions'}});".format(s2.pk))
+        self.driver.execute_script("jQuery('#session{}').simulateDragDrop({{dropTarget: '.unassigned-sessions .drop-target'}});".format(s2.pk))
 
         WebDriverWait(self.driver, 2).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, '.unassigned-sessions #session{}'.format(s2.pk))))
 
         self.assertEqual(list(SchedTimeSessAssignment.objects.filter(session=s2, schedule=schedule)), [])
 
         # sorting unassigned
-        sorted_pks = [s.pk for s in sorted([s1, s2], key=lambda s: s.group.acronym)]
+        sorted_pks = [s.pk for s in sorted([s1, s2, s2b], key=lambda s: (s.group.acronym, s.requested_duration, s.pk))]
         self.driver.find_element_by_css_selector('[name=sort_unassigned] option[value=name]').click()
-        self.assertTrue(self.driver.find_element_by_css_selector('.unassigned-sessions #session{} + #session{}'.format(*sorted_pks)))
+        self.assertTrue(self.driver.find_element_by_css_selector('.unassigned-sessions .drop-target #session{} + #session{} + #session{}'.format(*sorted_pks)))
 
-        sorted_pks = [s.pk for s in sorted([s1, s2], key=lambda s: (s.group.parent.acronym, s.group.acronym))]
+        sorted_pks = [s.pk for s in sorted([s1, s2, s2b], key=lambda s: (s.group.parent.acronym, s.group.acronym, s.requested_duration, s.pk))]
         self.driver.find_element_by_css_selector('[name=sort_unassigned] option[value=parent]').click()
-        self.assertTrue(self.driver.find_element_by_css_selector('.unassigned-sessions #session{} + #session{}'.format(*sorted_pks)))
+        self.assertTrue(self.driver.find_element_by_css_selector('.unassigned-sessions .drop-target #session{} + #session{}'.format(*sorted_pks)))
         
-        sorted_pks = [s.pk for s in sorted([s1, s2], key=lambda s: (s.requested_duration, s.group.parent.acronym, s.group.acronym))]
+        sorted_pks = [s.pk for s in sorted([s1, s2, s2b], key=lambda s: (s.requested_duration, s.group.parent.acronym, s.group.acronym, s.pk))]
         self.driver.find_element_by_css_selector('[name=sort_unassigned] option[value=duration]').click()
-        self.assertTrue(self.driver.find_element_by_css_selector('.unassigned-sessions #session{} + #session{}'.format(*sorted_pks)))
+        self.assertTrue(self.driver.find_element_by_css_selector('.unassigned-sessions .drop-target #session{} + #session{}'.format(*sorted_pks)))
         
-        sorted_pks = [s.pk for s in sorted([s1, s2], key=lambda s: (bool(s.comments), s.group.parent.acronym, s.group.acronym))]
+        sorted_pks = [s.pk for s in sorted([s1, s2, s2b], key=lambda s: (int(bool(s.comments)), s.group.parent.acronym, s.group.acronym, s.requested_duration, s.pk))]
         self.driver.find_element_by_css_selector('[name=sort_unassigned] option[value=comments]').click()
-        self.assertTrue(self.driver.find_element_by_css_selector('.unassigned-sessions #session{} + #session{}'.format(*sorted_pks)))
+        self.assertTrue(self.driver.find_element_by_css_selector('.unassigned-sessions .drop-target #session{} + #session{}'.format(*sorted_pks)))
 
         # schedule
-        self.driver.execute_script("jQuery('#session{}').simulateDragDrop({{dropTarget: '#timeslot{}'}});".format(s2.pk, slot1.pk))
+        self.driver.execute_script("jQuery('#session{}').simulateDragDrop({{dropTarget: '#timeslot{} .drop-target'}});".format(s2.pk, slot1.pk))
 
         WebDriverWait(self.driver, 2).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, '#timeslot{} #session{}'.format(slot1.pk, s2.pk))))
 
         assignment = SchedTimeSessAssignment.objects.get(session=s2, schedule=schedule)
         self.assertEqual(assignment.timeslot, slot1)
 
+        # timeslot constraint hints when selected
+        s1_element = self.driver.find_element_by_css_selector('#session{}'.format(s1.pk))
+        s1_element.click()
+
+        # violated due to constraints
+        self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{}.would-violate-hint'.format(slot1.pk)))
+        # violated due to missing capacity
+        self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{}.would-violate-hint'.format(slot3.pk)))
+
         # reschedule
-        self.driver.execute_script("jQuery('#session{}').simulateDragDrop({{dropTarget: '#timeslot{}'}});".format(s2.pk, slot2.pk))
+        self.driver.execute_script("jQuery('#session{}').simulateDragDrop({{dropTarget: '#timeslot{} .drop-target'}});".format(s2.pk, slot2.pk))
 
         WebDriverWait(self.driver, 2).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, '#timeslot{} #session{}'.format(slot2.pk, s2.pk))))
 
@@ -185,14 +205,12 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
         self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{}.overfull'.format(slot2.pk)))
 
         # constraint hints
-        s1_element = self.driver.find_element_by_css_selector('#session{}'.format(s1.pk))
         s1_element.click()
-
-        constraint_element = s2_element.find_element_by_css_selector(".constraints span[data-sessions=\"{}\"].selected-hint".format(s1.pk))
+        constraint_element = s2_element.find_element_by_css_selector(".constraints span[data-sessions=\"{}\"].would-violate-hint".format(s1.pk))
         self.assertTrue(constraint_element.is_displayed())
 
         # current constraint violations
-        self.driver.execute_script("jQuery('#session{}').simulateDragDrop({{dropTarget: '#timeslot{}'}});".format(s1.pk, slot1.pk))
+        self.driver.execute_script("jQuery('#session{}').simulateDragDrop({{dropTarget: '#timeslot{} .drop-target'}});".format(s1.pk, slot1.pk))
 
         WebDriverWait(self.driver, 2).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, '#timeslot{} #session{}'.format(slot1.pk, s1.pk))))
 
@@ -203,6 +221,16 @@ class EditMeetingScheduleTests(IetfLiveServerTestCase):
         self.assertTrue(s1_element.is_displayed())
         self.driver.find_element_by_css_selector(".session-parent-toggles [value=\"{}\"]".format(s1.group.parent.acronym)).click()
         self.assertTrue(not s1_element.is_displayed())
+        self.driver.find_element_by_css_selector(".session-parent-toggles [value=\"{}\"]".format(s1.group.parent.acronym)).click()
+        self.assertTrue(s1_element.is_displayed())
+
+        # hide timeslots
+        self.driver.find_element_by_css_selector(".timeslot-group-toggles button").click()
+        self.assertTrue(self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal").is_displayed())
+        self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal [value=\"{}\"]".format("ts-group-{}-{}".format(slot2.time.strftime("%Y%m%d-%H%M"), int(slot2.duration.total_seconds() / 60)))).click()
+        self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal [data-dismiss=\"modal\"]").click()
+        self.assertTrue(not self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal").is_displayed())
+
 
 @skipIf(skip_selenium, skip_message)
 @skipIf(django.VERSION[0]==2, "Skipping test with race conditions under Django 2")

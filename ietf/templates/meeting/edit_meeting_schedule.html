@@ -5,10 +5,10 @@
 {% load ietf_filters %}
 
 {% block morecss %}
+  {# set the group colors with CSS here #}
   {% for parent in session_parents %}
-    .parent-{{ parent.acronym }} {
-       background: linear-gradient(to right, {{ parent.scheduling_color }} 0.4em, transparent 0.5em);
-    }
+    .parent-{{ parent.acronym }} { background: linear-gradient(to right, {{ parent.scheduling_color }} 0.4em, transparent 0.5em); }
+    .parent-{{ parent.acronym }}.selected { background-color: {{ parent.light_scheduling_color }}; }
   {% endfor %}
 {% endblock morecss %}
 
@@ -47,7 +47,7 @@
       {% endif %}
     </p>
 
-    <div class="edit-grid">
+    <div class="edit-grid {% if not can_edit %}read-only{% endif %}">
 
       {# using the same markup in both room labels and the actual days ensures they are aligned #}
       <div class="room-label-column">
@@ -58,10 +58,8 @@
               &nbsp;
             </div>
 
-            <div class="timeline"></div>
-
             {% for room in labels %}
-              <div class="timeline timeslots">
+              <div class="timeslots">
                 <div class="room-name">
                   <strong>{{ room.name }}</strong><br>
                   {% if room.capacity %}{{ room.capacity }} <i class="fa fa-user-o"></i>{% endif %}
@@ -74,26 +72,26 @@
 
       <div class="day-flow">
         {% for day in days %}
-          <div class="day" style="width: {{ day.width }}em;">
+          <div class="day">
             <div class="day-label">
               <strong>{{ day.day|date:"l" }}</strong><br>
               {{ day.day|date:"N j, Y" }}
             </div>
 
-            <div class="timeline">
-              {% for t, left_or_right, offset in day.time_labels %}
-                <div class="time-label text-{{ left_or_right }}" style="{{ left_or_right }}: {{ offset }}em;">{{ t|date:"H:i" }}</div>
-              {% endfor %}
-            </div>
-
             {% for room, timeslots in day.room_timeslots %}
-              <div class="timeline timeslots" data-roomcapacity="{{ room.capacity }}">
+              <div class="timeslots" data-roomcapacity="{{ room.capacity }}">
 
                 {% for t in timeslots %}
-                  <div id="timeslot{{ t.timeslot.pk }}" class="timeslot" data-start="{{ t.timeslot.time.isoformat }}" data-end="{{ t.timeslot.end_time.isoformat }}" data-duration="{{ t.timeslot.duration.total_seconds }}" style="left: {{ t.offset }}em; width: {{ t.width }}em;">
-                    {% for assignment, session in t.timeslot.session_assignments %}
+                  <div id="timeslot{{ t.pk }}" class="timeslot {{ t.start_end_group }}" data-start="{{ t.time.isoformat }}" data-end="{{ t.end_time.isoformat }}" data-duration="{{ t.duration.total_seconds }}" data-scheduledatlabel="{{ t.time|date:"l G:i" }}-{{ t.end_time|date:"G:i" }}" style="width: {{ t.layout_width }}rem;">
+                    <div class="time-label">
+                      {{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}
+                    </div>
+
+                    <div class="drop-target">
+                    {% for assignment, session in t.session_assignments %}
                       {% include "meeting/edit_meeting_schedule_session.html" %}
                     {% endfor %}
+                    </div>
                   </div>
                 {% endfor %}
               </div>
@@ -106,9 +104,11 @@
     <div class="scheduling-panel">
       <div class="unassigned-container">
         <div class="unassigned-sessions">
-          {% for session in unassigned_sessions %}
-            {% include "meeting/edit_meeting_schedule_session.html" %}
-          {% endfor %}
+          <div class="drop-target">
+            {% for session in unassigned_sessions %}
+              {% include "meeting/edit_meeting_schedule_session.html" %}
+            {% endfor %}
+          </div>
         </div>
 
         <div class="preferences">
@@ -128,10 +128,43 @@
               <label class="parent-{{ p.acronym }}"><input type="checkbox" checked value="{{ p.acronym }}"> {{ p.acronym }}</label>
             {% endfor %}
           </span>
+
+          <span class="timeslot-group-toggles">
+            <button class="btn btn-default" data-toggle="modal" data-target="#timeslot-group-toggles-modal"><input type="checkbox" checked="checked" disabled> Timeslots</button>
+          </span>
         </div>
       </div>
 
       <div class="session-info-container"></div>
+    </div>
+
+    <div id="timeslot-group-toggles-modal" class="modal" role="dialog" aria-labelledby="timeslot-group-toggles-modal-title">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">
+              <span aria-hidden="true">&times;</span>
+              <span class="sr-only">Close</span>
+            </button>
+            <h4 class="modal-title" id="timeslot-group-toggles-modal-title">Displayed timeslots</h4>
+          </div>
+
+          <div class="modal-body">
+            {% for day, t_groups in timeslot_groups %}
+              <div>
+                <div><strong>{{ day|date:"M. d" }}</strong></div>
+                {% for start, end, key in t_groups %}
+                  <label><input type="checkbox" name="timeslot-group" value="{{ key }}" checked="checked"> {{ start|date:"H:i" }} - {{ end|date:"H:i" }}</label>
+                {% endfor %}
+              </div>
+            {% endfor %}
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>

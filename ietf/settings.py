@@ -1011,11 +1011,11 @@ DEV_MIDDLEWARE = ()
 # page loading.  If you wish to use the sql_queries debug listing, put this in
 # your settings_local and make sure your client IP address is in INTERNAL_IPS:
 #
-#    DEV_TEMPLATE_CONTEXT_PROCESSORS = (
+#    DEV_TEMPLATE_CONTEXT_PROCESSORS = [
 #        'ietf.context_processors.sql_debug',
-#    )
+#    ]
 #
-DEV_TEMPLATE_CONTEXT_PROCESSORS = ()
+DEV_TEMPLATE_CONTEXT_PROCESSORS = []    # type: List[str]
 
 # Domain which hosts draft and wg alias lists
 DRAFT_ALIAS_DOMAIN = IETF_DOMAIN

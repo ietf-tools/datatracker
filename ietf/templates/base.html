@@ -88,10 +88,7 @@
       <div class="container-fluid">
         {% comment %} {% bootstrap_messages %} {% endcomment %}
         {% for message in messages %}
-            <div class="alert{% if message.level_tag %} alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag }}{% endif %}{% endif %}{% if message.extra_tags %} {{message.extra_tags}}{% endif %} alert-dismissable">
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&#215;</button>
-                {{ message }}
-            </div>
+            <div class="alert{% if message.level_tag %} alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag }}{% endif %}{% endif %}{% if message.extra_tags %} {{message.extra_tags}}{% endif %} alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&#215;</button>{{ message }}</div>
         {% endfor %}
         {% if request.COOKIES.left_menu == "on" and not hide_menu %} {# ugly hack for the more or less unported meeting agenda edit pages #}
           <div class="row">

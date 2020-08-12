@@ -10,6 +10,7 @@ jQuery(document).ready(function () {
 
     let sessions = content.find(".session");
     let timeslots = content.find(".timeslot");
+    let days = content.find(".day-flow .day");
 
     // hack to work around lack of position sticky support in old browsers, see https://caniuse.com/#feat=css-sticky
     if (content.find(".scheduling-panel").css("position") != "sticky") {
@@ -17,13 +18,48 @@ jQuery(document).ready(function () {
         content.css("padding-bottom", "14em");
     }
 
+    function findTimeslotsOverlapping(intervals) {
+        let res = [];
+
+        timeslots.each(function () {
+            var timeslot = jQuery(this);
+            let start = timeslot.data("start");
+            let end = timeslot.data("end");
+
+            for (let i = 0; i < intervals.length; ++i) {
+                if (end >= intervals[i][0] && intervals[i][1] >= start) {
+                    res.push(timeslot);
+                    break;
+                }
+            }
+        });
+
+        return res;
+    }
+
     // selecting
     function selectSessionElement(element) {
         if (element) {
             sessions.not(element).removeClass("selected");
             jQuery(element).addClass("selected");
-            showConstraintHints(element.id.slice("session".length));
-            content.find(".scheduling-panel .session-info-container").html(jQuery(element).find(".session-info").html());
+
+            showConstraintHints(element);
+
+            let sessionInfoContainer = content.find(".scheduling-panel .session-info-container");
+            sessionInfoContainer.html(jQuery(element).find(".session-info").html());
+
+            sessionInfoContainer.find("[data-original-title]").tooltip();
+
+            sessionInfoContainer.find(".time").text(jQuery(element).closest(".timeslot").data('scheduledatlabel'));
+
+            sessionInfoContainer.find(".other-session").each(function () {
+                let scheduledAt = sessions.filter("#session" + this.dataset.othersessionid).closest(".timeslot").data('scheduledatlabel');
+                let timeElement = jQuery(this).find(".time");
+                if (scheduledAt)
+                    timeElement.text(timeElement.data("scheduled").replace("{time}", scheduledAt));
+                else
+                    timeElement.text(timeElement.data("notscheduled"));
+            });
         }
         else {
             sessions.removeClass("selected");
@@ -32,20 +68,49 @@ jQuery(document).ready(function () {
         }
     }
 
-    function showConstraintHints(sessionIdStr) {
+    function showConstraintHints(selectedSession) {
+        let sessionId = selectedSession ? selectedSession.id.slice("session".length) : null;
+        // hints on the sessions
         sessions.find(".constraints > span").each(function () {
-            if (!sessionIdStr) {
-                jQuery(this).removeClass("selected-hint");
+            if (!sessionId) {
+                jQuery(this).removeClass("would-violate-hint");
                 return;
             }
 
             let sessionIds = this.dataset.sessions;
-            if (sessionIds)
-                jQuery(this).toggleClass("selected-hint", sessionIds.split(",").indexOf(sessionIdStr) != -1);
+            if (!sessionIds)
+                return;
+
+            let wouldViolate = sessionIds.split(",").indexOf(sessionId) != -1;
+            jQuery(this).toggleClass("would-violate-hint", wouldViolate);
         });
+
+        // hints on timeslots
+        timeslots.removeClass("would-violate-hint");
+        if (selectedSession) {
+            let intervals = [];
+            timeslots.filter(":has(.session .constraints > span.would-violate-hint)").each(function () {
+                intervals.push([this.dataset.start, this.dataset.end]);
+            });
+
+            let overlappingTimeslots = findTimeslotsOverlapping(intervals);
+            for (let i = 0; i < overlappingTimeslots.length; ++i)
+                overlappingTimeslots[i].addClass("would-violate-hint");
+
+            // check room sizes
+            let attendees = +selectedSession.dataset.attendees;
+            if (attendees) {
+                timeslots.not(".would-violate-hint").each(function () {
+                    if (attendees > +jQuery(this).closest(".timeslots").data("roomcapacity"))
+                        jQuery(this).addClass("would-violate-hint");
+                });
+            }
+        }
     }
 
     content.on("click", function (event) {
+        if (jQuery(event.target).is(".session-info-container") || jQuery(event.target).closest(".session-info-container").length > 0)
+            return;
         selectSessionElement(null);
     });
 
@@ -71,13 +136,13 @@ jQuery(document).ready(function () {
         sessions.prop('draggable', true);
 
         // dropping
-        let dropElements = content.find(".timeslot,.unassigned-sessions");
+        let dropElements = content.find(".timeslot .drop-target,.unassigned-sessions .drop-target");
         dropElements.on('dragenter', function (event) {
             if ((event.originalEvent.dataTransfer.getData("text/plain") || "").slice(0, "session".length) != "session")
                 return;
 
             event.preventDefault(); // default action is signalling that this is not a valid target
-            jQuery(this).addClass("dropping");
+            jQuery(this).parent().addClass("dropping");
         });
 
         dropElements.on('dragover', function (event) {
@@ -92,11 +157,11 @@ jQuery(document).ready(function () {
             if (event.originalEvent.currentTarget.contains(event.originalEvent.relatedTarget))
                 return;
 
-            jQuery(this).removeClass("dropping");
+            jQuery(this).parent().removeClass("dropping");
         });
 
         dropElements.on('drop', function (event) {
-            jQuery(this).removeClass("dropping");
+            jQuery(this).parent().removeClass("dropping");
 
             let sessionId = event.originalEvent.dataTransfer.getData("text/plain");
             if ((event.originalEvent.dataTransfer.getData("text/plain") || "").slice(0, "session".length) != "session")
@@ -112,6 +177,7 @@ jQuery(document).ready(function () {
                 return;
 
             let dropElement = jQuery(this);
+            let dropParent = dropElement.parent();
 
             function done(response) {
                 if (response != "OK") {
@@ -121,11 +187,11 @@ jQuery(document).ready(function () {
 
                 dropElement.append(sessionElement); // move element
                 updateCurrentSchedulingHints();
-                if (dropElement.hasClass("unassigned-sessions"))
+                if (dropParent.hasClass("unassigned-sessions"))
                     sortUnassigned();
             }
 
-            if (dropElement.hasClass("unassigned-sessions")) {
+            if (dropParent.hasClass("unassigned-sessions")) {
                 jQuery.ajax({
                     url: ietfData.urls.assign,
                     method: "post",
@@ -143,7 +209,7 @@ jQuery(document).ready(function () {
                     data: {
                         action: "assign",
                         session: sessionId.slice("session".length),
-                        timeslot: dropElement.attr("id").slice("timeslot".length)
+                        timeslot: dropParent.attr("id").slice("timeslot".length)
                     },
                     timeout: 5 * 1000
                 }).fail(failHandler).done(done);
@@ -153,7 +219,7 @@ jQuery(document).ready(function () {
 
     // hints for the current schedule
 
-    function updateCurrentSessionConstraintViolations() {
+    function updateSessionConstraintViolations() {
         // do a sweep on sessions sorted by start time
         let scheduledSessions = [];
 
@@ -226,14 +292,14 @@ jQuery(document).ready(function () {
 
     function updateAttendeesViolations() {
         sessions.each(function () {
-            let roomCapacity = jQuery(this).closest(".timeline").data("roomcapacity");
+            let roomCapacity = jQuery(this).closest(".timeslots").data("roomcapacity");
             if (roomCapacity && this.dataset.attendees)
                 jQuery(this).toggleClass("too-many-attendees", +this.dataset.attendees > +roomCapacity);
         });
     }
 
     function updateCurrentSchedulingHints() {
-        updateCurrentSessionConstraintViolations();
+        updateSessionConstraintViolations();
         updateAttendeesViolations();
         updateTimeSlotDurationViolations();
     }
@@ -273,6 +339,10 @@ jQuery(document).ready(function () {
     function sortUnassigned() {
         let sortBy = content.find("select[name=sort_unassigned]").val();
 
+        function extractId(e) {
+            return e.id.slice("session".length);
+        }
+
         function extractName(e) {
             return e.querySelector(".session-label").innerHTML;
         }
@@ -291,15 +361,15 @@ jQuery(document).ready(function () {
 
         let keyFunctions = [];
         if (sortBy == "name")
-            keyFunctions = [extractName, extractDuration];
+            keyFunctions = [extractName, extractDuration, extractId];
         else if (sortBy == "parent")
-            keyFunctions = [extractParent, extractName, extractDuration];
+            keyFunctions = [extractParent, extractName, extractDuration, extractId];
         else if (sortBy == "duration")
-            keyFunctions = [extractDuration, extractParent, extractName];
+            keyFunctions = [extractDuration, extractParent, extractName, extractId];
         else if (sortBy == "comments")
-            keyFunctions = [extractComments, extractParent, extractName, extractDuration];
+            keyFunctions = [extractComments, extractParent, extractName, extractDuration, extractId];
 
-        let unassignedSessionsContainer = content.find(".unassigned-sessions");
+        let unassignedSessionsContainer = content.find(".unassigned-sessions .drop-target");
 
         let sortedSessions = sortArrayWithKeyFunctions(unassignedSessionsContainer.children(".session").toArray(), keyFunctions);
         for (let i = 0; i < sortedSessions.length; ++i)
@@ -312,7 +382,7 @@ jQuery(document).ready(function () {
 
     sortUnassigned();
 
-    // toggling of sessions
+    // toggling visible sessions by session parents
     let sessionParentInputs = content.find(".session-parent-toggles input");
 
     function updateSessionParentToggling() {
@@ -326,7 +396,32 @@ jQuery(document).ready(function () {
     }
 
     sessionParentInputs.on("click", updateSessionParentToggling);
-
     updateSessionParentToggling();
+
+    // toggling visible timeslots
+    let timeslotGroupInputs = content.find("#timeslot-group-toggles-modal .modal-body input");
+    function updateTimeslotGroupToggling() {
+        let checked = [];
+        timeslotGroupInputs.filter(":checked").each(function () {
+            checked.push("." + this.value);
+        });
+
+        timeslots.filter(checked.join(",")).removeClass("hidden");
+        timeslots.not(checked.join(",")).addClass("hidden");
+
+        days.each(function () {
+            jQuery(this).toggle(jQuery(this).find(".timeslot:not(.hidden)").length > 0);
+        });
+    }
+
+    timeslotGroupInputs.on("click change", updateTimeslotGroupToggling);
+    updateTimeslotGroupToggling();
+
+    // session info
+    content.find(".session-info-container").on("mouseover", ".other-session", function (event) {
+        sessions.filter("#session" + this.dataset.othersessionid).addClass("highlight");
+    }).on("mouseleave", ".other-session", function (event) {
+        sessions.filter("#session" + this.dataset.othersessionid).removeClass("highlight");
+    });
 });
 

@@ -3,22 +3,28 @@
 
 
 import datetime
+import itertools
+import re
 import requests
 
+from collections import defaultdict
 from urllib.error import HTTPError
+
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.db.models.expressions import Subquery, OuterRef
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.meeting.models import Session, Meeting, SchedulingEvent, TimeSlot
+from ietf.meeting.models import Session, Meeting, SchedulingEvent, TimeSlot, Constraint
 from ietf.group.models import Group, Role
 from ietf.group.utils import can_manage_materials
-from ietf.name.models import SessionStatusName
+from ietf.name.models import SessionStatusName, ConstraintName
 from ietf.nomcom.utils import DISQUALIFYING_ROLE_QUERY_EXPRESSION
-from ietf.person.models import Email
+from ietf.person.models import Person, Email
 from ietf.secr.proceedings.proc_utils import import_audio_files
 
 def session_time_for_sorting(session, use_meeting_date):
@@ -309,3 +315,130 @@ def data_for_meetings_overview(meetings, interim_status=None):
         m.interim_meeting_cancelled = m.type_id == 'interim' and all(s.current_status == 'canceled' for s in m.sessions)
 
     return meetings
+
+def reverse_editor_label(label):
+    reverse_sign = "-"
+
+    m = re.match(r"(<[^>]+>)([^<].*)", label)
+    if m:
+        return m.groups()[0] + reverse_sign + m.groups()[1]
+    else:
+        return reverse_sign + label
+
+def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
+    # process constraint names - we synthesize extra names to be able
+    # to treat the concepts in the same manner as the modelled ones
+    constraint_names = {n.pk: n for n in ConstraintName.objects.all()}
+
+    joint_with_groups_constraint_name = ConstraintName(
+        slug='joint_with_groups',
+        name="Joint session with",
+        editor_label="<i class=\"fa fa-clone\"></i>",
+        order=8,
+    )
+    constraint_names[joint_with_groups_constraint_name.slug] = joint_with_groups_constraint_name
+
+    ad_constraint_name = ConstraintName(
+        slug='responsible_ad',
+        name="Responsible AD",
+        editor_label="<span class=\"encircled\">AD</span>",
+        order=9,
+    )
+    constraint_names[ad_constraint_name.slug] = ad_constraint_name
+    
+    for n in list(constraint_names.values()):
+        # add reversed version of the name
+        reverse_n = ConstraintName(
+            slug=n.slug + "-reversed",
+            name="{} - reversed".format(n.name),
+        )
+        reverse_n.formatted_editor_label = mark_safe(reverse_editor_label(n.editor_label))
+        constraint_names[reverse_n.slug] = reverse_n
+
+        n.formatted_editor_label = mark_safe(n.editor_label)
+        n.countless_formatted_editor_label = format_html(n.formatted_editor_label, count="") if "{count}" in n.formatted_editor_label else n.formatted_editor_label
+
+    # convert human-readable rules in the database to constraints on actual sessions
+    constraints = list(Constraint.objects.filter(meeting=meeting).prefetch_related('target', 'person', 'timeranges'))
+
+    # synthesize AD constraints - we can treat them as a special kind of 'bethere'
+    responsible_ad_for_group = {}
+    session_groups = set(s.group for s in sessions if s.group and s.group.parent and s.group.parent.type_id == 'area')
+    meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
+
+    # dig up historic AD names
+    for group_id, history_time, pk in Person.objects.filter(rolehistory__name='ad', rolehistory__group__group__in=session_groups, rolehistory__group__time__lte=meeting_time).values_list('rolehistory__group__group', 'rolehistory__group__time', 'pk').order_by('rolehistory__group__time'):
+        responsible_ad_for_group[group_id] = pk
+    for group_id, pk in Person.objects.filter(role__name='ad', role__group__in=session_groups, role__group__time__lte=meeting_time).values_list('role__group', 'pk'):
+        responsible_ad_for_group[group_id] = pk
+
+    ad_person_lookup = {p.pk: p for p in Person.objects.filter(pk__in=set(responsible_ad_for_group.values()))}
+    for group in session_groups:
+        ad = ad_person_lookup.get(responsible_ad_for_group.get(group.pk))
+        if ad is not None:
+            constraints.append(Constraint(meeting=meeting, source=group, person=ad, name=ad_constraint_name))
+
+    # process must not be scheduled at the same time constraints
+    constraints_for_sessions = defaultdict(list)
+
+    person_needed_for_groups = {cn.slug: defaultdict(set) for cn in constraint_names.values()}
+    for c in constraints:
+        if c.person_id is not None:
+            person_needed_for_groups[c.name_id][c.person_id].add(c.source_id)
+
+    sessions_for_group = defaultdict(list)
+    for s in sessions:
+        if s.group_id is not None:
+            sessions_for_group[s.group_id].append(s.pk)
+
+    def add_group_constraints(g1_pk, g2_pk, name_id, person_id):
+        if g1_pk != g2_pk:
+            for s1_pk in sessions_for_group.get(g1_pk, []):
+                for s2_pk in sessions_for_group.get(g2_pk, []):
+                    if s1_pk != s2_pk:
+                        constraints_for_sessions[s1_pk].append((name_id, s2_pk, person_id))
+
+    reverse_constraints = []
+    seen_forward_constraints_for_groups = set()
+
+    for c in constraints:
+        if c.target_id and c.name_id != 'wg_adjacent':
+            add_group_constraints(c.source_id, c.target_id, c.name_id, c.person_id)
+            seen_forward_constraints_for_groups.add((c.source_id, c.target_id, c.name_id))
+            reverse_constraints.append(c)
+
+        elif c.person_id:
+            for g in person_needed_for_groups[c.name_id].get(c.person_id):
+                add_group_constraints(c.source_id, g, c.name_id, c.person_id)
+
+    for c in reverse_constraints:
+        # suppress reverse constraints in case we have a forward one already
+        if (c.target_id, c.source_id, c.name_id) not in seen_forward_constraints_for_groups:
+            add_group_constraints(c.target_id, c.source_id, c.name_id + "-reversed", c.person_id)
+
+    # formatted constraints
+    def format_constraint(c):
+        if c.name_id == "time_relation":
+            return c.get_time_relation_display()
+        elif c.name_id == "timerange":
+            return ", ".join(t.desc for t in c.timeranges.all())
+        elif c.person:
+            return c.person.plain_name()
+        elif c.target:
+            return c.target.acronym
+        else:
+            return "UNKNOWN"
+
+    formatted_constraints_for_sessions = defaultdict(dict)
+    for (group_pk, cn_pk), cs in itertools.groupby(sorted(constraints, key=lambda c: (c.source_id, constraint_names[c.name_id].order, c.name_id, c.pk)), key=lambda c: (c.source_id, c.name_id)):
+        cs = list(cs)
+        for s_pk in sessions_for_group.get(group_pk, []):
+            formatted_constraints_for_sessions[s_pk][constraint_names[cn_pk]] = [format_constraint(c) for c in cs]
+
+    # synthesize joint_with_groups constraints
+    for s in sessions:
+        joint_groups = s.joint_with_groups.all()
+        if joint_groups:
+            formatted_constraints_for_sessions[s.pk][joint_with_groups_constraint_name] = [g.acronym for g in joint_groups]
+
+    return constraints_for_sessions, formatted_constraints_for_sessions, constraint_names
