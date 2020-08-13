@@ -91,11 +91,24 @@ class RotateAlphabeticallyReviewerAndGenericQueuePolicyTest(TestCase):
         policy = RotateAlphabeticallyReviewerQueuePolicy(team)
         reviewer_0 = create_person(team, "reviewer", name="Test Reviewer-0", username="testreviewer0")
         reviewer_1 = create_person(team, "reviewer", name="Test Reviewer-1", username="testreviewer1")
+        reviewer_2 = create_person(team, "reviewer", name="Test Reviewer-2", username="testreviewer2")
+        reviewer_3 = create_person(team, "reviewer", name="Test Reviewer-3", username="testreviewer3")
         review_req = ReviewRequestFactory(team=team, type_id='early')
+        review_req_2 = ReviewRequestFactory(team=team, type_id='early', doc=review_req.doc)
+        review_req_3 = ReviewRequestFactory(team=team, type_id='early', doc=review_req.doc)
         ReviewAssignmentFactory(review_request=review_req, reviewer=reviewer_1.email(), state_id='part-completed')
+        ReviewAssignmentFactory(review_request=review_req_2, reviewer=reviewer_2.email(), state_id='rejected')
+        ReviewAssignmentFactory(review_request=review_req_3, reviewer=reviewer_3.email(), state_id='no-response')
         field = PersonEmailChoiceField(label="Assign Reviewer", empty_label="(None)", required=False)
         
         policy.setup_reviewer_field(field, review_req)
+        addresses = list( map( lambda choice: choice[0], field.choices ) )
+        self.assertNotIn(
+            str(reviewer_2.email()), addresses,
+            "Reviews should not suggest people who have rejected this request in the past")
+        self.assertNotIn(
+            str(reviewer_3.email()), addresses,
+            "Reviews should not suggest people who have not responded to this request in the past.")
         self.assertEqual(field.choices[0], ('', '(None)'))
         self.assertEqual(field.choices[1][0], str(reviewer_0.email()))
         self.assertEqual(field.choices[2][0], str(reviewer_1.email()))

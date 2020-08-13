@@ -3,6 +3,7 @@
 
 import re
 
+from django.db.models import Q
 from django.db.models.aggregates import Max
 
 from ietf.doc.models import DocumentAuthor, DocAlias
@@ -126,8 +127,26 @@ class AbstractReviewerQueuePolicy:
         The field should be an instance similar to
             PersonEmailChoiceField(label="Assign Reviewer", empty_label="(None)")
         """
-        field.queryset = field.queryset.filter(role__name="reviewer", role__group=review_req.team)
-        one_assignment = review_req.reviewassignment_set.first()
+
+        # Collect a set of person IDs for people who have either not responded
+        # to or outright rejected reviewing this document in the past
+        rejecting_reviewer_ids = review_req.doc.reviewrequest_set.filter(
+            reviewassignment__state__slug__in=('rejected', 'no-response')
+        ).values_list(
+            'reviewassignment__reviewer__person_id', flat=True
+        )
+
+        # Query the Email objects for reviewers who haven't rejected or
+        # not responded to this document in the past
+        field.queryset = field.queryset.filter(
+            role__name="reviewer",
+            role__group=review_req.team
+        ).filter(
+            ~Q( person_id__in=rejecting_reviewer_ids )
+        )
+        one_assignment = review_req.reviewassignment_set.filter(
+            ~Q(state__slug__in = ('rejected', 'no-response') )
+        ).first()
         if one_assignment:
             field.initial = one_assignment.reviewer_id
 
