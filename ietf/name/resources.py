@@ -17,7 +17,8 @@ from ietf.name.models import ( AgendaTypeName, BallotPositionName, ConstraintNam
     LiaisonStatementState, LiaisonStatementTagName, MeetingTypeName, NomineePositionStateName,
     ReviewAssignmentStateName, ReviewRequestStateName, ReviewResultName, ReviewTypeName,
     RoleName, RoomResourceName, SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName,
-    TopicAudienceName, ReviewerQueuePolicyName, TimerangeName, ExtResourceTypeName, ExtResourceName)
+    TopicAudienceName, ReviewerQueuePolicyName, TimerangeName, ExtResourceTypeName, ExtResourceName,
+    SlideSubmissionStatusName)
 
 class TimeSlotTypeNameResource(ModelResource):
     class Meta:
@@ -650,3 +651,20 @@ class ExtResourceNameResource(ModelResource):
             "type": ALL_WITH_RELATIONS,
         }
 api.name.register(ExtResourceNameResource())
+
+class SlideSubmissionStatusNameResource(ModelResource):
+    class Meta:
+        queryset = SlideSubmissionStatusName.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        resource_name = 'slidesubmissionstatusname'
+        ordering = ['slug', ]
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(SlideSubmissionStatusNameResource())
+
