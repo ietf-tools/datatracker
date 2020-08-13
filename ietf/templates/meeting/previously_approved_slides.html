@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2020, All Rights Reserved #}
+{% load origin staticfiles bootstrap3 %}
+
+{% block title %}Approved Slides for {{ submission.session.meeting }} : {{ submission.session.group.acronym }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>These slides have already been {% if submission.status.slug == 'approved' %} approved {% else %} rejected {% endif %}</h1>
+
+  <p>The slides from {{ submission.submitter }} have already been {% if submission.status.slug == 'approved' %} approved {% else %} rejected {% endif %}.  No further action is needed.</p>
+
+  <p>You may wish to
+    {% if submission.status.slug == 'approved' and submission.doc %}
+    <a href="{% url 'ietf.doc.views_doc.document_main' name=submission.doc.name %}">view the slides</a> or
+    {% endif %}
+    <a href="{% url "ietf.meeting.views.session_details" num=submission.session.meeting.number acronym=submission.session.group.acronym %}">return to this meeting session</a>.</p>
+
+{% endblock %}
