@@ -7,6 +7,7 @@ from django.template import Template, Context
 
 from email.utils import parseaddr
 from ietf.utils.mail import formataddr, get_email_addresses_from_text
+from ietf.group.models import Group
 from ietf.person.models import Email, Alias
 from ietf.review.models import ReviewTeamSettings
 
@@ -367,3 +368,6 @@ class Recipient(models.Model):
                 for role in review_req.team.parent.role_set.filter(name='ad'):
                     addrs.append(role.email.address)
         return addrs
+
+    def gather_yang_doctors_secretaries(self, **kwargs):
+        return self.gather_group_secretaries(group=Group.objects.get(acronym='yangdoctors'))

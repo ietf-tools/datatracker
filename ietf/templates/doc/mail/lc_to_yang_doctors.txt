@@ -1,0 +1,4 @@
+{% load ietf_filters %}{% autoescape off %}{% filter wordwrap:78 %}
+IETF Last Call has been issued for a document with yang checks.
+
+The document is available at {{ url }}{% endfilter %}{% endautoescape %}

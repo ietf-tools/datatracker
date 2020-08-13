@@ -3942,6 +3942,17 @@
   },
   {
     "fields": {
+      "cc": [],
+      "desc": "Recipients when IETF LC is issued on a document with yang checks",
+      "to": [
+        "yang_doctors_secretaries"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "last_call_of_doc_with_yang_issued"
+  },
+  {
+    "fields": {
       "cc": [
         "doc_ad",
         "doc_notify",
@@ -5542,6 +5553,14 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "submission_submitter"
+  },
+  {
+    "fields": {
+      "desc": "Yang Doctors Secretaries",
+      "template": ""
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "yang_doctors_secretaries"
   },
   {
     "fields": {
@@ -14886,7 +14905,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2020-08-04T00:13:15.604",
+      "time": "2020-08-12T00:12:54.984",
       "used": true,
       "version": "xym 0.4.8"
     },
@@ -14897,7 +14916,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2020-08-04T00:13:16.892",
+      "time": "2020-08-12T00:12:56.359",
       "used": true,
       "version": "pyang 2.3.2"
     },
@@ -14908,7 +14927,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2020-08-04T00:13:17.151",
+      "time": "2020-08-12T00:12:56.632",
       "used": true,
       "version": "yanglint SO 1.6.7"
     },
@@ -14919,7 +14938,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2020-08-04T00:13:18.980",
+      "time": "2020-08-12T00:12:58.366",
       "used": true,
       "version": "xml2rfc 2.47.0"
     },
