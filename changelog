@@ -1,3 +1,27 @@
+ietfdb (7.14.0) ietf; urgency=medium
+
+  **Updated layout of the new schedule editor, cookie fixes, and yangdoctor notifications**
+
+  * Merged in /branch/iola/meeting-improvement-r17835@18048.  This provides 
+    a new snapshot of the new schedule editor work, with improved edit page 
+    layout and details.
+
+  * Added a patch to make django use the same settings when deleting a 
+    cookie as when setting it.  In particular, it sets Secure if 
+    settings.SESSION_COOKIE_SECURE, which is needed if samesite='None'. Fixes 
+    issue #3056
+
+  * Use the same 'Secure' and 'SameSite' cookie settings for application
+    cookies as for session cookies, rather than hardcoded values (DRY), in
+    order to play well with recent changes in browser cookie handling.
+
+  * Merged in [18324] from rjsparks@nostrum.com:
+    Send extra mail to yangdoctors chairs when a draft with yang checks 
+    goes into IETF LC. Fixes #2419.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Aug 2020 12:22:03 +0000
+
+
 ietfdb (7.13.0) ietf; urgency=medium
 
   **Enhancements to upload pages and APIs, new Research Area Groups, better 
