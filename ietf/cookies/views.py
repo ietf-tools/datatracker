@@ -48,6 +48,7 @@ def preferences(request, **kwargs):
             httponly=settings.SESSION_COOKIE_HTTPONLY or None,
             samesite=settings.SESSION_COOKIE_SAMESITE,
         )
+    return response
 
 def new_enough(request, days=None):
     return preferences(request, new_enough=days)
