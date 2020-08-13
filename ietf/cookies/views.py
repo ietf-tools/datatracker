@@ -37,9 +37,20 @@ def preferences(request, **kwargs):
     response = render(request, "cookies/settings.html", preferences )
     for key in new_cookies:
         response.set_cookie(key, new_cookies[key],
-            max_age=settings.PREFERENCES_COOKIE_AGE, secure=True, samesite='None')
+            max_age=settings.PREFERENCES_COOKIE_AGE,
+            secure=settings.SESSION_COOKIE_SECURE or None,
+            httponly=settings.SESSION_COOKIE_HTTPONLY or None,
+            samesite=settings.SESSION_COOKIE_SAMESITE,
+        )
     for key in del_cookies:
-        response.delete_cookie(key)
+        response.delete_cookie(key, 
+            secure=settings.SESSION_COOKIE_SECURE or None,
+            httponly=settings.SESSION_COOKIE_HTTPONLY or None,
+            samesite=settings.SESSION_COOKIE_SAMESITE,
+        )
+ 
+--- django/http/response.py.or
+secure=True, sames)
     return response
 
 def new_enough(request, days=None):
