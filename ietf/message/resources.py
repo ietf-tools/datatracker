@@ -22,7 +22,7 @@ class MessageResource(ModelResource):
     related_docs     = ToManyField(DocumentResource, 'related_docs', null=True)
     class Meta:
         cache = SimpleCache()
-        queryset = Message.objects.all()
+        queryset = Message.objects.none()
         serializer = api.Serializer()
         #resource_name = 'message'
         ordering = ['id', ]
@@ -69,7 +69,7 @@ api.message.register(SendQueueResource())
 class MessageAttachmentResource(ModelResource):
     message          = ToOneField(MessageResource, 'message')
     class Meta:
-        queryset = MessageAttachment.objects.all()
+        queryset = MessageAttachment.objects.none()
         serializer = api.Serializer()
         cache = SimpleCache()
         #resource_name = 'messageattachment'
