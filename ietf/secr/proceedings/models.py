@@ -60,14 +60,3 @@ class InterimMeeting(Meeting):
         else:
             return ''
 
-class Registration(models.Model):
-    rsn = models.AutoField(primary_key=True)
-    fname = models.CharField(max_length=255)
-    lname = models.CharField(max_length=255)
-    company = models.CharField(max_length=255)
-    country = models.CharField(max_length=2)
-    
-    def __str__(self):
-        return "%s %s" % (self.fname, self.lname)
-    class Meta:
-        db_table = 'registrations'
