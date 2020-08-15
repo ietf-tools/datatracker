@@ -1,6 +1,6 @@
 ietfdb (7.14.0) ietf; urgency=medium
 
-  **Updated layout of the new schedule editor, cookie fixes, and yangdoctor notifications**
+  **Updated new schedule editor, cookie fixes, and yangdoctor notifications**
 
   * Merged in /branch/iola/meeting-improvement-r17835@18048.  This provides 
     a new snapshot of the new schedule editor work, with improved edit page 

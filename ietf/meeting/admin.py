@@ -176,6 +176,7 @@ admin.site.register(SessionPresentation, SessionPresentationAdmin)
 
 class ImportantDateAdmin(admin.ModelAdmin):
     model = ImportantDate
+    list_filter = ['meeting', ]
     list_display = ['meeting', 'name', 'date']
 admin.site.register(ImportantDate,ImportantDateAdmin)
 
