@@ -1141,6 +1141,7 @@ class IndividualInfoFormsTests(TestCase):
 
         badlines = (
             'github_repo https://github3.com/some/repo',
+            'github_org https://github.com/not/an_org',
             'github_notify  badaddr',
             'website /not/a/good/url',
             'notavalidtag blahblahblah',
@@ -1154,6 +1155,7 @@ class IndividualInfoFormsTests(TestCase):
 
         goodlines = """
             github_repo https://github.com/some/repo Some display text
+            github_org https://github.com/totally_some_org
             github_username githubuser
             webpage http://example.com/http/is/fine
         """
@@ -1163,7 +1165,7 @@ class IndividualInfoFormsTests(TestCase):
         doc = Document.objects.get(name=self.docname)
         self.assertEqual(doc.latest_event(DocEvent,type="changed_document").desc[:35], 'Changed document external resources')
         self.assertIn('github_username githubuser', doc.latest_event(DocEvent,type="changed_document").desc)
-        self.assertEqual(doc.docextresource_set.count(), 3)
+        self.assertEqual(doc.docextresource_set.count(), 4)
         self.assertEqual(doc.docextresource_set.get(name__slug='github_repo').display_name, 'Some display text')
         self.assertIn(doc.docextresource_set.first().name.slug,str(doc.docextresource_set.first()))
 
