@@ -1035,8 +1035,13 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
         for r in rooms:
             ts = []
             for t in timeslots_by_day_and_room.get((d, r.pk), []):
+                # FIXME: the database (as of 2020) contains spurious
+                # regular time slots in rooms not intended for regular
+                # sessions - once those are gone, this filter can go
+                # away
                 if t.type_id == 'regular' and not any(t.slug == 'regular' for t in r.session_types.all()):
                     continue
+
                 t.assigned_sessions = []
                 for a in assignments_by_timeslot.get(t.pk, []):
                     s = sessions_by_pk.get(a.session_id)
