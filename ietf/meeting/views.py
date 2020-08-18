@@ -54,7 +54,8 @@ from ietf.person.models import Person
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
-from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment
+from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
+from ietf.meeting.forms import CustomDurationField
 from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
@@ -470,13 +471,12 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         if request.method == 'POST':
             return HttpResponseForbidden("Can't view this schedule")
 
-        # FIXME: check this
-        return render(request, "meeting/private_schedule.html",
-                                             {"schedule":schedule,
-                                              "meeting": meeting,
-                                              "meeting_base_url": request.build_absolute_uri(meeting.base_url()),
-                                              "hide_menu": True
-                                          }, status=403, content_type="text/html")
+        return render(request, "meeting/private_schedule.html", {
+            "schedule":schedule,
+            "meeting": meeting,
+            "meeting_base_url": request.build_absolute_uri(meeting.base_url()),
+            "hide_menu": True
+        }, status=403, content_type="text/html")
 
     assignments = SchedTimeSessAssignment.objects.filter(
         schedule__in=[schedule, schedule.base],
@@ -495,7 +495,6 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     sessions = add_event_info_to_session_qs(
         Session.objects.filter(
             meeting=meeting,
-            # Restrict graphical scheduling to regular meeting requests (Sessions) for now
             type='regular',
         ).order_by('pk'),
         requested_time=True,
@@ -742,6 +741,328 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'timeslot_groups': sorted((d, list(sorted(t_groups))) for d, t_groups in timeslot_groups.items()),
         'unassigned_sessions': unassigned_sessions,
         'session_parents': session_parents,
+        'hide_menu': True,
+    })
+
+
+class RoomNameModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.name
+
+class TimeSlotForm(forms.Form):
+    day = forms.TypedChoiceField(coerce=lambda t: datetime.datetime.strptime(t, "%Y-%m-%d").date())
+    time = forms.TimeField()
+    duration = CustomDurationField() # this is just to make 1:30 turn into 1.5 hours instead of 1.5 minutes
+    location = RoomNameModelChoiceField(queryset=Room.objects.all(), required=False, empty_label="(No location)")
+    show_location = forms.BooleanField(initial=True, required=False)
+    type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(used=True), empty_label=None, required=False)
+    name = forms.CharField(help_text='Name that appears on the agenda', required=False)
+    short = forms.CharField(max_length=32,label='Short name', help_text='Abbreviated session name used for material file names', required=False)
+    group = forms.ModelChoiceField(queryset=Group.objects.filter(type__in=['ietf', 'team'], state='active'),
+        help_text='''Select a group to associate with this session.<br>For example: Tutorials = Education, Code Sprint = Tools Team''',
+        required=False)
+    agenda_note = forms.CharField(required=False)
+
+    def __init__(self, meeting, schedule, *args, timeslot=None, **kwargs):
+        super().__init__(*args,**kwargs)
+
+        self.fields["time"].widget.attrs["placeholder"] = "HH:MM"
+        self.fields["duration"].widget.attrs["placeholder"] = "HH:MM"
+        self.fields["duration"].initial = ""
+
+        self.fields["day"].choices = [
+            ((meeting.date + datetime.timedelta(days=i)).isoformat(), (meeting.date + datetime.timedelta(days=i)).strftime("%a %b %d"))
+            for i in range(meeting.days)
+        ]
+
+        self.fields['location'].queryset = self.fields['location'].queryset.filter(meeting=meeting)
+
+        self.fields['group'].widget.attrs['data-ietf'] = Group.objects.get(acronym='ietf').pk
+
+        self.active_assignment = None
+
+        if timeslot:
+            self.initial = {
+                'day': timeslot.time.date(),
+                'time': timeslot.time.time(),
+                'duration': timeslot.duration,
+                'location': timeslot.location_id,
+                'show_location': timeslot.show_location,
+                'type': timeslot.type_id,
+                'name': timeslot.name,
+            }
+
+            assignments = sorted(SchedTimeSessAssignment.objects.filter(
+                timeslot=timeslot,
+                schedule__in=[schedule, schedule.base if schedule else None]
+            ).select_related('session', 'session__group'), key=lambda a: 0 if a.schedule_id == schedule.pk else 1)
+
+            if assignments:
+                self.active_assignment = assignments[0]
+
+                self.initial['short'] = self.active_assignment.session.short
+                self.initial['group'] = self.active_assignment.session.group_id
+
+        if not self.active_assignment or timeslot.type_id != 'regular':
+            del self.fields['agenda_note'] # at the moment, the UI only shows this field for regular sessions
+
+        self.timeslot = timeslot
+
+    def clean(self):
+        group = self.cleaned_data.get('group')
+        ts_type = self.cleaned_data.get('type')
+        short = self.cleaned_data.get('short')
+
+        if ts_type:
+            if ts_type.slug in ['break', 'reg', 'reserved', 'unavail', 'regular']:
+                if ts_type.slug != 'regular':
+                    self.cleaned_data['group'] = self.fields['group'].queryset.get(acronym='secretariat')
+            else:
+                if not group:
+                    self.add_error('group', 'When scheduling this type of time slot, a group must be associated')
+                if not short:
+                    self.add_error('short', 'When scheduling this type of time slot, a short name is required')
+
+            if self.timeslot and self.timeslot.type_id == 'regular' and self.active_assignment and ts_type.pk != self.timeslot.type_id:
+                self.add_error('type', "Can't change type on time slots for regular sessions when a session has been assigned")
+
+        if self.active_assignment and self.active_assignment.session.group != self.cleaned_data.get('group') and self.active_assignment.session.materials.exists() and self.timeslot.type_id != 'regular':
+            self.add_error('group', "Can't change group after materials have been uploaded")
+
+
+@role_required('Area Director', 'Secretariat')
+def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name=None):
+    meeting = get_meeting(num)
+    if name is None:
+        schedule = meeting.schedule
+    else:
+        schedule = get_schedule_by_name(meeting, get_person_by_email(owner), name)
+
+    if schedule is None:
+        raise Http404("No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
+
+    rooms = list(Room.objects.filter(meeting=meeting).prefetch_related('session_types').order_by('-capacity', 'name'))
+    rooms.append(Room(name="(No location)"))
+
+    timeslot_qs = TimeSlot.objects.filter(meeting=meeting).prefetch_related('type').order_by('time')
+
+    can_edit = has_role(request.user, 'Secretariat')
+
+    if request.method == 'GET' and request.GET.get('action') == "edit-timeslot":
+        timeslot_pk = request.GET.get('timeslot')
+        if not timeslot_pk or not timeslot_pk.isdecimal():
+            raise Http404
+        timeslot = get_object_or_404(timeslot_qs, pk=timeslot_pk)
+
+        assigned_session = add_event_info_to_session_qs(Session.objects.filter(
+            timeslotassignments__schedule__in=[schedule, schedule.base],
+            timeslotassignments__timeslot=timeslot,
+        )).first()
+
+        timeslot.can_cancel = not assigned_session or assigned_session.current_status not in ['canceled', 'canceled', 'resched']
+
+        return JsonResponse({
+            'form': render_to_string("meeting/edit_timeslot_form.html", {
+                'timeslot_form_action': 'edit',
+                'timeslot_form': TimeSlotForm(meeting, schedule, timeslot=timeslot),
+                'timeslot': timeslot,
+                'schedule': schedule,
+                'meeting': meeting,
+                'can_edit': can_edit,
+            }, request=request)
+        })
+
+    scroll = request.POST.get('scroll')
+
+    def redirect_with_scroll():
+        url = request.get_full_path()
+        if scroll and scroll.isdecimal():
+            url += "#scroll={}".format(scroll)
+        return HttpResponseRedirect(url)
+
+    add_timeslot_form = None
+    if request.method == 'POST' and request.POST.get('action') == 'add-timeslot' and can_edit:
+        add_timeslot_form = TimeSlotForm(meeting, schedule, request.POST)
+        if add_timeslot_form.is_valid():
+            c = add_timeslot_form.cleaned_data
+
+            timeslot, created = TimeSlot.objects.get_or_create(
+                meeting=meeting,
+                type=c['type'],
+                name=c['name'],
+                time=datetime.datetime.combine(c['day'], c['time']),
+                duration=c['duration'],
+                location=c['location'],
+                show_location=c['show_location'],
+            )
+
+            if timeslot.type_id != 'regular':
+                if not created:
+                    Session.objects.filter(timeslotassignments__timeslot=timeslot).delete()
+
+                session = Session.objects.create(
+                    meeting=meeting,
+                    name=c['name'],
+                    short=c['short'],
+                    group=c['group'],
+                    type=c['type'],
+                    agenda_note=c.get('agenda_note') or "",
+                )
+
+                SchedulingEvent.objects.create(
+                    session=session,
+                    status=SessionStatusName.objects.get(slug='sched'),
+                    by=request.user.person,
+                )
+
+                SchedTimeSessAssignment.objects.create(
+                    timeslot=timeslot,
+                    session=session,
+                    schedule=schedule
+                )
+
+            return redirect_with_scroll()
+
+    edit_timeslot_form = None
+    if request.method == 'POST' and request.POST.get('action') == 'edit-timeslot' and can_edit:
+        timeslot_pk = request.POST.get('timeslot')
+        if not timeslot_pk or not timeslot_pk.isdecimal():
+            raise Http404
+
+        timeslot = get_object_or_404(TimeSlot, pk=timeslot_pk)
+
+        edit_timeslot_form = TimeSlotForm(meeting, schedule, request.POST, timeslot=timeslot)
+        if edit_timeslot_form.is_valid() and edit_timeslot_form.active_assignment.schedule_id == schedule.pk:
+
+            c = edit_timeslot_form.cleaned_data
+
+            timeslot.type = c['type']
+            timeslot.name = c['name']
+            timeslot.time = datetime.datetime.combine(c['day'], c['time'])
+            timeslot.duration = c['duration']
+            timeslot.location = c['location']
+            timeslot.show_location = c['show_location']
+            timeslot.save()
+
+            session = Session.objects.filter(
+                timeslotassignments__schedule__in=[schedule, schedule.base if schedule else None],
+                timeslotassignments__timeslot=timeslot,
+            ).select_related('group').first()
+
+            if session:
+                if timeslot.type_id != 'regular':
+                    session.name = c['name']
+                    session.short = c['short']
+                    session.group = c['group']
+                    session.type = c['type']
+                session.agenda_note = c.get('agenda_note') or ""
+                session.save()
+
+            return redirect_with_scroll()
+
+    if request.method == 'POST' and request.POST.get('action') == 'cancel-timeslot' and can_edit:
+        timeslot_pk = request.POST.get('timeslot')
+        if not timeslot_pk or not timeslot_pk.isdecimal():
+            raise Http404
+
+        timeslot = get_object_or_404(TimeSlot, pk=timeslot_pk)
+        if timeslot.type_id != 'break':
+            sessions = add_event_info_to_session_qs(
+                Session.objects.filter(timeslotassignments__schedule=schedule, timeslotassignments__timeslot=timeslot),
+            ).exclude(current_status__in=['canceled', 'resched'])
+            for session in sessions:
+                SchedulingEvent.objects.create(
+                    session=session,
+                    status=SessionStatusName.objects.get(slug='canceled'),
+                    by=request.user.person,
+                )
+
+        return redirect_with_scroll()
+
+    if request.method == 'POST' and request.POST.get('action') == 'delete-timeslot' and can_edit:
+        timeslot_pk = request.POST.get('timeslot')
+        if not timeslot_pk or not timeslot_pk.isdecimal():
+            raise Http404
+
+        timeslot = get_object_or_404(TimeSlot, pk=timeslot_pk)
+
+        if timeslot.type_id != 'regular':
+            for session in Session.objects.filter(timeslotassignments__schedule=schedule, timeslotassignments__timeslot=timeslot):
+                for doc in session.materials.all():
+                    doc.set_state(State.objects.get(type=doc.type_id, slug='deleted'))
+                    e = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type='deleted')
+                    e.desc = "Deleted meeting session"
+                    e.save()
+
+                session.delete()
+
+        timeslot.delete()
+
+        return redirect_with_scroll()
+    
+    sessions_by_pk = {
+        s.pk: s for s in
+        add_event_info_to_session_qs(
+            Session.objects.filter(
+                meeting=meeting,
+            ).order_by('pk'),
+            requested_time=True,
+            requested_by=True,
+        ).filter(
+            current_status__in=['appr', 'schedw', 'scheda', 'sched', 'canceled', 'canceledpa', 'resched']
+        ).prefetch_related(
+            'group', 'group', 'group__type',
+        )
+    }
+
+    assignments_by_timeslot = defaultdict(list)
+    for a in SchedTimeSessAssignment.objects.filter(schedule__in=[schedule, schedule.base]):
+        assignments_by_timeslot[a.timeslot_id].append(a)
+
+    days = [meeting.date + datetime.timedelta(days=i) for i in range(meeting.days)]
+
+    timeslots_by_day_and_room = defaultdict(list)
+    for t in timeslot_qs:
+        timeslots_by_day_and_room[(t.time.date(), t.location_id)].append(t)
+
+    min_time = min([t.time.time() for t in timeslot_qs] + [datetime.time(8)])
+    max_time = max([t.end_time().time() for t in timeslot_qs] + [datetime.time(22)])
+    min_max_delta = datetime.datetime.combine(meeting.date, max_time) - datetime.datetime.combine(meeting.date, min_time)
+
+    day_grid = []
+    for d in days:
+        room_timeslots = []
+        for r in rooms:
+            ts = []
+            for t in timeslots_by_day_and_room.get((d, r.pk), []):
+                if t.type_id == 'regular' and not any(t.slug == 'regular' for t in r.session_types.all()):
+                    continue
+                t.assigned_sessions = []
+                for a in assignments_by_timeslot.get(t.pk, []):
+                    s = sessions_by_pk.get(a.session_id)
+                    if s:
+                        t.assigned_sessions.append(s)
+
+                t.left_offset = 100.0 * (t.time - datetime.datetime.combine(t.time.date(), min_time)) / min_max_delta
+                t.layout_width = min(100.0 * t.duration / min_max_delta, 100 - t.left_offset)
+                ts.append(t)
+
+            room_timeslots.append((r, ts))
+
+        day_grid.append({
+            'day': d,
+            'room_timeslots': room_timeslots
+        })
+
+    return render(request, "meeting/edit_meeting_timeslots_and_misc_sessions.html", {
+        'meeting': meeting,
+        'schedule': schedule,
+        'can_edit': can_edit,
+        'day_grid': day_grid,
+        'empty_timeslot_form': TimeSlotForm(meeting, schedule),
+        'add_timeslot_form': add_timeslot_form,
+        'edit_timeslot_form': edit_timeslot_form,
+        'scroll': scroll,
         'hide_menu': True,
     })
 

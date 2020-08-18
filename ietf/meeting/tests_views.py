@@ -1171,6 +1171,161 @@ class EditTests(TestCase):
         self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot=timeslots[1])), [])
         self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot=timeslots[2])), [])
         
+    def test_edit_meeting_timeslots_and_misc_sessions(self):
+        meeting = make_meeting_test_data()
+
+        self.client.login(username="secretary", password="secretary+password")
+
+        # check we have the grid and everything set up as a baseline -
+        # the Javascript tests check that the Javascript can work with
+        # it
+        url = urlreverse("ietf.meeting.views.edit_meeting_timeslots_and_misc_sessions", kwargs=dict(num=meeting.number, owner=meeting.schedule.base.owner_email(), name=meeting.schedule.base.name))
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+
+        breakfast_room = Room.objects.get(meeting=meeting, name="Breakfast Room")
+        break_room = Room.objects.get(meeting=meeting, name="Break Area")
+        reg_room = Room.objects.get(meeting=meeting, name="Registration Area")
+
+        for i in range(meeting.days):
+            self.assertTrue(q("[data-day=\"{}\"]".format((meeting.date + datetime.timedelta(days=i)).isoformat())))
+
+        self.assertTrue(q(".room-label:contains(\"{}\")".format(breakfast_room.name)))
+        self.assertTrue(q(".room-label:contains(\"{}\")".format(break_room.name)))
+        self.assertTrue(q(".room-label:contains(\"{}\")".format(reg_room.name)))
+
+        break_slot = TimeSlot.objects.get(location=break_room, type='break')
+
+        room_row = q(".room-row[data-day=\"{}\"][data-room=\"{}\"]".format(break_slot.time.date().isoformat(), break_slot.location_id))
+        self.assertTrue(room_row)
+        self.assertTrue(room_row.find("#timeslot{}".format(break_slot.pk)))
+
+        self.assertTrue(q(".timeslot-form"))
+
+        # add timeslot
+        ietf_group = Group.objects.get(acronym='ietf')
+
+        r = self.client.post(url, {
+            'day': meeting.date,
+            'time': '08:30',
+            'duration': '1:30',
+            'location': break_room.pk,
+            'show_location': 'on',
+            'type': 'other',
+            'group': ietf_group.pk,
+            'name': "IETF Testing",
+            'short': "ietf-testing",
+            'scroll': 1234,
+            'action': 'add-timeslot',
+        })
+        self.assertNoFormPostErrors(r)
+        self.assertIn("#scroll=1234", r['Location'])
+
+        test_timeslot = TimeSlot.objects.get(meeting=meeting, name="IETF Testing")
+        self.assertEqual(test_timeslot.time, datetime.datetime.combine(meeting.date, datetime.time(8, 30)))
+        self.assertEqual(test_timeslot.duration, datetime.timedelta(hours=1, minutes=30))
+        self.assertEqual(test_timeslot.location_id, break_room.pk)
+        self.assertEqual(test_timeslot.show_location, True)
+        self.assertEqual(test_timeslot.type_id, 'other')
+
+        test_session = Session.objects.get(meeting=meeting, timeslotassignments__timeslot=test_timeslot)
+        self.assertEqual(test_session.short, 'ietf-testing')
+        self.assertEqual(test_session.group, ietf_group)
+
+        self.assertTrue(SchedulingEvent.objects.filter(session=test_session, status='sched'))
+
+        # edit timeslot
+        r = self.client.get(url, {
+            'timeslot': test_timeslot.pk,
+            'action': 'edit-timeslot',
+        })
+        self.assertEqual(r.status_code, 200)
+        edit_form_html = json.loads(r.content)['form']
+        q = PyQuery(edit_form_html)
+        self.assertEqual(q("[name=name]").val(), test_timeslot.name)
+        self.assertEqual(q("[name=location]").val(), str(test_timeslot.location_id))
+        self.assertEqual(q("[name=timeslot]").val(), str(test_timeslot.pk))
+        self.assertEqual(q("[name=type]").val(), str(test_timeslot.type_id))
+        self.assertEqual(q("[name=group]").val(), str(ietf_group.pk))
+
+        iab_group = Group.objects.get(acronym='iab')
+
+        r = self.client.post(url, {
+            'timeslot': test_timeslot.pk,
+            'day': meeting.date,
+            'time': '09:30',
+            'duration': '1:00',
+            'location': breakfast_room.pk,
+            'type': 'other',
+            'group': iab_group.pk,
+            'name': "IETF Testing 2",
+            'short': "ietf-testing2",
+            'action': 'edit-timeslot',
+        })
+        self.assertNoFormPostErrors(r)
+        test_timeslot.refresh_from_db()
+        self.assertEqual(test_timeslot.time, datetime.datetime.combine(meeting.date, datetime.time(9, 30)))
+        self.assertEqual(test_timeslot.duration, datetime.timedelta(hours=1))
+        self.assertEqual(test_timeslot.location_id, breakfast_room.pk)
+        self.assertEqual(test_timeslot.show_location, False)
+        self.assertEqual(test_timeslot.type_id, 'other')
+
+        test_session.refresh_from_db()
+        self.assertEqual(test_session.short, 'ietf-testing2')
+        self.assertEqual(test_session.group, iab_group)
+
+        # cancel timeslot
+        r = self.client.post(url, {
+            'timeslot': test_timeslot.pk,
+            'action': 'cancel-timeslot',
+        })
+        self.assertNoFormPostErrors(r)
+
+        event = SchedulingEvent.objects.filter(
+            session__timeslotassignments__timeslot=test_timeslot
+        ).order_by('-id').first()
+        self.assertEqual(event.status_id, 'canceled')
+
+        # delete timeslot
+        test_presentation = Document.objects.create(name='slides-test', type_id='slides')
+        SessionPresentation.objects.create(
+            document=test_presentation,
+            rev='1',
+            session=test_session
+        )
+
+        r = self.client.post(url, {
+            'timeslot': test_timeslot.pk,
+            'action': 'delete-timeslot',
+        })
+        self.assertNoFormPostErrors(r)
+
+        self.assertEqual(list(TimeSlot.objects.filter(pk=test_timeslot.pk)), [])
+        self.assertEqual(list(Session.objects.filter(pk=test_session.pk)), [])
+        self.assertEqual(test_presentation.get_state_slug(), 'deleted')
+
+        # set agenda note
+        assignment = SchedTimeSessAssignment.objects.filter(session__group__acronym='mars', schedule=meeting.schedule).first()
+
+        url = urlreverse("ietf.meeting.views.edit_meeting_timeslots_and_misc_sessions", kwargs=dict(num=meeting.number, owner=meeting.schedule.owner_email(), name=meeting.schedule.name))
+
+        r = self.client.post(url, {
+            'timeslot': assignment.timeslot_id,
+            'day': assignment.timeslot.time.date().isoformat(),
+            'time': assignment.timeslot.time.time().isoformat(),
+            'duration': assignment.timeslot.duration,
+            'location': assignment.timeslot.location_id,
+            'type': assignment.timeslot.type_id,
+            'name': assignment.timeslot.name,
+            'agenda_note': "New Test Note",
+            'action': 'edit-timeslot',
+        })
+        self.assertNoFormPostErrors(r)
+
+        assignment.session.refresh_from_db()
+        self.assertEqual(assignment.session.agenda_note, "New Test Note")
+
+
     def test_new_meeting_schedule(self):
         meeting = make_meeting_test_data()
 

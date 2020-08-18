@@ -8,12 +8,6 @@
 
   <h1>{% block title %}Possible Meeting Agendas for IETF {{ meeting.number }}{% endblock %}</h1>
 
-  {% comment %}
-  <div>
-  <p><a href="{% url "ietf.meeting.views.edit_timeslots" meeting.number %}">Edit Timeslots</a></p>
-  </div>
-  {% endcomment %}
-
   <div>
     {% for schedules, own, label in schedule_groups %}
       <div class="panel panel-default">
@@ -35,16 +29,12 @@
               <th class="col-md-3">Notes</th>
               <th class="col-md-1">Visible</th>
               <th class="col-md-1">Public</th>
+              <td></td>
             </tr>
             {% for schedule in schedules %}
               <tr>
                 <td>
-                  <a href="{% url "ietf.meeting.views.edit_schedule" meeting.number schedule.owner_email schedule.name %}">{{ schedule.name }}</a>
-                  {% if schedule.can_edit_properties %}
-                    <a class="edit-schedule-properties" href="{% url "ietf.meeting.views.edit_schedule_properties" meeting.number schedule.owner_email schedule.name %}?next={{ request.get_full_path|urlencode }}">
-                      <i title="Edit agenda properties" class="fa fa-edit"></i>
-                    </a>
-                  {% endif %}
+                  <a href="{% url "ietf.meeting.views.edit_schedule" meeting.number schedule.owner_email schedule.name %}" title="Show regular sessions in agenda">{{ schedule.name }}</a>
                 </td>
                 <td>{{ schedule.owner }}</td>
                 <td>
@@ -55,7 +45,7 @@
                 </td>
                 <td>
                   {% if schedule.base %}
-                    <a href="{% url "ietf.meeting.views.edit_schedule" meeting.number schedule.base.owner_email schedule.base.name %}">{{ schedule.base.name }}</a>
+                    <a href="{% url "ietf.meeting.views.edit_meeting_timeslots_and_misc_sessions" meeting.number schedule.base.owner_email schedule.base.name %}">{{ schedule.base.name }}</a>
                   {% endif %}
                 </td>
                 <td>{{ schedule.notes|linebreaksbr }}</td>
@@ -72,6 +62,17 @@
                 {% else %}
                   <div class="label label-danger">private</div>
                 {% endif %}
+              </td>
+              <td>
+                {% if schedule.can_edit_properties %}
+                  <a class="edit-schedule-properties" href="{% url "ietf.meeting.views.edit_schedule_properties" meeting.number schedule.owner_email schedule.name %}?next={{ request.get_full_path|urlencode }}">
+                    <i title="Edit agenda properties" class="fa fa-edit"></i>
+                  </a>
+                {% endif %}
+
+                <a href="{% url "ietf.meeting.views.edit_meeting_timeslots_and_misc_sessions" meeting.number schedule.owner_email schedule.name %}">
+                  <i title="Show time slots and misc. sessions for agenda" class="fa fa-calendar"></i>
+                </a>
               </td>
             </tr>
           {% endfor %}

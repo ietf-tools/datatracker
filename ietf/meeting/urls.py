@@ -28,6 +28,7 @@ safe_for_all_meeting_types = [
 type_ietf_only_patterns = [
     url(r'^agenda/%(owner)s/%(schedule_name)s/edit$' % settings.URL_REGEXPS, views.edit_schedule),
     url(r'^agenda/%(owner)s/%(schedule_name)s/edit/$' % settings.URL_REGEXPS, views.edit_meeting_schedule),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/timeslots/$' % settings.URL_REGEXPS, views.edit_meeting_timeslots_and_misc_sessions),
     url(r'^agenda/%(owner)s/%(schedule_name)s/details$' % settings.URL_REGEXPS, views.edit_schedule_properties),
     url(r'^agenda/%(owner)s/%(schedule_name)s/delete$' % settings.URL_REGEXPS, views.delete_schedule),
     url(r'^agenda/%(owner)s/%(schedule_name)s/make_official$' % settings.URL_REGEXPS, views.make_schedule_official),
