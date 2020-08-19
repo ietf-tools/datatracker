@@ -1238,4 +1238,7 @@ if SERVER_MODE != 'production':
 
     # Cannot have this set to True if we're using http: from the dev-server:
     CSRF_COOKIE_SECURE = False
+    CSRF_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    
