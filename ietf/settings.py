@@ -228,7 +228,7 @@ LOGGING = {
             'level': 'INFO',
         },
         'django.request': {
-            'handlers': ['debug_console', 'syslog'],
+            'handlers': ['debug_console'],
             'level': 'ERROR',
         },
         'django.server': {
@@ -236,11 +236,11 @@ LOGGING = {
             'level': 'INFO',
         },
         'django.security': {
-	    'handlers': ['syslog', ],
+	    'handlers': ['debug_console', ],
             'level': 'INFO',
         },
  	'oidc_provider': {
-	    'handlers': ['syslog', 'console', ],
+	    'handlers': ['debug_console', ],
 	    'level': 'DEBUG',
 	},
     },
