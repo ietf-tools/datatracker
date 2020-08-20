@@ -16,19 +16,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Registration',
-            fields=[
-                ('rsn', models.AutoField(primary_key=True, serialize=False)),
-                ('fname', models.CharField(max_length=255)),
-                ('lname', models.CharField(max_length=255)),
-                ('company', models.CharField(max_length=255)),
-                ('country', models.CharField(max_length=2)),
-            ],
-            options={
-                'db_table': 'registrations',
-            },
-        ),
-        migrations.CreateModel(
             name='InterimMeeting',
             fields=[
             ],
