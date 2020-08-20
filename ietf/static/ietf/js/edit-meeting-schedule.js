@@ -1,14 +1,14 @@
 jQuery(document).ready(function () {
     let content = jQuery(".edit-meeting-schedule");
 
-    function failHandler(xhr, textStatus, error) {
-        let errorText = error;
+    function reportServerError(xhr, textStatus, error) {
+        let errorText = error || textStatus;
         if (xhr && xhr.responseText)
             errorText += "\n\n" + xhr.responseText;
         alert("Error: " + errorText);
     }
 
-    let sessions = content.find(".session");
+    let sessions = content.find(".session").not(".readonly");
     let timeslots = content.find(".timeslot");
     let days = content.find(".day-flow .day");
 
@@ -120,7 +120,7 @@ jQuery(document).ready(function () {
     });
 
 
-    if (ietfData.can_edit) {
+    if (!content.find(".edit-grid").hasClass("read-only")) {
         // dragging
         sessions.on("dragstart", function (event) {
             event.originalEvent.dataTransfer.setData("text/plain", this.id);
@@ -130,7 +130,6 @@ jQuery(document).ready(function () {
         });
         sessions.on("dragend", function () {
             jQuery(this).removeClass("dragging");
-
         });
 
         sessions.prop('draggable', true);
@@ -161,31 +160,47 @@ jQuery(document).ready(function () {
         });
 
         dropElements.on('drop', function (event) {
-            jQuery(this).parent().removeClass("dropping");
+            let dropElement = jQuery(this);
 
             let sessionId = event.originalEvent.dataTransfer.getData("text/plain");
-            if ((event.originalEvent.dataTransfer.getData("text/plain") || "").slice(0, "session".length) != "session")
+            if ((event.originalEvent.dataTransfer.getData("text/plain") || "").slice(0, "session".length) != "session") {
+                dropElement.parent().removeClass("dropping");
                 return;
+            }
 
             let sessionElement = sessions.filter("#" + sessionId);
-            if (sessionElement.length == 0)
+            if (sessionElement.length == 0) {
+                dropElement.parent().removeClass("dropping");
                 return;
+            }
 
             event.preventDefault(); // prevent opening as link
 
-            if (sessionElement.parent().is(this))
+            let dragParent = sessionElement.parent();
+            if (dragParent.is(this)) {
+                dropElement.parent().removeClass("dropping");
                 return;
+            }
 
-            let dropElement = jQuery(this);
             let dropParent = dropElement.parent();
 
+            function failHandler(xhr, textStatus, error) {
+                dropElement.parent().removeClass("dropping");
+                reportServerError(xhr, textStatus, error);
+            }
+
             function done(response) {
-                if (response != "OK") {
-                    failHandler(null, null, response);
+                dropElement.parent().removeClass("dropping");
+
+                if (!response.success) {
+                    reportServerError(null, null, response);
                     return;
                 }
 
                 dropElement.append(sessionElement); // move element
+                if (response.tombstone)
+                    dragParent.append(response.tombstone);
+
                 updateCurrentSchedulingHints();
                 if (dropParent.hasClass("unassigned-sessions"))
                     sortUnassigned();
@@ -193,7 +208,7 @@ jQuery(document).ready(function () {
 
             if (dropParent.hasClass("unassigned-sessions")) {
                 jQuery.ajax({
-                    url: ietfData.urls.assign,
+                    url: window.location.href,
                     method: "post",
                     timeout: 5 * 1000,
                     data: {
@@ -204,7 +219,7 @@ jQuery(document).ready(function () {
             }
             else {
                 jQuery.ajax({
-                    url: ietfData.urls.assign,
+                    url: window.location.href,
                     method: "post",
                     data: {
                         action: "assign",
@@ -214,6 +229,32 @@ jQuery(document).ready(function () {
                     timeout: 5 * 1000
                 }).fail(failHandler).done(done);
             }
+        });
+
+        // swap days
+        content.find(".swap-days").on("click", function () {
+            let originDay = this.dataset.dayid;
+            let modal = content.find("#swap-days-modal");
+            let radios = modal.find(".modal-body label");
+            radios.removeClass("text-muted");
+            radios.find("input[name=target_day]").prop("disabled", false).prop("checked", false);
+
+            let originRadio = radios.find("input[name=target_day][value=" + originDay + "]");
+            originRadio.parent().addClass("text-muted");
+            originRadio.prop("disabled", true);
+
+            modal.find(".modal-title .day").text(jQuery.trim(originRadio.parent().text()));
+            modal.find("input[name=source_day]").val(originDay);
+
+            updateSwapDaysSubmitButton();
+        });
+
+        function updateSwapDaysSubmitButton() {
+            content.find("#swap-days-modal button[type=submit]").prop("disabled", content.find("#swap-days-modal input[name=target_day]:checked").length == 0);
+        }
+
+        content.find("#swap-days-modal input[name=target_day]").on("change", function () {
+            updateSwapDaysSubmitButton();
         });
     }
 

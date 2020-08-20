@@ -33,11 +33,11 @@ for meeting in Meeting.objects.filter(type="ietf").order_by("date"):
     for schedule in meeting.schedule_set.all():
         print "  Checking for missing Break and Reg sessions in %s" % schedule
         for timeslot in meeting.timeslot_set.all():
-            if timeslot.type_id == 'break':
-                assignment, created = ScheduleTimeslotSSessionAssignment.objects.get_or_create(timeslot=timeslot, session=brk, schedule=schedule)
+            if timeslot.type_id == 'break' and not (schedule.base and SchedTimeSessAssignment.objects.filter(timeslot=timeslot, session=brk, schedule=schedule.base).exists()):
+                assignment, created = SchedTimeSessAssignment.objects.get_or_create(timeslot=timeslot, session=brk, schedule=schedule)
                 if created:
                     print "    Added %s break assignment" % timeslot
-            if timeslot.type_id == 'reg':
-                assignment, created = ScheduleTimeslotSSessionAssignment.objects.get_or_create(timeslot=timeslot, session=reg, schedule=schedule)
+            if timeslot.type_id == 'reg' and not (schedule.base and SchedTimeSessAssignment.objects.filter(timeslot=timeslot, session=reg, schedule=schedule.base).exists()):
+                assignment, created = SchedTimeSessAssignment.objects.get_or_create(timeslot=timeslot, session=reg, schedule=schedule)
                 if created:
                     print "    Added %s registration assignment" % timeslot

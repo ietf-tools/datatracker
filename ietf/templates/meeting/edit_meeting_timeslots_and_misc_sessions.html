@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles %}
+{% load ietf_filters %}
+{% load bootstrap3 %}
+
+{% block title %}{{ schedule.name }}: IETF {{ meeting.number }} meeting agenda{% endblock %}
+
+{% block js %}
+  <script type="text/javascript" src="{% static 'ietf/js/edit-meeting-timeslots-and-misc-sessions.js' %}"></script>
+{% endblock js %}
+
+
+{% block content %}
+  {% origin %}
+  <div class="edit-meeting-timeslots-and-misc-sessions {% if not can_edit %}read-only{% endif %}" {% if scroll %}data-scroll="{{ scroll }}"{% endif %}>
+
+    <p class="pull-right">
+      <a href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">Other Agendas</a>
+    </p>
+
+    <p>
+      Meeting time slots and misc. sessions for agenda: {{ schedule.name }} {% if not can_edit %}<em>(you do not have permission to edit time slots)</em>{% endif %}
+    </p>
+
+    <div class="day-grid">
+      {% for day in day_grid %}
+        <div class="day">
+          <div class="day-label">
+            <strong>{{ day.day|date:"l" }}</strong>
+            {{ day.day|date:"N j, Y" }}
+          </div>
+
+          {% for room, timeslots in day.room_timeslots %}
+            <div class="room-row" data-room="{{ room.pk }}" data-day="{{ day.day.isoformat }}">
+              <div class="room-label" title="{{ room.name }}">
+                <strong>{{ room.name }}</strong>
+                {% if room.capacity %}{{ room.capacity }}{% endif %}
+              </div>
+
+              <div class="timeline">
+                {% for t in timeslots %}
+                  <div id="timeslot{{ t.pk }}" class="timeslot" style="left: {{ t.left_offset|floatformat }}%; width: {{ t.layout_width|floatformat }}%;">
+                    {% for s in t.assigned_sessions %}
+                      <span class="session {% if s.current_status == 'canceled' or s.current_status == 'resched' %}cancelled{% endif %}">
+                        {% if s.name %}
+                          {{ s.name }}
+                          {% if s.group %}
+                            ({{ s.group.acronym }})
+                          {% endif %}
+                        {% elif s.group %}
+                          {{ s.group.acronym }}
+                        {% endif %}
+                      </span>
+                    {% empty %}
+                      {% if t.type_id == 'regular' %}
+                        (session)
+                      {% elif t.name  %}
+                        {{ t.name }}
+                      {% else %}
+                        {{ t.type.name }}
+                      {% endif %}
+                    {% endfor %}
+                    <span class="time-label">{{ t.time|date:"G:i" }}-{{ t.end_time|date:"G:i" }}</span>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="add-timeslot-template" style="display:none">
+      {% include "meeting/edit_timeslot_form.html" with timeslot_form_action='add' timeslot_form=empty_timeslot_form %}
+    </div>
+
+    <div class="scheduling-panel" style="{% if not edit_timeslot_form and not add_timeslot_form %}display:none{% endif %}">
+      <i class="close fa fa-times pull-right"></i>
+
+      <div class="panel-content">
+        {% if edit_timeslot_form %}
+          {% include "meeting/edit_timeslot_form.html" with timeslot_form_action='edit' timeslot_form=edit_timeslot_form %}
+        {% elif add_timeslot_form %}
+          {% include "meeting/edit_timeslot_form.html" with timeslot_form_action='add' timeslot_form=add_timeslot_form %}
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+{% endblock %}

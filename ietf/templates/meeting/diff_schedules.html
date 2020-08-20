@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2020, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters %}
+{% load bootstrap3 %}
+
+{% block content %}
+  {% origin %}
+  <h1>{% block title %}Differences between Meeting Agendas for IETF {{ meeting.number }}{% endblock %}</h1>
+
+  <form method="get">
+    {% bootstrap_form form %}
+    <button type="submit">Show differences</button>
+  </form>
+
+  {% if diffs != None %}
+    <h2>Differences from {{ from_schedule.name }} ({{ from_schedule.owner }}) to {{ to_schedule.name }} ({{ to_schedule.owner }}) </h2>
+
+    {% if diffs %}
+      <table class="table table-condensed schedule-diffs">
+        {% for d in diffs %}
+          <tr>
+            <td>
+              {% if d.change == 'schedule' %}
+                Scheduled <b>{{ d.session.session_label }}</b> to <b>{{ d.to.time|date:"l G:i" }} at {{ d.to.location.name }}</b>
+              {% elif d.change == 'move' %}
+                Moved <b>{{ d.session.session_label }}</b> from {{ d.from.time|date:"l G:i" }} at {{ d.from.location.name }} to <b>{{ d.to.time|date:"l G:i" }} at {{ d.to.location.name }}</b>
+              {% elif d.change == 'unschedule' %}
+                Unscheduled <b>{{ d.session.session_label }}</b> from {{ d.from.time|date:"l G:i" }} at {{ d.from.location.name }}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      No differences in scheduled sessions found!
+    {% endif %}
+  {% endif %}
+
+{% endblock content %}

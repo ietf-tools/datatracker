@@ -297,7 +297,9 @@ class Meeting(models.Model):
         min_time = datetime.datetime(1970, 1, 1, 0, 0, 0) # should be Meeting.modified, but we don't have that
         timeslots_updated = self.timeslot_set.aggregate(Max('modified'))["modified__max"] or min_time
         sessions_updated = self.session_set.aggregate(Max('modified'))["modified__max"] or min_time
-        assignments_updated = (self.schedule.assignments.aggregate(Max('modified'))["modified__max"] or min_time) if self.schedule else min_time
+        assignments_updated = min_time
+        if self.schedule:
+            assignments_updated = SchedTimeSessAssignment.objects.filter(schedule__in=[self.schedule, self.schedule.base if self.schedule else None]).aggregate(Max('modified'))["modified__max"] or min_time
         ts = max(timeslots_updated, sessions_updated, assignments_updated)
         tz = pytz.timezone(settings.PRODUCTION_TIMEZONE)
         ts = tz.localize(ts)
@@ -397,14 +399,14 @@ class Room(models.Model):
         return self.functional_name
     # audio stream support
     def audio_stream_url(self):
-        urlresource = self.urlresource_set.filter(name_id='audiostream').first()
-        return urlresource.url if urlresource else None
+        urlresources = [ur for ur in self.urlresource_set.all() if ur.name_id == 'audiostream']
+        return urlresources[0].url if urlresources else None
     def video_stream_url(self):
-        urlresource = self.urlresource_set.filter(name_id__in=['meetecho', ]).first()
-        return urlresource.url if urlresource else None
+        urlresources = [ur for ur in self.urlresource_set.all() if ur.name_id in ['meetecho']]
+        return urlresources[0].url if urlresources else None
     def webex_url(self):
-        urlresource = self.urlresource_set.filter(name_id__in=['webex', ]).first()
-        return urlresource.url if urlresource else None
+        urlresources = [ur for ur in self.urlresource_set.all() if ur.name_id in ['webex']]
+        return urlresources[0].url if urlresources else None
     #
     class Meta:
         ordering = ["-id"]
@@ -456,7 +458,7 @@ class TimeSlot(models.Model):
     @property
     def session(self):
         if not hasattr(self, "_session_cache"):
-            self._session_cache = self.sessions.filter(timeslotassignments__schedule=self.meeting.schedule).first()
+            self._session_cache = self.sessions.filter(timeslotassignments__schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting else None]).first()
         return self._session_cache
 
     @property
@@ -628,10 +630,14 @@ class Schedule(models.Model):
     meeting  = ForeignKey(Meeting, null=True, related_name='schedule_set')
     name     = models.CharField(max_length=16, blank=False, help_text="Letters, numbers and -:_ allowed.", validators=[RegexValidator(r'^[A-Za-z0-9-:_]*$')])
     owner    = ForeignKey(Person)
-    visible  = models.BooleanField(default=True, help_text="Make this agenda available to those who know about it.")
-    public   = models.BooleanField(default=True, help_text="Make this agenda publically available.")
+    visible  = models.BooleanField("Show in agenda list", default=True, help_text="Show in the list of possible agendas for the meeting.")
+    public   = models.BooleanField(default=True, help_text="Allow others to see this agenda.")
     badness  = models.IntegerField(null=True, blank=True)
-    # considering copiedFrom = ForeignKey('Schedule', blank=True, null=True)
+    notes    = models.TextField(blank=True)
+    origin   = ForeignKey('Schedule', blank=True, null=True, on_delete=models.SET_NULL, related_name="+")
+    base     = ForeignKey('Schedule', blank=True, null=True, on_delete=models.SET_NULL,
+                          help_text="Sessions scheduled in the base schedule show up in this schedule too.", related_name="derivedschedule_set",
+                          limit_choices_to={'base': None}) # prevent the inheritance from being more than one layer deep (no recursion)
 
     def __str__(self):
         return u"%s:%s(%s)" % (self.meeting, self.name, self.owner)
@@ -657,20 +663,6 @@ class Schedule(models.Model):
             return email.address
         else:
             return "noemail"
-
-    @property
-    def visible_token(self):
-        if self.visible:
-            return "visible"
-        else:
-            return "hidden"
-
-    @property
-    def public_token(self):
-        if self.public:
-            return "public"
-        else:
-            return "private"
 
     @property
     def is_official(self):
@@ -943,6 +935,8 @@ class Session(models.Model):
     modified = models.DateTimeField(auto_now=True)
     remote_instructions = models.CharField(blank=True,max_length=1024)
 
+    tombstone_for = models.ForeignKey('Session', blank=True, null=True, help_text="This session is the tombstone for a session that was rescheduled", on_delete=models.CASCADE)
+
     materials = models.ManyToManyField(Document, through=SessionPresentation, blank=True)
     resources = models.ManyToManyField(ResourceAssociation, blank=True)
 
@@ -1084,7 +1078,7 @@ class Session(models.Model):
             ss0name = "(%s)" % SessionStatusName.objects.get(slug=status_id).name
         else:
             ss0name = "(unscheduled)"
-            ss = self.timeslotassignments.filter(schedule=self.meeting.schedule).order_by('timeslot__time')
+            ss = self.timeslotassignments.filter(schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting.schedule else None]).order_by('timeslot__time')
             if ss:
                 ss0name = ','.join(x.timeslot.time.strftime("%a-%H%M") for x in ss)
         return "%s: %s %s %s" % (self.meeting, self.group.acronym, self.name, ss0name)
@@ -1117,11 +1111,8 @@ class Session(models.Model):
     def reverse_constraints(self):
         return Constraint.objects.filter(target=self.group, meeting=self.meeting).order_by('name__name')
 
-    def timeslotassignment_for_schedule(self, schedule):
-        return self.timeslotassignments.filter(schedule=schedule).first()
-
     def official_timeslotassignment(self):
-        return self.timeslotassignment_for_schedule(self.meeting.schedule)
+        return self.timeslotassignments.filter(schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting.schedule else None]).first()
 
     def constraints_dict(self, host_scheme):
         constraint_list = []

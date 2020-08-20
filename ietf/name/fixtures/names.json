@@ -12080,6 +12080,16 @@
   {
     "fields": {
       "desc": "",
+      "name": "Rescheduled",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.sessionstatusname",
+    "pk": "resched"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Best Current Practice",
       "order": 0,
       "used": true

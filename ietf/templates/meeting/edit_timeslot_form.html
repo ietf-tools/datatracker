@@ -1,0 +1,41 @@
+{# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
+{% load origin %}
+{% load bootstrap3 %}
+{% if not timeslot_form.active_assignment or timeslot_form.active_assignment.schedule_id == schedule.pk %}
+  <form class="timeslot-form" method="post">{% csrf_token %}
+    <div class="flowing-form">
+      {% bootstrap_field timeslot_form.day %}
+      {% bootstrap_field timeslot_form.time %}
+      {% bootstrap_field timeslot_form.duration %}
+
+      {% bootstrap_field timeslot_form.location %}
+      {% bootstrap_field timeslot_form.show_location %}
+
+      {% bootstrap_field timeslot_form.type %}
+      {% bootstrap_field timeslot_form.group %}
+      {% bootstrap_field timeslot_form.name %}
+      {% bootstrap_field timeslot_form.short %}
+      {% if 'agenda_note' in timeslot_form.fields %}
+        {% bootstrap_field timeslot_form.agenda_note %}
+      {% endif %}
+    </div>
+
+    {% if can_edit %}
+      <button type="submit" class="btn btn-primary" name="action" value="{{ timeslot_form_action }}-timeslot">
+        {% if timeslot_form_action == 'add' %}Add time slot{% else %}Save{% endif %} slot
+      </button>
+
+      {% if timeslot %}
+        <input type="hidden" name="timeslot" value="{{ timeslot.pk }}">
+
+        {% if timeslot.type_id != 'break' and timeslot.can_cancel %}
+          <button type="submit" class="btn btn-danger" name="action" value="cancel-timeslot" title="Cancel session">Cancel session</button>
+        {% endif %}
+
+        <button type="submit" class="btn btn-danger" name="action" value="delete-timeslot" title="Delete time slot">Delete</button>
+      {% endif %}
+    {% endif %}
+  </form>
+{% elif schedule.base %}
+  <p class="text-center">You cannot edit this session here - it is set up in the <a href="{% url 'ietf.meeting.views.edit_meeting_timeslots_and_misc_sessions' meeting.number schedule.base.owner_email schedule.base.name %}">base schedule</a></p>
+{% endif %}

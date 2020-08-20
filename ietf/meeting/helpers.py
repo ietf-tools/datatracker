@@ -9,7 +9,7 @@ import re
 from tempfile import mkstemp
 
 from django.http import HttpRequest, Http404
-from django.db.models import Max, Q, Prefetch
+from django.db.models import F, Max, Q, Prefetch
 from django.conf import settings
 from django.core.cache import cache
 from django.urls import reverse
@@ -150,13 +150,6 @@ def get_schedule(meeting, name=None):
         schedule = get_object_or_404(meeting.schedule_set, name=name)
     return schedule
 
-def get_schedule_by_id(meeting, schedid):
-    if schedid is None:
-        schedule = meeting.schedule
-    else:
-        schedule = get_object_or_404(meeting.schedule_set, id=int(schedid))
-    return schedule
-
 # seems this belongs in ietf/person/utils.py?
 def get_person_by_email(email):
     # email == None may actually match people who haven't set an email!
@@ -171,13 +164,17 @@ def get_schedule_by_name(meeting, owner, name):
         return meeting.schedule_set.filter(name = name).first()
 
 def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefetches=()):
-    assignments_queryset = assignments_queryset.select_related(
-        "timeslot", "timeslot__location", "timeslot__type",
-        ).prefetch_related(
+    assignments_queryset = assignments_queryset.prefetch_related(
+            'timeslot', 'timeslot__type', 'timeslot__meeting',
+            'timeslot__location', 'timeslot__location__floorplan', 'timeslot__location__urlresource_set',
             Prefetch(
                 "session",
                 queryset=add_event_info_to_session_qs(Session.objects.all().prefetch_related(
                     'group', 'group__charter', 'group__charter__group',
+                    Prefetch('materials',
+                             queryset=Document.objects.exclude(states__type=F("type"), states__slug='deleted').order_by('sessionpresentation__order').prefetch_related('states'),
+                             to_attr='prefetched_active_materials'
+                    )
                 ))
             ),
             *extra_prefetches
@@ -218,9 +215,20 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
     parents = Group.objects.filter(pk__in=parent_id_set)
     parent_replacements = find_history_replacements_active_at(parents, meeting_time)
 
+    timeslot_by_session_pk = {a.session_id: a.timeslot for a in assignments}
+
     for a in assignments:
         if a.session and a.session.historic_group and a.session.historic_group.parent_id:
             a.session.historic_group.historic_parent = parent_replacements.get(a.session.historic_group.parent_id)
+
+        if a.session.current_status == 'resched':
+            a.session.rescheduled_to = timeslot_by_session_pk.get(a.session.tombstone_for_id)
+
+        for d in a.session.prefetched_active_materials:
+            # make sure these are precomputed with the meeting instead
+            # of having to look it up
+            d.get_href(meeting=meeting)
+            d.get_versionless_href(meeting=meeting)
 
     return assignments
 
@@ -423,6 +431,11 @@ def get_announcement_initial(meeting, is_change=False):
     type = group.type.slug.upper()
     if group.type.slug == 'wg' and group.state.slug == 'bof':
         type = 'BOF'
+
+    assignments = SchedTimeSessAssignment.objects.filter(
+        schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None]
+    ).order_by('timeslot__time')
+
     initial['subject'] = '{name} ({acronym}) {type} {desc} Meeting: {date}{change}'.format(
         name=group.name, 
         acronym=group.acronym,

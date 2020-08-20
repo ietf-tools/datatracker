@@ -221,9 +221,12 @@ def recording(request, meeting_num):
     session.
     '''
     meeting = get_object_or_404(Meeting, number=meeting_num)
-    assignments = meeting.schedule.assignments.exclude(session__type__in=('reg','break')).order_by('session__group__acronym')
-    sessions = [ x.session for x in assignments ]
-    
+    sessions = Session.objects.filter(
+        timeslotassignments__schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None]
+    ).exclude(
+        type__in=['reg','break']
+    ).order_by('group__acronym')
+
     if request.method == 'POST':
         form = RecordingForm(request.POST,meeting=meeting)
         if form.is_valid():
