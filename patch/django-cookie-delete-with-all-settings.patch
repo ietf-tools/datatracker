@@ -11,7 +11,7 @@
  
 --- django/http/response.py.orig	2020-08-13 11:16:04.060627793 +0200
 +++ django/http/response.py	2020-08-13 11:54:03.482476973 +0200
-@@ -210,12 +210,19 @@
+@@ -210,12 +210,18 @@
          value = signing.get_cookie_signer(salt=key + salt).sign(value)
          return self.set_cookie(key, value, **kwargs)
  
@@ -20,7 +20,6 @@
          # Most browsers ignore the Set-Cookie header if the cookie name starts
          # with __Host- or __Secure- and the cookie doesn't use the secure flag.
 -        secure = key.startswith(('__Secure-', '__Host-'))
-+        import debug
 +        if key in self.cookies:
 +            domain     = self.cookies[key].get('domain', domain)
 +            secure     = self.cookies[key].get('secure', secure)
