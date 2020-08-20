@@ -319,6 +319,15 @@ def maybe_patch_library(app_configs, **kwargs):
                             "\tTarget files: %s\n") % (library_path, ',  '.join(force_str(i.target) for i in patch_set.items)),
                         id="datatracker.W0002",
                         ))
+                else:
+                    # Patch succeeded or was a no-op
+                    if not patch_set.already_patched:
+                        errors.append(
+                            checks.Error("Found an unpatched file, and applied the patch in %s" % (patch_file),
+                                hint="You will need to re-run the command now that the patch in place.",
+                                id="datatracker.E0022",
+                            )
+                        )
             else:
                 errors.append(checks.Warning(
                     "Could not parse patch file '%s'"%patch_file,

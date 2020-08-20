@@ -930,6 +930,7 @@ class PatchSet(object):
       if validhunks < len(p.hunks):
         if self._match_file_hunks(filename, p.hunks):
           warning("already patched  %s" % filename)
+          self.already_patched = True
         else:
           warning("source file is different - %s" % filename)
           errors += 1
@@ -1175,9 +1176,9 @@ def main():
 
   #pprint(patch)
   if options.revert:
-    patch.revert(options.strip, root=options.directory) or sys.exit(-1)
+    patch.revert(options.strip, root=options.directory.encode()) or sys.exit(-1)
   else:
-    patch.apply(options.strip, root=options.directory) or sys.exit(-1)
+    patch.apply(options.strip, root=options.directory.encode()) or sys.exit(-1)
 
   # todo: document and test line ends handling logic - patch.py detects proper line-endings
   #       for inserted hunks and issues a warning if patched file has incosistent line ends
