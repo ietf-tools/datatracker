@@ -1,3 +1,32 @@
+ietfdb (7.14.1) ietf; urgency=medium
+
+  **Code cleanup**
+
+  * Code cleanup: removed an unused model and updated an initial migration to
+    reflect actual database tables present.
+
+  * Changed the API to not export saved Message instances (they can contain 
+    information such as draft confirmation codes and password reset codes that 
+    should not be generally visible).
+
+  * Added a 'meeting' list filter to the admin page for ImportantDate.
+
+  * Changed some settings for non-production modes to permit login to the dev.
+    server from recent browsers (such as Chrome 84).
+
+  * Changed the default LOGGING settings to avoid logging to syslog, as it may 
+    not be available in all enviroments.
+
+  * Made the patch utility return information to distinguish already 
+    patched files from successful patch application, and modified our checks 
+    extensions to signal when patches have been applied and a ccommand needs to 
+    be re-run.
+
+  * Removed a misnamed patch file.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Aug 2020 13:16:20 +0000
+
+
 ietfdb (7.14.0) ietf; urgency=medium
 
   **Updated new schedule editor, cookie fixes, and yangdoctor notifications**
