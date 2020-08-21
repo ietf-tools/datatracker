@@ -12372,6 +12372,7 @@
       "desc": "",
       "name": "Break",
       "order": 0,
+      "private": false,
       "used": true
     },
     "model": "name.timeslottypename",
@@ -12382,6 +12383,7 @@
       "desc": "Leadership Meetings",
       "name": "Leadership",
       "order": 0,
+      "private": true,
       "used": true
     },
     "model": "name.timeslottypename",
@@ -12392,6 +12394,7 @@
       "desc": "Other Meetings Not Published on Agenda",
       "name": "Off Agenda",
       "order": 0,
+      "private": true,
       "used": true
     },
     "model": "name.timeslottypename",
@@ -12402,6 +12405,7 @@
       "desc": "",
       "name": "Other",
       "order": 0,
+      "private": false,
       "used": true
     },
     "model": "name.timeslottypename",
@@ -12412,6 +12416,7 @@
       "desc": "",
       "name": "Plenary",
       "order": 0,
+      "private": false,
       "used": true
     },
     "model": "name.timeslottypename",
@@ -12422,6 +12427,7 @@
       "desc": "",
       "name": "Registration",
       "order": 0,
+      "private": false,
       "used": true
     },
     "model": "name.timeslottypename",
@@ -12432,6 +12438,7 @@
       "desc": "",
       "name": "Regular",
       "order": 0,
+      "private": false,
       "used": true
     },
     "model": "name.timeslottypename",
@@ -12442,6 +12449,7 @@
       "desc": "A room has been reserved for use by another body the timeslot indicated",
       "name": "Room Reserved",
       "order": 0,
+      "private": false,
       "used": true
     },
     "model": "name.timeslottypename",
@@ -12452,6 +12460,7 @@
       "desc": "A room was not booked for the timeslot indicated",
       "name": "Room Unavailable",
       "order": 0,
+      "private": false,
       "used": true
     },
     "model": "name.timeslottypename",

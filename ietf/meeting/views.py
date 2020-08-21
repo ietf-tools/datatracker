@@ -1344,9 +1344,8 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
 
     updated = meeting.updated()
     filtered_assignments = SchedTimeSessAssignment.objects.filter(
-        schedule__in=[schedule, schedule.base]
-    ).exclude(
-        timeslot__type__in=['lead', 'offagenda']
+        schedule__in=[schedule, schedule.base],
+        timeslot__type__private=False,
     )
     filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
 
@@ -1641,9 +1640,8 @@ def week_view(request, num=None, name=None, owner=None):
         raise Http404
 
     filtered_assignments = SchedTimeSessAssignment.objects.filter(
-        schedule__in=[schedule, schedule.base]
-    ).exclude(
-        timeslot__type__in=['lead','offagenda']
+        schedule__in=[schedule, schedule.base],
+        timeslot__type__private=False,
     )
     # Only show assignments from the traditional meeting "week" (Sat-Fri). 
     # We'll determine this using the saturday before the first scheduled regular session.
@@ -1815,7 +1813,10 @@ def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
         elif len(item) > 1 and item[0] == '~':
             include_types |= set([item[1:]])
 
-    assignments = SchedTimeSessAssignment.objects.filter(schedule__in=[schedule, schedule.base]).exclude(timeslot__type__in=['lead','offagenda'])
+    assignments = SchedTimeSessAssignment.objects.filter(
+        schedule__in=[schedule, schedule.base],
+        timeslot__type__private=False,
+    )
     assignments = preprocess_assignments_for_agenda(assignments, meeting)
 
     if q:
@@ -1848,9 +1849,10 @@ def agenda_json(request, num=None):
     locations = set()
     parent_acronyms = set()
     assignments = SchedTimeSessAssignment.objects.filter(
-        schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None]
+        schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None],
+        timeslot__type__private=False,
     ).exclude(
-        session__type__in=['lead','offagenda','break','reg']
+        session__type__in=['break', 'reg']
     )
     # Update the assignments with historic information, i.e., valid at the
     # time of the meeting

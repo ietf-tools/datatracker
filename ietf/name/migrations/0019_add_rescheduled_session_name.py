@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0017_update_constraintname_order_and_label'),
+        ('name', '0018_add_timeslottypename_private'),
     ]
 
     def add_rescheduled_session_status_name(apps, schema_editor):
