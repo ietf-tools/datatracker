@@ -4,7 +4,7 @@
 {% load textfilters %}
 {% origin %}
 
-<span id="session-buttons-{{session.pk}}">
+<span id="session-buttons-{{session.pk}}" class="text-nowrap">
   {% with acronym=session.historic_group.acronym %}
   {% if session.agenda and show_agenda %}
     {% include "meeting/session_agenda_include.html" %}

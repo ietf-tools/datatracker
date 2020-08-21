@@ -1289,3 +1289,19 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   cursor: default;
   background-color: #eee;
 }
+
+/* A modified .container-fluid without padding on very narrow devices*/
+.container-fluid-narrow {
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+}
+@media (max-width: 480px) {
+  .container-fluid-narrow {
+    padding-right: 0;
+    padding-left: 0;
+    margin-right: auto;
+    margin-left: auto;
+  }
+}

@@ -155,9 +155,9 @@
           {% for item in filtered_assignments %}
 
             {% ifchanged item.timeslot.time|date:"Y-m-d" %}
-              <tr><th class="gap" colspan="6"></th></tr>
+              <tr><th class="gap" colspan="5"></th></tr>
               <tr class="warning">
-                <th colspan="6">
+                <th colspan="5">
 		   {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
 		   <div class="anchor-target" id="{{item.timeslot.time|slugify}}"></div>
 	          {% if "-utc" in request.path %}
@@ -173,13 +173,14 @@
               {% ifchanged %}
                 <tr class="info">
 	          <th class="text-nowrap text-right">
-	            {% if "-utc" in request.path %}
-	              {{item.timeslot.utc_start_time|date:"G:i"}}-{{item.timeslot.utc_end_time|date:"G:i"}}
-	            {% else %}
-	              {{item.timeslot.time|date:"G:i"}}-{{item.timeslot.end_time|date:"G:i"}}
-	            {% endif %}
+                    <span class="hidden-xs">
+                       {% include "meeting/timeslot_start_end.html" %}
+                    </span>
 	          </th>
-	          <th colspan="5">
+	          <th colspan="4">
+                    <span class="hidden-sm hidden-md hidden-lg">
+                       {% include "meeting/timeslot_start_end.html" %}
+                    </span>
 	            {% if "-utc" in request.path %}
 	              {{ item.timeslot.utc_start_time|date:"l"}}
 	            {% else %}
@@ -194,25 +195,28 @@
             {% if item.timeslot.type.slug == 'break' or item.timeslot.type.slug == 'reg' or item.timeslot.type.slug == 'other' %}
                 <tr id="row-{{ item.slug }}" timeslot-type="{{item.timeslot.type.slug}}">
 	          <td class="text-nowrap text-right">
-	            {% if "-utc" in request.path %}
-	              {{item.timeslot.utc_start_time|date:"G:i"}}-{{item.timeslot.utc_end_time|date:"G:i"}}
-	            {% else %}
-	              {{item.timeslot.time|date:"G:i"}}-{{item.timeslot.end_time|date:"G:i"}}
-	            {% endif %}
+                    <span class="hidden-xs">
+                       {% include "meeting/timeslot_start_end.html" %}
+                    </span>
 	          </td>
                   <td colspan="3">
-                    {% if item.timeslot.show_location and item.timeslot.get_location %}
+                    <span class="hidden-sm hidden-md hidden-lg">
+                       {% include "meeting/timeslot_start_end.html" %}
+                    </span>
+                    {% if item.timeslot.show_location and item.timeslot.get_html_location %}
 		      {% if schedule.meeting.number|add:"0" < 96 %}
-                      <a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|xslugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+                      <a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
                       {% elif item.timeslot.location.floorplan %}
-		      <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_location|xslugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+		      <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
 		      {% else %}
-                      {{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}
+                      {{item.timeslot.get_html_location}}
 		      {% endif %}
 		      {% with item.timeslot.location.floorplan as floor %}
 		      {% if item.timeslot.location.floorplan %}
+                      <span class="hidden-xs">
 			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
 			  class="pull-right" title="{{floor.name}}"><span class="label label-blank label-wide">{{floor.short}}</span></a>
+                      </span>
 		      {% endif %}
 		      {% endwith %}
 	            {% endif %}
@@ -228,22 +232,20 @@
 
                     {% if item.session.current_status == 'canceled' %}
 		      <span class="label label-danger pull-right">CANCELLED</span>
+                    {% else %}
+                      <div class="pull-right padded-left">
+                        {% if item.timeslot.type.slug == 'other' %}
+                          {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
+                            {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
+                          {% else %}
+                            {% for slide in item.session.slides %}
+                              <a href="{{slide.get_href}}">{{ slide.title|clean_whitespace }}</a>
+                              <br>
+                            {% endfor %}
+                          {% endif %}
+                        {% endif %}
+                      </div>
 		    {% endif %}
-
-	          </td>
-		  <td class="col-md-2 text-right">
-		    <span class="hidden-xs">
-		      {% if item.timeslot.type.slug == 'other' %}
-		        {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
-			  {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
-			{% else %}
-			  {% for slide in item.session.slides %}
-			    <a href="{{slide.get_href}}">{{ slide.title|clean_whitespace }}</a>
-			    <br>
-			  {% endfor %}
-			{% endif %}
-		      {% endif %}
-		    </span>
 		  </td>
                 </tr>
             {% endif %}
@@ -253,20 +255,21 @@
                 <tr id="row-{{item.slug}}"  timeslot-type="{{item.timeslot.type.slug}}" data-ske="row-{{ item.slug }}" {% if item.timeslot.type.slug == 'plenary' %}class="{{item.timeslot.type.slug}}danger"{% endif %}>
 		  {% if item.timeslot.type.slug == 'plenary' %}
 	            <th class="text-nowrap text-right">
-		      {% if "-utc" in request.path %}
-			{{item.timeslot.utc_start_time|date:"G:i"}}-{{item.timeslot.utc_end_time|date:"G:i"}}
-		      {% else %}
-			{{item.timeslot.time|date:"G:i"}}-{{item.timeslot.end_time|date:"G:i"}}
-		      {% endif %}
+                      <span class="hidden-xs">
+                         {% include "meeting/timeslot_start_end.html" %}
+                      </span>
 		    </th>
 		    <td colspan="3">
-		      {% if item.timeslot.show_location and item.timeslot.get_location %}
+                      <span class="hidden-sm hidden-md hidden-lg">
+                         {% include "meeting/timeslot_start_end.html" %}
+                      </span>
+		      {% if item.timeslot.show_location and item.timeslot.get_html_location %}
 			{% if schedule.meeting.number|add:"0" < 96 %}
-			<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|xslugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+			<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
                         {% elif item.timeslot.location.floorplan %}
-			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_location|xslugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
 			{% else %}
-                        {{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}
+                        {{item.timeslot.get_html_location}}
 			{% endif %}
 		      {% endif %}
 		    </td>
@@ -275,19 +278,21 @@
 		    <td>
 		      {% with item.timeslot.location.floorplan as floor %}
 		      {% if item.timeslot.location.floorplan %}
+                      <span class="hidden-xs">
 			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
 			  class="pull-right" title="{{floor.name}}"><span class="label label-blank">{{floor.short}}</span></a>
+                      </span>
 		      {% endif %}
 		      {% endwith %}
 		    </td>
                     <td>
-                      {% if item.timeslot.show_location and item.timeslot.get_location %}
+                      {% if item.timeslot.show_location and item.timeslot.get_html_location %}
 			{% if schedule.meeting.number|add:"0" < 96 %}
-			<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|xslugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+			<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
                         {% elif item.timeslot.location.floorplan %}
-			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_location|xslugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
                         {% else %}
-                        {{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}
+                        {{item.timeslot.get_html_location}}
 			{% endif %}
                       {% endif %}
                     </td>
@@ -316,12 +321,16 @@
                       </a>
                     {% endif %}
 
-                    {% if item.session.historic_group.state_id == "bof" %}
-                      <span class="label label-success pull-right">BOF</span>
-                    {% endif %}
-
                     {% if item.session.current_status == 'canceled' %}
                       <span class="label label-danger pull-right">CANCELLED</span>
+                    {% else %}
+                      <div class="pull-right padded-left">
+                         {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
+                      </div>
+                    {% endif %}
+
+                    {% if item.session.historic_group.state_id == "bof" %}
+                      <span class="label label-success pull-right">BOF</span>
                     {% endif %}
 
                     {% if item.session.agenda_note|first_url|conference_url %}
@@ -329,12 +338,6 @@
                     {% elif item.session.agenda_note %}
                       <br><span class="text-danger">{{item.session.agenda_note}}</span>
                     {% endif %}
-
-		  </td>
-		  <td class="text-nowrap text-right">
-		  <span class="hidden-xs">
-		    {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
-		  </span>
 		  </td>
 		</tr>
               {% endif %}

@@ -23,6 +23,7 @@ from django.conf import settings
 #from django.template.defaultfilters import slugify, date as date_format, time as time_format
 from django.template.defaultfilters import date as date_format
 from django.utils.text import slugify
+from django.utils.safestring import mark_safe
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.models import Document
@@ -488,20 +489,19 @@ class TimeSlot(models.Model):
         return self.time + self.duration
 
     def get_hidden_location(self):
-        location = self.location
-        if location:
-            location = location.name
-        elif self.type_id == "reg":
-            location = self.meeting.reg_area
-        elif self.type_id == "break":
-            location = self.meeting.break_area
-        return location
+        if not hasattr(self, '_cached_hidden_location'):
+            location = self.location
+            if location:
+                location = location.name
+            elif self.type_id == "reg":
+                location = self.meeting.reg_area
+            elif self.type_id == "break":
+                location = self.meeting.break_area
+            self._cached_hidden_location = location
+        return self._cached_hidden_location
 
     def get_location(self):
-        location = self.get_hidden_location()
-        if not self.show_location:
-            location = ""
-        return location
+        return self.get_hidden_location() if self.show_location else ""
 
     def get_functional_location(self):
         name_parts = []
@@ -512,6 +512,15 @@ class TimeSlot(models.Model):
         if location:
             name_parts.append(location)
         return ' - '.join(name_parts)
+
+    def get_html_location(self):
+        if not hasattr(self, '_cached_html_location'):
+            self._cached_html_location = self.get_location()
+            if len(self._cached_html_location) > 8:
+                self._cached_html_location = mark_safe(self._cached_html_location.replace('/', '/<wbr>'))
+            else:
+                self._cached_html_location = mark_safe(self._cached_html_location.replace(' ', '&nbsp;'))
+        return self._cached_html_location
 
     def tz(self):
         if not hasattr(self, '_cached_tz'):
