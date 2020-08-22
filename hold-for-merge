@@ -1,5 +1,11 @@
 # -*- conf-mode -*-
 
+/personal/lars/7.12.1.dev0@18335
+/personal/lars/7.12.1.dev0@18330  # Merge attempted but needed re-working; some cherry-picking done
+/personal/lars/7.12.1.dev0@18329
+/personal/lars/7.12.1.dev0@18328
+/personal/lars/7.12.1.dev0@18327
+
 /personal/markd/v6.127.1.dev1@17694     # Review still shows issues, henrik will rework (29 Apr 2020)
 /personal/markd/v6.120.0.dev0@17570     # Review issues to be resolved (08 Apr 2020)
 /personal/mahoney/6.121.1.dev0@17473    # Test commit
