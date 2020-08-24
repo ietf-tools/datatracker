@@ -321,7 +321,7 @@ def maybe_patch_library(app_configs, **kwargs):
                         ))
                 else:
                     # Patch succeeded or was a no-op
-                    if not patch_set.already_patched:
+                    if not patch_set.already_patched and settings.SERVER_MODE != 'production':
                         errors.append(
                             checks.Error("Found an unpatched file, and applied the patch in %s" % (patch_file),
                                 hint="You will need to re-run the command now that the patch in place.",
