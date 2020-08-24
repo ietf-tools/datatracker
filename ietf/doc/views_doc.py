@@ -288,10 +288,9 @@ def document_main(request, name, rev=None):
             submission = "individual"
         elif group.type_id == "area" and doc.stream_id == "ietf":
             submission = "individual in %s area" % group.acronym
-        elif group.type_id in ("rg", "wg"):
+        else:
             submission = "%s %s" % (group.acronym, group.type)
-            if group.type_id == "wg":
-                submission = "<a href=\"%s\">%s</a>" % (urlreverse("ietf.group.views.group_home", kwargs=dict(group_type=group.type_id, acronym=group.acronym)), submission)
+            submission = "<a href=\"%s\">%s</a>" % (urlreverse("ietf.group.views.group_home", kwargs=dict(group_type=group.type_id, acronym=group.acronym)), submission)
             if doc.stream_id and doc.get_state_slug("draft-stream-%s" % doc.stream_id) == "c-adopt":
                 submission = "candidate for %s" % submission
 
