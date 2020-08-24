@@ -1137,6 +1137,7 @@ CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/fix-django-password-strength-kwargs.patch',
     'patch/add-django-http-cookie-value-none.patch',
     'patch/django-cookie-delete-with-all-settings.patch',
+    'patch/tastypie-django22-fielderror-response.patch',
 ]
 if DEBUG:
     try:
