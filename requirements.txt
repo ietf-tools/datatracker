@@ -9,7 +9,7 @@ coverage>=4.0.1,!=4.0.2,<5.0    # Coverage 5.x moves from a json database to SQL
 #cssselect>=0.6.1               # for PyQuery
 decorator>=4.0.4
 defusedxml>=0.4.1		# for TastyPie when ussing xml; not a declared dependency
-Django>=2.2,<3.0
+Django>=2.2.15,<3.0
 django-bootstrap3>=14.0
 django-csp>=3.5
 django-cors-headers>=2.4.0
@@ -21,7 +21,7 @@ django-password-strength>=1.2.1
 django-referrer-policy>=1.0
 django-simple-history>=2.3.0
 django-stubs==1.3.0		# The django-stubs version used determines the the mypy version indicated below
-django-tastypie>=0.14.2         # Django 2.1 will require 0.14.2; Django 3.0 will require 0.14.3
+django-tastypie>=0.14.3         # Django 2.1 will require 0.14.2; Django 3.0 will require 0.14.3
 django-webtest>=1.9.7
 django-widget-tweaks>=1.4.2
 docutils>=0.12,!=0.15
