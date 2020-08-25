@@ -10,6 +10,7 @@ import debug                            # pyflakes:ignore
 
 from django.template import Origin, TemplateDoesNotExist, Template as DjangoTemplate
 from django.template.loaders.base import Loader as BaseLoader
+from django.utils.safestring import mark_safe
 
 from ietf.dbtemplate.models import DBTemplate
 
@@ -53,9 +54,9 @@ class RSTTemplate(PlainTemplate):
                                       'halt_level': 2,
                                   })
         except SystemMessage as e:
-            e.message = e.message.replace('<string>:', 'line ')
+            e.message = mark_safe('<div class="danger preformatted">%s</div>' % str(e).replace('<string>:', 'line '))
             args = list(e.args)
-            args[0] = args[0].replace('<string>:', 'line ')
+            args[0] = mark_safe('<div class="danger preformatted">%s</div>' % args[0].replace('<string>:', 'line '))
             e.args = tuple(args)
             raise e
 

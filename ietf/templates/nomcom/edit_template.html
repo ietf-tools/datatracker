@@ -32,6 +32,9 @@
   </dl>
 
   <form id="templateform" method="post">
+    {% if form.errors %}
+      <p class="alert alert-danger">There were errors, see below.</p>
+    {% endif %}
     {% csrf_token %}
     {% bootstrap_form form %}
 
