@@ -26,7 +26,7 @@ def reverse(apps, schema_editor):
     SchedulingEvent = apps.get_model('meeting', 'SchedulingEvent')
     Person = apps.get_model('person', 'Person')
     person = Person.objects.get(name='Ryan Cross')
-    SchedulingEvent.objects.filter(meeting__number=107, by=person).delete()
+    SchedulingEvent.objects.filter(session__meeting__number=107, by=person).delete()
 
 
 class Migration(migrations.Migration):
