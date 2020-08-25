@@ -135,9 +135,9 @@
         <h2>Download as .ics</h2>
         <p class="buttonlist">
           {% for p in group_parents %}
-            <a class="btn btn-default" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?{{p.acronym|upper}},-~Other,-~Plenary">{{p.acronym|upper}}</a>
+            <a class="btn btn-default" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{p.acronym|upper}}">{{p.acronym|upper}}</a>
           {% endfor %}
-          <a class="btn btn-default" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?~Plenary,~Other">Non-area events</a>
+          <a class="btn btn-default" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?showtypes=plenary,other">Non-area events</a>
           <a id="ical-link" class="hidden btn btn-primary" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}">Customized schedule</a>
         </p>
 
@@ -364,7 +364,7 @@
        qs = qs.replace(/^\?/, '');
        $.each(qs.split('&'), function(i, v) {
            var toks = v.split('=', 2)
-           params[toks[0]] = toks[1];
+           params[toks[0]] = toks[1].toLowerCase();
        });
        return params;
    }
@@ -397,9 +397,7 @@
 
            // loop through the has items and change the UI element and row visibilities accordingly
            $.each(hide_groups, function (i, v) {
-//               if (v.indexOf("-") == 0) {
                // this is a "negative" item: when present, hide these rows
-//                   v = v.replace(/^-/, '');
                $('[id^="row-"]').filter('[id*="-' + v + '"]').hide();
                $(".view." + v).find("button").removeClass("active disabled");
                $("button.pickviewneg." + v).removeClass("active");
@@ -412,14 +410,14 @@
            });
 
            // show the week view
-           $("#weekview").attr("src", "week-view.html" + window.location.hash).removeClass("hidden");
+           $("#weekview").attr("src", "week-view.html" + window.location.search).removeClass("hidden");
 
            // show the custom .ics link
            $("#ical-link").attr("href",$("#ical-link").attr("href").split("?")[0]+window.location.search);
            $("#ical-link").removeClass("hidden");
 
        } else {
-           // if the hash is empty, show all and hide weekview
+           // if the hash is empty, show all and hide weekview / custom ical link
            $('[id^="row-"]').show();
            $("#ical-link, #weekview").addClass("hidden");
        }
@@ -463,7 +461,8 @@
            search = '?' + qparams.join('&');
        }
 
-       var new_url = window.location.href.replace(/(\?.*)?$/, search);
+       // strip out the search / hash, then add back
+       var new_url = window.location.href.replace(/(\?.*)?(#.*)?$/, search + window.location.hash);
        if (window.history && window.history.replaceState) {
            // Keep current origin, replace search string, no page reload
            history.replaceState({}, document.title, new_url);

@@ -27,7 +27,7 @@ import debug                            # pyflakes:ignore
 
 from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -1337,6 +1337,23 @@ def ical_session_status(session_with_current_status):
         return "CONFIRMED"
 
 def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
+    """Agenda ical view
+
+    By default, all agenda items will be shown. A filter can be specified in 
+    the querystring. It has the format
+    
+      ?show=...&hide=...&showtypes=...&hidetypes=...
+
+    where any of the parameters can be omitted. The right-hand side of each
+    '=' is a comma separated list, which can be empty. If none of the filter
+    parameters are specified, no filtering will be applied, even if the query
+    string is not empty.
+
+    The show and hide parameters each take a list of working group (wg) acronyms.    
+    The showtypes and hidetypes parameters take a list of session types. 
+
+    Hiding (by wg or type) takes priority over showing.
+    """
     meeting = get_meeting(num, type_in=None)
     schedule = get_schedule(meeting, name)
     updated = meeting.updated()
@@ -1344,38 +1361,49 @@ def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
     if schedule is None and acronym is None and session_id is None:
         raise Http404
 
-    q = request.META.get('QUERY_STRING','') or ""
-    filter = set(unquote(q).lower().split(','))
-    include = [ i for i in filter if not (i.startswith('-') or i.startswith('~')) ]
-    include_types = set(["plenary","other"])
-    exclude = []
-
-    # Process the special flags.
-    #   "-wgname" will remove a working group from the output.
-    #   "~Type" will add that type to the output.
-    #   "-~Type" will remove that type from the output
-    # Current types are:
-    #   Session, Other (default on), Break, Plenary (default on)
-    # Non-Working Group "wg names" include:
-    #   edu, ietf, tools, iesg, iab
-
-    for item in filter:
-        if len(item) > 2 and item[0] == '-' and item[1] == '~':
-            include_types -= set([item[2:]])
-        elif len(item) > 1 and item[0] == '-':
-            exclude.append(item[1:])
-        elif len(item) > 1 and item[0] == '~':
-            include_types |= set([item[1:]])
-
     assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
     assignments = preprocess_assignments_for_agenda(assignments, meeting)
 
-    if q:
-        assignments = [a for a in assignments if
-                   (a.timeslot.type_id in include_types
-                    or (a.session.historic_group and a.session.historic_group.acronym in include)
-                    or (a.session.historic_group and a.session.historic_group.historic_parent and a.session.historic_group.historic_parent.acronym in include))
-                   and (not a.session.historic_group or a.session.historic_group.acronym not in exclude)]
+    if len(request.GET) > 0:
+        # Parse group filters from GET parameters. The keys in this dict define the
+        # allowed querystring parameters.
+        filt_params = {'show': set(), 'hide': set(), 'showtypes': set(), 'hidetypes': set()}
+        
+        for key, value in request.GET.items():
+            if key not in filt_params:
+                return HttpResponseBadRequest('Unrecognized parameter "%s"' % key)
+            if value is None:
+                return HttpResponseBadRequest(
+                    'Parameter "%s" is not assigned a value (use "key=" for an empty value)' % key
+                )
+            filt_params[key] = set(unquote(value).lower().split(','))
+
+        def _should_include_assignment(assignment):
+            """Decide whether to include an assignment
+            
+            Relies on filt_params from parent scope.
+            """
+            historic_group = assignment.session.historic_group
+            if historic_group:
+                group_acronym = historic_group.acronym
+                parent = historic_group.historic_parent
+                parent_acronym = parent.acronym if parent else None
+            else:
+                group_acronym = None
+                parent_acronym = None
+            session_type = assignment.timeslot.type_id
+
+            # Hide if wg or type hide lists apply
+            if (group_acronym in filt_params['hide']) or (session_type in filt_params['hidetypes']):
+                return False
+            
+            # Show if any of the show lists apply, including showing by parent group
+            return ((group_acronym in filt_params['show']) or 
+                    (parent_acronym in filt_params['show']) or 
+                    (session_type in filt_params['showtypes']))
+            
+        # Apply the filter
+        assignments = [a for a in assignments if _should_include_assignment(a)]
 
     if acronym:
         assignments = [ a for a in assignments if a.session.historic_group and a.session.historic_group.acronym == acronym ]
