@@ -4,13 +4,18 @@
 
 {% load ietf_filters static %}
 
-{% block title %}IETF {{meetings.0.number}} : Important Dates{% endblock %}
+{% block title %}IETF {{meetings.0.number}}: Important Dates{% endblock %}
 
 {% block content %}
   {% origin %}
-  <h2>Important Dates</h2>
+  <h1>Important Dates</h1>
+
+  <p>iCalendar: <a href="webcal://{{request.get_host}}{% url 'ietf.meeting.views.important_dates' output_format='ics' %}">webcal subscription</a>
+    &middot; <a href="{% url 'ietf.meeting.views.important_dates' output_format='ics' %}">download</a>
+  </p>
+  
 {% for meeting in meetings %}
-  <h3>IETF {{meeting.number}} : {{ meeting.date}}, {{meeting.city}}, {{meeting.country}}</h3>
+  <h3>IETF {{meeting.number}}: {{ meeting.date}}, {{meeting.city}}, {{meeting.country}}</h3>
   <ul>
   {% with first=forloop.first %}
     {% for d in meeting.importantdate_set.all %}

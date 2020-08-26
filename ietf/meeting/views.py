@@ -3582,7 +3582,7 @@ def api_upload_bluesheet(request):
     return HttpResponse("Done", status=200, content_type='text/plain')
 
 
-def important_dates(request, num=None):
+def important_dates(request, num=None, output_format=None):
     assert num is None or num.isdigit()
     preview_roles = ['Area Director', 'Secretariat', 'IETF Chair', 'IAD', ]
 
@@ -3602,8 +3602,24 @@ def important_dates(request, num=None):
             or (user and user.is_authenticated and has_role(user, preview_roles))):
             meetings.append(future_meeting)
 
-    context={'meetings':meetings}
-    return render(request, 'meeting/important-dates.html', context)
+    if output_format == 'ics':
+        for m in meetings:
+            m.cached_updated = m.updated()
+            m.important_dates = m.importantdate_set.prefetch_related("name")
+            for d in m.important_dates:
+                d.midnight_cutoff = "UTC 23:59" in d.name.name
+
+        ics = render_to_string('meeting/important_dates.ics', {
+            'meetings': meetings,
+        }, request=request)
+        # icalendar response file should have '\r\n' line endings per RFC5545
+        response = HttpResponse(re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", ics), content_type='text/calendar')
+        response['Content-Disposition'] = 'attachment; filename="important-dates.ics"'
+        return response
+
+    return render(request, 'meeting/important-dates.html', {
+        'meetings': meetings
+    })
 
 TimeSlotTypeForm = modelform_factory(TimeSlot, fields=('type',))
 

@@ -1,0 +1,26 @@
+{% load humanize %}{% autoescape off %}{% load ietf_filters %}BEGIN:VCALENDAR
+VERSION:2.0
+METHOD:PUBLISH
+PRODID:-//IETF//datatracker.ietf.org ical importantdates//EN
+{% for meeting in meetings %}{% for d in meeting.important_dates %}BEGIN:VEVENT
+UID:ietf-{{ meeting.number }}-{{ d.name_id }}-{{ d.date.isoformat }}
+SUMMARY:IETF {{ meeting.number }}: {{ d.name.name }}
+CLASS:PUBLIC
+DTSTART{% if not d.midnight_cutoff %};VALUE=DATE{% endif %}:{{ d.date|date:"Ymd" }}{% if d.midnight_cutoff %}235900Z{% endif %}
+DTSTAMP:{{ meeting.cached_updated|date:"Ymd" }}T{{ meeting.cached_updated|date:"His" }}Z
+DESCRIPTION:{{ d.name.desc }} {% if first and d.name.slug == 'openreg' or first and d.name.slug == 'earlybird' %}
+Register here: https://www.ietf.org/how/meetings/register/{% endif %}{% if d.name.slug == 'opensched' %}
+To request a Working Group session, use the IETF Meeting Session Request Tool:
+{{ request.scheme }}://{{ request.get_host}}{% url 'ietf.secr.sreq.views.main' %}
+If you are working on a BoF request, it is highly recommended to tell the IESG
+now by sending an email to iesg@ietf.org to get advance help with the request.{% endif %}{% if d.name.slug == 'cutoffwgreq' %}
+To request a Working Group session, use the IETF Meeting Session Request Tool:
+{{ request.scheme }}://{{ request.get_host }}{% url 'ietf.secr.sreq.views.main' %}{% endif %}{% if d.name.slug == 'cutoffbofreq' %}
+To request a BOF, please see instructions on Requesting a BOF:
+https://www.ietf.org/how/bofs/bof-procedures/{% endif %}{% if d.name.slug == 'idcutoff' %}
+Upload using the ID Submission Tool:
+{{ request.scheme }}://{{ request.get_host }}{% url 'ietf.submit.views.upload_submission' %}{% endif %}{% if d.name.slug == 'draftwgagenda' or d.name.slug == 'revwgagenda' or d.name.slug == 'procsub' or d.name.slug == 'revslug' %}
+Upload using the Meeting Materials Management Tool:
+{{ request.scheme }}://{{ request.get_host }}{% url 'ietf.meeting.views.materials' num=meeting.number %}{% endif %}
+END:VEVENT
+{% endfor %}{% endfor %}END:VCALENDAR{% endautoescape %}

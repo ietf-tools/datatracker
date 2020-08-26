@@ -585,6 +585,16 @@ class MeetingTests(TestCase):
         post_date =  meeting.importantdate_set.get(name=idn).date
         self.assertEqual(pre_date, post_date+datetime.timedelta(days=1))
 
+    def test_important_dates_ical(self):
+        meeting = MeetingFactory(type_id='ietf')
+        meeting.show_important_dates = True
+        meeting.save()
+        populate_important_dates(meeting)
+        url = urlreverse('ietf.meeting.views.important_dates', kwargs={'num': meeting.number, 'output_format': 'ics'})
+        r = self.client.get(url)
+        for d in meeting.importantdate_set.all():
+            self.assertContains(r, d.date.isoformat())
+
     def test_group_ical(self):
         meeting = make_meeting_test_data()
         s1 = Session.objects.filter(meeting=meeting, group__acronym="mars").first()

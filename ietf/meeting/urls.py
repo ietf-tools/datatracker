@@ -104,7 +104,7 @@ type_ietf_only_patterns_id_optional = [
     url(r'^proceedings/overview/$', views.proceedings_overview),
     url(r'^proceedings/progress-report/$', views.proceedings_progress_report),
     url(r'^important-dates/$', views.important_dates),
-
+    url(r'^important-dates.(?P<output_format>ics)$', views.important_dates),
 ]
 
 urlpatterns = [
