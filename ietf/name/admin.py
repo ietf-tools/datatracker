@@ -11,7 +11,7 @@ from ietf.name.models import (
     ReviewRequestStateName, ReviewResultName, ReviewTypeName, RoleName, RoomResourceName,
     SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName, TopicAudienceName,
     DocUrlTagName, ReviewAssignmentStateName, ReviewerQueuePolicyName, TimerangeName,
-    ExtResourceName, ExtResourceTypeName, )
+    ExtResourceName, ExtResourceTypeName, SlideSubmissionStatusName)
 
 
 from ietf.stats.models import CountryAlias
@@ -89,3 +89,4 @@ admin.site.register(TimerangeName, NameAdmin)
 admin.site.register(TopicAudienceName, NameAdmin)
 admin.site.register(DocUrlTagName, NameAdmin)
 admin.site.register(ExtResourceTypeName, NameAdmin)
+admin.site.register(SlideSubmissionStatusName, NameAdmin)

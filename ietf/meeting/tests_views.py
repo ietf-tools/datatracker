@@ -2788,6 +2788,7 @@ class MaterialsTests(TestCase):
     def test_disapprove_proposed_slides(self):
         submission = SlideSubmissionFactory()
         submission.session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 1)
         chair = RoleFactory(group=submission.session.group,name_id='chair').person
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, url)
@@ -2795,7 +2796,11 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code,200)
         r = self.client.post(url,dict(title='some title',disapprove="disapprove"))
         self.assertEqual(r.status_code,302)
-        self.assertEqual(SlideSubmission.objects.count(), 0)
+        self.assertEqual(SlideSubmission.objects.filter(status__slug = 'rejected').count(), 1)
+        self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 0)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "These slides have already been  rejected")
 
     def test_approve_proposed_slides(self):
         submission = SlideSubmissionFactory()
@@ -2804,13 +2809,22 @@ class MaterialsTests(TestCase):
         chair = RoleFactory(group=submission.session.group,name_id='chair').person
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, url)
+        self.assertEqual(submission.status_id, 'pending')
+        self.assertIsNone(submission.doc)
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         r = self.client.post(url,dict(title='different title',approve='approve'))
         self.assertEqual(r.status_code,302)
-        self.assertEqual(SlideSubmission.objects.count(), 0)
+        self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 0)
+        self.assertEqual(SlideSubmission.objects.filter(status__slug = 'approved').count(), 1)
+        submission = SlideSubmission.objects.get(id = submission.id)
+        self.assertEqual(submission.status_id, 'approved')
+        self.assertIsNotNone(submission.doc)
         self.assertEqual(session.sessionpresentation_set.count(),1)
         self.assertEqual(session.sessionpresentation_set.first().document.title,'different title')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "These slides have already been  approved")
 
     def test_approve_proposed_slides_multisession_apply_one(self):
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
@@ -2881,7 +2895,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.client.logout()       
 
-        (first_submission, second_submission) = SlideSubmission.objects.filter(session=session).order_by('id')
+        (first_submission, second_submission) = SlideSubmission.objects.filter(session=session, status__slug = 'pending').order_by('id')
 
         approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':second_submission.pk,'num':second_submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, approve_url)
@@ -2893,7 +2907,8 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code,302)
         self.client.logout()
 
-        self.assertEqual(SlideSubmission.objects.count(),0)
+        self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(),0)
+        self.assertEqual(SlideSubmission.objects.filter(status__slug = 'rejected').count(),1)
         self.assertEqual(session.sessionpresentation_set.first().document.rev,'01')
         path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
         filename = os.path.join(path,session.sessionpresentation_set.first().document.name+'-01.txt')

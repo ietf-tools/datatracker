@@ -12079,6 +12079,36 @@
   },
   {
     "fields": {
+      "desc": "Approved",
+      "name": "approved",
+      "order": 1,
+      "used": true
+    },
+    "model": "name.slidesubmissionstatusname",
+    "pk": "approved"
+  },
+  {
+    "fields": {
+      "desc": "Pending",
+      "name": "pending",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.slidesubmissionstatusname",
+    "pk": "pending"
+  },
+  {
+    "fields": {
+      "desc": "Rejected",
+      "name": "rejected",
+      "order": 2,
+      "used": true
+    },
+    "model": "name.slidesubmissionstatusname",
+    "pk": "rejected"
+  },
+  {
+    "fields": {
       "desc": "",
       "name": "Best Current Practice",
       "order": 0,
@@ -14905,7 +14935,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2020-08-12T00:12:54.984",
+      "time": "2020-07-23T00:12:27.508",
       "used": true,
       "version": "xym 0.4.8"
     },
@@ -14916,7 +14946,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2020-08-12T00:12:56.359",
+      "time": "2020-07-23T00:12:28.886",
       "used": true,
       "version": "pyang 2.3.2"
     },
@@ -14927,7 +14957,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2020-08-12T00:12:56.632",
+      "time": "2020-07-23T00:12:29.140",
       "used": true,
       "version": "yanglint SO 1.6.7"
     },
@@ -14938,7 +14968,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2020-08-12T00:12:58.366",
+      "time": "2020-07-23T00:12:30.892",
       "used": true,
       "version": "xml2rfc 2.47.0"
     },

@@ -130,3 +130,5 @@ class ExtResourceTypeName(NameModel):
 class ExtResourceName(NameModel):
     """GitHub Repository URL, GitHub Username, ..."""
     type = ForeignKey(ExtResourceTypeName)
+class SlideSubmissionStatusName(NameModel):
+    "Pending, Accepted, Rejected"

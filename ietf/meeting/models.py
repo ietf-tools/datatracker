@@ -29,7 +29,7 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
-from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName, ImportantDateName, TimerangeName
+from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName, ImportantDateName, TimerangeName, SlideSubmissionStatusName
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
@@ -1277,6 +1277,8 @@ class SlideSubmission(models.Model):
     filename = models.CharField(max_length=255)
     apply_to_all = models.BooleanField(default=False)
     submitter = ForeignKey(Person)
+    status      = ForeignKey(SlideSubmissionStatusName, null=True, default='pending', on_delete=models.SET_NULL)
+    doc         = ForeignKey(Document, null=True, on_delete=models.SET_NULL)
 
     def staged_filepath(self):
         return os.path.join(settings.SLIDE_STAGING_PATH , self.filename)

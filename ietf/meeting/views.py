@@ -25,7 +25,7 @@ from wsgiref.handlers import format_date_time
 
 from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound, Http404
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -79,6 +79,7 @@ from ietf.meeting.utils import current_session_status
 from ietf.meeting.utils import data_for_meetings_overview
 from ietf.meeting.utils import preprocess_constraints_for_meeting_schedule_editor
 from ietf.message.utils import infer_message
+from ietf.name.models import SlideSubmissionStatusName
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
     create_recording)
@@ -1541,9 +1542,9 @@ def session_details(request, num, acronym):
     pending_suggestions = None
     if request.user.is_authenticated:
         if can_manage:
-            pending_suggestions = session.slidesubmission_set.all()
+            pending_suggestions = session.slidesubmission_set.filter(status__slug='pending')
         else:
-            pending_suggestions = session.slidesubmission_set.filter(submitter=request.user.person)
+            pending_suggestions = session.slidesubmission_set.filter(status__slug='pending', submitter=request.user.person)
 
     return render(request, "meeting/session_details.html",
                   { 'scheduled_sessions':scheduled_sessions ,
@@ -3146,13 +3147,16 @@ def approve_proposed_slides(request, slidesubmission_id, num):
     name, _ = os.path.splitext(submission.filename)
     name = name[:name.rfind('-ss')]
     existing_doc = Document.objects.filter(name=name).first()
-    if request.method == 'POST':
+    if request.method == 'POST' and submission.status.slug == 'pending':
         form = ApproveSlidesForm(show_apply_to_all_checkbox, request.POST)
         if form.is_valid():
             apply_to_all = submission.session.type_id == 'regular'
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
             if request.POST.get('approve'):
+                # Ensure that we have a file to approve.  The system gets cranky otherwise.
+                if submission.filename is None or submission.filename == '' or not os.path.isfile(submission.staged_filepath()):
+                    return HttpResponseNotFound("The slides you attempted to approve could not be found.  Please disapprove and delete them instead.")
                 title = form.cleaned_data['title']
                 if existing_doc:
                    doc = Document.objects.get(name=name)
@@ -3192,15 +3196,29 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 os.rename(submission.staged_filepath(), os.path.join(path, target_filename))
                 post_process(doc)
                 acronym = submission.session.group.acronym
-                submission.delete()
+                submission.status = SlideSubmissionStatusName.objects.get(slug='approved')
+                submission.doc = doc
+                submission.save()
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=acronym)
             elif request.POST.get('disapprove'):
-                os.unlink(submission.staged_filepath())
+                # Errors in processing a submit request sometimes result
+                # in a SlideSubmission object without a file.  Handle
+                # this case and keep processing the 'disapprove' even if
+                # the filename doesn't exist.
+                try:
+                    if submission.filename != None and submission.filename != '':
+                        os.unlink(submission.staged_filepath())
+                except (FileNotFoundError, IsADirectoryError):
+                    pass
                 acronym = submission.session.group.acronym
-                submission.delete()
+                submission.status = SlideSubmissionStatusName.objects.get(slug='rejected')
+                submission.save()
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=acronym)
             else:
                 pass
+    elif not submission.status.slug == 'pending':
+        return render(request, "meeting/previously_approved_slides.html",
+                      {'submission': submission })
     else:
         initial = {
             'title': submission.title,
