@@ -890,6 +890,7 @@ def document_bibxml(request, name, rev=None):
 
     return render(request, "doc/bibxml.xml",
                               dict(
+                                  name=name,
                                   doc=doc,
                                   doc_bibtype='I-D',
                                ),

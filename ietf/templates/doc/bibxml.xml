@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<reference anchor="{{doc_bibtype}}.{{doc.name|slice:"6:"}}">
+<reference anchor="{{doc_bibtype}}.{{name|slice:"6:"}}">
    <front>
       <title>{{doc.title}}</title>{% if doc.submission %}{% for author in doc.submission.authors %}
       <author fullname="{{ author.name }}">
