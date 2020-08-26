@@ -358,6 +358,10 @@ pre {
   font-family: "PT Mono", monospace, "Courier";
 }
 
+#templateform textarea {
+  font-family: "PT Mono", monospace, "Courier";
+}
+
 #ipr-details dl.dl-horizontal dt {
   white-space: normal;
 }
@@ -1305,3 +1309,4 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
     margin-left: auto;
   }
 }
+        
