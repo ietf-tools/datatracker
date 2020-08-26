@@ -3,6 +3,7 @@
 
 
 import json
+import html
 import os
 import shutil
 import sys
@@ -229,7 +230,7 @@ class CustomApiTests(TestCase):
             text = file.read()
             for p in people:
                 self.assertIn(p['name'], text)
-                self.assertIn(p['affiliation'], text)
+                self.assertIn(html.escape(p['affiliation']), text)
 
     def test_person_export(self):
         person = PersonFactory()
