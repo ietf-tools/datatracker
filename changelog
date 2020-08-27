@@ -1,3 +1,63 @@
+ietfdb (7.15.0) ietf; urgency=medium
+
+  **IETF Agenda page improvements for small devices, bugfixes**
+
+  * Updated the instructions for how to expand a vocabulary v3 file to 
+    standalone (by using --expand with xml2rfc)
+
+  * Updated the IETF meeting agenda rendering so as to show the session links
+    to materials, meetecho, jabber, notepad etc. also for narrov-screen
+    devices such as phones, based on code from lars@eggert.org.  Also moved
+    some template code doing markup tweaking of the room name to a TimeSlot
+    method, and factored out session start- and end-time display, repeated in
+    4 locations, to a template snipped.  Added a new CSS class which provides
+    less padding at the sides of pages on narrow devices.
+
+  * Merged in [18326] from lars@netapp.com:
+    Updated bootstrap to 3.4.1 
+
+  * Merged in [18357] from rjsparks@nostrum.com:
+    Show a link to a drafts group page on the draft info page for all group
+    types when the draft has a group. Fixes #3061.  
+
+  * Added a patch for tastypie under django 2.2, to catch field error 
+    exceptions that were handled differently under earlier django versions.
+
+  * Changed the maybe_patch_libraries() check action to emit 'patched now, 
+    restart needed' errors in test or development, but not in production, where 
+    we don't care if the patches were applied earlier or just now.
+
+  * Changed the week_view() function to calculate a 
+    first_regular_session_time also when the meeting has not been populated 
+    with any sessions, by using the meeting.date as a proxy value.
+
+  * Fixed an issue that could prevent error messages from docutils from 
+    propagating to the end user when editing RST templates.
+
+  * Made a template filter more robust when given unexpected input.
+
+  * Fixed an issue with the generated tag and target URL for versioned bibxml
+    entries under /doc/bibxml3 for drafts that have been published as RFC.
+
+  * Added html.escape() in a test case in order to correctly handle 
+    affiliation names with ampersands.
+
+  * Merged in [18371] from mark@painless-security.com:
+    Track slide submissions even after acceptance or rejection.
+    Fixes issue #2835.   
+
+  * Fixed an issue with the target URL for versioned bibxml entries under 
+    /doc/bibxml3 for drafts that have been published as RFC.
+
+  * Changed the nomcom template editing forms to use a monospaced font for 
+    the template text (recommended for RST templates).
+
+  * Added a link to the group page from the year label on the nomcom index 
+    page.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Aug 2020 21:38:04 +0000
+
+
 ietfdb (7.14.1) ietf; urgency=medium
 
   **Code cleanup**
