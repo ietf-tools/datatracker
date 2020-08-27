@@ -25,12 +25,6 @@ from ietf.utils.fields import DatepickerDateField
 from ietf.utils.text import dict_to_text
 
 # ----------------------------------------------------------------
-# Globals
-# ----------------------------------------------------------------
-STATE_CHOICES = [ (x.slug, x.name) for x in IprDisclosureStateName.objects.all() ]
-STATE_CHOICES.insert(0,('all','All States'))
-
-# ----------------------------------------------------------------
 # Base Classes
 # ----------------------------------------------------------------
 class CustomModelChoiceField(forms.ModelChoiceField):
@@ -418,7 +412,7 @@ class ThirdPartyIprDisclosureForm(IprDisclosureFormBase):
         return obj
         
 class SearchForm(forms.Form):
-    state =    forms.MultipleChoiceField(choices=STATE_CHOICES,widget=forms.CheckboxSelectMultiple,required=False)
+    state =    forms.MultipleChoiceField(choices=[], widget=forms.CheckboxSelectMultiple,required=False)
     draft =    forms.CharField(label="Draft name", max_length=128, required=False)
     rfc =      forms.IntegerField(label="RFC number", required=False)
     holder =   forms.CharField(label="Name of patent owner/applicant", max_length=128,required=False)
@@ -426,6 +420,10 @@ class SearchForm(forms.Form):
     group =    GroupModelChoiceField(label="Working group",queryset=Group.objects.filter(type='wg').order_by('acronym'),required=False, empty_label="(Select WG)")
     doctitle = forms.CharField(label="Words in document title", max_length=128,required=False)
     iprtitle = forms.CharField(label="Words in IPR disclosure title", max_length=128,required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['state'].choices = [('all','All States')] + [(n.pk, n.name) for n in IprDisclosureStateName.objects.all()]
 
 class StateForm(forms.Form):
     state = forms.ModelChoiceField(queryset=IprDisclosureStateName.objects,label="New State",empty_label=None)
