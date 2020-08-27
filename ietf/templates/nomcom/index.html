@@ -25,7 +25,7 @@
     <tbody>
       {% for nomcom in nomcom_list|dictsortreversed:"label" %}
         <tr>
-          <td>{{ nomcom.label }}</td>
+          <td><a href="{% url 'ietf.group.views.group_home' acronym=nomcom.acronym  %}">{{ nomcom.label }}</a></td>
           <td >
 	    {% with nomcom.get_chair as role %}
 	      <a href="mailto:{{role.person.email_address}}">{{role.person}}</a>
