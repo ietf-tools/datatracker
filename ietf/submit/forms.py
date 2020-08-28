@@ -64,6 +64,7 @@ class SubmissionBaseUploadForm(forms.Form):
         self.parsed_draft = None
         self.file_types = []
         self.file_info = {}             # indexed by file field name, e.g., 'txt', 'xml', ...
+        self.xml_version = None
         # No code currently (14 Sep 2017) uses this class directly; it is
         # only used through its subclasses.  The two assignments below are
         # set to trigger an exception if it is used directly only to make
@@ -182,7 +183,7 @@ class SubmissionBaseUploadForm(forms.Form):
                     parser = xml2rfc.XmlRfcParser(str(tfn), quiet=True)
                     self.xmltree = parser.parse(remove_comments=False, quiet=True)
                     self.xmlroot = self.xmltree.getroot()
-                    xml_version = self.xmlroot.get('version', '2')
+                    self.xml_version = self.xmlroot.get('version', '2')
 
                     draftname = self.xmlroot.attrib.get('docName')
                     if draftname is None:
@@ -224,7 +225,7 @@ class SubmissionBaseUploadForm(forms.Form):
                     # --- Prep the xml ---
                     file_name['xml'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (self.filename, self.revision, ext))
                     try:
-                        if xml_version == '3':
+                        if self.xml_version == '3':
                             prep = xml2rfc.PrepToolWriter(self.xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
                             prep.options.accept_prepped = True
                             self.xmltree.tree = prep.prep()
@@ -238,7 +239,7 @@ class SubmissionBaseUploadForm(forms.Form):
                     if not ('txt' in self.cleaned_data and self.cleaned_data['txt']):
                         file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (self.filename, self.revision))
                         try:
-                            if xml_version != '3':
+                            if self.xml_version != '3':
                                 self.xmltree = parser.parse(remove_comments=True, quiet=True)
                                 self.xmlroot = self.xmltree.getroot()
                                 pagedwriter = xml2rfc.PaginatedTextRfcWriter(self.xmltree, quiet=True)
@@ -252,14 +253,14 @@ class SubmissionBaseUploadForm(forms.Form):
                                         xml2rfc.__version__,
                                         os.path.basename(file_name['txt']),
                                         os.path.basename(file_name['xml']),
-                                        xml_version))
+                                        self.xml_version))
                         except Exception as e:
                             msgs = format_messages('txt', e, xml2rfc.log)
                             log.log('\n'.join(msgs))
                             self.add_error('xml', msgs)
 
                     # --- Convert to html ---
-                    if xml_version == '3':
+                    if self.xml_version == '3':
                         try:
                             file_name['html'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.html' % (self.filename, self.revision))
                             writer = xml2rfc.HtmlWriter(self.xmltree, quiet=True)
@@ -270,12 +271,12 @@ class SubmissionBaseUploadForm(forms.Form):
                                     xml2rfc.__version__,
                                     os.path.basename(file_name['html']),
                                     os.path.basename(file_name['xml']),
-                                    xml_version))
+                                    self.xml_version))
                         except Exception as e:
                             msgs = format_messages('html', e, xml2rfc.log)
                             self.add_error('xml', msgs)
 
-                    if xml_version == '2':
+                    if self.xml_version == '2':
                         ok, errors = self.xmltree.validate()
                     else:
                         ok, errors = True, ''

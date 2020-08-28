@@ -63,6 +63,7 @@ class SubmissionResource(ModelResource):
             "document_date": ALL,
             "submission_date": ALL,
             "submitter": ALL,
+            "xml_version": ALL,
             "state": ALL_WITH_RELATIONS,
             "group": ALL_WITH_RELATIONS,
             "draft": ALL_WITH_RELATIONS,

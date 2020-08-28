@@ -357,6 +357,8 @@ class SubmitTests(TestCase):
         self.assertIn(sug_replaced_alias.name, get_payload_text(outbox[-1]))
         self.assertIn("ames-chairs@", outbox[-1]["To"].lower())
         self.assertIn("mars-chairs@", outbox[-1]["To"].lower())
+        # Check submission settings
+        self.assertEqual(draft.submission().xml_version, "3" if 'xml' in formats else None)
 
         # fetch the document page
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs={'name':name})
@@ -559,7 +561,8 @@ class SubmitTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
         self.assertContains(r, draft.title)
-
+        # Check submission settings
+        self.assertEqual(draft.submission().xml_version, "3" if 'xml' in formats else None)
 
     def test_submit_existing_txt(self):
         self.submit_existing(["txt"])
@@ -681,6 +684,9 @@ class SubmitTests(TestCase):
         new_revision = draft.latest_event()
         self.assertEqual(new_revision.type, "new_revision")
         self.assertEqual(new_revision.by.name, author.name)
+
+        # Check submission settings
+        self.assertEqual(draft.submission().xml_version, "3" if 'xml' in formats else None)
 
     def test_submit_new_logged_in_txt(self):
         self.submit_new_individual_logged_in(["txt"])

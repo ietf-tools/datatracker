@@ -769,6 +769,7 @@ def fill_in_submission(form, submission, authors, abstract, file_size):
     submission.first_two_pages = ''.join(form.parsed_draft.pages[:2])
     submission.file_size = file_size
     submission.file_types = ','.join(form.file_types)
+    submission.xml_version = form.xml_version
     submission.submission_date = datetime.date.today()
     submission.document_date = form.parsed_draft.get_creation_date()
     submission.replaces = ""
