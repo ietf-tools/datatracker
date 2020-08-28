@@ -225,12 +225,12 @@ def state_alert_badge(doc):
     if doc.type_id != 'draft':
         return ''
 
-    iesg_state = doc.get_state('draft-iesg')
-    if iesg_state.slug != 'rfcqueue':
+    iesg_state = doc.get_state_slug('draft-iesg')
+    if iesg_state != 'rfcqueue':
         return ''
 
-    rfced_state = doc.get_state('draft-rfceditor')
-    if rfced_state.slug == 'auth48':
+    rfced_state = doc.get_state_slug('draft-rfceditor')
+    if rfced_state == 'auth48':
         return mark_safe('<span class="label label-info" title="AUTH48">AUTH48</span>')
 
     return ''
