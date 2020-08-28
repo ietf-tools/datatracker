@@ -7,7 +7,7 @@ from collections import Counter
 from urllib.parse import urlparse
 
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from ietf.doc.models import DocExtResource
 from ietf.group.models import GroupExtResource
@@ -20,11 +20,13 @@ from ietf.person.models import PersonExtResource
 class Command(BaseCommand):
     help = ('Locate information about github repositories to backup')
 
+    def add_arguments(self, parser):
+        parser.add_argument('--verbose', dest='verbose', action='store_true', help='Show counts of types of repositories')
+
     def handle(self, *args, **options):
 
-        if not settings.GITHUB_BACKUP_API_KEY:
-            # TODO: complain 
-            return
+        if not (hasattr(settings,'GITHUB_BACKUP_API_KEY') and settings.GITHUB_BACKUP_API_KEY):
+            raise CommandError("ERROR: can't find GITHUB_BACKUP_API_KEY") # TODO: at >= py3.1, use returncode
 
         github = github3.login(token = settings.GITHUB_BACKUP_API_KEY)
         owners = dict()
@@ -59,9 +61,14 @@ class Command(BaseCommand):
                             repos.add( (owner, repo.name) )
 
         owner_types = Counter([owners[owner].type for owner in owners])
-        print ("Owners:")
-        for key in owner_types:
-            print("    ",key,':',owner_types[key])
-        print ("Repositories:", len(repos))
-        for repo in sorted(repos):
-            print("    https://github.com/%s/%s" % repo )
+        if options['verbose']:
+            self.stdout.write("Owners:")
+            for key in owner_types:
+                self.stdout.write("    %s: %s"%(key,owner_types[key]))
+            self.stdout.write("Repositories: %d" % len(repos))
+            for repo in sorted(repos):
+                self.stdout.write("    https://github.com/%s/%s" % repo )
+        else:
+            for repo in sorted(repos):
+                self.stdout.write("%s/%s" % repo )
+
