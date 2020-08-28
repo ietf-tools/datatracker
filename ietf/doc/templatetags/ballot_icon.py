@@ -220,7 +220,7 @@ def state_age_colored(doc):
         return ""
 
 @register.filter
-def state_alert_badge(doc):
+def auth48_alert_badge(doc):
     """Return alert badge, if any, for a document"""
     if doc.type_id != 'draft':
         return ''

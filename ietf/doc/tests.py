@@ -261,7 +261,7 @@ class SearchTests(TestCase):
                                        kwargs=dict(name=ad.full_name_as_key())))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
-        self.assertContains(r, 'title="AUTH48"')  # title attribute of AUTH48 badge in state_alert_badge filter
+        self.assertContains(r, 'title="AUTH48"')  # title attribute of AUTH48 badge in auth48_alert_badge filter
 
     def test_drafts_in_last_call(self):
         draft = IndividualDraftFactory(pages=1)
