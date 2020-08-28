@@ -435,26 +435,12 @@ def new_meeting_schedule(request, num, owner=None, name=None):
             new_schedule.save()
 
             if schedule:
-                # keep a mapping so that extendedfrom references can be chased
-                old_pk_to_new_pk = {}
-                extendedfroms = {}
                 for assignment in schedule.assignments.all():
-                    extendedfrom_id = assignment.extendedfrom_id
-
                     # clone by resetting primary key
-                    old_pk = assignment.pk
                     assignment.pk = None
                     assignment.schedule = new_schedule
                     assignment.extendedfrom = None
                     assignment.save()
-
-                    old_pk_to_new_pk[old_pk] = assignment.pk
-                    if extendedfrom_id is not None:
-                        extendedfroms[assignment.pk] = extendedfrom_id
-
-                for pk, extendedfrom_id in extendedfroms.values():
-                    if extendedfrom_id in old_pk_to_new_pk:
-                        SchedTimeSessAssignment.objects.filter(pk=pk).update(extendedfrom=old_pk_to_new_pk[extendedfrom_id])
 
             # now redirect to this new schedule
             return redirect(edit_meeting_schedule, meeting.number, new_schedule.owner_email(), new_schedule.name)
