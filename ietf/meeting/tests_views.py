@@ -1931,7 +1931,6 @@ class InterimTests(TestCase):
         make_meeting_test_data(create_interims=True)
         url = urlreverse("ietf.meeting.views.upcoming")
         today = datetime.date.today()
-        add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first()
         mars_interim = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='mars')).filter(current_status='sched').first().meeting
         ames_interim = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='ames')).filter(current_status='canceled').first().meeting
         r = self.client.get(url)
@@ -1944,19 +1943,28 @@ class InterimTests(TestCase):
         self.check_interim_tabs(url)
 
     def test_upcoming_ical(self):
-        make_meeting_test_data(create_interims=True)
+        meeting = make_meeting_test_data(create_interims=True)
+        populate_important_dates(meeting)
+
         url = urlreverse("ietf.meeting.views.upcoming_ical")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+
+        today = datetime.date.today()
+        mars_interim = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='mars')).filter(current_status='sched').first().meeting
+        ames_interim = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='ames')).filter(current_status='canceled').first().meeting
+        self.assertContains(r, mars_interim.number)
+        self.assertContains(r, ames_interim.number)
+        self.assertContains(r, 'IETF 72')
         self.assertEqual(r.get('Content-Type'), "text/calendar")
-        self.assertEqual(r.content.count(b'UID'), 7)
+        self.assertEqual(r.content.count(b'UID'), 3 + meeting.importantdate_set.count())
+
         # check filtered output
         url = url + '?filters=mars'
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.get('Content-Type'), "text/calendar")
-        # print r.content
-        self.assertEqual(r.content.count(b'UID'), 2)
+        self.assertEqual(r.content.count(b'UID'), 2 + meeting.importantdate_set.count())
 
 
     def test_upcoming_json(self):

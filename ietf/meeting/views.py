@@ -81,6 +81,7 @@ from ietf.meeting.utils import data_for_meetings_overview
 from ietf.meeting.utils import preprocess_constraints_for_meeting_schedule_editor
 from ietf.meeting.utils import diff_meeting_schedules, prefetch_schedule_diff_objects
 from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments
+from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.message.utils import infer_message
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
@@ -3246,7 +3247,7 @@ def upcoming_ical(request):
 
     assignments = list(SchedTimeSessAssignment.objects.filter(
         schedule__in=[m.schedule_id for m in meetings] + [m.schedule.base_id for m in meetings if m.schedule],
-        session__in=[s.pk for m in meetings for s in m.sessions],
+        session__in=[s.pk for m in meetings for s in m.sessions if m.type_id != 'ietf'],
         timeslot__time__gte=today,
     ).order_by(
         'schedule__meeting__date', 'session__type', 'timeslot__time'
@@ -3270,17 +3271,16 @@ def upcoming_ical(request):
             a.session = sessions.get(a.session_id) or a.session
             a.session.ical_status = ical_session_status(a)
 
-    # gather vtimezones
-    vtimezones = set()
-    for meeting in meetings:
-        if meeting.vtimezone():
-            vtimezones.add(meeting.vtimezone())
-    vtimezones = ''.join(vtimezones)
+    # handle IETFs separately
+    ietfs = [m for m in meetings if m.type_id == 'ietf']
+    preprocess_meeting_important_dates(ietfs)
 
     # icalendar response file should have '\r\n' line endings per RFC5545
     response = render_to_string('meeting/upcoming.ics', {
-        'vtimezones': vtimezones,
-        'assignments': assignments})
+        'vtimezones': ''.join({meeting.vtimezone() for meeting in meetings if meeting.vtimezone()}),
+        'assignments': assignments,
+        'ietfs': ietfs,
+    }, request=request)
     response = re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", response)
 
     response = HttpResponse(response, content_type='text/calendar')
@@ -3603,11 +3603,7 @@ def important_dates(request, num=None, output_format=None):
             meetings.append(future_meeting)
 
     if output_format == 'ics':
-        for m in meetings:
-            m.cached_updated = m.updated()
-            m.important_dates = m.importantdate_set.prefetch_related("name")
-            for d in m.important_dates:
-                d.midnight_cutoff = "UTC 23:59" in d.name.name
+        preprocess_meeting_important_dates(meetings)
 
         ics = render_to_string('meeting/important_dates.ics', {
             'meetings': meetings,

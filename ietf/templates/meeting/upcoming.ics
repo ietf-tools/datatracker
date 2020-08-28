@@ -8,8 +8,8 @@ SUMMARY:{% if item.session.name %}{{item.session.name|ics_esc}}{% else %}{{item.
 {% if item.schedule.meeting.city %}LOCATION:{{item.schedule.meeting.city}},{{item.schedule.meeting.country}}
 {% endif %}STATUS:{{item.session.ical_status}}
 CLASS:PUBLIC
-DTSTART{% if item.schedule.meeting.time_zone %};TZID="{{item.schedule.meeting.time_zone}}"{%endif%}:{{ item.timeslot.time|date:"Ymd" }}T{{item.timeslot.time|date:"Hi"}}00
-DTEND{% if item.schedule.meeting.time_zone %};TZID="{{item.schedule.meeting.time_zone}}"{%endif%}:{{ item.timeslot.end_time|date:"Ymd" }}T{{item.timeslot.end_time|date:"Hi"}}00
+DTSTART{% if item.schedule.meeting.time_zone and item.schedule.meeting.time_zone != 'UTC' %};TZID={{ item.schedule.meeting.time_zone|ics_esc }}{%endif%}:{{ item.timeslot.time|date:"Ymd" }}T{{item.timeslot.time|date:"Hi"}}00
+DTEND{% if item.schedule.meeting.time_zone and item.schedule.meeting.time_zone != 'UTC' %};TZID={{ item.schedule.meeting.time_zone|ics_esc }}{%endif%}:{{ item.timeslot.end_time|date:"Ymd" }}T{{item.timeslot.end_time|date:"Hi"}}00
 DTSTAMP:{{ item.timeslot.modified|date:"Ymd" }}T{{ item.timeslot.modified|date:"His" }}Z
 {% if item.session.agenda %}URL:{{item.session.agenda.get_href}}
 DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
@@ -18,4 +18,14 @@ DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
   ({{material.title|ics_esc}}){% endif %}:
   {{material.get_href}}\n{% endfor %}
 {% endif %}END:VEVENT
-{% endfor %}END:VCALENDAR{% endautoescape %}
+{% endfor %}{% for meeting in ietfs %}BEGIN:VEVENT
+UID:ietf-{{ meeting.number }}
+SUMMARY:IETF {{ meeting.number }}{% if meeting.city %}
+LOCATION:{{ meeting.city }},{{ meeting.country }}{% endif %}
+CLASS:PUBLIC
+DTSTART;VALUE=DATE{% if meeting.time_zone and meeting.time_zone != 'UTC' %};TZID={{ meeting.time_zone|ics_esc }}{% endif %}:{{ meeting.date|date:"Ymd" }}
+DTEND;VALUE=DATE{% if meeting.time_zone and meeting.time_zone != 'UTC' %};TZID={{ meeting.time_zone|ics_esc }}{% endif %}:{{ meeting.end_date|date:"Ymd" }}
+DTSTAMP:{{ meeting.cached_updated|date:"Ymd" }}T{{ meeting.cached_updated|date:"His" }}Z
+URL:{{ request.scheme }}://{{ request.get_host }}{% url 'ietf.meeting.views.agenda' num=meeting.number %}
+END:VEVENT
+{% include "meeting/important_dates_for_meeting.ics" %}{% endfor %}END:VCALENDAR{% endautoescape %}

@@ -560,3 +560,11 @@ def swap_meeting_schedule_timeslot_assignments(schedule, source_timeslots, targe
             if not swapped:
                 for a in lts_assignments:
                     a.delete()
+
+def preprocess_meeting_important_dates(meetings):
+    for m in meetings:
+        m.cached_updated = m.updated()
+        m.important_dates = m.importantdate_set.prefetch_related("name")
+        for d in m.important_dates:
+            d.midnight_cutoff = "UTC 23:59" in d.name.name
+    
