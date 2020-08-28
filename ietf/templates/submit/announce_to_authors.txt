@@ -9,10 +9,11 @@ Title:		{{ submission.title }}
 Document date:	{{ submission.document_date|date:"Y-m-d" }}
 Group:		{{ group }}
 Pages:		{{ submission.pages }}
-URL:            https://www.ietf.org/internet-drafts/{{ submission.name }}-{{ submission.rev }}.txt
-Status:         https://datatracker.ietf.org/doc/{{ submission.name }}/
+URL:            https://www.ietf.org/id/{{ submission.name }}-{{ submission.rev }}.txt
+Status:         https://datatracker.ietf.org/doc/{{ submission.name }}/{% if submission.xml_version == "3" %}
+Html:           https://www.ietf.org/id/{{ submission.name }}-{{ submission.rev }}.html{% else %}
+Htmlized:       https://datatracker.ietf.org/doc/html/{{ submission.name }}{% endif %}
 Htmlized:       https://tools.ietf.org/html/{{ submission.name }}-{{ submission.rev }}
-Htmlized:       https://datatracker.ietf.org/doc/html/{{ submission.name }}
 {% if submission.rev != "00" %}Diff:           {{rfcdiff_base_url}}?url2={{ submission.name }}-{{ submission.rev }}{% endif %}
 
 Abstract:
