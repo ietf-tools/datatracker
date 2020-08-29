@@ -53,7 +53,6 @@ class RSTTemplate(PlainTemplate):
                                       'halt_level': 2,
                                   })
         except SystemMessage as e:
-            e.message = e.message.replace('<string>:', 'line ')
             args = list(e.args)
             args[0] = args[0].replace('<string>:', 'line ')
             e.args = tuple(args)
