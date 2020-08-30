@@ -221,11 +221,17 @@ class CustomApiTests(TestCase):
                                     'item': '1', 'bluesheet': bluesheet, })
         self.assertContains(r, "Done", status_code=200)
 
+        # Submit again, with slightly different content, as an updated version
+        people[1]['affiliation'] = 'Bolaget AB'
+        bluesheet = json.dumps(people)
         r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
                                     'item': '1', 'bluesheet': bluesheet, })
         self.assertContains(r, "Done", status_code=200)
 
         bluesheet = session.sessionpresentation_set.filter(document__type__slug='bluesheets').first().document
+        # We've submitted an update; check that the rev is right
+        self.assertEqual(bluesheet.rev, '01')
+        # Check the content
         with open(bluesheet.get_file_name()) as file:
             text = file.read()
             for p in people:
