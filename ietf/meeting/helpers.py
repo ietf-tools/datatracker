@@ -9,7 +9,7 @@ import re
 from tempfile import mkstemp
 
 from django.http import HttpRequest, Http404
-from django.db.models import Max, Q, Prefetch
+from django.db.models import F, Max, Q, Prefetch
 from django.conf import settings
 from django.core.cache import cache
 from django.urls import reverse
@@ -171,13 +171,17 @@ def get_schedule_by_name(meeting, owner, name):
         return meeting.schedule_set.filter(name = name).first()
 
 def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefetches=()):
-    assignments_queryset = assignments_queryset.select_related(
-        "timeslot", "timeslot__location", "timeslot__type",
-        ).prefetch_related(
+    assignments_queryset = assignments_queryset.prefetch_related(
+            'timeslot', 'timeslot__type', 'timeslot__meeting',
+            'timeslot__location', 'timeslot__location__floorplan', 'timeslot__location__urlresource_set',
             Prefetch(
                 "session",
                 queryset=add_event_info_to_session_qs(Session.objects.all().prefetch_related(
                     'group', 'group__charter', 'group__charter__group',
+                    Prefetch('materials',
+                             queryset=Document.objects.exclude(states__type=F("type"), states__slug='deleted').order_by('sessionpresentation__order').prefetch_related('states'),
+                             to_attr='prefetched_active_materials'
+                    )
                 ))
             ),
             *extra_prefetches
@@ -221,6 +225,12 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
     for a in assignments:
         if a.session and a.session.historic_group and a.session.historic_group.parent_id:
             a.session.historic_group.historic_parent = parent_replacements.get(a.session.historic_group.parent_id)
+
+        for d in a.session.prefetched_active_materials:
+            # make sure these are precomputed with the meeting instead
+            # of having to look it up
+            d.get_href(meeting=meeting)
+            d.get_versionless_href(meeting=meeting)
 
     return assignments
 

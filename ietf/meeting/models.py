@@ -398,14 +398,14 @@ class Room(models.Model):
         return self.functional_name
     # audio stream support
     def audio_stream_url(self):
-        urlresource = self.urlresource_set.filter(name_id='audiostream').first()
-        return urlresource.url if urlresource else None
+        urlresources = [ur for ur in self.urlresource_set.all() if ur.name_id == 'audiostream']
+        return urlresources[0].url if urlresources else None
     def video_stream_url(self):
-        urlresource = self.urlresource_set.filter(name_id__in=['meetecho', ]).first()
-        return urlresource.url if urlresource else None
+        urlresources = [ur for ur in self.urlresource_set.all() if ur.name_id in ['meetecho']]
+        return urlresources[0].url if urlresources else None
     def webex_url(self):
-        urlresource = self.urlresource_set.filter(name_id__in=['webex', ]).first()
-        return urlresource.url if urlresource else None
+        urlresources = [ur for ur in self.urlresource_set.all() if ur.name_id in ['webex']]
+        return urlresources[0].url if urlresources else None
     #
     class Meta:
         ordering = ["-id"]
