@@ -170,13 +170,16 @@ validate_xmpp = XMPPURLValidator()
 def validate_external_resource_value(name, value):
     """ validate a resource value using its name's properties """
 
-    if name.type.slug == 'url':
+    if name.type_id == 'url':
 
         if name.slug in ( 'github_org', 'github_repo' ):
             validate_http_url(value)
-            hostname = urlparse(value).netloc.lower()
+            parsed_url = urlparse(value)
+            hostname = parsed_url.netloc.lower()
             if not any([ hostname.endswith(x) for x in ('github.com','github.io' ) ]):
                 raise ValidationError('URL must be a github url')
+            if name.slug == 'github_org' and len(parsed_url.path.strip('/').split('/'))!=1:
+                raise ValidationError('github path has too many components to be an organization URL')
         elif name.slug == 'jabber_room':
             validate_xmpp(value)
         else:
