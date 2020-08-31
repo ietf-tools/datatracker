@@ -102,9 +102,11 @@ class DocHistoryAdmin(admin.ModelAdmin):
 admin.site.register(DocHistory, DocHistoryAdmin)
 
 class DocAliasAdmin(admin.ModelAdmin):
-#     list_display = ['name', 'document_link']
-#     search_fields = ['name', 'document__name']
+    list_display = ['name', 'targets']
+    search_fields = ['name', 'docs__name']
     raw_id_fields = ['docs']
+    def targets(self, obj):
+        return ', '.join([o.name for o in obj.docs.all()])
 admin.site.register(DocAlias, DocAliasAdmin)
 
 class DocReminderAdmin(admin.ModelAdmin):
