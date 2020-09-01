@@ -27,6 +27,7 @@ django-widget-tweaks>=1.4.2
 docutils>=0.12,!=0.15
 factory-boy>=2.9.0,<3
 Faker>=0.8.8,!=0.8.9,!=0.8.10   # from factory-boy # Faker 0.8.9,0.8.10 sometimes return string names instead of unicode.
+github3.py>=1.2
 hashids>=1.1.0
 html2text>=2019.8.11
 html5lib>=1.0.1
