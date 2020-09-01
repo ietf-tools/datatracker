@@ -120,12 +120,12 @@
 		{% endif %}
 	        <p>Also show special sessions of these groups:</p>
 	        <div class="btn-group btn-group-justified">
-	          <div class="btn-group"><button class="btn btn-default pickviewneg active iepg"> IEPG</button></div>
-	          <div class="btn-group"><button class="btn btn-default pickviewneg active tools"> Tools</button></div>
-	          <div class="btn-group"><button class="btn btn-default pickviewneg active edu"> EDU</button></div>
-	          <div class="btn-group"><button class="btn btn-default pickviewneg active ietf"> IETF</button></div>
-	          <div class="btn-group"><button class="btn btn-default pickviewneg active iesg"> IESG</button></div>
-	          <div class="btn-group"><button class="btn btn-default pickviewneg active iab"> IAB</button></div>
+	          <div class="btn-group"><button class="btn btn-default pickview iepg"> IEPG</button></div>
+	          <div class="btn-group"><button class="btn btn-default pickview tools"> Tools</button></div>
+	          <div class="btn-group"><button class="btn btn-default pickview edu"> EDU</button></div>
+	          <div class="btn-group"><button class="btn btn-default pickview ietf"> IETF</button></div>
+	          <div class="btn-group"><button class="btn btn-default pickview iesg"> IESG</button></div>
+	          <div class="btn-group"><button class="btn btn-default pickview iab"> IAB</button></div>
 	        </div>
 	      </div>
 	    </div>
@@ -362,10 +362,13 @@
    function parse_query_params(qs) {
        var params = {};
        qs = qs.replace(/^\?/, '');
-       $.each(qs.split('&'), function(i, v) {
-           var toks = v.split('=', 2)
-           params[toks[0]] = toks[1].toLowerCase();
-       });
+       if (qs) {
+         var param_strs = qs.split('&');
+         for (var ii = 0; ii < param_strs.length; ii++) {
+             var toks = param_strs[ii].split('=', 2)
+             params[toks[0]] = toks[1] || true;
+         }
+       }
        return params;
    }
    
@@ -374,43 +377,56 @@
        return qparams[filt] ? qparams[filt].split(',') :  [];
    }
 
-   function toggle_visibility() {
-       var qparams = parse_query_params(window.location.search);
-       var show_groups = get_filter_from_qparams(qparams, 'show');
-       var hide_groups = get_filter_from_qparams(qparams, 'hide');
+   function get_filter_params(qparams) {
+       return {
+           show_groups: get_filter_from_qparams(qparams, 'show'),
+           hide_groups: get_filter_from_qparams(qparams, 'hide'),
+           show_types: get_filter_from_qparams(qparams, 'showtypes'),
+           hide_types: get_filter_from_qparams(qparams, 'hidetypes'),
+       };
+   }
 
+   function toggle_visibility(filter_params) {
        // reset UI elements to default state
        $(".pickview").removeClass("active disabled");
        $(".pickviewneg").addClass("active");
 
-       if (show_groups.length || hide_groups.length) {
-           // if groups were selected for filtering, hide all rows that are
-           // hidden by default, show all rows that are shown by default
+       if (filter_params['show_groups'].length || 
+           filter_params['hide_groups'].length || 
+           filter_params['show_types'].length || 
+           filter_params['hide_types'].length
+       ) {
+           // if groups were selected for filtering, hide all rows by default
            $('[id^="row-"]').hide();
-           $.each($(".pickviewneg").text().trim().split(/ +/), function (i, v) {
-               v = v.trim().toLowerCase();
-               $('[id^="row-"]').filter('[id*="-' + v + '"]').show();
-           });
 
            // show the customizer
            $("#customize").collapse("show");
 
            // loop through the has items and change the UI element and row visibilities accordingly
-           $.each(hide_groups, function (i, v) {
-               // this is a "negative" item: when present, hide these rows
-               $('[id^="row-"]').filter('[id*="-' + v + '"]').hide();
-               $(".view." + v).find("button").removeClass("active disabled");
-               $("button.pickviewneg." + v).removeClass("active");
-           });
-           $.each(show_groups, function (i, v) {
-               // this is a regular item: when present, show these rows
+           $.each(filter_params['show_groups'], function (i, v) {
+               // this is a regular item by wg: when present, show these rows
                $('[id^="row-"]').filter('[id*="-' + v + '"]').show();
                $(".view." + v).find("button").addClass("active disabled");
                $("button.pickview." + v).addClass("active");
            });
+           $.each(filter_params['show_types'], function (i, v) {
+               // this is a regular item by type: when present, show these rows
+               $('[id^="row-"]').filter('[timeslot-type*="' + v + '"]').show();
+           });
+           $.each(filter_params['hide_groups'], function (i, v) {
+               // this is a "negative" item by wg: when present, hide these rows
+               $('[id^="row-"]').filter('[id*="-' + v + '"]').hide();
+               $(".view." + v).find("button").removeClass("active disabled");
+               $("button.pickviewneg." + v).removeClass("active");
+           });
+           $.each(filter_params['hide_types'], function (i, v) {
+               // this is a "negative" item by type: when present, hide these rows
+               $('[id^="row-"]').filter('[timeslot-type*="' + v + '"]').hide();
+           });
 
            // show the week view
-           $("#weekview").attr("src", "week-view.html" + window.location.search).removeClass("hidden");
+           update_weekview();
+           $("#weekview").removeClass("hidden");
 
            // show the custom .ics link
            $("#ical-link").attr("href",$("#ical-link").attr("href").split("?")[0]+window.location.search);
@@ -426,16 +442,14 @@
    $(".pickview, .pickviewneg").click(function () {
        // Get clicked item label
        var item = $(this).text().trim().toLowerCase();
-       var qparams = parse_query_params(window.location.search);
-       var show_groups = get_filter_from_qparams(qparams, 'show');
-       var hide_groups = get_filter_from_qparams(qparams, 'hide');
+       var fp = get_filter_params(parse_query_params(window.location.search));
 
        if ($(this).hasClass("pickviewneg")) {
-           toggle_list_item(hide_groups, item);
+           toggle_list_item(fp['hide_groups'], item);
        } else {
-           toggle_list_item(show_groups, item);
+           toggle_list_item(fp['show_groups'], item);
        }
-       update_filters(show_groups, hide_groups);
+       update_filters(fp);
    });
    
    /* Add to list if not present, remove if present */
@@ -448,14 +462,20 @@
        }
    }
 
-   function update_filters(show, hide) {
+   function update_filters(filter_params) {
        var qparams = [];
        var search = '';
-       if (show.length > 0) {
-           qparams.push('show=' + show.join());
+       if (filter_params['show_groups'].length > 0) {
+           qparams.push('show=' + filter_params['show_groups'].join());
        }
-       if (hide.length > 0) {
-           qparams.push('hide=' + hide.join());
+       if (filter_params['hide_groups'].length > 0) {
+           qparams.push('hide=' + filter_params['hide_groups'].join());
+       }
+       if (filter_params['show_types'].length > 0) {
+           qparams.push('showtypes=' + filter_params['show_types'].join());
+       }
+       if (filter_params['hide_types'].length > 0) {
+           qparams.push('hidetypes=' + filter_params['hide_types'].join());
        }
        if (qparams.length > 0) {
            search = '?' + qparams.join('&');
@@ -466,15 +486,32 @@
        if (window.history && window.history.replaceState) {
            // Keep current origin, replace search string, no page reload
            history.replaceState({}, document.title, new_url);
-           toggle_visibility();
+           toggle_visibility(filter_params);
        } else {
            // No window.history.replaceState support, page reload required
            window.location = new_url;
        }
    }
 
+   function update_weekview() {
+       var wv_iframe = document.getElementById('weekview');
+       var wv_window = wv_iframe.contentWindow;
+       var new_url = 'week-view.html' + window.location.search;
+       if (wv_iframe.src && wv_window.history && wv_window.history.replaceState) {
+           wv_window.history.replaceState({}, '', new_url);
+           wv_window.draw_calendar()
+       } else {
+           // ho history.replaceState, page reload required
+           wv_iframe.src = new_url;
+       }
+   }
+
    $(document).ready(function () {
-       toggle_visibility();
+       toggle_visibility(
+               get_filter_params(
+                       parse_query_params(window.location.search)
+               )
+       );
    });
 
    $(".modal").on("show.bs.modal", function () {

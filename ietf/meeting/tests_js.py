@@ -285,10 +285,6 @@ class SlideReorderTests(MeetingTestCase):
 
 @skipIf(skip_selenium, skip_message)
 class AgendaTests(MeetingTestCase):
-    # Groups whose display logic is inverted in agenda.html. These have
-    # toggles with class 'pickviewneg' in the template.
-    PICKVIEWNEG = ['iepg', 'tools', 'edu', 'ietf', 'iesg', 'iab']
-    
     def setUp(self):
         super(AgendaTests, self).setUp()
         self.meeting = make_meeting_test_data()
@@ -377,40 +373,75 @@ class AgendaTests(MeetingTestCase):
         self.assertEqual(result[4], ['item1', 'item3'], 'Removing middle item from list failed')
         self.assertEqual(result[5], ['item1', 'item2'], 'Removing last item from list failed')
 
+    def do_agenda_view_filter_test(self, querystring, visible_groups=()):
+        self.login()
+        self.driver.get(self.absreverse('ietf.meeting.views.agenda') + querystring)
+        self.assert_agenda_item_visibility(visible_groups)
+        weekview_iframe = self.driver.find_element_by_id('weekview')
+        if len(querystring) == 0:
+            self.assertFalse(weekview_iframe.is_displayed(), 'Weekview should be hidden when filters off')
+        else:
+            self.assertTrue(weekview_iframe.is_displayed(), 'Weekview should be visible when filters on')
+            self.driver.switch_to.frame(weekview_iframe)
+            self.assert_weekview_item_visibility(visible_groups)
+            self.driver.switch_to.default_content()
+        
     def test_agenda_view_filter_show_one(self):
         """Filtered agenda view should display only matching rows (one group selected)"""
-        self.login()
-        self.driver.get(self.absreverse('ietf.meeting.views.agenda') + '?show=mars')
-        self.assert_agenda_item_visibility(['mars'] + self.PICKVIEWNEG)  # ames and secretariat not selected
+        self.do_agenda_view_filter_test('?show=mars', ['mars'])
 
     def test_agenda_view_filter_show_two(self):
         """Filtered agenda view should display only matching rows (two groups selected)"""
-        self.login()
-        self.driver.get(self.absreverse('ietf.meeting.views.agenda') + '?show=mars,ames')
-        self.assert_agenda_item_visibility(['mars', 'ames'] + self.PICKVIEWNEG)  # secretariat not selected
+        self.do_agenda_view_filter_test('?show=mars,ames', ['mars', 'ames'])
 
     def test_agenda_view_filter_all(self):
         """Filtered agenda view should display only matching rows (all groups selected)"""
-        self.login()
-        self.driver.get(self.absreverse('ietf.meeting.views.agenda'))
-        self.assert_agenda_item_visibility()
+        self.do_agenda_view_filter_test('', None)  # None means all should be visible
 
     def test_agenda_view_filter_hide(self):
-        self.login()
-        self.driver.get(self.absreverse('ietf.meeting.views.agenda') + '?hide=ietf')
-        self.assert_agenda_item_visibility([g for g in self.PICKVIEWNEG if g != 'ietf'])
+        self.do_agenda_view_filter_test('?hide=ietf', [])
 
     def test_agenda_view_filter_show_and_hide(self):
-        self.login()
-        self.driver.get(self.absreverse('ietf.meeting.views.agenda') + '?show=mars&hide=ietf')
-        self.assert_agenda_item_visibility(
-            ['mars'] + [g for g in self.PICKVIEWNEG if g != 'ietf']
-        )
+        self.do_agenda_view_filter_test('?show=mars&hide=ietf', ['mars'])
 
-    def assert_agenda_item_visibility(self, visible_groups=()):
+    def test_agenda_view_filter_show_and_hide_same_group(self):
+        self.do_agenda_view_filter_test('?show=mars&hide=mars', [])
+
+    def test_agenda_view_filter_showtypes(self):
+        self.do_agenda_view_filter_test('?showtypes=plenary', ['ietf'])  # ietf has a plenary session
+
+    def test_agenda_view_filter_hidetypes(self):
+        self.do_agenda_view_filter_test('?hidetypes=plenary', []) 
+        
+    def test_agenda_view_filter_showtypes_and_hidetypes(self):
+        self.do_agenda_view_filter_test('?showtypes=plenary&hidetypes=regular', ['ietf'])  # ietf has a plenary session
+    
+    def test_agenda_view_filter_showtypes_and_hidetypes_same_type(self):
+        self.do_agenda_view_filter_test('?showtypes=plenary&hidetypes=plenary', [])
+        
+    def test_agenda_view_filter_show_and_showtypes(self):
+        self.do_agenda_view_filter_test('?show=mars&showtypes=plenary', ['mars', 'ietf'])  # ietf has a plenary session
+        
+    def test_agenda_view_filter_show_and_hidetypes(self):
+        self.do_agenda_view_filter_test('?show=ietf,mars&hidetypes=plenary', ['mars'])  # ietf has a plenary session
+        
+    def test_agenda_view_filter_hide_and_hidetypes(self):
+        self.do_agenda_view_filter_test('?hide=ietf,mars&hidetypes=plenary', [])
+        
+    def test_agenda_view_filter_show_hide_and_showtypes(self):
+        self.do_agenda_view_filter_test('?show=mars&hide=ames&showtypes=plenary,regular', ['mars', 'ietf'])  # ietf has plenary session
+        
+    def test_agenda_view_filter_show_hide_and_hidetypes(self):
+        self.do_agenda_view_filter_test('?show=mars,ietf&hide=ames&hidetypes=plenary', ['mars'])  # ietf has plenary session
+        
+    def test_agenda_view_filter_all_params(self):
+        self.do_agenda_view_filter_test('?show=secretariat,ietf&hide=ames&showtypes=regular&hidetypes=plenary',
+                                        ['secretariat', 'mars'])
+        
+    def assert_agenda_item_visibility(self, visible_groups=None):
         """Assert that correct items are visible in current browser window
         
-        If visible_groups is empty (the default), expects all items to be visible.
+        If visible_groups is None (the default), expects all items to be visible.
         """
         for item in self.get_expected_items():
             row_id = self.row_id_for_item(item)
@@ -419,10 +450,32 @@ class AgendaTests(MeetingTestCase):
             except NoSuchElementException:
                 item_row = None
             self.assertIsNotNone(item_row, 'No row for schedule item "%s"' % row_id)
-            if len(visible_groups) == 0 or item.session.group.acronym in visible_groups:
+            if visible_groups is None or item.session.group.acronym in visible_groups:
                 self.assertTrue(item_row.is_displayed(), 'Row for schedule item "%s" is not displayed but should be' % row_id)
             else:
                 self.assertFalse(item_row.is_displayed(), 'Row for schedule item "%s" is displayed but should not be' % row_id)
+
+    def assert_weekview_item_visibility(self, visible_groups=None):
+        for item in self.get_expected_items():
+            if item.session.name:
+                label = item.session.name
+            elif item.timeslot.type_id == 'break':
+                label = item.timeslot.name
+            elif item.session.group:
+                label = item.session.group.name
+            else:
+                label = 'Free Slot'
+
+            try:
+                item_div = self.driver.find_element_by_xpath('//div/span[contains(text(),"%s")]/..' % label)
+            except NoSuchElementException:
+                item_div = None
+
+            if visible_groups is None or item.session.group.acronym in visible_groups:
+                self.assertIsNotNone(item_div, 'No weekview entry for "%s" (%s)' % (label, item.slug()))
+                self.assertTrue(item_div.is_displayed(), 'Entry for "%s (%s)" is not displayed but should be' % (label, item.slug()))
+            else:
+                self.assertIsNone(item_div, 'Unexpected weekview entry for "%s" (%s)' % (label, item.slug()))
 
     def test_agenda_view_group_filter_toggle(self):
         """Clicking a group toggle enables/disables agenda filtering"""
@@ -449,7 +502,7 @@ class AgendaTests(MeetingTestCase):
         group_button.click()
 
         # Check visibility
-        self.assert_agenda_item_visibility([group_acronym] + self.PICKVIEWNEG)
+        self.assert_agenda_item_visibility([group_acronym])
         
         # Click the group button again
         group_button = WebDriverWait(self.driver, 2).until(

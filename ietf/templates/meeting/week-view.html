@@ -107,33 +107,60 @@
       }
     }
 
+
     //===========================================================================
 
-    function is_visible(include) {
+    function parse_query_params(qs) {
+      var params = {};
+      qs = qs.replace(/^\?/, '').toLowerCase();
+      if (qs) {
+        var param_strs = qs.split('&');
+        for (var ii = 0; ii < param_strs.length; ii++) {
+            var toks = param_strs[ii].split('=', 2)
+            params[toks[0]] = toks[1] || true;
+        }
+      }
+      return params;
+    }
+
+    //===========================================================================
+
+    function get_filter_from_qparams(qparams, filt) {
+      return qparams[filt] ? qparams[filt].split(',') :  [];
+    }
+
+    function get_filter_params(qparams) {
+        return {
+          show_groups: get_filter_from_qparams(qparams, 'show'),
+          hide_groups: get_filter_from_qparams(qparams, 'hide'),
+          show_types: get_filter_from_qparams(qparams, 'showtypes'),
+          hide_types: get_filter_from_qparams(qparams, 'hidetypes'),
+        };
+    }
+    //===========================================================================
+
+    function is_visible(query_params) {
+      // Returns a method to filter objects for visibility
+      // Accepts show, hide, showtypes, and hidetypes filters. Also accepts
+      // '@<state>' to show sessions in a particular state (e.g., @bof).
+      // Current types are:
+      //   Session, Other, Break, Plenary
+      var fp = get_filter_params(query_params);
+
       return function (item) {
-        //   "-wgname" will remove a working group from the output.
-        //   "~Type" will add that type to the output.
-        //   "-~Type" will remove that type from the output
-        //   "@bof" will include all BOFs
-        // Current types are:
-        //   Session, Other, Break, Plenary
+        var item_group = (item.group || '').toLowerCase();
+        var item_type = (item.type || '').toLowerCase();
+        var item_area = (item.area || '').toLowerCase();
+        var item_state = (item.state || '').toLowerCase();
 
-        if ("group" in item) {
-          if (include[(item.group).toLowerCase()]) { return true; }
-          if (include["-"+(item.group).toLowerCase()]) { return false; }
+        if ((fp['hide_groups'].indexOf(item_group) >= 0) || 
+                (fp['hide_types'].indexOf(item_type) >= 0)) {
+          return false;
         }
-        if ("state" in item) {
-          if (include["@"+(item.state).toLowerCase()]) { return true; }
-        }
-        if (include["~"+(item.type).toLowerCase()]) { return true; }
-        if (include["-~"+(item.type).toLowerCase()]) { return false; }
-        if ("area" in item) {
-          if (include[(item.area).toLowerCase()]) { return true; }
-        }
-        if (item.type === "Plenary") { return true; }
-        if (item.type === "Other") { return true; }
-
-        return false;
+        return ((fp['show_groups'].indexOf(item_group) >= 0) ||
+                (fp['show_groups'].indexOf(item_area) >= 0) ||
+                (fp['show_types'].indexOf(item_type) >= 0) ||
+                query_params['@'+item_state]);
       }
     }
 
@@ -143,16 +170,23 @@
       var width = document.body.clientWidth;
       var height = document.body.clientHeight;
 
-      var include = {};
-      window.location.hash.replace("#",'').split(',').forEach(function(key){
-        include[(key + "").toLowerCase()] = true;
-      });
+      var visible_items = all_items;
+      var qs = window.location.search;
+      if (qs.length > 1) {
+          visible_items = visible_items.filter(is_visible(parse_query_params(qs)));
+      }
 
-      var visible_items = all_items.filter(is_visible(include));
-
-      var start_day = visible_items[0].day;
+      var start_day;
+      var day_start;
+      if (visible_items.length > 0) {
+          start_day = visible_items[0].day;
+          day_start = visible_items[0].start_time;
+      } else {
+          // fallback in case all items were filtered
+          start_day = all_items[0].day;
+          day_start = all_items[0].start_time;
+      }
       var end_day = start_day;
-      var day_start = visible_items[0].start_time;
       var day_end = 0;
 
       compute_swimlanes(visible_items);
@@ -324,6 +358,11 @@
 
         document.body.appendChild(e);
       });
+
+      // Div to indicate rendering has occurred, for testing purposes.
+      var elt = document.createElement('div');
+      elt.id = 'wv-end';
+      document.body.appendChild(elt);
     }
 
     //===========================================================================

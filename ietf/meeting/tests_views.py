@@ -801,7 +801,7 @@ class MeetingTests(TestCase):
         # ames regular session should be suppressed
         self.do_ical_filter_test(
             meeting,
-            querystring='?show=mars&hide=ames&showtypes=plenary,regular',
+            querystring='?show=ietf&hide=ames&showtypes=regular',
             expected_session_summaries=[
                 'IETF Plenary',
                 'mars - Martian Special Interest Group',
