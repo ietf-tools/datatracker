@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+from collections import defaultdict
 import datetime
 import io
 import os
@@ -204,6 +205,11 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
             if a.session.group and a.session.group not in groups:
                 groups.append(a.session.group)
 
+    sessions_for_groups = defaultdict(list)
+    for a in assignments:
+        if a.session and a.session.group:
+            sessions_for_groups[(a.session.group, a.session.type_id)].append(a)
+
     group_replacements = find_history_replacements_active_at(groups, meeting_time)
 
     parent_id_set = set()
@@ -217,7 +223,8 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
                 if a.session.historic_group.parent_id:
                     parent_id_set.add(a.session.historic_group.parent_id)
 
-            a.session.order_number = a.session.order_in_meeting()
+            l = sessions_for_groups.get((a.session.group, a.session.type_id), [])
+            a.session.order_number = l.index(a) + 1 if a in l else 0
 
     parents = Group.objects.filter(pk__in=parent_id_set)
     parent_replacements = find_history_replacements_active_at(parents, meeting_time)
