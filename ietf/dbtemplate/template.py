@@ -54,7 +54,6 @@ class RSTTemplate(PlainTemplate):
                                       'halt_level': 2,
                                   })
         except SystemMessage as e:
-            e.message = mark_safe('<div class="danger preformatted">%s</div>' % str(e).replace('<string>:', 'line '))
             args = list(e.args)
             args[0] = mark_safe('<div class="danger preformatted">%s</div>' % args[0].replace('<string>:', 'line '))
             e.args = tuple(args)
