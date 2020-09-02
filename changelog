@@ -1,3 +1,64 @@
+ietfdb (7.15.1) ietf; urgency=medium
+
+  * Fixed an issue in the auth48 state_alert_badge() template filter, which 
+    could arise for a document where a get_state() call returns None.
+
+  * Added exception catching around an urlreverse that might fail.  
+    (Enumerating valid group types will also work, but can get out of sync, so 
+    this is more DRY).
+
+  * Renamed the AUTH48 state_alert_badge() filter to auth48_alert_badge(), 
+    as the filter is specific to auth48, not generic.
+
+  * Added an xml_version field to Submission objects, to capture the schema 
+    version of submitted XML files (if any).  Related to issue #3067.
+
+  * Added links to v3 HTML output for v3 draft submissions. 
+    Fixes issue #3067.
+
+  * Adjusted the horizontal placement of [New] labels in search results, 
+    aligning them on a vertical line for a neater look.
+
+  * Updated the bluesheet submission API tests slightly, to verify correct 
+    handling of bluesheet updates.
+
+  * Merged in [18373] from mark@painless-security.com:
+    Filter out reviewers who have rejected reviewing this document in the 
+    past from the list of suggested reviewers.  Fixes #2996.  
+
+  * Merged in [18378] from rjsparks@nostrum.com:
+    Improved the classification of some github related external resources. 
+    Tightened validation of new resource values.  
+
+  * Added an admin page search field and tweaked the list display for the
+    DocAlias admin page.
+
+  * Merged in [18103] from olau@iola.dk:
+    Prefetch a couple of things in the agenda view to reduce the number of
+    queries for IETF 106 from about 3800 to about 235. 
+
+  * Merged in [18414] from olau@iola.dk:
+    Compute session order from available data instead of going through the
+    database again (saves ~2800 queries on the IETF 106 agenda page) 
+
+  * Merged in [18425] from olau@iola.dk:
+    Made the IPR search form initialize the state field upon form
+    initialization instead of evaluating the queryset upon importing the
+    module. This is probably never a problem in practice in this case in
+    the live environment, but it's a confusing practice, and when running
+    the tests sometimes a bug seems to throw Django off and the error is
+    then shadowed by Django crashing when trying to access the
+    (non-existing) database. 
+
+  * Merged in [18445] from rjsparks@nostrum.com:
+    Provided a management command to inform github backups.  
+
+  * Merged in [18446] from rcross@amsl.com:
+    Removed a reference to old style exception attribute 'message'.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  02 Sep 2020 20:54:59 +0000
+
+
 ietfdb (7.15.0) ietf; urgency=medium
 
   **IETF Agenda page improvements for small devices, bugfixes**
