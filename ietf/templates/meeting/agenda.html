@@ -126,6 +126,7 @@
 	          <div class="btn-group"><button class="btn btn-default pickview ietf"> IETF</button></div>
 	          <div class="btn-group"><button class="btn btn-default pickview iesg"> IESG</button></div>
 	          <div class="btn-group"><button class="btn btn-default pickview iab"> IAB</button></div>
+              <div class="btn-group"><button class="btn btn-default pickview secretariat"> Secretariat</button></div>
 	        </div>
 	      </div>
 	    </div>
@@ -192,7 +193,7 @@
             {% endif %}
 
             {% if item.timeslot.type.slug == 'break' or item.timeslot.type.slug == 'reg' or item.timeslot.type.slug == 'other' %}
-                <tr id="row-{{ item.slug }}" timeslot-type="{{item.timeslot.type.slug}}">
+                <tr id="row-{{ item.slug }}" data-item-group={{ item.session.group.acronym }} data-timeslot-type="{{item.timeslot.type.slug}}">
 	          <td class="text-nowrap text-right">
 	            {% if "-utc" in request.path %}
 	              {{item.timeslot.utc_start_time|date:"G:i"}}-{{item.timeslot.utc_end_time|date:"G:i"}}
@@ -250,7 +251,7 @@
 
             {% if item.timeslot.type_id == 'regular' or item.timeslot.type.slug == 'plenary' %}
               {% if item.session.historic_group %}
-                <tr id="row-{{item.slug}}"  timeslot-type="{{item.timeslot.type.slug}}" data-ske="row-{{ item.slug }}" {% if item.timeslot.type.slug == 'plenary' %}class="{{item.timeslot.type.slug}}danger"{% endif %}>
+                <tr id="row-{{item.slug}}" data-item-group={{ item.session.group.acronym }} data-timeslot-type="{{item.timeslot.type.slug}}" data-ske="row-{{ item.slug }}" {% if item.timeslot.type.slug == 'plenary' %}class="{{item.timeslot.type.slug}}danger"{% endif %}>
 		  {% if item.timeslot.type.slug == 'plenary' %}
 	            <th class="text-nowrap text-right">
 		      {% if "-utc" in request.path %}
@@ -361,7 +362,7 @@
   <script>
    function parse_query_params(qs) {
        var params = {};
-       qs = qs.replace(/^\?/, '');
+       qs = qs.replace(/^\?/, '').toLowerCase();
        if (qs) {
          var param_strs = qs.split('&');
          for (var ii = 0; ii < param_strs.length; ii++) {
@@ -405,23 +406,23 @@
            // loop through the has items and change the UI element and row visibilities accordingly
            $.each(filter_params['show_groups'], function (i, v) {
                // this is a regular item by wg: when present, show these rows
-               $('[id^="row-"]').filter('[id*="-' + v + '"]').show();
+               $('[id^="row-"]').filter('[data-item-group="'+ v +'"]').show();
                $(".view." + v).find("button").addClass("active disabled");
                $("button.pickview." + v).addClass("active");
            });
            $.each(filter_params['show_types'], function (i, v) {
                // this is a regular item by type: when present, show these rows
-               $('[id^="row-"]').filter('[timeslot-type*="' + v + '"]').show();
+               $('[id^="row-"]').filter('[data-timeslot-type*="' + v + '"]').show();
            });
            $.each(filter_params['hide_groups'], function (i, v) {
                // this is a "negative" item by wg: when present, hide these rows
-               $('[id^="row-"]').filter('[id*="-' + v + '"]').hide();
+               $('[id^="row-"]').filter('[data-item-group="'+ v +'"]').hide();
                $(".view." + v).find("button").removeClass("active disabled");
                $("button.pickviewneg." + v).removeClass("active");
            });
            $.each(filter_params['hide_types'], function (i, v) {
                // this is a "negative" item by type: when present, hide these rows
-               $('[id^="row-"]').filter('[timeslot-type*="' + v + '"]').hide();
+               $('[id^="row-"]').filter('[data-timeslot-type*="' + v + '"]').hide();
            });
 
            // show the week view

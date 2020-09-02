@@ -1336,6 +1336,58 @@ def ical_session_status(session_with_current_status):
     else:
         return "CONFIRMED"
 
+def parse_agenda_filter_params(querydict):
+    """Parse agenda filter parameters from a request"""
+    if len(querydict) == 0:
+        return None
+
+    # Parse group filters from GET parameters. The keys in this dict define the
+    # allowed querystring parameters.
+    filt_params = {'show': set(), 'hide': set(), 'showtypes': set(), 'hidetypes': set()}
+
+    for key, value in querydict.items():
+        if key not in filt_params:
+            raise ValueError('Unrecognized parameter "%s"' % key)
+        if value is None:
+            return ValueError(
+                'Parameter "%s" is not assigned a value (use "key=" for an empty value)' % key
+            )
+        vals = unquote(value).lower().split(',')
+        filt_params[key] = set([v for v in vals if len(v) > 0])  # remove empty strings
+
+    return filt_params
+
+
+def should_include_assignment(filter_params, assignment):
+    """Decide whether to include an assignment
+
+    When filtering by wg, uses historic_group if available as an attribute
+    on the session, otherwise falls back to using group.
+    """
+    historic_group = getattr(assignment.session, 'historic_group', None)
+    if historic_group:
+        group_acronym = historic_group.acronym
+        parent = historic_group.historic_parent
+        parent_acronym = parent.acronym if parent else None
+    else:
+        group = assignment.session.group
+        group_acronym = group.acronym
+        if group.parent:
+            parent_acronym = group.parent.acronym
+        else:
+            parent_acronym = None
+    session_type = assignment.timeslot.type_id
+
+    # Hide if wg or type hide lists apply
+    if (group_acronym in filter_params['hide']) or (session_type in filter_params['hidetypes']):
+        return False
+
+    # Show if any of the show lists apply, including showing by parent group
+    return ((group_acronym in filter_params['show']) or
+            (parent_acronym in filter_params['show']) or
+            (session_type in filter_params['showtypes']))
+
+
 def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
     """Agenda ical view
 
@@ -1364,46 +1416,14 @@ def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
     assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
     assignments = preprocess_assignments_for_agenda(assignments, meeting)
 
-    if len(request.GET) > 0:
-        # Parse group filters from GET parameters. The keys in this dict define the
-        # allowed querystring parameters.
-        filt_params = {'show': set(), 'hide': set(), 'showtypes': set(), 'hidetypes': set()}
-        
-        for key, value in request.GET.items():
-            if key not in filt_params:
-                return HttpResponseBadRequest('Unrecognized parameter "%s"' % key)
-            if value is None:
-                return HttpResponseBadRequest(
-                    'Parameter "%s" is not assigned a value (use "key=" for an empty value)' % key
-                )
-            filt_params[key] = set(unquote(value).lower().split(','))
+    try:
+        filt_params = parse_agenda_filter_params(request.GET)
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
 
-        def _should_include_assignment(assignment):
-            """Decide whether to include an assignment
-            
-            Relies on filt_params from parent scope.
-            """
-            historic_group = assignment.session.historic_group
-            if historic_group:
-                group_acronym = historic_group.acronym
-                parent = historic_group.historic_parent
-                parent_acronym = parent.acronym if parent else None
-            else:
-                group_acronym = None
-                parent_acronym = None
-            session_type = assignment.timeslot.type_id
-
-            # Hide if wg or type hide lists apply
-            if (group_acronym in filt_params['hide']) or (session_type in filt_params['hidetypes']):
-                return False
-            
-            # Show if any of the show lists apply, including showing by parent group
-            return ((group_acronym in filt_params['show']) or 
-                    (parent_acronym in filt_params['show']) or 
-                    (session_type in filt_params['showtypes']))
-            
+    if filt_params is not None:
         # Apply the filter
-        assignments = [a for a in assignments if _should_include_assignment(a)]
+        assignments = [a for a in assignments if should_include_assignment(filt_params, a)]
 
     if acronym:
         assignments = [ a for a in assignments if a.session.historic_group and a.session.historic_group.acronym == acronym ]
@@ -2754,24 +2774,47 @@ def past(request):
                   })
 
 def upcoming(request):
-    '''List of upcoming meetings'''
+    """List of upcoming meetings
+
+    Only querystring filters by wg name are supported. Always includes IETF meetings;
+    filters 'interim' type meetings by wg name as requested. The showtypes/hidetypes
+    filters are ignored..
+    """
     today = datetime.date.today()
+    filter_params = parse_agenda_filter_params(request.GET)
 
     # Get ietf meetings starting 7 days ago, and interim meetings starting today
     ietf_meetings = Meeting.objects.filter(type_id='ietf', date__gte=today-datetime.timedelta(days=7))
     for m in ietf_meetings:
         m.end = m.date+datetime.timedelta(days=m.days)
+    entries = list(ietf_meetings)
+
     interim_sessions = add_event_info_to_session_qs(
         Session.objects.filter(
-            meeting__type_id='interim', 
+            meeting__type_id='interim',
             timeslotassignments__schedule=F('meeting__schedule'),
             timeslotassignments__timeslot__time__gte=today
         )
     ).filter(current_status__in=('sched','canceled'))
+    if filter_params is not None:
+        group_shown = interim_sessions.filter(
+            group__acronym__in=filter_params['show']
+        )
+        parent_group_shown = interim_sessions.filter(
+            group__parent__acronym__in=filter_params['show']
+        )
+        # The '|' combines querysets with OR - qs.filter(x=1) | qs.filter(y=2)
+        # translates to a 'WHERE x=1 OR y=2' in the SQL.
+        interim_sessions = (
+            group_shown | parent_group_shown
+        ).exclude(
+            # N.B., we only consider parent group (area) for show, not for hide.
+            # This is consistent with previous behavior but is worth revisiting.
+            group__acronym__in=filter_params['hide']
+        )
+
     for session in interim_sessions:
         session.historic_group = session.group
-
-    entries = list(ietf_meetings)
     entries.extend(list(interim_sessions))
     entries.sort(key = lambda o: pytz.utc.localize(datetime.datetime.combine(o.date, datetime.datetime.min.time())) if isinstance(o,Meeting) else o.official_timeslotassignment().timeslot.utc_start_time())
 
@@ -2800,8 +2843,11 @@ def upcoming(request):
 
 
 def upcoming_ical(request):
-    '''Return Upcoming meetings in iCalendar file'''
-    filters = request.GET.getlist('filters')
+    """Return Upcoming meetings in iCalendar file
+
+    Filters by wg name and session type.
+    """
+    filter_params = parse_agenda_filter_params(request.GET)
     today = datetime.date.today()
 
     # get meetings starting 7 days ago -- we'll filter out sessions in the past further down
@@ -2818,13 +2864,8 @@ def upcoming_ical(request):
     ).distinct())
 
     # apply filters
-    if filters:
-        assignments = [a for a in assignments if
-                       a.session.group and (
-                           a.session.group.acronym in filters or (
-                               a.session.group.parent and a.session.group.parent.acronym in filters
-                           )
-                       ) ]
+    if filter_params is not None:
+        assignments = [a for a in assignments if should_include_assignment(filter_params, a)]
 
     # we already collected sessions with current_status, so reuse those
     sessions = {s.pk: s for m in meetings for s in m.sessions}

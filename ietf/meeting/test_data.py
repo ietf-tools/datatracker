@@ -219,7 +219,7 @@ def make_interim_test_data():
     ad = Person.objects.get(user__username='ad')
     RoleFactory(group=area,person=ad,name_id='ad')
     mars = GroupFactory(acronym='mars',parent=area,name='Martian Special Interest Group')
-    ames = GroupFactory(acronym='ames',parent=area)
+    ames = GroupFactory(acronym='ames',parent=area,name='Asteroid Mining Equipment Standardization Group')
     RoleFactory(group=mars,person__user__username='marschairman',name_id='chair')
     RoleFactory(group=ames,person__user__username='ameschairman',name_id='chair')
 
