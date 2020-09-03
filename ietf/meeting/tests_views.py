@@ -1897,6 +1897,29 @@ class InterimTests(TestCase):
         r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
         self.assertContains(r, 'days must be consecutive')
 
+    def test_interim_request_multi_day_cancel(self):
+        """All sessions of a multi-day interim request should be canceled"""
+        length_before = len(outbox)
+        date = datetime.date.today()+datetime.timedelta(days=15)
+
+        # Set up an interim request with several sessions 
+        num_sessions = 3
+        meeting = MeetingFactory(type_id='interim', date=date)
+        for _ in range(num_sessions):
+            SessionFactory(meeting=meeting)
+
+        # Cancel the interim request
+        url = urlreverse('ietf.meeting.views.interim_request_cancel', kwargs={'number': meeting.number})
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.post(url)
+        
+        # Verify results
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.upcoming'))
+        for session in add_event_info_to_session_qs(meeting.session_set.all()):
+            self.assertEqual(session.current_status, 'canceled')
+        self.assertEqual(len(outbox), length_before + 1)
+        self.assertIn('Interim Meeting Cancelled', outbox[-1]['Subject'])
+
     def test_interim_request_series(self):
         make_meeting_test_data()
         meeting_count_before = Meeting.objects.filter(type='interim').count()
