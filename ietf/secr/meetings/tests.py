@@ -65,7 +65,7 @@ class SecrMeetingTestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertEqual(len(q('#id_schedule_selector option')),3)
+        self.assertEqual({option.get('value') for option in q('#id_schedule_selector option:not([value=""])')}, {'base', 'test-schedule', 'test-unofficial-schedule'})
          
     def test_add_meeting(self):
         "Add Meeting"
@@ -92,6 +92,9 @@ class SecrMeetingTestCase(TestCase):
         new_meeting = Meeting.objects.get(number=number)
         
         self.assertTrue(new_meeting.schedule)
+        self.assertEqual(new_meeting.schedule.name, 'secretary1')
+        self.assertTrue(new_meeting.schedule.base)
+        self.assertEqual(new_meeting.schedule.base.name, 'base')
         self.assertEqual(new_meeting.attendees, None)
 
     def test_edit_meeting(self):
@@ -197,8 +200,7 @@ class SecrMeetingTestCase(TestCase):
         
         # test delete
         # first unschedule sessions so we can delete
-        SchedTimeSessAssignment.objects.filter(schedule=meeting.schedule).delete()
-        SchedTimeSessAssignment.objects.filter(schedule=meeting.unofficial_schedule).delete()
+        SchedTimeSessAssignment.objects.filter(schedule__in=[meeting.schedule, meeting.schedule.base, meeting.unofficial_schedule]).delete()
         self.client.login(username="secretary", password="secretary+password")
         post_dict = {
             'room-TOTAL_FORMS':  q('input[name="room-TOTAL_FORMS"]').val(),
@@ -341,27 +343,29 @@ class SecrMeetingTestCase(TestCase):
 
     def test_meetings_misc_session_delete(self):
         meeting = make_meeting_test_data()
-        slot = meeting.schedule.assignments.filter(timeslot__type='reg').first().timeslot
-        url = reverse('ietf.secr.meetings.views.misc_session_delete', kwargs={'meeting_id':meeting.number,'schedule_name':meeting.schedule.name,'slot_id':slot.id})
-        target = reverse('ietf.secr.meetings.views.misc_sessions', kwargs={'meeting_id':meeting.number,'schedule_name':meeting.schedule.name})
+        schedule = meeting.schedule.base
+        slot = schedule.assignments.filter(timeslot__type='reg').first().timeslot
+        url = reverse('ietf.secr.meetings.views.misc_session_delete', kwargs={'meeting_id':meeting.number,'schedule_name':schedule.name,'slot_id':slot.id})
+        target = reverse('ietf.secr.meetings.views.misc_sessions', kwargs={'meeting_id':meeting.number,'schedule_name':schedule.name})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         response = self.client.post(url, {'post':'yes'})
         self.assertRedirects(response, target)
-        self.assertFalse(meeting.schedule.assignments.filter(timeslot=slot))
+        self.assertFalse(schedule.assignments.filter(timeslot=slot))
 
     def test_meetings_misc_session_cancel(self):
         meeting = make_meeting_test_data()
-        slot = meeting.schedule.assignments.filter(timeslot__type='reg').first().timeslot
-        url = reverse('ietf.secr.meetings.views.misc_session_cancel', kwargs={'meeting_id':meeting.number,'schedule_name':meeting.schedule.name,'slot_id':slot.id})
-        redirect_url = reverse('ietf.secr.meetings.views.misc_sessions', kwargs={'meeting_id':meeting.number,'schedule_name':meeting.schedule.name})
+        schedule = meeting.schedule.base
+        slot = schedule.assignments.filter(timeslot__type='reg').first().timeslot
+        url = reverse('ietf.secr.meetings.views.misc_session_cancel', kwargs={'meeting_id':meeting.number,'schedule_name':schedule.name,'slot_id':slot.id})
+        redirect_url = reverse('ietf.secr.meetings.views.misc_sessions', kwargs={'meeting_id':meeting.number,'schedule_name':schedule.name})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         response = self.client.post(url, {'post':'yes'})
         self.assertRedirects(response, redirect_url)
-        session = slot.sessionassignments.filter(schedule=meeting.schedule).first().session
+        session = slot.sessionassignments.filter(schedule=schedule).first().session
         self.assertEqual(SchedulingEvent.objects.filter(session=session).order_by('-id')[0].status_id, 'canceled')
 
     def test_meetings_regular_session_edit(self):

@@ -36,11 +36,13 @@
           <td>{{ session.current_status_name }}</td>
           <td><a href="{% url 'ietf.secr.meetings.views.regular_session_edit' meeting_id=meeting.number schedule_name=schedule.name session_id=session.id %}">Edit</a></td>
           <td>
-            <form method="post">
-              {% csrf_token %}
-              <input type="hidden" name="pk" value="{{ session.pk }}">
-              <input type="submit" name="cancel" value="Cancel">
-            </form>
+            {% if session.can_cancel %}
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="pk" value="{{ session.pk }}">
+                <input type="submit" name="cancel" value="Cancel">
+              </form>
+            {% endif %}
           </td>
         </tr>
       {% endfor %}

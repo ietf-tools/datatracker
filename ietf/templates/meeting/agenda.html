@@ -333,6 +333,20 @@
                       <span class="label label-success pull-right">BOF</span>
                     {% endif %}
 
+                    {% if item.session.current_status == 'resched' %}
+                      <span class="label label-danger pull-right">
+                        RESCHEDULED
+                        {% if item.session.rescheduled_to %}
+                          TO
+		          {% if "-utc" in request.path %}
+                            {{ item.session.rescheduled_to.utc_start_time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.utc_end_time|date:"G:i" }}
+		          {% else %}
+                            {{ item.session.rescheduled_to.time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.end_time|date:"G:i" }}
+		          {% endif %}
+                        {% endif %}
+                      </span>
+                    {% endif %}
+
                     {% if item.session.agenda_note|first_url|conference_url %}
                       <br><a href={{item.session.agenda_note|first_url}}>{{item.session.agenda_note|slice:":23"}}</a>
                     {% elif item.session.agenda_note %}

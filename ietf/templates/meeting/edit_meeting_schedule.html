@@ -12,12 +12,9 @@
   {% endfor %}
 {% endblock morecss %}
 
-{% block title %}{{ schedule.name }}: IETF {{ meeting.number }} meeting schedule{% endblock %}
+{% block title %}{{ schedule.name }}: IETF {{ meeting.number }} meeting agenda{% endblock %}
 
 {% block js %}
-  <script type='text/javascript'>
-   var ietfData = {{ js_data|safe }};
-  </script>
   <script type="text/javascript" src="{% static 'ietf/js/edit-meeting-schedule.js' %}"></script>
 {% endblock js %}
 
@@ -27,14 +24,20 @@
   <div class="edit-meeting-schedule">
 
     <p class="pull-right">
-      <a href="{% url "ietf.meeting.views.copy_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">Copy schedule</a>
+      {% if can_edit_properties %}
+        <a href="{% url "ietf.meeting.views.edit_schedule_properties" schedule.meeting.number schedule.owner_email schedule.name %}">Edit properties</a>
+        
+        &middot;
+      {% endif %}
+
+      <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">New agenda</a>
       &middot;
 
-      <a href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">All schedules for meeting</a>
+      <a href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">Other Agendas</a>
     </p>
 
     <p>
-      Schedule name: {{ schedule.name }}
+      Agenda name: {{ schedule.name }}
 
       &middot;
 
@@ -43,7 +46,7 @@
       {% if not can_edit %}
         &middot;
 
-        <em>You can't edit this schedule. Take a copy first.</em>
+        <strong><em>You can't edit this schedule. Make a <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">new agenda from this</a>.</em></strong>
       {% endif %}
     </p>
 
@@ -74,7 +77,7 @@
         {% for day in days %}
           <div class="day">
             <div class="day-label">
-              <strong>{{ day.day|date:"l" }}</strong><br>
+              <strong>{{ day.day|date:"l" }}</strong> <i class="fa fa-exchange swap-days" data-dayid="{{ day.day.isoformat }}" data-toggle="modal" data-target="#swap-days-modal"></i><br>
               {{ day.day|date:"N j, Y" }}
             </div>
 
@@ -88,9 +91,9 @@
                     </div>
 
                     <div class="drop-target">
-                    {% for assignment, session in t.session_assignments %}
-                      {% include "meeting/edit_meeting_schedule_session.html" %}
-                    {% endfor %}
+                      {% for assignment, session in t.session_assignments %}
+                        {% include "meeting/edit_meeting_schedule_session.html" %}
+                      {% endfor %}
                     </div>
                   </div>
                 {% endfor %}
@@ -164,6 +167,35 @@
             <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div id="swap-days-modal" class="modal" role="dialog" aria-labelledby="swap-days-modal-title">
+      <div class="modal-dialog modal-lg" role="document">
+        <form class="modal-content" method="post">{% csrf_token %}
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">
+              <span aria-hidden="true">&times;</span>
+              <span class="sr-only">Close</span>
+            </button>
+            <h4 class="modal-title" id="swap-days-modal-title">Swap <span class="day"></span> with</h4>
+          </div>
+
+          <input type="hidden" name="source_day" value="">
+
+          <div class="modal-body">
+            {% for day in days %}
+              <label>
+                <input type="radio" name="target_day" value="{{ day.day.isoformat }}"> {{ day.day|date:"l, N j, Y" }}
+              </label>
+            {% endfor %}
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <button type="submit" name="action" value="swapdays" class="btn btn-primary">Swap days</button>
+          </div>
+        </form>
       </div>
     </div>
 

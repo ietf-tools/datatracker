@@ -1,0 +1,5 @@
+{% load humanize %}{% autoescape off %}{% load ietf_filters %}BEGIN:VCALENDAR
+VERSION:2.0
+METHOD:PUBLISH
+PRODID:-//IETF//datatracker.ietf.org ical importantdates//EN
+{% for meeting in meetings %}{% include "meeting/important_dates_for_meeting.ics" %}{% endfor %}END:VCALENDAR{% endautoescape %}

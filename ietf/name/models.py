@@ -66,6 +66,7 @@ class SessionStatusName(NameModel):
     """Waiting for Approval, Approved, Waiting for Scheduling, Scheduled, Cancelled, Disapproved"""
 class TimeSlotTypeName(NameModel):
     """Session, Break, Registration, Other, Reserved, unavail"""
+    private = models.BooleanField(default=False, help_text="Whether sessions of this type should be kept off the public agenda")
 class ConstraintName(NameModel):
     """conflict, conflic2, conflic3, bethere, timerange, time_relation, wg_adjacent"""
     penalty = models.IntegerField(default=0, help_text="The penalty for violating this kind of constraint; for instance 10 (small penalty) or 10000 (large penalty)")

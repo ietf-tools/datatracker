@@ -19,7 +19,7 @@ from django.utils.safestring import mark_safe
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.meeting.models import Session, Meeting, SchedulingEvent, TimeSlot, Constraint
+from ietf.meeting.models import Session, Meeting, SchedulingEvent, TimeSlot, Constraint, SchedTimeSessAssignment
 from ietf.group.models import Group, Role
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName, ConstraintName
@@ -28,7 +28,7 @@ from ietf.person.models import Person, Email
 from ietf.secr.proceedings.proc_utils import import_audio_files
 
 def session_time_for_sorting(session, use_meeting_date):
-    official_timeslot = TimeSlot.objects.filter(sessionassignments__session=session, sessionassignments__schedule=session.meeting.schedule).first()
+    official_timeslot = TimeSlot.objects.filter(sessionassignments__session=session, sessionassignments__schedule__in=[session.meeting.schedule, session.meeting.schedule.base if session.meeting.schedule else None]).first()
     if official_timeslot:
         return official_timeslot.time
     elif use_meeting_date and session.meeting.date:
@@ -442,3 +442,129 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
             formatted_constraints_for_sessions[s.pk][joint_with_groups_constraint_name] = [g.acronym for g in joint_groups]
 
     return constraints_for_sessions, formatted_constraints_for_sessions, constraint_names
+
+
+def diff_meeting_schedules(from_schedule, to_schedule):
+    """Compute the difference between the two meeting schedules as a list
+    describing the set of actions that will turn the schedule of from into
+    the schedule of to, like:
+
+    [
+      {'change': 'schedule', 'session': session_id, 'to': timeslot_id},
+      {'change': 'move', 'session': session_id, 'from': timeslot_id, 'to': timeslot_id2},
+      {'change': 'unschedule', 'session': session_id, 'from': timeslot_id},
+    ]
+
+    Uses .assignments.all() so that it can be prefetched.
+    """
+    diffs = []
+
+    from_session_timeslots = {
+        a.session_id: a.timeslot_id
+        for a in from_schedule.assignments.all()
+    }
+
+    session_ids_in_to = set()
+
+    for a in to_schedule.assignments.all():
+        session_ids_in_to.add(a.session_id)
+
+        from_timeslot_id = from_session_timeslots.get(a.session_id)
+
+        if from_timeslot_id is None:
+            diffs.append({'change': 'schedule', 'session': a.session_id, 'to': a.timeslot_id})
+        elif a.timeslot_id != from_timeslot_id:
+            diffs.append({'change': 'move', 'session': a.session_id, 'from': from_timeslot_id, 'to': a.timeslot_id})
+
+    for from_session_id, from_timeslot_id in from_session_timeslots.items():
+        if from_session_id not in session_ids_in_to:
+            diffs.append({'change': 'unschedule', 'session': from_session_id, 'from': from_timeslot_id})
+
+    return diffs
+
+
+def prefetch_schedule_diff_objects(diffs):
+    session_ids = set()
+    timeslot_ids = set()
+
+    for d in diffs:
+        session_ids.add(d['session'])
+
+        if d['change'] == 'schedule':
+            timeslot_ids.add(d['to'])
+        elif d['change'] == 'move':
+            timeslot_ids.add(d['from'])
+            timeslot_ids.add(d['to'])
+        elif d['change'] == 'unschedule':
+            timeslot_ids.add(d['from'])
+
+    session_lookup = {s.pk: s for s in Session.objects.filter(pk__in=session_ids)}
+    timeslot_lookup = {t.pk: t for t in TimeSlot.objects.filter(pk__in=timeslot_ids).prefetch_related('location')}
+
+    res = []
+    for d in diffs:
+        d_objs = {
+            'change': d['change'],
+            'session': session_lookup.get(d['session'])
+        }
+
+        if d['change'] == 'schedule':
+            d_objs['to'] = timeslot_lookup.get(d['to'])
+        elif d['change'] == 'move':
+            d_objs['from'] = timeslot_lookup.get(d['from'])
+            d_objs['to'] = timeslot_lookup.get(d['to'])
+        elif d['change'] == 'unschedule':
+            d_objs['from'] = timeslot_lookup.get(d['from'])
+
+        res.append(d_objs)
+
+    return res
+
+def swap_meeting_schedule_timeslot_assignments(schedule, source_timeslots, target_timeslots, source_target_offset):
+    """Swap the assignments of the two meeting schedule timeslots in one
+    go, automatically matching them up based on the specified offset,
+    e.g. timedelta(days=1). For timeslots where no suitable swap match
+    is found, the sessions are unassigned. Doesn't take tombstones into
+    account."""
+
+    assignments_by_timeslot = defaultdict(list)
+
+    for a in SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot__in=source_timeslots + target_timeslots):
+        assignments_by_timeslot[a.timeslot_id].append(a)
+
+    timeslots_to_match_up = [(source_timeslots, target_timeslots, source_target_offset), (target_timeslots, source_timeslots, -source_target_offset)]
+    for lhs_timeslots, rhs_timeslots, lhs_offset in timeslots_to_match_up:
+        timeslots_by_location = defaultdict(list)
+        for rts in rhs_timeslots:
+            timeslots_by_location[rts.location_id].append(rts)
+
+        for lts in lhs_timeslots:
+            lts_assignments = assignments_by_timeslot.pop(lts.pk, [])
+            if not lts_assignments:
+                continue
+
+            swapped = False
+
+            most_overlapping_rts, max_overlap = max([
+                (rts, max(datetime.timedelta(0), min(lts.end_time() + lhs_offset, rts.end_time()) - max(lts.time + lhs_offset, rts.time)))
+                for rts in timeslots_by_location.get(lts.location_id, [])
+            ] + [(None, datetime.timedelta(0))], key=lambda t: t[1])
+
+            if max_overlap > datetime.timedelta(minutes=5):
+                for a in lts_assignments:
+                    a.timeslot = most_overlapping_rts
+                    a.modified = datetime.datetime.now()
+                    a.save()
+                swapped = True
+
+            if not swapped:
+                for a in lts_assignments:
+                    a.delete()
+
+def preprocess_meeting_important_dates(meetings):
+    for m in meetings:
+        m.cached_updated = m.updated()
+        m.important_dates = m.importantdate_set.prefetch_related("name")
+        for d in m.important_dates:
+            d.midnight_cutoff = "UTC 23:59" in d.name.name
+    

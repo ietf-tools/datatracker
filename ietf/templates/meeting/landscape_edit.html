@@ -367,6 +367,9 @@ promiselist.push(ss_promise);
   <div class="agenda_save_box">
 
     <div id="agenda_title"><b>Agenda name: </b><span>{{schedule.name}}</span></div>
+    {% if can_edit_properties %}
+      <div><b>Properties</b> <a href="{% url "ietf.meeting.views.edit_schedule_properties" schedule.meeting.number schedule.owner_email schedule.name %}">Edit</a></div>
+    {% endif %}
     <div id="agenda_saveas">
       <form action="{{saveasurl}}" method="post">{% csrf_token %}
         {{ saveas.as_p }}

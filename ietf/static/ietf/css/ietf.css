@@ -1007,6 +1007,12 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   border-top: 1px solid #ddd;
 }
 
+/* === List Meeting Schedules ====================================== */
+
+.from-base-schedule {
+  opacity: 0.7;
+}
+
 /* === Edit Meeting Schedule ====================================== */
 
 .edit-meeting-schedule .edit-grid {
@@ -1036,6 +1042,18 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 
 .edit-meeting-schedule .edit-grid .day-label {
   height: 3em;
+}
+
+.edit-meeting-schedule .edit-grid .day-label .swap-days {
+  cursor: pointer;
+}
+
+.edit-meeting-schedule .edit-grid .day-label .swap-days:hover {
+  color: #666;
+}
+
+.edit-meeting-schedule #swap-days-modal .modal-body label {
+  display: block;
 }
 
 .edit-meeting-schedule .edit-grid .day-flow {
@@ -1120,6 +1138,11 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 
 .edit-meeting-schedule .read-only .session.selected {
   cursor: default;
+}
+
+.edit-meeting-schedule .session.readonly {
+  cursor: default;
+  background-color: #ddd;
 }
 
 .edit-meeting-schedule .session.selected .session-label {
@@ -1309,4 +1332,131 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
     margin-left: auto;
   }
 }
-        
+
+/* === Edit Meeting Timeslots and Misc Sessions =================== */
+
+.edit-meeting-timeslots-and-misc-sessions .day {
+  margin-bottom: 1em;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .day-label {
+  text-align: center;
+  font-size: 20px;
+  margin-bottom: 0.4em;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .room-row {
+  border-bottom: 1px solid #ccc;
+  height: 20px;
+  display: flex;
+  cursor: pointer;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .room-label {
+  width: 12em;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .timeline {
+  position: relative;
+  flex-grow: 1;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .timeline.hover {
+  background: radial-gradient(#999 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .timeline.selected.hover,
+.edit-meeting-timeslots-and-misc-sessions .timeline.selected {
+  background: radial-gradient(#999 2px, transparent 2px);
+  background-size: 20px 20px;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .timeslot {
+  position: absolute;
+  overflow: hidden;
+  background-color: #f0f0f0;
+  opacity: 0.8;
+  height: 19px;
+  top: 0px;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  padding-left: 0.2em;
+  border-left: 1px solid #999;
+  border-right: 1px solid #999;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .timeslot:hover {
+  background-color: #ccc;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .timeslot.selected {
+  background-color: #bbb;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .timeslot .session.cancelled {
+  color: #a00;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .scheduling-panel {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  border-top: 0.2em solid #ccc;
+  padding-top: 0.2em;
+  margin-bottom: 2em;
+  background-color: #fff;
+  opacity: 0.95;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .scheduling-panel form {
+  display: flex;
+  align-items: flex-start;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .scheduling-panel form button {
+  margin: 0 0.5em;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .scheduling-panel .flowing-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .scheduling-panel .flowing-form .form-group {
+  margin-right: 1em;
+  margin-bottom: 0.5em;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .scheduling-panel .flowing-form label {
+  display: inline-block;
+  margin-right: 0.5em;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .scheduling-panel .flowing-form .form-control {
+  display: inline-block;
+  width: auto;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .scheduling-panel .flowing-form [name=time],
+.edit-meeting-timeslots-and-misc-sessions .scheduling-panel .flowing-form [name=duration] {
+  width: 6em;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .scheduling-panel .flowing-form [name=name] {
+  width: 25em;
+}
+
+.edit-meeting-timeslots-and-misc-sessions .scheduling-panel .flowing-form [name=short] {
+  width: 10em;
+}
+

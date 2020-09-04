@@ -138,8 +138,8 @@ admin.site.register(SchedulingEvent, SchedulingEventAdmin)
 
 class ScheduleAdmin(admin.ModelAdmin):
     list_display = ["name", "meeting", "owner", "visible", "public", "badness"]
-    list_filter = ["meeting", ]
-    raw_id_fields = ["meeting", "owner", ]
+    list_filter = ["meeting"]
+    raw_id_fields = ["meeting", "owner", "origin", "base"]
     search_fields = ["meeting__number", "name", "owner__name"]
     ordering = ["-meeting", "name"]
 
