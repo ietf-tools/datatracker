@@ -302,13 +302,13 @@ def maybe_patch_library(app_configs, **kwargs):
     import os, django
     django_path = os.path.dirname(django.__file__)
     library_path = os.path.dirname(django_path)
-    cwd = os.getcwd()
+    top_dir = os.path.dirname(settings.BASE_DIR)
     # All patches in settings.CHECKS_LIBRARY_PATCHES_TO_APPLY must have a
     # relative file path rooted in the django dir, for instance
     # 'django/db/models/fields/__init__.py'
     for patch_file in settings.CHECKS_LIBRARY_PATCHES_TO_APPLY:
         try:
-            patch_path = os.path.join(cwd, patch_file)
+            patch_path = os.path.join(top_dir, patch_file)
             patch_set = patch.fromfile(patch_path)
             if patch_set:
                 if not patch_set.apply(root=library_path.encode('utf-8')):
