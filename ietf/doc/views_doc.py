@@ -174,6 +174,7 @@ def document_main(request, name, rev=None):
         split_content = not ( request.GET.get('include_text') or request.COOKIES.get("full_draft", settings.USER_PREFERENCE_DEFAULTS["full_draft"]) == "on" )
 
         iesg_state = doc.get_state("draft-iesg")
+        iesg_state_slug = iesg_state.slug if iesg_state else None
         iesg_state_summary = doc.friendly_state()
         irsg_state = doc.get_state("draft-stream-irtf")
 
@@ -272,7 +273,7 @@ def document_main(request, name, rev=None):
         iesg_ballot_summary = None
         irsg_ballot_summary = None
         due_date = None
-        if (iesg_state and iesg_state.slug in IESG_BALLOT_ACTIVE_STATES) or irsg_state:
+        if (iesg_state_slug in IESG_BALLOT_ACTIVE_STATES) or irsg_state:
             active_ballot = doc.active_ballot()
             if active_ballot:
                 if irsg_state:
@@ -326,7 +327,7 @@ def document_main(request, name, rev=None):
         if doc.stream_id == "ietf" and iesg_state:
             show_in_states = set(IESG_BALLOT_ACTIVE_STATES)
             show_in_states.update(('approved','ann','rfcqueue','pub'))
-            if iesg_state.slug in show_in_states: 
+            if iesg_state_slug in show_in_states: 
                 can_edit_consensus = can_edit
                 e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
                 consensus = nice_consensus(e and e.consensus)
@@ -403,14 +404,14 @@ def document_main(request, name, rev=None):
                 label = "Request Publication"
                 if not doc.intended_std_level:
                     label += " (note that intended status is not set)"
-                if iesg_state and iesg_state.slug not in ('idexists','dead'):
+                if iesg_state and iesg_state_slug not in ('idexists','dead'):
                     label += " (Warning: the IESG state indicates ongoing IESG processing)"
                 actions.append((label, urlreverse('ietf.doc.views_draft.request_publication', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ietf",) and not snapshot:
-            if iesg_state.slug == 'idexists' and can_edit:
+            if iesg_state_slug == 'idexists' and can_edit:
                 actions.append(("Begin IESG Processing", urlreverse('ietf.doc.views_draft.edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
-            elif can_edit_stream_info and (iesg_state.slug in ('idexists','watching')):
+            elif can_edit_stream_info and (iesg_state_slug in ('idexists','watching')):
                 actions.append(("Submit to IESG for Publication", urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=doc.name))))
 
         augment_docs_and_user_with_user_info([doc], request.user)
