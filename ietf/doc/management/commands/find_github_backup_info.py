@@ -52,7 +52,7 @@ class Command(BaseCommand):
                         repo = path_parts[1]
                         if (owner, repo) not in repos:
                             try:
-                                _ = github.repository(owner,repo)
+                                github.repository(owner,repo)
                                 repos.add( (owner, repo) )
                             except github3.exceptions.NotFoundError:
                                 continue
