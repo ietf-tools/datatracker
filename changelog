@@ -1,3 +1,28 @@
+ietfdb (7.16.0) ietf; urgency=medium
+
+  **Updated new schedule editor**
+
+  * Merged in ^/branch/iola/meeting-improvement-r18382@18466.  This provides a
+    beta-level snapshot of the new schedule editor work.  All known issues
+    should be fixed, but there might be adjustments needed after experience
+    with using the new edit view.
+
+  * Changed to using BASE_DIR as starting point for finding patch files in
+    checks.maybe_patch_libraries(), instead of CWD.  Fixes an issue with
+    running management commands with the current directory being different
+    than the top of the datatracker app tree.
+
+  * Rewrote some code in document_main to avoid using the iesg_state.slug
+    attribute when iesg_state might not be set.
+
+  * Fixed a pyflakes nit.
+
+  * Backported a patch to production that changed the secretariat
+    session-request tool session lengths to 60/120 minutes.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Sep 2020 10:59:01 +0000
+
+
 ietfdb (7.15.1) ietf; urgency=medium
 
   * Fixed an issue in the auth48 state_alert_badge() template filter, which 
