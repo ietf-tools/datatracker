@@ -6,6 +6,7 @@ import re
 from django import template
 from django.conf import settings
 from django.template.defaultfilters import linebreaksbr, force_escape
+from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 
 import debug           # pyflakes:ignore
@@ -66,6 +67,10 @@ def decrypt(string, request, year, plain=False):
     command = "%s smime -decrypt -in %s -inkey /dev/stdin"
     code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
                             encrypted_file.name), key)
+    try:
+        out = force_text(out)
+    except Exception:
+        pass
     if code != 0:
         log("openssl error: %s:\n  Error %s: %s" %(command, code, error))
 
