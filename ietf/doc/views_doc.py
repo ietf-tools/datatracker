@@ -557,7 +557,7 @@ def document_main(request, name, rev=None):
             content = markup_txt.markup(content)
 
         ballot_summary = None
-        if doc.get_state_slug() in ("iesgeval") and doc.active_ballot():
+        if doc.get_state_slug() in ("iesgeval", ) and doc.active_ballot():
             ballot_summary = needed_ballot_positions(doc, list(doc.active_ballot().active_balloter_positions().values()))
 
         return render(request, "doc/document_conflict_review.html",
