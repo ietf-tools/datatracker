@@ -76,7 +76,7 @@ from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions,
 from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
-from ietf.utils import markup_txt
+from ietf.utils import markup_txt, log
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
 
@@ -174,6 +174,7 @@ def document_main(request, name, rev=None):
         split_content = not ( request.GET.get('include_text') or request.COOKIES.get("full_draft", settings.USER_PREFERENCE_DEFAULTS["full_draft"]) == "on" )
 
         iesg_state = doc.get_state("draft-iesg")
+        log.assertion('iesg_state', note="A document's 'draft-iesg' state should never be unset'.  Failed for %s"%doc.name)
         iesg_state_slug = iesg_state.slug if iesg_state else None
         iesg_state_summary = doc.friendly_state()
         irsg_state = doc.get_state("draft-stream-irtf")

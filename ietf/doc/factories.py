@@ -205,9 +205,12 @@ class RgRfcFactory(RgDraftFactory):
                 obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
             if not obj.get_state('draft-stream-irtf'):
                 obj.set_state(State.objects.get(type_id='draft-stream-irtf', slug='pub'))
+            if not obj.get_state('draft-iesg'):
+                obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
         else:
             obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
             obj.set_state(State.objects.get(type_id='draft-stream-irtf', slug='pub'))
+            obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
 
 
 class CharterFactory(BaseDocumentFactory):
