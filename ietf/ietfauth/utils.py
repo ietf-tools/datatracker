@@ -18,6 +18,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from django.urls import reverse as urlreverse
 from django.utils.decorators import available_attrs
 from django.utils.http import urlquote
 
@@ -209,21 +210,24 @@ def openid_userinfo(claims, user):
     # Populate claims dict.
     person = get_object_or_404(Person, user=user)
     email = person.email()
+    if person.photo:
+        photo_path = urlreverse('ietf.person.views.photo', kwargs={'email_or_name': person.email()})
+        photo_url = settings.IDTRACKER_BASE_URL + photo_path
+    else:
+        photo_url = ''
     claims.update( {
             'name':         person.plain_name(),
             'given_name':   person.first_name(),
             'family_name':  person.last_name(),
             'nickname':     '-',
             'email':        email.address if email else '',
+            'picture':      photo_url,
         } )
     return claims
 
-
-
-
 oidc_provider.lib.claims.StandardScopeClaims.info_profile = (
 		'Basic profile',
-		'Access to your basic datatracker information: Name.'
+		'Access to your basic datatracker information: Name, photo.'
 	    )
 
 class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):

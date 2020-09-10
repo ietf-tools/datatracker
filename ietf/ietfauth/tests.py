@@ -765,7 +765,7 @@ class OpenIDConnectTests(TestCase):
             client.store_registration_info(client_reg)
 
             # Get a user for which we want to get access
-            person = PersonFactory()
+            person = PersonFactory(with_bio=True)
             RoleFactory(name_id='chair', person=person)
             # an additional email
             EmailFactory(person=person)
@@ -831,7 +831,7 @@ class OpenIDConnectTests(TestCase):
             # Get userinfo, check keys present
             userinfo = client.do_user_info_request(state=params["state"], scope=args['scope'])
             for key in [ 'email', 'family_name', 'given_name', 'meeting', 'name', 'roles',
-                         'ticket_type', 'reg_type', 'affiliation', ]:
+                         'ticket_type', 'reg_type', 'affiliation', 'picture', ]:
                 self.assertIn(key, userinfo)
             self.assertIn('remote', set(userinfo['reg_type'].split()))
             self.assertNotIn('hackathon', set(userinfo['reg_type'].split()))
