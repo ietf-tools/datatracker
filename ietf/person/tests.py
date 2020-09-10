@@ -4,8 +4,10 @@
 
 import datetime
 
+from io import StringIO, BytesIO
+from PIL import Image
 from pyquery import PyQuery
-from io import StringIO
+
 
 from django.http import HttpRequest
 from django.urls import reverse as urlreverse
@@ -70,6 +72,25 @@ class PersonTests(TestCase):
         photo_url = q("div.bio-text img.bio-photo").attr("src")
         r = self.client.get(photo_url)
         self.assertEqual(r.status_code, 200)
+
+    def test_person_photo(self):
+        person = PersonFactory(with_bio=True)
+        
+        self.assertTrue(person.photo is not None)
+        self.assertTrue(person.photo.name is not None)
+
+        url = urlreverse("ietf.person.views.photo", kwargs={ "email_or_name": person.email()})
+        r = self.client.get(url)
+        self.assertEqual(r['Content-Type'], 'image/jpg')
+        self.assertEqual(r.status_code, 200)
+        img = Image.open(BytesIO(r.content))
+        self.assertEqual(img.width, 80)
+
+        r = self.client.get(url+'?size=200')
+        self.assertEqual(r['Content-Type'], 'image/jpg')
+        self.assertEqual(r.status_code, 200)
+        img = Image.open(BytesIO(r.content))
+        self.assertEqual(img.width, 200)
 
     def test_name_methods(self):
         person = PersonFactory(name="Dr. Jens F. Möller", )

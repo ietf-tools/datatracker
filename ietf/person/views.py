@@ -3,7 +3,8 @@
 
 
 import datetime
-from io import StringIO
+from io import StringIO, BytesIO
+from PIL import Image
 
 from django.contrib import messages
 from django.db.models import Q
@@ -76,6 +77,30 @@ def profile(request, email_or_name):
         if not persons:
             raise Http404
     return render(request, 'person/profile.html', {'persons': persons, 'today':datetime.date.today()})
+
+
+def photo(request, email_or_name):
+    if '@' in email_or_name:
+        persons = [ get_object_or_404(Email, address=email_or_name).person, ]
+    else:
+        aliases = Alias.objects.filter(name=email_or_name)
+        persons = list(set([ a.person for a in aliases ]))
+        if not persons:
+            raise Http404("No such person")
+    if len(persons) > 1:
+        return HttpResponse(r"\r\n".join([p.email() for p in persons]), status=300)
+    person = persons[0]
+    if not person.photo:
+        raise Http404("No photo found")
+    size = request.GET.get('s') or request.GET.get('size', '80')
+    if not size.isdigit():
+        return HttpResponse("Size must be integer", status=400)
+    size = int(size)
+    img = Image.open(person.photo)
+    img = img.resize((size, img.height*size//img.width))
+    bytes = BytesIO()
+    img.save(bytes, format='JPEG')
+    return HttpResponse(bytes.getvalue(), content_type='image/jpg')
 
 
 @role_required("Secretariat")
