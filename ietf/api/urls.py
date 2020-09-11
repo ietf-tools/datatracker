@@ -36,6 +36,8 @@ urlpatterns = [
     url(r'^openid/', include('oidc_provider.urls', namespace='oidc_provider')),
     # Draft submission API
     url(r'^submit/?$', submit_views.api_submit),
+    # Datatracker version
+    url(r'^version/?$', api_views.version),
 ]
 
 # Additional (standard) Tastypie endpoints

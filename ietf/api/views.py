@@ -26,6 +26,7 @@ from tastypie.serializers import Serializer
 
 import debug                            # pyflakes:ignore
 
+import ietf
 from ietf.person.models import Person, Email
 from ietf.api import _api_list
 from ietf.api.serializer import JsonExportMixin
@@ -196,3 +197,14 @@ def api_new_meeting_registration(request):
             return HttpResponse(response, status=202, content_type='text/plain')
     else:
         return HttpResponse(status=405)
+
+
+def version(request):
+    return HttpResponse(
+                json.dumps({
+                        'version': ietf.__version__+ietf.__patch__,
+                        'date': ietf.__date__[7:-2],
+                    }),
+                content_type='application/json',
+            )
+    
