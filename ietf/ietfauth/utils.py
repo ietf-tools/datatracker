@@ -227,7 +227,7 @@ def openid_userinfo(claims, user):
 
 oidc_provider.lib.claims.StandardScopeClaims.info_profile = (
 		'Basic profile',
-		'Access to your basic datatracker information: Name, photo.'
+		'Access to your basic datatracker information: Name and photo (if present).'
 	    )
 
 class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):

@@ -833,6 +833,7 @@ class OpenIDConnectTests(TestCase):
             for key in [ 'email', 'family_name', 'given_name', 'meeting', 'name', 'roles',
                          'ticket_type', 'reg_type', 'affiliation', 'picture', ]:
                 self.assertIn(key, userinfo)
+                self.assertTrue(userinfo[key])
             self.assertIn('remote', set(userinfo['reg_type'].split()))
             self.assertNotIn('hackathon', set(userinfo['reg_type'].split()))
 
