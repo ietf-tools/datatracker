@@ -261,6 +261,24 @@
     </pre>
     </div>
 
+    <h3 id="openid-connect" class="anchor-target">OpenID Connect</h3>
+    <div>
+       <p>
+          The datatracker supports <a href="https://openid.net/connect/">OpenID Connect</a>, but
+          not dynamic registration.  The OpenID Connect Issuer is
+          <code> {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.api.urls.oidc_issuer' %} </code>
+          
+       </p>
+    </div>
+
+    <h3 id="datatracker-version" class="anchor-target">Datatracker Version</h3>
+    <div>
+       <p>
+          The datatracker version and release/patch date is available as a JSON blob at
+          <code><a href="{% url 'ietf.api.views.version' %}">{% url 'ietf.api.views.version' %}</a></code>.
+       </p>
+    </div>
+
     <h3 id="personal-api-keys" class="anchor-target">Personal API Keys</h3>
     <div>
       <p>
@@ -346,14 +364,16 @@ payload = jwstoken.payload
 
   <div class="col-md-1 hidden-print bs-docs-sidebar" id="affix">
     <ul class="nav nav-pills nav-stacked small fixed" data-spy="affix">
+
       <li><a href="#framework">Framework API</a></li>
       <li><a href="#framework-documents">&nbsp; Framework API: Documents</a></li>
       <li><a href="#simplified-documents">Simplified documents API</a></li>
       <li><a href="#iesg-position-api">IESG ballot position API</a></li>
       <li><a href="#session-video-url-api">Set session video URL API</a></li>
+      <li><a href="#openid-connect">OpenID Connect</a></li>
+      <li><a href="#datatracker-version">Datatracker Version</a></li>
       <li><a href="#personal-api-keys">Personal API keys</a></li>
       <li><a href="#signing-keys">Signing keys</a></li>
-
 
     </ul>
   </div>

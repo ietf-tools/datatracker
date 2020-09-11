@@ -21,6 +21,7 @@ from tastypie.test import ResourceTestCaseMixin
 
 import debug                            # pyflakes:ignore
 
+import ietf
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.test_data import make_meeting_test_data
@@ -64,6 +65,11 @@ class CustomApiTests(TestCase):
         url = urlreverse('ietf.api.views.api_help')
         r = self.client.get(url)
         self.assertContains(r, 'The datatracker API', status_code=200)
+
+    def test_api_openid_issuer(self):
+        url = urlreverse('ietf.api.urls.oidc_issuer')
+        r = self.client.get(url)
+        self.assertContains(r, 'OpenID Connect Issuer', status_code=200)
 
     def test_api_set_session_video_url(self):
         url = urlreverse('ietf.meeting.views.api_set_session_video_url')
@@ -354,6 +360,15 @@ class CustomApiTests(TestCase):
         err, fields = r.content.decode().split(':', 1)
         missing_fields = [ f.strip() for f in fields.split(',') ]
         self.assertEqual(set(missing_fields), set(drop_fields))
+
+
+    def test_api_version(self):
+        url = urlreverse('ietf.api.views.version')
+        r = self.client.get(url)
+        data = r.json()
+        self.assertEqual(data['version'], ietf.__version__+ietf.__patch__)
+        self.assertIn(data['date'], ietf.__date__)
+
 
 class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
     def __init__(self, *args, **kwargs):
