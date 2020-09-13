@@ -1,3 +1,34 @@
+ietfdb (7.17.0) ietf; urgency=medium
+
+  * Added an assertion to catch an unexpected document state (no IESG-state 
+    set).  Updated the log.assertion() function to accept a "note" argument, 
+    for more informative assertion messages.
+
+  * Fixed a bad membership test.
+
+  * Updated the decrypt() templatetag to ensure it returns (unicode) strings
+    rather than bytes.
+
+  * Added a view to retrieve profile photos, in order to support Meetecho's
+    need for such, at /person/{email}/photo.  The default is to supply images
+    with 80px width.  Image scaling is available using the same query argument
+    as for Gravatar: ?size=200 or ?s=200 for 200-pixel wide images, for
+    instance.
+
+  * OpenID already has a photo URL as part of the 'profile' scope.  Added the
+    datatracker photo url to the returned OpenID 'profile' scope information
+    when a profile photo is available.
+
+  * Updated coverage data and tweaked an OpenIDtest and a scope description.
+
+  * Added a datatracker version endpoint /api/version.  Fixes issue #3077.
+
+  * Added documentation of the OpenID Connect and version endpoints to 
+    /api/.  Added some tests.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Sep 2020 12:33:13 +0000
+
+
 ietfdb (7.16.0) ietf; urgency=medium
 
   **Updated new schedule editor**
