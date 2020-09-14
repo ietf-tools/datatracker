@@ -1016,12 +1016,15 @@ def edit_shepherd(request, name):
                 c.save()
                 events.append(c)
     
-                if doc.shepherd and (doc.shepherd.formatted_email() not in doc.notify):
+                if doc.shepherd and (doc.shepherd.address not in doc.notify):
                     addrs = doc.notify
                     if addrs:
                         addrs += ', '
-                    addrs += doc.shepherd.formatted_email()
-                    events.append(make_notify_changed_event(request, doc, request.user.person, addrs, c.time))
+                    addrs += doc.shepherd.address
+                    c = make_notify_changed_event(request, doc, request.user.person, addrs, c.time)
+                    c.desc += " because the document shepherd was set"
+                    c.save()
+                    events.append(c)
                     doc.notify = addrs
     
                 doc.save_with_history(events)
