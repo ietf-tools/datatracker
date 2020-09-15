@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2017, All Rights Reserved
 
 from django.conf.urls import include
+from django.views.generic import TemplateView
 
 from ietf import api
 from ietf.api import views as api_views
@@ -33,6 +34,7 @@ urlpatterns = [
     # Let the registration system notify us about registrations
     url(r'^notify/meeting/registration/?', api_views.api_new_meeting_registration),
     # OpenID authentication provider
+    url(r'^openid/$', TemplateView.as_view(template_name='api/openid-issuer.html'), name='ietf.api.urls.oidc_issuer'),
     url(r'^openid/', include('oidc_provider.urls', namespace='oidc_provider')),
     # Draft submission API
     url(r'^submit/?$', submit_views.api_submit),
