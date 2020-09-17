@@ -9,7 +9,7 @@
 
   <h1>{% block title %}Countries known to the Datatracker{% endblock %}</h1>
 
-  <p>In case you think a country or an alias is missing from the list, you can <a href="mailto:{{ ticket_email_address }}">file a ticket</a>.</p>
+  <p>In case you think a country or an alias is missing from the list, you can <a href="mailto:{{ settings.SECRETARIAT_ACTION_EMAIL }}">file a ticket</a>.</p>
 
   {% if request.user.is_staff %}
     <p>Note: since you're an admin, the country names are linked to their corresponding admin page.</p>

@@ -42,3 +42,7 @@ def sql_debug(request):
     else:
         return {'sql_debug': False }
     
+def settings_info(request):
+    return {
+        'settings': settings,
+    }

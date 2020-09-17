@@ -596,7 +596,8 @@ def change_password(request):
             # keep the session
             update_session_auth_hash(request, user)
 
-            send_mail(request, emails, None, "Datatracker password change notification", "registration/password_change_email.txt", {})
+            send_mail(request, emails, None, "Datatracker password change notification",
+                "registration/password_change_email.txt", {'action_email': settings.SECRETARIAT_ACTION_EMAIL, })
 
             messages.success(request, "Your password was successfully changed")
             return HttpResponseRedirect(urlreverse('ietf.ietfauth.views.profile'))

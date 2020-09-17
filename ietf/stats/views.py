@@ -755,7 +755,6 @@ def known_countries_list(request, stats_type=None, acronym=None):
 
     return render(request, "stats/known_countries_list.html", {
         "countries": countries,
-        "ticket_email_address": settings.SECRETARIAT_TICKET_EMAIL,
     })
 
 def meeting_stats(request, num=None, stats_type=None):

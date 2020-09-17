@@ -370,6 +370,7 @@ TEMPLATES = [
                 'ietf.context_processors.server_mode',
                 'ietf.context_processors.debug_mark_queries_from_view',
                 'ietf.context_processors.revision_info',
+                'ietf.context_processors.settings_info',
                 'ietf.secr.context_processors.secr_revision_info',
                 'ietf.context_processors.rfcdiff_base_url',
             ],
@@ -742,7 +743,8 @@ AUDIO_IMPORT_EMAIL = ['ietf@meetecho.com']
 IANA_EVAL_EMAIL = "drafts-eval@icann.org"
 SESSION_REQUEST_FROM_EMAIL = 'IETF Meeting Session Request Tool <session-request@ietf.org>' 
 
-SECRETARIAT_TICKET_EMAIL = "ietf-action@ietf.org"
+SECRETARIAT_ACTION_EMAIL = "ietf-action@ietf.org"
+SECRETARIAT_INFO_EMAIL = "ietf-info@ietf.org"
 
 # Put real password in settings_local.py
 IANA_SYNC_PASSWORD = "secret"

@@ -637,7 +637,7 @@ def main(request):
 
     # warn if there are no associated groups
     if not scheduled_groups and not unscheduled_groups:
-        messages.warning(request, 'The account %s is not associated with any groups.  If you have multiple Datatracker accounts you may try another or report a problem to ietf-action@ietf.org' % request.user)
+        messages.warning(request, 'The account %s is not associated with any groups.  If you have multiple Datatracker accounts you may try another or report a problem to %s' % (request.user, settings.SECRETARIAT_ACTION_EMAIL))
      
     # add session status messages for use in template
     for group in scheduled_groups:
