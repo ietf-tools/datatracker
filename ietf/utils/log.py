@@ -135,15 +135,16 @@ def assertion(statement, state=True, note=None):
         else:
             # build a simulated traceback object
             tb = build_traceback(inspect.stack()[1:])
+            e  = AssertionError(statement)
             # provide extra info if available
             extra = {}
             for key in [ 'request', 'status_code', ]:
                 if key in frame.f_locals:
                     extra[key] = frame.f_locals[key]
             if note:
-                logger.error("Assertion failed: '%s': %s != %s (%s)", statement, repr(value), state, note, exc_info=(AssertionError, None, tb), extra=extra)
+                logger.error("Assertion failed: '%s': %s != %s (%s)", statement, repr(value), state, note, exc_info=(AssertionError, e, tb), extra=extra)
             else:
-                logger.error("Assertion failed: '%s': %s != %s", statement, repr(value), state, exc_info=(AssertionError, None, tb), extra=extra)
+                logger.error("Assertion failed: '%s': %s != %s", statement, repr(value), state, exc_info=(AssertionError, e, tb), extra=extra)
 
 def unreachable(date="(unknown)"):
     "Raises an assertion or sends traceback to admins if executed."

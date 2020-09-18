@@ -267,6 +267,9 @@ class DocumentInfo(models.Model):
             self.states.remove(*others)
         if state not in already_set:
             self.states.add(state)
+        if state.type and state.type.slug == 'draft-iesg':
+            iesg_state = self.states.get(type_id="draft-iesg") # pyflakes:ignore
+            log.assertion('iesg_state', note="A document's 'draft-iesg' state should never be unset'.  Failed for %s"%self.name)
         self.state_cache = None # invalidate cache
         self._cached_state_slug = {}
 
