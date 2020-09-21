@@ -41,11 +41,11 @@ class Utf8ExceptionMiddleware(object):
         return self.get_response(request)
     def process_exception(self, request, exception):
         if isinstance(exception, OperationalError):
-            extype, value, tb = exc_parts()
-            if value[0] == 1366:
-                log("Database 4-byte utf8 exception: %s: %s" % (extype, value))
+            extype, e, tb = exc_parts()
+            if e.args[0] == 1366:
+                log("Database 4-byte utf8 exception: %s: %s" % (extype, e))
                 return render(request, 'utf8_4byte_failed.html',
-                              {'exception': extype, 'args': value, 'traceback': "".join(tb)} )
+                              {'exception': extype, 'args': e.args, 'traceback': "".join(tb)} )
         return None
 
 def redirect_trailing_period_middleware(get_response):
