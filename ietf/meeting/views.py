@@ -3051,7 +3051,7 @@ def interim_request_cancel(request, number):
             result_status = SessionStatusName.objects.get(slug='canceled' if was_scheduled else 'canceledpa')
             for session in meeting.session_set.all():
                 SchedulingEvent.objects.create(
-                    session=first_session,
+                    session=session,
                     status=result_status,
                     by=request.user.person,
                 )
