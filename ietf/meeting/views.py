@@ -1637,7 +1637,7 @@ def week_view(request, num=None, name=None, owner=None):
     # We'll determine this using the saturday before the first scheduled regular session.
     first_regular_session = meeting.schedule.qs_assignments_with_sessions.filter(session__type_id='regular').order_by('timeslot__time').first()
     first_regular_session_time = first_regular_session.timeslot.time if first_regular_session else date2datetime(meeting.date)
-    saturday_before = first_regular_session_time - datetime.timedelta(days=(first_regular_session_time.weekday() - 5)%7)
+    saturday_before = first_regular_session_time.replace(hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(days=(first_regular_session_time.weekday() - 5)%7)
 #    saturday_after = saturday_before + datetime.timedelta(days=7)
 #    filtered_assignments = filtered_assignments.filter(timeslot__time__gte=saturday_before,timeslot__time__lt=saturday_after)
     filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
