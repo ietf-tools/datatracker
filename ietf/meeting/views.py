@@ -1379,7 +1379,9 @@ def should_include_assignment(filter_params, assignment):
     session_type = assignment.timeslot.type_id
 
     # Hide if wg or type hide lists apply
-    if (group_acronym in filter_params['hide']) or (session_type in filter_params['hidetypes']):
+    if ((group_acronym in filter_params['hide']) or
+        (parent_acronym in filter_params['hide']) or
+        (session_type in filter_params['hidetypes'])):
         return False
 
     # Show if any of the show lists apply, including showing by parent group
@@ -2774,14 +2776,8 @@ def past(request):
                   })
 
 def upcoming(request):
-    """List of upcoming meetings
-
-    Only querystring filters by wg name are supported. Always includes IETF meetings;
-    filters 'interim' type meetings by wg name as requested. The showtypes/hidetypes
-    filters are ignored..
-    """
+    """List of upcoming meetings"""
     today = datetime.date.today()
-    filter_params = parse_agenda_filter_params(request.GET)
 
     # Get ietf meetings starting 7 days ago, and interim meetings starting today
     ietf_meetings = Meeting.objects.filter(type_id='ietf', date__gte=today-datetime.timedelta(days=7))
@@ -2796,22 +2792,21 @@ def upcoming(request):
             timeslotassignments__timeslot__time__gte=today
         )
     ).filter(current_status__in=('sched','canceled'))
-    if filter_params is not None:
-        group_shown = interim_sessions.filter(
-            group__acronym__in=filter_params['show']
-        )
-        parent_group_shown = interim_sessions.filter(
-            group__parent__acronym__in=filter_params['show']
-        )
-        # The '|' combines querysets with OR - qs.filter(x=1) | qs.filter(y=2)
-        # translates to a 'WHERE x=1 OR y=2' in the SQL.
-        interim_sessions = (
-            group_shown | parent_group_shown
-        ).exclude(
-            # N.B., we only consider parent group (area) for show, not for hide.
-            # This is consistent with previous behavior but is worth revisiting.
-            group__acronym__in=filter_params['hide']
-        )
+
+    # get groups for group UI display - same algorithm as in agenda(), but
+    # using group / parent instead of historic_group / historic_parent
+    groups = [s.group for s in interim_sessions
+              if s.group
+              and s.group.type_id in ('wg', 'rg', 'ag', 'rag', 'iab', 'program')
+              and s.group.parent]
+    group_parents = {g.parent for g in groups if g.parent}
+    seen = set()
+    for p in group_parents:
+        p.group_list = []
+        for g in groups:
+            if g.acronym not in seen and g.parent.acronym == p.acronym:
+                p.group_list.append(g)
+                seen.add(g.acronym)
 
     for session in interim_sessions:
         session.historic_group = session.group
@@ -2825,15 +2820,25 @@ def upcoming(request):
     # add menu actions
     actions = []
     if can_request_interim_meeting(request.user):
-        actions.append(('Request new interim meeting',
-                        reverse('ietf.meeting.views.interim_request')))
-    actions.append(('Download as .ics',
-                    reverse('ietf.meeting.views.upcoming_ical')))
-    actions.append(('Subscribe with webcal',
-                    'webcal://'+request.get_host()+reverse('ietf.meeting.views.upcoming_ical')))
+        actions.append(dict(
+            label='Request new interim meeting',
+            url=reverse('ietf.meeting.views.interim_request'),
+            append_filter=False)
+        )
+    actions.append(dict(
+        label='Download as .ics',
+        url=reverse('ietf.meeting.views.upcoming_ical'),
+        append_filter=True)
+    )
+    actions.append(dict(
+        label='Subscribe with webcal',
+        url='webcal://'+request.get_host()+reverse('ietf.meeting.views.upcoming_ical'),
+        append_filter=True)
+    )
 
     return render(request, 'meeting/upcoming.html', {
                   'entries': entries,
+                  'group_parents': group_parents,
                   'menu_actions': actions,
                   'menu_entries': menu_entries,
                   'selected_menu_entry': selected_menu_entry,

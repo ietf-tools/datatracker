@@ -738,6 +738,29 @@ class MeetingTests(TestCase):
             expected_session_summaries=[]
         )
 
+    def test_ical_filter_show_area(self):
+        meeting = make_meeting_test_data()
+        mars = Group.objects.get(acronym='mars')
+        area = mars.parent
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?show=%s' % area.acronym,
+            expected_session_summaries=[
+                'ames - Asteroid Mining Equipment Standardization Group',
+                'mars - Martian Special Interest Group',
+            ]
+        )
+
+    def test_ical_filter_hide_area(self):
+        meeting = make_meeting_test_data()
+        mars = Group.objects.get(acronym='mars')
+        area = mars.parent
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?show=mars&hide=%s' % area.acronym,
+            expected_session_summaries=[]
+        )
+
     def test_ical_filter_show_and_hide(self):
         meeting = make_meeting_test_data()
         self.do_ical_filter_test(
@@ -1861,40 +1884,26 @@ class InterimTests(TestCase):
         q = PyQuery(r.content)
         self.assertIn('CANCELLED', q('tr>td.text-right>span').text())
 
-    def test_upcoming_filter_show(self):
-        r, interims = self.do_upcoming_test('show=ames')
-        self.assertNotContains(r, interims['mars'].number)
-        self.assertContains(r, interims['ames'].number)
-        self.assertContains(r, 'IETF 72')
-        # cancelled session
-        q = PyQuery(r.content)
-        self.assertIn('CANCELLED', q('tr>td.text-right>span').text())
-
-    def test_upcoming_filter_show_area(self):
-        make_meeting_test_data(create_interims=True)
-        area = Group.objects.get(acronym='mars').parent
-        self.assertEqual(area,
-                         Group.objects.get(acronym='ames').parent,
-                         'The mars and ames groups have different areas; this breaks this test')
-        r, interims = self.do_upcoming_test('show=%s' % area.acronym, create_meeting=False)
+    def test_upcoming_filters_ignored(self):
+        """The upcoming view should ignore filter querystrings"""
+        r, interims = self.do_upcoming_test()
         self.assertContains(r, interims['mars'].number)
         self.assertContains(r, interims['ames'].number)
         self.assertContains(r, 'IETF 72')
 
-    def test_upcoming_filter_hide(self):
-        r, interims = self.do_upcoming_test('hide=mars')
-        self.assertNotContains(r, interims['mars'].number)
-        self.assertNotContains(r, interims['ames'].number)
-        self.assertContains(r, 'IETF 72')
-
-    def test_upcoming_filter_show_and_hide(self):
-        r, interims = self.do_upcoming_test('show=mars,ames&hide=ames')
+        r, interims = self.do_upcoming_test('show=ames', create_meeting=False)
         self.assertContains(r, interims['mars'].number)
-        self.assertNotContains(r, interims['ames'].number)
+        self.assertContains(r, interims['ames'].number)
         self.assertContains(r, 'IETF 72')
 
-    def do_upcoming_ical_test(self, querystring=None):
-        make_meeting_test_data(create_interims=True)
+        r, interims = self.do_upcoming_test('show=ames&hide=ames,mars', create_meeting=False)
+        self.assertContains(r, interims['mars'].number)
+        self.assertContains(r, interims['ames'].number)
+        self.assertContains(r, 'IETF 72')
+
+    def do_upcoming_ical_test(self, querystring=None, create_meeting=True):
+        if create_meeting:
+            make_meeting_test_data(create_interims=True)
 
         # Create a group with a plenary interim session for testing type filters
         somegroup = GroupFactory(acronym='sg', name='Some Group')
@@ -2009,6 +2018,27 @@ class InterimTests(TestCase):
                                       expected_event_summaries=[
                                           'mars - Martian Special Interest Group',
                                       ])
+
+    def test_upcoming_ical_filter_show_area(self):
+        make_meeting_test_data(create_interims=True)
+        mars = Group.objects.get(acronym='mars')
+        area = mars.parent
+        r = self.do_upcoming_ical_test('show=%s' % area.acronym,
+                                       create_meeting=False)
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[
+                                          'ames - Asteroid Mining Equipment Standardization Group',
+                                          'mars - Martian Special Interest Group',
+                                      ])
+
+    def test_upcoming_ical_filter_hide_area(self):
+        make_meeting_test_data(create_interims=True)
+        mars = Group.objects.get(acronym='mars')
+        area = mars.parent
+        r = self.do_upcoming_ical_test('show=mars&hide=%s' % area.acronym,
+                                       create_meeting=False)
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[])
 
     def test_upcoming_json(self):
         make_meeting_test_data(create_interims=True)

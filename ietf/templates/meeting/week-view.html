@@ -153,7 +153,8 @@
         var item_area = (item.area || '').toLowerCase();
         var item_state = (item.state || '').toLowerCase();
 
-        if ((fp['hide_groups'].indexOf(item_group) >= 0) || 
+        if ((fp['hide_groups'].indexOf(item_group) >= 0) ||
+                (fp['hide_groups'].indexOf(item_area) >= 0) ||
                 (fp['hide_types'].indexOf(item_type) >= 0)) {
           return false;
         }

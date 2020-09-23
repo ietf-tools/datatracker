@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015, 2020, All Rights Reserved #}
 {% load origin %}
 {% load cache %}
 {% load ietf_filters static classname %}
@@ -31,7 +31,9 @@
 
       <p>For more on regular IETF meetings see <a href="https://www.ietf.org/meeting/upcoming.html">here</a></p>
 
-      {% if menu_entries %}
+        {% include 'meeting/agenda_filter.html' with group_parents=group_parents only%}
+
+        {% if menu_entries %}
       <ul class="nav nav-tabs" role="tablist">
         {% for name, url in menu_entries %}
           <li {% if selected_menu_entry == name.lower %}class="active"{% endif %}>
@@ -42,16 +44,18 @@
       {% endif %}
 
       {% if menu_actions %}
-        <div class="buttonlist">
-          {% for name, url in menu_actions %}
-            <a class="btn btn-default" href="{{ url }}">{{ name }}</a>
+        <div id="menu-actions" class="buttonlist">
+          {% for action in menu_actions %}
+            <a class="btn btn-default"
+               data-append-filter="{{ action.append_filter }}"
+               href="{{ action.url }}">{{ action.label }}</a>
           {% endfor %}
         </div>
       {% endif %}
-  
+
       {% cache 600 upcoming-meetings entries.count %}
         {% if entries %}
-          <table class="table table-condensed table-striped tablesorter">
+          <table id="upcoming-meeting-table" class="table table-condensed table-striped tablesorter">
             <thead>
               <tr>
                 <th>Date</th>
@@ -62,7 +66,9 @@
             </thead>
             <tbody>
               {% for entry in entries %}
-                <tr>
+                <tr class="entry"
+                    data-item-group="{% if entry.group %}{{ entry.group.acronym|lower }}{% endif %}"
+                    data-item-area="{% if entry.group and entry.group.parent %}{{ entry.group.parent.acronym|lower }}{% endif %}">
                   {% if entry|classname == 'Meeting' %}
                     {% with meeting=entry %}
                       <td>{{ meeting.date }} - {{ meeting.end }}</td>
@@ -110,47 +116,152 @@
 <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 <script src="{% static 'fullcalendar/core/main.js' %}"></script>
 <script src="{% static 'fullcalendar/daygrid/main.js' %}"></script>
+    <script src="{% static 'ietf/js/agenda/agenda_filter.js' %}"></script>
     <script>
-
-      document.addEventListener('DOMContentLoaded', function() {
-        var calendarEl = document.getElementById('calendar');
-        var glue = calendarEl.clientWidth > 720 ? ' ' : '\n';
-
-        var calendar = new FullCalendar.Calendar(calendarEl, {
-          plugins: [ 'dayGrid' ],
-          displayEventTime: false,
-          events: [
-          {% for entry in entries %}
-            {% if entry|classname == 'Meeting' %}
+      // List of all events with meta-info needed for filtering
+      var all_event_list = [{% for entry in entries %}
+          {% if entry|classname == 'Meeting' %}
               {% with meeting=entry %}
-                {
-                  title: 'IETF {{ meeting.number }}',
-                  start: '{{meeting.date}}',
-                  end: '{{meeting.end}}',
-                  url: '{% url 'ietf.meeting.views.agenda' num=meeting.number %}'
-                }{% if not forloop.last %}, {% endif %}
+                  {
+                      title: 'IETF {{ meeting.number }}',
+                      start: '{{meeting.date}}',
+                      end: '{{meeting.end}}',
+                      url: '{% url 'ietf.meeting.views.agenda' num=meeting.number %}'
+                  }{% if not forloop.last %}, {% endif %}
               {% endwith %}
-            {% else %} {# if it's not a Meeting, it's a Session #}
+          {% else %} {# if it's not a Meeting, it's a Session #}
               {% with session=entry %}
-                {
-                  title: '{{session.official_timeslotassignment.timeslot.utc_start_time|date:"H:i"}}-{{session.official_timeslotassignment.timeslot.utc_end_time|date:"H:i"}}'+glue+'{{session.group.acronym}}',
-                  start: '{{session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}}',
-                  end: '{{session.official_timeslotassignment.timeslot.utc_end_time | date:"Y-m-d H:i"}}',
-                  url: '{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}'
-                }
+                  {
+                      title: '{{session.official_timeslotassignment.timeslot.utc_start_time|date:"H:i"}}-{{session.official_timeslotassignment.timeslot.utc_end_time|date:"H:i"}}',
+                      group: '{% if session.group %}{{session.group.acronym}}{% endif %}',
+                      area: '{% if session.group and session.group.parent %}{{ session.group.parent.acronym }}{% endif %}',
+                      start: '{{session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}}',
+                      end: '{{session.official_timeslotassignment.timeslot.utc_end_time | date:"Y-m-d H:i"}}',
+                      url: '{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}'
+                  }
               {% endwith %}
               {% if not forloop.last %}, {% endif %}
-            {% endif %}
-          {% endfor %}
-          ],
-          eventRender: function(info) {
-            $(info.el).tooltip({title: info.event.title});             
-          },
-          timeFormat: 'H:mm',
-        });
+          {% endif %}
+      {% endfor %}];
+      var filtered_event_list = []; // currently visible list
+      var event_calendar; // handle on the calendar object
 
-        calendar.render();
-      });
+      // Test whether an event should be visible given a set of filter parameters
+      function calendar_event_visible(filter_params, event) {
+          // Visible if filtering is disabled or event has no group
+          if (!agenda_filter.filtering_is_enabled(filter_params) || !event.group) {
+              return true;
+          }
+
+          // Exclude if group or area is in the hide_groups list
+          if (filter_params['hide_groups'].indexOf(event.group) !== -1) {
+              return false;
+          }
+          if (event.area && (filter_params['hide_groups'].indexOf(event.area) !== -1)) {
+              return false;
+          }
+
+          // Include if group or area is in the show_groups list
+          if (filter_params['show_groups'].indexOf(event.group) !== -1) {
+              return true;
+          }
+          if (event.area && (filter_params['show_groups'].indexOf(event.area) !== -1)) {
+              return true;
+          }
+
+          // Not selected, exclude by default
+          return false;
+      }
+
+      // Apply filter_params to the event list and format data for the calendar
+      function filter_calendar_events(filter_params, event_list) {
+          var calendarEl = document.getElementById('calendar');
+          var glue = calendarEl.clientWidth > 720 ? ' ' : '\n';
+          var filtered_output = [];
+          for (var ii = 0; ii < event_list.length; ii++) {
+              var this_event = event_list[ii];
+              if (calendar_event_visible(filter_params, this_event)) {
+                  filtered_output.push({
+                      title: this_event.title + (this_event.group ? (glue + this_event.group) : ''),
+                      start: this_event.start,
+                      end: this_event.end,
+                      url: this_event.url
+                  })
+              }
+          }
+          return filtered_output;
+      }
+
+      // Initialize or update the calendar, updating the filtered event list
+      function update_calendar(filter_params) {
+          filtered_event_list = filter_calendar_events(filter_params, all_event_list);
+          if (event_calendar) {
+              event_calendar.refetchEvents()
+          } else {
+              /* Initialize the calendar object.
+               * The event source is a function that simply returns the current global list of
+               * filtered events.
+               */
+              var calendarEl = document.getElementById('calendar')
+              event_calendar = new FullCalendar.Calendar(calendarEl, {
+                  plugins: ['dayGrid'],
+                  displayEventTime: false,
+                  events: function (fInfo, success) {success(filtered_event_list)},
+                  eventRender: function (info) {
+                      $(info.el).tooltip({ title: info.event.title })
+                  },
+                  timeFormat: 'H:mm',
+              })
+              event_calendar.render()
+          }
+      }
+
+      function update_meeting_display(filter_params) {
+          var meeting_rows = $("#upcoming-meeting-table tr.entry")
+          if (!agenda_filter.filtering_is_enabled(filter_params)) {
+              meeting_rows.show();
+              return;
+          }
+
+          // hide everything that has a group
+          meeting_rows.filter("[data-item-group!='']").hide();
+
+          $.each(filter_params['show_groups'], function (i, v) {
+              // this is a regular item by wg: when present, show these rows
+              meeting_rows.filter('[data-item-group="'+ v +'"]').show();
+              meeting_rows.filter('[data-item-area="'+ v +'"]').show();
+          });
+          $.each(filter_params['hide_groups'], function (i, v) {
+              // this is a "negative" item by wg: when present, hide these rows
+              meeting_rows.filter('[data-item-group="'+ v +'"]').hide();
+              meeting_rows.filter('[data-item-area="'+ v +'"]').hide();
+          });
+      }
+
+      function update_links(filter_params) {
+          var filtered_links = $("#menu-actions [data-append-filter='True']");
+          var filtering_enabled = agenda_filter.filtering_is_enabled(filter_params);
+          filtered_links.each(function(index, elt) {
+              var orig_link_href = $(elt).attr("href").split("?")[0];
+              if (filtering_enabled) {
+                  // append new querystring
+                  $(elt).attr("href", orig_link_href+window.location.search);
+              } else {
+                  // remove querystring
+                  $(elt).attr("href", orig_link_href);
+              }
+          });
+      }
+
+      function update_view(filter_params) {
+          update_meeting_display(filter_params);
+          update_links(filter_params);
+          update_calendar(filter_params);
+      }
+
+      // Set up the filtering - the callback will be called when the page loads and on any filter changes
+      agenda_filter.set_update_callback(update_view);
+      agenda_filter.enable();
 
       $(".modal").on("show.bs.modal", function () {
 	  var i = $(this).find(".frame");

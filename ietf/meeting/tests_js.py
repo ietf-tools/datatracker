@@ -4,20 +4,28 @@
 
 import time
 import datetime
+import shutil
+import os
 from pyquery import PyQuery 
 from unittest import skipIf
 
 import django
 from django.urls import reverse as urlreverse
+from django.utils.text import slugify
+from django.db.models import F
 #from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore
 
 from ietf.doc.factories import DocumentFactory
 from ietf.group import colors
+from ietf.group.models import Group
 from ietf.meeting.factories import SessionFactory
 from ietf.meeting.test_data import make_meeting_test_data
-from ietf.meeting.models import Schedule, SchedTimeSessAssignment, Session, Room, TimeSlot, Constraint, ConstraintName
+from ietf.meeting.models import (Schedule, SchedTimeSessAssignment, Session,
+                                 Room, TimeSlot, Constraint, ConstraintName,
+                                 Meeting)
+from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.utils.test_runner import IetfLiveServerTestCase
 from ietf.utils.pipe import pipe
 from ietf import settings
@@ -314,24 +322,32 @@ class AgendaTests(MeetingTestCase):
     def test_agenda_view_js_func_parse_query_params(self):
         """Test parse_query_params() function"""
         self.driver.get(self.absreverse('ietf.meeting.views.agenda'))
-        
+
+        parse_query_params = 'return agenda_filter_for_testing.parse_query_params'
+
         # Only 'show' param
         result = self.driver.execute_script(
-            'return parse_query_params("?show=group1,group2,group3");'
+            parse_query_params + '("?show=group1,group2,group3");'
         )
         self.assertEqual(result, dict(show='group1,group2,group3'))
 
         # Only 'hide' param
         result = self.driver.execute_script(
-            'return parse_query_params("?hide=group4,group5,group6");'
+            parse_query_params + '("?hide=group4,group5,group6");'
         )
         self.assertEqual(result, dict(hide='group4,group5,group6'))
-        
+
         # Both 'show' and 'hide'
         result = self.driver.execute_script(
-            'return parse_query_params("?show=group1,group2,group3&hide=group4,group5,group6");'
+            parse_query_params + '("?show=group1,group2,group3&hide=group4,group5,group6");'
         )
         self.assertEqual(result, dict(show='group1,group2,group3', hide='group4,group5,group6'))
+
+        # Encoded
+        result = self.driver.execute_script(
+            parse_query_params + '("?show=%20group1,%20group2,%20group3&hide=group4,group5,group6");'
+        )
+        self.assertEqual(result, dict(show=' group1, group2, group3', hide='group4,group5,group6'))
 
     def test_agenda_view_js_func_toggle_list_item(self):
         """Test toggle_list_item() function"""
@@ -341,30 +357,30 @@ class AgendaTests(MeetingTestCase):
             """
             // start empty, add item
             var list0=[];
-            toggle_list_item(list0, 'item');
+            %(toggle_list_item)s(list0, 'item');
             
             // one item, remove it
             var list1=['item'];
-            toggle_list_item(list1, 'item');
+            %(toggle_list_item)s(list1, 'item');
             
             // one item, add another
             var list2=['item1'];
-            toggle_list_item(list2, 'item2');
+            %(toggle_list_item)s(list2, 'item2');
             
             // multiple items, remove first
             var list3=['item1', 'item2', 'item3'];
-            toggle_list_item(list3, 'item1');
+            %(toggle_list_item)s(list3, 'item1');
             
             // multiple items, remove middle
             var list4=['item1', 'item2', 'item3'];
-            toggle_list_item(list4, 'item2');
+            %(toggle_list_item)s(list4, 'item2');
             
             // multiple items, remove last
             var list5=['item1', 'item2', 'item3'];
-            toggle_list_item(list5, 'item3');
+            %(toggle_list_item)s(list5, 'item3');
             
             return [list0, list1, list2, list3, list4, list5];
-            """
+            """ % {'toggle_list_item': 'agenda_filter_for_testing.toggle_list_item'}
         )
         self.assertEqual(result[0], ['item'], 'Adding item to empty list failed')
         self.assertEqual(result[1], [], 'Removing only item in a list failed')
@@ -385,10 +401,19 @@ class AgendaTests(MeetingTestCase):
             self.driver.switch_to.frame(weekview_iframe)
             self.assert_weekview_item_visibility(visible_groups)
             self.driver.switch_to.default_content()
-        
+
+    def test_agenda_view_filter_show_none(self):
+        """Filtered agenda view should display only matching rows (no group selected)"""
+        self.do_agenda_view_filter_test('?show=', [])
+
     def test_agenda_view_filter_show_one(self):
         """Filtered agenda view should display only matching rows (one group selected)"""
         self.do_agenda_view_filter_test('?show=mars', ['mars'])
+
+    def test_agenda_view_filter_show_area(self):
+        mars = Group.objects.get(acronym='mars')
+        area = mars.parent
+        self.do_agenda_view_filter_test('?show=%s' % area.acronym, ['ames', 'mars'])
 
     def test_agenda_view_filter_show_two(self):
         """Filtered agenda view should display only matching rows (two groups selected)"""
@@ -400,6 +425,11 @@ class AgendaTests(MeetingTestCase):
 
     def test_agenda_view_filter_hide(self):
         self.do_agenda_view_filter_test('?hide=ietf', [])
+
+    def test_agenda_view_filter_hide_area(self):
+        mars = Group.objects.get(acronym='mars')
+        area = mars.parent
+        self.do_agenda_view_filter_test('?show=mars&hide=%s' % area.acronym, [])
 
     def test_agenda_view_filter_show_and_hide(self):
         self.do_agenda_view_filter_test('?show=mars&hide=ietf', ['mars'])
@@ -551,7 +581,186 @@ class AgendaTests(MeetingTestCase):
         WebDriverWait(self.driver, 2).until(expected_conditions.url_to_be(expected_url))
         # no assertion here - if WebDriverWait raises an exception, the test will fail.
         # We separately test whether this URL will filter correctly.
-        
+
+
+@skipIf(skip_selenium, skip_message)
+class InterimTests(MeetingTestCase):
+    def setUp(self):
+        super(InterimTests, self).setUp()
+        self.materials_dir = self.tempdir('materials')
+        self.saved_agenda_path = settings.AGENDA_PATH
+        settings.AGENDA_PATH = self.materials_dir
+        self.meeting = make_meeting_test_data(create_interims=True)
+
+    def tearDown(self):
+        settings.AGENDA_PATH = self.saved_agenda_path
+        shutil.rmtree(self.materials_dir)
+        super(InterimTests, self).tearDown()
+
+    def tempdir(self, label):
+        # Borrowed from  test_utils.TestCase
+        slug = slugify(self.__class__.__name__.replace('.','-'))
+        dirname = "tmp-{label}-{slug}-dir".format(**locals())
+        if 'VIRTUAL_ENV' in os.environ:
+            dirname = os.path.join(os.environ['VIRTUAL_ENV'], dirname)
+        path = os.path.abspath(dirname)
+        if not os.path.exists(path):
+            os.mkdir(path)
+        return path
+
+    def displayed_interims(self, groups=None):
+        sessions = add_event_info_to_session_qs(
+            Session.objects.filter(
+                meeting__type_id='interim',
+                timeslotassignments__schedule=F('meeting__schedule'),
+                timeslotassignments__timeslot__time__gte=datetime.datetime.today()
+            )
+        ).filter(current_status__in=('sched','canceled'))
+        meetings = []
+        for s in sessions:
+            if groups is None or s.group.acronym in groups:
+                s.meeting.calendar_label = s.group.acronym  # annotate with group
+                meetings.append(s.meeting)
+        return meetings
+
+    def all_ietf_meetings(self):
+        meetings = Meeting.objects.filter(
+            type_id='ietf',
+            date__gte=datetime.datetime.today()-datetime.timedelta(days=7)
+        )
+        for m in meetings:
+            m.calendar_label = 'IETF %s' % m.number
+        return meetings
+
+    def assert_upcoming_meeting_visibility(self, visible_meetings=None):
+        """Assert that correct items are visible in current browser window
+
+        If visible_meetings is None (the default), expects all items to be visible.
+        """
+        expected = {mtg.number for mtg in visible_meetings}
+        not_visible = set()
+        unexpected = set()
+        entries = self.driver.find_elements_by_css_selector(
+            'table#upcoming-meeting-table > tbody > tr.entry'
+        )
+        for entry in entries:
+            nums = [n for n in expected if n in entry.text]
+            self.assertLessEqual(len(nums), 1, 'Multiple matching meeting numbers')
+            if len(nums) > 0:  # asserted that it's at most 1, so if it's not 0, it's 1.
+                expected.remove(nums[0])
+                if not entry.is_displayed():
+                    not_visible.add(nums[0])
+                continue
+            # Found an unexpected row - this is ok as long as it's hidden
+            if entry.is_displayed():
+                unexpected.add(entry.text)
+
+        self.assertEqual(expected, set(), "Missing entries for expected iterim meetings.")
+        self.assertEqual(not_visible, set(), "Hidden rows for expected interim meetings.")
+        self.assertEqual(unexpected, set(), "Unexpected row visible")
+
+    def assert_upcoming_meeting_calendar(self, visible_meetings=None):
+        """Assert that correct items are sent to the calendar"""
+        def advance_month():
+            button = WebDriverWait(self.driver, 2).until(
+                expected_conditions.element_to_be_clickable(
+                    (By.CSS_SELECTOR, 'div#calendar button.fc-next-button')))
+            button.click()
+
+        seen = set()
+        not_visible = set()
+        unexpected = set()
+
+        # Test that we see all the expected meetings when we scroll through the
+        # entire year. We only check the group names / IETF numbers. This should
+        # be good enough to catch filtering errors but does not validate the
+        # details of what's shown on the calendar. Need 13 iterations instead of
+        # 12 in order to check the starting month of the following year, which
+        # will usually contain the day 1 year from the start date.
+        for _ in range(13):
+            entries = self.driver.find_elements_by_css_selector(
+                'div#calendar div.fc-content'
+            )
+            for entry in entries:
+                meetings = [m for m in visible_meetings if m.calendar_label in entry.text]
+                if len(meetings) > 0:
+                    seen.add(meetings[0])
+                    if not entry.is_displayed():
+                        not_visible.add(meetings[0])
+                    continue
+                # Found an unexpected row - this is ok as long as it's hidden
+                if entry.is_displayed():
+                    unexpected.add(entry.text)
+            advance_month()
+
+        self.assertEqual(seen, visible_meetings, "Expected calendar entries not shown.")
+        self.assertEqual(not_visible, set(), "Hidden calendar entries for expected interim meetings.")
+        self.assertEqual(unexpected, set(), "Unexpected calendar entries visible")
+
+    def do_upcoming_view_filter_test(self, querystring, visible_meetings=()):
+        self.login()
+        self.driver.get(self.absreverse('ietf.meeting.views.upcoming') + querystring)
+        self.assert_upcoming_meeting_visibility(visible_meetings)
+        self.assert_upcoming_meeting_calendar(visible_meetings)
+
+        # Check the ical links
+        simplified_querystring = querystring.replace(' ', '%20')  # encode spaces'
+        ics_link = self.driver.find_element_by_link_text('Download as .ics')
+        self.assertIn(simplified_querystring, ics_link.get_attribute('href'))
+        webcal_link = self.driver.find_element_by_link_text('Subscribe with webcal')
+        self.assertIn(simplified_querystring, webcal_link.get_attribute('href'))
+
+    def test_upcoming_view_displays_all_interims(self):
+        """By default, all upcoming interims and IETF meetings should be displayed"""
+        meetings = set(self.all_ietf_meetings())
+        meetings.update(self.displayed_interims())
+        self.do_upcoming_view_filter_test('', meetings)
+
+    def test_upcoming_view_filter_show_none(self):
+        meetings = set(self.all_ietf_meetings())
+        self.do_upcoming_view_filter_test('?show=', meetings)
+
+    def test_upcoming_view_filter_show_one(self):
+        meetings = set(self.all_ietf_meetings())
+        meetings.update(self.displayed_interims(groups=['mars']))
+        self.do_upcoming_view_filter_test('?show=mars', meetings)
+
+    def test_upcoming_view_filter_show_area(self):
+        mars = Group.objects.get(acronym='mars')
+        area = mars.parent
+        meetings = set(self.all_ietf_meetings())
+        meetings.update(self.displayed_interims(groups=['mars', 'ames']))
+        self.do_upcoming_view_filter_test('?show=%s' % area.acronym, meetings)
+
+    def test_upcoming_view_filter_show_two(self):
+        meetings = set(self.all_ietf_meetings())
+        meetings.update(self.displayed_interims(groups=['mars', 'ames']))
+        self.do_upcoming_view_filter_test('?show=mars,ames', meetings)
+
+    def test_upcoming_view_filter_whitespace(self):
+        """Whitespace in filter lists should be ignored"""
+        meetings = set(self.all_ietf_meetings())
+        meetings.update(self.displayed_interims(groups=['mars']))
+        self.do_upcoming_view_filter_test('?show=mars , ames &hide=   ames', meetings)
+
+    def test_upcoming_view_filter_hide(self):
+        # Not a useful application, but test for completeness...
+        meetings = set(self.all_ietf_meetings())
+        self.do_upcoming_view_filter_test('?hide=mars', meetings)
+
+    def test_upcoming_view_filter_hide_area(self):
+        mars = Group.objects.get(acronym='mars')
+        area = mars.parent
+        meetings = set(self.all_ietf_meetings())
+        self.do_upcoming_view_filter_test('?show=mars&hide=%s' % area.acronym, meetings)
+
+    def test_upcoming_view_filter_show_and_hide_same_group(self):
+        meetings = set(self.all_ietf_meetings())
+        meetings.update(self.displayed_interims(groups=['mars']))
+        self.do_upcoming_view_filter_test('?show=mars,ames&hide=ames', meetings)
+
+    # The upcoming meetings view does not handle showtypes / hidetypes
+
 # The following are useful debugging tools
 
 # If you add this to a LiveServerTestCase and run just this test, you can browse
