@@ -789,6 +789,8 @@ class IetfLiveServerTestCase(StaticLiveServerTestCase):
         set_coverage_checking(False)
         super(IetfLiveServerTestCase, cls).setUpClass()
 
+    def setUp(self):
+        super(IetfLiveServerTestCase, self).setUp()
         # LiveServerTestCase uses TransactionTestCase which seems to
         # somehow interfere with the fixture loading process in
         # IetfTestRunner when running multiple tests (the first test

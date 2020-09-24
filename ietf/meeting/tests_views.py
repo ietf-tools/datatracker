@@ -22,6 +22,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import Client, override_settings
 from django.db.models import F
+from django.http import QueryDict
 
 import debug           # pyflakes:ignore
 
@@ -37,7 +38,7 @@ from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignm
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
 from ietf.meeting.utils import finalize, condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs
-from ietf.meeting.views import session_draft_list
+from ietf.meeting.views import session_draft_list, parse_agenda_filter_params
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -60,6 +61,33 @@ else:
     skip_message = ("Skipping pdf test: The binary for ghostscript wasn't found in the\n       "
                     "location indicated in settings.py.")
     print("     "+skip_message)
+
+
+def assert_ical_response_is_valid(test_inst, response, expected_event_summaries=None, expected_event_count=None):
+    """Validate an HTTP response containing iCal data
+
+    Based on RFC2445, but not exhaustive by any means. Assumes a single iCalendar object. Checks that
+    expected_event_summaries are found, but other events are allowed to be present. Specify the
+    expected_event_count if you want to reject additional events.
+    """
+    test_inst.assertEqual(response.get('Content-Type'), "text/calendar")
+
+    # Validate iCalendar object
+    test_inst.assertContains(response, 'BEGIN:VCALENDAR', count=1)
+    test_inst.assertContains(response, 'END:VCALENDAR', count=1)
+    test_inst.assertContains(response, 'PRODID:', count=1)
+    test_inst.assertContains(response, 'VERSION', count=1)
+
+    # Validate event objects
+    if expected_event_summaries is not None:
+        for summary in expected_event_summaries:
+            test_inst.assertContains(response, 'SUMMARY:' + summary)
+
+    if expected_event_count is not None:
+        test_inst.assertContains(response, 'BEGIN:VEVENT', count=expected_event_count)
+        test_inst.assertContains(response, 'END:VEVENT', count=expected_event_count)
+        test_inst.assertContains(response, 'UID', count=expected_event_count)
+
 
 class MeetingTests(TestCase):
     def setUp(self):
@@ -201,7 +229,7 @@ class MeetingTests(TestCase):
 
         # iCal
         r = self.client.get(urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
-                            + "?" + session.group.parent.acronym.upper())
+                            + "?show=" + session.group.parent.acronym.upper())
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
         self.assertContains(r, slot.location.name)
@@ -607,23 +635,282 @@ class MeetingTests(TestCase):
         #
         url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number, 'acronym':s1.group.acronym, })
         r = self.client.get(url)
-        self.assertEqual(r.get('Content-Type'), "text/calendar")
-        self.assertContains(r, 'BEGIN:VEVENT')
-        self.assertEqual(r.content.count(b'UID'), 2)
-        self.assertContains(r, 'SUMMARY:mars - Martian Special Interest Group')
+        assert_ical_response_is_valid(self,
+                                      r,
+                                      expected_event_summaries=['mars - Martian Special Interest Group'],
+                                      expected_event_count=2)
         self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
         self.assertContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
-        self.assertContains(r, 'END:VEVENT')
         #
         url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number, 'session_id':s1.id, })
         r = self.client.get(url)
-        self.assertEqual(r.get('Content-Type'), "text/calendar")
-        self.assertContains(r, 'BEGIN:VEVENT')
-        self.assertEqual(r.content.count(b'UID'), 1)
-        self.assertContains(r, 'SUMMARY:mars - Martian Special Interest Group')
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=['mars - Martian Special Interest Group'],
+                                      expected_event_count=1)
         self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
         self.assertNotContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
-        self.assertContains(r, 'END:VEVENT')
+
+    def test_meeting_agenda_has_static_ical_links(self):
+        """Links to the agenda_ical view must appear on the agenda page
+        
+        Confirms that these have the correct querystrings. Does not test the JS-based
+        'Customized schedule' button.
+        """
+        meeting = make_meeting_test_data()
+        
+        # get the agenda
+        url = urlreverse('ietf.meeting.views.agenda', kwargs=dict(num=meeting.number))
+        r = self.client.get(url)
+        
+        # Check that it has the links we expect
+        ical_url = urlreverse('ietf.meeting.views.agenda_ical', kwargs=dict(num=meeting.number))
+        q = PyQuery(r.content)
+        content = q('#content').html().lower()  # don't care about case
+        # Should be a 'non-area events' link showing appropriate types
+        self.assertIn('%s?showtypes=plenary,other' % ical_url, content)
+        assignments = meeting.schedule.assignments.exclude(timeslot__type__in=['lead', 'offagenda'])
+        # Assume the test meeting is not using historic groups
+        groups = [a.session.group for a in assignments if a.session is not None]
+        for g in groups:
+            if g.parent_id is not None:
+                self.assertIn('%s?show=%s' % (ical_url, g.parent.acronym.lower()), content)
+
+    def test_parse_agenda_filter_params(self):
+        def _r(show=(), hide=(), showtypes=(), hidetypes=()):
+            """Helper to create expected result dict"""
+            return dict(show=set(show), hide=set(hide), showtypes=set(showtypes), hidetypes=set(hidetypes))
+
+        self.assertIsNone(parse_agenda_filter_params(QueryDict('')))
+
+        self.assertRaises(ValueError, parse_agenda_filter_params, QueryDict('unknown'))  # unknown param
+        self.assertRaises(ValueError, parse_agenda_filter_params, QueryDict('unknown=x'))  # unknown param
+
+        # test valid combos (not exhaustive)
+        for qstr, expected in (
+            ('show=', _r()), ('hide=', _r()), ('showtypes=', _r()), ('hidetypes=', _r()),
+            ('show=x', _r(show=['x'])), ('hide=x', _r(hide=['x'])),
+            ('showtypes=x', _r(showtypes=['x'])), ('hidetypes=x', _r(hidetypes=['x'])),
+            ('show=x,y,z', _r(show=['x','y','z'])),
+            ('hide=x,y,z', _r(hide=['x','y','z'])),
+            ('showtypes=x,y,z', _r(showtypes=['x','y','z'])),
+            ('hidetypes=x,y,z', _r(hidetypes=['x','y','z'])),
+            ('show=a&hide=a', _r(show=['a'], hide=['a'])),
+            ('show=a&hide=b', _r(show=['a'], hide=['b'])),
+            ('show=a&hide=b&showtypes=c&hidetypes=d', _r(show=['a'], hide=['b'], showtypes=['c'], hidetypes=['d'])),
+        ):
+            self.assertEqual(
+                parse_agenda_filter_params(QueryDict(qstr)),
+                expected,
+                'Parsed "%s" incorrectly' % qstr,
+            )
+
+    def test_ical_filter_invalid_syntaxes(self):
+        meeting = make_meeting_test_data()
+        url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number})
+        
+        r = self.client.get(url + '?unknownparam=mars')
+        self.assertEqual(r.status_code, 400, 'Unknown parameter should be rejected')
+
+        r = self.client.get(url + '?mars')
+        self.assertEqual(r.status_code, 400, 'Missing parameter name should be rejected')
+
+    def do_ical_filter_test(self, meeting, querystring, expected_session_summaries):
+        url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number})
+        r = self.client.get(url + querystring)
+        self.assertEqual(r.status_code, 200)
+        assert_ical_response_is_valid(self,
+                                      r,
+                                      expected_event_summaries=expected_session_summaries,
+                                      expected_event_count=len(expected_session_summaries))
+
+    def test_ical_filter_default(self):
+        meeting = make_meeting_test_data()
+        self.do_ical_filter_test(
+            meeting,
+            querystring='',
+            expected_session_summaries=[
+                'Morning Break',
+                'Registration',
+                'IETF Plenary',
+                'ames - Asteroid Mining Equipment Standardization Group',
+                'mars - Martian Special Interest Group',
+            ]
+        )
+
+    def test_ical_filter_show(self):
+        meeting = make_meeting_test_data()
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?show=mars',
+            expected_session_summaries=[
+                'mars - Martian Special Interest Group',
+            ]
+        )
+
+    def test_ical_filter_hide(self):
+        meeting = make_meeting_test_data()
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?hide=ietf',
+            expected_session_summaries=[]
+        )
+
+    def test_ical_filter_show_area(self):
+        meeting = make_meeting_test_data()
+        mars = Group.objects.get(acronym='mars')
+        area = mars.parent
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?show=%s' % area.acronym,
+            expected_session_summaries=[
+                'ames - Asteroid Mining Equipment Standardization Group',
+                'mars - Martian Special Interest Group',
+            ]
+        )
+
+    def test_ical_filter_hide_area(self):
+        meeting = make_meeting_test_data()
+        mars = Group.objects.get(acronym='mars')
+        area = mars.parent
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?show=mars&hide=%s' % area.acronym,
+            expected_session_summaries=[]
+        )
+
+    def test_ical_filter_show_and_hide(self):
+        meeting = make_meeting_test_data()
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?show=ames&hide=mars',
+            expected_session_summaries=[
+                'ames - Asteroid Mining Equipment Standardization Group',
+            ]
+        )
+
+    def test_ical_filter_show_and_hide_same_group(self):
+        meeting = make_meeting_test_data()
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?show=ames&hide=ames',
+            expected_session_summaries=[]
+        )
+
+    def test_ical_filter_showtypes(self):
+        meeting = make_meeting_test_data()
+        # Show break/plenary types
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?showtypes=break,plenary',
+            expected_session_summaries=[
+                'IETF Plenary',
+                'Morning Break',
+            ]
+        )
+
+    def test_ical_filter_hidetypes(self):
+        meeting = make_meeting_test_data()
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?hidetypes=plenary',
+            expected_session_summaries=[]
+        )
+
+    def test_ical_filter_showtypes_and_hidetypes(self):
+        meeting = make_meeting_test_data()
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?showtypes=break&hidetypes=plenary',
+            expected_session_summaries=[
+                'Morning Break',
+            ]
+        )
+
+    def test_ical_filter_showtypes_and_hidetypes_same_type(self):
+        meeting = make_meeting_test_data()
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?showtypes=plenary&hidetypes=plenary',
+            expected_session_summaries=[]
+        )
+
+    def test_ical_filter_show_and_showtypes(self):
+        meeting = make_meeting_test_data()
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?show=mars&showtypes=plenary',
+            expected_session_summaries=[
+                'IETF Plenary',
+                'mars - Martian Special Interest Group',
+            ]
+        )
+
+    def test_ical_filter_hide_and_showtypes(self):
+        meeting = make_meeting_test_data()
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?hide=ames&showtypes=regular',
+            expected_session_summaries=[
+                'mars - Martian Special Interest Group',
+            ]
+        )
+
+    def test_ical_filter_show_and_hidetypes(self):
+        meeting = make_meeting_test_data()
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?show=ietf,mars&hidetypes=plenary',
+            expected_session_summaries=[
+                'mars - Martian Special Interest Group',
+            ]
+        )
+
+    def test_ical_filter_hide_and_hidetypes(self):
+        meeting = make_meeting_test_data()
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?hide=ietf,mars&hidetypes=plenary',
+            expected_session_summaries=[]
+        )
+
+    def test_ical_filter_show_hide_and_showtypes(self):
+        meeting = make_meeting_test_data()
+        # ames regular session should be suppressed
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?show=ietf&hide=ames&showtypes=regular',
+            expected_session_summaries=[
+                'IETF Plenary',
+                'mars - Martian Special Interest Group',
+            ]
+        )
+
+    def test_ical_filter_show_hide_and_hidetypes(self):
+        meeting = make_meeting_test_data()
+        # ietf plenary session should be suppressed
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?show=mars,ietf&hide=ames&hidetypes=plenary',
+            expected_session_summaries=[
+                'mars - Martian Special Interest Group',
+            ]
+        )
+
+    def test_ical_filter_all_params(self):
+        meeting = make_meeting_test_data()
+        # should include Morning Break / Registration due to secretariat in show list
+        # should include mars SIG because regular in showtypes list
+        # should not include IETF plenary because plenary in hidetypes list
+        # should not show ames SIG because ames in hide list
+        self.do_ical_filter_test(
+            meeting,
+            querystring='?show=secretariat,ietf&hide=ames&showtypes=regular&hidetypes=plenary',
+            expected_session_summaries=[
+                'Morning Break',
+                'Registration',
+                'mars - Martian Special Interest Group',
+            ]
+        )
 
     def build_session_setup(self):
         # This setup is intentionally unusual - the session has one draft attached as a session presentation,
@@ -1927,45 +2214,210 @@ class InterimTests(TestCase):
         #self.assertIn('CANCELLED', q('[id*="'+id+'"]').text())
         self.assertIn('CANCELLED', q('tr>td>a>span').text())
 
-    def test_upcoming(self):
-        make_meeting_test_data(create_interims=True)
+    def do_upcoming_test(self, querystring=None, create_meeting=True):
+        if create_meeting:
+            make_meeting_test_data(create_interims=True)
         url = urlreverse("ietf.meeting.views.upcoming")
+        if querystring is not None:
+            url += '?' + querystring
+
         today = datetime.date.today()
-        mars_interim = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='mars')).filter(current_status='sched').first().meeting
-        ames_interim = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='ames')).filter(current_status='canceled').first().meeting
-        r = self.client.get(url)
-        self.assertContains(r, mars_interim.number)
-        self.assertContains(r, ames_interim.number)
+        interims = dict(
+            mars=add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='mars')).filter(current_status='sched').first().meeting,
+            ames=add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='ames')).filter(current_status='canceled').first().meeting,
+        )
+        self.check_interim_tabs(url)
+        return self.client.get(url), interims
+
+    def test_upcoming(self):
+        r, interims = self.do_upcoming_test()
+        self.assertContains(r, interims['mars'].number)
+        self.assertContains(r, interims['ames'].number)
         self.assertContains(r, 'IETF 72')
         # cancelled session
         q = PyQuery(r.content)
         self.assertIn('CANCELLED', q('tr>td.text-right>span').text())
-        self.check_interim_tabs(url)
+
+    def test_upcoming_filters_ignored(self):
+        """The upcoming view should ignore filter querystrings"""
+        r, interims = self.do_upcoming_test()
+        self.assertContains(r, interims['mars'].number)
+        self.assertContains(r, interims['ames'].number)
+        self.assertContains(r, 'IETF 72')
+
+        r, interims = self.do_upcoming_test('show=ames', create_meeting=False)
+        self.assertContains(r, interims['mars'].number)
+        self.assertContains(r, interims['ames'].number)
+        self.assertContains(r, 'IETF 72')
+
+        r, interims = self.do_upcoming_test('show=ames&hide=ames,mars', create_meeting=False)
+        self.assertContains(r, interims['mars'].number)
+        self.assertContains(r, interims['ames'].number)
+        self.assertContains(r, 'IETF 72')
+
+    def do_upcoming_ical_test(self, querystring=None, create_meeting=True):
+        if create_meeting:
+            make_meeting_test_data(create_interims=True)
+
+        # Create a group with a plenary interim session for testing type filters
+        somegroup = GroupFactory(acronym='sg', name='Some Group')
+        sg_interim = make_interim_meeting(somegroup, datetime.date.today() + datetime.timedelta(days=20))
+        sg_sess = sg_interim.session_set.first()
+        sg_slot = sg_sess.timeslotassignments.first().timeslot
+        sg_sess.type_id = 'plenary'
+        sg_slot.type_id = 'plenary'
+        sg_sess.save()
+        sg_slot.save()
+
+        url = urlreverse("ietf.meeting.views.upcoming_ical")
+        if querystring is not None:
+            url += '?' + querystring
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        return r
 
     def test_upcoming_ical(self):
         meeting = make_meeting_test_data(create_interims=True)
         populate_important_dates(meeting)
+        r = self.do_upcoming_ical_test(create_meeting=False)
 
-        url = urlreverse("ietf.meeting.views.upcoming_ical")
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        # Expect events for important dates plus 4 - one for each WG and one for the IETF meeting
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[
+                                          'ames - Asteroid Mining Equipment Standardization Group',
+                                          'mars - Martian Special Interest Group',
+                                          'sg - Some Group',
+                                          'IETF 72',
+                                      ],
+                                      expected_event_count=4 + meeting.importantdate_set.count())
 
-        today = datetime.date.today()
-        mars_interim = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='mars')).filter(current_status='sched').first().meeting
-        ames_interim = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='ames')).filter(current_status='canceled').first().meeting
-        self.assertContains(r, mars_interim.number)
-        self.assertContains(r, ames_interim.number)
-        self.assertContains(r, 'IETF 72')
-        self.assertEqual(r.get('Content-Type'), "text/calendar")
-        self.assertEqual(r.content.count(b'UID'), 3 + meeting.importantdate_set.count())
+    def test_upcoming_ical_filter_show(self):
+        r  = self.do_upcoming_ical_test('show=mars,ames')
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[
+                                          'mars - Martian Special Interest Group',
+                                          'ames - Asteroid Mining Equipment Standardization Group',
+                                          'IETF 72',
+                                      ],
+                                      expected_event_count=3)
 
-        # check filtered output
-        url = url + '?filters=mars'
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.get('Content-Type'), "text/calendar")
-        self.assertEqual(r.content.count(b'UID'), 2 + meeting.importantdate_set.count())
+    def test_upcoming_ical_filter_hide(self):
+        r = self.do_upcoming_ical_test('hide=mars')
+        assert_ical_response_is_valid(self, r, expected_event_summaries=['IETF 72'], expected_event_count=1)
 
+    def test_upcoming_ical_filter_show_and_hide(self):
+        r = self.do_upcoming_ical_test('show=mars,ames&hide=mars')
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[
+                                          'ames - Asteroid Mining Equipment Standardization Group',
+                                          'IETF 72',
+                                      ],
+                                      expected_event_count=2)
+
+    def test_upcoming_ical_filter_showtypes(self):
+        r = self.do_upcoming_ical_test('showtypes=regular')
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[
+                                          'ames - Asteroid Mining Equipment Standardization Group',
+                                          'mars - Martian Special Interest Group',
+                                          'IETF 72',
+                                      ],
+                                      expected_event_count=3)
+
+    def test_upcoming_ical_filter_hidetypes(self):
+        r = self.do_upcoming_ical_test('hidetypes=regular')
+        assert_ical_response_is_valid(self, r, expected_event_summaries=['IETF 72'])
+
+    def test_upcoming_ical_filter_showtypes_and_hidetypes(self):
+        r = self.do_upcoming_ical_test('showtypes=plenary,regular&hidetypes=regular')
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[
+                                          'sg - Some Group',
+                                          'IETF 72',
+                                      ],
+                                      expected_event_count=2)
+
+    def test_upcoming_ical_filter_show_and_showtypes(self):
+        r = self.do_upcoming_ical_test('show=mars&showtypes=plenary')
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[
+                                          'mars - Martian Special Interest Group',
+                                          'sg - Some Group',
+                                          'IETF 72',
+                                      ],
+                                      expected_event_count=3)
+        
+    def test_upcoming_ical_filter_show_and_hidetypes(self):
+        r = self.do_upcoming_ical_test('show=mars,sg&hidetypes=regular')
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[
+                                          'sg - Some Group',
+                                          'IETF 72',
+                                      ],
+                                      expected_event_count=2)
+
+    def test_upcoming_ical_filter_hide_and_showtypes(self):
+        r = self.do_upcoming_ical_test('hide=mars&showtypes=regular')
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[
+                                          'ames - Asteroid Mining Equipment Standardization Group',
+                                          'IETF 72',
+                                      ],
+                                      expected_event_count=2)
+        
+    def test_upcoming_ical_filter_hide_and_hidetypes(self):
+        r = self.do_upcoming_ical_test('hide=mars&hidetypes=regular')
+        assert_ical_response_is_valid(self, r, expected_event_summaries=['IETF 72'], expected_event_count=1)
+
+    def test_upcoming_ical_filter_show_hide_and_showtypes(self):
+        r = self.do_upcoming_ical_test('show=ames&hide=mars&showtypes=regular,plenary')
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[
+                                          'ames - Asteroid Mining Equipment Standardization Group',
+                                          'sg - Some Group',
+                                          'IETF 72',
+                                      ],
+                                      expected_event_count=3)
+
+    def test_upcoming_ical_filter_show_hide_and_hidetypes(self):
+        r = self.do_upcoming_ical_test('show=ames,sg&hide=mars&hidetypes=regular')
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[
+                                          'sg - Some Group',
+                                          'IETF 72'
+                                      ],
+                                      expected_event_count=2)
+
+    def test_upcoming_ical_filter_all_params(self):
+        r = self.do_upcoming_ical_test('show=sg&hide=ames&showtypes=regular&hidetypes=plenary')
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[
+                                          'mars - Martian Special Interest Group',
+                                          'IETF 72',
+                                      ],
+                                      expected_event_count=2)
+
+    def test_upcoming_ical_filter_show_area(self):
+        make_meeting_test_data(create_interims=True)
+        mars = Group.objects.get(acronym='mars')
+        area = mars.parent
+        r = self.do_upcoming_ical_test('show=%s' % area.acronym,
+                                       create_meeting=False)
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_summaries=[
+                                          'ames - Asteroid Mining Equipment Standardization Group',
+                                          'mars - Martian Special Interest Group',
+                                          'IETF 72',
+                                      ],
+                                      expected_event_count=3)
+
+    def test_upcoming_ical_filter_hide_area(self):
+        make_meeting_test_data(create_interims=True)
+        mars = Group.objects.get(acronym='mars')
+        area = mars.parent
+        r = self.do_upcoming_ical_test('show=mars&hide=%s' % area.acronym,
+                                       create_meeting=False)
+        assert_ical_response_is_valid(self, r, expected_event_summaries=['IETF 72'], expected_event_count=1)
 
     def test_upcoming_json(self):
         make_meeting_test_data(create_interims=True)

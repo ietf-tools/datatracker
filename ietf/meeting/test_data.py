@@ -116,6 +116,9 @@ def make_meeting_test_data(meeting=None, create_interims=False):
     break_slot = TimeSlot.objects.create(meeting=meeting, type_id="break", location=break_room,
                                          duration=datetime.timedelta(minutes=90),
                                          time=datetime.datetime.combine(session_date, datetime.time(7,0)))
+    plenary_slot = TimeSlot.objects.create(meeting=meeting, type_id="plenary", location=room,
+                                         duration=datetime.timedelta(minutes=60),
+                                         time=datetime.datetime.combine(session_date, datetime.time(11,0)))
     # mars WG
     mars = Group.objects.get(acronym='mars')
     mars_session = Session.objects.create(meeting=meeting, group=mars,
@@ -159,6 +162,14 @@ def make_meeting_test_data(meeting=None, create_interims=False):
     SchedulingEvent.objects.create(session=break_session, status_id='schedw', by=system_person)
     SchedTimeSessAssignment.objects.create(timeslot=break_slot, session=break_session, schedule=base_schedule)
 
+    # IETF Plenary
+    plenary_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="ietf"),
+                                             name="IETF Plenary", attendees=250,
+                                             requested_duration=datetime.timedelta(minutes=60),
+                                             type_id="plenary")
+    SchedulingEvent.objects.create(session=plenary_session, status_id='schedw', by=system_person)
+    SchedTimeSessAssignment.objects.create(timeslot=plenary_slot, session=plenary_session, schedule=schedule)
+    
     meeting.schedule = schedule
     meeting.save()
 
@@ -209,7 +220,7 @@ def make_interim_test_data():
     ad = Person.objects.get(user__username='ad')
     RoleFactory(group=area,person=ad,name_id='ad')
     mars = GroupFactory(acronym='mars',parent=area,name='Martian Special Interest Group')
-    ames = GroupFactory(acronym='ames',parent=area)
+    ames = GroupFactory(acronym='ames',parent=area,name='Asteroid Mining Equipment Standardization Group')
     RoleFactory(group=mars,person__user__username='marschairman',name_id='chair')
     RoleFactory(group=ames,person__user__username='ameschairman',name_id='chair')
 

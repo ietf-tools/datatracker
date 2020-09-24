@@ -477,8 +477,7 @@ class TimeSlotEditingApiTests(TestCase):
 
     def test_manipulate_timeslot(self):
         meeting = make_meeting_test_data()
-        slot = meeting.timeslot_set.all()[0]
-        self.assertEqual(TimeSlot.objects.get(pk=slot.pk).type_id,'regular')
+        slot = meeting.timeslot_set.filter(type_id='regular')[0]
 
         url = urlreverse("ietf.meeting.ajax.timeslot_sloturl",
                          kwargs=dict(num=meeting.number, slotid=slot.pk))
