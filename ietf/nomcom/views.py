@@ -16,7 +16,7 @@ from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.utils.encoding import force_bytes
+from django.utils.encoding import force_bytes, force_text
 
 
 from ietf.dbtemplate.models import DBTemplate
@@ -646,7 +646,7 @@ def private_questionnaire(request, year):
         if form.is_valid():
             form.save()
             messages.success(request, 'The questionnaire response has been registered.')
-            questionnaire_response = form.cleaned_data['comment_text']
+            questionnaire_response = force_text(form.cleaned_data['comment_text'])
             form = QuestionnaireForm(nomcom=nomcom, user=request.user)
     else:
         form = QuestionnaireForm(nomcom=nomcom, user=request.user)
