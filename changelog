@@ -1,4 +1,56 @@
+ietfdb (7.17.1) ietf; urgency=medium
+
+  This is a bugfix release to clear the slate before merging in the updated
+  IETF meeting agenda customization work.
+
+  * Changed the format of email addresses added to the document 
+    notifications filed when the document shepherd is set.  Fixes issue #3079.
+
+  * Added manually built UTC.ics and Etc/UTC.ics to the timezone .ics files
+
+  * Added a context processor to make settings generally available in page 
+    templates.  Split the SECRETARIAT_TICKET_EMAIL setting into 
+    SECRETARIAT_ACTION_EMAIL and SECRETARIAT_INFO_EMAIL, with different 
+    addresses.  Updated places with hardcoded ietf-action@ietf.org addresses to 
+    use the settings value, and updated some places to use ietf-infor@ietf.org 
+    instead of the ietf-action address.  Fixes issue #3081.
+
+  * Updated log.assertion() to provide an exception object (under Py3, it 
+    seems that logging.Logger instances ignore the traceback if there isn't 
+    also an exception object).  Added a check for unset draft-iesg state to 
+    Document.set_state().
+
+  * Updated a middleware function to use the correct Py3 idiom to access 
+    exception arguments.
+
+  * Merged in [18466] from jennifer@painless-security.com:
+    Cancel multi-session meetings correctly. Fixes #2958.  
+
+  * Merged in [18502] from rjsparks@nostrum.com:
+    Create a yangcatalog support group and populate its initial roles.  
+
+  * Merged in [18508] from rjsparks@nostrum.com:
+    Refine day edges on weekview. Fixes #3071.  
+
+  * Added a migration to create missing DocAlias instances (and remove some 
+    bad ones).
+
+  * Fixed a couple of pyflakes issues.
+
+  * Fixed a bytes/unicode issue for echoed-back nomcom questionnaire text.
+
+  * Merged in ^/personal/rjs/fixreviews_7.17.1.dev0:
+    Repair migration for disconnected and confused reviews.
+
+  * Changed the template for /meeting/upcoming.ics to not produce floating 
+    times for meetings with UTC timezone.  Fixes issue #3074.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Sep 2020 20:02:53 +0000
+
+
 ietfdb (7.17.0) ietf; urgency=medium
+
+  **Photo URL support for OpenID profiles**
 
   * Added an assertion to catch an unexpected document state (no IESG-state 
     set).  Updated the log.assertion() function to accept a "note" argument, 
