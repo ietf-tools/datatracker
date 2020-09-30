@@ -1,0 +1,70 @@
+* New filtering behavior
+
+Agenda filtering is defined by four parameters
+
+  * show (group/area)
+  * hide (group/area)
+  * showtypes (session type)
+  * hidetypes (session type)
+  
+These are specified as querystring parameters to the requested URL. The value
+for each parameter is a comma-separated list of groups or types. For example,
+the following URL specifies that sessions the babel group or art area (except
+for the asdf and dispatch groups) should be shown:
+
+https://datatracker.ietf.org/meeting/agenda/?show=art,babel&hide=asdf,dispatch
+
+Note that, in contrast to the URL fragment previously used, the querystring is
+sent in the HTTP request. As a result, manual changes to the filter string will
+cause page reloads. On modern browsers, the customization UI avoids these
+unnecessary reloads.
+
+If none of the filtering parameters are specified, then filtering is disabled
+and all sessions will be shown. If one or more is specified, even if empty,
+filtering is enabled. The filtered list of sessions begins empty. Sessions are
+added and removed by the following steps, in order.
+
+ 1. Add any session whose group or area is in the "show" list.
+ 2. Add any session whose type is in the "showtypes" list.
+ 3. Remove any session whose group or area is in the "hide list.
+ 4. Remove any session whose type is in thie "hidetypes" list.
+ 
+As a result, the "hide" and "hidetypes" list take priority over the "show" and
+"showtypes" lists.
+
+Filtering is implemented for the meeting agenda page and its iCal download
+links and for the upcoming meetings page and its iCal links. Filtering is
+performed server-side for the iCal links and client-side for the other pages.
+The upcoming meetings page only filters using group/area filters and ignores
+the type filters.
+
+Unrecognized or badly formatted parameter names are treated as errors. Empty
+parameter values are allowed. Group, area, and type names are not validated,
+so care must be taken to avoid typos.
+
+
+* New UI: "Non-area" customization buttons
+
+The "special sessions" buttons across the bottom of the customization UI have
+been moved to a "Non-area" column on the right side of the UI. This has a
+heading button and two sets of buttons. The top set contains session type
+buttons ("Plenary" and "Other"). The bottom set contains group and area
+buttons.
+
+When no non-area session type is active, only "regular" sessions will appear in
+the agenda. In this situation, the non-area group buttons are disabled. A click
+on the header button will enable or disable both session types.
+
+If one or both session types is activated, sessions of that type will be shown
+and the non-area group buttons will be enabled. These are active by default.
+Clicking an active group button will deactivate the button and add the
+corresponding group to the "hide" list. If the group was in the "show" list, it
+will be removed when added to the "hide" list (and vice versa). 
+
+
+* New UI: Upcoming meeting customization
+
+The customization UI from the agenda page now appears on the upcoming meetings
+page. It does not include the "Non-area" buttons.
+
+

@@ -25,8 +25,9 @@ from wsgiref.handlers import format_date_time
 
 from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import ( HttpResponse, HttpResponseRedirect, HttpResponseForbidden, HttpResponseNotFound,
-    Http404, JsonResponse)
+from django.http import (HttpResponse, HttpResponseRedirect, HttpResponseForbidden,
+                         HttpResponseNotFound, Http404, HttpResponseBadRequest,
+                         JsonResponse)
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -1773,7 +1774,78 @@ def ical_session_status(assignment):
     else:
         return "CONFIRMED"
 
+def parse_agenda_filter_params(querydict):
+    """Parse agenda filter parameters from a request"""
+    if len(querydict) == 0:
+        return None
+
+    # Parse group filters from GET parameters. The keys in this dict define the
+    # allowed querystring parameters.
+    filt_params = {'show': set(), 'hide': set(), 'showtypes': set(), 'hidetypes': set()}
+
+    for key, value in querydict.items():
+        if key not in filt_params:
+            raise ValueError('Unrecognized parameter "%s"' % key)
+        if value is None:
+            return ValueError(
+                'Parameter "%s" is not assigned a value (use "key=" for an empty value)' % key
+            )
+        vals = unquote(value).lower().split(',')
+        filt_params[key] = set([v for v in vals if len(v) > 0])  # remove empty strings
+
+    return filt_params
+
+
+def should_include_assignment(filter_params, assignment):
+    """Decide whether to include an assignment
+
+    When filtering by wg, uses historic_group if available as an attribute
+    on the session, otherwise falls back to using group.
+    """
+    historic_group = getattr(assignment.session, 'historic_group', None)
+    if historic_group:
+        group_acronym = historic_group.acronym
+        parent = historic_group.historic_parent
+        parent_acronym = parent.acronym if parent else None
+    else:
+        group = assignment.session.group
+        group_acronym = group.acronym
+        if group.parent:
+            parent_acronym = group.parent.acronym
+        else:
+            parent_acronym = None
+    session_type = assignment.timeslot.type_id
+
+    # Hide if wg or type hide lists apply
+    if ((group_acronym in filter_params['hide']) or
+        (parent_acronym in filter_params['hide']) or
+        (session_type in filter_params['hidetypes'])):
+        return False
+
+    # Show if any of the show lists apply, including showing by parent group
+    return ((group_acronym in filter_params['show']) or
+            (parent_acronym in filter_params['show']) or
+            (session_type in filter_params['showtypes']))
+
+
 def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
+    """Agenda ical view
+
+    By default, all agenda items will be shown. A filter can be specified in 
+    the querystring. It has the format
+    
+      ?show=...&hide=...&showtypes=...&hidetypes=...
+
+    where any of the parameters can be omitted. The right-hand side of each
+    '=' is a comma separated list, which can be empty. If none of the filter
+    parameters are specified, no filtering will be applied, even if the query
+    string is not empty.
+
+    The show and hide parameters each take a list of working group (wg) acronyms.    
+    The showtypes and hidetypes parameters take a list of session types. 
+
+    Hiding (by wg or type) takes priority over showing.
+    """
     meeting = get_meeting(num, type_in=None)
     schedule = get_schedule(meeting, name)
     updated = meeting.updated()
@@ -1781,41 +1853,20 @@ def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
     if schedule is None and acronym is None and session_id is None:
         raise Http404
 
-    q = request.META.get('QUERY_STRING','') or ""
-    filter = set(unquote(q).lower().split(','))
-    include = [ i for i in filter if not (i.startswith('-') or i.startswith('~')) ]
-    include_types = set(["plenary","other"])
-    exclude = []
-
-    # Process the special flags.
-    #   "-wgname" will remove a working group from the output.
-    #   "~Type" will add that type to the output.
-    #   "-~Type" will remove that type from the output
-    # Current types are:
-    #   Session, Other (default on), Break, Plenary (default on)
-    # Non-Working Group "wg names" include:
-    #   edu, ietf, tools, iesg, iab
-
-    for item in filter:
-        if len(item) > 2 and item[0] == '-' and item[1] == '~':
-            include_types -= set([item[2:]])
-        elif len(item) > 1 and item[0] == '-':
-            exclude.append(item[1:])
-        elif len(item) > 1 and item[0] == '~':
-            include_types |= set([item[1:]])
-
     assignments = SchedTimeSessAssignment.objects.filter(
         schedule__in=[schedule, schedule.base],
         timeslot__type__private=False,
     )
     assignments = preprocess_assignments_for_agenda(assignments, meeting)
 
-    if q:
-        assignments = [a for a in assignments if
-                   (a.timeslot.type_id in include_types
-                    or (a.session.historic_group and a.session.historic_group.acronym in include)
-                    or (a.session.historic_group and a.session.historic_group.historic_parent and a.session.historic_group.historic_parent.acronym in include))
-                   and (not a.session.historic_group or a.session.historic_group.acronym not in exclude)]
+    try:
+        filt_params = parse_agenda_filter_params(request.GET)
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
+
+    if filt_params is not None:
+        # Apply the filter
+        assignments = [a for a in assignments if should_include_assignment(filt_params, a)]
 
     if acronym:
         assignments = [ a for a in assignments if a.session.historic_group and a.session.historic_group.acronym == acronym ]
@@ -3189,6 +3240,7 @@ def upcoming(request):
     ietf_meetings = Meeting.objects.filter(type_id='ietf', date__gte=today-datetime.timedelta(days=7))
     for m in ietf_meetings:
         m.end = m.date+datetime.timedelta(days=m.days)
+
     interim_sessions = add_event_info_to_session_qs(
         Session.objects.filter(
             meeting__type_id='interim', 
@@ -3196,6 +3248,22 @@ def upcoming(request):
             timeslotassignments__timeslot__time__gte=today
         )
     ).filter(current_status__in=('sched','canceled'))
+
+    # get groups for group UI display - same algorithm as in agenda(), but
+    # using group / parent instead of historic_group / historic_parent
+    groups = [s.group for s in interim_sessions
+              if s.group
+              and s.group.type_id in ('wg', 'rg', 'ag', 'rag', 'iab', 'program')
+              and s.group.parent]
+    group_parents = {g.parent for g in groups if g.parent}
+    seen = set()
+    for p in group_parents:
+        p.group_list = []
+        for g in groups:
+            if g.acronym not in seen and g.parent.acronym == p.acronym:
+                p.group_list.append(g)
+                seen.add(g.acronym)
+
     for session in interim_sessions:
         session.historic_group = session.group
 
@@ -3210,15 +3278,25 @@ def upcoming(request):
     # add menu actions
     actions = []
     if can_request_interim_meeting(request.user):
-        actions.append(('Request new interim meeting',
-                        reverse('ietf.meeting.views.interim_request')))
-    actions.append(('Download as .ics',
-                    reverse('ietf.meeting.views.upcoming_ical')))
-    actions.append(('Subscribe with webcal',
-                    'webcal://'+request.get_host()+reverse('ietf.meeting.views.upcoming_ical')))
+        actions.append(dict(
+            label='Request new interim meeting',
+            url=reverse('ietf.meeting.views.interim_request'),
+            append_filter=False)
+        )
+    actions.append(dict(
+        label='Download as .ics',
+        url=reverse('ietf.meeting.views.upcoming_ical'),
+        append_filter=True)
+    )
+    actions.append(dict(
+        label='Subscribe with webcal',
+        url='webcal://'+request.get_host()+reverse('ietf.meeting.views.upcoming_ical'),
+        append_filter=True)
+    )
 
     return render(request, 'meeting/upcoming.html', {
                   'entries': entries,
+                  'group_parents': group_parents,
                   'menu_actions': actions,
                   'menu_entries': menu_entries,
                   'selected_menu_entry': selected_menu_entry,
@@ -3228,8 +3306,11 @@ def upcoming(request):
 
 
 def upcoming_ical(request):
-    '''Return Upcoming meetings in iCalendar file'''
-    filters = request.GET.getlist('filters')
+    """Return Upcoming meetings in iCalendar file
+
+    Filters by wg name and session type.
+    """
+    filter_params = parse_agenda_filter_params(request.GET)
     today = datetime.date.today()
 
     # get meetings starting 7 days ago -- we'll filter out sessions in the past further down
@@ -3246,13 +3327,8 @@ def upcoming_ical(request):
     ).distinct())
 
     # apply filters
-    if filters:
-        assignments = [a for a in assignments if
-                       a.session.group and (
-                           a.session.group.acronym in filters or (
-                               a.session.group.parent and a.session.group.parent.acronym in filters
-                           )
-                       ) ]
+    if filter_params is not None:
+        assignments = [a for a in assignments if should_include_assignment(filter_params, a)]
 
     # we already collected sessions with current_status, so reuse those
     sessions = {s.pk: s for m in meetings for s in m.sessions}

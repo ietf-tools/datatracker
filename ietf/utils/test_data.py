@@ -428,7 +428,6 @@ def make_test_data():
 
     return draft
 
-    return draft
 
 def make_review_data(doc):
     team1 = create_group(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
