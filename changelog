@@ -1,3 +1,16 @@
+ietfdb (7.18.0) ietf; urgency=medium
+
+  **Reimplemented IETF agenda page customisation**
+
+  * Merged in the agenda filtering improvements from
+    jennifer@painless-security.com.  This completely reworks the filtering of 
+    the IETF agenda, in order to not collide with page navigation and clean up 
+    a number of edge cases.  It also reinstates the same kind of filtering for 
+    the upcoming meetings page.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Oct 2020 21:17:36 +0000
+
+
 ietfdb (7.17.1) ietf; urgency=medium
 
   This is a bugfix release to clear the slate before merging in the updated
