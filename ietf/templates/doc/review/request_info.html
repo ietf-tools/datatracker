@@ -1,4 +1,5 @@
 {# Copyright The IETF Trust 2017, All Rights Reserved #}{% load origin bootstrap3 %}{% origin %}
+{% load person_filters %}
   <table class="table table-condensed">
     <tbody class="meta">
       <tr>
@@ -127,10 +128,7 @@
 	<th>{% if forloop.first %}Assignment{{assignments|pluralize}}{% endif %}</th>
 	<th>Reviewer</th>
 	<td>
-	  <a href="{% url 'ietf.person.views.profile' email_or_name=assignment.reviewer.person.name %}"><b>{{ assignment.reviewer.person.plain_name }}</b></a>
-	  <a href="mailto:{{ assignment.reviewer.address }}"><span class="fa fa-envelope-o tiny"></span></a>
-
-
+          <strong>{% person_link assignment.reviewer.person %}</strong>
 
 	  {% if assignment.can_reject_reviewer_assignment or assignment.can_accept_reviewer_assignment %}
 	  <div class="reviewer-assignment-not-accepted">

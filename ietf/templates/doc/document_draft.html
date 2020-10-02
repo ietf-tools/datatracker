@@ -3,6 +3,7 @@
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
+{% load person_filters %}
 
 {% block pagehead %}
   <link rel="alternate" type="application/atom+xml" title="Document changes" href="/feed/document-changes/{{ name }}/">
@@ -72,10 +73,16 @@
         <th>Author{{doc.authors|pluralize}}</th>
         <td class="edit"></td>
         <td>
+          {# Implementation that uses the current primary email for each author #}
           {% for author in doc.authors %}
-             <a href="{% url 'ietf.person.views.profile' email_or_name=author.email %}">{{ author.plain_name }}</a>
-             {% if not forloop.last %}, {% endif %}
+             {% person_link author %}{% if not forloop.last %}, {% endif %}
           {% endfor %}
+          {% comment %}
+          {# Alternative implementation that uses the submission email (which might have turned invalid #}
+          {% for author in doc.documentauthor_set.all %}
+             {% email_person_link author.email %}{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+          {% endcomment %}
         </td>
       </tr>
 
