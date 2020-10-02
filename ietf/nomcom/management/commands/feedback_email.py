@@ -33,9 +33,9 @@ class Command(BaseCommand):
             raise CommandError("Missing nomcom-year\n\n"+help_message)
 
         if not email:
-            msg = sys.stdin.read()
+            msg = io.open(sys.stdin.fileno(), 'rb').read()
         else:
-            msg = io.open(email, "r").read()
+            msg = io.open(email, "rb").read()
 
         try:
             nomcom = NomCom.objects.get(group__acronym__icontains=year,
