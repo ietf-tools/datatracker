@@ -1,3 +1,43 @@
+ietfdb (7.19.0) ietf; urgency=medium
+
+  **Added links to people's personal profile page in a number of places**
+
+  The important feature of this release is to add links to people's personal
+  profile page in a number of places, but there are also a number of minor
+  tweaks and fixes.  From the commit log:
+
+  * Added missing exception handling for one invocation of 
+    parse_agenda_filter_params().
+
+  * Added Person.personextresource_set to the information returned in the 
+    personal-information JSON blob (this is GDPR-related).
+
+  * Fixed a test case bug that compared a py3 string with bytes.
+
+  * Added a comment to explain the lack of skipIf() for a test class.
+
+  * Added a link to a user's personal profile page to the personal 
+    drop-down menu.  Addresses issue #3093.
+
+  * Added a link to a user's personal profile page to the account info page,
+    and moved the GDPR 'fine print' to the bottom of the page. Turned the
+    'personal-info' dagger symbols into links to the fine print. Added a
+    dagger to the 'External Resources' section. 
+    Partially related to issue #3093.
+
+  * Added RFC and active-drafts counts to the personal profile page.
+
+  * Added listing of author names, with links to the individual profile 
+    pages, to Draft and RFC status pages.  Related to issue #3093.
+
+  * Fixed a Py3 str/bytes issue in the feedback_email handler.
+
+  * Changed a couple of spots that have links to the person profile page to
+    use the person_link template tag, for code consistency.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  02 Oct 2020 21:01:22 +0000
+
+
 ietfdb (7.18.0) ietf; urgency=medium
 
   **Reimplemented IETF agenda page customisation**
