@@ -140,7 +140,7 @@ OLD_PHOTO_DIRS = [
 ]
 
 IETF_HOST_URL = 'https://www.ietf.org/'
-IETF_ID_URL = IETF_HOST_URL + 'id/'
+IETF_ID_URL = IETF_HOST_URL + 'id/' # currently unused
 IETF_ID_ARCHIVE_URL = IETF_HOST_URL + 'archive/id/'
 IETF_AUDIO_URL = IETF_HOST_URL + 'audio/'
 

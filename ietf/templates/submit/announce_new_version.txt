@@ -1,7 +1,7 @@
 {% autoescape off %}
 A new version (-{{ submission.rev }}) has been submitted for {{ submission.name }}:
-https://www.ietf.org/id/{{ submission.name }}-{{ submission.rev }}.txt{% if submission.xml_version == "3" %}
-https://www.ietf.org/id/{{ submission.name }}-{{ submission.rev }}.html{% endif %}
+{{settings.IETF_ID_ARCHIVE_URL}}{{ submission.name }}-{{ submission.rev }}.txt{% if submission.xml_version == "3" %}
+{{settings.IETF_ID_ARCHIVE_URL}}{{ submission.name }}-{{ submission.rev }}.html{% endif %}
 {% if msg %}
 {{ msg|striptags }}
 {% endif %}

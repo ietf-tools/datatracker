@@ -248,10 +248,11 @@ def document_main(request, name, rev=None):
             possible_types = settings.IDSUBMIT_FILE_TYPES
             found_types = [t for t in possible_types if os.path.exists(base_path + t)]
 
-            if not snapshot and doc.get_state_slug() == "active":
-                base = settings.IETF_ID_URL
-            else:
-                base = settings.IETF_ID_ARCHIVE_URL
+            # if not snapshot and doc.get_state_slug() == "active":
+            #     base = settings.IETF_ID_URL
+            # else:
+            #     base = settings.IETF_ID_ARCHIVE_URL
+            base = settings.IETF_ID_ARCHIVE_URL
 
             file_urls = []
             for t in found_types:

@@ -15,8 +15,8 @@ Abstract:
 The IETF datatracker status page for this draft is:
 https://datatracker.ietf.org/doc/{{ submission.name }}/
 {% if submission.xml_version == "3" %}
-There is also a HTML versions available at:
-https://www.ietf.org/id/{{ submission.name }}-{{ submission.rev }}.html{% else %}
+There is also a HTML version available at:
+{{ settings.IETF_ID_ARCHIVE_URL }}{{ submission.name }}-{{ submission.rev }}.html{% else %}
 There are also htmlized versions available at:
 https://tools.ietf.org/html/{{ submission.name }}-{{ submission.rev }}
 https://datatracker.ietf.org/doc/html/{{ submission.name }}-{{ submission.rev }}{% endif %}

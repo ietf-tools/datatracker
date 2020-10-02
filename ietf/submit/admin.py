@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
 from django.urls import reverse as urlreverse
 from django.contrib import admin
+from django.conf import settings
 
 
 from ietf.submit.models import Preapproval, Submission, SubmissionEvent, SubmissionCheck, SubmissionEmailEvent
@@ -21,7 +22,7 @@ class SubmissionAdmin(admin.ModelAdmin):
 
     def draft_link(self, instance):
         if instance.state_id == "posted":
-            return '<a href="https://www.ietf.org/id/%s-%s.txt">%s</a>' % (instance.name, instance.rev, instance.name)
+            return '<a href="%s/%s-%s.txt">%s</a>' % (settings.IETF_ID_ARCHIVE_URL,instance.name, instance.rev, instance.name)
         else:
             return instance.name
     draft_link.allow_tags = True        # type: ignore # https://github.com/python/mypy/issues/2087

@@ -351,6 +351,7 @@ class SubmitTests(TestCase):
         self.assertIn("New Version Notification",outbox[-2]["Subject"])
         self.assertIn(name, get_payload_text(outbox[-2]))
         self.assertIn("mars", get_payload_text(outbox[-2]))
+        self.assertIn(settings.IETF_ID_ARCHIVE_URL, get_payload_text(outbox[-2]))
         # Check "Review of suggested possible replacements for..." mail
         self.assertIn("review", outbox[-1]["Subject"].lower())
         self.assertIn(name, get_payload_text(outbox[-1]))

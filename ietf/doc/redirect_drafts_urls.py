@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+from django.conf import settings
 from django.views.generic import RedirectView
 from django.http import HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404
@@ -17,5 +18,5 @@ urlpatterns = [
     url(r'^(?P<name>[^/]+)/(related/)?$', RedirectView.as_view(url='/doc/%(name)s/', permanent=True)),
     url(r'^wgid/(?P<id>\d+)/$', lambda request, id: HttpResponsePermanentRedirect("/wg/%s/" % get_object_or_404(Group, id=id).acronym)),
     url(r'^wg/(?P<acronym>[^/]+)/$', RedirectView.as_view(url='/wg/%(acronym)s/', permanent=True)),
-    url(r'^all_id(?:_txt)?.html$', RedirectView.as_view(url='https://www.ietf.org/id/all_id.txt', permanent=True)),
+    url(r'^all_id(?:_txt)?.html$', RedirectView.as_view(url='%s/all_id.txt'%settings.IETF_ID_ARCHIVE_URL, permanent=True)),
 ]
