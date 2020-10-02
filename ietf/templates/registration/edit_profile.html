@@ -10,39 +10,13 @@
 
 {% block content %}
   {% origin %}
-  <h1>Profile for {{ user.username }}</h1>
+  <h1>Profile information for {{ user.person.name }}</h1>
+
+  <p>&nbsp;</p>
 
   <p>
-      Personal information in the datatracker which is derived from your contributions
-      to the IETF standards development process is covered by the EU General Data Protection
-      Regulation's
-      <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#d1e1888-1-1">Article 6(1)&nbsp;(f)</a>
-      covering IETF's Legitimate Interest due to the IETF's mission of developing standards
-      for the internet.  See also the page on <a href="/help/personal-information">handling
-      of personal information</a>.
-
+     The information you provide below is used to generate your <a href="{% url 'ietf.person.views.profile' email_or_name=user.person.email %}">public datatracker profile page</a>
   </p>
-  <p>
-
-      Personal information which is <b>not</b> derived from your contributions is covered by the EU
-      <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#d1e1888-1-1">GDPR Article 6(1)&nbsp;(a)</a>
-      regarding consent.  All such information is visible on this page and shown with the
-      dagger symbol &dagger; next to it, or listed on your
-      <a href="{% url 'ietf.community.views.view_list' user.username %}">notification subscription page</a>.  Most of this
-      information can be edited or removed on these page.  There are some exceptions, such
-      as photos, which currently require an email to <a href="mailto:{{settings.SECRETARIAT_INFO_EMAIL}}">the Secretariat</a>
-      if you wish to update or remove the information.
-
-  </p>
-  <p>
-
-      All the information the datatracker has that is coupled to this account and visible
-      on this page or otherwise related to your work on ietf documents, is also available
-      to you as a <a href="{% url 'ietf.api.views.PersonalInformationExportView' %}">JSON blob</a> when
-      you are logged in.
-
-  </p>
-
 
   <hr>
 
@@ -56,7 +30,7 @@
 
 
     <div class="form-group">
-      <label class="col-sm-2 control-label">User name &dagger;</label>
+      <label class="col-sm-2 control-label">User name <a href="#pi">&dagger;</a></label>
       <div class="col-sm-10">
 	<p class="form-control-static">
 	  {{ user.username }}
@@ -67,7 +41,7 @@
     </div>
 
     <div class="form-group">
-      <label class="col-sm-2 control-label">Password &dagger;</label>
+      <label class="col-sm-2 control-label">Password <a href="#pi">&dagger;</a></label>
       <div class="col-sm-10">
 	 <p class="form-control-static">
 	   
@@ -79,7 +53,7 @@
 
     {% if person.photo %}
     <div class="form-group">
-      <label class="col-sm-2 control-label">Photo &dagger;</label>
+      <label class="col-sm-2 control-label">Photo <a href="#pi">&dagger;</a></label>
       <div class="col-sm-10">
 	 <p class="form-control-static">
 	   <a href="{{person.photo.url}}">
@@ -103,7 +77,7 @@
 
 	     If you've done so and the calculation is still incorrect, please
 	     send a note to
-	     <a href="mailto:{{settings.SECRETARIAT_TICKET_EMAIL}}">{{settings.SECRETARIAT_TICKET_EMAIL}}</a>.<br/>
+	     <a href="mailto:{{settings.SECRETARIAT_INFO_EMAIL}}">{{settings.SECRETARIAT_INFO_EMAIL}}</a>.<br/>
 	     See <a href="{% url 'ietf.doc.views_doc.document_main' name='rfc7437'%}">RFC 7437</a>
 	     for eligibility requirements.
 
@@ -112,7 +86,7 @@
     </div>
 
     <div class="form-group">
-      <label class="col-sm-2 control-label">External Resources</label>
+      <label class="col-sm-2 control-label">External Resources <a href="#pi">&dagger;</a></label>
       <div class="col-sm-10 form-control-static">
         {% for extres in person.personextresource_set.all %}
           <div class="row">
@@ -139,7 +113,7 @@
 		 <td><input type="radio" name="primary_email" value="{{ email.pk }}" {% if email.primary %}checked{% endif %}></td>
 		 <td><input type="checkbox" name="active_emails" value="{{ email.pk }}" {% if email.active %}checked{% endif %}></td>
 		 <td>
-		   {% if email.origin == person.user.username or email.origin == '' %}&dagger;{% endif %}
+		   {% if email.origin == person.user.username or email.origin == '' %}<a href="#pi">&dagger;</a>{% endif %}
 		   {{ email }}
 		 </td>
 		 <td>{{ email.origin|default:'(unknown)' }}</td>
@@ -185,6 +159,41 @@
     </div>
   </form>
 
+  <hr>
+
+  <p id="pi"><strong>[&dagger;] Personal information requiring consent:</strong></p>
+
+  <p>
+      Personal information in the datatracker which is derived from your contributions
+      to the IETF standards development process is covered by the EU General Data Protection
+      Regulation's
+      <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#d1e1888-1-1">Article 6(1)&nbsp;(f)</a>
+      covering IETF's Legitimate Interest due to the IETF's mission of developing standards
+      for the internet.  See also the page on <a href="/help/personal-information">handling
+      of personal information</a>.
+
+  </p>
+  <p>
+
+      Personal information which is <b>not</b> derived from your contributions is covered by the EU
+      <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#d1e1888-1-1">GDPR Article 6(1)&nbsp;(a)</a>
+      regarding consent.  All such information is visible on this page and shown with the
+      dagger symbol (<strong>&dagger;</strong>) next to it, or listed on your
+      <a href="{% url 'ietf.community.views.view_list' user.username %}">notification subscription page</a>.  Most of this
+      information can be edited or removed on these pages.  There are some exceptions, such
+      as photos, which currently require an email to <a href="mailto:{{settings.SECRETARIAT_INFO_EMAIL}}">the Secretariat</a>
+      if you wish to update or remove the information.
+
+  </p>
+  <p>
+
+      All the information the datatracker has that is coupled to this account and visible
+      on this page or otherwise related to your work on ietf documents, is also available
+      to you as a <a href="{% url 'ietf.api.views.PersonalInformationExportView' %}">JSON blob</a> when
+      you are logged in.  It contains both the Legitimate Interest information and the information
+      that requires Consent.
+
+  </p>
 
 {% endblock %}
 
