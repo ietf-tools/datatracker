@@ -3310,7 +3310,11 @@ def upcoming_ical(request):
 
     Filters by wg name and session type.
     """
-    filter_params = parse_agenda_filter_params(request.GET)
+    try:
+        filter_params = parse_agenda_filter_params(request.GET)
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
+        
     today = datetime.date.today()
 
     # get meetings starting 7 days ago -- we'll filter out sessions in the past further down
