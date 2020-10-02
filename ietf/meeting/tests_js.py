@@ -59,6 +59,7 @@ def start_web_driver():
     options.add_argument("no-sandbox") # docker needs this
     return webdriver.Chrome(options=options, service_log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
 
+# This class is subclassed later, and does not contain any tests, so doesn't need @skipIf()
 class MeetingTestCase(IetfLiveServerTestCase):
     def __init__(self, *args, **kwargs):
         super(MeetingTestCase, self).__init__(*args, **kwargs)
