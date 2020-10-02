@@ -72,7 +72,7 @@
   {% endif %}
 
   <div class="col-md-6">
-     <h2 id="rfcs">RFCs</h2>
+     <h2 id="rfcs">RFCs <small>({{person.rfcs|length}})</small></h2>
      {% if person.rfcs %}
 	<table class="table">
 	  {% for doc in person.rfcs  %}
@@ -94,7 +94,7 @@
      {% endif %}
   </div>
   <div class="col-md-6">
-     <h2 id="drafts">Active Drafts</h2>
+     <h2 id="drafts">Active Drafts <small>({{person.active_drafts|length}})</small></h2>
      {% if person.active_drafts.exists %}
 	<ul>
 	   {% for doc in person.active_drafts %}
