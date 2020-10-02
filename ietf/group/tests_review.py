@@ -44,7 +44,7 @@ class ReviewTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, review_req.doc.name)
-            self.assertContains(r, str(assignment.reviewer.person))
+            self.assertContains(r, str(assignment.reviewer.person).encode('utf-8'))
 
         url = urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym })
 
