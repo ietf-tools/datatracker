@@ -894,8 +894,6 @@ class ReviewTests(TestCase):
         })
         self.assertEqual(r.status_code, 302)
 
-
-
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, "part-completed")
         self.assertTrue(assignment.review_request.doc.rev in assignment.review.name)
@@ -914,35 +912,6 @@ class ReviewTests(TestCase):
 
         self.assertTrue(not any( len(line) > 100 for line in body.splitlines() ))
         self.assertTrue(any( len(line) > 80 for line in body.splitlines() ))
-
-        first_review = assignment.review
-
-        # complete
-        assignment = assignment.review_request.reviewassignment_set.create(state_id="assigned", reviewer=assignment.reviewer)
-
-        url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": assignment.review_request.doc.name, "assignment_id": assignment.pk })
-
-        r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=assignment.review_request.team, slug="ready").pk,
-            "state": ReviewAssignmentStateName.objects.get(slug="completed").pk,
-            "reviewed_rev": assignment.review_request.doc.rev,
-            "review_submission": "enter",
-            "review_content": "This is another review with a really, really, really, really, really, really, really, really, really, really long line.",
-        })
-        self.assertEqual(r.status_code, 302)
-
-        assignment = reload_db_objects(assignment)
-        self.assertEqual(assignment.state_id, "completed")
-        self.assertTrue(assignment.review_request.doc.rev in assignment.review.name)
-        second_review = assignment.review
-        self.assertTrue(first_review.name != second_review.name)
-        self.assertTrue(second_review.name.endswith("-2")) # uniquified
-
-        # This review has a line longer than 100; it should be wrapped to less
-        # than 80.
-        body = get_payload_text(outbox[2])
-        self.assertIn('really, really, really', body)
-        self.assertTrue(all( len(line) <= 80 for line in body.splitlines() ))
 
 
     def test_revise_review_enter_content(self):

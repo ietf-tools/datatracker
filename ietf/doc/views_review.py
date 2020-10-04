@@ -19,6 +19,7 @@ from django.http import JsonResponse, Http404, HttpResponse, HttpResponseRedirec
 from django.shortcuts import render, get_object_or_404, redirect
 from django import forms
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.html import mark_safe # type:ignore
 from django.core.exceptions import ValidationError
@@ -28,7 +29,7 @@ from django.urls import reverse as urlreverse
 from ietf.doc.models import (Document, NewRevisionDocEvent, State, DocAlias,
                              LastCallDocEvent, ReviewRequestDocEvent, ReviewAssignmentDocEvent, DocumentAuthor)
 from ietf.name.models import (ReviewRequestStateName, ReviewAssignmentStateName, ReviewResultName, 
-                             DocTypeName, ReviewTypeName)
+                             ReviewTypeName)
 from ietf.person.models import Person
 from ietf.review.models import ReviewRequest, ReviewAssignment, ReviewWish
 from ietf.group.models import Group
@@ -655,6 +656,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
         team = assignment.review_request.team
         team_acronym = assignment.review_request.team.acronym.lower()
         request_type = assignment.review_request.type
+        reviewer = assignment.reviewer
         mailtrigger_slug = 'review_completed_{}_{}'.format(team_acronym, request_type.slug)
         # Description is only used if the mailtrigger does not exist yet.
         mailtrigger_desc = 'Recipients when a {} {} review is completed'.format(team_acronym, request_type)
@@ -679,7 +681,31 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                                   request.POST, request.FILES)
         if form.is_valid():
             review_submission = form.cleaned_data['review_submission']
-            
+            if not assignment:
+                request_type = form.cleaned_data['review_type']
+                reviewer = form.cleaned_data['reviewer'].role_email('reviewer',group=team)
+
+            if assignment and assignment.review:
+                review = assignment.review
+            else:
+                # create review doc
+                name_components = [
+                    "review",
+                    strip_prefix(doc.name, "draft-"),
+                    form.cleaned_data["reviewed_rev"],
+                    team.acronym, 
+                    request_type.slug,
+                    xslugify(reviewer.person.ascii_parts()[3]),
+                    datetime.date.today().isoformat(),
+                ]
+                review_name = "-".join(c for c in name_components if c).lower()
+                if not Document.objects.filter(name=review_name).exists():
+                    review = Document.objects.create(name=review_name,type_id='review',group=team)
+                    DocAlias.objects.create(name=review_name).docs.add(review)
+                else:
+                    messages.warning(message='Attempt to save review failed: review document already exists. This most likely occurred because the review was submitted twice in quick succession. If you intended to submit a new review, rather than update an existing one, things are probably OK. Please verify that the shown review is what you expected.')
+                    return redirect("ietf.doc.views_doc.document_main", name=review_name)
+
             if not assignment:
                 # If this is an unsolicited review, create a new request and assignment.
                 # The assignment will be immediately closed after, sharing the usual
@@ -698,33 +724,8 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                     state_id='assigned',
                     reviewer=form.cleaned_data['reviewer'].role_email('reviewer', group=team),
                     assigned_on=datetime.datetime.now(),
+                    review = review,
                 )
-                request_type = form.cleaned_data['review_type']
-
-            review = assignment.review
-            if not review:
-                # create review doc
-                for i in range(1, 100):
-                    name_components = [
-                        "review",
-                        strip_prefix(assignment.review_request.doc.name, "draft-"),
-                        form.cleaned_data["reviewed_rev"],
-                        assignment.review_request.team.acronym,
-                        request_type.slug,
-                        xslugify(assignment.reviewer.person.ascii_parts()[3]),
-                        datetime.date.today().isoformat(),
-                    ]
-                    if i > 1:
-                        name_components.append(str(i))
-
-                    name = "-".join(c for c in name_components if c).lower()
-                    if not Document.objects.filter(name=name).exists():
-                        review = Document.objects.create(name=name)
-                        DocAlias.objects.create(name=review.name).docs.add(review)
-                        break
-
-                review.type = DocTypeName.objects.get(slug="review")
-                review.group = assignment.review_request.team
 
             review.rev = "00" if not review.rev else "{:02}".format(int(review.rev) + 1)
             review.title = "{} Review of {}-{}".format(assignment.review_request.type.name, assignment.review_request.doc.name, form.cleaned_data["reviewed_rev"])
