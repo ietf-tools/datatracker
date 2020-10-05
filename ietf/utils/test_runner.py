@@ -397,7 +397,7 @@ class CoverageTest(unittest.TestCase):
                 include=include, file=None)
             for pattern in settings.TEST_CODE_COVERAGE_EXCLUDE_LINES:
                 checker.exclude(pattern)
-            # Maybe output a html report
+            # Maybe output an HTML report
             if self.runner.run_full_test_suite and self.runner.html_report:
                 checker.html_report(directory=settings.TEST_CODE_COVERAGE_REPORT_DIR)
             # In any case, build a dictionary with per-file data for this run
@@ -512,7 +512,7 @@ class IetfTestRunner(DiscoverRunner):
             help='Save short test result data in %s/.testresult' % os.path.dirname(os.path.dirname(settings.BASE_DIR))),
         parser.add_argument('--html-report',
             action='store_true', default=False,
-            help='Generate a html code coverage report in %s' % settings.TEST_CODE_COVERAGE_REPORT_DIR)
+            help='Generate an HTML code coverage report in %s' % settings.TEST_CODE_COVERAGE_REPORT_DIR)
         parser.add_argument('--permit-mixed-migrations',
             action='store_true', default=False,
             help='Permit interleaved unreleased migrations')
