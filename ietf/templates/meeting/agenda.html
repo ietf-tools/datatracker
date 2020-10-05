@@ -125,10 +125,7 @@
             {% endif %}
 
             {% if item.timeslot.type.slug == 'break' or item.timeslot.type.slug == 'reg' or item.timeslot.type.slug == 'other' %}
-                <tr id="row-{{ item.slug }}"
-                    data-item-group="{% if item.session.historic_group %}{{ item.session.historic_group.acronym }}{% endif %}"
-                    data-item-area="{% if item.session.historic_group and item.session.historic_group.historic_parent %}{{ item.session.historic_group.historic_parent.acronym }}{% endif %}"
-                    data-timeslot-type="{{item.timeslot.type.slug}}">
+                <tr id="row-{{ item.slug }}" data-filter-keywords="{{ item.filter_keywords|join:',' }}">
 	          <td class="text-nowrap text-right">
                     <span class="hidden-xs">
                        {% include "meeting/timeslot_start_end.html" %}
@@ -187,11 +184,9 @@
 
             {% if item.timeslot.type_id == 'regular' or item.timeslot.type.slug == 'plenary' %}
               {% if item.session.historic_group %}
-                <tr id="row-{{item.slug}}"
-                    data-item-group="{{ item.session.historic_group.acronym }}"
-                    data-item-area="{% if item.session.historic_group.historic_parent %}{{ item.session.historic_group.historic_parent.acronym }}{% endif  %}"
-                    data-timeslot-type="{{item.timeslot.type.slug}}"
-                    data-ske="row-{{ item.slug }}" {% if item.timeslot.type.slug == 'plenary' %}class="{{item.timeslot.type.slug}}danger"{% endif %}>
+                <tr id="row-{{item.slug}}" 
+                    {% if item.timeslot.type.slug == 'plenary' %}class="{{item.timeslot.type.slug}}danger"{% endif %}
+                    data-filter-keywords="{{ item.filter_keywords|join:',' }}">
 		  {% if item.timeslot.type.slug == 'plenary' %}
 	            <th class="text-nowrap text-right">
                       <span class="hidden-xs">
@@ -328,26 +323,18 @@
        }
 
        // if groups were selected for filtering, hide all rows by default
-       agenda_rows.hide();
+       agenda_rows.filter(function(index, row) {
+           return !!$(row).attr('data-filter-keywords');
+       }).hide();
 
        // loop through the has items and change the UI element and row visibilities accordingly
-       $.each(filter_params['show_groups'], function (i, v) {
+       $.each(filter_params.show, function (i, v) {
            // this is a regular item by wg: when present, show these rows
-           agenda_rows.filter('[data-item-group="'+ v +'"]').show();
-           agenda_rows.filter('[data-item-area="'+ v +'"]').show();
+           agenda_filter.rows_matching_filter_keyword(agenda_rows, v).show();
        });
-       $.each(filter_params['show_types'], function (i, v) {
-           // this is a regular item by type: when present, show these rows
-           agenda_rows.filter('[data-timeslot-type*="' + v + '"]').show();
-       });
-       $.each(filter_params['hide_groups'], function (i, v) {
+       $.each(filter_params.hide, function (i, v) {
            // this is a "negative" item by wg: when present, hide these rows
-           agenda_rows.filter('[data-item-group="'+ v +'"]').hide();
-           agenda_rows.filter('[data-item-area="'+ v +'"]').hide();
-       });
-       $.each(filter_params['hide_types'], function (i, v) {
-           // this is a "negative" item by type: when present, hide these rows
-           agenda_rows.filter('[data-timeslot-type*="' + v + '"]').hide();
+           agenda_filter.rows_matching_filter_keyword(agenda_rows, v).hide();
        });
    }
 
@@ -381,7 +368,7 @@
               wv_window.history.replaceState({}, '', new_url);
               wv_window.draw_calendar()
           } else {
-              // ho history.replaceState, page reload required
+              // either have not yet loaded the iframe or we do not support history replacement
               wv_iframe.src = new_url;
           }
       }

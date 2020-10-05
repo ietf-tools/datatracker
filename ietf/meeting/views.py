@@ -66,6 +66,7 @@ from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
 from ietf.meeting.helpers import get_meeting, get_ietf_meeting, get_current_ietf_meeting_num
 from ietf.meeting.helpers import get_schedule, schedule_permissions
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
+from ietf.meeting.helpers import filter_keywords_for_session, tag_assignments_with_filter_keywords
 from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
 from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
 from ietf.meeting.helpers import can_edit_interim_request
@@ -1339,6 +1340,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         timeslot__type__private=False,
     )
     filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
+    tag_assignments_with_filter_keywords(filtered_assignments)
 
     if ext == ".csv":
         return agenda_csv(schedule, filtered_assignments)
@@ -1642,7 +1644,8 @@ def week_view(request, num=None, name=None, owner=None):
 #    saturday_after = saturday_before + datetime.timedelta(days=7)
 #    filtered_assignments = filtered_assignments.filter(timeslot__time__gte=saturday_before,timeslot__time__lt=saturday_after)
     filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
-    
+    tag_assignments_with_filter_keywords(filtered_assignments)
+
     items = []
     for a in filtered_assignments:
         # we don't HTML escape any of these as the week-view code is using createTextNode
@@ -1658,7 +1661,8 @@ def week_view(request, num=None, name=None, owner=None):
                 day_of_month=a.timeslot.time.strftime("%d").lstrip("0"),
                 year=a.timeslot.time.strftime("%Y"),
             ),
-            "type": a.timeslot.type.name
+            "type": a.timeslot.type.name,
+            "filter_keywords": ",".join(a.filter_keywords),
         }
 
         if a.session:
@@ -3267,9 +3271,11 @@ def upcoming(request):
 
     for session in interim_sessions:
         session.historic_group = session.group
+        session.filter_keywords = filter_keywords_for_session(session)
+
     entries.extend(list(interim_sessions))
     entries.sort(key = lambda o: pytz.utc.localize(datetime.datetime.combine(o.date, datetime.datetime.min.time())) if isinstance(o,Meeting) else o.official_timeslotassignment().timeslot.utc_start_time())
-
+    
     # add menu entries
     menu_entries = get_interim_menu_entries(request)
     selected_menu_entry = 'upcoming'
@@ -3309,7 +3315,10 @@ def upcoming_ical(request):
 
     Filters by wg name and session type.
     """
-    filter_params = parse_agenda_filter_params(request.GET)
+    try:
+        filter_params = parse_agenda_filter_params(request.GET)
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
     today = datetime.date.today()
 
     # get meetings starting 7 days ago -- we'll filter out sessions in the past further down

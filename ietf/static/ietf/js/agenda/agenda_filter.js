@@ -1,16 +1,12 @@
-var agenda_filter_for_testing = {}; // methods to be accessed for automated testing
-var agenda_filter = function () {
+var agenda_filter; // public interface
+var agenda_filter_for_testing; // methods to be accessed for automated testing
+
+// closure to create private scope
+(function () {
     'use strict'
 
     var update_callback // function(filter_params)
     var enable_non_area = false // if true, show the non-area filters
-
-    /* Add to list without duplicates */
-    function add_list_item (list, item) {
-        if (list.indexOf(item) === -1) {
-            list.push(item);
-        }
-    }
 
     /* Remove from list, if present */
     function remove_list_item (list, item) {
@@ -20,13 +16,18 @@ var agenda_filter = function () {
         }
     }
 
-    /* Add to list if not present, remove if present */
+    /* Add to list if not present, remove if present
+     * 
+     * Returns true if added to the list, otherwise false.
+     */
     function toggle_list_item (list, item) {
         var item_index = list.indexOf(item);
         if (item_index === -1) {
             list.push(item)
+            return true;
         } else {
             list.splice(item_index, 1)
+            return false;
         }
     }
 
@@ -48,101 +49,83 @@ var agenda_filter = function () {
         if (!qparams[filt] || (qparams[filt] === true)) {
             return [];
         }
-        return $.map(qparams[filt].split(','), function(s){return s.trim();});
+        var result = [];
+        var qp = qparams[filt].split(',');
+        
+        for (var ii = 0; ii < qp.length; ii++) {
+            result.push(qp[ii].trim());
+        }
+        return result;
     }
 
     function get_filter_params (qparams) {
-        var enabled = !!(qparams.show || qparams.hide || qparams.showtypes || qparams.hidetypes);
+        var enabled = !!(qparams.show || qparams.hide);
         return {
             enabled: enabled,
-            show_groups: get_filter_from_qparams(qparams, 'show'),
-            hide_groups: get_filter_from_qparams(qparams, 'hide'),
-            show_types: get_filter_from_qparams(qparams, 'showtypes'),
-            hide_types: get_filter_from_qparams(qparams, 'hidetypes'),
+            show: get_filter_from_qparams(qparams, 'show'),
+            hide: get_filter_from_qparams(qparams, 'hide')
         }
     }
 
-    function filtering_is_enabled (filter_params) {
-        return filter_params['enabled'];
+    function get_keywords(elt) {
+        var keywords = $(elt).attr('data-filter-keywords');
+        if (keywords) {
+            return keywords.toLowerCase().split(',');
+        }
+        return [];
     }
 
-    function get_area_items (area) {
-        var types = [];
-        var groups = [];
-        var neg_groups = [];
+    function get_item(elt) {
+        return elt.text().trim().toLowerCase().replace(/ /g, '');
+    }
 
-        $('.view.' + area).find('button').each(function (index, elt) {
-            elt = $(elt) // jquerify
-            var item = elt.text().trim().toLowerCase()
-            if (elt.hasClass('picktype')) {
-                types.push(item)
-            } else if (elt.hasClass('pickview')) {
-                groups.push(item);
-            } else if (elt.hasClass('pickviewneg')) {
-                neg_groups.push(item)
+    // utility method - is there a match between two lists of keywords?
+    function keyword_match(list1, list2) {
+        for (var ii = 0; ii < list1.length; ii++) {
+            if (list2.indexOf(list1[ii]) !== -1) {
+                return true;
             }
+        }
+        return false;
+    }
+    
+    // Find the items corresponding to a keyword
+    function get_items_with_keyword (keyword) {
+        var items = [];
+
+        $('.view button.pickview').filter(function(index, elt) {
+            return keyword_match(get_keywords(elt), [keyword]);
+        }).each(function (index, elt) {
+            items.push(get_item($(elt)));
         });
-        return { 'groups': groups, 'neg_groups': neg_groups, 'types': types };
+        return items;
+    }
+
+    function filtering_is_enabled (filter_params) {
+        return filter_params.enabled;
     }
 
     // Update the filter / customization UI to match the current filter parameters
     function update_filter_ui (filter_params) {
-        var area_group_buttons = $('.view .pickview, .pick-area');
-        var non_area_header_button = $('button.pick-non-area');
-        var non_area_type_buttons = $('.view.non-area .picktype');
-        var non_area_group_buttons = $('.view.non-area button.pickviewneg');
+        var buttons = $('.pickview');
 
         if (!filtering_is_enabled(filter_params)) {
-            // Not filtering - set everything to defaults and exit
-            area_group_buttons.removeClass('active');
-            non_area_header_button.removeClass('active');
-            non_area_type_buttons.removeClass('active');
-            non_area_group_buttons.removeClass('active');
-            non_area_group_buttons.addClass('disabled');
+            // Not filtering - set to default and exit
+            buttons.removeClass('active');
             return;
         }
 
         // show the customizer - it will stay visible even if filtering is disabled
         $('#customize').collapse('show')
 
-        // Group and area buttons - these are all positive selections
-        area_group_buttons.each(function (index, elt) {
+        // Update button state to match visibility
+        buttons.each(function (index, elt) {
             elt = $(elt);
-            var item = elt.text().trim().toLowerCase();
-            var area = elt.attr('data-group-area');
-            if ((filter_params['hide_groups'].indexOf(item) === -1) // not hidden...
-                && ((filter_params['show_groups'].indexOf(item) !== -1) // AND shown...
-                    || (area && (filter_params['show_groups'].indexOf(area.trim().toLowerCase()) !== -1))) // OR area shown
-            ) {
-                elt.addClass('active');
-            } else {
-                elt.removeClass('active');
-            }
-        });
-
-        // Non-area buttons need special handling. Only have positive type and negative group buttons.
-        // Assume non-area heading is disabled, then enable if one of the types is active
-        non_area_header_button.removeClass('active');
-        non_area_group_buttons.addClass('disabled');
-        non_area_type_buttons.each(function (index, elt) {
-            // Positive type selection buttons
-            elt = $(elt);
-            var item = elt.text().trim().toLowerCase();
-            if ((filter_params['show_types'].indexOf(item) !== -1)
-                && (filter_params['hide_types'].indexOf(item) === -1)){
-                elt.addClass('active');
-                non_area_header_button.addClass('active');
-                non_area_group_buttons.removeClass('disabled');
-            } else {
-                elt.removeClass('active');
-            }
-        });
-
-        non_area_group_buttons.each(function (index, elt) {
-            // Negative group selection buttons
-            elt = $(elt);
-            var item = elt.text().trim().toLowerCase();
-            if (filter_params['hide_groups'].indexOf(item) === -1) {
+            var keywords = get_keywords(elt);
+            keywords.push(get_item(elt)); // treat item as one of its keywords
+            var hidden = keyword_match(filter_params.hide, keywords);
+            var shown = keyword_match(filter_params.show, keywords); 
+            if (shown && !hidden) {
                 elt.addClass('active');
             } else {
                 elt.removeClass('active');
@@ -163,7 +146,6 @@ var agenda_filter = function () {
         }
     }
 
-
     /* Trigger an update so the user will see the page appropriate for given filter_params
      *
      * Updates the URL to match filter_params, then updates the history / display to match
@@ -172,17 +154,11 @@ var agenda_filter = function () {
     function update_filters (filter_params) {
         var qparams = []
         var search = ''
-        if (filter_params['show_groups'].length > 0) {
-            qparams.push('show=' + filter_params['show_groups'].join())
+        if (filter_params.show.length > 0) {
+            qparams.push('show=' + filter_params.show.join())
         }
-        if (filter_params['hide_groups'].length > 0) {
-            qparams.push('hide=' + filter_params['hide_groups'].join())
-        }
-        if (filter_params['show_types'].length > 0) {
-            qparams.push('showtypes=' + filter_params['show_types'].join())
-        }
-        if (filter_params['hide_types'].length > 0) {
-            qparams.push('hidetypes=' + filter_params['hide_types'].join())
+        if (filter_params.hide.length > 0) {
+            qparams.push('hide=' + filter_params.hide.join())
         }
         if (qparams.length > 0) {
             search = '?' + qparams.join('&')
@@ -202,27 +178,41 @@ var agenda_filter = function () {
 
     /* Helper for pick group/type button handlers - toggles the appropriate parameter entry
      *    elt - the jquery element that was clicked
-     *    param_type - key of the filter param to update (show_groups, show_types, etc)
+     *    param_type - key of the filter param to update (show, hide)
      */
-    function handle_pick_button (elt, param_type) {
-        var area = elt.attr('data-group-area');
-        var item = elt.text().trim().toLowerCase();
+    function handle_pick_button (elt) {
         var fp = get_filter_params(parse_query_params(window.location.search));
-        var neg_param_type = {
-            show_groups: 'hide_groups',
-            hide_groups: 'show_groups',
-            show_types: 'hide_types',
-            hide_types: 'show_types'
-        }[param_type];
+        var item = get_item(elt);
 
-        if (area && (fp[param_type].indexOf(area.trim().toLowerCase()) !== -1)) {
-            // Area is shown - toggle hide list
-            toggle_list_item(fp[neg_param_type], item);
-            remove_list_item(fp[param_type], item);
+        /* Normally toggle in and out of the 'show' list. If this item is active because
+         * one of its keywords is active, invert the sense and toggle in and out of the
+         * 'hide' list instead. */
+        var inverted = keyword_match(fp.show, get_keywords(elt));
+        var just_showed_item = false;
+        if (inverted) {
+            toggle_list_item(fp.hide, item);
+            remove_list_item(fp.show, item);
         } else {
-            toggle_list_item(fp[param_type], item);
-            remove_list_item(fp[neg_param_type], item);
+            just_showed_item = toggle_list_item(fp.show, item);
+            remove_list_item(fp.hide, item);
         }
+
+        /* If we just showed an item, remove its children from the 
+         * show/hide lists to keep things consistent. This way, selecting
+         * an area will enable all items in the row as one would expect. */
+        if (just_showed_item) {
+            var children = get_items_with_keyword(item);
+            $.each(children, function(index, child) {
+                remove_list_item(fp.show, child);
+                remove_list_item(fp.hide, child);
+            });
+        }
+        
+        // If the show list is empty, clear the hide list because there is nothing to hide
+        if (fp.show.length === 0) {
+            fp.hide = [];
+        }
+        
         return fp;
     }
 
@@ -230,88 +220,49 @@ var agenda_filter = function () {
         return elt.hasClass('disabled');
     }
 
-    // Various "pick" button handlers
-    $('.pickview').click(function () {
-        if (is_disabled($(this))) { return; }
-        update_filters(handle_pick_button($(this), 'show_groups'))
-    });
-
-    $('.pickviewneg').click(function () {
-        if (is_disabled($(this))) { return; }
-        update_filters(handle_pick_button($(this), 'hide_groups'))
-    });
-
-    $('.picktype').click(function () {
-        if (is_disabled($(this))) { return; }
-        var fp = handle_pick_button($(this), 'show_types')
-        // If we just disabled the last non-area type, clear out the hide groups list.
-        var items = get_area_items('non-area')
-        var any_left = false
-        $.each(items.types, function (index, session_type) {
-            if (fp['show_types'].indexOf(session_type) !== -1) {
-                any_left = true
-            }
-        })
-        if (!any_left) {
-            fp['hide_groups'] = []
-        }
-        update_filters(fp);
-    });
-
-    // Click handler for an area header button
-    $('.pick-area').click(function() {
-        if (is_disabled($(this))) { return; }
-        var fp = handle_pick_button($(this), 'show_groups');
-        var items = get_area_items($(this).text().trim().toLowerCase());
-
-        // Clear all the individual group show/hide options
-        $.each(items.groups, function(index, group) {
-            remove_list_item(fp['show_groups'], group);
-            remove_list_item(fp['hide_groups'], group);
+    function register_handlers() {
+        $('.pickview').click(function () {
+            if (is_disabled($(this))) { return; }
+            var fp = handle_pick_button($(this));
+            update_filters(fp);
         });
-        update_filters(fp);
-    });
-
-    // Click handler for the "Non-Area" header button
-    $('.pick-non-area').click(function () {
-        var items = get_area_items('non-area');
-
-        var fp = get_filter_params(parse_query_params(window.location.search))
-        if ($(this).hasClass('active')) {
-            // Were active - disable or hide everything
-            $.each(items.types, function (index, session_type) {
-                remove_list_item(fp['show_types'], session_type)
-            })
-            // When no types are shown, no need to hide groups. Empty hide_groups list.
-            fp['hide_groups'] = []
-        } else {
-            // Were not active - enable or stop hiding everything
-            $.each(items.types, function (index, session_type) {
-                add_list_item(fp['show_types'], session_type)
-            })
-            $.each(items.neg_groups, function (index, group) {
-                remove_list_item(fp['hide_groups'], group)
-            })
-        }
-        update_filters(fp);
-    });
-
-    // Entry point to filtering code when page loads
+    }
+    
+    /* Entry point to filtering code when page loads
+     * 
+     * This must be called if you are using the HTML template to provide a customization
+     * button UI. Do not call if you only want to use the parameter parsing routines.
+     */
     function enable () {
         $(document).ready(function () {
-            update_view()
+            register_handlers();
+            update_view();
         })
+    }
+
+    // utility method - filter a jquery set to those matching a keyword
+    function rows_matching_filter_keyword(rows, kw) {
+        return rows.filter(function(index, element) {
+            var row_kws = get_keywords(element);
+            return keyword_match(row_kws, [kw.toLowerCase()]);
+        });
     }
 
     // Make private functions available for unit testing
-    agenda_filter_for_testing.toggle_list_item = toggle_list_item;
-    agenda_filter_for_testing.parse_query_params = parse_query_params;
+    agenda_filter_for_testing = {
+        parse_query_params: parse_query_params,
+        toggle_list_item: toggle_list_item
+    };
 
-    // Public interface methods
-    return {
+    // Make public interface methods accessible
+    agenda_filter = {
         enable: enable,
         filtering_is_enabled: filtering_is_enabled,
+        get_filter_params: get_filter_params,
         include_non_area_selectors: function () {enable_non_area = true},
+        keyword_match: keyword_match,
+        parse_query_params: parse_query_params,
+        rows_matching_filter_keyword: rows_matching_filter_keyword,
         set_update_callback: function (cb) {update_callback = cb}
-    }
-}();
+    };
+})();

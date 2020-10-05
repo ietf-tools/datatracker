@@ -24,13 +24,11 @@
                         <tr>
                             {% for p in group_parents %}
                                 <th style="width:{% widthratio 1 group_parents|length|add:1 100 %}%">
-                                    <button class="btn btn-default btn-block pick-area {{ p.acronym|lower }}">{{ p.acronym|upper }}</button>
+                                    <button class="btn btn-default btn-block pickview {{ p.acronym|lower }}">{{ p.acronym|upper }}</button>
                                 </th>
                             {% endfor %}
                             {% if non_area_filters %}
-                                <th style="width:{% widthratio 1 group_parents|length|add:1 100 %}">
-                                    <button class="btn btn-default btn-block pick-non-area">Non-Area</button>
-                                </th>
+                                <th style="width:{% widthratio 1 group_parents|length|add:1 100 %}"></th>
                             {% endif %}
                         </tr>
                         </thead>
@@ -42,7 +40,7 @@
                                 {% for group in p.group_list %}
                                     <div class="btn-group btn-group-xs btn-group-justified">
                                         <button class="btn btn-default pickview {{ group.acronym }}"
-                                                data-group-area="{{ p.acronym|lower }}">
+                                                data-filter-keywords="{{ p.acronym|lower }}{% if group.is_bof %},bof{% endif %}">
                                             {% if group.is_bof %}
                                                 <i>{{ group.acronym }}</i>
                                             {% else %}
@@ -57,37 +55,34 @@
                                 <td class="view non-area">
                                     <div class="btn-group-vertical btn-block">
                                         <div class="btn-group btn-group-xs btn-group-justified">
-                                            <button class="btn btn-default picktype plenary">Plenary</button>
+                                            <button class="btn btn-default pickview adofficehours"> AD Office Hours</button>
                                         </div>
                                         <div class="btn-group btn-group-xs btn-group-justified">
-                                            <button class="btn btn-default picktype other">Other</button>
-                                        </div>
-                                    </div>
-                                    <div class="btn-group-vertical btn-block">
-                                        <div class="btn-group btn-group-xs btn-group-justified">
-                                            <button class="btn btn-default pickviewneg edu"> EDU</button>
+                                            <button class="btn btn-default pickview bof"> BOF</button>
                                         </div>
                                         <div class="btn-group btn-group-xs btn-group-justified">
-                                            <button class="btn btn-default pickviewneg hackathon"> Hackathon</button>
+                                            <button class="btn btn-default pickview edu"> EDU</button>
                                         </div>
                                         <div class="btn-group btn-group-xs btn-group-justified">
-                                            <button class="btn btn-default pickviewneg iab"> IAB</button>
+                                            <button class="btn btn-default pickview hackathon"> Hackathon</button>
                                         </div>
                                         <div class="btn-group btn-group-xs btn-group-justified">
-                                            <button class="btn btn-default pickviewneg iepg"> IEPG</button>
+                                            <button class="btn btn-default pickview iepg"> IEPG</button>
                                         </div>
                                         <div class="btn-group btn-group-xs btn-group-justified">
-                                            <button class="btn btn-default pickviewneg iesg"> IESG</button>
+                                            <button class="btn btn-default pickview iesg"> IESG</button>
                                         </div>
                                         <div class="btn-group btn-group-xs btn-group-justified">
-                                            <button class="btn btn-default pickviewneg ietf"> IETF</button>
+                                            <button class="btn btn-default pickview ietf"> IETF</button>
                                         </div>
                                         <div class="btn-group btn-group-xs btn-group-justified">
-                                            <button class="btn btn-default pickviewneg secretariat"> Secretariat
-                                            </button>
+                                            <button class="btn btn-default pickview plenary"> Plenary</button>
                                         </div>
                                         <div class="btn-group btn-group-xs btn-group-justified">
-                                            <button class="btn btn-default pickviewneg tools"> Tools</button>
+                                            <button class="btn btn-default pickview secretariat"> Secretariat</button>
+                                        </div>
+                                        <div class="btn-group btn-group-xs btn-group-justified">
+                                            <button class="btn btn-default pickview tools"> Tools</button>
                                         </div>
                                     </div>
                                 </td>

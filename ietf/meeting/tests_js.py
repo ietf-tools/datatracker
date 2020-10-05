@@ -466,6 +466,14 @@ class AgendaTests(MeetingTestCase):
         area = mars.parent
         self.do_agenda_view_filter_test('?show=%s' % area.acronym, ['ames', 'mars'])
 
+    def test_agenda_view_filter_bof(self):
+        mars = Group.objects.get(acronym='mars')
+        mars.state_id = 'bof'
+        mars.save()
+        self.do_agenda_view_filter_test('?show=bof', ['mars'])
+        self.do_agenda_view_filter_test('?show=bof,mars', ['mars'])
+        self.do_agenda_view_filter_test('?show=bof,ames', ['mars','ames'])
+
     def test_agenda_view_filter_show_two(self):
         """Filtered agenda view should display only matching rows (two groups selected)"""
         self.do_agenda_view_filter_test('?show=mars,ames', ['mars', 'ames'])
@@ -482,43 +490,6 @@ class AgendaTests(MeetingTestCase):
         area = mars.parent
         self.do_agenda_view_filter_test('?show=mars&hide=%s' % area.acronym, [])
 
-    def test_agenda_view_filter_show_and_hide(self):
-        self.do_agenda_view_filter_test('?show=mars&hide=ietf', ['mars'])
-
-    def test_agenda_view_filter_show_and_hide_same_group(self):
-        self.do_agenda_view_filter_test('?show=mars&hide=mars', [])
-
-    def test_agenda_view_filter_showtypes(self):
-        self.do_agenda_view_filter_test('?showtypes=plenary', ['ietf'])  # ietf has a plenary session
-
-    def test_agenda_view_filter_hidetypes(self):
-        self.do_agenda_view_filter_test('?hidetypes=plenary', []) 
-        
-    def test_agenda_view_filter_showtypes_and_hidetypes(self):
-        self.do_agenda_view_filter_test('?showtypes=plenary&hidetypes=regular', ['ietf'])  # ietf has a plenary session
-    
-    def test_agenda_view_filter_showtypes_and_hidetypes_same_type(self):
-        self.do_agenda_view_filter_test('?showtypes=plenary&hidetypes=plenary', [])
-        
-    def test_agenda_view_filter_show_and_showtypes(self):
-        self.do_agenda_view_filter_test('?show=mars&showtypes=plenary', ['mars', 'ietf'])  # ietf has a plenary session
-        
-    def test_agenda_view_filter_show_and_hidetypes(self):
-        self.do_agenda_view_filter_test('?show=ietf,mars&hidetypes=plenary', ['mars'])  # ietf has a plenary session
-        
-    def test_agenda_view_filter_hide_and_hidetypes(self):
-        self.do_agenda_view_filter_test('?hide=ietf,mars&hidetypes=plenary', [])
-        
-    def test_agenda_view_filter_show_hide_and_showtypes(self):
-        self.do_agenda_view_filter_test('?show=mars&hide=ames&showtypes=plenary,regular', ['mars', 'ietf'])  # ietf has plenary session
-        
-    def test_agenda_view_filter_show_hide_and_hidetypes(self):
-        self.do_agenda_view_filter_test('?show=mars,ietf&hide=ames&hidetypes=plenary', ['mars'])  # ietf has plenary session
-        
-    def test_agenda_view_filter_all_params(self):
-        self.do_agenda_view_filter_test('?show=secretariat,ietf&hide=ames&showtypes=regular&hidetypes=plenary',
-                                        ['secretariat', 'mars'])
-        
     def assert_agenda_item_visibility(self, visible_groups=None):
         """Assert that correct items are visible in current browser window
         
@@ -692,19 +663,20 @@ class InterimTests(MeetingTestCase):
         not_visible = set()
         unexpected = set()
         entries = self.driver.find_elements_by_css_selector(
-            'table#upcoming-meeting-table > tbody > tr.entry'
+            'table#upcoming-meeting-table a.ietf-meeting-link, table#upcoming-meeting-table a.interim-meeting-link'
         )
         for entry in entries:
-            nums = [n for n in expected if n in entry.text]
+            entry_text = entry.get_attribute('innerHTML').strip()  # gets text, even if element is hidden
+            nums = [n for n in expected if n in entry_text]
             self.assertLessEqual(len(nums), 1, 'Multiple matching meeting numbers')
             if len(nums) > 0:  # asserted that it's at most 1, so if it's not 0, it's 1.
                 expected.remove(nums[0])
                 if not entry.is_displayed():
                     not_visible.add(nums[0])
                 continue
-            # Found an unexpected row - this is ok as long as it's hidden
+            # Found an unexpected row - this is only a problem if it is visible
             if entry.is_displayed():
-                unexpected.add(entry.text)
+                unexpected.add(entry_text)
 
         self.assertEqual(expected, set(), "Missing entries for expected iterim meetings.")
         self.assertEqual(not_visible, set(), "Hidden rows for expected interim meetings.")
