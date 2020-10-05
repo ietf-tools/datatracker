@@ -291,9 +291,10 @@ class DocumentInfo(models.Model):
             state_type = self.type_id
 
         if not hasattr(self, "state_cache") or self.state_cache == None:
-            self.state_cache = {}
+            state_cache = {}
             for s in self.states.all():
-                self.state_cache[s.type_id] = s
+                state_cache[s.type_id] = s
+            self.state_cache = state_cache
 
         return self.state_cache.get(state_type, None)
 
