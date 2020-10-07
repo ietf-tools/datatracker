@@ -15,6 +15,7 @@
   </p>
   
 {% for meeting in meetings %}
+  {% if meeting.show_important_dates %}
   <h3>IETF {{meeting.number}}: {{ meeting.date}}, {{meeting.city}}, {{meeting.country}}</h3>
   <ul>
   {% with first=forloop.first %}
@@ -47,6 +48,7 @@
     {% endfor %}
   {% endwith %}
   </ul>
+  {% endif %}
 {% endfor %}
 {% endblock %}
 
