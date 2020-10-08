@@ -3347,7 +3347,7 @@ def upcoming_ical(request):
 
     # icalendar response file should have '\r\n' line endings per RFC5545
     response = render_to_string('meeting/upcoming.ics', {
-        'vtimezones': ''.join({meeting.vtimezone() for meeting in meetings if meeting.vtimezone()}),
+        'vtimezones': ''.join(sorted(list({meeting.vtimezone() for meeting in meetings if meeting.vtimezone()}))),
         'assignments': assignments,
         'ietfs': ietfs,
     }, request=request)
