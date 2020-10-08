@@ -253,7 +253,7 @@ class Topic(models.Model):
     subject = models.CharField(verbose_name='Name', max_length=255, help_text='This short description will appear on the Feedback pages.')
     description = ForeignKey(DBTemplate, related_name='description', null=True, editable=False)
     accepting_feedback = models.BooleanField(verbose_name='Is accepting feedback', default=False)
-    audience = ForeignKey(TopicAudienceName)
+    audience = ForeignKey(TopicAudienceName, verbose_name='Who can provide feedback (intended audience)')
 
     class Meta:
         verbose_name_plural = 'Topics'
