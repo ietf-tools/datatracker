@@ -637,7 +637,7 @@ class Schedule(models.Model):
     schedule, others may copy it
     """
     meeting  = ForeignKey(Meeting, null=True, related_name='schedule_set')
-    name     = models.CharField(max_length=16, blank=False, help_text="Letters, numbers and -:_ allowed.", validators=[RegexValidator(r'^[A-Za-z0-9-:_]*$')])
+    name     = models.CharField(max_length=64, blank=False, help_text="Letters, numbers and -:_ allowed.", validators=[RegexValidator(r'^[A-Za-z0-9-:_]*$')])
     owner    = ForeignKey(Person)
     visible  = models.BooleanField("Show in agenda list", default=True, help_text="Show in the list of possible agendas for the meeting.")
     public   = models.BooleanField(default=True, help_text="Allow others to see this agenda.")
