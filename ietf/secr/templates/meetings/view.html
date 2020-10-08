@@ -48,7 +48,9 @@
              </select>
            </form>
          </li>
+         {% if meeting.schedule %}
          <li><button onclick="window.location='{% url "ietf.secr.meetings.views.rooms" meeting_id=meeting.number schedule_name=meeting.schedule.name %}'">Official Schedule</button></li>
+         {% endif %}
        </ul>
       </div> <!-- button-group -->
       

@@ -92,7 +92,7 @@ class SecrMeetingTestCase(TestCase):
         new_meeting = Meeting.objects.get(number=number)
         
         self.assertTrue(new_meeting.schedule)
-        self.assertEqual(new_meeting.schedule.name, 'secretary1')
+        self.assertEqual(new_meeting.schedule.name, 'sec-retary-1')
         self.assertTrue(new_meeting.schedule.base)
         self.assertEqual(new_meeting.schedule.base.name, 'base')
         self.assertEqual(new_meeting.attendees, None)

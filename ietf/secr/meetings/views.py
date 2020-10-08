@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.db.models import Max
 from django.forms.models import inlineformset_factory
 from django.shortcuts import render, get_object_or_404, redirect
+from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
 
@@ -227,7 +228,7 @@ def add(request):
             )
 
             schedule = Schedule.objects.create(meeting = meeting,
-                                               name    = "{}1".format(request.user.username),
+                                               name    = "%s-1" % slugify(request.user.person.plain_name()),
                                                owner   = request.user.person,
                                                visible = True,
                                                public  = True,
