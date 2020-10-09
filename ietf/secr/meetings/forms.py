@@ -3,6 +3,7 @@ import datetime
 import re
 
 from django import forms
+from django.db.models import Q
 
 import debug                            # pyflakes:ignore
 
@@ -159,7 +160,14 @@ class MiscSessionForm(TimeSlotForm):
     short = forms.CharField(max_length=32,label='Short Name',help_text='Enter an abbreviated session name (used for material file names)',required=False)
     type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(used=True).exclude(slug__in=('regular',)),empty_label=None)
     group = forms.ModelChoiceField(
-        queryset=Group.objects.filter(type__in=['ietf','team'],state='active'),
+        queryset=Group.objects.filter(
+            Q(type__in=['ietf','team','area'],state='active')|
+            Q(type__features__has_meetings=True,state='active')
+        ).exclude(
+            type_id__in=['wg','ag','rg','rag','program']
+        ).order_by(
+            'name'
+        ),
         help_text='''Select a group to associate with this session.  For example:<br>
                      Tutorials = Education,<br>
                      Code Sprint = Tools Team,<br>
