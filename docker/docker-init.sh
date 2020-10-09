@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# A little bit of setup
+export LANG=en_GB.UTF-8
+
 echo "Gathering info ..."
 MYSQLDIR="$(mysqld --verbose --help 2>/dev/null | awk '$1 == "datadir" { print $2; exit }')"
 if [ ! "$USER" ]; then
