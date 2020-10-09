@@ -170,11 +170,9 @@ def check_submission_revision_consistency(submission):
 
     Returns None if revision is consistent or an error message describing the problem.
     """
-    unexpected_events = SubmissionDocEvent.objects.filter(
-        submission__name=submission.name, rev__gte=submission.rev
-    )
-    if len(unexpected_events) != 0:
-        conflicts = [evt.rev for evt in unexpected_events]
+    unexpected_submissions = Submission.objects.filter(name=submission.name, rev__gte=submission.rev, state_id='posted').order_by('rev')
+    if len(unexpected_submissions) != 0:
+        conflicts = [sub.rev for sub in unexpected_submissions]
         return "Rev %s conflicts with existing %s (%s). This indicates a database inconsistency that requires investigation." %(
             submission.rev,
             "submission" if len(conflicts) == 1 else "submissions",
