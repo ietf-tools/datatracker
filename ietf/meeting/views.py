@@ -2495,7 +2495,7 @@ class UploadSlidesForm(FileUploadForm):
 
     def clean_title(self):
         title = self.cleaned_data['title']
-        # THe current tables only handles Unicode BMP:
+        # The current tables only handles Unicode BMP:
         if ord(max(title)) > 0xffff:
             raise forms.ValidationError("The title contains characters outside the Unicode BMP, which is not currently supported")
         if self.session.meeting.type_id=='interim':

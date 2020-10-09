@@ -331,6 +331,8 @@ class FileUploadForm(forms.Form):
         self.mime_types = settings.MEETING_VALID_UPLOAD_MIME_TYPES[doc_type]
         super(FileUploadForm, self).__init__(*args, **kwargs)
         label = '%s file to upload.  ' % (self.doc_type.capitalize(), )
+        if self.doc_type == "slides":
+            label += 'Did you remember to put in slide numbers? '
         if self.mime_types:
             label += 'Note that you can only upload files with these formats: %s.' % (', '.join(self.mime_types, ))
         self.fields['file'].label=label
