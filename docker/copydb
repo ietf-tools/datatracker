@@ -117,8 +117,10 @@ if [ -e "/.dockerenv" -o -n "$(grep -s '/docker/' /proc/self/cgroup)" ]; then
    die "It looks as if you're running inside docker -- please quit docker first."
 fi
 
-cd $progdir/../data/ \
-	&& echo "Building tarfile ..." \
-	&& tar cjf ietf_utf8.bin.tar.bz2 mysql \
-	&& echo "Copying tarfile to ietfa.amsl.com ..." \
-	&& scp ietf_utf8.bin.tar.bz2 ietfa.amsl.com:/a/www/www6s/lib/dt/sprint/
+workdir=$(realpath $progdir/../data/mysql/..)
+echo "Working directory: $workdir"
+cd $workdir
+echo "Building tarfile ..."
+tar cjf ietf_utf8.bin.tar.bz2 mysql
+echo "Copying tarfile to ietfa.amsl.com ..."
+scp ietf_utf8.bin.tar.bz2 ietfa.amsl.com:/a/www/www6s/lib/dt/sprint/
