@@ -107,11 +107,9 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
 def get_interim_menu_entries(request):
     '''Setup menu entries for interim meeting view tabs'''
     entries = []
-    if can_manage_some_groups(request.user):
-        entries.append(("Upcoming", reverse("ietf.meeting.views.upcoming")))
-        entries.append(("Pending", reverse("ietf.meeting.views.interim_pending")))
-        if has_role(request.user, "Secretariat"):
-            entries.append(("Announce", reverse("ietf.meeting.views.interim_announce")))
+    entries.append(("Upcoming", reverse("ietf.meeting.views.upcoming")))
+    entries.append(("Pending", reverse("ietf.meeting.views.interim_pending")))
+    entries.append(("Announce", reverse("ietf.meeting.views.interim_announce")))
     return entries
 
 def send_interim_change_notice(request, meeting):
@@ -2905,7 +2903,6 @@ def ajax_get_utc(request):
                         content_type='application/json')
 
 
-@role_required('Secretariat',)
 def interim_announce(request):
     '''View which shows interim meeting requests awaiting announcement'''
     meetings = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='scheda')
@@ -2968,11 +2965,7 @@ def interim_skip_announcement(request, number):
         'meeting': meeting})
 
 
-@login_required
 def interim_pending(request):
-
-    if not can_manage_some_groups(request.user):
-        permission_denied(request, "You are not authorized to access this view")
 
     '''View which shows interim meeting requests pending approval'''
     meetings = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='apprw')
@@ -2980,7 +2973,6 @@ def interim_pending(request):
     menu_entries = get_interim_menu_entries(request)
     selected_menu_entry = 'pending'
 
-    meetings = [m for m in meetings if can_view_interim_request(m, request.user)]
     for meeting in meetings:
         if can_approve_interim_request(meeting, request.user):
             meeting.can_approve = True
