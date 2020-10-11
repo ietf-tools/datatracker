@@ -65,6 +65,11 @@ def prevent_system_name(name):
     if "(system)" in name_without_spaces.lower():
         raise forms.ValidationError("Please pick another name - this name is reserved.")
 
+def prevent_anonymous_name(name):
+    name_without_spaces = name.replace(" ", "").replace("\t", "")
+    if "anonymous" in name_without_spaces.lower():
+        raise forms.ValidationError("Please pick another name - this name is reserved.")
+
 class PersonPasswordForm(forms.ModelForm, PasswordForm):
 
     class Meta:
@@ -75,6 +80,7 @@ class PersonPasswordForm(forms.ModelForm, PasswordForm):
         name = self.cleaned_data.get('name', '')
         prevent_at_symbol(name)
         prevent_system_name(name)
+        prevent_anonymous_name(name)
 
         return name
 
