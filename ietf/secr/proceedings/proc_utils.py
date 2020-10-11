@@ -217,6 +217,7 @@ def get_progress_stats(sdate,edate):
     data['last_calls_count'] = events.filter(type='sent_last_call').count()
     new_draft_events = events.filter(newrevisiondocevent__rev='00')
     new_drafts = list(set([ e.doc_id for e in new_draft_events ]))
+    data['new_docs'] = list(set([ e.doc for e in new_draft_events ]))
     data['new_drafts_count'] = len(new_drafts)
     data['new_drafts_updated_count'] = events.filter(doc__id__in=new_drafts,newrevisiondocevent__rev='01').count()
     data['new_drafts_updated_more_count'] = events.filter(doc__id__in=new_drafts,newrevisiondocevent__rev='02').count()

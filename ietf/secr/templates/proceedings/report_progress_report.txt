@@ -23,7 +23,7 @@
     {{ group }} ({{ group.acronym }})
  {% endfor %}
  
- 5) {{ new_docs.count }} new or revised Internet-Drafts this period
+ 5) {{ new_docs|length }} new or revised Internet-Drafts this period
  
  (o - Revised Internet-Draft; + - New Internet-Draft)
 
