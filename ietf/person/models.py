@@ -96,7 +96,7 @@ class Person(models.Model):
             else:
                 ascii = unidecode_name(self.name)
             prefix, first, middle, last, suffix = name_parts(ascii)
-            self._cached_plain_ascii = " ".join([first, last])
+            self._cached_plain_ascii = (" ".join([first, last])).strip()
         return self._cached_plain_ascii
     def initials(self):
         return initials(self.ascii or self.name)
