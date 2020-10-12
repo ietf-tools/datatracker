@@ -8,7 +8,7 @@ import os
 import re
 import tempfile
 
-from email import message_from_string
+from email import message_from_string, message_from_bytes
 from email.header import decode_header
 from email.iterators import typed_subpart_iterator
 from email.utils import parseaddr
@@ -20,7 +20,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
-from django.utils.encoding import force_str
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.person.models import Email, Person
@@ -450,7 +449,12 @@ def get_body(message):
 
 
 def parse_email(text):
-    msg = message_from_string(force_str(text))
+    if isinstance(text, bytes):
+        msg = message_from_bytes(text)
+    elif isinstance(text, str):
+        msg = message_from_string(text)
+    else:
+        raise ValueError("Expected email message text to be str or bytes")
 
     body = get_body(msg)
     subject = getheader(msg['Subject'])
