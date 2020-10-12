@@ -1,0 +1,811 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters static %}
+{% load group_filters %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+
+{% block title %}NomCom{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <div class="row">
+    <div class="col-md-10">
+
+
+      <h1>NomCom Membership History</h1>
+
+    <p class="alert alert-warning"><b>Note:</b> The data for concluded NomComs is occasionally incorrect.</p>
+    {% for regime in regimes %}
+
+        <table class="table table-condensed">
+			<tbody class="meta">
+		         <h3 class="anchor-target" id="{{ regime.year }}">{{ regime.label }}</h3>
+		     	{% for slug, label, roles in regime.nomcom.personnel %}
+		        	<tr>
+		        		<th></th>
+			 			<th>{{ label }}</th>
+			  			<td>
+			    		{% for r in roles %}
+			      			{% role_person_link r %}
+			      			<br />
+			    		{% endfor %}
+			  			</td>
+		        	</tr>
+		      	{% endfor %}
+   			 </tbody>
+    	</table>
+     {% endfor %}
+    <a href="prior"></a>
+
+    <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="2012">2012/2013</h3>
+     <tr><th></th>
+     		<th>Chair</th>
+     		<td>Matt Lepinski<br /></td> 
+     	</tr>
+       <tr><th></th>
+     		<th>Advisor</th>
+     		<td>Suresh Krishnan<br /></td> 
+     	</tr>
+        <tr><th></th>
+     		<th>Members</th>
+     		<td>Dhruv Dhody<br />
+              Yi (Aaron) Ding<br />
+              Toerless Eckert<br />
+              Jeff Haas<br />
+              David Meyer<br />
+              Michael Richardson<br />
+              Teemu Savolainen<br />
+              Karen Seo<br />
+              Steven White<br />
+              Leaf Yeh<br />
+            </td>
+        </tr>
+        <tr><th></th>
+            <th>Liaison Members</th>
+            <td>Marc Blanchet (IAB Liaison)<br />
+              Scott Bradner (IAOC Liaison)<br />
+              Sean Turner (IESG Liaison)<br />
+              Rudi Vansnick (ISOC Liaison)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+    <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="2011">2011/2012</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Suresh Krishnan<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisors</th>
+     		<td>Tom Walsh<br />
+     			Henrik Levkowetz (Tools Advisor)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+            <th>Members</th>
+            <td>Jaap Akkerhuis<br />
+              Stephen Hanna<br />
+              Sheng Jiang<br />
+              Dapeng Liu<br />
+              Rifaat Shekh-Yuse<br />
+              Pascal Thubert<br />
+              Olivier Vautrin<br />
+              Simo Veikkolainen<br />
+              Ijsbrand Wijnands<br />
+              Lianshu Zheng<br />
+          </td>
+         </tr>
+         <tr><th></th>
+            <th>Liaison Members</th>
+            <td>Dave Thaler (IAB Liaison)<br />
+              Dave Crocker (IAOC Liaison)<br />
+              Ralph Droms (IESG Liaison)<br />
+              Jason Livingood (ISOC Liaison)<br />
+              </td>
+        </tr>
+    </tbody>
+</table>
+
+    <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="2010">2010/2011</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Tom Walsh<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisors</th>
+     		<td>Mary Barnes<br />
+     			Henrik Levkowetz (Tools Advisor)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+            <th>Members</th>
+            <td>Gregory Cauchie<br />
+              Mehmet Ersue<br />
+              Dorothy Gellert<br />
+              Tony Hansen<br />
+              Suresh Krishnan<br />
+              Dirk Kroeselberg<br />
+              Jan Seedorf<br />
+              Pete St. Pierre<br />
+              Rolf Winter<br />
+          </td>
+      	</tr>
+        <tr><th></th>
+            <th>Liaison Members</th>
+            <td>Spencer Dawkins (IAB Liaison)<br />
+              Ole Jacobsen (IAOC Liaison)<br />
+              Dan Romascanu (IESG Liaison)<br />
+              Eric Burger (ISOC Liaison)<br />
+              </td>
+        </tr>
+    </tbody>
+</table>
+
+    <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="2009">2009/2010</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Mary Barnes<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisors</th>
+     		<td>Joel Halpern<br />
+     			Henrik Levkowetz (Tools Advisor)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+            <th>Members</th>
+            <td>Scott Brim<br />
+              David H. Crocker<br />
+              Roque Gagliano<br />
+              Randall Gellens<br />
+              Dorothy Gellert<br />
+              Wassim Haddad<br />
+              Stephen Kent<br />
+              Simo Veikkolainen<br />
+              Dimitri Papadimitriou<br />
+              Lucy Yong<br />
+            </td>
+        </tr>
+        <tr><th></th>
+            <th>Liaison Members</th>
+            <td>Jon Peterson (IAB Liaison)<br />
+              Tim Polk (IESG Liaison)<br />
+              Henk Uijterwall (IAOC liaison)<br />
+              TBA (ISOC Liaison)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+    <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="2008">2008/2009</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Joel Halpern<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisor</th>
+     		<td>Lakshminath Dondeti<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+            <th>Members</th>
+             <td>Bernard Aboba<br />
+              Stephen Hanna<br />
+              Sam Hartman<br />
+              Bernie Hoeneisen<br />
+              Markus Isomaki<br />
+              Matt Lepinski<br />
+              Jason Livingood<br />
+              Hannes Tschofenig<br />
+              Russ White<br />
+              Margaret Wasserman<br />
+            </td>
+        </tr>
+        <tr><th></th>
+            <th>Liaison Members</th>
+             <td>Dave Oran (IAB Liaison)<br />
+              Ross Callon (IESG Liaison)<br />
+              Bert Wijnen (ISOC Liaison)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+    <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="2007">2007/2008</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Lakshminath Dondeti<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisor</th>
+     		<td>Andrew Lange<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Members</th>
+             <td>Simon Leinen<br />
+              Christopher Boulton<br />
+              Dan Wing<br />
+              Derek Atkins<br />
+              Steven Blake<br />
+              Ian Chakeres<br />
+              Thomas Walsh<br />
+              Attila Takacs<br />
+              Ole Jacobsen<br />
+              Craig White<br />
+          </td>
+      </tr>
+      <tr><th></th>
+            <th>Liaison Members</th>
+             <td>Danny McPherson (IAB Liaison)<br />
+              Lars Eggert (IESG Liaison)<br />
+              Fred Baker (ISOC Liaison)<br />
+          </td>
+      </tr>
+  </tbody>
+</table>
+
+
+    <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="2006">2006/2007</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Andrew Lange<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisor</th>
+     		<td>Ralph Droms (Previous Chair)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Members</th>
+             <td>Cengiz Alaettinoglu<br />
+              Dan Li<br />
+              Brian Haberman<br />
+              John Drake<br />
+              Stephen Kent<br />
+              Vidya Narayanan<br />
+              Hao Zhou<br />
+              Kurt Zeilenga<br />
+              Martin Stiemerling<br />
+              Juergen Quittek<br />
+            </td>
+        </tr>
+      <tr><th></th>
+            <th>Liaison Members</th>
+            <td>Olaf Kolkman (IAB Liaison)<br />
+              Cullen Jennings (IESG Liaison)<br />
+              Fred Baker (ISOC Liaison)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+    <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="2005">2005/2006</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Ralph Droms<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisor</th>
+     		<td>Danny McPherson (Previous Chair)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Members</th>
+            <td>Sam Weiler<br />
+              Lakshminath Dondeti<br />
+              Stewart Bryant<br />
+              Alan Hawrylyshen<br />
+              Wassim Haddad<br />
+              Joao Luis Silva Damas<br />
+              Dinesh Mohan<br />
+              Ron Bonica<br />
+              Jozef Babiarz<br />
+              Vijay K. Gurbani<br />
+            </td>
+        </tr>
+    	<tr><th></th>
+            <th>Liaison Members</th>
+            <td>David Meyer (IAB Liaison)<br />
+              Russ Housley (IESG Liaison)<br />
+              Steve Crocker (ISOC Liaison)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+    <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="2004">2004/2005</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Danny McPherson<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisor</th>
+     		<td>Richard Draves (Previous Chair)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Members</th>
+            <td>Alia Atlas<br />
+              Stewart Bryant<br />
+              Lakshminath Dondeti<br />
+              Markus Isomaki<br />
+              Andrew Lange<br />
+              Matt Larson<br />
+              Chris Liljenstolpe<br />
+              Magnus Westerlund<br />
+              Russ White<br />
+              Juha Wiljakka<br />
+            </td>
+        </tr>
+    	<tr><th></th>
+            <th>Liaison Members</th>
+            <td>Eric Rescorla (IAB Liaison)<br />
+              Alex Zinin (IESG Liaison)<br />
+              Steve Crocker (ISOC Liaison)<br />
+              Richard Draves (Previous Chair/Advisor)<br />
+          	</td>
+      	</tr>
+  	</tbody>
+</table>
+
+    <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="2003">2003/2004</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Rich Draves<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisor</th>
+     		<td>Phil Roberts (Previous Chair)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Members</th>
+             <td>Abdul-jabbar Asiri<br />
+              Jin Seek Choi<br />
+              Ralph Droms<br />
+              Dan Forsberg<br />
+              Ole J. Jacobsen<br />
+              Kireeti Kompella<br />
+              David E. Martin<br />
+              Basavaraj Patil<br />
+              Richard Shockey<br />
+              Andrew Thiessen<br />
+            </td>
+        </tr>
+    	<tr><th></th>
+            <th>Liaison Members</th>
+            <td>Geoff Huston (IAB Liaison)<br />
+              Bill Fenner (IESG liaison)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+    <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="2002">2002/2003</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Phil Roberts<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisor</th>
+     		<td>Theodore Ts'o (Previous Chair)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Members</th>
+            <td>Frank Alfano<br />
+              Dennis Beard<br />
+              Alec Brusilovsky<br />
+              Richard Draves<br />
+              Eva Gustafsson<br />
+              Eva Jonsson<br />
+              Thomas Kurien<br />
+              Edward Lewis<br />
+              Michael Richardson<br />
+              Stephen Trowbridge<br />
+            </td>
+        </tr>
+    	<tr><th></th>
+            <th>Liaison Members</th>
+            <td>Eric Rescorla (IAB liaison)<br />
+              Allison Mankin (IETF liaison)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+    <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="2001">2001/2002</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Theodore Ts'o<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisor</th>
+     		<td>Bernard Aboba (Previous Chair)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Members</th>
+            <td>Ron Bonica<br />
+              Dave Crocker<br />
+              Eric Gray<br />
+              Bob Hinden<br />
+              Matt Holdrege<br />
+              Danny McPherson<br />
+              Ersue Mehmet<br />
+              Radia Perlman<br />
+              Hal Sandick<br />
+              Russ White<br />
+            </td>
+        </tr>
+    	<tr><th></th>
+            <th>Liaison Members</th>
+            <td>Fred Baker (IAB liaison)<br />
+              Thomas Narten (IESG Liaison)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+     <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="2000">2000/2001</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Bernard Aboba<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisor</th>
+     		<td>Avri Doria (Previous Chair)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Members</th>
+            <td>David Allan<br />
+              Stuart Cheshire<br />
+              Alain Durand<br />
+              Hadriel Kaplan<br />
+              Perry E. Metzger<br />
+              Phil Roberts<br />
+              David Robinson<br />
+              Hal Sandick<br />
+              Vijay Srinivasan<br />
+              Bill Woodcock<br />
+            </td>
+        </tr>
+    	<tr><th></th>
+            <th>Liaison Members</th>
+            <td>Leslie Daigle (IAB Liaison)<br />
+              Allison Mankin (IESG Liaison)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+     <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="1999">1999/2000</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Avri Doria<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisor</th>
+     		<td>Donald E. Eastlake (Previous Chair)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Members</th>
+            <td>Bernard Aboba<br />
+              Michael W. Condry<br />
+              Paul Hoffman<br />
+              Jim Luciani<br />
+              Greg Minshall<br />
+              William B. Norton<br />
+              Basavaraj Patil<br />
+              Yakov Rekhter<br />
+              Bill Sommerfeld<br />
+              Walter Weiss<br />
+            </td>
+        </tr>
+    	<tr><th></th>
+            <th>Liaison Members</th>
+            <td>Geoff Huston (IAB Liaison)<br />
+              Thomas Narten (IESG Liaison)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+     <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="1998">1998/1999</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Donald Eastlake 3rd<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisor</th>
+     		<td>Michael St Johns (Previous Chair)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Members</th>
+            <td>Avri Doria<br />
+              Randall Gellens<br />
+              Stephen R. Hanna<br />
+              Bob Hinden<br />
+              R A Lichtensteiger<br />
+              Bob Mahoney<br />
+              Keith McCloghrie<br />
+              David Meyer<br />
+              Lixia Zhang<br />
+              Glen Zorn<br />
+            </td>
+        </tr>
+    	<tr><th></th>
+            <th>Liaison Members</th>
+            <td>Steven Bellovin (IAB Liaison)<br />
+              Bert Wijnen (IESG Liaison)<br />
+              Michael St Johns (Previous Chair)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+     <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="1997">1997/1998</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Michael StJohns<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisor</th>
+     		<td>Geoff Huston (Previous Chair)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Members</th>
+            <td>Bernard Aboba<br />
+              Uri Blumenthal<br />
+              John Boudreaux<br />
+              Avri Doria<br />
+              Rik Drummond<br />
+              Donald Eastlake<br />
+              Steve Hole<br />
+              Steve Kent<br />
+              Keith McClogrie<br />
+              Lixia Zhang<br />
+            </td>
+        </tr>
+    	<tr><th></th>
+            <th>Liaison Members</th>
+            <td>Tony Hain (IAB Liaison)<br />
+              Scott Bradner (IESG Liaison)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+     <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="1996">1996/1997</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Geoff Huston<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisor</th>
+     		<td>Guy Almes (Previous Chair)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Members</th>
+             <td>Guy Almes<br />
+              Jim Bound<br />
+              Matt Crawford<br />
+              Phill Gross<br />
+              Bob Hinden<br />
+              Dorian Kim<br />
+              Bill Manning<br />
+              Marshall Rose<br />
+              Mike StJohns<br />
+              Glen Zorn<br />
+            </td>
+        </tr>
+    	<tr><th></th>
+            <th>Liaison Members</th>
+            <td>Radia Perlman (IAB Liaison)<br />
+              Joyce Reynolds (IESG Liaison)<br />
+              Christian Huitema (ISOC Liaison)<br />
+              Guy Almes (Previous Chair)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+     <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="1995">1995/1996</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Guy Almes<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisor</th>
+     		<td>John Curran (Previous Chair)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Members</th>
+            <td>Uri Blumenthal<br />
+              Jeff Case<br />
+              Noel Chiappa<br />
+              Dave Crocker<br />
+              Donald Eastlake<br />
+              Ned Freed<br />
+              David Meyer<br />
+              Mark Prior<br />
+              Bob Steen<br />
+              Paul Traina<br />
+            </td>
+        </tr>
+    	<tr><th></th>
+            <th>Liaison Members</th>
+             <td>Bob Moskowitz (IAB Liaison)<br />
+              Harald Alvestrand (IESG Liaison)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+     <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="1994">1994/1995</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>John Curran<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Advisor</th>
+     		<td>Fred Baker (Previous Chair)<br />
+     		</td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Members</th>
+            <td>Fred Baker<br />
+              Roxana Bradescu<br />
+              Peter S. Ford<br />
+              Tony Genovese<br />
+              Michael Mealling<br />
+              Charlie Perkins<br />
+              Marshall Rose<br />
+              Greg Ruth<br />
+              Paul Traina<br />
+              Steven Waldbusser<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+     <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="1993">1993/1994</h3>
+     	<tr><th></th>
+     		<th>Chair</th>
+     		<td>Fred Baker<br /></td>
+     	</tr>
+     	<tr><th></th>
+     		<th>Members</th>
+            <td>Jeff Case<br />
+              Noel Chiappa<br />
+              Alan Clegg<br />
+              Jeroen Houttuin<br />
+              Daniel Karrenberg<br />
+              Andy Nicholson<br />
+              Dr. Marshall T. Rose<br />
+            </td>
+        </tr>
+    	<tr><th></th>
+            <th>Liaison Members</th>
+            <td>Bob Braden (IAB Liaison)<br />
+              Stev Knowles (IESG Liaison)<br />
+              Jon Postel (IRSG Liaison)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+     <table class="table table-condensed">
+		<tbody class="meta">
+		<h3 class="anchor-target" id="1992">1992/1993</h3>
+     	<tr><th></th>
+     		<th>Members</th>
+            <td>Jack Brown<br />
+              Peter S. Ford<br />
+              Steve Kent<br />
+              Paul Mockapetris<br />
+              Craig Partridge<br />
+              Jim Romaguera<br />
+              Claudio Topolcic<br />
+            </td>
+        </tr>
+    	<tr><th></th>
+            <th>Liaison Members</th>
+            <td>Barry Leiner (IAB Liaison)<br />
+              Erik Huizer (IESG Liaison)<br />
+              Jon Postel (IRSG Liaison)<br />
+              Geoff Huston (ISOC Liaison)<br />
+            </td>
+        </tr>
+    </tbody>
+</table>
+ 
+
+    </div>
+    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
+      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+	{% for regime in regimes %}
+	  <li><a href="#{{ regime.year }}">{{ regime.label }}</a></li>
+	{% endfor %}
+	<li><a href="#2012">2012/2013</a></li>
+	<li><a href="#2011">2011/2012</a></li>
+	<li><a href="#2010">2010/2011</a></li>
+	<li><a href="#2009">2009/2010</a></li>
+	<li><a href="#2008">2008/2009</a></li>
+	<li><a href="#2007">2007/2008</a></li>
+	<li><a href="#2006">2006/2007</a></li>
+	<li><a href="#2005">2005/2006</a></li>
+	<li><a href="#2004">2004/2005</a></li>
+	<li><a href="#2003">2003/2004</a></li>
+	<li><a href="#2002">2002/2003</a></li>
+	<li><a href="#2001">2001/2002</a></li>
+	<li><a href="#2000">2000/2001</a></li>
+	<li><a href="#1999">1999/2000</a></li>
+	<li><a href="#1998">1998/1999</a></li>
+	<li><a href="#1997">1997/1998</a></li>
+	<li><a href="#1996">1996/1997</a></li>
+	<li><a href="#1995">1995/1996</a></li>
+	<li><a href="#1994">1994/1995</a></li>
+	<li><a href="#1993">1993/1994</a></li>
+	<li><a href="#1992">1992/1993</a></li>
+      </ul>
+    </div>
+  </div>
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}
