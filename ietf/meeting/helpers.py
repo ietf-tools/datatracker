@@ -12,6 +12,7 @@ from tempfile import mkstemp
 from django.http import HttpRequest, Http404
 from django.db.models import F, Max, Q, Prefetch
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from django.urls import reverse
 from django.utils.cache import get_cache_key
@@ -341,6 +342,8 @@ def session_constraint_expire(request,session):
 
 def can_approve_interim_request(meeting, user):
     '''Returns True if the user has permissions to approve an interim meeting request'''
+    if not user or isinstance(user,AnonymousUser):
+        return False
     if meeting.type.slug != 'interim':
         return False
     if has_role(user, 'Secretariat'):

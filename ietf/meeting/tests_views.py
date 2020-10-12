@@ -2095,49 +2095,7 @@ class InterimTests(TestCase):
         settings.AGENDA_PATH = self.saved_agenda_path
         shutil.rmtree(self.materials_dir)
 
-    def check_interim_tabs(self, url):
-        '''Helper function to check interim meeting list tabs'''
-        # no logged in -  no tabs
-        r = self.client.get(url)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q("ul.nav-tabs")), 0)
-        # plain user -  no tabs
-        username = "plain"
-        self.client.login(username=username, password=username + "+password")
-        r = self.client.get(url)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q("ul.nav-tabs")), 0)
-        self.client.logout()
-        # privileged user
-        username = "ad"
-        self.client.login(username=username, password=username + "+password")
-        r = self.client.get(url)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q("a:contains('Pending')")), 1)
-        self.assertEqual(len(q("a:contains('Announce')")), 0)
-        self.client.logout()
-        # secretariat
-        username = "secretary"
-        self.client.login(username=username, password=username + "+password")
-        r = self.client.get(url)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q("a:contains('Pending')")), 1)
-        self.assertEqual(len(q("a:contains('Announce')")), 1)
-        self.client.logout()
-
-    def test_interim_announce(self):
-        make_interim_test_data()
-        url = urlreverse("ietf.meeting.views.interim_announce")
-        meeting = Meeting.objects.filter(type='interim', session__group__acronym='mars').first()
-        session = meeting.session_set.first()
-        SchedulingEvent.objects.create(
-            session=session,
-            status=SessionStatusName.objects.get(slug='scheda'),
-            by=Person.objects.get(name='(System)')
-        )
-        login_testing_unauthorized(self, "secretary", url)
-        r = self.client.get(url)
-        self.assertContains(r, meeting.number)
+    # test_interim_announce subsumed by test_appears_on_announce
 
     def test_interim_skip_announcement(self):
         make_meeting_test_data()
@@ -2226,7 +2184,6 @@ class InterimTests(TestCase):
             mars=add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='mars')).filter(current_status='sched').first().meeting,
             ames=add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='ames')).filter(current_status='canceled').first().meeting,
         )
-        self.check_interim_tabs(url)
         return self.client.get(url), interims
 
     def test_upcoming(self):
@@ -2238,22 +2195,7 @@ class InterimTests(TestCase):
         q = PyQuery(r.content)
         self.assertIn('CANCELLED', q('tr>td.text-right>span').text())
 
-    def test_upcoming_filters_ignored(self):
-        """The upcoming view should ignore filter querystrings"""
-        r, interims = self.do_upcoming_test()
-        self.assertContains(r, interims['mars'].number)
-        self.assertContains(r, interims['ames'].number)
-        self.assertContains(r, 'IETF 72')
-
-        r, interims = self.do_upcoming_test('show=ames', create_meeting=False)
-        self.assertContains(r, interims['mars'].number)
-        self.assertContains(r, interims['ames'].number)
-        self.assertContains(r, 'IETF 72')
-
-        r, interims = self.do_upcoming_test('show=ames&hide=ames,mars', create_meeting=False)
-        self.assertContains(r, interims['mars'].number)
-        self.assertContains(r, interims['ames'].number)
-        self.assertContains(r, 'IETF 72')
+    # test_upcoming_filters_ignored removed - we _don't_ want to ignore filters now, and the test passed because it wasn't testing the filtering anyhow (which requires testing the js).
 
     def do_upcoming_ical_test(self, querystring=None, create_meeting=True):
         if create_meeting:
@@ -2806,23 +2748,7 @@ class InterimTests(TestCase):
         self.assertEqual(session.agenda_note,agenda_note)
 
 
-    def test_interim_pending(self):
-        make_interim_test_data()
-        url = urlreverse('ietf.meeting.views.interim_pending')
-        count = len(set(s.meeting_id for s in add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim')).filter(current_status='apprw')))
-
-        # unpriviledged user
-        login_testing_unauthorized(self,"plain",url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 403) 
-        
-        # secretariat
-        login_testing_unauthorized(self,"secretary",url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q("#pending-interim-meetings-table tr"))-1, count)
-        self.client.logout()
+    # test_interim_pending subsumed by test_appears_on_pending
 
 
     def test_can_approve_interim_request(self):
@@ -3885,6 +3811,7 @@ class HasMeetingsTests(TestCase):
 
     def test_appears_on_upcoming(self):
         url = urlreverse('ietf.meeting.views.upcoming')
+        sessions=[]
         for gf in GroupFeatures.objects.filter(has_meetings=True):
             session = SessionFactory(
                 group__type_id = gf.type_id,
@@ -3892,14 +3819,17 @@ class HasMeetingsTests(TestCase):
                 meeting__date = datetime.datetime.today()+datetime.timedelta(days=30),
                 status_id='sched',
             )
-            r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
-            q = PyQuery(r.content)
+            sessions.append(session)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        for session in sessions:
             self.assertIn(session.meeting.number, q('.interim-meeting-link').text())
 
 
     def test_appears_on_pending(self):
         url = urlreverse('ietf.meeting.views.interim_pending')
+        sessions=[]
         for gf in GroupFeatures.objects.filter(has_meetings=True):
             group = GroupFactory(type_id=gf.type_id)
             meeting_date = datetime.datetime.today() + datetime.timedelta(days=30)
@@ -3910,27 +3840,16 @@ class HasMeetingsTests(TestCase):
                 meeting__number = 'interim-%d-%s-00'%(meeting_date.year,group.acronym),
                 status_id='apprw',
             )
-            for role_name in gf.groupman_roles:
-                role = RoleFactory(group=group, name_id=role_name)
-                self.client.login(username=role.person.user.username, password=role.person.user.username+'+password')
-                r = self.client.get(url)
-                self.assertEqual(r.status_code, 200)
-                q = PyQuery(r.content)
-                self.assertIn(session.meeting.number, q('.interim-meeting-link').text())
-                self.client.logout()
-            for authrole in gf.groupman_authroles:
-                role = self.create_role_for_authrole(authrole)
-                self.client.login(username=role.person.user.username, password=role.person.user.username+'+password')
-                r = self.client.get(url)
-                self.assertEqual(r.status_code, 200)
-                q = PyQuery(r.content)
-                self.assertIn(session.meeting.number, q('.interim-meeting-link').text())
-                self.client.logout()
+            sessions.append(session)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        for session in sessions:
+            self.assertIn(session.meeting.number, q('.interim-meeting-link').text())
 
 
     def test_appears_on_announce(self):
         url = urlreverse('ietf.meeting.views.interim_announce')
-        login_testing_unauthorized(self,"secretary",url)
         sessions=[]
         for gf in GroupFeatures.objects.filter(has_meetings=True):
             group = GroupFactory(type_id=gf.type_id)
