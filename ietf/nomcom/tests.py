@@ -90,6 +90,7 @@ class NomcomViewsTest(TestCase):
 
         # public urls
         self.index_url = reverse('ietf.nomcom.views.year_index', kwargs={'year': self.year})
+        self.history_url = reverse('ietf.nomcom.views.history')
         self.requirements_url = reverse('ietf.nomcom.views.requirements', kwargs={'year': self.year})
         self.questionnaires_url = reverse('ietf.nomcom.views.questionnaires', kwargs={'year': self.year})
         self.public_feedback_url = reverse('ietf.nomcom.views.public_feedback', kwargs={'year': self.year})
@@ -491,6 +492,10 @@ class NomcomViewsTest(TestCase):
     def test_index_view(self):
         """Verify home view"""
         self.check_url_status(self.index_url, 200)
+
+    def test_history_view(self):
+        """Verify history view"""
+        self.check_url_status(self.history_url, 200)
 
     def test_announcements_view(self):
         nomcom = Group.objects.get(acronym="nomcom%s" % self.year, type="nomcom")

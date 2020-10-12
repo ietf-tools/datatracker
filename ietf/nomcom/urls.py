@@ -6,6 +6,7 @@ from ietf.utils.urls import url
 urlpatterns = [
     url(r'^$', views.index),
     url(r'^ann/$', views.announcements),
+    url(r'^history/$', views.history),
     url(r'^(?P<year>\d{4})/private/$', views.private_index),
     url(r'^(?P<year>\d{4})/private/key/$', views.private_key),
     url(r'^(?P<year>\d{4})/private/help/$', views.configuration_help),

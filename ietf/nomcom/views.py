@@ -112,6 +112,40 @@ def announcements(request):
                            },
                        )
 
+def history(request):
+    nomcom_list = Group.objects.filter(type__slug='nomcom').order_by('acronym')
+
+    regimes = []
+
+    for nomcom in nomcom_list:
+        year = int(nomcom.acronym[6:])
+        if year > 2012:
+            personnel = {}
+            for r in Role.objects.filter(group=nomcom).order_by('person__name').select_related("email", "person", "name"):
+                if r.name_id not in personnel:
+                    personnel[r.name_id] = []
+                personnel[r.name_id].append(r)
+
+            nomcom.personnel = []
+            for role_name_slug, roles in personnel.items():
+                label = roles[0].name.name
+                if len(roles) > 1:
+                    if label.endswith("y"):
+                        label = label[:-1] + "ies"
+                    else:
+                        label += "s"
+
+                nomcom.personnel.append((role_name_slug, label, roles))
+
+            nomcom.personnel.sort(key=lambda t: t[2][0].name.order)
+
+            regimes.append(dict(year=year, label="%s/%s" % (year, year+1), nomcom=nomcom))
+
+    regimes.sort(key=lambda x: x['year'], reverse=True)
+
+    return render(request, "nomcom/history.html", {'nomcom_list': nomcom_list,
+                            'regimes': regimes})
+
 @role_required("Nomcom")
 def private_key(request, year):
     nomcom = get_nomcom_by_year(year)
