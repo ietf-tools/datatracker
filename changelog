@@ -1,3 +1,85 @@
+ietfdb (7.20.0) ietf; urgency=medium
+
+  **Bugfixes and minor features**
+
+  * Merged in [18533] from rjsparks@nostrum.com:
+    Replaced review name collision resolution code with a decision to not 
+    save when it occurs. Fixes #3092.  
+
+  * Merged in [18550] from rjsparks@nostrum.com:
+    Use the id-archive wherever we had been using the id-repository. 
+    Fixes #3080.  
+
+  * Fixed some grammar errors.
+
+  * Changed the cache-filling code for doc.get_state() to avoid a period 
+    where the cache is seen as valid but empty.  Addresses an issue where 
+    documents occasionally appear to be in an unexpected state.
+
+  * Made the important-dates page honour the Meeting.show_important_dates 
+    setting.
+
+  * Changed the length of the schedule name field from 16 to 64, to avoid 
+    running into lenght issues for schedule names auto-generated from person 
+    name or email.
+
+  * Changed the autogeneration of schedule names to use a slugified user
+    (person) name, rather than the user login. Logins are mostly email
+    addresses, may contain characters not permitted in the URL pattern for
+    schedule names, and are less readable in the contexts where schedule names
+    are used.
+
+  * Tweaked the verbose name of the Nomcom Topic Questionnaire's 'audience' 
+    field, on request from the NomCom chair.
+
+  * Tweaked the generation of .ics vtimezone entries to have a stable ordering
+    in /meeting/upcoming.ics.  Fixes issue #3097.
+
+  * Added a UTF-8 language locale to docker-init.sh, in order to be able 
+    some python packages that would fail to install under the default locale.
+
+  * Tweaked the docker/copydb script to handle symlinked data directories.
+
+  * Changed a draft submission revision consistency check to look at 
+    Submission objects rather than SubmissionDocEvent objects in order to not 
+    fail incorrectly when there are prior cancelled uploads.  
+    Related to issue #2909.
+
+  * Merged in [18587] from rcross@amsl.com:
+    Fixed section 5 of secretariat progress report. Fixes #3063.
+
+  * Changed the template for the person_link templatetag to use the user's
+    primary email address instead of the name, in order to work correctly
+    for different persons having the same name.
+
+  * Fixed a bug in the name_parts() function when dealing with names 
+    listing uppercased surname first (followed by given name).
+
+  * Added a person name validation step to prevent names like 'anonymous'.
+
+  * Tweaked the Person.plain_ascii() name method to not return leading or
+    trailing spaces.
+
+  * Added a management command, 'check_person_names_and_aliases':
+
+    When we started explicitly listing draft and RFC author names on the
+    documemnt pages in commit [18549], it uncovered a number of links that
+    would return 404 because name alias entries were missing for some person
+    entries, in particular for authors of early RFCs and drafts. Adding such
+    alias entries can be done automatically in most cases. This new management
+    command will do so, and also report (and in some cases fix) additional
+    issues, such as names incorrectly incorporating '<>', name aliases that
+    are email addresses, and more.
+
+    Run this with -v2 (verbosity 2) to have it report all found names and
+    aliases for each issue type, and run it with -f to fix those that can be
+    automatically fixed.
+
+  * Fixed another py2/py3 issue with the nomcom mail processing script.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  12 Oct 2020 12:57:08 +0000
+
+
 ietfdb (7.19.0) ietf; urgency=medium
 
   **Added links to people's personal profile page in a number of places**
