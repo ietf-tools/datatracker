@@ -108,6 +108,15 @@ RUN apt-get install -qy \
 	zile \
 	zlib1g-dev
 
+# Postgresql packages
+RUN apt-get install -qy \
+        postgresql-11 \
+        postgresql-server-dev-11 
+
+RUN pip install \
+        psycopg2
+        
+
 # Get the key used to sign the libyang repo
 RUN wget -nv http://download.opensuse.org/repositories/home:liberouter/Debian_9.0/Release.key
 RUN apt-key add - < Release.key

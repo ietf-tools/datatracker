@@ -437,7 +437,7 @@ def get_body(message):
                                                              'plain')]
         body = []
         for part in text_parts:
-            charset = get_charset(message)
+            charset = get_charset(part)
             body.append(get_payload_text(part, default_charset=charset))
 
         return "\n".join(body).strip()
