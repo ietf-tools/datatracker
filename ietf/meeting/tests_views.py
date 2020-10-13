@@ -3820,12 +3820,16 @@ class HasMeetingsTests(TestCase):
                 'session_set-MIN_NUM_FORMS':0,
                 'session_set-MAX_NUM_FORMS':1000}
 
+        empty_outbox()
         r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
         self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
         self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year, group.acronym, next_num))
+        self.assertTrue(len(outbox)>0)
+        self.assertIn('interim approved',outbox[0]["Subject"])
+        self.assertIn(user.person.email().address,outbox[0]["To"])
         self.client.logout()
 
 

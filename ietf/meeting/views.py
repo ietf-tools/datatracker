@@ -72,6 +72,7 @@ from ietf.meeting.helpers import can_edit_interim_request
 from ietf.meeting.helpers import can_request_interim_meeting, get_announcement_initial
 from ietf.meeting.helpers import sessions_post_save, is_interim_meeting_approved
 from ietf.meeting.helpers import send_interim_cancellation_notice
+from ietf.meeting.helpers import send_interim_approval
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_announcement_request
 from ietf.meeting.utils import finalize, sort_accept_tuple, condition_slide_order
@@ -3032,9 +3033,11 @@ def interim_request(request):
                 sessions_post_save(request, formset)
 
                 if requires_approval:
-                    send_interim_approval_request(meetings=[meeting])
-                elif not has_role(request.user, 'Secretariat'):
-                    send_interim_announcement_request(meeting=meeting)
+                    send_interim_approval_request(meetings=series)
+                else:
+                    send_interim_approval(request.user, meeting=meeting)
+                    if not has_role(request.user, 'Secretariat'):
+                        send_interim_announcement_request(meeting=meeting)
 
             # series require special handling, each session gets it's own
             # meeting object we won't see this on edit because series are
@@ -3064,8 +3067,10 @@ def interim_request(request):
 
                 if requires_approval:
                     send_interim_approval_request(meetings=series)
-                elif not has_role(request.user, 'Secretariat'):
-                    send_interim_announcement_request(meeting=meeting)
+                else:
+                    send_interim_approval(request.user, meeting=meeting)
+                    if not has_role(request.user, 'Secretariat'):
+                        send_interim_announcement_request(meeting=meeting)
 
             messages.success(request, 'Interim meeting request submitted')
             return redirect(upcoming)
