@@ -138,6 +138,7 @@ def document_main(request, name, rev=None):
 
     snapshot = False
 
+    gh = None
     if rev != None:
         if rev == doc.rev:
             return redirect('ietf.doc.views_doc.document_main', name=name)
@@ -155,11 +156,12 @@ def document_main(request, name, rev=None):
         if doc.type_id == "charter":
             # find old group, too
             gh = find_history_active_at(doc.group, doc.time)
-            if gh:
-                group = gh
 
     # set this after we've found the right doc instance
-    group = doc.group
+    if gh:
+        group = gh
+    else:
+        group = doc.group
 
     top = render_document_top(request, doc, "status", name)
 
@@ -174,7 +176,8 @@ def document_main(request, name, rev=None):
         split_content = not ( request.GET.get('include_text') or request.COOKIES.get("full_draft", settings.USER_PREFERENCE_DEFAULTS["full_draft"]) == "on" )
 
         iesg_state = doc.get_state("draft-iesg")
-        log.assertion('iesg_state', note="A document's 'draft-iesg' state should never be unset'.  Failed for %s"%doc.name)
+        if isinstance(doc, Document):
+            log.assertion('iesg_state', note="A document's 'draft-iesg' state should never be unset'.  Failed for %s"%doc.name)
         iesg_state_slug = iesg_state.slug if iesg_state else None
         iesg_state_summary = doc.friendly_state()
         irsg_state = doc.get_state("draft-stream-irtf")
