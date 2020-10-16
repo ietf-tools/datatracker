@@ -5,8 +5,7 @@ var agenda_filter_for_testing; // methods to be accessed for automated testing
 (function () {
     'use strict'
 
-    var update_callback // function(filter_params)
-    var enable_non_area = false // if true, show the non-area filters
+    var update_callback; // function(filter_params)
 
     /* Remove from list, if present */
     function remove_list_item (list, item) {
@@ -76,7 +75,7 @@ var agenda_filter_for_testing; // methods to be accessed for automated testing
     }
 
     function get_item(elt) {
-        return elt.text().trim().toLowerCase().replace(/ /g, '');
+        return $(elt).attr('data-filter-item');
     }
 
     // utility method - is there a match between two lists of keywords?
@@ -178,7 +177,6 @@ var agenda_filter_for_testing; // methods to be accessed for automated testing
 
     /* Helper for pick group/type button handlers - toggles the appropriate parameter entry
      *    elt - the jquery element that was clicked
-     *    param_type - key of the filter param to update (show, hide)
      */
     function handle_pick_button (elt) {
         var fp = get_filter_params(parse_query_params(window.location.search));
@@ -259,7 +257,6 @@ var agenda_filter_for_testing; // methods to be accessed for automated testing
         enable: enable,
         filtering_is_enabled: filtering_is_enabled,
         get_filter_params: get_filter_params,
-        include_non_area_selectors: function () {enable_non_area = true},
         keyword_match: keyword_match,
         parse_query_params: parse_query_params,
         rows_matching_filter_keyword: rows_matching_filter_keyword,

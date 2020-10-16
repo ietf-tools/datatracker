@@ -62,17 +62,24 @@
   {% endif %}
 
 
-  {% include "meeting/agenda_filter.html" with group_parents=group_parents non_area_filters=True customize_button_text="Customize the agenda view..." only %}
+  {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Customize the agenda view..." only %}
 
         <h2>Download as .ics</h2>
         <p class="buttonlist">
-          {% for p in group_parents %}
-            <a class="btn btn-default" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{p.acronym|upper}}">{{p.acronym|upper}}</a>
-          {% endfor %}
-          <a class="btn btn-default" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?showtypes=plenary,other">Non-area events</a>
-          <a id="ical-link" class="hidden btn btn-primary" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}">Customized schedule</a>
+            {% for fc in filter_categories %}
+                {% if not forloop.last %} {# skip the last group, it's the office hours/misc #}
+                    <div style="display:inline-block;margin-right:1em">
+                        {% for p in fc|dictsort:"label" %}
+                            <a class="btn btn-default" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{p.keyword}}">{{p.label}}</a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <div style="display:inline-block">
+                <a class="btn btn-default" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{ non_area_keywords|join:',' }}">Non-area events</a>
+                <a id="ical-link" class="hidden btn btn-primary" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}">Customized schedule</a>
+            </div>
         </p>
-
 
         <h2>
           Schedule

@@ -6,6 +6,7 @@ import time
 import datetime
 import shutil
 import os
+import re
 from unittest import skipIf
 
 import django
@@ -20,14 +21,16 @@ from ietf.doc.factories import DocumentFactory
 from ietf.group import colors
 from ietf.person.models import Person
 from ietf.group.models import Group
+from ietf.group.factories import GroupFactory
 from ietf.meeting.factories import SessionFactory
-from ietf.meeting.test_data import make_meeting_test_data
+from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.models import (Schedule, SchedTimeSessAssignment, Session,
                                  Room, TimeSlot, Constraint, ConstraintName,
                                  Meeting, SchedulingEvent, SessionStatusName)
 from ietf.meeting.utils import add_event_info_to_session_qs
-from ietf.utils.test_runner import IetfLiveServerTestCase
 from ietf.utils.pipe import pipe
+from ietf.utils.test_runner import IetfLiveServerTestCase
+from ietf.utils.test_utils import assert_ical_response_is_valid
 from ietf import settings
 
 skip_selenium = False
@@ -355,20 +358,6 @@ class AgendaTests(MeetingTestCase):
         expected_items = self.meeting.schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
         self.assertGreater(len(expected_items), 0, 'Test setup generated an empty schedule')
         return expected_items
-    
-    def test_agenda_view_displays_all_items(self):
-        """By default, all agenda items should be displayed"""
-        self.login()
-        self.driver.get(self.absreverse('ietf.meeting.views.agenda'))
-
-        for item in self.get_expected_items():
-            row_id = 'row-%s' % item.slug()
-            try:
-                item_row = self.driver.find_element_by_id(row_id)
-            except NoSuchElementException:
-                item_row = None
-            self.assertIsNotNone(item_row, 'No row for schedule item "%s"' % row_id)
-            self.assertTrue(item_row.is_displayed(), 'Row for schedule item "%s" is not displayed' % row_id)
 
     def test_agenda_view_js_func_parse_query_params(self):
         """Test parse_query_params() function"""
@@ -444,6 +433,7 @@ class AgendaTests(MeetingTestCase):
         self.login()
         self.driver.get(self.absreverse('ietf.meeting.views.agenda') + querystring)
         self.assert_agenda_item_visibility(visible_groups)
+        self.assert_agenda_view_filter_matches_ics_filter(querystring)
         weekview_iframe = self.driver.find_element_by_id('weekview')
         if len(querystring) == 0:
             self.assertFalse(weekview_iframe.is_displayed(), 'Weekview should be hidden when filters off')
@@ -453,42 +443,169 @@ class AgendaTests(MeetingTestCase):
             self.assert_weekview_item_visibility(visible_groups)
             self.driver.switch_to.default_content()
 
-    def test_agenda_view_filter_show_none(self):
-        """Filtered agenda view should display only matching rows (no group selected)"""
-        self.do_agenda_view_filter_test('?show=', [])
+    def test_agenda_view_filter_default(self):
+        """Filtered agenda view should display only matching rows (all groups selected)"""
+        self.do_agenda_view_filter_test('', None)  # None means all should be visible
 
-    def test_agenda_view_filter_show_one(self):
-        """Filtered agenda view should display only matching rows (one group selected)"""
+    def test_agenda_view_filter_show_group(self):
+        self.do_agenda_view_filter_test('?show=', [])
         self.do_agenda_view_filter_test('?show=mars', ['mars'])
+        self.do_agenda_view_filter_test('?show=mars,ames', ['mars', 'ames'])
 
     def test_agenda_view_filter_show_area(self):
         mars = Group.objects.get(acronym='mars')
         area = mars.parent
         self.do_agenda_view_filter_test('?show=%s' % area.acronym, ['ames', 'mars'])
 
-    def test_agenda_view_filter_bof(self):
+    def test_agenda_view_filter_show_type(self):
+        self.do_agenda_view_filter_test('?show=reg,break', ['secretariat'])
+
+    def test_agenda_view_filter_show_bof(self):
         mars = Group.objects.get(acronym='mars')
         mars.state_id = 'bof'
         mars.save()
         self.do_agenda_view_filter_test('?show=bof', ['mars'])
-        self.do_agenda_view_filter_test('?show=bof,mars', ['mars'])
-        self.do_agenda_view_filter_test('?show=bof,ames', ['mars','ames'])
+        self.do_agenda_view_filter_test('?show=bof,ames', ['ames', 'mars'])
 
-    def test_agenda_view_filter_show_two(self):
-        """Filtered agenda view should display only matching rows (two groups selected)"""
-        self.do_agenda_view_filter_test('?show=mars,ames', ['mars', 'ames'])
+    def test_agenda_view_filter_show_ad_office_hours(self):
+        area = GroupFactory(type_id='area')
+        SessionFactory(
+            meeting__type_id='ietf', 
+            type_id='other',
+            group=area,
+            name='%s Office Hours' % area.acronym,
+        )
+        self.do_agenda_view_filter_test('?show=adofficehours', [area.acronym])
 
-    def test_agenda_view_filter_all(self):
-        """Filtered agenda view should display only matching rows (all groups selected)"""
-        self.do_agenda_view_filter_test('', None)  # None means all should be visible
+    def test_agenda_view_filter_hide_group(self):
+        mars = Group.objects.get(acronym='mars')
+        mars.state_id = 'bof'
+        mars.save()
+        area = mars.parent
 
-    def test_agenda_view_filter_hide(self):
-        self.do_agenda_view_filter_test('?hide=ietf', [])
+        # Nothing shown, nothing visible
+        self.do_agenda_view_filter_test('?hide=mars', [])
+        
+        # Group shown
+        self.do_agenda_view_filter_test('?show=ames,mars&hide=mars', ['ames'])
+        
+        # Area shown
+        self.do_agenda_view_filter_test('?show=%s&hide=mars' % area.acronym, ['ames'])
+
+        # Type shown
+        self.do_agenda_view_filter_test('?show=plenary,regular&hide=mars', ['ames','ietf'])
+
+        # bof shown
+        self.do_agenda_view_filter_test('?show=bof&hide=mars', [])
+
 
     def test_agenda_view_filter_hide_area(self):
         mars = Group.objects.get(acronym='mars')
+        mars.state_id = 'bof'
+        mars.save()
         area = mars.parent
-        self.do_agenda_view_filter_test('?show=mars&hide=%s' % area.acronym, [])
+        SessionFactory(
+            meeting__type_id='ietf',
+            type_id='other',
+            group=area,
+            name='%s Office Hours' % area.acronym,
+        )
+
+        # Nothing shown
+        self.do_agenda_view_filter_test('?hide=%s' % area.acronym, [])
+        
+        # Group shown
+        self.do_agenda_view_filter_test('?show=ames,mars&hide=%s' % area.acronym, [])
+        
+        # Area shown
+        self.do_agenda_view_filter_test('?show=%s&hide=%s' % (area.acronym, area.acronym), [])
+
+        # Type shown
+        self.do_agenda_view_filter_test('?show=plenary,regular&hide=%s' % area.acronym, ['ietf'])
+
+        # bof shown
+        self.do_agenda_view_filter_test('?show=bof&hide=%s' % area.acronym, [])
+        
+        # AD office hours shown
+        self.do_agenda_view_filter_test('?show=adofficehours&hide=%s' % area.acronym, [])
+
+    def test_agenda_view_filter_hide_type(self):
+        mars = Group.objects.get(acronym='mars')
+        mars.state_id = 'bof'
+        mars.save()
+        area = mars.parent
+        SessionFactory(
+            meeting__type_id='ietf',
+            type_id='other',
+            group=area,
+            name='%s Office Hours' % area.acronym,
+        )
+
+        # Nothing shown
+        self.do_agenda_view_filter_test('?hide=plenary', [])
+
+        # Group shown
+        self.do_agenda_view_filter_test('?show=ietf,ames&hide=plenary', ['ames'])
+
+        # Area shown
+        self.do_agenda_view_filter_test('?show=%s&hide=regular' % area.acronym, [])
+
+        # Type shown
+        self.do_agenda_view_filter_test('?show=plenary,regular&hide=plenary', ['ames', 'mars'])
+
+        # bof shown
+        self.do_agenda_view_filter_test('?show=bof&hide=regular', [])
+
+        # AD office hours shown
+        self.do_agenda_view_filter_test('?show=adofficehours&hide=other', [])
+
+    def test_agenda_view_filter_hide_bof(self):
+        mars = Group.objects.get(acronym='mars')
+        mars.state_id = 'bof'
+        mars.save()
+        area = mars.parent
+
+        # Nothing shown
+        self.do_agenda_view_filter_test('?hide=bof', [])
+
+        # Group shown
+        self.do_agenda_view_filter_test('?show=mars,ames&hide=bof', ['ames'])
+
+        # Area shown
+        self.do_agenda_view_filter_test('?show=%s&hide=bof' % area.acronym, ['ames'])
+
+        # Type shown
+        self.do_agenda_view_filter_test('?show=regular&hide=bof', ['ames'])
+
+        # bof shown
+        self.do_agenda_view_filter_test('?show=bof&hide=bof', [])
+
+    def test_agenda_view_filter_hide_ad_office_hours(self):
+        mars = Group.objects.get(acronym='mars')
+        mars.state_id = 'bof'
+        mars.save()
+        area = mars.parent
+        SessionFactory(
+            meeting__type_id='ietf',
+            type_id='other',
+            group=area,
+            name='%s Office Hours' % area.acronym,
+        )
+
+        # Nothing shown
+        self.do_agenda_view_filter_test('?hide=adofficehours', [])
+
+        # Area shown
+        self.do_agenda_view_filter_test('?show=%s&hide=adofficehours' % area.acronym, ['ames', 'mars'])
+
+        # Type shown
+        self.do_agenda_view_filter_test('?show=plenary,other&hide=adofficehours', ['ietf'])
+
+        # AD office hours shown
+        self.do_agenda_view_filter_test('?show=adofficehours&hide=adofficehours', [])
+
+    def test_agenda_view_filter_whitespace(self):
+        self.do_agenda_view_filter_test('?show=  ames , mars &hide=  mars ', ['ames'])
 
     def assert_agenda_item_visibility(self, visible_groups=None):
         """Assert that correct items are visible in current browser window
@@ -604,6 +721,81 @@ class AgendaTests(MeetingTestCase):
         # no assertion here - if WebDriverWait raises an exception, the test will fail.
         # We separately test whether this URL will filter correctly.
 
+    def session_from_agenda_row_id(self, row_id):
+        """Find session corresponding to a row in the agenda HTML"""
+        components = row_id.split('-', 8)
+        # for regular session:
+        #   row-<meeting#>-<year>-<month>-<day>-<DoW>-<HHMM>-<parent acro>-<group acro>
+        # for plenary session:
+        #   row-<meeting#>-<year>-<month>-<day>-<DoW>-<HHMM>-1plenary-<group acro>
+        # for others (break, reg, other):
+        #   row-<meeting#>-<year>-<month>-<day>-<DoW>-<HHMM>-<group acro>-<session name slug>
+        meeting_number = components[1]
+        start_time = datetime.datetime(
+            year=int(components[2]),
+            month=int(components[3]),
+            day=int(components[4]),
+            hour=int(components[6][0:2]),
+            minute=int(components[6][2:4]),
+        )
+        # If labeled as plenary, it's plenary...
+        if components[7] == '1plenary':
+            session_type = 'plenary'
+            group = Group.objects.get(acronym=components[8])
+        else:
+            # If not a plenary, see if the last component is a group
+            try:
+                group = Group.objects.get(acronym=components[8])
+            except Group.DoesNotExist:
+                # Last component was not a group, so this must not be a regular session
+                session_type = 'other'
+                group = Group.objects.get(acronym=components[7])
+            else:
+                # Last component was a group, this is a regular session
+                session_type = 'regular'
+        
+        meeting = Meeting.objects.get(number=meeting_number)
+        possible_assignments = SchedTimeSessAssignment.objects.filter(
+            schedule__in=[meeting.schedule, meeting.schedule.base],
+            timeslot__time=start_time,
+        )
+        if session_type == 'other':
+            possible_sessions = [pa.session for pa in possible_assignments.filter(
+                timeslot__type_id__in=['break', 'reg', 'other'], session__group=group
+            ) if slugify(pa.session.name) == components[8]]
+            if len(possible_sessions) != 1:
+                raise ValueError('No unique matching session for row %s (found %d)' % (
+                    row_id, len(possible_sessions)
+                ))
+            session = possible_sessions[0]
+        else:
+            session = possible_assignments.filter(
+                timeslot__type_id=session_type
+            ).get(session__group=group).session
+        return session, possible_assignments.get(session=session).timeslot
+
+    def assert_agenda_view_filter_matches_ics_filter(self, filter_string):
+        """The agenda view and ics view should show the same events for a given filter
+        
+        This must be called after using self.driver.get to load the agenda page
+        to be checked.
+        """
+        ics_url = self.absreverse('ietf.meeting.views.agenda_ical')
+        
+        # parse out the events
+        agenda_rows = self.driver.find_elements_by_css_selector('[id^="row-"')
+        visible_rows = [r for r in agenda_rows if r.is_displayed()]
+        sessions = [self.session_from_agenda_row_id(row.get_attribute("id")) 
+                    for row in visible_rows]
+        r = self.client.get(ics_url + filter_string)
+        # verify that all expected sessions are found
+        expected_uids = [
+            'ietf-%s-%s-%s' % (session.meeting.number, timeslot.pk, session.group.acronym) 
+            for (session, timeslot) in sessions
+        ]
+        assert_ical_response_is_valid(self, r, 
+                                      expected_event_uids=expected_uids,
+                                      expected_event_count=len(sessions))
 
 @skipIf(skip_selenium, skip_message)
 class InterimTests(MeetingTestCase):
@@ -613,6 +805,17 @@ class InterimTests(MeetingTestCase):
         self.saved_agenda_path = settings.AGENDA_PATH
         settings.AGENDA_PATH = self.materials_dir
         self.meeting = make_meeting_test_data(create_interims=True)
+
+        # Create a group with a plenary interim session for testing type filters
+        somegroup = GroupFactory(acronym='sg', name='Some Group')
+        sg_interim = make_interim_meeting(somegroup, datetime.date.today() + datetime.timedelta(days=20))
+        sg_sess = sg_interim.session_set.first()
+        sg_slot = sg_sess.timeslotassignments.first().timeslot
+        sg_sess.type_id = 'plenary'
+        sg_slot.type_id = 'plenary'
+        sg_sess.save()
+        sg_slot.save()
+
 
     def tearDown(self):
         settings.AGENDA_PATH = self.saved_agenda_path
@@ -654,6 +857,11 @@ class InterimTests(MeetingTestCase):
             m.calendar_label = 'IETF %s' % m.number
         return meetings
 
+    def find_upcoming_meeting_entries(self):
+        return self.driver.find_elements_by_css_selector(
+            'table#upcoming-meeting-table a.ietf-meeting-link, table#upcoming-meeting-table a.interim-meeting-link'
+        )
+
     def assert_upcoming_meeting_visibility(self, visible_meetings=None):
         """Assert that correct items are visible in current browser window
 
@@ -662,9 +870,7 @@ class InterimTests(MeetingTestCase):
         expected = {mtg.number for mtg in visible_meetings}
         not_visible = set()
         unexpected = set()
-        entries = self.driver.find_elements_by_css_selector(
-            'table#upcoming-meeting-table a.ietf-meeting-link, table#upcoming-meeting-table a.interim-meeting-link'
-        )
+        entries = self.find_upcoming_meeting_entries()
         for entry in entries:
             entry_text = entry.get_attribute('innerHTML').strip()  # gets text, even if element is hidden
             nums = [n for n in expected if n in entry_text]
@@ -725,6 +931,7 @@ class InterimTests(MeetingTestCase):
         self.driver.get(self.absreverse('ietf.meeting.views.upcoming') + querystring)
         self.assert_upcoming_meeting_visibility(visible_meetings)
         self.assert_upcoming_meeting_calendar(visible_meetings)
+        self.assert_upcoming_view_filter_matches_ics_filter(querystring)
 
         # Check the ical links
         simplified_querystring = querystring.replace(' ', '%20')  # encode spaces'
@@ -733,56 +940,157 @@ class InterimTests(MeetingTestCase):
         webcal_link = self.driver.find_element_by_link_text('Subscribe with webcal')
         self.assertIn(simplified_querystring, webcal_link.get_attribute('href'))
 
-    def test_upcoming_view_displays_all_interims(self):
+    def assert_upcoming_view_filter_matches_ics_filter(self, filter_string):
+        """The upcoming view and ics view should show matching events for a given filter
+
+        The upcoming ics view shows more detail than the upcoming view, so this
+        test expands the upcoming meeting list into the corresponding set of expected
+        sessions.
+ 
+        This must be called after using self.driver.get to load the upcoming page
+        to be checked.
+        """
+        ics_url = self.absreverse('ietf.meeting.views.upcoming_ical')
+
+        # parse out the meetings shown on the upcoming view
+        upcoming_meetings = self.find_upcoming_meeting_entries()
+        visible_meetings = [mtg for mtg in upcoming_meetings if mtg.is_displayed()]
+        
+        # Have list of meetings, now get sessions that should be shown
+        expected_ietfs = []
+        expected_interim_sessions = []
+        expected_schedules = []
+        for meeting_elt in visible_meetings:
+            # meeting_elt is an anchor element
+            label_text = meeting_elt.get_attribute('innerHTML')
+            match = re.search(r'(?P<ietf>IETF\s+)?(?P<number>\S+)', label_text)
+            meeting = Meeting.objects.get(number=match.group('number'))
+            if match.group('ietf'):
+                expected_ietfs.append(meeting)
+            else:
+                expected_interim_sessions.extend([s.pk for s in meeting.session_set.all()])
+                if meeting.schedule:
+                    expected_schedules.extend([meeting.schedule, meeting.schedule.base])
+        
+        # Now find the sessions we expect to see - should match the upcoming_ical view
+        expected_assignments = list(SchedTimeSessAssignment.objects.filter(
+            schedule__in=expected_schedules,
+            session__in=expected_interim_sessions,
+            timeslot__time__gte=datetime.date.today(),
+        ))
+        # The UID formats should match those in the upcoming.ics template
+        expected_uids = [
+            'ietf-%s-%s' % (item.session.meeting.number, item.timeslot.pk)
+            for item in expected_assignments
+        ] + [
+            'ietf-%s' % (ietf.number) for ietf in expected_ietfs
+        ]
+        r = self.client.get(ics_url + filter_string)
+        assert_ical_response_is_valid(self, r,
+                                      expected_event_uids=expected_uids,
+                                      expected_event_count=len(expected_uids))
+
+    def test_upcoming_view_default(self):
         """By default, all upcoming interims and IETF meetings should be displayed"""
-        meetings = set(self.all_ietf_meetings())
-        meetings.update(self.displayed_interims())
-        self.do_upcoming_view_filter_test('', meetings)
+        ietf_meetings = set(self.all_ietf_meetings())
+        self.do_upcoming_view_filter_test('', ietf_meetings.union(self.displayed_interims()))
 
-    def test_upcoming_view_filter_show_none(self):
-        meetings = set(self.all_ietf_meetings())
-        self.do_upcoming_view_filter_test('?show=', meetings)
+    def test_upcoming_view_filter_show_group(self):
+        # Show none
+        ietf_meetings = set(self.all_ietf_meetings())
+        self.do_upcoming_view_filter_test('?show=', ietf_meetings)
 
-    def test_upcoming_view_filter_show_one(self):
-        meetings = set(self.all_ietf_meetings())
-        meetings.update(self.displayed_interims(groups=['mars']))
-        self.do_upcoming_view_filter_test('?show=mars', meetings)
+        # Show one
+        self.do_upcoming_view_filter_test('?show=mars', 
+                                          ietf_meetings.union(
+                                              self.displayed_interims(groups=['mars'])
+                                          ))
+
+        # Show two
+        self.do_upcoming_view_filter_test('?show=mars,ames', 
+                                          ietf_meetings.union(
+                                              self.displayed_interims(groups=['mars', 'ames'])
+                                          ))
 
     def test_upcoming_view_filter_show_area(self):
         mars = Group.objects.get(acronym='mars')
         area = mars.parent
-        meetings = set(self.all_ietf_meetings())
-        meetings.update(self.displayed_interims(groups=['mars', 'ames']))
-        self.do_upcoming_view_filter_test('?show=%s' % area.acronym, meetings)
+        ietf_meetings = set(self.all_ietf_meetings())
+        self.do_upcoming_view_filter_test('?show=%s' % area.acronym,
+                                          ietf_meetings.union(
+                                              self.displayed_interims(groups=['mars', 'ames'])
+                                          ))
 
-    def test_upcoming_view_filter_show_two(self):
-        meetings = set(self.all_ietf_meetings())
-        meetings.update(self.displayed_interims(groups=['mars', 'ames']))
-        self.do_upcoming_view_filter_test('?show=mars,ames', meetings)
+    def test_upcoming_view_filter_show_type(self):
+        ietf_meetings = set(self.all_ietf_meetings())
+        self.do_upcoming_view_filter_test('?show=plenary',
+                                          ietf_meetings.union(
+                                              self.displayed_interims(groups=['sg'])
+                                          ))
+
+    def test_upcoming_view_filter_hide_group(self):
+        mars = Group.objects.get(acronym='mars')
+        area = mars.parent
+
+        # Without anything shown, should see only ietf meetings
+        ietf_meetings = set(self.all_ietf_meetings())
+        self.do_upcoming_view_filter_test('?hide=mars', ietf_meetings)
+
+        # With group shown
+        self.do_upcoming_view_filter_test('?show=ames,mars&hide=mars',
+                                          ietf_meetings.union(
+                                              self.displayed_interims(groups=['ames'])
+                                          ))
+        # With area shown
+        self.do_upcoming_view_filter_test('?show=%s&hide=mars' % area.acronym, 
+                                          ietf_meetings.union(
+                                              self.displayed_interims(groups=['ames'])
+                                          ))
+
+        # With type shown
+        self.do_upcoming_view_filter_test('?show=plenary&hide=sg',
+                                          ietf_meetings)
+
+    def test_upcoming_view_filter_hide_area(self):
+        mars = Group.objects.get(acronym='mars')
+        area = mars.parent
+
+        # Without anything shown, should see only ietf meetings
+        ietf_meetings = set(self.all_ietf_meetings())
+        self.do_upcoming_view_filter_test('?hide=%s' % area.acronym, ietf_meetings)
+
+        # With area shown
+        self.do_upcoming_view_filter_test('?show=%s&hide=%s' % (area.acronym, area.acronym),
+                                          ietf_meetings)
+
+        # With group shown
+        self.do_upcoming_view_filter_test('?show=mars&hide=%s' % area.acronym, ietf_meetings)
+
+        # With type shown
+        self.do_upcoming_view_filter_test('?show=regular&hide=%s' % area.acronym, ietf_meetings)
+
+    def test_upcoming_view_filter_hide_type(self):
+        mars = Group.objects.get(acronym='mars')
+        area = mars.parent
+
+        # Without anything shown, should see only ietf meetings
+        ietf_meetings = set(self.all_ietf_meetings())
+        self.do_upcoming_view_filter_test('?hide=regular', ietf_meetings)
+
+        # With group shown
+        self.do_upcoming_view_filter_test('?show=mars&hide=regular', ietf_meetings)
+
+        # With type shown
+        self.do_upcoming_view_filter_test('?show=plenary,regular&hide=%s' % area.acronym, 
+                                          ietf_meetings.union(
+                                              self.displayed_interims(groups=['sg'])
+                                          ))
 
     def test_upcoming_view_filter_whitespace(self):
         """Whitespace in filter lists should be ignored"""
         meetings = set(self.all_ietf_meetings())
         meetings.update(self.displayed_interims(groups=['mars']))
         self.do_upcoming_view_filter_test('?show=mars , ames &hide=   ames', meetings)
-
-    def test_upcoming_view_filter_hide(self):
-        # Not a useful application, but test for completeness...
-        meetings = set(self.all_ietf_meetings())
-        self.do_upcoming_view_filter_test('?hide=mars', meetings)
-
-    def test_upcoming_view_filter_hide_area(self):
-        mars = Group.objects.get(acronym='mars')
-        area = mars.parent
-        meetings = set(self.all_ietf_meetings())
-        self.do_upcoming_view_filter_test('?show=mars&hide=%s' % area.acronym, meetings)
-
-    def test_upcoming_view_filter_show_and_hide_same_group(self):
-        meetings = set(self.all_ietf_meetings())
-        meetings.update(self.displayed_interims(groups=['mars']))
-        self.do_upcoming_view_filter_test('?show=mars,ames&hide=ames', meetings)
-
-    # The upcoming meetings view does not handle showtypes / hidetypes
 
 # The following are useful debugging tools
 

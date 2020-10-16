@@ -66,20 +66,21 @@ class HelpersTests(TestCase):
             expected_area = group.parent
 
         for assignment in assignments:
-            expected_filter_keywords = [assignment.timeslot.type.slug]
+            expected_filter_keywords = {assignment.timeslot.type.slug, assignment.session.type.slug}
 
             if assignment.session == office_hours:
-                expected_filter_keywords.extend([
+                expected_filter_keywords.update([
                     group.parent.acronym,
-                    'adofficehours',
+                    'officehours',
+                    'someofficehours',
                 ])
             else:
-                expected_filter_keywords.extend([
+                expected_filter_keywords.update([
                     expected_group.acronym,
                     expected_area.acronym
                 ])
                 if bof:
-                    expected_filter_keywords.append('bof')
+                    expected_filter_keywords.add('bof')
 
             self.assertCountEqual(
                 assignment.filter_keywords,

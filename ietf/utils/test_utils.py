@@ -92,6 +92,39 @@ def reload_db_objects(*objects):
     else:
         return t
 
+def assert_ical_response_is_valid(test_inst, response, expected_event_summaries=None,
+                                  expected_event_uids=None, expected_event_count=None):
+    """Validate an HTTP response containing iCal data
+
+    Based on RFC2445, but not exhaustive by any means. Assumes a single iCalendar object. Checks that
+    expected_event_summaries/_uids are found, but other events are allowed to be present. Specify the
+    expected_event_count if you want to reject additional events. If any of these are None,
+    the check for that property is skipped.
+    """
+    test_inst.assertEqual(response.get('Content-Type'), "text/calendar")
+
+    # Validate iCalendar object
+    test_inst.assertContains(response, 'BEGIN:VCALENDAR', count=1)
+    test_inst.assertContains(response, 'END:VCALENDAR', count=1)
+    test_inst.assertContains(response, 'PRODID:', count=1)
+    test_inst.assertContains(response, 'VERSION', count=1)
+
+    # Validate event objects
+    if expected_event_summaries is not None:
+        for summary in expected_event_summaries:
+            test_inst.assertContains(response, 'SUMMARY:' + summary)
+
+    if expected_event_uids is not None:
+        for uid in expected_event_uids:
+            test_inst.assertContains(response, 'UID:' + uid)
+
+    if expected_event_count is not None:
+        test_inst.assertContains(response, 'BEGIN:VEVENT', count=expected_event_count)
+        test_inst.assertContains(response, 'END:VEVENT', count=expected_event_count)
+        test_inst.assertContains(response, 'UID', count=expected_event_count)
+
+
+
 class ReverseLazyTest(django.test.TestCase):
     def test_redirect_with_lazy_reverse(self):
         response = self.client.get('/ipr/update/')

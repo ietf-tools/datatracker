@@ -31,7 +31,7 @@
 
       <p>For more on regular IETF meetings see <a href="https://www.ietf.org/meeting/upcoming.html">here</a></p>
 
-        {% include 'meeting/agenda_filter.html' with group_parents=group_parents customize_button_text="Customize the meeting list..." only%}
+        {% include 'meeting/agenda_filter.html' with filter_categories=filter_categories customize_button_text="Customize the meeting list..." only%}
 
         {% if menu_entries %}
       <ul class="nav nav-tabs" role="tablist">
