@@ -650,7 +650,7 @@ URL_REGEXPS = {
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
 DOCUMENT_PATH_PATTERN = '/a/www/ietf-ftp/{doc.type_id}/'
-INTERNET_DRAFT_PATH = '/a/www/ietf-ftp/internet-drafts/'
+INTERNET_DRAFT_PATH = '/a/ietfdata/doc/draft/repository'
 INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
 CHARTER_PATH = '/a/www/ietf-ftp/charter/'
@@ -665,10 +665,10 @@ IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'
 IESG_MINUTES_URL = 'https://www6.ietf.org/iesg/internal/minutes.txt'
 IESG_WG_EVALUATION_DIR = "/a/www/www6/iesg/evaluation"
 # Move drafts to this directory when they expire
-INTERNET_DRAFT_ARCHIVE_DIR = '/a/www/www6s/draft-archive'
+INTERNET_DRAFT_ARCHIVE_DIR = '/a/ietfdata/doc/draft/collection/draft-archive/'
 # The following directory contains linked copies of all drafts, but don't
 # write anything to this directory -- its content is maintained by ghostlinkd:
-INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/a/www/www6s/archive/id'
+INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/a/ietfdata/doc/draft/archive'
 MEETING_RECORDINGS_DIR = '/a/www/audio'
 
 DOCUMENT_FORMAT_WHITELIST = ["txt", "ps", "pdf", "xml", "html", ]
