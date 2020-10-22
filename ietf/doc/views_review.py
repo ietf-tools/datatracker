@@ -703,7 +703,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                     review = Document.objects.create(name=review_name,type_id='review',group=team)
                     DocAlias.objects.create(name=review_name).docs.add(review)
                 else:
-                    messages.warning(message='Attempt to save review failed: review document already exists. This most likely occurred because the review was submitted twice in quick succession. If you intended to submit a new review, rather than update an existing one, things are probably OK. Please verify that the shown review is what you expected.')
+                    messages.warning(request, message='Attempt to save review failed: review document already exists. This most likely occurred because the review was submitted twice in quick succession. If you intended to submit a new review, rather than update an existing one, things are probably OK. Please verify that the shown review is what you expected.')
                     return redirect("ietf.doc.views_doc.document_main", name=review_name)
 
             if not assignment:
