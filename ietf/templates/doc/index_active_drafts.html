@@ -2,9 +2,11 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static %}
+{% load cache %}
 {% block title %}Active Internet-Drafts{% endblock %}
 
 {% block content %}
+  {% cache 900 ietf_doc_index_active_drafts %}
   {% origin %}
   <h1>Active Internet-Drafts</h1>
 
@@ -35,5 +37,5 @@
       </p>
     {% endfor %}
   {% endfor %}
-
+  {% endcache %}
 {% endblock %}

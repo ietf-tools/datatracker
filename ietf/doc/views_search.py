@@ -544,8 +544,11 @@ def index_all_drafts(request):
     return render(request, 'doc/index_all_drafts.html', { "categories": categories })
 
 def index_active_drafts(request):
-    groups = active_drafts_index_by_group()
-
+    cache_key = 'doc:index_active_drafts'
+    groups = cache.get(cache_key)
+    if not groups:
+        groups = active_drafts_index_by_group()
+        cache.set(cache_key, groups, 15*60)
     return render(request, "doc/index_active_drafts.html", { 'groups': groups })
 
 def ajax_select2_search_docs(request, model_name, doc_type):
