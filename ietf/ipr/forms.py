@@ -276,7 +276,7 @@ class IprDisclosureFormBase(forms.ModelForm):
     patent_inventor =  forms.CharField(max_length=63, required=True, validators=[ validate_name ], help_text="Inventor name")
     patent_title =  forms.CharField(max_length=255, required=True, validators=[ validate_title ], help_text="Title of invention")
     patent_date =  forms.DateField(required=True, help_text="Date granted or applied for")
-    patent_notes =  forms.CharField(max_length=1024, required=False, widget=forms.Textarea)
+    patent_notes =  forms.CharField(max_length=4096, required=False, widget=forms.Textarea)
     
     def __init__(self,*args,**kwargs):
         super(IprDisclosureFormBase, self).__init__(*args,**kwargs)
