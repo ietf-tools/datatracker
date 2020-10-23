@@ -552,13 +552,31 @@ def send_interim_approval_request(meetings):
               context,
               cc=cc_list)
 
+def send_interim_approval(user, meeting):
+    """Send an email to chairs and whoever initiated the action that resulted in approval that an interim is approved"""
+    first_session = meeting.session_set.first()
+    (to_email,cc_list) = gather_address_lists('interim_approved',group=first_session.group,person=user.person)
+    from_email = (settings.SESSION_REQUEST_FROM_EMAIL)
+    subject = f'{meeting.number} interim approved'
+    template = 'meeting/interim_approval.txt'
+    context = { 
+        'meeting': meeting,
+    }
+    send_mail(None,
+              to_email,
+              from_email,
+              subject,
+              template,
+              context,
+              cc=cc_list)
+
 def send_interim_announcement_request(meeting):
     """Sends an email to the secretariat that an interim meeting is ready for 
     announcement, includes the link to send the official announcement"""
     first_session = meeting.session_set.first()
     group = first_session.group
     requester = session_requested_by(first_session)
-    (to_email, cc_list) = gather_address_lists('interim_approved')
+    (to_email, cc_list) = gather_address_lists('interim_announce_requested')
     from_email = (settings.SESSION_REQUEST_FROM_EMAIL)
     subject = '{group} - interim meeting ready for announcement'.format(group=group.acronym)
     template = 'meeting/interim_announcement_request.txt'

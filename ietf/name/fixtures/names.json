@@ -3762,6 +3762,17 @@
   },
   {
     "fields": {
+      "cc": [],
+      "desc": "Recipients when an interim announcement is requested",
+      "to": [
+        "iesg_secretary"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "interim_announce_requested"
+  },
+  {
+    "fields": {
       "cc": [
         "group_mail_list"
       ],
@@ -3777,9 +3788,10 @@
   {
     "fields": {
       "cc": [],
-      "desc": "Recipients when an interim meeting is approved and an announcement needs to be sent",
+      "desc": "Recipients when an interim meeting is approved",
       "to": [
-        "iesg_secretary"
+        "group_chairs",
+        "logged_in_person"
       ]
     },
     "model": "mailtrigger.mailtrigger",
@@ -10511,6 +10523,17 @@
   },
   {
     "fields": {
+      "default_offset_days": -57,
+      "desc": "Preliminary BOF proposals requested. To request a BOF, please see instructions on requesting a BOF at https://www.ietf.org/how/bofs/bof-procedures/",
+      "name": "Preliminary BOF proposals requested",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.importantdatename",
+    "pk": "bofproposals"
+  },
+  {
+    "fields": {
       "default_offset_days": -36,
       "desc": "Cut-off date for Area Directors to approve BOFs at UTC 23:59",
       "name": "Cut-off BOF approval",
@@ -10629,6 +10652,17 @@
     },
     "model": "name.importantdatename",
     "pk": "ietf-108-go-ahead"
+  },
+  {
+    "fields": {
+      "default_offset_days": -70,
+      "desc": "Announcement of whether the meeting will be in-person or online.",
+      "name": "Online or in-person Announcement",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.importantdatename",
+    "pk": "online-announcement"
   },
   {
     "fields": {
@@ -11899,6 +11933,26 @@
   },
   {
     "fields": {
+      "desc": "Can operate the YangCatalog, change its configuration, and edit its data",
+      "name": "YangCatalog Administrator",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.rolename",
+    "pk": "yc_admin"
+  },
+  {
+    "fields": {
+      "desc": "Can grant user api rights and browse the YangCatalog directory structure",
+      "name": "YangCatalog Operator",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.rolename",
+    "pk": "yc_operator"
+  },
+  {
+    "fields": {
       "desc": "Audio streaming support",
       "name": "Audio Stream",
       "order": 0,
@@ -12050,6 +12104,16 @@
   {
     "fields": {
       "desc": "",
+      "name": "Rescheduled",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.sessionstatusname",
+    "pk": "resched"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Scheduled",
       "order": 0,
       "used": true
@@ -12106,16 +12170,6 @@
     },
     "model": "name.slidesubmissionstatusname",
     "pk": "rejected"
-  },
-  {
-    "fields": {
-      "desc": "",
-      "name": "Rescheduled",
-      "order": 0,
-      "used": true
-    },
-    "model": "name.sessionstatusname",
-    "pk": "resched"
   },
   {
     "fields": {
@@ -14954,7 +15008,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2020-07-23T00:12:27.508",
+      "time": "2020-10-09T00:17:03.141",
       "used": true,
       "version": "xym 0.4.8"
     },
@@ -14965,7 +15019,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2020-07-23T00:12:28.886",
+      "time": "2020-10-09T00:17:04.888",
       "used": true,
       "version": "pyang 2.3.2"
     },
@@ -14976,7 +15030,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2020-07-23T00:12:29.140",
+      "time": "2020-10-09T00:17:05.228",
       "used": true,
       "version": "yanglint SO 1.6.7"
     },
@@ -14987,9 +15041,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2020-07-23T00:12:30.892",
+      "time": "2020-10-09T00:17:07.630",
       "used": true,
-      "version": "xml2rfc 2.47.0"
+      "version": "xml2rfc 3.2.1"
     },
     "model": "utils.versioninfo",
     "pk": 4

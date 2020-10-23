@@ -2429,7 +2429,7 @@ class InterimTests(TestCase):
         count = person.role_set.filter(name='chair',group__type__in=('wg', 'rg'), group__state__in=('active', 'proposed')).count()
         self.assertEqual(count, len(q("#id_group option")) - 1)  # -1 for options placeholder
 
-    def do_interim_request_single_virtual(self):
+    def do_interim_request_single_virtual(self, emails_expected):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
         date = datetime.date.today() + datetime.timedelta(days=30)
@@ -2479,13 +2479,13 @@ class InterimTests(TestCase):
         doc = session.materials.first()
         path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
         self.assertTrue(os.path.exists(path))
-        # check notice to secretariat
-        self.assertEqual(len(outbox), length_before + 1)
+        # check notices to secretariat and chairs
+        self.assertEqual(len(outbox), length_before + emails_expected)
         return meeting
 
     @override_settings(VIRTUAL_INTERIMS_REQUIRE_APPROVAL = True)
     def test_interim_request_single_virtual_settings_approval_required(self):
-        meeting = self.do_interim_request_single_virtual()
+        meeting = self.do_interim_request_single_virtual(emails_expected=1)
         self.assertEqual(meeting.session_set.last().schedulingevent_set.last().status_id,'apprw')
         self.assertIn('New Interim Meeting Request', outbox[-1]['Subject'])
         self.assertIn('session-request@ietf.org', outbox[-1]['To'])
@@ -2493,7 +2493,7 @@ class InterimTests(TestCase):
 
     @override_settings(VIRTUAL_INTERIMS_REQUIRE_APPROVAL = False)
     def test_interim_request_single_virtual_settings_approval_not_required(self):
-        meeting = self.do_interim_request_single_virtual()
+        meeting = self.do_interim_request_single_virtual(emails_expected=2)
         self.assertEqual(meeting.session_set.last().schedulingevent_set.last().status_id,'scheda')
         self.assertIn('iesg-secretary@ietf.org', outbox[-1]['To'])
         self.assertIn('interim meeting ready for announcement', outbox[-1]['Subject'])
@@ -3746,12 +3746,16 @@ class HasMeetingsTests(TestCase):
                 'session_set-MIN_NUM_FORMS':0,
                 'session_set-MAX_NUM_FORMS':1000}
 
+        empty_outbox()
         r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
         self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
         self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year, group.acronym, next_num))
+        self.assertTrue(len(outbox)>0)
+        self.assertIn('interim approved',outbox[0]["Subject"])
+        self.assertIn(user.person.email().address,outbox[0]["To"])
         self.client.logout()
 
 
