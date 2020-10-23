@@ -31,7 +31,7 @@
 
       <p>For more on regular IETF meetings see <a href="https://www.ietf.org/meeting/upcoming.html">here</a></p>
 
-        {% include 'meeting/agenda_filter.html' with group_parents=group_parents customize_button_text="Customize the meeting list..." only%}
+        {% include 'meeting/agenda_filter.html' with filter_categories=filter_categories customize_button_text="Customize the meeting list..." only%}
 
         {% if menu_entries %}
       <ul class="nav nav-tabs" role="tablist">
@@ -66,9 +66,8 @@
             </thead>
             <tbody>
               {% for entry in entries %}
-                <tr class="entry"
-                    data-item-group="{% if entry.group %}{{ entry.group.acronym|lower }}{% endif %}"
-                    data-item-area="{% if entry.group and entry.group.parent %}{{ entry.group.parent.acronym|lower }}{% endif %}">
+                <tr class="entry" 
+                    {% if entry|classname == 'Session' %}data-filter-keywords="{{ entry.filter_keywords|join:',' }}"{% endif %}>
                   {% if entry|classname == 'Meeting' %}
                     {% with meeting=entry %}
                       <td>{{ meeting.date }} - {{ meeting.end }}</td>
@@ -77,11 +76,11 @@
                       <td></td>
                     {% endwith %}
                   {% elif entry|classname == 'Session' %}
-                    {% with session=entry meeting=entry.meeting%}
+                    {% with session=entry group=entry.group meeting=entry.meeting%}
                       <td>{{ session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}} - {{ session.official_timeslotassignment.timeslot.utc_end_time | date:"H:i e" }}</td>
-                      <td><a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{ session.group.acronym }}</a></td>
+                      <td><a href="{% url 'ietf.group.views.group_home' acronym=group.acronym %}">{{ group.acronym }}</a></td>
                       <td>
-                        <a class="interim-meeting-link" href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">{{ session.meeting.number }}</a>
+                        <a class="interim-meeting-link" href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=group.acronym %}"> {{ meeting.number }}</a>
                       </td>
                       {% if session.current_status == 'canceled' %}
                         <td class='text-right'>
@@ -134,7 +133,7 @@
                   {
                       title: '{{session.official_timeslotassignment.timeslot.utc_start_time|date:"H:i"}}-{{session.official_timeslotassignment.timeslot.utc_end_time|date:"H:i"}}',
                       group: '{% if session.group %}{{session.group.acronym}}{% endif %}',
-                      area: '{% if session.group and session.group.parent %}{{ session.group.parent.acronym }}{% endif %}',
+                      filter_keywords: ["{{ session.filter_keywords|join:'","' }}"],
                       start: '{{session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}}',
                       end: '{{session.official_timeslotassignment.timeslot.utc_end_time | date:"Y-m-d H:i"}}',
                       url: '{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}'
@@ -148,29 +147,14 @@
 
       // Test whether an event should be visible given a set of filter parameters
       function calendar_event_visible(filter_params, event) {
-          // Visible if filtering is disabled or event has no group
-          if (!agenda_filter.filtering_is_enabled(filter_params) || !event.group) {
+          // Visible if filtering is disabled or event has no keywords
+          if (!agenda_filter.filtering_is_enabled(filter_params) || !event.filter_keywords) {
               return true;
           }
 
-          // Exclude if group or area is in the hide_groups list
-          if (filter_params['hide_groups'].indexOf(event.group) !== -1) {
-              return false;
-          }
-          if (event.area && (filter_params['hide_groups'].indexOf(event.area) !== -1)) {
-              return false;
-          }
-
-          // Include if group or area is in the show_groups list
-          if (filter_params['show_groups'].indexOf(event.group) !== -1) {
-              return true;
-          }
-          if (event.area && (filter_params['show_groups'].indexOf(event.area) !== -1)) {
-              return true;
-          }
-
-          // Not selected, exclude by default
-          return false;
+          // Visible if shown and not hidden
+          return (!agenda_filter.keyword_match(filter_params.hide, event.filter_keywords)
+                  && agenda_filter.keyword_match(filter_params.show, event.filter_keywords));
       }
 
       // Apply filter_params to the event list and format data for the calendar
@@ -217,24 +201,22 @@
       }
 
       function update_meeting_display(filter_params) {
-          var meeting_rows = $("#upcoming-meeting-table tr.entry")
+          var meeting_rows = $("#upcoming-meeting-table tr.entry");
           if (!agenda_filter.filtering_is_enabled(filter_params)) {
               meeting_rows.show();
               return;
           }
 
-          // hide everything that has a group
-          meeting_rows.filter("[data-item-group!='']").hide();
+          // hide everything that has keywords
+          meeting_rows.filter(function(index, row){
+              return !!$(row).attr('data-filter-keywords');
+          }).hide();
 
-          $.each(filter_params['show_groups'], function (i, v) {
-              // this is a regular item by wg: when present, show these rows
-              meeting_rows.filter('[data-item-group="'+ v +'"]').show();
-              meeting_rows.filter('[data-item-area="'+ v +'"]').show();
+          $.each(filter_params['show'], function (i, v) {
+              agenda_filter.rows_matching_filter_keyword(meeting_rows, v).show();
           });
-          $.each(filter_params['hide_groups'], function (i, v) {
-              // this is a "negative" item by wg: when present, hide these rows
-              meeting_rows.filter('[data-item-group="'+ v +'"]').hide();
-              meeting_rows.filter('[data-item-area="'+ v +'"]').hide();
+          $.each(filter_params['hide'], function (i, v) {
+              agenda_filter.rows_matching_filter_keyword(meeting_rows, v).hide();
           });
       }
 

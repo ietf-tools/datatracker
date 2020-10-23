@@ -2,6 +2,7 @@
 {% load origin %}{% origin %}
 {% load static %}
 <html> <head>
+  <script src="{% static 'ietf/js/agenda/agenda_filter.js' %}"></script>
   <script type="text/javascript">
 
     var all_items = {{ items|safe }};
@@ -106,62 +107,17 @@
         }
       }
     }
-
-
+    
     //===========================================================================
 
-    function parse_query_params(qs) {
-      var params = {};
-      qs = qs.replace(/^\?/, '').toLowerCase();
-      if (qs) {
-        var param_strs = qs.split('&');
-        for (var ii = 0; ii < param_strs.length; ii++) {
-            var toks = param_strs[ii].split('=', 2)
-            params[toks[0]] = toks[1] || true;
-        }
-      }
-      return params;
-    }
-
-    //===========================================================================
-
-    function get_filter_from_qparams(qparams, filt) {
-      return qparams[filt] ? qparams[filt].split(',') :  [];
-    }
-
-    function get_filter_params(qparams) {
-        return {
-          show_groups: get_filter_from_qparams(qparams, 'show'),
-          hide_groups: get_filter_from_qparams(qparams, 'hide'),
-          show_types: get_filter_from_qparams(qparams, 'showtypes'),
-          hide_types: get_filter_from_qparams(qparams, 'hidetypes'),
-        };
-    }
-    //===========================================================================
-
-    function is_visible(query_params) {
+    function is_visible(filter_params) {
       // Returns a method to filter objects for visibility
-      // Accepts show, hide, showtypes, and hidetypes filters. Also accepts
+      // Accepts show and hide filters. No longer accepts
       // '@<state>' to show sessions in a particular state (e.g., @bof).
-      // Current types are:
-      //   Session, Other, Break, Plenary
-      var fp = get_filter_params(query_params);
-
       return function (item) {
-        var item_group = (item.group || '').toLowerCase();
-        var item_type = (item.type || '').toLowerCase();
-        var item_area = (item.area || '').toLowerCase();
-        var item_state = (item.state || '').toLowerCase();
-
-        if ((fp['hide_groups'].indexOf(item_group) >= 0) ||
-                (fp['hide_groups'].indexOf(item_area) >= 0) ||
-                (fp['hide_types'].indexOf(item_type) >= 0)) {
-          return false;
-        }
-        return ((fp['show_groups'].indexOf(item_group) >= 0) ||
-                (fp['show_groups'].indexOf(item_area) >= 0) ||
-                (fp['show_types'].indexOf(item_type) >= 0) ||
-                query_params['@'+item_state]);
+          var filter_keywords = item.filter_keywords.split(',');
+          return (!agenda_filter.keyword_match(filter_keywords, filter_params.hide)
+                  && agenda_filter.keyword_match(filter_keywords, filter_params.show));
       }
     }
 
@@ -172,9 +128,12 @@
       var height = document.body.clientHeight;
 
       var visible_items = all_items;
-      var qs = window.location.search;
-      if (qs.length > 1) {
-          visible_items = visible_items.filter(is_visible(parse_query_params(qs)));
+      var filter_params = agenda_filter.get_filter_params(
+              agenda_filter.parse_query_params(window.location.search)
+      );
+      
+      if (agenda_filter.filtering_is_enabled(filter_params)) {
+          visible_items = visible_items.filter(is_visible(filter_params));
       }
 
       var start_day;
@@ -539,9 +498,13 @@
 
     //===========================================================================
     // Set up events for drawing the calendar
-    window.addEventListener("resize", draw_calendar, false);
-    window.addEventListener("load", draw_calendar, false);
-    window.addEventListener("hashchange", draw_calendar, false);
+    function redraw_weekview() {
+        draw_calendar();
+    }
+
+    window.addEventListener("resize", redraw_weekview, false);
+    window.addEventListener("load", redraw_weekview, false);
+    window.addEventListener("hashchange", redraw_weekview, false);
 
   </script>
 </head>

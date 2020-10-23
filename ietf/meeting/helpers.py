@@ -240,6 +240,30 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
 
     return assignments
 
+def tag_assignments_with_filter_keywords(assignments):
+    """Add keywords for agenda filtering
+    
+    Keywords are all lower case.
+    """
+    for a in assignments:
+        a.filter_keywords = {a.timeslot.type.slug.lower()}
+        a.filter_keywords.update(filter_keywords_for_session(a.session))
+
+def filter_keywords_for_session(session):
+    keywords = {session.type.slug.lower()}
+    group = getattr(session, 'historic_group', session.group)
+    if group is not None:
+        if group.state_id == 'bof':
+            keywords.add('bof')
+        keywords.add(group.acronym.lower())
+        area = getattr(group, 'historic_parent', group.parent)
+        if area is not None:
+            keywords.add(area.acronym.lower())
+    office_hours_match = re.match(r'^ *\w+(?: +\w+)* +office hours *$', session.name, re.IGNORECASE)
+    if office_hours_match is not None:
+        keywords.update(['officehours', session.name.lower().replace(' ', '')])
+    return keywords
+
 def read_session_file(type, num, doc):
     # XXXX FIXME: the path fragment in the code below should be moved to
     # settings.py.  The *_PATH settings should be generalized to format()

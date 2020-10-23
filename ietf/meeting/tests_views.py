@@ -23,6 +23,7 @@ from django.contrib.auth.models import User
 from django.test import Client, override_settings
 from django.db.models import F
 from django.http import QueryDict
+from django.template import Context, Template
 
 import debug           # pyflakes:ignore
 
@@ -51,7 +52,7 @@ from ietf.meeting.factories import ( SessionFactory, SessionPresentationFactory,
     MeetingFactory, FloorPlanFactory, TimeSlotFactory, SlideSubmissionFactory )
 from ietf.doc.factories import DocumentFactory, WgDraftFactory
 from ietf.submit.tests import submission_file
-
+from ietf.utils.test_utils import assert_ical_response_is_valid
 
 if os.path.exists(settings.GHOSTSCRIPT_COMMAND):
     skip_pdf_tests = False
@@ -61,32 +62,6 @@ else:
     skip_message = ("Skipping pdf test: The binary for ghostscript wasn't found in the\n       "
                     "location indicated in settings.py.")
     print("     "+skip_message)
-
-
-def assert_ical_response_is_valid(test_inst, response, expected_event_summaries=None, expected_event_count=None):
-    """Validate an HTTP response containing iCal data
-
-    Based on RFC2445, but not exhaustive by any means. Assumes a single iCalendar object. Checks that
-    expected_event_summaries are found, but other events are allowed to be present. Specify the
-    expected_event_count if you want to reject additional events.
-    """
-    test_inst.assertEqual(response.get('Content-Type'), "text/calendar")
-
-    # Validate iCalendar object
-    test_inst.assertContains(response, 'BEGIN:VCALENDAR', count=1)
-    test_inst.assertContains(response, 'END:VCALENDAR', count=1)
-    test_inst.assertContains(response, 'PRODID:', count=1)
-    test_inst.assertContains(response, 'VERSION', count=1)
-
-    # Validate event objects
-    if expected_event_summaries is not None:
-        for summary in expected_event_summaries:
-            test_inst.assertContains(response, 'SUMMARY:' + summary)
-
-    if expected_event_count is not None:
-        test_inst.assertContains(response, 'BEGIN:VEVENT', count=expected_event_count)
-        test_inst.assertContains(response, 'END:VEVENT', count=expected_event_count)
-        test_inst.assertContains(response, 'UID', count=expected_event_count)
 
 
 class MeetingTests(TestCase):
@@ -257,7 +232,28 @@ class MeetingTests(TestCase):
         r = self.client.get(urlreverse("ietf.meeting.views.week_view", kwargs=dict(num=meeting.number)))
         self.assertContains(r, 'CANCELLED')
         self.assertContains(r, session.group.acronym)
-        self.assertContains(r, slot.location.name)       
+        self.assertContains(r, slot.location.name)
+
+    def test_meeting_agenda_filters_ignored(self):
+        """The agenda view should ignore filter querystrings
+        
+        (They are handled by javascript on the front end)
+        """
+        meeting = make_meeting_test_data()
+        expected_items = meeting.schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
+        expected_rows = ['row-%s' % item.slug() for item in expected_items]
+        
+        r = self.client.get(urlreverse('ietf.meeting.views.agenda'))
+        for row_id in expected_rows:
+            self.assertContains(r, row_id)
+
+        r = self.client.get(urlreverse('ietf.meeting.views.agenda') + '?show=mars')
+        for row_id in expected_rows:
+            self.assertContains(r, row_id)
+
+        r = self.client.get(urlreverse('ietf.meeting.views.agenda') + '?show=mars&hide=ames,mars,plenary,ietf,bof')
+        for row_id in expected_rows:
+            self.assertContains(r, row_id)
 
     def test_agenda_iab_session(self):
         date = datetime.date.today()
@@ -657,7 +653,7 @@ class MeetingTests(TestCase):
         'Customized schedule' button.
         """
         meeting = make_meeting_test_data()
-        
+
         # get the agenda
         url = urlreverse('ietf.meeting.views.agenda', kwargs=dict(num=meeting.number))
         r = self.client.get(url)
@@ -665,15 +661,21 @@ class MeetingTests(TestCase):
         # Check that it has the links we expect
         ical_url = urlreverse('ietf.meeting.views.agenda_ical', kwargs=dict(num=meeting.number))
         q = PyQuery(r.content)
-        content = q('#content').html().lower()  # don't care about case
-        # Should be a 'non-area events' link showing appropriate types
-        self.assertIn('%s?showtypes=plenary,other' % ical_url, content)
+        content = q('#content').html()
+
         assignments = meeting.schedule.assignments.exclude(timeslot__type__in=['lead', 'offagenda'])
+
         # Assume the test meeting is not using historic groups
         groups = [a.session.group for a in assignments if a.session is not None]
         for g in groups:
             if g.parent_id is not None:
                 self.assertIn('%s?show=%s' % (ical_url, g.parent.acronym.lower()), content)
+
+        # Should be a 'non-area events' link showing appropriate types        
+        non_area_labels = [
+            'BoF', 'EDU', 'Hackathon', 'IEPG', 'IESG', 'IETF', 'Plenary', 'Secretariat', 'Tools',
+        ]
+        self.assertIn('%s?show=%s' % (ical_url, ','.join(non_area_labels).lower()), content)
 
     def test_parse_agenda_filter_params(self):
         def _r(show=(), hide=(), showtypes=(), hidetypes=()):
@@ -723,7 +725,8 @@ class MeetingTests(TestCase):
                                       expected_event_summaries=expected_session_summaries,
                                       expected_event_count=len(expected_session_summaries))
 
-    def test_ical_filter_default(self):
+    def test_ical_filter(self):
+        # Just a quick check of functionality - permutations tested via tests_js.AgendaTests
         meeting = make_meeting_test_data()
         self.do_ical_filter_test(
             meeting,
@@ -736,179 +739,13 @@ class MeetingTests(TestCase):
                 'mars - Martian Special Interest Group',
             ]
         )
-
-    def test_ical_filter_show(self):
-        meeting = make_meeting_test_data()
         self.do_ical_filter_test(
             meeting,
-            querystring='?show=mars',
+            querystring='?show=plenary,secretariat,ames&hide=reg',
             expected_session_summaries=[
-                'mars - Martian Special Interest Group',
-            ]
-        )
-
-    def test_ical_filter_hide(self):
-        meeting = make_meeting_test_data()
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?hide=ietf',
-            expected_session_summaries=[]
-        )
-
-    def test_ical_filter_show_area(self):
-        meeting = make_meeting_test_data()
-        mars = Group.objects.get(acronym='mars')
-        area = mars.parent
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?show=%s' % area.acronym,
-            expected_session_summaries=[
+                'Morning Break',
+                'IETF Plenary',
                 'ames - Asteroid Mining Equipment Standardization Group',
-                'mars - Martian Special Interest Group',
-            ]
-        )
-
-    def test_ical_filter_hide_area(self):
-        meeting = make_meeting_test_data()
-        mars = Group.objects.get(acronym='mars')
-        area = mars.parent
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?show=mars&hide=%s' % area.acronym,
-            expected_session_summaries=[]
-        )
-
-    def test_ical_filter_show_and_hide(self):
-        meeting = make_meeting_test_data()
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?show=ames&hide=mars',
-            expected_session_summaries=[
-                'ames - Asteroid Mining Equipment Standardization Group',
-            ]
-        )
-
-    def test_ical_filter_show_and_hide_same_group(self):
-        meeting = make_meeting_test_data()
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?show=ames&hide=ames',
-            expected_session_summaries=[]
-        )
-
-    def test_ical_filter_showtypes(self):
-        meeting = make_meeting_test_data()
-        # Show break/plenary types
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?showtypes=break,plenary',
-            expected_session_summaries=[
-                'IETF Plenary',
-                'Morning Break',
-            ]
-        )
-
-    def test_ical_filter_hidetypes(self):
-        meeting = make_meeting_test_data()
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?hidetypes=plenary',
-            expected_session_summaries=[]
-        )
-
-    def test_ical_filter_showtypes_and_hidetypes(self):
-        meeting = make_meeting_test_data()
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?showtypes=break&hidetypes=plenary',
-            expected_session_summaries=[
-                'Morning Break',
-            ]
-        )
-
-    def test_ical_filter_showtypes_and_hidetypes_same_type(self):
-        meeting = make_meeting_test_data()
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?showtypes=plenary&hidetypes=plenary',
-            expected_session_summaries=[]
-        )
-
-    def test_ical_filter_show_and_showtypes(self):
-        meeting = make_meeting_test_data()
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?show=mars&showtypes=plenary',
-            expected_session_summaries=[
-                'IETF Plenary',
-                'mars - Martian Special Interest Group',
-            ]
-        )
-
-    def test_ical_filter_hide_and_showtypes(self):
-        meeting = make_meeting_test_data()
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?hide=ames&showtypes=regular',
-            expected_session_summaries=[
-                'mars - Martian Special Interest Group',
-            ]
-        )
-
-    def test_ical_filter_show_and_hidetypes(self):
-        meeting = make_meeting_test_data()
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?show=ietf,mars&hidetypes=plenary',
-            expected_session_summaries=[
-                'mars - Martian Special Interest Group',
-            ]
-        )
-
-    def test_ical_filter_hide_and_hidetypes(self):
-        meeting = make_meeting_test_data()
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?hide=ietf,mars&hidetypes=plenary',
-            expected_session_summaries=[]
-        )
-
-    def test_ical_filter_show_hide_and_showtypes(self):
-        meeting = make_meeting_test_data()
-        # ames regular session should be suppressed
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?show=ietf&hide=ames&showtypes=regular',
-            expected_session_summaries=[
-                'IETF Plenary',
-                'mars - Martian Special Interest Group',
-            ]
-        )
-
-    def test_ical_filter_show_hide_and_hidetypes(self):
-        meeting = make_meeting_test_data()
-        # ietf plenary session should be suppressed
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?show=mars,ietf&hide=ames&hidetypes=plenary',
-            expected_session_summaries=[
-                'mars - Martian Special Interest Group',
-            ]
-        )
-
-    def test_ical_filter_all_params(self):
-        meeting = make_meeting_test_data()
-        # should include Morning Break / Registration due to secretariat in show list
-        # should include mars SIG because regular in showtypes list
-        # should not include IETF plenary because plenary in hidetypes list
-        # should not show ames SIG because ames in hide list
-        self.do_ical_filter_test(
-            meeting,
-            querystring='?show=secretariat,ietf&hide=ames&showtypes=regular&hidetypes=plenary',
-            expected_session_summaries=[
-                'Morning Break',
-                'Registration',
-                'mars - Martian Special Interest Group',
             ]
         )
 
@@ -2197,141 +2034,30 @@ class InterimTests(TestCase):
 
     # test_upcoming_filters_ignored removed - we _don't_ want to ignore filters now, and the test passed because it wasn't testing the filtering anyhow (which requires testing the js).
 
-    def do_upcoming_ical_test(self, querystring=None, create_meeting=True):
-        if create_meeting:
-            make_meeting_test_data(create_interims=True)
-
-        # Create a group with a plenary interim session for testing type filters
-        somegroup = GroupFactory(acronym='sg', name='Some Group')
-        sg_interim = make_interim_meeting(somegroup, datetime.date.today() + datetime.timedelta(days=20))
-        sg_sess = sg_interim.session_set.first()
-        sg_slot = sg_sess.timeslotassignments.first().timeslot
-        sg_sess.type_id = 'plenary'
-        sg_slot.type_id = 'plenary'
-        sg_sess.save()
-        sg_slot.save()
-
-        url = urlreverse("ietf.meeting.views.upcoming_ical")
-        if querystring is not None:
-            url += '?' + querystring
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        return r
-
     def test_upcoming_ical(self):
         meeting = make_meeting_test_data(create_interims=True)
         populate_important_dates(meeting)
-        r = self.do_upcoming_ical_test(create_meeting=False)
-
-        # Expect events for important dates plus 4 - one for each WG and one for the IETF meeting
-        assert_ical_response_is_valid(self, r,
-                                      expected_event_summaries=[
-                                          'ames - Asteroid Mining Equipment Standardization Group',
-                                          'mars - Martian Special Interest Group',
-                                          'sg - Some Group',
-                                          'IETF 72',
-                                      ],
-                                      expected_event_count=4 + meeting.importantdate_set.count())
-
-    def test_upcoming_ical_filter_show(self):
-        r  = self.do_upcoming_ical_test('show=mars,ames')
-        assert_ical_response_is_valid(self, r,
-                                      expected_event_summaries=[
-                                          'mars - Martian Special Interest Group',
-                                          'ames - Asteroid Mining Equipment Standardization Group',
-                                          'IETF 72',
-                                      ],
-                                      expected_event_count=3)
-
-    def test_upcoming_ical_filter_hide(self):
-        r = self.do_upcoming_ical_test('hide=mars')
-        assert_ical_response_is_valid(self, r, expected_event_summaries=['IETF 72'], expected_event_count=1)
-
-    def test_upcoming_ical_filter_show_and_hide(self):
-        r = self.do_upcoming_ical_test('show=mars,ames&hide=mars')
-        assert_ical_response_is_valid(self, r,
-                                      expected_event_summaries=[
-                                          'ames - Asteroid Mining Equipment Standardization Group',
-                                          'IETF 72',
-                                      ],
-                                      expected_event_count=2)
-
-    def test_upcoming_ical_filter_showtypes(self):
-        r = self.do_upcoming_ical_test('showtypes=regular')
-        assert_ical_response_is_valid(self, r,
-                                      expected_event_summaries=[
-                                          'ames - Asteroid Mining Equipment Standardization Group',
-                                          'mars - Martian Special Interest Group',
-                                          'IETF 72',
-                                      ],
-                                      expected_event_count=3)
-
-    def test_upcoming_ical_filter_hidetypes(self):
-        r = self.do_upcoming_ical_test('hidetypes=regular')
-        assert_ical_response_is_valid(self, r, expected_event_summaries=['IETF 72'])
-
-    def test_upcoming_ical_filter_showtypes_and_hidetypes(self):
-        r = self.do_upcoming_ical_test('showtypes=plenary,regular&hidetypes=regular')
-        assert_ical_response_is_valid(self, r,
-                                      expected_event_summaries=[
-                                          'sg - Some Group',
-                                          'IETF 72',
-                                      ],
-                                      expected_event_count=2)
-
-    def test_upcoming_ical_filter_show_and_showtypes(self):
-        r = self.do_upcoming_ical_test('show=mars&showtypes=plenary')
-        assert_ical_response_is_valid(self, r,
-                                      expected_event_summaries=[
-                                          'mars - Martian Special Interest Group',
-                                          'sg - Some Group',
-                                          'IETF 72',
-                                      ],
-                                      expected_event_count=3)
+        url = urlreverse("ietf.meeting.views.upcoming_ical")
         
-    def test_upcoming_ical_filter_show_and_hidetypes(self):
-        r = self.do_upcoming_ical_test('show=mars,sg&hidetypes=regular')
-        assert_ical_response_is_valid(self, r,
-                                      expected_event_summaries=[
-                                          'sg - Some Group',
-                                          'IETF 72',
-                                      ],
-                                      expected_event_count=2)
+        r = self.client.get(url)
 
-    def test_upcoming_ical_filter_hide_and_showtypes(self):
-        r = self.do_upcoming_ical_test('hide=mars&showtypes=regular')
+        self.assertEqual(r.status_code, 200)
+        # Expect events for important dates plus 3 - one for each WG and one for the IETF meeting
         assert_ical_response_is_valid(self, r,
                                       expected_event_summaries=[
                                           'ames - Asteroid Mining Equipment Standardization Group',
+                                          'mars - Martian Special Interest Group',
                                           'IETF 72',
                                       ],
-                                      expected_event_count=2)
-        
-    def test_upcoming_ical_filter_hide_and_hidetypes(self):
-        r = self.do_upcoming_ical_test('hide=mars&hidetypes=regular')
-        assert_ical_response_is_valid(self, r, expected_event_summaries=['IETF 72'], expected_event_count=1)
+                                      expected_event_count=3 + meeting.importantdate_set.count())
 
-    def test_upcoming_ical_filter_show_hide_and_showtypes(self):
-        r = self.do_upcoming_ical_test('show=ames&hide=mars&showtypes=regular,plenary')
-        assert_ical_response_is_valid(self, r,
-                                      expected_event_summaries=[
-                                          'ames - Asteroid Mining Equipment Standardization Group',
-                                          'sg - Some Group',
-                                          'IETF 72',
-                                      ],
-                                      expected_event_count=3)
+    def test_upcoming_ical_filter(self):
+        # Just a quick check of functionality - details tested by test_js.InterimTests
+        make_meeting_test_data(create_interims=True)
+        url = urlreverse("ietf.meeting.views.upcoming_ical")
+        r = self.client.get(url + '?show=mars')
 
-    def test_upcoming_ical_filter_show_hide_and_hidetypes(self):
-        r = self.do_upcoming_ical_test('show=ames,sg&hide=mars&hidetypes=regular')
-        assert_ical_response_is_valid(self, r,
-                                      expected_event_summaries=[
-                                          'sg - Some Group',
-                                          'IETF 72'
-                                      ],
-                                      expected_event_count=2)
-
-    def test_upcoming_ical_filter_all_params(self):
-        r = self.do_upcoming_ical_test('show=sg&hide=ames&showtypes=regular&hidetypes=plenary')
+        self.assertEqual(r.status_code, 200)
         assert_ical_response_is_valid(self, r,
                                       expected_event_summaries=[
                                           'mars - Martian Special Interest Group',
@@ -2339,27 +2065,16 @@ class InterimTests(TestCase):
                                       ],
                                       expected_event_count=2)
 
-    def test_upcoming_ical_filter_show_area(self):
-        make_meeting_test_data(create_interims=True)
-        mars = Group.objects.get(acronym='mars')
-        area = mars.parent
-        r = self.do_upcoming_ical_test('show=%s' % area.acronym,
-                                       create_meeting=False)
-        assert_ical_response_is_valid(self, r,
-                                      expected_event_summaries=[
-                                          'ames - Asteroid Mining Equipment Standardization Group',
-                                          'mars - Martian Special Interest Group',
-                                          'IETF 72',
-                                      ],
-                                      expected_event_count=3)
 
-    def test_upcoming_ical_filter_hide_area(self):
-        make_meeting_test_data(create_interims=True)
-        mars = Group.objects.get(acronym='mars')
-        area = mars.parent
-        r = self.do_upcoming_ical_test('show=mars&hide=%s' % area.acronym,
-                                       create_meeting=False)
-        assert_ical_response_is_valid(self, r, expected_event_summaries=['IETF 72'], expected_event_count=1)
+    def test_upcoming_ical_filter_invalid_syntaxes(self):
+        make_meeting_test_data()
+        url = urlreverse('ietf.meeting.views.upcoming_ical')
+
+        r = self.client.get(url + '?unknownparam=mars')
+        self.assertEqual(r.status_code, 400, 'Unknown parameter should be rejected')
+
+        r = self.client.get(url + '?mars')
+        self.assertEqual(r.status_code, 400, 'Missing parameter name should be rejected')
 
     def test_upcoming_json(self):
         make_meeting_test_data(create_interims=True)
@@ -3871,4 +3586,205 @@ class HasMeetingsTests(TestCase):
         q = PyQuery(r.content)
         for session in sessions:
             self.assertIn(session.meeting.number, q('.interim-meeting-link').text())
+
+
+class AgendaFilterTests(TestCase):
+    """Tests for the AgendaFilter template"""
+    def test_agenda_width_scale_filter(self):
+        """Test calculation of UI column width by agenda_width_scale filter"""
+        template = Template('{% load agenda_filter_tags %}{{ categories|agenda_width_scale:spacing }}')
+
+        # Should get '1' as min value when input is empty
+        context = Context({'categories': [], 'spacing': 7})
+        self.assertEqual(template.render(context), '1')
+
+        # 3 columns, no spacers
+        context = Context({'categories': [range(3)], 'spacing': 7})
+        self.assertEqual(template.render(context), '21')
+
+        # 6 columns, 1 spacer
+        context = Context({'categories': [range(3), range(3)], 'spacing': 7})
+        self.assertEqual(template.render(context), '43')
+
+        # 10 columns, 2 spacers
+        context = Context({'categories': [range(3), range(3), range(4)], 'spacing': 7})
+        self.assertEqual(template.render(context), '72')
+
+        # 10 columns, 2 spacers, different spacer scale
+        context = Context({'categories': [range(3), range(3), range(4)], 'spacing': 5})
+        self.assertEqual(template.render(context), '52')
+
+    def test_agenda_filter_template(self):
+        """Test rendering of input data by the agenda filter template"""
+        def _assert_button_ok(btn, expected_label=None, expected_filter_item=None, 
+                              expected_filter_keywords=None):
+            """Test button properties"""
+            self.assertIn(btn.text(), expected_label)
+            self.assertEqual(btn.attr('data-filter-item'), expected_filter_item)
+            self.assertEqual(btn.attr('data-filter-keywords'), expected_filter_keywords)
+
+        template = Template('{% include "meeting/agenda_filter.html" %}')
+
+        # Test with/without custom button text
+        context = Context({'customize_button_text': None, 'filter_categories': []})
+        q = PyQuery(template.render(context))
+        self.assertIn('Customize...', q('h4.panel-title').text())
+        self.assertEqual(q('table'), [])  # no filter_categories, so no button table
+
+        context['customize_button_text'] = 'My custom text...'
+        q = PyQuery(template.render(context))
+        self.assertIn(context['customize_button_text'], q('h4.panel-title').text())
+        self.assertEqual(q('table'), [])  # no filter_categories, so no button table
+        
+        # Now add a non-trivial set of filters
+        context['filter_categories'] = [
+            [  # first category
+                dict(
+                    label='area0',
+                    keyword='keyword0',
+                    children=[
+                        dict(
+                            label='child00',
+                            keyword='keyword00',
+                            is_bof=False,
+                        ),
+                        dict(
+                            label='child01',
+                            keyword='keyword01',
+                            is_bof=True,
+                        ),
+                    ]),
+                dict(
+                    label='area1',
+                    keyword='keyword1',
+                    children=[
+                        dict(
+                            label='child10',
+                            keyword='keyword10',
+                            is_bof=False,
+                        ),
+                        dict(
+                            label='child11',
+                            keyword='keyword11',
+                            is_bof=True,
+                        ),
+                    ]),
+            ],
+            [  # second category
+                dict(
+                    label='area2',
+                    keyword='keyword2',
+                    children=[
+                        dict(
+                            label='child20',
+                            keyword='keyword20',
+                            is_bof=True,
+                        ),
+                        dict(
+                            label='child21',
+                            keyword='keyword21',
+                            is_bof=False,
+                        ),
+                    ]),
+            ],
+            [  # third category
+                dict(
+                    label=None,
+                    keyword=None,
+                    children=[
+                        dict(
+                            label='child30',
+                            keyword='keyword30',
+                            is_bof=False,
+                        ),
+                        dict(
+                            label='child31',
+                            keyword='keyword31',
+                            is_bof=True,
+                        ),
+                    ]),
+            ],
+        ]
+
+        q = PyQuery(template.render(context))
+        self.assertIn(context['customize_button_text'], q('h4.panel-title').text())
+        self.assertNotEqual(q('table'), [])  # should now have table
+        
+        # Check that buttons are present for the expected things
+        header_row = q('thead tr')
+        self.assertEqual(len(header_row), 1)
+        button_row = q('tbody tr')
+        self.assertEqual(len(button_row), 1)
+
+        # verify correct headers
+        header_cells = header_row('th')
+        self.assertEqual(len(header_cells), 6)  # 4 columns and 2 spacers
+        header_buttons = header_cells('button.pickview')
+        self.assertEqual(len(header_buttons), 3)  # last column has blank header, so only 3
+        
+        # verify buttons
+        button_cells = button_row('td')
+    
+        # area0
+        _assert_button_ok(header_cells.eq(0)('button.keyword0'),
+                          expected_label='area0',
+                          expected_filter_item='keyword0')
+        
+        buttons = button_cells.eq(0)('button.pickview')
+        self.assertEqual(len(buttons), 2)  # two children
+        _assert_button_ok(buttons('.keyword00'),
+                          expected_label='child00',
+                          expected_filter_item='keyword00',
+                          expected_filter_keywords='keyword0')
+        _assert_button_ok(buttons('.keyword01'),
+                          expected_label='child01',
+                          expected_filter_item='keyword01',
+                          expected_filter_keywords='keyword0,bof')
+
+        # area1
+        _assert_button_ok(header_cells.eq(1)('button.keyword1'),
+                          expected_label='area1',
+                          expected_filter_item='keyword1')
+
+        buttons = button_cells.eq(1)('button.pickview')
+        self.assertEqual(len(buttons), 2)  # two children
+        _assert_button_ok(buttons('.keyword10'),
+                          expected_label='child10',
+                          expected_filter_item='keyword10',
+                          expected_filter_keywords='keyword1')
+        _assert_button_ok(buttons('.keyword11'),
+                          expected_label='child11',
+                          expected_filter_item='keyword11',
+                          expected_filter_keywords='keyword1,bof')
+        
+        # area2
+        # Skip column index 2, which is a spacer column
+        _assert_button_ok(header_cells.eq(3)('button.keyword2'),
+                          expected_label='area2',
+                          expected_filter_item='keyword2')
+
+        buttons = button_cells.eq(3)('button.pickview')
+        self.assertEqual(len(buttons), 2)  # two children
+        _assert_button_ok(buttons('.keyword20'),
+                          expected_label='child20',
+                          expected_filter_item='keyword20',
+                          expected_filter_keywords='keyword2,bof')
+        _assert_button_ok(buttons('.keyword21'),
+                          expected_label='child21',
+                          expected_filter_item='keyword21',
+                          expected_filter_keywords='keyword2')
+
+        # area3 (no label for this one)
+        # Skip column index 4, which is a spacer column
+        self.assertEqual([], header_cells.eq(5)('button'))  # no header button
+        buttons = button_cells.eq(5)('button.pickview')
+        self.assertEqual(len(buttons), 2)  # two children
+        _assert_button_ok(buttons('.keyword30'),
+                          expected_label='child30',
+                          expected_filter_item='keyword30',
+                          expected_filter_keywords=None)
+        _assert_button_ok(buttons('.keyword31'),
+                          expected_label='child31',
+                          expected_filter_item='keyword31',
+                          expected_filter_keywords='bof')
 
