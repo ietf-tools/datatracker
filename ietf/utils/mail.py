@@ -90,6 +90,7 @@ def send_smtp(msg, bcc=None):
     If someone has set test_mode=True, then append the msg to
     the outbox.
     '''
+    mark = time.time()
     add_headers(msg)
     (fname, frm) = parseaddr(msg.get('From'))
     addrlist = msg.get_all('To') + msg.get_all('Cc', [])
@@ -137,7 +138,8 @@ def send_smtp(msg, bcc=None):
             except smtplib.SMTPServerDisconnected:
                 pass
         subj = force_text(msg.get('Subject', '[no subject]'))
-        log("sent email from '%s' to %s id %s subject '%s'" % (frm, to, msg.get('Message-ID', ''), subj))
+        tau = time.time() - mark
+        log("sent email (%.3fs) from '%s' to %s id %s subject '%s'" % (tau, frm, to, msg.get('Message-ID', ''), subj))
     
 def copy_email(msg, to, toUser=False, originalBcc=None):
     '''
