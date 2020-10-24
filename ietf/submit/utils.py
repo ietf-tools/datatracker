@@ -7,6 +7,7 @@ import io
 import os
 import pathlib
 import re
+import time
 
 from typing import Callable, Optional # pyflakes:ignore
 
@@ -671,6 +672,7 @@ def save_files(form):
         with io.open(name, 'wb+') as destination:
             for chunk in f.chunks():
                 destination.write(chunk)
+        log("saved file %s" % name)
     return file_name
 
 def get_draft_meta(form, saved_files):
@@ -786,6 +788,7 @@ def apply_checkers(submission, file_name):
                                 symbol=checker.symbol)
         check.save()
 
+    mark = time.time()
     for checker_path in settings.IDSUBMIT_CHECKER_CLASSES:
         checker_class = import_string(checker_path)
         checker = checker_class()
@@ -795,6 +798,8 @@ def apply_checkers(submission, file_name):
             if hasattr(checker, method) and ext in file_name:
                 apply_check(submission, checker, method, file_name[ext])
                 break
+    tau = time.time() - mark
+    log("ran submission checks (%.3fs) for %s" % (tau, file_name))
 
 def send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval):
     docevent_from_submission(request, submission, desc="Uploaded new revision")

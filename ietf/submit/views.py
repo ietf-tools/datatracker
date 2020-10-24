@@ -50,6 +50,7 @@ def upload_submission(request):
         try:
             form = SubmissionManualUploadForm(request, data=request.POST, files=request.FILES)
             if form.is_valid():
+                log('got valid submission form for %s' % form.filename)
                 saved_files = save_files(form)
                 authors, abstract, file_name, file_size = get_draft_meta(form, saved_files)
 
@@ -97,7 +98,6 @@ def upload_submission(request):
             form._errors["__all__"] = form.error_class(["There was a failure processing your upload -- please verify that your draft passes idnits.  (%s)" % e.message])
             if debug.debug:
                 raise
-
     else:
         form = SubmissionManualUploadForm(request=request)
 
@@ -119,6 +119,7 @@ def api_submit(request):
         try:
             form = SubmissionAutoUploadForm(request, data=request.POST, files=request.FILES)
             if form.is_valid():
+                log('got valid submission form for %s' % form.filename)
                 username = form.cleaned_data['user']
                 user = User.objects.filter(username=username)
                 if user.count() == 0:
