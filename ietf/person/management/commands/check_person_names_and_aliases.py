@@ -4,7 +4,9 @@
 
 from tqdm import tqdm
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
+
 
 import debug                            # pyflakes:ignore
 
@@ -31,6 +33,9 @@ class Command(BaseCommand):
         badname = []
         onename = []
         addrname = []
+        if hasattr(settings, 'SERVER_MODE'):
+            # Try to avoid sending mail during repair
+            settings.SERVER_MODE = 'repair'
         for person in tqdm(Person.objects.all()):
             email = person.email()
             # Person names with junk
