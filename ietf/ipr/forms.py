@@ -194,7 +194,7 @@ class GenericDisclosureForm(forms.Form):
     otherwise create a GenericIprDisclosure object."""
     compliant = forms.BooleanField(label="This disclosure complies with RFC 3979", required=False)
     holder_legal_name = forms.CharField(max_length=255)
-    notes = forms.CharField(label="Additional notes", max_length=255,widget=forms.Textarea,required=False, strip=False)
+    notes = forms.CharField(label="Additional notes", max_length=4096,widget=forms.Textarea,required=False, strip=False)
     other_designations = forms.CharField(label="Designations for other contributions", max_length=255,required=False)
     holder_contact_name = forms.CharField(label="Name", max_length=255)
     holder_contact_email = forms.EmailField(label="Email")
