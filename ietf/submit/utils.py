@@ -672,7 +672,7 @@ def save_files(form):
         with io.open(name, 'wb+') as destination:
             for chunk in f.chunks():
                 destination.write(chunk)
-        log("saved file %s" % name)
+        log.log("saved file %s" % name)
     return file_name
 
 def get_draft_meta(form, saved_files):
@@ -799,7 +799,7 @@ def apply_checkers(submission, file_name):
                 apply_check(submission, checker, method, file_name[ext])
                 break
     tau = time.time() - mark
-    log("ran submission checks (%.3fs) for %s" % (tau, file_name))
+    log.log("ran submission checks (%.3fs) for %s" % (tau, file_name))
 
 def send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval):
     docevent_from_submission(request, submission, desc="Uploaded new revision")
