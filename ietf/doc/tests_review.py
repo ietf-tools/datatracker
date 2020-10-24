@@ -23,7 +23,7 @@ import ietf.review.mailarch
 
 from ietf.doc.factories import ( NewRevisionDocEventFactory, IndividualDraftFactory, WgDraftFactory,
                             WgRfcFactory, ReviewFactory, DocumentFactory)
-from ietf.doc.models import ( DocumentAuthor, RelatedDocument, DocEvent, ReviewRequestDocEvent,
+from ietf.doc.models import ( Document, DocumentAuthor, RelatedDocument, DocEvent, ReviewRequestDocEvent,
                             ReviewAssignmentDocEvent, )
 from ietf.group.factories import RoleFactory, ReviewTeamFactory
 from ietf.group.models import Group
@@ -37,6 +37,7 @@ from ietf.review.policies import get_reviewer_queue_policy
 from ietf.utils.mail import outbox, empty_outbox, parseaddr, on_behalf_of, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized, reload_db_objects
 from ietf.utils.test_utils import TestCase
+from ietf.utils.text import strip_prefix, xslugify
 
 class ReviewTests(TestCase):
     def setUp(self):
@@ -876,7 +877,41 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox), 0)
         self.assertTrue("http://example.com" in assignment.review.external_url)
-        
+
+    def test_double_submit_review(self):
+        assignment, url = self.setup_complete_review_test()
+
+        login_testing_unauthorized(self, assignment.reviewer.person.user.username, url)
+
+        name_components = [
+            "review",
+            strip_prefix(assignment.review_request.doc.name, "draft-"),
+            assignment.review_request.doc.rev,
+            assignment.review_request.team.acronym, 
+            assignment.review_request.type.slug,
+            xslugify(assignment.reviewer.person.ascii_parts()[3]),
+            datetime.date.today().isoformat(),
+        ]
+        review_name = "-".join(c for c in name_components if c).lower()
+        Document.objects.create(name=review_name,type_id='review',group=assignment.review_request.team)
+
+        r = self.client.post(url, data={
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=assignment.review_request.team, slug="ready").pk,
+            "state": ReviewAssignmentStateName.objects.get(slug="completed").pk,
+            "reviewed_rev": assignment.review_request.doc.rev,
+            "review_submission": "enter",
+            "review_content": "This is a review\nwith two lines",
+            "review_url": "",
+            "review_file": "",
+            # Custom completion should be ignored - review posted by assignee is always set to now
+            "completion_date": "2012-12-24",
+            "completion_time": "12:13:14",
+        })
+        self.assertEqual(r.status_code, 302)
+        r2 = self.client.get(r.url)
+        self.assertEqual(len(r2.context['messages']),1)
+        self.assertIn('Attempt to save review failed', list(r2.context['messages'])[0].message)
+
     def test_partially_complete_review(self):
         assignment, url = self.setup_complete_review_test()
 
