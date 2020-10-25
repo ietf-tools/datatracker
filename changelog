@@ -1,3 +1,70 @@
+ietfdb (7.21.0) ietf; urgency=medium
+
+  **Code sprint 108.1, and more**
+
+  This was an online codesprint, held March 19.  Thanks to all who
+  participated!  As usual, there were some very good contributions:
+
+  * Merged in [18589] from rjsparks@nostrum.com:
+    Allow anyone to see the pending and awaiting announcement tabs on the 
+    upcoming meeting view. Fixes #2929. Partially addresses #3016.  
+
+  * Merged in [18590] from peter@akayla.com:
+    Added slide numbering reminder. Fixes issue #3041.  
+
+  * Merged in [18591] from rcross@amsl.com:
+    Add more options to Group select field of Misc Session create. Fixes 
+    #3033.  
+
+  * Refined the template used by the person-link template tag to do better 
+    for document authors without an email address.
+
+  * Merged in [18601] from fenton@bluepopcorn.net:
+    Added NomCom membership history page. Fixes issue #3006. Branch  
+
+  The release also contains a number of bugfixes and features other than
+  from the sprint:
+
+  * Fixed a bug in the charset handling of individual parts in multipart 
+    email messages in ietf.nomcom.get_body()
+
+  * Restricted a log.assertion to only run for current documents (not 
+    DocHistory entries).  Fixed a buggy handling of document.group for historic 
+    groups.
+
+  * Added better guards against passing empty data to the person profile 
+    template.
+
+  * Updated paths after directory moves on the production server
+
+  * Added caching for the /doc/active page.
+
+  * Added timing information to the send_smtp() log entries.
+
+  * Merged in [18616] from rjsparks@nostrum.com:
+    Email requesters when an interim moves into the announcement queue. 
+    Partially addresses #3016 and #3099.  
+
+  * Merged in branch ^/personal/jennifer/7.17.1.dev0 from 
+    jennifer@painless-security.com:
+    This adds support for the simpler show/hide filtering to the ical agenda
+    views. It also significantly rearranges (and, I hope, improves the
+    organization of) the tests. In particular, it specifically tests that
+    the ical and HTML views include equivalent sets of events. Finally, the
+    agenda_filter.html template is reworked to be more modular.
+
+  * Merged in [18620], [18622], and [18627] from rjsparks@nostrum.com:
+    Increased the length-limit on the notes field of the base IPR disclosure
+    form. Fixes #3104. 
+
+  * Disabled mail sending for the check_person_names_and_aliases management
+    command, to avoid duplicate person email notifications.
+
+  * Added more logging for submissions, to get better timing information.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Oct 2020 10:05:46 +0000
+
+
 ietfdb (7.20.0) ietf; urgency=medium
 
   **Bugfixes and minor features**
