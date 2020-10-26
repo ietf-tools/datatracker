@@ -299,7 +299,7 @@ def maybe_patch_library(app_configs, **kwargs):
     errors = []
     # Change path to our copy of django (this assumes we're running in a
     # virtualenv, which we should)
-    import os, django
+    import os, django, sys
     django_path = os.path.dirname(django.__file__)
     library_path = os.path.dirname(django_path)
     top_dir = os.path.dirname(settings.BASE_DIR)
@@ -321,7 +321,9 @@ def maybe_patch_library(app_configs, **kwargs):
                         ))
                 else:
                     # Patch succeeded or was a no-op
-                    if not patch_set.already_patched and settings.SERVER_MODE != 'production':
+                    if (not patch_set.already_patched
+                        and settings.SERVER_MODE != 'production'
+                        and sys.argv[1] != 'check'):
                         errors.append(
                             checks.Error("Found an unpatched file, and applied the patch in %s" % (patch_file),
                                 hint="You will need to re-run the command now that the patch in place.",
