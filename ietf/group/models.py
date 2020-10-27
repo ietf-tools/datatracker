@@ -250,6 +250,10 @@ class GroupHistory(GroupInfo):
     group = ForeignKey(Group, related_name='history_set')
     acronym = models.CharField(max_length=40)
 
+    def ad_role(self):
+        # Note - this shows current ADs, not historic ADs
+        return self.group.role_set.filter(name='ad').first()
+
     class Meta:
         verbose_name_plural="group histories"
 
