@@ -41,7 +41,7 @@ class Person(models.Model):
     # The normal unicode form of the name.  This must be
     # set to the same value as the ascii-form if equal.
     name = models.CharField("Full Name (Unicode)", max_length=255, db_index=True, help_text="Preferred long form of name.")
-    plain = models.CharField("Plain Name (Unicode)", max_length=64, default='', blank=True, help_text="Preferred plain form of name, if different from the automatic plain form.")
+    plain = models.CharField("Plain Name correction (Unicode)", max_length=64, default='', blank=True, help_text="Use this if you have a Spanish double surname.  Don't use this for nicknames, and don't use it unless you've actually observed that the datatracker shows your name incorrectly.")
     # The normal ascii-form of the name.
     ascii = models.CharField("Full Name (ASCII)", max_length=255, help_text="Name as rendered in ASCII (Latin, unaccented) characters.")
     # The short ascii-form of the name.  Also in alias table if non-null
