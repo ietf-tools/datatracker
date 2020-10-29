@@ -855,7 +855,7 @@ XML_LIBRARY = "/www/tools.ietf.org/tools/xml2rfc/web/public/rfc/"
 
 # === Meeting Related Settings =================================================
 
-MEETING_MATERIALS_SERVE_LOCALLY = False
+MEETING_MATERIALS_SERVE_LOCALLY = True
 
 # If you override MEETING_MATERIALS_SERVE_LOCALLY in your settings_local.conf, you will need to
 # set the right value for MEETING_DOC_HREFS there as well. MEETING_DOC_LOCAL_HREFS and 
