@@ -242,7 +242,6 @@ def materials_document(request, document, num=None, ext=None):
         raise Http404("File not found: %s" % filename)
 
     old_proceedings_format = meeting.number.isdigit() and int(meeting.number) <= 96
-
     if settings.MEETING_MATERIALS_SERVE_LOCALLY or old_proceedings_format:
         with io.open(filename, 'rb') as file:
             bytes = file.read()
@@ -1301,6 +1300,17 @@ def diff_schedules(request, num):
         'to_schedule': to_schedule,
     })
 
+@ensure_csrf_cookie
+def assignment_materials(request, assignment_id):
+    """Assignment details for agenda page pop-up"""
+    assignments = SchedTimeSessAssignment.objects.filter(pk=int(assignment_id))
+    if len(assignments) == 0:
+        raise Http404('No such assignment')
+    assert len(assignments) == 1
+    meeting = assignments[0].timeslot.meeting  # timeslot is guaranteed to be non-null
+    assignments = preprocess_assignments_for_agenda(assignments, meeting)
+    assignment = assignments[0]
+    return render(request, 'meeting/assignment_materials.html', dict(item=assignment))
 
 @ensure_csrf_cookie
 def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
