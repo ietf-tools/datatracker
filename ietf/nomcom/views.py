@@ -572,7 +572,7 @@ def feedback(request, year, public):
         elif topic:
             form = FeedbackForm(data=request.POST,
                                 nomcom=nomcom, user=request.user,
-                                topic=topic)
+                                public=public, topic=topic)
         else:
             form = None
         if form and form.is_valid():
