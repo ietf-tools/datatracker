@@ -16,7 +16,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="session-materials"
-                           data-src="{% url 'ietf.meeting.views.session_materials' num=meeting.number session_id=session.pk %}">
+                           data-src="{% url 'ietf.meeting.views.session_materials' session_id=session.pk %}">
                     </div>
                 </div>
                 <div class="modal-footer">

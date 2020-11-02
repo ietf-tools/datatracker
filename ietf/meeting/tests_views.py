@@ -159,8 +159,7 @@ class MeetingTests(TestCase):
         self.assertIn(registration_text, agenda_content)
 
         # Make sure there's a frame for the session agenda and it points to the right place
-        assignment_url = urlreverse('ietf.meeting.views.session_materials',
-                                    kwargs=dict(num=meeting.number, session_id=session.pk))
+        assignment_url = urlreverse('ietf.meeting.views.session_materials', kwargs=dict(session_id=session.pk))
         self.assertTrue(
             any(
                 [assignment_url in x.attrib["data-src"] 
@@ -851,8 +850,7 @@ class MeetingTests(TestCase):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
 
-        url = urlreverse('ietf.meeting.views.session_materials', 
-                         kwargs=dict(num=meeting.number, session_id=session.pk))
+        url = urlreverse('ietf.meeting.views.session_materials', kwargs=dict(session_id=session.pk))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)

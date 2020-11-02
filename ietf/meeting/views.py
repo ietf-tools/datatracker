@@ -1301,16 +1301,13 @@ def diff_schedules(request, num):
     })
 
 @ensure_csrf_cookie
-def session_materials(request, num, session_id):
+def session_materials(request, session_id):
     """Session details for agenda page pop-up"""
-    meeting = get_object_or_404(Meeting, number=num)
-    schedule = meeting.schedule
-    assignments = schedule.assignments.filter(session__id=int(session_id))
+    session = get_object_or_404(Session, id=session_id)
+    assignments = SchedTimeSessAssignment.objects.filter(session=session)
     if len(assignments) == 0:
-        raise Http404('No such session in this schedule')
-    assert len(assignments) == 1
-    meeting = assignments[0].timeslot.meeting  # timeslot is guaranteed to be non-null
-    assignments = preprocess_assignments_for_agenda(assignments, meeting)
+        raise Http404('No such scheduled session')
+    assignments = preprocess_assignments_for_agenda(assignments, session.meeting)
     assignment = assignments[0]
     return render(request, 'meeting/session_materials.html', dict(item=assignment))
 
