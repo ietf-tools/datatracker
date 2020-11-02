@@ -25,7 +25,7 @@
   background-color: inherit !important;
   border: none !important;
   }
-  .assignment-materials .agenda-frame,.minutes-frame {
+  .session-materials .agenda-frame,.minutes-frame {
   white-space: normal;
   }
 {% endblock %}
@@ -178,7 +178,7 @@
                       <div class="pull-right padded-left">
                         {% if item.timeslot.type.slug == 'other' %}
                           {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
-                            {% include "meeting/session_buttons_include.html" with show_agenda=True session=item.session meeting=schedule.meeting %}
+                            {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule only %}
                           {% else %}
                             {% for slide in item.session.slides %}
                               <a href="{{slide.get_href}}">{{ slide.title|clean_whitespace }}</a>
@@ -459,7 +459,7 @@
    }
 
    $(".modal").on("show.bs.modal", function () {
-       retrieve_session_modal($(this).find(".assignment-materials"));
+       retrieve_session_modal($(this).find(".session-materials"));
    });
 
   </script>

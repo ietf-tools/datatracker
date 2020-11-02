@@ -21,6 +21,7 @@ safe_for_all_meeting_types = [
     url(r'^session/(?P<session_id>\d+)/doc/%(name)s/remove$' % settings.URL_REGEXPS, views.remove_sessionpresentation),
     url(r'^session/(?P<session_id>\d+)\.ics$',    views.agenda_ical),
     url(r'^sessions/(?P<acronym>[-a-z0-9]+)\.ics$', views.agenda_ical),
+    url(r'^session/(?P<session_id>\d+)/agenda_materials$', views.session_materials),
     url(r'^slidesubmission/(?P<slidesubmission_id>\d+)$', views.approve_proposed_slides)
 ]
 
@@ -111,7 +112,6 @@ urlpatterns = [
     # First patterns which start with unique strings
     url(r'^$', views.current_materials),
     url(r'^ajax/get-utc/?$', views.ajax_get_utc),
-    url(r'^assignment/(?P<assignment_id>\d+)/materials.html$', views.assignment_materials),
     url(r'^interim/announce/?$', views.interim_announce),
     url(r'^interim/announce/(?P<number>[A-Za-z0-9._+-]+)/?$', views.interim_send_announcement),
     url(r'^interim/skip_announce/(?P<number>[A-Za-z0-9._+-]+)/?$', views.interim_skip_announcement),
