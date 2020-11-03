@@ -259,6 +259,7 @@ def post_rev00_submission_events(draft, submission, submitter):
 
 @transaction.atomic
 def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
+    log.log(f"{submission.name}: start")
     system = Person.objects.get(name="(System)")
     submitter_parsed = submission.submitter_parsed()
     if submitter_parsed["name"] and submitter_parsed["email"]:
@@ -267,12 +268,15 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     else:
         submitter = system
         submitter_info = system.name
+    log.log(f"{submission.name}: got submitter: {submitter.name}")
 
     # update draft attributes
     try:
         draft = Document.objects.get(name=submission.name)
+        log.log(f"{submission.name}: retrieved draft: {draft}")
     except Document.DoesNotExist:
         draft = Document.objects.create(name=submission.name, type_id="draft")
+        log.log(f"{submission.name}: created draft: {draft}")
 
     prev_rev = draft.rev
 
@@ -301,6 +305,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
             draft.stream = StreamName.objects.get(slug=stream_slug)
 
     draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
+    log.log(f"{submission.name}: got draft details")
 
     events = []
 
@@ -328,6 +333,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
         desc="New version available: <b>%s-%s.txt</b>" % (draft.name, draft.rev),
     )
     events.append(e)
+    log.log(f"{submission.name}: created doc events")
 
     # update related objects
     alias, __ = DocAlias.objects.get_or_create(name=submission.name)
@@ -339,9 +345,12 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
 
     draft.formal_languages.set(submission.formal_languages.all())
 
+    log.log(f"{submission.name}: updated state and info")
+
     trouble = rebuild_reference_relations(draft, filename=os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (submission.name, submission.rev)))
     if trouble:
         log.log('Rebuild_reference_relations trouble: %s'%trouble)
+    log.log(f"{submission.name}: rebuilt reference relations")
     
     if draft.stream_id == "ietf" and draft.group.type_id == "wg" and draft.rev == "00":
         # automatically set state "WG Document"
@@ -379,39 +388,14 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
         # automatically set state "WG Document"
         draft.set_state(State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
 
-    # Update yang urls if applicable
-    for check in submission.checks.all():
-        # Temporary code -- remove after 6.64.0 release
-        if not type(check.items) is dict:
-            continue
-        if not 'checker' in check.items:
-            continue
-        log.assertion('type(check.items) is dict')
-        check.items['draft'] = draft.name
-        check.items['rev'] = draft.rev
-        if 'code' in check.items and check.items['code']:
-            code = check.items['code']
-            if 'yang' in code:
-                modules = code['yang']
-                # Yang impact analysis URL
-                draft.docextresource_set.filter(name_id='yc_impact').delete()
-                f = settings.SUBMIT_YANG_CATALOG_MODULEARG
-                moduleargs = '&'.join([ f.format(module=m) for m in modules])
-                url  = settings.SUBMIT_YANG_CATALOG_IMPACT_URL.format(moduleargs=moduleargs, draft=draft.name)
-                desc = settings.SUBMIT_YANG_CATALOG_IMPACT_DESC.format(modules=','.join(modules), draft=draft.name)
-                draft.docextresource_set.create(value=url, name_id='yc_impact', display_name=desc)
-                # Yang module metadata URLs
-                draft.docextresource_set.filter(name_id='yc_entry').delete()
-                for module in modules:
-                    url  = settings.SUBMIT_YANG_CATALOG_MODULE_URL.format(module=module)
-                    desc = settings.SUBMIT_YANG_CATALOG_MODULE_DESC.format(module=module)
-                    draft.docextresource_set.create(value=url, name_id='yc_entry', display_name=desc)
+    log.log(f"{submission.name}: handled state changes")
 
     if not draft.get_state('draft-iesg'):
         draft.states.add(State.objects.get(type_id='draft-iesg', slug='idexists'))
 
     # save history now that we're done with changes to the draft itself
     draft.save_with_history(events)
+    log.log(f"{submission.name}: saved history")
 
     # clean up old files
     if prev_rev != draft.rev:
@@ -420,16 +404,19 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
 
     move_files_to_repository(submission)
     submission.state = DraftSubmissionStateName.objects.get(slug="posted")
+    log.log(f"{submission.name}: moved files")
 
     new_replaces, new_possibly_replaces = update_replaces_from_submission(request, submission, draft)
 
     update_name_contains_indexes_with_new_doc(draft)
+    log.log(f"{submission.name}: updated replaces and indexes")
 
     announce_to_lists(request, submission)
     if submission.group and submission.group.type_id == 'wg' and draft.rev == '00':
         announce_new_wg_00(request, submission)
     announce_new_version(request, submission, draft, state_change_msg)
     announce_to_authors(request, submission)
+    log.log(f"{submission.name}: sent announcements")
 
     if new_possibly_replaces:
         send_review_possibly_replaces_request(request, draft, submitter_info)
@@ -438,6 +425,8 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     submission.save()
 
     create_submission_event(request, submission, approved_subm_desc)
+    log.log(f"{submission.name}: done")
+    
 
 def update_replaces_from_submission(request, submission, draft):
     if not submission.replaces:
@@ -790,6 +779,7 @@ def apply_checkers(submission, file_name):
 
     mark = time.time()
     for checker_path in settings.IDSUBMIT_CHECKER_CLASSES:
+        lap = time.time()
         checker_class = import_string(checker_path)
         checker = checker_class()
         # ordered list of methods to try
@@ -798,8 +788,10 @@ def apply_checkers(submission, file_name):
             if hasattr(checker, method) and ext in file_name:
                 apply_check(submission, checker, method, file_name[ext])
                 break
+        tau = time.time() - lap
+        log.log(f"ran {checker.__class__.__name__} ({tau:.3}s) for {file_name}")
     tau = time.time() - mark
-    log.log("ran submission checks (%.3fs) for %s" % (tau, file_name))
+    log.log(f"ran submission checks ({tau:.3}s) for {file_name}")
 
 def send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval):
     docevent_from_submission(request, submission, desc="Uploaded new revision")
