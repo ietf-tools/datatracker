@@ -110,6 +110,20 @@ if __name__ == '__main__':
         dump_sublist(afile, vfile, name+'-ads',    ['ietf.org', ], settings.GROUP_VIRTUAL_DOMAIN, get_group_ad_emails(directorate))
         dump_sublist(afile, vfile, name+'-chairs', ['ietf.org', ], settings.GROUP_VIRTUAL_DOMAIN, get_group_role_emails(directorate, ['chair', 'secr']))
 
+    # - Teams -----------------------------------------
+    teams = Group.objects.filter(type='team').all()
+
+    # - status = Active
+    active_teams = teams.filter(state__in=ACTIVE_STATES)
+
+    # - activity within last year? (use concluded_date)
+    inactive_recent_teams = teams.exclude(state__in=ACTIVE_STATES).filter(time__gte=show_since)
+    interesting_teams = active_teams | inactive_recent_teams
+
+    for team in interesting_teams.distinct().iterator():
+        name = team.acronym
+        dump_sublist(afile, vfile, name+'-chairs', ['ietf.org', ], settings.GROUP_VIRTUAL_DOMAIN, get_group_role_emails(team, ['chair', 'secr']))
+
     # - Areas --------------------------------------------------
     # Additionally, for areas, we should list -ads and -chairs
     # (for every chair in active groups within the area).
