@@ -18,6 +18,7 @@ from django.db.models import F
 import debug                            # pyflakes:ignore
 
 from ietf.doc.factories import DocumentFactory
+from ietf.doc.models import State
 from ietf.group import colors
 from ietf.person.models import Person
 from ietf.group.models import Group
@@ -784,7 +785,7 @@ class AgendaTests(MeetingTestCase):
         ics_url = self.absreverse('ietf.meeting.views.agenda_ical')
         
         # parse out the events
-        agenda_rows = self.driver.find_elements_by_css_selector('[id^="row-"')
+        agenda_rows = self.driver.find_elements_by_css_selector('[id^="row-"]')
         visible_rows = [r for r in agenda_rows if r.is_displayed()]
         sessions = [self.session_from_agenda_row_id(row.get_attribute("id")) 
                     for row in visible_rows]
@@ -797,6 +798,111 @@ class AgendaTests(MeetingTestCase):
         assert_ical_response_is_valid(self, r, 
                                       expected_event_uids=expected_uids,
                                       expected_event_count=len(sessions))
+
+    def test_session_materials_modal(self):
+        """Test opening and re-opening a session materals modal
+
+        This currently only tests the slides to ensure that changes to these are picked up
+        without reloading the main agenda page. This should also test that the agenda and
+        minutes are displayed and updated correctly, but problems with WebDriver/Selenium/Chromedriver
+        are blocking this.
+        """
+        session = self.meeting.session_set.filter(group__acronym="mars").first()
+        assignment = session.official_timeslotassignment()
+        slug = assignment.slug()
+
+        url = self.absreverse('ietf.meeting.views.agenda')
+        self.driver.get(url)
+
+        # modal should start hidden
+        modal_div = self.driver.find_element_by_css_selector('div#modal-%s' % slug)
+        self.assertFalse(modal_div.is_displayed())
+
+        # Click the 'materials' button
+        open_modal_button = WebDriverWait(self.driver, 2).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '[data-target="#modal-%s"]' % slug)
+            ),
+            'Modal open button not found or not clickable',
+        )
+        open_modal_button.click()
+        WebDriverWait(self.driver, 2).until(
+            expected_conditions.visibility_of(modal_div),
+            'Modal did not become visible after clicking open button',
+        )
+
+        # Check that we have the expected slides
+        not_deleted_slides = session.materials.filter(
+            type='slides'
+        ).exclude(
+            states__type__slug='slides',states__slug='deleted'
+        )
+        self.assertGreater(not_deleted_slides.count(), 0)  # make sure this isn't a pointless test
+        for slide in not_deleted_slides:
+            anchor = self.driver.find_element_by_xpath('//a[text()="%s"]' % slide.title)
+            self.assertIsNotNone(anchor)
+
+        deleted_slides = session.materials.filter(
+            type='slides', states__type__slug='slides', states__slug='deleted'
+        )
+        self.assertGreater(deleted_slides.count(), 0)  # make sure this isn't a pointless test
+        for slide in deleted_slides:
+            with self.assertRaises(NoSuchElementException):
+                self.driver.find_element_by_xpath('//a[text()="%s"]' % slide.title)
+
+        # Now close the modal
+        close_modal_button = WebDriverWait(self.driver, 2).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '.modal-footer button[data-dismiss="modal"]')
+            ),
+            'Modal close button not found or not clickable',
+        )
+        close_modal_button.click()
+        WebDriverWait(self.driver, 2).until(
+            expected_conditions.invisibility_of_element(modal_div),
+            'Modal was not hidden after clicking close button',
+        )
+
+        # Modify the session info
+        newly_deleted_slide = not_deleted_slides.first()
+        newly_undeleted_slide = deleted_slides.first()
+        newly_deleted_slide.set_state(State.objects.get(type="slides", slug="deleted"))
+        newly_undeleted_slide.set_state(State.objects.get(type="slides", slug="active"))
+
+        # Click the 'materials' button
+        open_modal_button = WebDriverWait(self.driver, 2).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '[data-target="#modal-%s"]' % slug)
+            ),
+            'Modal open button not found or not clickable for refresh test',
+        )
+        open_modal_button.click()
+        WebDriverWait(self.driver, 2).until(
+            expected_conditions.visibility_of(modal_div),
+            'Modal did not become visible after clicking open button for refresh test',
+        )
+
+        # Check that we now see the updated slides
+        not_deleted_slides = session.materials.filter(
+            type='slides'
+        ).exclude(
+            states__type__slug='slides',states__slug='deleted'
+        )
+        self.assertNotIn(newly_deleted_slide, not_deleted_slides)
+        self.assertIn(newly_undeleted_slide, not_deleted_slides)
+        for slide in not_deleted_slides:
+            anchor = self.driver.find_element_by_xpath('//a[text()="%s"]' % slide.title)
+            self.assertIsNotNone(anchor)
+
+        deleted_slides = session.materials.filter(
+            type='slides', states__type__slug='slides', states__slug='deleted'
+        )
+        self.assertIn(newly_deleted_slide, deleted_slides)
+        self.assertNotIn(newly_undeleted_slide, deleted_slides)
+        for slide in deleted_slides:
+            with self.assertRaises(NoSuchElementException):
+                self.driver.find_element_by_xpath('//a[text()="%s"]' % slide.title)
+
 
 @skipIf(skip_selenium, skip_message)
 class InterimTests(MeetingTestCase):

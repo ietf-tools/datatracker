@@ -158,12 +158,16 @@ class MeetingTests(TestCase):
         self.assertIn(time_interval, agenda_content)
         self.assertIn(registration_text, agenda_content)
 
-        # Make sure there's a frame for the agenda and it points to the right place
-        self.assertTrue(any([session.materials.get(type='agenda').get_href() in x.attrib["data-src"] for x in q('tr div.modal-body  div.frame')])) 
-
-        # Make sure undeleted slides are present and deleted slides are not
-        self.assertTrue(any([session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().title in x.text for x in q('tr div.modal-body ul a')]))
-        self.assertFalse(any([session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().title in x.text for x in q('tr div.modal-body ul a')]))
+        # Make sure there's a frame for the session agenda and it points to the right place
+        assignment = session.official_timeslotassignment()
+        assignment_url = urlreverse('ietf.meeting.views.assignment_materials',
+                                    kwargs=dict(assignment_id=assignment.pk))
+        self.assertTrue(
+            any(
+                [assignment_url in x.attrib["data-src"] 
+                 for x in q('tr div.modal-body  div.assignment-materials')]
+            )
+        ) 
 
         # future meeting, no agenda
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=future_meeting.number)))
@@ -843,6 +847,50 @@ class MeetingTests(TestCase):
         self.assertEqual(r.status_code,200)
         self.assertIn('STATUS:CANCELLED',unicontent(r))
         self.assertNotIn('STATUS:CONFIRMED',unicontent(r))
+
+    def test_assignment_materials(self):
+        meeting = make_meeting_test_data()
+        session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
+
+        for assignment in session.timeslotassignments.all():
+            url = urlreverse('ietf.meeting.views.assignment_materials', 
+                             kwargs=dict(assignment_id=assignment.pk))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+
+            agenda_div = q('div.agenda-frame')
+            self.assertIsNotNone(agenda_div)
+            self.assertEqual(agenda_div.attr('data-src'), session.agenda().get_href())
+
+            minutes_div = q('div.minutes-frame')
+            self.assertIsNotNone(minutes_div)
+            self.assertEqual(minutes_div.attr('data-src'), session.minutes().get_href())
+
+            # Make sure undeleted slides are present and deleted slides are not
+            not_deleted_slides = session.materials.filter(
+                type='slides'
+            ).exclude(
+                states__type__slug='slides',states__slug='deleted'
+            )
+            self.assertGreater(not_deleted_slides.count(), 0)  # make sure this isn't a pointless test
+
+            deleted_slides = session.materials.filter(
+                type='slides', states__type__slug='slides', states__slug='deleted'
+            )
+            self.assertGreater(deleted_slides.count(), 0)  # make sure this isn't a pointless test
+
+            # live slides should be found
+            for slide in not_deleted_slides:
+                self.assertTrue(q('ul li a:contains("%s")' % slide.title))
+
+            # deleted slides should not be found
+            for slide in deleted_slides:
+                self.assertFalse(q('ul li a:contains("%s")' % slide.title))
+
+
+        for slide in session.slides():
+                self.assertContains(r, slide.title)
 
 class ReorderSlidesTests(TestCase):
 

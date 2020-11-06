@@ -1,0 +1,42 @@
+{# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
+{% load origin %}{% origin %}
+{% load static %}
+{% load textfilters %}
+{% load ietf_filters %}
+{% with item.session.agenda as agenda %}
+    {% if agenda %}
+        {% if agenda.file_extension == "txt" or agenda.file_extension == "md" or agenda.file_extension == "html" or agenda.file_extension == "htm" %}
+            <h4>Agenda</h4>
+            <div class="agenda-frame" data-src="{{ agenda.get_href }}"></div>
+        {% else %}
+            <span class="label label-info">Agenda submitted as {{ agenda.file_extension|upper }}</span>
+        {% endif %}
+    {% else %}
+        <span class="label label-warning">No agenda submitted</span>
+    {% endif %}
+{% endwith %}
+
+{% if item.session.slides %}
+    <h4>Slides</h4>
+    <ul class="fa-ul list-unstyled">
+        {% for slide in item.session.slides %}
+            <li>
+                <span class="fa-li fa fa-file-{{ slide.file_extension|lower }}-o"></span>
+                <a href="{{ slide.get_versionless_href }}">{{ slide.title|clean_whitespace }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+{% with item.session.minutes as minutes %}
+    {% if minutes %}
+        {% if minutes.file_extension == "txt" or minutes.file_extension == "md" or minutes.file_extension == "html" or minutes.file_extension == "htm" %}
+            <h4>Minutes</h4>
+            <div class="minutes-frame" data-src="{{ minutes.get_href }}"></div>
+        {% else %}
+            <span class="label label-info">Minutes submitted as {{ minutes.file_extension|upper }}</span>
+        {% endif %}
+    {% else %}
+        <span class="label label-warning">No minutes submitted</span>
+    {% endif %}
+{% endwith %}
