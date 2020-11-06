@@ -1,21 +1,22 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# expects slug, session, and timeslot  to be in the context #}
 {% load origin %}{% origin %}
 {% load static %}
 {% load textfilters %}
 {% load ietf_filters %}
-          <div class="modal fade text-left" id="modal-{{ item.slug }}" tabindex="-1" role="dialog" aria-labelledby="label-{{ item.slug }}" aria-hidden="true">
+          <div class="modal fade text-left" id="modal-{{ slug }}" tabindex="-1" role="dialog" aria-labelledby="label-{{ slug }}" aria-hidden="true">
             <div class="modal-dialog modal-lg">
               <div class="modal-content">
                 <div class="modal-header">
                   <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                  <h4 class="modal-title" id="label-{{item.slug}}">
+                  <h4 class="modal-title" id="label-{{slug}}">
                     Meeting materials for
-                    {% if item.timeslot.type.slug == 'plenary' %}{{item.timeslot.name}}{% else %}{{item.session.historic_group.name}}{% endif %}
+                    {% if timeslot.type.slug == 'plenary' %}{{timeslot.name}}{% else %}{{session.historic_group.name}}{% endif %}
                   </h4>
                 </div>
                 <div class="modal-body">
-                    <div class="assignment-materials"
-                           data-src="{% url 'ietf.meeting.views.assignment_materials' assignment_id=item.pk %}">
+                    <div class="session-materials"
+                           data-src="{% url 'ietf.meeting.views.session_materials' num=meeting.number session_id=session.pk %}">
                     </div>
                 </div>
                 <div class="modal-footer">
