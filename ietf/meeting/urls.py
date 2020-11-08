@@ -21,7 +21,6 @@ safe_for_all_meeting_types = [
     url(r'^session/(?P<session_id>\d+)/doc/%(name)s/remove$' % settings.URL_REGEXPS, views.remove_sessionpresentation),
     url(r'^session/(?P<session_id>\d+)\.ics$',    views.agenda_ical),
     url(r'^sessions/(?P<acronym>[-a-z0-9]+)\.ics$', views.agenda_ical),
-    url(r'^session/(?P<session_id>\d+)/agenda_materials$', views.session_materials),
     url(r'^slidesubmission/(?P<slidesubmission_id>\d+)$', views.approve_proposed_slides)
 ]
 
@@ -125,6 +124,7 @@ urlpatterns = [
     url(r'^upcoming/?$', views.upcoming),
     url(r'^upcoming\.ics/?$', views.upcoming_ical),
     url(r'^upcoming\.json/?$', views.upcoming_json),
+    url(r'^session/(?P<session_id>\d+)/agenda_materials$', views.session_materials),
     # Then patterns from more specific to less
     url(r'^(?P<num>interim-[a-z0-9-]+)/', include(type_interim_patterns)),
     url(r'^(?P<num>\d+)/requests.html$', RedirectView.as_view(url='/meeting/%(num)s/requests', permanent=True)),
