@@ -1,3 +1,44 @@
+ietfdb (7.22.0) ietf; urgency=medium
+
+  * Added a GroupHistory.ad_role() method to help with some template
+    expansions.
+
+  * Modified the name and help text of the Person.plain field, to make the 
+    intended use clearer (to avoid cases of incorrect usage seen recently).
+
+  * Changed back to serve meeting materials locally as the default.  There 
+    could be more tweaks in a subsequent commit.
+
+  * Nomcom topic responses didn't save respondent because of a missing form 
+    creation parameter.  Fixed.
+
+  * Added additional logging of submission steps, for submission timing 
+    investigation.  Should be reduced once cause of long response times has 
+    been found.
+
+  * Added *-chairs aliases for teams to the script that generates group 
+    *-chairs@ietf.org aliases for postfix
+
+  * Merged in [18651] from jennifer@painless-security.com:
+    Retrieve session agenda, slides, and minutes each time agenda modal is 
+    opened. Fixes #3050.  
+
+  * Removed superfluous spaces within <pre> for materials.  Fixes issue 
+    #3124.
+
+  * Merged in [18653] from jennifer@painless-security.com:
+    Retrieve session agenda materials by meeting/session instead of by 
+    assignment.  
+
+  * Merged in [18654] from jennifer@painless-security.com:
+    Do not require redundant meeting number for session materials view.  
+
+  * Added matching indexes to a number of models with default ordering based
+    on multiple keys, to speed up queries.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Nov 2020 20:25:02 +0000
+
+
 ietfdb (7.21.0) ietf; urgency=medium
 
   **Code sprint 108.1, and more**
