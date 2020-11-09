@@ -334,6 +334,9 @@ class GroupEvent(models.Model):
 
     class Meta:
         ordering = ['-time', 'id']
+        indexes = [
+            models.Index(fields=['-time', '-id']),
+        ]
 
 class ChangeStateGroupEvent(GroupEvent):
     state = ForeignKey(GroupStateName)

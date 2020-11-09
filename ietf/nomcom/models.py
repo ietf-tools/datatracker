@@ -296,6 +296,9 @@ class Feedback(models.Model):
 
     class Meta:
         ordering = ['time']
+        indexes = [
+            models.Index(fields=['time',]),
+        ]
 
 class FeedbackLastSeen(models.Model):
     reviewer = ForeignKey(Person)

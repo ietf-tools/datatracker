@@ -37,6 +37,9 @@ class Message(models.Model):
 
     class Meta:
         ordering = ['time']
+        indexes = [
+            models.Index(fields=['time',]),
+        ]
 
     def __str__(self):
         return "'%s' %s -> %s" % (self.subject, self.frm, self.to)
@@ -71,6 +74,9 @@ class SendQueue(models.Model):
     
     class Meta:
         ordering = ['time']
+        indexes = [
+            models.Index(fields=['time',]),
+        ]
 
     def __str__(self):
         return "'%s' %s -> %s (sent at %s)" % (self.message.subject, self.message.frm, self.message.to, self.sent_at or "<not yet>")

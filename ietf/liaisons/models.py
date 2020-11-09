@@ -238,3 +238,6 @@ class LiaisonStatementEvent(models.Model):
 
     class Meta:
         ordering = ['-time', '-id']
+        indexes = [
+            models.Index(fields=['-time', '-id']),
+        ]

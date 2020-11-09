@@ -618,6 +618,9 @@ class DocumentAuthorInfo(models.Model):
     class Meta:
         abstract = True
         ordering = ["document", "order"]
+        indexes = [
+            models.Index(fields=['document', 'order']),
+        ]
 
 class DocumentAuthor(DocumentAuthorInfo):
     document = ForeignKey('Document')
@@ -1076,6 +1079,7 @@ class DocEvent(models.Model):
         ordering = ['-time', '-id']
         indexes = [
             models.Index(fields=['type', 'doc']),
+            models.Index(fields=['-time', '-id']),
         ]
         
 class NewRevisionDocEvent(DocEvent):

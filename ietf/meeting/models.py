@@ -312,6 +312,9 @@ class Meeting(models.Model):
 
     class Meta:
         ordering = ["-date", "-id"]
+        indexes = [
+            models.Index(fields=['-date', '-id']),
+        ]
 
 # === Rooms, Resources, Floorplans =============================================
 
@@ -622,6 +625,9 @@ class TimeSlot(models.Model):
 
     class Meta:
         ordering = ["-time", "-id"]
+        indexes = [
+            models.Index(fields=['-time', '-id']),
+        ]
 
 
 # end of TimeSlot

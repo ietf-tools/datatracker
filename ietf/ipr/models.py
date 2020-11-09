@@ -30,6 +30,9 @@ class IprDisclosureBase(models.Model):
 
     class Meta:
         ordering = ['-time', '-id']
+        indexes = [
+            models.Index(fields=['-time', '-id']),
+        ]
 
     def __str__(self):
         return self.title
@@ -247,6 +250,9 @@ class IprEvent(models.Model):
                     
     class Meta:
         ordering = ['-time', '-id']
+        indexes = [
+            models.Index(fields=['-time', '-id']),
+        ]
 
 class LegacyMigrationIprEvent(IprEvent):
     """A subclass of IprEvent specifically for capturing contents of legacy_url_0,
