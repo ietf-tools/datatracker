@@ -697,7 +697,7 @@ DOC_HREFS = {
 
 # Valid MIME types for cases where text is uploaded and immediately extracted,
 # e.g. a charter or a review. Must be a tuple, not a list.
-DOC_TEXT_FILE_VALID_UPLOAD_MIME_TYPES = ('text/plain', 'text/markdown', 'text/x-rst')
+DOC_TEXT_FILE_VALID_UPLOAD_MIME_TYPES = ('text/plain', 'text/markdown', 'text/x-rst', 'text/x-markdown', )
 
 # Override this in settings_local.py if needed
 CACHE_MIDDLEWARE_SECONDS = 300
@@ -917,12 +917,13 @@ MEETING_VALID_UPLOAD_MIME_TYPES = {
 MEETING_VALID_MIME_TYPE_EXTENSIONS = {
     'text/plain':   ['.txt', '.md', ],
     'text/markdown': ['.txt', '.md', ],
+    'text/x-markdown': ['.txt', '.md', ],
     'text/html':    ['.html', '.htm'],
     'application/pdf': ['.pdf'],
 }
 
 MEETING_VALID_UPLOAD_MIME_FOR_OBSERVED_MIME = {
-    'text/plain':   ['text/plain', 'text/markdown', ],
+    'text/plain':   ['text/plain', 'text/markdown', 'text/x-markdown', ],
     'text/html':    ['text/html', ],
     'application/pdf': ['application/pdf', ],
 }
