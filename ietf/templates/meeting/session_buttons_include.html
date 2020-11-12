@@ -33,7 +33,7 @@
   {% endif %}
 
   {# show stream buttons up till end of session, then show archive buttons #}
-  {% if now < timeslot.end_time %}
+  {% if now < timeslot.utc_end_time %}
     <!-- Jabber -->
     <a class=""
       href="xmpp:{{session.jabber_room_name}}@jabber.ietf.org?join"

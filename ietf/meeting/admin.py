@@ -97,7 +97,7 @@ class SchedulingEventInline(admin.TabularInline):
 class SessionAdmin(admin.ModelAdmin):
     list_display = ["meeting", "name", "group", "attendees", "requested", "current_status"]
     list_filter = ["meeting", ]
-    raw_id_fields = ["meeting", "group", "materials"]
+    raw_id_fields = ["meeting", "group", "materials", "joint_with_groups", "tombstone_for"]
     search_fields = ["meeting__number", "name", "group__name", "group__acronym", ]
     ordering = ["-id"]
     inlines = [SchedulingEventInline]

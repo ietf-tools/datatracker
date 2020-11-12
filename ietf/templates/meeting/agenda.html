@@ -65,7 +65,7 @@
   {% endif %}
 
 
-  {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Customize the agenda view..." only %}
+  {% include "meeting/agenda_filter.html" with filter_categories=filter_categories customize_button_text="Customize the agenda view..." %}
 
         <h2>Download as .ics</h2>
         <p class="buttonlist">
@@ -178,7 +178,7 @@
                       <div class="pull-right padded-left">
                         {% if item.timeslot.type.slug == 'other' %}
                           {% if item.session.agenda or item.session.remote_instructions or item.session.agenda_note %}
-                            {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule only %}
+                            {% include "meeting/session_buttons_include.html" with show_agenda=True item=item schedule=schedule %}
                           {% else %}
                             {% for slide in item.session.slides %}
                               <a href="{{slide.get_href}}">{{ slide.title|clean_whitespace }}</a>
