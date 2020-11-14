@@ -113,10 +113,6 @@ RUN apt-get install -qy \
         postgresql-11 \
         postgresql-server-dev-11 
 
-RUN pip install \
-        psycopg2
-        
-
 # Get the key used to sign the libyang repo
 RUN wget -nv http://download.opensuse.org/repositories/home:liberouter/Debian_9.0/Release.key
 RUN apt-key add - < Release.key
@@ -127,7 +123,7 @@ RUN echo "deb http://download.opensuse.org/repositories/home:/liberouter/Debian_
 
 # Update the package defs, and install the desired mysql from the mysql repo
 RUN apt-get update
-RUN apt-get install -qy libyang
+RUN apt-get install -qy libyang1
 
 # This is expected to exist by the mysql startup scripts:
 #RUN touch /etc/mysql/debian.cnf
