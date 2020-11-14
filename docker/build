@@ -113,13 +113,7 @@ done
 # ----------------------------------------------------------------------
 # The program itself
 
-if [ "$(uname)" != "Linux" ]; then
-    if [ -n "$(type -p docker-machine)" ]; then
-	machine=$(type -p docker-machine)
-    else
-	die "Could not find boot2docker or docker-machine -- you need to set one of those before running this script."
-    fi
-else
+if [ "$(uname)" == "Linux" ]; then
     die "Didn't expect to run this script on Linux -- are you inside docker?"
 fi
 
