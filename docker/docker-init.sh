@@ -112,11 +112,12 @@ echo "Activating the virtual python environment ..."
 
 if ! $VIRTDIR/bin/python -c "import django"; then
     echo "Installing requirements ..."
-    if [ ! -f /home/$USER/$CWD/requirements.txt ]; then
-        echo "   Using /home/$USER/$CWD/requirements.txt"
-        pip install -r /home/$USER/$CWD/requirements.txt
+    reqs=/home/$USER/$CWD/requirements.txt
+    if [ ! -f $reqs ]; then
+        echo "   Using $reqs"
+        pip install -r $reqs
     else
-        echo "   Didn't find /home/$USER/$CWD/requirements.txt"
+        echo "   Didn't find $reqs"
         echo "   Using /usr/local/share/datatracker/requirements.txt"
         pip install -r /usr/local/share/datatracker/requirements.txt
     fi
@@ -180,7 +181,11 @@ chmod -R g+w   /usr/local/lib/		# so we can patch libs if needed
 cd "/home/$USER/$CWD" || cd "/home/$USER/"
 
 echo "Done!"
-echo ""
-echo "Make sure you export LANG=en_GB.UTF-8 (or another UTF-8 locale) in your .bashrc"
+if ! echo "$LANG" | grep "UTF-8"; then
+    echo ""
+    echo "Make sure you export LANG=en_GB.UTF-8 (or another UTF-8 locale) in your .bashrc"
+else
+    echo "LANG=$LANG"
+fi
 
-su $USER
+su -p $USER
