@@ -99,8 +99,11 @@ def photo(request, email_or_name):
     img = Image.open(person.photo)
     img = img.resize((size, img.height*size//img.width))
     bytes = BytesIO()
-    img.save(bytes, format='JPEG')
-    return HttpResponse(bytes.getvalue(), content_type='image/jpg')
+    try:
+        img.save(bytes, format='JPEG')
+        return HttpResponse(bytes.getvalue(), content_type='image/jpg')
+    except OSError:
+        raise Http404
 
 
 @role_required("Secretariat")
