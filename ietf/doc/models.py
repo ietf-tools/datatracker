@@ -7,6 +7,7 @@ import logging
 import io
 import os
 import rfc2html
+import time
 
 from django.db import models
 from django.core import checks
@@ -715,12 +716,16 @@ class Document(DocumentInfo):
         assert events, "You must always add at least one event to describe the changes in the history log"
         self.time = max(self.time, events[0].time)
 
+        mark = time.time()
         self._has_an_event_so_saving_is_allowed = True
         self.save()
         del self._has_an_event_so_saving_is_allowed
+        log.log(f'{time.time()-mark:.3f} seconds to save Document object')
 
+        mark = time.time()
         from ietf.doc.utils import save_document_in_history
         save_document_in_history(self)
+        log.log(f'{time.time()-mark:.3f} seconds to save Document in history')
 
     def save(self, *args, **kwargs):
         # if there's no primary key yet, we can allow the save to go
