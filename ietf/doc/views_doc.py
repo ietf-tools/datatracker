@@ -47,7 +47,6 @@ from django.http import HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
-from django.urls.exceptions import NoReverseMatch
 from django.conf import settings
 from django import forms
 
@@ -296,11 +295,11 @@ def document_main(request, name, rev=None):
         elif group.type_id == "area" and doc.stream_id == "ietf":
             submission = "individual in %s area" % group.acronym
         else:
-            submission = "%s %s" % (group.acronym, group.type)
-            try:
-                submission = "<a href=\"%s\">%s</a>" % (urlreverse("ietf.group.views.group_home", kwargs=dict(group_type=group.type_id, acronym=group.acronym)), submission)
-            except NoReverseMatch:
-                pass
+            if group.features.acts_like_wg:
+                submission = "%s %s" % (group.acronym, group.type)
+            else:
+                submission = group.acronym
+            submission = "<a href=\"%s\">%s</a>" % (group.about_url(), submission)
             if doc.stream_id and doc.get_state_slug("draft-stream-%s" % doc.stream_id) == "c-adopt":
                 submission = "candidate for %s" % submission
 

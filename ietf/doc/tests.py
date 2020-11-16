@@ -752,6 +752,61 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name="draft-xyz123")))
         self.assertEqual(r.status_code, 404)
 
+    def assert_correct_wg_group_link(self, r, group):
+        """Assert correct format for WG-like group types"""
+        self.assertContains(
+            r,
+            '(<a href="%(about_url)s">%(group_acro)s %(group_type)s</a>)' % {
+                "group_acro": group.acronym,
+                "group_type": group.type,
+                "about_url": group.about_url(),
+            },
+            msg_prefix='WG-like group %s (%s) should include group type in link' % (group.acronym, group.type),
+        )
+
+    def assert_correct_non_wg_group_link(self, r, group):
+        """Assert correct format for non-WG-like group types"""
+        self.assertContains(
+            r,
+            '(<a href="%(about_url)s">%(group_acro)s</a>)' % {
+                "group_acro": group.acronym,
+                "about_url": group.about_url(),
+            },
+            msg_prefix='Non-WG-like group %s (%s) should not include group type in link' % (group.acronym, group.type),
+        )
+
+    def test_draft_group_link(self):
+        """Link to group 'about' page should have correct format"""
+        for group_type_id in ['wg', 'rg', 'ag']:
+            group = GroupFactory(type_id=group_type_id)
+            draft = WgDraftFactory(name='draft-document-%s' % group_type_id, group=group)
+            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+            self.assertEqual(r.status_code, 200)
+            self.assert_correct_wg_group_link(r, group)
+
+            rfc = WgRfcFactory(name='draft-rfc-document-%s' % group_type_id, group=group)
+            DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10')
+            # get the rfc name to avoid a redirect
+            rfc_name = rfc.docalias.filter(name__startswith='rfc').first().name
+            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc_name)))
+            self.assertEqual(r.status_code, 200)
+            self.assert_correct_wg_group_link(r, group)
+
+        for group_type_id in ['ietf', 'team']:
+            group = GroupFactory(type_id=group_type_id)
+            draft = WgDraftFactory(name='draft-document-%s' % group_type_id, group=group)
+            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+            self.assertEqual(r.status_code, 200)
+            self.assert_correct_non_wg_group_link(r, group)
+
+            rfc = WgRfcFactory(name='draft-rfc-document-%s' % group_type_id, group=group)
+            DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10')
+            # get the rfc name to avoid a redirect
+            rfc_name = rfc.docalias.filter(name__startswith='rfc').first().name
+            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc_name)))
+            self.assertEqual(r.status_code, 200)
+            self.assert_correct_non_wg_group_link(r, group)
+
     def test_document_primary_and_history_views(self):
         IndividualDraftFactory(name='draft-imaginary-independent-submission')
         ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission')
