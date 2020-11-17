@@ -1,3 +1,35 @@
+ietfdb (7.23.0) ietf; urgency=medium
+
+  **Code Sprint 109, and more**
+
+  * Added 'test/x-markdown' as accepted mime type for text file uploads.
+
+  * Fixed a recent regression in agenda.html which caused the 'now' context 
+    variable to not be available when checking if a meeting session is in the 
+    past or future, to know which recordings or live session links to show.  
+    Also fixed a potential timezone issue with regards to this.
+
+  * Updated the docker development image with a number of tweaks, including
+    propagation of the docker-init environment to the su'd user in order to
+    set LANG to a UTF-8 locale
+
+  * Merged in a html typo fix from rcross@amsl.com.
+
+  * Added exception catching to the photo endpoint, for cases where 
+    conversion fails (we just had one case of RGBA to JPEG didn't work).
+
+  * Merged in [18698] from rjsparks@nostrum.com:
+    Add logging for times to save a document with history.  
+
+  * Merged in [18695] from peter@akayla.com:
+    Changed new email address button text. Fixes #3134.  
+
+  * Merged in [18701] from jennifer@painless-security.com:
+    Improve group 'about' link text on doc page. Fixes #3066.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  17 Nov 2020 09:05:42 +0000
+
+
 ietfdb (7.22.0) ietf; urgency=medium
 
   * Added a GroupHistory.ad_role() method to help with some template
