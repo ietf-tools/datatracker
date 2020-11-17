@@ -370,13 +370,21 @@
 
           // Filtering is enabled
           weekview.removeClass("hidden");
-
+          
           var wv_iframe = document.getElementById('weekview');
           var wv_window = wv_iframe.contentWindow;
-          var new_url = 'week-view.html' + window.location.search;
+          var queryparams = window.location.search;
+          {% if "-utc" in request.path %}
+              if (queryparams) {
+                  queryparams += '&tz=utc';
+              } else {
+                  queryparams = '?tz=utc';
+              }
+          {% endif %} 
+          var new_url = 'week-view.html' + queryparams;
           if (wv_iframe.src && wv_window.history && wv_window.history.replaceState) {
               wv_window.history.replaceState({}, '', new_url);
-              wv_window.draw_calendar()
+              wv_window.redraw_weekview();
           } else {
               // either have not yet loaded the iframe or we do not support history replacement
               wv_iframe.src = new_url;
