@@ -720,12 +720,12 @@ class Document(DocumentInfo):
         self._has_an_event_so_saving_is_allowed = True
         self.save()
         del self._has_an_event_so_saving_is_allowed
-        log.log(f'{time.time()-mark:.3f} seconds to save Document object')
+        log.log(f'{time.time()-mark:.3f} seconds to save {self.name} Document')
 
         mark = time.time()
         from ietf.doc.utils import save_document_in_history
         save_document_in_history(self)
-        log.log(f'{time.time()-mark:.3f} seconds to save Document in history')
+        log.log(f'{time.time()-mark:.3f} seconds to save {self.name} DocHistory')
 
     def save(self, *args, **kwargs):
         # if there's no primary key yet, we can allow the save to go
