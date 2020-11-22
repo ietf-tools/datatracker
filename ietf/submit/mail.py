@@ -11,7 +11,7 @@ import pyzmail
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
-from django.core.validators import ValidationError
+from django.core.exceptions import ValidationError
 from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
 from django.utils.encoding import force_text, force_str

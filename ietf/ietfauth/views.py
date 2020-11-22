@@ -50,8 +50,7 @@ from django.contrib.auth.hashers import identify_hasher
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.contrib.sites.models import Site
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.validators import ValidationError
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.urls import reverse as urlreverse
 from django.utils.safestring import mark_safe
 from django.http import Http404, HttpResponseRedirect  #, HttpResponse, 

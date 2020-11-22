@@ -12,7 +12,8 @@ import time
 from typing import Callable, Optional # pyflakes:ignore
 
 from django.conf import settings
-from django.core.validators import validate_email, ValidationError
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email 
 from django.db import transaction
 from django.http import HttpRequest     # pyflakes:ignore
 from django.utils.module_loading import import_string

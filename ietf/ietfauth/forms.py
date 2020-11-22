@@ -246,7 +246,7 @@ class ChangePasswordForm(forms.Form):
 
 
 class ChangeUsernameForm(forms.Form):
-    username = forms.ChoiceField(choices=['-','--------'])
+    username = forms.ChoiceField(choices=[('-','--------')])
     password = forms.CharField(widget=forms.PasswordInput, help_text="Confirm the change with your password")
 
     def __init__(self, user, *args, **kwargs):

@@ -7,7 +7,8 @@ from email.utils import parseaddr
 
 from django.contrib import messages
 from django.urls import reverse as urlreverse
-from django.core.validators import validate_email, ValidationError
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db.models import Q, Prefetch
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect

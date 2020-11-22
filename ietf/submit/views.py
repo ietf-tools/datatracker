@@ -13,7 +13,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db import DataError
 from django.urls import reverse as urlreverse
-from django.core.validators import ValidationError
+from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponse
 from django.http import HttpRequest     # pyflakes:ignore
 from django.shortcuts import get_object_or_404, redirect, render
