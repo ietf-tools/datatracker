@@ -8,6 +8,7 @@ import datetime, json
 
 from django import forms
 from django.conf import settings
+from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.defaultfilters import striptags
@@ -592,6 +593,7 @@ class BallotWriteupForm(forms.Form):
 def ballot_writeupnotes(request, name):
     """Editing of ballot write-up and notes"""
     doc = get_object_or_404(Document, docalias__name=name)
+    prev_state = doc.get_state("draft-iesg")
 
     login = request.user.person
 
@@ -604,61 +606,76 @@ def ballot_writeupnotes(request, name):
     if request.method == 'POST' and "save_ballot_writeup" in request.POST or "issue_ballot" in request.POST:
         form = BallotWriteupForm(request.POST)
         if form.is_valid():
-            t = form.cleaned_data["ballot_writeup"]
-            if t != existing.text:
-                e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login)
-                e.by = login
-                e.type = "changed_ballot_writeup_text"
-                e.desc = "Ballot writeup was changed"
-                e.text = t
-                e.save()
-            elif existing.pk == None:
-                existing.save()
+            if prev_state.slug in ['ann', 'approved', 'rfcqueue', 'pub']:
+                ballot_already_approved = True
+                messages.warning(request, "There is an approved ballot for %s.  Writeup not changed." % doc.name)
+            else:
+                ballot_already_approved = False
+                t = form.cleaned_data["ballot_writeup"]
+                if t != existing.text:
+                    e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login)
+                    e.by = login
+                    e.type = "changed_ballot_writeup_text"
+                    e.desc = "Ballot writeup was changed"
+                    e.text = t
+                    e.save()
+                elif existing.pk == None:
+                    existing.save()
 
-            if "issue_ballot" in request.POST:
-                e = create_ballot_if_not_open(request, doc, login, "approve") # pyflakes:ignore
-                ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
-                if has_role(request.user, "Area Director") and not doc.latest_event(BallotPositionDocEvent, balloter=login, ballot=ballot):
-                    # sending the ballot counts as a yes
-                    pos = BallotPositionDocEvent(doc=doc, rev=doc.rev, by=login)
-                    pos.ballot = ballot
-                    pos.type = "changed_ballot_position"
-                    pos.balloter = login
-                    pos.pos_id = "yes"
-                    pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.balloter.plain_name())
-                    pos.save()
+            if "issue_ballot" in request.POST and not ballot_already_approved:
+                if prev_state.slug in ['watching', 'writeupw', 'goaheadw']:
+                    new_state = State.objects.get(used=True, type="draft-iesg", slug='iesg-eva')
+                    prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
+                    doc.set_state(new_state)
+                    doc.tags.remove(*prev_tags)
 
-                    # Consider mailing this position to 'iesg_ballot_saved'
+                    sce = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
+                    if sce:
+                        doc.save_with_history([sce])
 
-                approval = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
-                if not approval:
-                    approval = generate_approval_mail(request, doc)
-                    approval.save()
+                if not ballot_already_approved:
+                    e = create_ballot_if_not_open(request, doc, login, "approve") # pyflakes:ignore
+                    ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
+                    if has_role(request.user, "Area Director") and not doc.latest_event(BallotPositionDocEvent, balloter=login, ballot=ballot):
+                        # sending the ballot counts as a yes
+                        pos = BallotPositionDocEvent(doc=doc, rev=doc.rev, by=login)
+                        pos.ballot = ballot
+                        pos.type = "changed_ballot_position"
+                        pos.balloter = login
+                        pos.pos_id = "yes"
+                        pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.balloter.plain_name())
+                        pos.save()
 
-                msg = generate_issue_ballot_mail(request, doc, ballot)
+                        # Consider mailing this position to 'iesg_ballot_saved'
 
-                addrs = gather_address_lists('iesg_ballot_issued',doc=doc).as_strings()
-                override = {'To':addrs.to}
-                if addrs.cc:
-                    override['CC'] = addrs.cc
-                send_mail_preformatted(request, msg, override=override)
+                    approval = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
+                    if not approval:
+                        approval = generate_approval_mail(request, doc)
+                        approval.save()
 
-                addrs = gather_address_lists('ballot_issued_iana',doc=doc).as_strings()
-                override={ "To": "IANA <%s>"%settings.IANA_EVAL_EMAIL, "Bcc": None , "Reply-To": []}
-                if addrs.cc:
-                    override['CC'] = addrs.cc
-                send_mail_preformatted(request, msg, extra=extra_automation_headers(doc), override=override)
+                    msg = generate_issue_ballot_mail(request, doc, ballot)
 
-                e = DocEvent(doc=doc, rev=doc.rev, by=login)
-                e.by = login
-                e.type = "sent_ballot_announcement"
-                e.desc = "Ballot has been issued"
-                e.save()
+                    addrs = gather_address_lists('iesg_ballot_issued',doc=doc).as_strings()
+                    override = {'To':addrs.to}
+                    if addrs.cc:
+                        override['CC'] = addrs.cc
+                    send_mail_preformatted(request, msg, override=override)
 
-                return render(request, 'doc/ballot/ballot_issued.html',
-                                          dict(doc=doc,
-                                               back_url=doc.get_absolute_url()))
-                        
+                    addrs = gather_address_lists('ballot_issued_iana',doc=doc).as_strings()
+                    override={ "To": "IANA <%s>"%settings.IANA_EVAL_EMAIL, "Bcc": None , "Reply-To": []}
+                    if addrs.cc:
+                        override['CC'] = addrs.cc
+                    send_mail_preformatted(request, msg, extra=extra_automation_headers(doc), override=override)
+
+                    e = DocEvent(doc=doc, rev=doc.rev, by=login)
+                    e.by = login
+                    e.type = "sent_ballot_announcement"
+                    e.desc = "Ballot has been issued"
+                    e.save()
+
+                    return render(request, 'doc/ballot/ballot_issued.html',
+                                              dict(doc=doc,
+                                                   back_url=doc.get_absolute_url()))
 
     need_intended_status = ""
     if not doc.intended_std_level:
@@ -668,6 +685,7 @@ def ballot_writeupnotes(request, name):
                               dict(doc=doc,
                                    back_url=doc.get_absolute_url(),
                                    ballot_issued=bool(doc.latest_event(type="sent_ballot_announcement")),
+                                   ballot_issue_danger=bool(prev_state.slug in ['ad-eval', 'lc']),
                                    ballot_writeup_form=form,
                                    need_intended_status=need_intended_status,
                                    ))
