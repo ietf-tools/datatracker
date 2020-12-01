@@ -20,7 +20,6 @@ from ietf.meeting.forms import duration_string
 from ietf.meeting.helpers import get_meeting, make_materials_directories, populate_important_dates
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule, SchedulingEvent
 from ietf.meeting.utils import add_event_info_to_session_qs
-from ietf.meeting.utils import only_sessions_that_can_meet
 from ietf.name.models import SessionStatusName
 from ietf.group.models import Group, GroupEvent
 from ietf.secr.meetings.blue_sheets import create_blue_sheets
@@ -662,9 +661,7 @@ def regular_sessions(request, meeting_id, schedule_name):
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
 
-    sessions = add_event_info_to_session_qs(
-        only_sessions_that_can_meet(meeting.session_set)
-    ).order_by('group__acronym')
+    sessions = meeting.session_set.that_can_meet().order_by('group__acronym')
 
     if request.method == 'POST':
         if 'cancel' in request.POST:

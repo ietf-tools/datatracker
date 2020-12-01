@@ -13,17 +13,18 @@
 
 {% block content %}
   {% origin %}
-  <h1>{% block title %}Cancel Interim Meeting {% if session_status != "sched" %}Request{% endif %}{% endblock %}</h1>
+  <h1>{% block title %}Cancel Interim {% if meeting %}Meeting{% else %}Session{% endif %} {% if session_status != "sched" %}Request{% endif %}{% endblock %}</h1>
 
   <form id="interim-request-cancel-form" role="form" method="post" class="form-horizontal">
     {% csrf_token %}
     
     {% bootstrap_form form layout='horizontal' %}
 
-    <div class="form-group"
+    <div class="form-group">
     {% buttons %}
       <button type="submit" class="btn btn-primary">Submit</button>
-      <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">Back</a>
+        {% if meeting %}<a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">Back</a>
+        {% else %}<a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.interim_request_details' number=session.meeting.number %}">Back</a>{% endif %}
     {% endbuttons %}
     </div>
     

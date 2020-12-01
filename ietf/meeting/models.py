@@ -17,7 +17,8 @@ import debug                            # pyflakes:ignore
 
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-from django.db.models import Max
+from django.db.models import Max, Subquery, OuterRef, TextField, Value
+from django.db.models.functions import Coalesce
 from django.conf import settings
 # mostly used by json_dict()
 #from django.template.defaultfilters import slugify, date as date_format, time as time_format
@@ -924,12 +925,78 @@ class SessionPresentation(models.Model):
 constraint_cache_uses = 0
 constraint_cache_initials = 0
 
+class SessionQuerySet(models.QuerySet):
+    def with_current_status(self):
+        """Annotate session with its current status
+        
+        Adds current_status, containing the text representation of the status.
+        """
+        return self.annotate(
+            # coalesce with '' to avoid nulls which give funny
+            # results, e.g. .exclude(current_status='canceled') also
+            # skips rows with null in them
+            current_status=Coalesce(
+                Subquery(
+                    SchedulingEvent.objects.filter(
+                        session=OuterRef('pk')
+                    ).order_by(
+                        '-time', '-id'
+                    ).values('status')[:1]),
+                Value(''), 
+                output_field=TextField()),
+        )
+
+    def with_requested_by(self):
+        """Annotate session with requested_by field
+        
+        Adds requested_by field - pk of the Person who made the request
+        """
+        return self.annotate(
+            requested_by=Subquery(
+                SchedulingEvent.objects.filter(
+                    session=OuterRef('pk')
+                ).order_by(
+                    'time', 'id'
+                ).values('by')[:1]),
+        )
+
+    def with_requested_time(self):
+        """Annotate session with requested_time field"""
+        return self.annotate(
+            requested_time=Subquery(
+                SchedulingEvent.objects.filter(
+                    session=OuterRef('pk')
+                ).order_by(
+                    'time', 'id'
+                ).values('time')[:1]),
+        )
+
+    def not_canceled(self):
+        """Queryset containing all sessions not canceled
+                
+        Results annotated with current_status
+        """
+        return self.with_current_status().exclude(current_status__in=Session.CANCELED_STATUSES)
+
+    def that_can_meet(self):
+        """Queryset containing sessions that can meet
+        
+        Results annotated with current_status
+        """
+        return self.with_current_status().exclude(
+            current_status__in=['notmeet', 'disappr', 'deleted', 'apprw']
+        ).filter(
+            type__slug='regular'
+        )
+
+
 class Session(models.Model):
     """Session records that a group should have a session on the
     meeting (time and location is stored in a TimeSlot) - if multiple
     timeslots are needed, multiple sessions will have to be created.
     Training sessions and similar are modeled by filling in a
     responsible group (e.g. Edu team) and filling in the name."""
+    objects = SessionQuerySet.as_manager()  # sets default query manager
     meeting = ForeignKey(Meeting)
     name = models.CharField(blank=True, max_length=255, help_text="Name of session, in case the session has a purpose rather than just being a group meeting.")
     short = models.CharField(blank=True, max_length=32, help_text="Short version of 'name' above, for use in filenames.")
@@ -951,6 +1018,8 @@ class Session(models.Model):
 
     unique_constraints_dict = None
 
+    CANCELED_STATUSES = ['canceled', 'canceledpa']
+    
     # Should work on how materials are captured so that deleted things are no longer associated with the session
     # (We can keep the information about something being added to and removed from a session in the document's history)
     def get_material(self, material_type, only_one):

@@ -33,7 +33,7 @@ from ietf.group.utils import can_manage_group
 from ietf.person.models import Person
 from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request
 from ietf.meeting.helpers import send_interim_approval_request
-from ietf.meeting.helpers import send_interim_cancellation_notice
+from ietf.meeting.helpers import send_interim_meeting_cancellation_notice, send_interim_session_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates, update_important_dates
 from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission, SchedulingEvent, Room, Constraint, ConstraintName
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
@@ -1934,67 +1934,288 @@ class InterimTests(TestCase):
 
     # test_interim_announce subsumed by test_appears_on_announce
 
-    def test_interim_skip_announcement(self):
+    def do_interim_skip_announcement_test(self, base_session=False, extra_session=False, canceled_session=False):
         make_meeting_test_data()
         group = Group.objects.get(acronym='irg')
         date = datetime.date.today() + datetime.timedelta(days=30)
         meeting = make_interim_meeting(group=group, date=date, status='scheda')
+        session = meeting.session_set.first()
+        if base_session:
+            base_session = SessionFactory(meeting=meeting, status_id='apprw', add_to_schedule=False)
+            meeting.schedule.base = Schedule.objects.create(
+                meeting=meeting, owner=PersonFactory(), name="base", visible=True, public=True
+            )
+            SchedTimeSessAssignment.objects.create(
+                timeslot=TimeSlotFactory.create(meeting=meeting),
+                session=base_session,
+                schedule=meeting.schedule.base,
+            )
+            meeting.schedule.save()
+        if extra_session:
+            extra_session = SessionFactory(meeting=meeting, status_id='scheda')
+        if canceled_session:
+            canceled_session = SessionFactory(meeting=meeting, status_id='canceledpa')
         url = urlreverse("ietf.meeting.views.interim_skip_announcement", kwargs={'number': meeting.number})
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        
+
         # check post
         len_before = len(outbox)
         r = self.client.post(url)
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_announce'))
-        self.assertEqual(add_event_info_to_session_qs(meeting.session_set).first().current_status, 'sched')
+        meeting_sessions = meeting.session_set.with_current_status()
+        self.assertEqual(meeting_sessions.get(pk=session.pk).current_status, 'sched')
+        if base_session:
+            self.assertEqual(meeting_sessions.get(pk=base_session.pk).current_status, 'sched')            
+        if extra_session:
+            self.assertEqual(meeting_sessions.get(pk=extra_session.pk).current_status, 'sched')
+        if canceled_session:
+            self.assertEqual(meeting_sessions.get(pk=canceled_session.pk).current_status, 'canceledpa')
         self.assertEqual(len(outbox), len_before)
-        
-    def test_interim_send_announcement(self):
+
+    def test_interim_skip_announcement(self):
+        """skip_announcement should move single session to sched state"""
+        self.do_interim_skip_announcement_test()
+
+    def test_interim_skip_announcement_with_base_sched(self):
+        """skip_announcement should move single session to sched state"""
+        self.do_interim_skip_announcement_test(base_session=True)
+
+    def test_interim_skip_announcement_with_extra_session(self):
+        """skip_announcement should move multiple sessions to sched state"""
+        self.do_interim_skip_announcement_test(extra_session=True)
+
+    def test_interim_skip_announcement_with_extra_session_and_base_sched(self):
+        """skip_announcement should move multiple sessions to sched state"""
+        self.do_interim_skip_announcement_test(extra_session=True, base_session=True)
+
+    def test_interim_skip_announcement_with_canceled_session(self):
+        """skip_announcement should not schedule a canceled session"""
+        self.do_interim_skip_announcement_test(canceled_session=True)
+
+    def test_interim_skip_announcement_with_canceled_session_and_base_sched(self):
+        """skip_announcement should not schedule a canceled session"""
+        self.do_interim_skip_announcement_test(canceled_session=True, base_session=True)
+
+    def test_interim_skip_announcement_with_extra_and_canceled_sessions(self):
+        """skip_announcement should schedule multiple sessions and leave canceled session alone"""
+        self.do_interim_skip_announcement_test(extra_session=True, canceled_session=True)
+
+    def test_interim_skip_announcement_with_extra_and_canceled_sessions_and_base_sched(self):
+        """skip_announcement should schedule multiple sessions and leave canceled session alone"""
+        self.do_interim_skip_announcement_test(extra_session=True, canceled_session=True, base_session=True)
+
+    def do_interim_send_announcement_test(self, base_session=False, extra_session=False, canceled_session=False):
         make_interim_test_data()
-        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
+        session = Session.objects.with_current_status().filter(
+            meeting__type='interim', group__acronym='mars', current_status='apprw').first()
+        meeting = session.meeting
         meeting.time_zone = 'America/Los_Angeles'
         meeting.save()
+
+        if base_session:
+            base_session = SessionFactory(meeting=meeting, status_id='apprw', add_to_schedule=False)
+            meeting.schedule.base = Schedule.objects.create(
+                meeting=meeting, owner=PersonFactory(), name="base", visible=True, public=True
+            )
+            SchedTimeSessAssignment.objects.create(
+                timeslot=TimeSlotFactory.create(meeting=meeting),
+                session=base_session,
+                schedule=meeting.schedule.base,
+            )
+            meeting.schedule.save()
+        if extra_session:
+            extra_session = SessionFactory(meeting=meeting, status_id='apprw')
+        if canceled_session:
+            canceled_session = SessionFactory(meeting=meeting, status_id='canceledpa')
 
         url = urlreverse("ietf.meeting.views.interim_send_announcement", kwargs={'number': meeting.number})
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         initial = r.context['form'].initial
+
         # send announcement
         len_before = len(outbox)
         r = self.client.post(url, initial)
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_announce'))
         self.assertEqual(len(outbox), len_before + 1)
-        self.assertIn('WG Virtual Meeting', outbox[-1]['Subject'])
-        self.assertIn('09:00 to 09:20 America/Los_Angeles', get_payload_text(outbox[-1]))
+        announcement_msg = outbox[-1]
+        announcement_text = get_payload_text(announcement_msg)
+        self.assertIn('WG Virtual Meeting', announcement_msg['Subject'])
+        self.assertIn('09:00 to 09:20 America/Los_Angeles', announcement_text)
+        for sess in [session, base_session, extra_session]:
+            if sess:
+                timeslot = sess.official_timeslotassignment().timeslot
+                self.assertIn(timeslot.time.strftime('%Y-%m-%d'), announcement_text)
+                self.assertIn(
+                    '(%s to %s UTC)' % (
+                        timeslot.utc_start_time().strftime('%H:%M'),timeslot.utc_end_time().strftime('%H:%M')
+                    ), announcement_text)
+        # Count number of sessions listed
+        if base_session and extra_session:
+            expected_session_matches = 3
+        elif base_session or extra_session:
+            expected_session_matches = 2
+        else:
+            expected_session_matches = 0  # no session list when only one session
+        session_matches = re.findall(r'Session \d+:', announcement_text)
+        self.assertEqual(len(session_matches), expected_session_matches) 
 
-        timeslot = meeting.session_set.first().official_timeslotassignment().timeslot
-        self.assertIn('(%s to %s UTC)'%(timeslot.utc_start_time().strftime('%H:%M'),timeslot.utc_end_time().strftime('%H:%M')), get_payload_text(outbox[-1]))
+        meeting_sessions = meeting.session_set.with_current_status()
+        self.assertEqual(meeting_sessions.get(pk=session.pk).current_status, 'sched')
+        if base_session:
+            self.assertEqual(meeting_sessions.get(pk=base_session.pk).current_status, 'sched')
+        if extra_session:
+            self.assertEqual(meeting_sessions.get(pk=extra_session.pk).current_status, 'sched')
+        if canceled_session:
+            self.assertEqual(meeting_sessions.get(pk=canceled_session.pk).current_status, 'canceledpa')
 
-    def test_interim_approve_by_ad(self):
+    def test_interim_send_announcement(self):
+        self.do_interim_send_announcement_test()
+
+    def test_interim_send_announcement_with_base_sched(self):
+        self.do_interim_send_announcement_test(base_session=True)
+
+    def test_interim_send_announcement_with_extra_session(self):
+        self.do_interim_send_announcement_test(extra_session=True)
+
+    def test_interim_send_announcement_with_extra_session_and_base_sched(self):
+        self.do_interim_send_announcement_test(extra_session=True, base_session=True)
+
+    def test_interim_send_announcement_with_canceled_session(self):
+        self.do_interim_send_announcement_test(canceled_session=True)
+
+    def test_interim_send_announcement_with_canceled_session_and_base_sched(self):
+        self.do_interim_send_announcement_test(canceled_session=True, base_session=True)
+
+    def test_interim_send_announcement_with_extra_and_canceled_sessions(self):
+        self.do_interim_send_announcement_test(extra_session=True, canceled_session=True)
+
+    def test_interim_send_announcement_with_extra_and_canceled_sessions_and_base_sched(self):
+        self.do_interim_send_announcement_test(extra_session=True, canceled_session=True, base_session=True)
+
+    def do_interim_approve_by_ad_test(self, base_session=False, extra_session=False, canceled_session=False):
         make_interim_test_data()
-        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
+        session = Session.objects.with_current_status().filter(
+            meeting__type='interim', group__acronym='mars', current_status='apprw').first()
+        meeting = session.meeting
+
+        if base_session:
+            base_session = SessionFactory(meeting=meeting, status_id='apprw', add_to_schedule=False)
+            meeting.schedule.base = Schedule.objects.create(
+                meeting=meeting, owner=PersonFactory(), name="base", visible=True, public=True
+            )
+            SchedTimeSessAssignment.objects.create(
+                timeslot=TimeSlotFactory.create(meeting=meeting),
+                session=base_session,
+                schedule=meeting.schedule.base,
+            )
+            meeting.schedule.save()
+        if extra_session:
+            extra_session = SessionFactory(meeting=meeting, status_id='apprw')
+        if canceled_session:
+            canceled_session = SessionFactory(meeting=meeting, status_id='canceledpa')
+
         url = urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
         length_before = len(outbox)
         login_testing_unauthorized(self, "ad", url)
         r = self.client.post(url, {'approve': 'approve'})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_pending'))
-        for session in add_event_info_to_session_qs(meeting.session_set.all()):
-            self.assertEqual(session.current_status, 'scheda')
+
+        for sess in [session, base_session, extra_session]:
+            if sess:
+                self.assertEqual(Session.objects.with_current_status().get(pk=sess.pk).current_status,
+                                 'scheda')
+        if canceled_session:
+            self.assertEqual(Session.objects.with_current_status().get(pk=canceled_session.pk).current_status,
+                             'canceledpa')
         self.assertEqual(len(outbox), length_before + 1)
         self.assertIn('ready for announcement', outbox[-1]['Subject'])
 
-    def test_interim_approve_by_secretariat(self):
+    def test_interim_approve_by_ad(self):
+        self.do_interim_approve_by_ad_test()
+
+    def test_interim_approve_by_ad_with_base_sched(self):
+        self.do_interim_approve_by_ad_test(base_session=True)
+
+    def test_interim_approve_by_ad_with_extra_session(self):
+        self.do_interim_approve_by_ad_test(extra_session=True)
+
+    def test_interim_approve_by_ad_with_extra_session_and_base_sched(self):
+        self.do_interim_approve_by_ad_test(extra_session=True, base_session=True)
+
+    def test_interim_approve_by_ad_with_canceled_session(self):
+        self.do_interim_approve_by_ad_test(canceled_session=True)
+
+    def test_interim_approve_by_ad_with_canceled_session_and_base_sched(self):
+        self.do_interim_approve_by_ad_test(canceled_session=True, base_session=True)
+
+    def test_interim_approve_by_ad_with_extra_and_canceled_sessions(self):
+        self.do_interim_approve_by_ad_test(extra_session=True, canceled_session=True)
+
+    def test_interim_approve_by_ad_with_extra_and_canceled_sessions_and_base_sched(self):
+        self.do_interim_approve_by_ad_test(extra_session=True, canceled_session=True, base_session=True)
+
+    def do_interim_approve_by_secretariat_test(self, base_session=False, extra_session=False, canceled_session=False):
         make_interim_test_data()
-        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
+        session = Session.objects.with_current_status().filter(
+            meeting__type='interim', group__acronym='mars', current_status='apprw').first()
+        meeting = session.meeting
+        if base_session:
+            base_session = SessionFactory(meeting=meeting, status_id='apprw', add_to_schedule=False)
+            meeting.schedule.base = Schedule.objects.create(
+                meeting=meeting, owner=PersonFactory(), name="base", visible=True, public=True
+            )
+            SchedTimeSessAssignment.objects.create(
+                timeslot=TimeSlotFactory.create(meeting=meeting),
+                session=base_session,
+                schedule=meeting.schedule.base,
+            )
+            meeting.schedule.save()
+        if extra_session:
+            extra_session = SessionFactory(meeting=meeting, status_id='apprw')
+        if canceled_session:
+            canceled_session = SessionFactory(meeting=meeting, status_id='canceledpa')
+
         url = urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
+        length_before = len(outbox)
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.post(url, {'approve': 'approve'})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_send_announcement', kwargs={'number': meeting.number}))
-        for session in add_event_info_to_session_qs(meeting.session_set.all()):
-            self.assertEqual(session.current_status, 'scheda')
+        for sess in [session, base_session, extra_session]:
+            if sess:
+                self.assertEqual(Session.objects.with_current_status().get(pk=sess.pk).current_status,
+                                 'scheda')
+        if canceled_session:
+            self.assertEqual(Session.objects.with_current_status().get(pk=canceled_session.pk).current_status,
+                             'canceledpa')
+        self.assertEqual(len(outbox), length_before)
+
+    def test_interim_approve_by_secretariat(self):
+        self.do_interim_approve_by_secretariat_test()
+
+    def test_interim_approve_by_secretariat_with_base_sched(self):
+        self.do_interim_approve_by_secretariat_test(base_session=True)
+
+    def test_interim_approve_by_secretariat_with_extra_session(self):
+        self.do_interim_approve_by_secretariat_test(extra_session=True)
+
+    def test_interim_approve_by_secretariat_with_extra_session_and_base_sched(self):
+        self.do_interim_approve_by_secretariat_test(extra_session=True, base_session=True)
+
+    def test_interim_approve_by_secretariat_with_canceled_session(self):
+        self.do_interim_approve_by_secretariat_test(canceled_session=True)
+
+    def test_interim_approve_by_secretariat_with_canceled_session_and_base_sched(self):
+        self.do_interim_approve_by_secretariat_test(canceled_session=True, base_session=True)
+
+    def test_interim_approve_by_secretariat_with_extra_and_canceled_sessions(self):
+        self.do_interim_approve_by_secretariat_test(extra_session=True, canceled_session=True)
+
+    def test_interim_approve_by_secretariat_with_extra_and_canceled_sessions_and_base_sched(self):
+        self.do_interim_approve_by_secretariat_test(extra_session=True, canceled_session=True, base_session=True)
 
     def test_past(self):
         today = datetime.date.today()
@@ -2387,6 +2608,10 @@ class InterimTests(TestCase):
         meeting_count_before = Meeting.objects.filter(type='interim').count()
         date = datetime.date.today() + datetime.timedelta(days=30)
         date2 = date + datetime.timedelta(days=1)
+        # ensure dates are in the same year
+        if date.year != date2.year:
+            date += datetime.timedelta(days=1)
+            date2 += datetime.timedelta(days=1)
         time = datetime.datetime.now().time().replace(microsecond=0,second=0)
         dt = datetime.datetime.combine(date, time)
         dt2 = datetime.datetime.combine(date2, time)
@@ -2536,7 +2761,8 @@ class InterimTests(TestCase):
 
     def test_interim_request_details(self):
         make_interim_test_data()
-        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
+        meeting = Session.objects.with_current_status().filter(
+            meeting__type='interim', group__acronym='mars', current_status='apprw').first().meeting
         url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
@@ -2568,50 +2794,316 @@ class InterimTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('Announce')")),2)
 
-    def test_interim_request_disapprove(self):
+    def test_interim_request_details_cancel(self):
+        """Test access to cancel meeting / session features"""
         make_interim_test_data()
-        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
+        mars_sessions = Session.objects.with_current_status(
+        ).filter(
+            meeting__type='interim',
+            group__acronym='mars',
+        )
+        meeting_apprw = mars_sessions.filter(current_status='apprw').first().meeting
+        meeting_sched = mars_sessions.filter(current_status='sched').first().meeting
+        # All these roles should have access to cancel the request
+        usernames_and_passwords = (
+            ('marschairman', 'marschairman+password'),
+            ('secretary', 'secretary+password')
+        )
+        
+        # Start with one session - there should not be any cancel session buttons
+        for meeting in (meeting_apprw, meeting_sched):
+            url = urlreverse('ietf.meeting.views.interim_request_details', 
+                             kwargs={'number': meeting.number})
+
+            for username, password in usernames_and_passwords:
+                self.client.login(username=username, password=password)
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 200)
+                q = PyQuery(r.content)
+
+                cancel_meeting_btns = q("a.btn:contains('Cancel Meeting')")
+                self.assertEqual(len(cancel_meeting_btns), 1,
+                                 'Should be exactly one cancel meeting button for user %s' % username)
+                self.assertEqual(cancel_meeting_btns.eq(0).attr('href'),
+                                 urlreverse('ietf.meeting.views.interim_request_cancel',
+                                            kwargs={'number': meeting.number}),
+                                 'Cancel meeting points to wrong URL')
+
+                self.assertEqual(len(q("a.btn:contains('Cancel Session')")), 0,
+                                 'Should be no cancel session buttons for user %s' % username)
+
+        # Add a second session
+        SessionFactory(meeting=meeting_apprw, status_id='apprw')
+        SessionFactory(meeting=meeting_sched, status_id='sched')
+
+        for meeting in (meeting_apprw, meeting_sched):
+            url = urlreverse('ietf.meeting.views.interim_request_details',
+                             kwargs={'number': meeting.number})
+
+            for username, password in usernames_and_passwords:
+                self.client.login(username=username, password=password)
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 200)
+                q = PyQuery(r.content)
+                cancel_meeting_btns = q("a.btn:contains('Cancel Meeting')")
+                self.assertEqual(len(cancel_meeting_btns), 1,
+                                 'Should be exactly one cancel meeting button for user %s' % username)
+                self.assertEqual(cancel_meeting_btns.eq(0).attr('href'),
+                                 urlreverse('ietf.meeting.views.interim_request_cancel',
+                                            kwargs={'number': meeting.number}),
+                                 'Cancel meeting button points to wrong URL')
+
+                cancel_session_btns = q("a.btn:contains('Cancel Session')")
+                self.assertEqual(len(cancel_session_btns), 2,
+                                 'Should be two cancel session buttons for user %s' % username)
+                hrefs = [btn.attr('href') for btn in cancel_session_btns.items()]
+                for index, session in enumerate(meeting.session_set.all()):
+                    self.assertIn(urlreverse('ietf.meeting.views.interim_request_session_cancel',
+                                             kwargs={'sessionid': session.pk}),
+                                  hrefs,
+                                  'Session missing a link to its cancel URL')
+
+    def test_interim_request_details_status(self):
+        """Test statuses on the interim request details page"""
+        make_interim_test_data()
+        some_person = PersonFactory()
+        self.client.login(username='marschairman', password='marschairman+password')
+        # These are the first sessions for each meeting - hang on to them
+        sessions = list(
+            Session.objects.with_current_status().filter(meeting__type='interim', group__acronym='mars')
+        )
+
+        # Hack: change the name for the 'canceled' session status so we can tell it apart
+        # from the 'canceledpa' session status more easily
+        canceled_status = SessionStatusName.objects.get(slug='canceled')
+        canceled_status.name = 'This is cancelled'
+        canceled_status.save()
+        canceledpa_status = SessionStatusName.objects.get(slug='canceledpa')
+        notmeet_status = SessionStatusName.objects.get(slug='notmeet')
+
+        # Simplest case - single session for each meeting
+        for session in [Session.objects.with_current_status().get(pk=s.pk) for s in sessions]:
+            url = urlreverse('ietf.meeting.views.interim_request_details',
+                             kwargs={'number': session.meeting.number})
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            status = SessionStatusName.objects.get(slug=session.current_status)
+            self.assertEqual(
+                len(q("dd:contains('%s')" % status.name)),
+                1  # once - for the meeting status, no session status shown when only one session
+            )
+
+        # Now add a second session with a different status - it should not change meeting status
+        for session in [Session.objects.with_current_status().get(pk=s.pk) for s in sessions]:
+            SessionFactory(meeting=session.meeting, status_id=notmeet_status.pk)
+            url = urlreverse('ietf.meeting.views.interim_request_details',
+                             kwargs={'number': session.meeting.number})
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            status = SessionStatusName.objects.get(slug=session.current_status)
+            self.assertEqual(
+                len(q("dd:contains('%s')" % status.name)),
+                2  # twice - once as the meeting status, once as the session status
+            )
+            self.assertEqual(
+                len(q("dd:contains('%s')" % notmeet_status.name)),
+                1  # only for the session status
+            )
+
+        # Now cancel the first session - second meeting status should be shown for meeting
+        for session in [Session.objects.with_current_status().get(pk=s.pk) for s in sessions]:
+            # Use 'canceledpa' here and 'canceled' later
+            SchedulingEvent.objects.create(session=session,
+                                           status=canceledpa_status,
+                                           by=some_person)
+            url = urlreverse('ietf.meeting.views.interim_request_details',
+                             kwargs={'number': session.meeting.number})
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(
+                len(q("dd:contains('%s')" % canceledpa_status.name)),
+                1  # only for the session status
+            )
+            self.assertEqual(
+                len(q("dd:contains('%s')" % notmeet_status.name)),
+                2  # twice - once as the meeting status, once as the session status
+            )
+
+        # Now cancel the second session - first meeting status should be shown for meeting again
+        for session in [Session.objects.with_current_status().get(pk=s.pk) for s in sessions]:
+            second_session = session.meeting.session_set.exclude(pk=session.pk).first()
+            # use canceled so we can differentiate between the first and second session statuses
+            SchedulingEvent.objects.create(session=second_session,
+                                           status=canceled_status,
+                                           by=some_person)
+            url = urlreverse('ietf.meeting.views.interim_request_details',
+                             kwargs={'number': session.meeting.number})
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(
+                len(q("dd:contains('%s')" % canceledpa_status.name)),
+                2  # twice - once as the meeting status, once as the session status
+            )
+            self.assertEqual(
+                len(q("dd:contains('%s')" % canceled_status.name)),
+                1  # only as the session status
+            )
+
+    def do_interim_request_disapprove_test(self, extra_session=False, canceled_session=False):
+        make_interim_test_data()
+        session = Session.objects.with_current_status().filter(
+            meeting__type='interim', group__acronym='mars', current_status='apprw').first()
+        meeting = session.meeting
+        if extra_session:
+            extra_session = SessionFactory(meeting=meeting, status_id='apprw')
+        if canceled_session:
+            canceled_session = SessionFactory(meeting=meeting, status_id='canceledpa')
+
         url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.post(url,{'disapprove':'Disapprove'})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_pending'))
-        for session in add_event_info_to_session_qs(meeting.session_set.all()):
-            self.assertEqual(session.current_status,'disappr')
+        for sess in [session, extra_session]:
+            if sess:
+                self.assertEqual(Session.objects.with_current_status().get(pk=sess.pk).current_status,
+                                 'disappr')
+        if canceled_session:
+            self.assertEqual(Session.objects.with_current_status().get(pk=canceled_session.pk).current_status,
+                             'canceledpa')
+
+    def test_interim_request_disapprove(self):
+        self.do_interim_request_disapprove_test()
+
+    def test_interim_request_disapprove_with_extra_session(self):
+        self.do_interim_request_disapprove_test(extra_session=True)
+
+    def test_interim_request_disapprove_with_canceled_session(self):
+        self.do_interim_request_disapprove_test(canceled_session=True)
+
+    def test_interim_request_disapprove_with_extra_and_canceled_sessions(self):
+        self.do_interim_request_disapprove_test(extra_session=True, canceled_session=True)
 
     def test_interim_request_cancel(self):
+        """Test that interim request cancel function works
+        
+        Does not test that UI buttons are present, that is handled elsewhere.
+        """
         make_interim_test_data()
-        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='apprw').first().meeting
-        url = urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
-        self.client.login(username="marschairman", password="marschairman+password")
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q("a.btn:contains('Cancel')")), 1)
+        meeting = Session.objects.with_current_status(
+        ).filter(
+            meeting__type='interim',
+            group__acronym='mars',
+            current_status='apprw',
+        ).first().meeting
+
         # ensure fail unauthorized
         url = urlreverse('ietf.meeting.views.interim_request_cancel', kwargs={'number': meeting.number})
         comments = 'Bob cannot make it'
         self.client.login(username="ameschairman", password="ameschairman+password")
         r = self.client.post(url, {'comments': comments})
         self.assertEqual(r.status_code, 403)
+
         # test cancelling before announcement
         self.client.login(username="marschairman", password="marschairman+password")
         length_before = len(outbox)
         r = self.client.post(url, {'comments': comments})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.upcoming'))
-        for session in add_event_info_to_session_qs(meeting.session_set.all()):
+        for session in meeting.session_set.with_current_status():
             self.assertEqual(session.current_status,'canceledpa')
             self.assertEqual(session.agenda_note, comments)
         self.assertEqual(len(outbox), length_before)     # no email notice
+
         # test cancelling after announcement
         meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='sched').first().meeting
         url = urlreverse('ietf.meeting.views.interim_request_cancel', kwargs={'number': meeting.number})
         r = self.client.post(url, {'comments': comments})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.upcoming'))
-        for session in add_event_info_to_session_qs(meeting.session_set.all()):
+        for session in meeting.session_set.with_current_status():
             self.assertEqual(session.current_status,'canceled')
             self.assertEqual(session.agenda_note, comments)
         self.assertEqual(len(outbox), length_before + 1)
         self.assertIn('Interim Meeting Cancelled', outbox[-1]['Subject'])
+
+    def test_interim_request_session_cancel(self):
+        """Test that interim meeting session cancellation functions
+
+        Does not test that UI buttons are present, that is handled elsewhere.
+        """
+        make_interim_test_data()
+        session = Session.objects.with_current_status().filter(
+            meeting__type='interim', group__acronym='mars', current_status='apprw',).first()
+        meeting = session.meeting
+        comments = 'Bob cannot make it'
+        
+        # Should not be able to cancel when there is only one session
+        self.client.login(username="marschairman", password="marschairman+password")
+        url = urlreverse('ietf.meeting.views.interim_request_session_cancel', kwargs={'sessionid': session.pk})
+        r = self.client.post(url, {'comments': comments})
+        self.assertEqual(r.status_code, 409)
+
+        # Add a second session
+        SessionFactory(meeting=meeting, status_id='apprw')
+
+        # ensure fail unauthorized
+        url = urlreverse('ietf.meeting.views.interim_request_session_cancel', kwargs={'sessionid': session.pk})
+        self.client.login(username="ameschairman", password="ameschairman+password")
+        r = self.client.post(url, {'comments': comments})
+        self.assertEqual(r.status_code, 403)
+        
+        # test cancelling before announcement
+        self.client.login(username="marschairman", password="marschairman+password")
+        length_before = len(outbox)
+        canceled_count_before = meeting.session_set.with_current_status().filter(
+            current_status__in=['canceled', 'canceledpa']).count()
+        r = self.client.post(url, {'comments': comments})
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_request_details', 
+                                           kwargs={'number': meeting.number}))
+        # This session should be canceled...
+        sessions = meeting.session_set.with_current_status()
+        session = sessions.filter(id=session.pk).first()  # reload our session info
+        self.assertEqual(session.current_status, 'canceledpa')
+        self.assertEqual(session.agenda_note, comments)
+        # But others should not - count should have changed by only 1
+        self.assertEqual(
+            sessions.filter(current_status__in=['canceled', 'canceledpa']).count(),
+            canceled_count_before + 1
+        )
+        self.assertEqual(len(outbox), length_before)     # no email notice
+
+        # test cancelling after announcement
+        session = Session.objects.with_current_status().filter(
+            meeting__type='interim', group__acronym='mars', current_status='sched').first()
+        meeting = session.meeting
+        
+        # Try to cancel when there's only one session in the meeting
+        url = urlreverse('ietf.meeting.views.interim_request_session_cancel', kwargs={'sessionid': session.pk})
+        r = self.client.post(url, {'comments': comments})
+        self.assertEqual(r.status_code, 409)
+
+        # Add another session
+        SessionFactory(meeting=meeting, status_id='sched')  # two sessions so canceling a session makes sense
+
+        canceled_count_before = meeting.session_set.with_current_status().filter(
+            current_status__in=['canceled', 'canceledpa']).count()
+        r = self.client.post(url, {'comments': comments})
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_request_details',
+                                           kwargs={'number': meeting.number}))
+        # This session should be canceled...
+        sessions = meeting.session_set.with_current_status()
+        session = sessions.filter(id=session.pk).first()  # reload our session info
+        self.assertEqual(session.current_status, 'canceled')
+        self.assertEqual(session.agenda_note, comments)
+        # But others should not - count should have changed by only 1
+        self.assertEqual(
+            sessions.filter(current_status__in=['canceled', 'canceledpa']).count(),
+            canceled_count_before + 1
+        )
+        self.assertEqual(len(outbox), length_before + 1)     # email notice sent
+        self.assertIn('session cancelled', outbox[-1]['Subject'])
 
     def test_interim_request_edit_no_notice(self):
         '''Edit a request.  No notice should go out if it hasn't been announced yet'''
@@ -2716,13 +3208,31 @@ class InterimTests(TestCase):
         self.assertEqual(len(outbox),length_before+1)
         self.assertIn('New Interim Meeting Request', outbox[-1]['Subject'])
 
-    def test_send_interim_cancellation_notice(self):
+    def test_send_interim_meeting_cancellation_notice(self):
         make_interim_test_data()
-        meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='sched').first().meeting
+        meeting = Session.objects.with_current_status(
+        ).filter(
+            meeting__type='interim',
+            group__acronym='mars',
+            current_status='sched',
+        ).first().meeting
         length_before = len(outbox)
-        send_interim_cancellation_notice(meeting=meeting)
-        self.assertEqual(len(outbox),length_before+1)
+        send_interim_meeting_cancellation_notice(meeting)
+        self.assertEqual(len(outbox),length_before + 1)
         self.assertIn('Interim Meeting Cancelled', outbox[-1]['Subject'])
+
+    def test_send_interim_session_cancellation_notice(self):
+        make_interim_test_data()
+        session = Session.objects.with_current_status(
+        ).filter(
+            meeting__type='interim',
+            group__acronym='mars',
+            current_status='sched',
+        ).first()
+        length_before = len(outbox)
+        send_interim_session_cancellation_notice(session)
+        self.assertEqual(len(outbox), length_before + 1)
+        self.assertIn('session cancelled', outbox[-1]['Subject'])
 
     def test_send_interim_minutes_reminder(self):
         make_meeting_test_data()
