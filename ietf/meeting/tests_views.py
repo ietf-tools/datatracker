@@ -2427,6 +2427,10 @@ class InterimTests(TestCase):
         make_meeting_test_data()
         meeting_count_before = Meeting.objects.filter(type='interim').count()
         date = datetime.date.today() + datetime.timedelta(days=30)
+        if (date.month, date.day) == (12, 31):
+            # Avoid date and date2 in separate years
+            # (otherwise the test will fail if run on December 1st)
+            date += datetime.timedelta(days=1)
         date2 = date + datetime.timedelta(days=1)
         time = datetime.datetime.now().time().replace(microsecond=0,second=0)
         dt = datetime.datetime.combine(date, time)
