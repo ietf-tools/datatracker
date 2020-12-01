@@ -24,15 +24,23 @@ class HashTest(TestCase):
             
 
 class ReviewAssignmentTest(TestCase):
-    def test_update_review_req_status(self):
+    def do_test_update_review_req_status(self, assignment_state, expected_state):
         review_req = ReviewRequestFactory(state_id='assigned')
         ReviewAssignmentFactory(review_request=review_req, state_id='part-completed')
         assignment = ReviewAssignmentFactory(review_request=review_req)
 
-        assignment.state_id = 'no-response'
+        assignment.state_id = assignment_state
         assignment.save()
         review_req = reload_db_objects(review_req)
-        self.assertEqual(review_req.state_id, 'requested')
+        self.assertEqual(review_req.state_id, expected_state)
+
+    def test_update_review_req_status(self):
+        # Test change
+        for assignment_state in ['no-response', 'rejected', 'withdrawn', 'overtaken']:
+            self.do_test_update_review_req_status(assignment_state, 'requested')
+        # Test no-change
+        for assignment_state in ['accepted', 'assigned', 'completed', 'part-completed', 'unknown', ]:
+            self.do_test_update_review_req_status('', 'assigned')
 
     def test_no_update_review_req_status_when_other_active_assignment(self):
         # If there is another still active assignment, do not update review_req state

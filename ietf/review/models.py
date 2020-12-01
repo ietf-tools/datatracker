@@ -8,6 +8,8 @@ from simple_history.models import HistoricalRecords
 
 from django.db import models
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
@@ -152,6 +154,12 @@ class ReviewAssignment(models.Model):
     result         = ForeignKey(ReviewResultName, blank=True, null=True)
     mailarch_url   = models.URLField(blank=True, null = True)
 
+    _original_state = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._original_state = self.state_id
+
     def __str__(self):
         return "Assignment for %s (%s) : %s %s of %s" % (self.reviewer.person, self.state, self.review_request.team.acronym, self.review_request.type, self.review_request.doc)
 
@@ -161,13 +169,15 @@ class ReviewAssignment(models.Model):
         If the review request has no other active or completed reviews, the review request
         needs to be treated as an unassigned request, as it will need a new reviewer.
         """
-        super(ReviewAssignment, self).save(*args, **kwargs)
-        active_states = ['assigned', 'accepted', 'completed']
-        review_req_has_active_assignments = self.review_request.reviewassignment_set.filter(state__in=active_states)
-        if self.review_request.state_id == 'assigned' and not review_req_has_active_assignments:
-            self.review_request.state_id = 'requested'
-            self.review_request.save()
-            
+        super().save(*args, **kwargs)
+        if self._original_state != self.state_id:
+            if self.state_id in ['withdrawn', 'rejected', 'no-response', 'overtaken']:
+                active_req_states = ['assigned', 'accepted', 'completed']
+                review_req_has_active_assignments = self.review_request.reviewassignment_set.filter(state__in=active_req_states)
+                if self.review_request.state_id == 'assigned' and not review_req_has_active_assignments:
+                    self.review_request.state_id = 'requested'
+                    self.review_request.save()
+            self._original_state = self.state_id
 
 def get_default_review_types():
     return ReviewTypeName.objects.filter(slug__in=['early','lc','telechat'])
