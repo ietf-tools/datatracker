@@ -632,7 +632,20 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         self.assertTrue('draft-ietf-mars-test@' in outbox[-1]['To']) # Gets the authors
         self.assertTrue('mars-chairs@ietf.org' in outbox[-1]['Cc'])
         self.assertTrue('aread@' in outbox[-1]['Cc'])
-        
+
+        #Check that we don't sent expiration warnings for dead or replaced drafts
+        old_state = draft.get_state_slug("draft-iesg")
+        mailbox_before = len(outbox)
+        draft.set_state(State.objects.get(type_id="draft-iesg",slug="dead"))
+        send_expire_warning_for_draft(draft)
+        self.assertEqual(len(outbox), mailbox_before,"Sent expiration warning for dead draft")
+        draft.set_state(State.objects.get(type_id="draft-iesg",slug=old_state))
+
+        mailbox_before = len(outbox)
+        draft.set_state(State.objects.get(type_id="draft",slug="repl"))
+        send_expire_warning_for_draft(draft)
+        self.assertEqual(len(outbox), mailbox_before,"Sent expiration warning for replaced draft")
+
     def test_expire_drafts(self):
         mars = GroupFactory(type_id='wg',acronym='mars')
         ad_role = RoleFactory(group=mars, name_id='ad', person=Person.objects.get(user__username='ad'))

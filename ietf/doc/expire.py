@@ -90,8 +90,10 @@ def in_draft_expire_freeze(when=None):
     return second_cut_off <= when < ietf_monday
 
 def send_expire_warning_for_draft(doc):
-    if doc.get_state_slug("draft-iesg") == "dead":
-        return # don't warn about dead documents
+
+    if ((doc.get_state_slug("draft-iesg") == "dead") or 
+        (doc.get_state_slug("draft") != "active")):
+        return # don't warn about dead or inactive documents
 
     expiration = doc.expires.date()
 
