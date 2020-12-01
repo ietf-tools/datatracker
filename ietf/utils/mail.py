@@ -359,7 +359,6 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     production = settings.SERVER_MODE == 'production'
 
     if settings.SERVER_MODE == 'repair':
-        log("\nIn repair mode: Skipped email from '%s' to %s id %s subject '%s'" % (frm, to, msg.get('Message-ID', ''), subject))
         return msg
 
     if settings.SERVER_MODE == 'development':
