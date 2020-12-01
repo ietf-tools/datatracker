@@ -39,7 +39,7 @@ def gather_address_lists(slug, skipped_recipients=None, create_from_slug_if_not_
     if skipped_recipients:
         cc = excludeaddrs(cc, skipped_recipients)
 
-    return AddrLists(to=list(to),cc=list(cc))
+    return AddrLists(to=sorted(list(to)),cc=sorted(list(cc)))
 
 def get_mailtrigger(slug, create_from_slug_if_not_exists, desc_if_not_exists):
     try:
