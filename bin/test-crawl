@@ -83,6 +83,9 @@ def strip_url(url):
     fragment_url = re.search("^(.+)#[a-z_.-]+$", url)
     if fragment_url:
         url = fragment_url.group(1)
+    next_url = re.search(r"^(.+)\?next=.+$", url)
+    if next_url:
+        url = next_url.group(1)
     return url
 
 def extract_html_urls(content):
