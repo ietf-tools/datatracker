@@ -10,7 +10,7 @@ from django.utils.http import urlquote
 
 from ietf.ietfauth.utils import has_role
 from ietf.doc.models import Document
-from ietf.group.models import Group, Role
+from ietf.group.models import Group
 from ietf.meeting.models import Session
 from ietf.secr.utils.meeting import get_timeslot
 from ietf.utils.response import permission_denied
@@ -65,11 +65,9 @@ def check_permissions(func):
         except ObjectDoesNotExist:
             permission_denied(request, "User not authorized to access group: %s" % group.acronym)
             
-        groups = [group]
-        if group.parent:
-            groups.append(group.parent)
-        all_roles = Role.objects.filter(group__in=groups,name__in=('ad','chair','secr'))
-        if login in [ r.person for r in all_roles ]:
+        if login.role_set.filter(name__in=group.features.groupman_roles,group=group):
+            return func(request, *args, **kwargs)
+        elif group.parent and login.role_set.filter(name__in=group.parent.features.groupman_roles,group=group.parent):
             return func(request, *args, **kwargs)
 
         # if session is plenary allow ietf/iab chairs

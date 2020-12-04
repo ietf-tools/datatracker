@@ -767,7 +767,7 @@ def meetings(request, acronym=None, group_type=None):
 
     future, in_progress, recent, past = group_sessions(sessions)
 
-    can_edit = group.has_role(request.user,["Chair","Secretary"])
+    can_edit = group.has_role(request.user,group.features.groupman_roles)
     can_always_edit = has_role(request.user,["Secretariat","Area Director"])
 
     return render(request,'group/meetings.html',
