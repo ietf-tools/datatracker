@@ -30,7 +30,8 @@ from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_reques
     email_resurrection_completed, email_state_changed, email_stream_changed,
     email_stream_state_changed, email_stream_tags_changed, extra_automation_headers,
     generate_publication_request, email_adopted, email_intended_status_changed,
-    email_iesg_processing_document, email_ad_approved_doc )
+    email_iesg_processing_document, email_ad_approved_doc,
+    email_iana_expert_review_state_changed )
 from ietf.doc.utils import ( add_state_change_event, can_adopt_draft, can_unadopt_draft,
     get_tags_for_stream_id, nice_consensus,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify,
@@ -239,6 +240,9 @@ def change_iana_state(request, name, state_type):
                 events = [add_state_change_event(doc, request.user.person, prev_state, new_state)]
 
                 doc.save_with_history(events)
+
+                if state_type == 'draft-iana-experts':
+                    email_iana_expert_review_state_changed(request, events)
 
             return HttpResponseRedirect(doc.get_absolute_url())
 

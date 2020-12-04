@@ -644,3 +644,14 @@ def email_lc_to_yang_doctors(request, doc):
               dict(doc=doc, url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url() ),
               cc = addrs.cc,
              )
+
+def email_iana_expert_review_state_changed(request, events):
+    assert type(events) == list
+    assert len(events) == 1
+    addrs = gather_address_lists('iana_expert_review_state_changed', doc=events[0].doc)
+    send_mail(request, addrs.to, settings.DEFAULT_FROM_EMAIL,
+              f'IANA expert review state changed to {events[0].state.name} for {events[0].doc.name}',
+              'doc/mail/iana_expert_review_state_changed.txt',
+              dict(event=events[0], url=settings.IDTRACKER_BASE_URL + events[0].doc.get_absolute_url() ),
+              cc = addrs.cc,
+             )

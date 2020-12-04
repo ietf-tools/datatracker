@@ -201,6 +201,26 @@ class ChangeStateTests(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state("draft-iana-review"), next_state)
 
+    def test_change_iana_expert_review_state(self):
+        draft = WgDraftFactory()
+
+        first_state = State.objects.get(used=True, type='draft-iana-experts', slug='reviews-assigned')
+        next_state = State.objects.get(used=True, type='draft-iana-experts', slug='reviewers-ok')
+
+        draft.set_state(first_state)
+
+        url = urlreverse('ietf.doc.views_draft.change_iana_state', kwargs=dict(name=draft.name, state_type="iana-experts"))
+        login_testing_unauthorized(self, 'iana', url)
+
+        empty_outbox()
+        r = self.client.post(url, dict(state=next_state.pk))
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(name=draft.name)
+        self.assertEqual(draft.get_state("draft-iana-experts"), next_state)
+
+        self.assertEqual(len(outbox),1)
+
     def test_add_expert_review_comment(self):
         draft = WgDraftFactory()
         url = urlreverse('ietf.doc.views_draft.add_iana_experts_comment',kwargs=dict(name=draft.name))
