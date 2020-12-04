@@ -92,6 +92,7 @@
 	              {% if not forloop.first %}
 	                {% ifchanged grouped_constraint.grouper %}<br>{% endifchanged %}
 	              {% endif %}
+                      <b>{{ forloop.counter }})</b>
 	              {% for constraint in grouped_constraint.list %}
 	                {% with constraint.target.parent.id as constraint_target_parent_id %}
 	                {% with constraint.source.parent.id as constraint_source_parent_id %}
