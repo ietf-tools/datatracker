@@ -248,6 +248,7 @@ def tag_assignments_with_filter_keywords(assignments):
     for a in assignments:
         a.filter_keywords = {a.timeslot.type.slug.lower()}
         a.filter_keywords.update(filter_keywords_for_session(a.session))
+        a.filter_keywords = sorted(list(a.filter_keywords))
 
 def filter_keywords_for_session(session):
     keywords = {session.type.slug.lower()}
@@ -262,7 +263,7 @@ def filter_keywords_for_session(session):
     office_hours_match = re.match(r'^ *\w+(?: +\w+)* +office hours *$', session.name, re.IGNORECASE)
     if office_hours_match is not None:
         keywords.update(['officehours', session.name.lower().replace(' ', '')])
-    return keywords
+    return sorted(list(keywords))
 
 def read_session_file(type, num, doc):
     # XXXX FIXME: the path fragment in the code below should be moved to
