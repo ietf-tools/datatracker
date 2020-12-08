@@ -41,7 +41,6 @@
 	     {{s.time|date:"H:i"}}
 	     &nbsp;<a href="{% url 'ietf.meeting.views.agenda_ical' num=s.meeting.number session_id=s.id %}"><span class="fa fa-calendar-o"></span></a>
 	     {% else %}
-	     <span class='invisible'>{{s.time|date:"H:i"}}</span>
 	     &nbsp;<a href="{% url 'ietf.meeting.views.agenda_ical' num=s.meeting.number acronym=s.group.acronym %}"><span class="fa fa-calendar"></span></a>
 	     {% endif %}
 	   {% endif %}
