@@ -153,7 +153,7 @@ def materials(request, num=None):
     sessions  = add_event_info_to_session_qs(Session.objects.filter(
         meeting__number=meeting.number,
         timeslotassignments__schedule__in=[schedule, schedule.base if schedule else None]
-    ).distinct().select_related('meeting__schedule', 'group__state', 'group__parent'))
+    ).distinct().select_related('meeting__schedule', 'group__state', 'group__parent')).order_by('group__acronym')
 
     plenaries = sessions.filter(name__icontains='plenary')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
