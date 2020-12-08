@@ -651,13 +651,15 @@ URL_REGEXPS = {
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
-DOCUMENT_PATH_PATTERN = '/a/www/ietf-ftp/{doc.type_id}/'
+
+#DOCUMENT_PATH_PATTERN = '/a/www/ietf-ftp/{doc.type_id}/'
+DOCUMENT_PATH_PATTERN = '/a/ietfdata/doc/{doc.type_id}/'
 INTERNET_DRAFT_PATH = '/a/ietfdata/doc/draft/repository'
 INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
-CHARTER_PATH = '/a/www/ietf-ftp/charter/'
-CONFLICT_REVIEW_PATH = '/a/www/ietf-ftp/conflict-reviews'
-STATUS_CHANGE_PATH = '/a/www/ietf-ftp/status-changes'
+CHARTER_PATH = '/a/ietfdata/doc/charter/'
+CONFLICT_REVIEW_PATH = '/a/ietfdata/doc/conflict-review'
+STATUS_CHANGE_PATH = '/a/ietfdata/doc/status-change'
 AGENDA_PATH = '/a/www/www6s/proceedings/'
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
 IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
