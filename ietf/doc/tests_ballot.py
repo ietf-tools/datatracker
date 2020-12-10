@@ -346,7 +346,7 @@ class BallotWriteupsTests(TestCase):
         self.assertTrue('aread@' in outbox[-1]['Cc'])
 
     def test_edit_ballot_writeup(self):
-        draft = IndividualDraftFactory()
+        draft = IndividualDraftFactory(states=[('draft','active'),('draft-iesg','iesg-eva')])
         url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -372,8 +372,32 @@ class BallotWriteupsTests(TestCase):
                 ballot_writeup="This is a simple test.",
                 save_ballot_writeup="1"))
         self.assertEqual(r.status_code, 200)
-        draft = Document.objects.get(name=draft.name)
-        self.assertTrue("This is a simple test" in draft.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text").text)
+        d = Document.objects.get(name=draft.name)
+        self.assertTrue("This is a simple test" in d.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text").text)
+        self.assertTrue('iesg-eva' == d.get_state_slug('draft-iesg'))
+
+    def test_edit_ballot_writeup_already_approved(self):
+        draft = IndividualDraftFactory(states=[('draft','active'),('draft-iesg','approved')])
+        url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
+        self.assertTrue(q('[type=submit]:contains("Save")'))
+
+        # save
+        r = self.client.post(url, dict(
+                ballot_writeup="This is a simple test.",
+                save_ballot_writeup="1"))
+        self.assertEqual(r.status_code, 200)
+        msgs = [m for m in r.context['messages']]
+        self.assertTrue(1 == len(msgs))
+        self.assertTrue("Writeup not changed" in msgs[0].message)
+        d = Document.objects.get(name=draft.name)
+        self.assertTrue('approved' == d.get_state_slug('draft-iesg'))
 
     def test_edit_ballot_rfceditornote(self):
         draft = IndividualDraftFactory()
@@ -467,6 +491,41 @@ class BallotWriteupsTests(TestCase):
                 self.assertIn('call expires', get_payload_text(outbox[-1]))
             self.client.logout()
 
+    def test_issue_ballot_auto_state_change(self):
+        ad = Person.objects.get(user__username="ad")
+        draft = IndividualDraftFactory(ad=ad, states=[('draft','active'),('draft-iesg','writeupw')])
+        url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
+        self.assertFalse(q('[class=help-block]:contains("not completed IETF Last Call")'))
+        self.assertTrue(q('[type=submit]:contains("Save")'))
+
+        # save
+        r = self.client.post(url, dict(
+                ballot_writeup="This is a simple test.",
+                issue_ballot="1"))
+        self.assertEqual(r.status_code, 200)
+        d = Document.objects.get(name=draft.name)
+        self.assertTrue('iesg-eva' == d.get_state_slug('draft-iesg')) 
+
+    def test_issue_ballot_warn_if_early(self):
+        ad = Person.objects.get(user__username="ad")
+        draft = IndividualDraftFactory(ad=ad, states=[('draft','active'),('draft-iesg','lc')])
+        url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # expect warning about issuing a ballot before IETF Last Call is done
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
+        self.assertTrue(q('[class=help-block]:contains("not completed IETF Last Call")'))
+        self.assertTrue(q('[type=submit]:contains("Save")'))
 
     def test_edit_approval_text(self):
         ad = Person.objects.get(user__username="ad")

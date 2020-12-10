@@ -17,11 +17,15 @@
 
     <div class="help-block">
       Technical summary, Working Group summary, document quality, personnel, IRTF note, IESG note, IANA note. This text will be appended to all announcements and messages to the IRTF or RFC Editor.
+
+      {% if ballot_issue_danger %}
+        <p class="text-danger">This document has not completed IETF Last Call.  Please do not issue the ballot early without good reason.</p>
+      {% endif %}
     </div>
 
     {% buttons %}
       <button type="submit" class="btn btn-primary" name="save_ballot_writeup" value="Save Ballot Writeup">Save</button>
-      <button type="submit" class="btn btn-warning" name="issue_ballot" value="Save and Issue Ballot">Save & {% if ballot_issued %}re-{% endif %}issue ballot</button>
+      <button type="submit" class={% if ballot_issue_danger %}"btn btn-danger"{% else %}"btn btn-warning"{% endif %} name="issue_ballot" value="Save and Issue Ballot">Save & {% if ballot_issued %}re-{% endif %}issue ballot</button>
     {% endbuttons %}
   </form>
 
