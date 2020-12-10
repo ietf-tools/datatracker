@@ -1903,9 +1903,6 @@ class ApiSubmitTests(TestCase):
         data['xml'], author = submission_file(name, rev, group, 'xml', "test_submission.xml", author=author, email=email, title=title, year=year)
         data['user'] = email
         r = self.client.post(url, data)
-        debug.show('url')
-        debug.show('r')
-        debug.show('r.content')
         return r, author, name
 
     def test_api_submit_info(self):
