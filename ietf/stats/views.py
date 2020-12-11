@@ -421,7 +421,7 @@ def document_stats(request, stats_type=None):
                 for document_count, names in sorted(bins.items(), key=lambda t: t[0]):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     series_data.append((document_count, percentage))
-                    plain_names = [ plain_name(n) for n in names ]
+                    plain_names = sorted([ plain_name(n) for n in names ])
                     table_data.append((document_count, percentage, len(plain_names), list(plain_names)[:names_limit]))
 
                 chart_data.append({ "data": series_data })
@@ -455,7 +455,7 @@ def document_stats(request, stats_type=None):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     if affiliation:
                         series_data.append((affiliation, len(names)))
-                    plain_names = [ plain_name(n) for n in names ]
+                    plain_names = sorted([ plain_name(n) for n in names ])
                     table_data.append((affiliation, percentage, len(plain_names), list(plain_names)[:names_limit]))
 
                 series_data.sort(key=lambda t: t[1], reverse=True)
@@ -504,7 +504,7 @@ def document_stats(request, stats_type=None):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     if country:
                         series_data.append((country, len(names)))
-                    plain_names = [ plain_name(n) for n in names ]
+                    plain_names = sorted([ plain_name(n) for n in names ])
                     table_data.append((country, percentage, len(plain_names), list(plain_names)[:names_limit]))
 
                 series_data.sort(key=lambda t: t[1], reverse=True)
@@ -546,7 +546,7 @@ def document_stats(request, stats_type=None):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     if continent:
                         series_data.append((continent, len(names)))
-                    plain_names = [ plain_name(n) for n in names ]
+                    plain_names = sorted([ plain_name(n) for n in names ])
                     table_data.append((continent, percentage, len(plain_names), list(plain_names)[:names_limit]))
 
                 series_data.sort(key=lambda t: t[1], reverse=True)
@@ -572,7 +572,7 @@ def document_stats(request, stats_type=None):
                 for citations, names in sorted(bins.items(), key=lambda t: t[0], reverse=True):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     series_data.append((citations, percentage))
-                    plain_names = [ plain_name(n) for n in names ]
+                    plain_names = sorted([ plain_name(n) for n in names ])
                     table_data.append((citations, percentage, len(plain_names), list(plain_names)[:names_limit]))
 
                 chart_data.append({ "data": sorted(series_data, key=lambda t: t[0]) })
@@ -598,7 +598,7 @@ def document_stats(request, stats_type=None):
                 for citations, names in sorted(bins.items(), key=lambda t: t[0], reverse=True):
                     percentage = len(names) * 100.0 / (total_persons or 1)
                     series_data.append((citations, percentage))
-                    plain_names = [ plain_name(n) for n in names ]
+                    plain_names = sorted([ plain_name(n) for n in names ])
                     table_data.append((citations, percentage, len(plain_names), list(plain_names)[:names_limit]))
 
                 chart_data.append({ "data": sorted(series_data, key=lambda t: t[0]) })
