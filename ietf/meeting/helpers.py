@@ -468,7 +468,8 @@ def get_announcement_initial(meeting, is_change=False):
         type = 'BOF'
 
     assignments = SchedTimeSessAssignment.objects.filter(
-        schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None]
+        schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None],
+        session__in=meeting.session_set.not_canceled()
     ).order_by('timeslot__time')
 
     initial['subject'] = '{name} ({acronym}) {type} {desc} Meeting: {date}{change}'.format(
@@ -615,7 +616,7 @@ def send_interim_announcement_request(meeting):
               context,
               cc_list)
 
-def send_interim_cancellation_notice(meeting):
+def send_interim_meeting_cancellation_notice(meeting):
     """Sends an email that a scheduled interim meeting has been cancelled."""
     session = meeting.session_set.first()
     group = session.group
@@ -628,9 +629,39 @@ def send_interim_cancellation_notice(meeting):
         date=meeting.date.strftime('%Y-%m-%d'))
     start_time = session.official_timeslotassignment().timeslot.time
     end_time = start_time + session.requested_duration
-    from ietf.meeting.utils import add_event_info_to_session_qs
-    is_multi_day = add_event_info_to_session_qs(meeting.session_set.all()).filter(current_status='sched').count() > 1
-    template = 'meeting/interim_cancellation_notice.txt'
+    is_multi_day = session.meeting.session_set.with_current_status().filter(current_status='sched').count() > 1
+    template = 'meeting/interim_meeting_cancellation_notice.txt'
+    context = locals()
+    send_mail(None,
+              to_email,
+              from_email,
+              subject,
+              template,
+              context,
+              cc=cc_list)
+
+
+def send_interim_session_cancellation_notice(session):
+    """Sends an email that one session of a scheduled interim meeting has been cancelled."""
+    group = session.group
+    start_time = session.official_timeslotassignment().timeslot.time
+    end_time = start_time + session.requested_duration
+    (to_email, cc_list) = gather_address_lists('interim_cancelled',group=group)
+    from_email = settings.INTERIM_ANNOUNCE_FROM_EMAIL_PROGRAM if group.type_id=='program' else settings.INTERIM_ANNOUNCE_FROM_EMAIL_DEFAULT
+
+    if session.name:
+        description = '"%s" session' % session.name
+    else:
+        description = 'interim meeting session'
+
+    subject = '{group} ({acronym}) {type} {description} cancelled (was {date})'.format(
+        group=group.name,
+        acronym=group.acronym,
+        type=group.type.slug.upper(),
+        description=description,
+        date=start_time.date().strftime('%Y-%m-%d'))
+    is_multi_day = session.meeting.session_set.with_current_status().filter(current_status='sched').count() > 1
+    template = 'meeting/interim_session_cancellation_notice.txt'
     context = locals()
     send_mail(None,
               to_email,

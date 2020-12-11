@@ -12,7 +12,6 @@ from urllib.error import HTTPError
 
 from django.conf import settings
 from django.template.loader import render_to_string
-from django.db.models.expressions import Subquery, OuterRef
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
@@ -48,7 +47,7 @@ def session_requested_by(session):
     return None
 
 def current_session_status(session):
-    last_event = SchedulingEvent.objects.filter(session=session).order_by('-time', '-id').first()
+    last_event = SchedulingEvent.objects.filter(session=session).select_related('status').order_by('-time', '-id').first()
     if last_event:
         return last_event.status
 
@@ -220,34 +219,18 @@ def condition_slide_order(session):
 def add_event_info_to_session_qs(qs, current_status=True, requested_by=False, requested_time=False):
     """Take a session queryset and add attributes computed from the
     scheduling events. A queryset is returned and the added attributes
-    can be further filtered on."""
-    from django.db.models import TextField, Value
-    from django.db.models.functions import Coalesce
+    can be further filtered on.
+    
+    Treat this method as deprecated. Use the SessionQuerySet methods directly, chaining if needed.
+    """
     if current_status:
-        qs = qs.annotate(
-            # coalesce with '' to avoid nulls which give funny
-            # results, e.g. .exclude(current_status='canceled') also
-            # skips rows with null in them
-            current_status=Coalesce(Subquery(SchedulingEvent.objects.filter(session=OuterRef('pk')).order_by('-time', '-id').values('status')[:1]), Value(''), output_field=TextField()),
-        )
+        qs = qs.with_current_status()
 
     if requested_by:
-        qs = qs.annotate(
-            requested_by=Subquery(SchedulingEvent.objects.filter(session=OuterRef('pk')).order_by('time', 'id').values('by')[:1]),
-        )
+        qs = qs.with_requested_by()
 
     if requested_time:
-        qs = qs.annotate(
-            requested_time=Subquery(SchedulingEvent.objects.filter(session=OuterRef('pk')).order_by('time', 'id').values('time')[:1]),
-        )
-
-    return qs
-
-def only_sessions_that_can_meet(session_qs):
-    qs = add_event_info_to_session_qs(session_qs).exclude(current_status__in=['notmeet', 'disappr', 'deleted', 'apprw'])
-
-    # Restrict graphical scheduling to meeting requests (Sessions) of type 'regular' for now
-    qs = qs.filter(type__slug='regular')
+        qs = qs.with_requested_time()
 
     return qs
 
@@ -279,9 +262,14 @@ def data_for_meetings_overview(meetings, interim_status=None):
     for m in meetings:
         m.sessions = []
 
-    sessions = add_event_info_to_session_qs(
-        Session.objects.filter(meeting__in=meetings).order_by('meeting', 'pk')
-    ).select_related('group', 'group__parent')
+    sessions = Session.objects.filter(
+        meeting__in=meetings
+    ).order_by(
+        'meeting', 'pk'
+    ).with_current_status(
+    ).select_related(
+        'group', 'group__parent'
+    )
 
     meeting_dict = {m.pk: m for m in meetings}
     for s in sessions.iterator():

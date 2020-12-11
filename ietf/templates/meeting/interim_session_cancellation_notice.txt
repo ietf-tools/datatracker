@@ -1,0 +1,7 @@
+{% load ams_filters %}
+{% if session.name %}The "{{ session.name }}"{% else %}A{% endif %} session of the {{ group.name }} ({{ group.acronym }}) {% if not session.meeting.city %}virtual {% endif %}{% if is_multi_day %}multi-day {% endif %}
+interim meeting has been cancelled. This session had been scheduled for {{ meeting.date|date:"Y-m-d" }} from {{ start_time|time:"H:i" }} to {{ end_time|time:"H:i" }} {{ meeting.time_zone }}.
+
+{{ session.agenda_note }}
+
+

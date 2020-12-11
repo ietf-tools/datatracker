@@ -8,7 +8,7 @@
 Country: {{ meeting.country }}
 {% else %}Meeting Type: Virtual Meeting{% endif %}
 
-{% for session in meeting.session_set.all %}Session {{ forloop.counter }}:
+{% for session in meeting.session_set.not_canceled %}Session {{ forloop.counter }}:
 
 Date: {{ session.official_timeslotassignment.timeslot.time|date:"Y-m-d" }}
 Start Time: {{ session.official_timeslotassignment.timeslot.time|date:"H:i" }} {{ meeting.time_zone }}

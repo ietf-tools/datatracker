@@ -72,7 +72,7 @@ from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_r
 from ietf.meeting.helpers import can_edit_interim_request
 from ietf.meeting.helpers import can_request_interim_meeting, get_announcement_initial
 from ietf.meeting.helpers import sessions_post_save, is_interim_meeting_approved
-from ietf.meeting.helpers import send_interim_cancellation_notice
+from ietf.meeting.helpers import send_interim_meeting_cancellation_notice, send_interim_session_cancellation_notice
 from ietf.meeting.helpers import send_interim_approval
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_announcement_request
@@ -2117,7 +2117,7 @@ def get_sessions(num, acronym):
     if not sessions:
         sessions = Session.objects.filter(meeting=meeting,short=acronym,type__in=['regular','plenary','other']) 
 
-    sessions = add_event_info_to_session_qs(sessions)
+    sessions = sessions.with_current_status()
 
     return sorted(sessions, key=lambda s: session_time_for_sorting(s, use_meeting_date=False))
 
@@ -2151,15 +2151,15 @@ def session_details(request, num, acronym):
                 session.times = [ x.timeslot.utc_start_time() for x in ss ]                
             else:
                 session.times = [ x.timeslot.local_start_time() for x in ss ]
-            session.cancelled = session.current_status == 'canceled'
+            session.cancelled = session.current_status in Session.CANCELED_STATUSES
             session.status = ''
         elif meeting.type_id=='interim':
             session.times = [ meeting.date ]
-            session.cancelled = session.current_status == 'canceled'
+            session.cancelled = session.current_status in Session.CANCELED_STATUSES
             session.status = ''
         else:
             session.times = []
-            session.cancelled = session.current_status == 'canceled'
+            session.cancelled = session.current_status in Session.CANCELED_STATUSES
             session.status = status_names.get(session.current_status, session.current_status)
 
         session.filtered_artifacts = list(session.sessionpresentation_set.filter(document__type__slug__in=['agenda','minutes','bluesheets']))
@@ -2996,7 +2996,8 @@ def interim_send_announcement(request, number):
         if form.is_valid():
             message = form.save(user=request.user)
             message.related_groups.add(group)
-            for session in meeting.session_set.all():
+            for session in meeting.session_set.not_canceled():
+                
                 SchedulingEvent.objects.create(
                     session=session,
                     status=SessionStatusName.objects.get(slug='sched'),
@@ -3021,7 +3022,7 @@ def interim_skip_announcement(request, number):
     meeting = get_object_or_404(Meeting, number=number)
 
     if request.method == 'POST':
-        for session in meeting.session_set.all():
+        for session in meeting.session_set.not_canceled():
             SchedulingEvent.objects.create(
                 session=session,
                 status=SessionStatusName.objects.get(slug='sched'),
@@ -3165,7 +3166,7 @@ def interim_request_cancel(request, number):
             was_scheduled = session_status.slug == 'sched'
 
             result_status = SessionStatusName.objects.get(slug='canceled' if was_scheduled else 'canceledpa')
-            for session in meeting.session_set.all():
+            for session in meeting.session_set.not_canceled():
                 SchedulingEvent.objects.create(
                     session=session,
                     status=result_status,
@@ -3173,7 +3174,7 @@ def interim_request_cancel(request, number):
                 )
 
             if was_scheduled:
-                send_interim_cancellation_notice(meeting)
+                send_interim_meeting_cancellation_notice(meeting)
 
             messages.success(request, 'Interim meeting cancelled')
             return redirect(upcoming)
@@ -3188,19 +3189,69 @@ def interim_request_cancel(request, number):
 
 
 @login_required
+def interim_request_session_cancel(request, sessionid):
+    '''View for cancelling an interim meeting request'''
+    session = get_object_or_404(Session, pk=sessionid)
+    group = session.group
+    if not can_manage_group(request.user, group):
+        permission_denied(request, "You do not have permissions to cancel this session")
+    session_status = current_session_status(session)
+
+    if request.method == 'POST':
+        form = InterimCancelForm(request.POST)
+        if form.is_valid():
+            remaining_sessions = session.meeting.session_set.with_current_status().exclude(
+                current_status__in=['canceled', 'canceledpa']
+            )
+            if remaining_sessions.count() <= 1:
+                return HttpResponse('Cannot cancel only remaining session. Cancel the request instead.',
+                                    status=409)
+
+            if 'comments' in form.changed_data:
+                session.agenda_note=form.cleaned_data.get('comments')
+                session.save()
+
+            was_scheduled = session_status.slug == 'sched'
+
+            result_status = SessionStatusName.objects.get(slug='canceled' if was_scheduled else 'canceledpa')
+            SchedulingEvent.objects.create(
+                session=session,
+                status=result_status,
+                by=request.user.person,
+            )
+
+            if was_scheduled:
+                send_interim_session_cancellation_notice(session)
+
+            messages.success(request, 'Interim meeting session cancelled')
+            return redirect(interim_request_details, number=session.meeting.number)
+    else:
+        session_time = session.official_timeslotassignment().timeslot.time
+        form = InterimCancelForm(initial={'group': group.acronym, 'date': session_time.date()})
+
+    return render(request, "meeting/interim_request_cancel.html", {
+        "form": form,
+        "session": session,
+        "session_status": session_status,
+    })
+
+
+@login_required
 def interim_request_details(request, number):
     '''View details of an interim meeting request'''
     meeting = get_object_or_404(Meeting, number=number)
-    group = meeting.session_set.first().group
+    sessions_not_canceled = meeting.session_set.not_canceled()
+    first_session = meeting.session_set.first()  # first, whether or not canceled
+    group = first_session.group
+
     if not can_manage_group(request.user, group):
         permission_denied(request, "You do not have permissions to manage this meeting request")
-    sessions = meeting.session_set.all()
     can_edit = can_edit_interim_request(meeting, request.user)
     can_approve = can_approve_interim_request(meeting, request.user)
 
     if request.method == 'POST':
         if request.POST.get('approve') and can_approve_interim_request(meeting, request.user):
-            for session in meeting.session_set.all():
+            for session in sessions_not_canceled:
                 SchedulingEvent.objects.create(
                     session=session,
                     status=SessionStatusName.objects.get(slug='scheda'),
@@ -3213,7 +3264,7 @@ def interim_request_details(request, number):
                 send_interim_announcement_request(meeting)
                 return redirect(interim_pending)
         if request.POST.get('disapprove') and can_approve_interim_request(meeting, request.user):
-            for session in meeting.session_set.all():
+            for session in sessions_not_canceled:
                 SchedulingEvent.objects.create(
                     session=session,
                     status=SessionStatusName.objects.get(slug='disappr'),
@@ -3222,19 +3273,31 @@ def interim_request_details(request, number):
             messages.success(request, 'Interim meeting disapproved')
             return redirect(interim_pending)
 
-    first_session = sessions.first()
-    assignments = SchedTimeSessAssignment.objects.filter(schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None])
+    # Determine meeting status from non-canceled sessions, if any.
+    # N.b., meeting_status may be None after either of these code paths,
+    # though I am not sure what circumstances would cause this.
+    if sessions_not_canceled.count() > 0:
+        meeting_status = current_session_status(sessions_not_canceled.first())
+    else:
+        meeting_status = current_session_status(first_session)
+
+    meeting_assignments = SchedTimeSessAssignment.objects.filter(
+        schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None]
+    ).select_related(
+        'session', 'timeslot'
+    )
+    for ma in meeting_assignments:
+        ma.status = current_session_status(ma.session)
+        ma.can_be_canceled = ma.status.slug in ('sched', 'scheda', 'apprw')
 
     return render(request, "meeting/interim_request_details.html", {
         "meeting": meeting,
-        "sessions": sessions,
-        "assignments": assignments,
-        "group": first_session.group,
+        "meeting_assignments": meeting_assignments,
+        "group": group,
         "requester": session_requested_by(first_session),
-        "session_status": current_session_status(first_session),
+        "meeting_status": meeting_status or SessionStatusName.objects.get(slug='canceled'),
         "can_edit": can_edit,
         "can_approve": can_approve})
-
 
 @login_required
 def interim_request_edit(request, number):
