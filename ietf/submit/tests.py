@@ -1878,16 +1878,41 @@ class ApiSubmitTests(TestCase):
         self.archive_dir = self.tempdir('submit-archive')
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
 
+        self.saved_yang_rfc_model_dir = settings.SUBMIT_YANG_RFC_MODEL_DIR
+        self.rfc_model_dir = self.tempdir('yang-rfcmod')
+        settings.SUBMIT_YANG_RFC_MODEL_DIR = self.rfc_model_dir
+
+        self.saved_yang_draft_model_dir = settings.SUBMIT_YANG_DRAFT_MODEL_DIR
+        self.draft_model_dir = self.tempdir('yang-draftmod')
+        settings.SUBMIT_YANG_DRAFT_MODEL_DIR = self.draft_model_dir
+
+        self.saved_yang_iana_model_dir = settings.SUBMIT_YANG_IANA_MODEL_DIR
+        self.iana_model_dir = self.tempdir('yang-ianamod')
+        settings.SUBMIT_YANG_IANA_MODEL_DIR = self.iana_model_dir
+
+        self.saved_yang_catalog_model_dir = settings.SUBMIT_YANG_CATALOG_MODEL_DIR
+        self.catalog_model_dir = self.tempdir('yang-catalogmod')
+        settings.SUBMIT_YANG_CATALOG_MODEL_DIR = self.catalog_model_dir
+
         MeetingFactory(type_id='ietf', date=datetime.date.today()+datetime.timedelta(days=60))
 
     def tearDown(self):
         shutil.rmtree(self.staging_dir)
         shutil.rmtree(self.repository_dir)
         shutil.rmtree(self.archive_dir)
+        shutil.rmtree(self.rfc_model_dir)
+        shutil.rmtree(self.draft_model_dir)
+        shutil.rmtree(self.iana_model_dir)
+        shutil.rmtree(self.catalog_model_dir)
+
         settings.IDSUBMIT_STAGING_PATH = self.saved_idsubmit_staging_path
         settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
         settings.IDSUBMIT_REPOSITORY_PATH = self.saved_idsubmit_repository_path
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
+        settings.SUBMIT_YANG_RFC_MODEL_DIR = self.saved_yang_rfc_model_dir
+        settings.SUBMIT_YANG_DRAFT_MODEL_DIR = self.saved_yang_draft_model_dir
+        settings.SUBMIT_YANG_IANA_MODEL_DIR = self.saved_yang_iana_model_dir
+        settings.SUBMIT_YANG_CATALOG_MODEL_DIR = self.saved_yang_catalog_model_dir
 
     def do_post_submission(self, rev, author=None, name=None, group=None, email=None, title=None, year=None):
         url = urlreverse('ietf.submit.views.api_submit')
