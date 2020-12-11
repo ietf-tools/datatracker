@@ -3,6 +3,7 @@
 
 
 import json
+import pytz
 
 from jwcrypto.jwk import JWK
 
@@ -36,6 +37,7 @@ from ietf.meeting.models import Meeting
 from ietf.stats.models import MeetingRegistration
 from ietf.utils.decorators import require_api_key
 from ietf.utils.log import log
+from ietf.utils.models import DumpInfo
 
 
 def top_level(request):
@@ -202,10 +204,13 @@ def api_new_meeting_registration(request):
 
 
 def version(request):
+    dumpinfo = DumpInfo.objects.order_by('-date').first()
+    dumptime = pytz.timezone(dumpinfo.tz).localize(dumpinfo.date).strftime('%Y-%m-%d %H:%M:%S %z') if dumpinfo else None
     return HttpResponse(
-                json.dumps({
+            json.dumps({
                         'version': ietf.__version__+ietf.__patch__,
                         'date': ietf.__date__[7:-2],
+                        'dumptime': dumptime,
                     }),
                 content_type='application/json',
             )
