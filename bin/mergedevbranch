@@ -119,6 +119,11 @@ rev=${rev#r}
 
 repo=$(echo -n "$(svn info | grep "^Repository Root: " | sed 's/Repository Root: //')")
 
+by=$(getent passwd $(whoami) | cut -d ':' -f 5 | tr -d ',')
+[ -z "$by" ] && die "Can't determine the real name of the user running this script"
+
+python -c 'import django' || die "Can't find django - can't run tests"
+
 note "Identify the branch:"
 if   svn info $branch > /dev/null 2>&1; then
     branch="${branch#^/}"
@@ -226,7 +231,7 @@ goes wrong during final testing.
 
 Regards,
 
-	Henrik
+	$by
 	(via the mergesprintbranch script)
 EOF
 
