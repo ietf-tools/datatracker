@@ -38,7 +38,7 @@ from ietf.meeting.helpers import send_interim_minutes_reminder, populate_importa
 from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission, SchedulingEvent, Room, Constraint, ConstraintName
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
 from ietf.meeting.utils import finalize, condition_slide_order
-from ietf.meeting.utils import add_event_info_to_session_qs
+from ietf.meeting.utils import add_event_info_to_session_qs, session_requested_by
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName
 from ietf.utils.decorators import skip_coverage
@@ -2253,6 +2253,8 @@ class InterimTests(TestCase):
         self.assertEqual(meeting.session_set.last().schedulingevent_set.last().status_id,'scheda')
         self.assertIn('iesg-secretary@ietf.org', outbox[-1]['To'])
         self.assertIn('interim meeting ready for announcement', outbox[-1]['Subject'])
+        self.assertIn(f'interim meeting for {meeting.session_set.first().group.acronym} has been approved',get_payload_text(outbox[-2]))
+        self.assertIn(f'Session Requester: { session_requested_by(meeting.session_set.first()) }', get_payload_text(outbox[-2]))
 
     def test_interim_request_single_in_person(self):
         make_meeting_test_data()

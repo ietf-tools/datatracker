@@ -585,6 +585,8 @@ def send_interim_approval(user, meeting):
     template = 'meeting/interim_approval.txt'
     context = { 
         'meeting': meeting,
+        'group': first_session.group,
+        'requester': session_requested_by(first_session),
     }
     send_mail(None,
               to_email,
