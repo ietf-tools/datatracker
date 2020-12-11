@@ -42,7 +42,7 @@ def check_app_locked(meeting=None):
     This function returns True if the application is locked to non-secretariat users.
     '''
     if not meeting:
-        meeting = get_meeting()
+        meeting = get_meeting(days=14)
     return bool(meeting.session_request_lock_message)
 
 def get_initial_session(sessions, prune_conflicts=False):
@@ -100,7 +100,7 @@ def get_lock_message(meeting=None):
     Returns the message to display to non-secretariat users when the tool is locked.
     '''
     if not meeting:
-        meeting = get_meeting()
+        meeting = get_meeting(days=14)
     return meeting.session_request_lock_message
 
 def get_requester_text(person,group):
@@ -117,7 +117,7 @@ def get_requester_text(person,group):
         return '%s, on behalf of the %s working group' % (person.ascii, group.acronym)
 
 def get_session_form_class():
-    meeting = get_meeting()
+    meeting = get_meeting(days=14)
     if meeting.number in settings.SECR_VIRTUAL_MEETINGS:
         return VirtualSessionForm
     else:
@@ -197,7 +197,7 @@ def approve(request, acronym):
     '''
     This view approves the third session.  For use by ADs or Secretariat.
     '''
-    meeting = get_meeting()
+    meeting = get_meeting(days=14)
     group = get_object_or_404(Group, acronym=acronym)
 
     session = add_event_info_to_session_qs(Session.objects.filter(meeting=meeting, group=group)).filter(current_status='apprw').first()
@@ -230,7 +230,7 @@ def cancel(request, acronym):
     scheduled during the period when the session request tool is
     reopened.  In this case be sure to clear the timeslot assignment as well.
     '''
-    meeting = get_meeting()
+    meeting = get_meeting(days=14)
     group = get_object_or_404(Group, acronym=acronym)
     sessions = Session.objects.filter(meeting=meeting,group=group).order_by('id')
     login = request.user.person
@@ -269,7 +269,7 @@ def confirm(request, acronym):
     '''
     # FIXME: this should be using form.is_valid/form.cleaned_data - invalid input will make it crash
     group = get_object_or_404(Group,acronym=acronym)
-    meeting = get_meeting()
+    meeting = get_meeting(days=14)
     FormClass = get_session_form_class()
 
     form = FormClass(group, request.POST, hidden=True)
@@ -404,7 +404,7 @@ def edit(request, acronym, num=None):
     '''
     This view allows the user to edit details of the session request
     '''
-    meeting = get_meeting(num)
+    meeting = get_meeting(num,days=14)
     group = get_object_or_404(Group, acronym=acronym)
     sessions = add_event_info_to_session_qs(Session.objects.filter(group=group, meeting=meeting)).filter(Q(current_status__isnull=True) | ~Q(current_status__in=['canceled', 'notmeet'])).order_by('id')
     sessions_count = sessions.count()
@@ -610,7 +610,7 @@ def main(request):
         'message': message},
     )
 
-    meeting = get_meeting()
+    meeting = get_meeting(days=14)
 
     scheduled_groups = []
     unscheduled_groups = []
@@ -665,7 +665,7 @@ def new(request, acronym):
     to create the request.
     '''
     group = get_object_or_404(Group, acronym=acronym)
-    meeting = get_meeting()
+    meeting = get_meeting(days=14)
     session_conflicts = session_conflicts_as_string(group, meeting)
     is_virtual = meeting.number in settings.SECR_VIRTUAL_MEETINGS,
     FormClass = get_session_form_class()
@@ -728,7 +728,7 @@ def no_session(request, acronym):
     - send notification
     - update session_activity log
     '''
-    meeting = get_meeting()
+    meeting = get_meeting(days=14)
     group = get_object_or_404(Group, acronym=acronym)
     login = request.user.person
 
@@ -776,7 +776,7 @@ def tool_status(request):
     '''
     This view handles locking and unlocking of the tool to the public.
     '''
-    meeting = get_meeting()
+    meeting = get_meeting(days=14)
     is_locked = check_app_locked(meeting=meeting)
     
     if request.method == 'POST':
@@ -817,7 +817,7 @@ def view(request, acronym, num = None):
     '''
     This view displays the session request info
     '''
-    meeting = get_meeting(num)
+    meeting = get_meeting(num,days=14)
     group = get_object_or_404(Group, acronym=acronym)
     sessions = add_event_info_to_session_qs(Session.objects.filter(meeting=meeting, group=group)).filter(Q(current_status__isnull=True) | ~Q(current_status__in=('canceled','notmeet','deleted'))).order_by('id')
 
