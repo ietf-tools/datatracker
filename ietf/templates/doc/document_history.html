@@ -4,7 +4,7 @@
 {% load ietf_filters %}
 {% load static %}
 
-{% block title %}History for {{ doc.name }}-{{ doc.rev }}{% endblock %}
+{% block title %}History for {{ doc.name }}{% if doc.rev %}-{{ doc.rev }}{% endif %}{% endblock %}
 
 {% block morecss %}
   form.diff-form button[type=submit] { margin-left: 2em; }
