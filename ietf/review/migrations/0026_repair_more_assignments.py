@@ -31,9 +31,7 @@ class Helper(object):
         )
 
 def forward(apps,schema_editor):
-    ReviewAssignment = apps.get_model('review','ReviewAssignment')
     Document = apps.get_model('doc','Document')
-    State = apps.get_model('doc','State')
     Person = apps.get_model('person','Person')
 
     # The calculation of review_path makes the assumption that DOCUMENT_PATH_PATTERN only uses 
