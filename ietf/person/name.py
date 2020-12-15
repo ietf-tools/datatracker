@@ -9,7 +9,7 @@ import debug                            # pyflakes:ignore
 
 
 def name_particle_match(name):
-    return re.search(r" (af|al|Al|de|der|di|Di|du|el|El|Hadi|in 't|Le|st\.?|St\.?|ten|ter|van|van der|van 't|Van|von|von der|Von|zu) ", name)
+    return re.search(r" (af|al|Al|de|De|der|di|Di|du|el|El|Hadi|in 't|Le|st\.?|St\.?|ten|ter|van|van der|van 't|Van|von|von der|Von|zu) ", name)
 
 def name_parts(name):
     prefix, first, middle, last, suffix = "", "", "", "", ""
