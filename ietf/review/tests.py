@@ -40,7 +40,7 @@ class ReviewAssignmentTest(TestCase):
             self.do_test_update_review_req_status(assignment_state, 'requested')
         # Test no-change
         for assignment_state in ['accepted', 'assigned', 'completed', 'part-completed', 'unknown', ]:
-            self.do_test_update_review_req_status('', 'assigned')
+            self.do_test_update_review_req_status(assignment_state, 'assigned')
 
     def test_no_update_review_req_status_when_other_active_assignment(self):
         # If there is another still active assignment, do not update review_req state
