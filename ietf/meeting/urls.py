@@ -62,7 +62,7 @@ type_ietf_only_patterns = [
     url(r'^agendas.json$',                       ajax.schedule_infosurl),
     url(r'^agenda/(?P<acronym>[-a-z0-9]+)-drafts.pdf$', views.session_draft_pdf),
     url(r'^agenda/(?P<acronym>[-a-z0-9]+)-drafts.tgz$', views.session_draft_tarfile),
-    url(r'^sessions.json',                               ajax.sessions_json),
+    url(r'^sessions\.json$',                               ajax.sessions_json),
     url(r'^session/(?P<sessionid>\d+).json',             ajax.session_json),
     url(r'^session/(?P<sessionid>\d+)/constraints.json', ajax.session_constraints),
     url(r'^constraint/(?P<constraintid>\d+).json',       ajax.constraint_json),
