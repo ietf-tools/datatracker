@@ -12,6 +12,7 @@ import requests
 from django.conf import settings
 from django.utils.encoding import smart_bytes, force_str
 from django.utils.http import urlquote
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -20,8 +21,7 @@ from ietf.doc.models import Document, DocEvent, State, StateDocEvent, StateType
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person
 from ietf.utils.mail import parseaddr, get_payload_text
-from ietf.utils.timezone import local_timezone_to_utc, email_time_to_local_timezone, utc_to_local_timezone
-
+from ietf.utils.timezone import local_timezone_to_utc
 
 #PROTOCOLS_URL = "https://www.iana.org/protocols/"
 #CHANGES_URL = "https://datatracker.dev.icann.org:8080/data-tracker/changes"
@@ -154,8 +154,7 @@ def update_history_with_changes(changes, send_email=True):
 
     for c in changes:
         docname = c['doc']
-        timestamp = datetime.datetime.strptime(c["time"], "%Y-%m-%d %H:%M:%S")
-        timestamp = utc_to_local_timezone(timestamp) # timestamps are in UTC
+        timestamp = timezone.utc.localize(datetime.datetime.strptime(c["time"], "%Y-%m-%d %H:%M:%S"))
 
         if c['type'] in ("iana_state", "iana_review"):
             if c['type'] == "iana_state":
@@ -236,9 +235,9 @@ def parse_review_email(text):
     doc_name = strip_version_extension(doc_name)
 
     # date
-    review_time = datetime.datetime.now()
+    review_time = timezone.now()
     if "Date" in msg:
-        review_time = email_time_to_local_timezone(msg["Date"])
+        review_time = email.utils.parsedate_to_datetime(msg["Date"])
 
     # by
     by = None

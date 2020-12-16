@@ -14,6 +14,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -29,15 +30,15 @@ from ietf.secr.proceedings.proc_utils import import_audio_files
 def session_time_for_sorting(session, use_meeting_date):
     official_timeslot = TimeSlot.objects.filter(sessionassignments__session=session, sessionassignments__schedule__in=[session.meeting.schedule, session.meeting.schedule.base if session.meeting.schedule else None]).first()
     if official_timeslot:
-        return official_timeslot.time
+        return official_timeslot.utc_start_time()
     elif use_meeting_date and session.meeting.date:
-        return datetime.datetime.combine(session.meeting.date, datetime.time.min)
+        return timezone.utc.localize(datetime.datetime.combine(session.meeting.date, datetime.time.min))
     else:
         first_event = SchedulingEvent.objects.filter(session=session).order_by('time', 'id').first()
         if first_event:
             return first_event.time
         else:
-            return datetime.datetime.min
+            return timezone.utc.localize(datetime.datetime.min)
 
 def session_requested_by(session):
     first_event = SchedulingEvent.objects.filter(session=session).order_by('time', 'id').first()
@@ -62,7 +63,7 @@ def group_sessions(sessions):
 
     sessions = sorted(sessions,key=lambda s:s.time)
 
-    today = datetime.date.today()
+    today = timezone.now().date()
     future = []
     in_progress = []
     recent = []
@@ -99,7 +100,7 @@ def get_upcoming_manageable_sessions(user):
     # .filter(date__gte=today - F('days')), but unfortunately, it
     # doesn't work correctly with Django 1.11 and MySQL/SQLite
 
-    today = datetime.date.today()
+    today = timezone.now().date()
 
     candidate_sessions = add_event_info_to_session_qs(
         Session.objects.filter(meeting__date__gte=today - datetime.timedelta(days=15))
@@ -179,12 +180,12 @@ def attended_ietf_meetings(person):
                 meetingregistration__attended=True,
             )
 
-def attended_in_last_five_ietf_meetings(person, date=datetime.datetime.today()):
+def attended_in_last_five_ietf_meetings(person, date=timezone.now().date()):
     previous_five = Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]
     attended = attended_ietf_meetings(person)
     return set(previous_five).intersection(attended)
 
-def is_nomcom_eligible(person, date=datetime.date.today()):
+def is_nomcom_eligible(person, date=timezone.now().date()):
     attended = attended_in_last_five_ietf_meetings(person, date)
     disqualifying_roles = Role.objects.filter(person=person).filter(DISQUALIFYING_ROLE_QUERY_EXPRESSION)
     return len(attended)>=3 and not disqualifying_roles.exists()
@@ -317,6 +318,7 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
     # process constraint names - we synthesize extra names to be able
     # to treat the concepts in the same manner as the modelled ones
     constraint_names = {n.pk: n for n in ConstraintName.objects.all()}
+    tz = meeting.tz()
 
     joint_with_groups_constraint_name = ConstraintName(
         slug='joint_with_groups',
@@ -352,10 +354,16 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
     # synthesize AD constraints - we can treat them as a special kind of 'bethere'
     responsible_ad_for_group = {}
     session_groups = set(s.group for s in sessions if s.group and s.group.parent and s.group.parent.type_id == 'area')
-    meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
+    meeting_time = tz.localize(datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0)))
 
     # dig up historic AD names
-    for group_id, history_time, pk in Person.objects.filter(rolehistory__name='ad', rolehistory__group__group__in=session_groups, rolehistory__group__time__lte=meeting_time).values_list('rolehistory__group__group', 'rolehistory__group__time', 'pk').order_by('rolehistory__group__time'):
+    for group_id, history_time, pk in Person.objects.filter(
+        rolehistory__name='ad',
+        rolehistory__group__group__in=session_groups,
+        rolehistory__group__time__lte=meeting_time).values_list(
+                        'rolehistory__group__group',
+                        'rolehistory__group__time',
+                        'pk').order_by('rolehistory__group__time'):
         responsible_ad_for_group[group_id] = pk
     for group_id, pk in Person.objects.filter(role__name='ad', role__group__in=session_groups, role__group__time__lte=meeting_time).values_list('role__group', 'pk'):
         responsible_ad_for_group[group_id] = pk

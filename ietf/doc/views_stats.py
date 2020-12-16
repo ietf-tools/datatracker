@@ -1,4 +1,6 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 
 import copy
 import datetime
@@ -19,6 +21,7 @@ from ietf.doc.utils import get_search_cache_key
 from ietf.doc.views_search import SearchForm, retrieve_search_results
 from ietf.name.models import DocTypeName
 from ietf.person.models import Person
+from ietf.utils.timezone import datetime_today
 
 epochday = datetime.datetime.utcfromtimestamp(0).date().toordinal()
 
@@ -47,7 +50,7 @@ def model_to_timeline_data(model, field='time', **kwargs):
         # This is needed for sqlite, when we're running tests:
         if type(obj_list[0]['date']) != datetime.date:
             obj_list = [ {'date': dt(e['date']), 'count': e['count']} for e in obj_list ]
-        today = datetime.date.today()
+        today = datetime_today().date()
         if not obj_list[-1]['date'] == today:
             obj_list += [ {'date': today, 'count': 0} ]
         data = [ ((e['date'].toordinal()-epochday)*1000*60*60*24, e['count']) for e in obj_list ]

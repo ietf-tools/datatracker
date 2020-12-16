@@ -12,6 +12,7 @@ from xml.dom import pulldom, Node
 
 from django.conf import settings
 from django.utils.encoding import smart_bytes, force_str, force_text
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -439,8 +440,8 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
             # unfortunately, rfc_published_date doesn't include the correct day
             # at the moment because the data only has month/year, so
             # try to deduce it
-            d = datetime.datetime.combine(rfc_published_date, datetime.time())
-            synthesized = datetime.datetime.now()
+            d = timezone.utc.localize(datetime.datetime.combine(rfc_published_date, datetime.time()))
+            synthesized = timezone.now()
             if abs(d - synthesized) > datetime.timedelta(days=60):
                 synthesized = d
             else:

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 import datetime
@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.db.models import Max
 from django.forms.models import inlineformset_factory
 from django.shortcuts import render, get_object_or_404, redirect
+from django.utils import timezone
 from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
@@ -30,6 +31,7 @@ from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.sreq.views import get_initial_session
 from ietf.secr.utils.meeting import get_session, get_timeslot
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.utils.timezone import datetime_today
 
 
 # prep for agenda changes
@@ -121,7 +123,7 @@ def send_notifications(meeting, groups, person):
     Send session scheduled email notifications for each group in groups.  Person is the
     user who initiated this action, request.uesr.get_profile().
     '''
-    now = datetime.datetime.now()
+    now = timezone.now()
     for group in groups:
         sessions = group.session_set.filter(meeting=meeting)
         addrs = gather_address_lists('session_scheduled',group=group,session=sessions[0])
@@ -314,7 +316,7 @@ def blue_sheet_redirect(request):
     This is the generic blue sheet URL.  It gets the next IETF meeting and redirects
     to the meeting specific URL.
     '''
-    today = datetime.date.today()
+    today = datetime_today()
     qs = Meeting.objects.filter(date__gt=today,type='ietf').order_by('date')
     if qs:
         meeting = qs[0]
@@ -792,7 +794,7 @@ def get_timeslot_time(form, meeting):
     day = form.cleaned_data['day']
 
     date = meeting.date + datetime.timedelta(days=int(day))
-    return datetime.datetime(date.year,date.month,date.day,time.hour,time.minute)
+    return  meeting.tz().localize(datetime.datetime(date.year,date.month,date.day,time.hour,time.minute))
 
 @role_required('Secretariat')
 def times_edit(request, meeting_id, schedule_name, time):
@@ -803,7 +805,7 @@ def times_edit(request, meeting_id, schedule_name, time):
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
     
     parts = [ int(x) for x in time.split(':') ]
-    dtime = datetime.datetime(*parts)
+    dtime = meeting.tz().localize(datetime.datetime(*parts))
     timeslots = TimeSlot.objects.filter(meeting=meeting,time=dtime)
 
     if request.method == 'POST':
@@ -854,7 +856,7 @@ def times_delete(request, meeting_id, schedule_name, time):
     meeting = get_object_or_404(Meeting, number=meeting_id)
     
     parts = [ int(x) for x in time.split(':') ]
-    dtime = datetime.datetime(*parts)
+    dtime = meeting.tz().localize(datetime.datetime(*parts))
     status = SessionStatusName.objects.get(slug='schedw')
 
     if request.method == 'POST' and request.POST['post'] == 'yes':

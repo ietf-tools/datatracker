@@ -38,6 +38,7 @@ import os
 import re
 import email
 import html5lib
+import inspect
 import sys
 
 from urllib.parse import unquote
@@ -168,6 +169,16 @@ class TestCase(django.test.TestCase):
             os.mkdir(path)
         return path
 
+    def assertNoPageErrors(self, response, error_css_selector=".has-error"):
+        from pyquery import PyQuery
+        from lxml import html
+        self.maxDiff = None
+
+        errors = [html.tostring(n).decode() for n in PyQuery(response.content)(error_css_selector)]
+        if errors:
+            explanation = "Got page with errors:\n----\n" + "----\n".join(errors)
+            raise AssertionError(explanation)
+
     def assertNoFormPostErrors(self, response, error_css_selector=".has-error"):
         """Try to fish out form errors, if none found at least check the
         status code to be a redirect.
@@ -179,14 +190,7 @@ class TestCase(django.test.TestCase):
         """
 
         if response.status_code == 200:
-            from pyquery import PyQuery
-            from lxml import html
-            self.maxDiff = None
-
-            errors = [html.tostring(n).decode() for n in PyQuery(response.content)(error_css_selector)]
-            if errors:
-                explanation = "{} != {}\nGot form back with errors:\n----\n".format(response.status_code, 302) + "----\n".join(errors)
-                self.assertEqual(response.status_code, 302, explanation)
+            self.assertNoPageErrors(response, error_css_selector)
 
         self.assertEqual(response.status_code, 302)
         
@@ -215,7 +219,26 @@ class TestCase(django.test.TestCase):
         else:
             self.assertGreater(len(mlist), 0)
 
+    def assertResponseStatus(self, r, code, msg_prefix=None):
+        if r.status_code != code:
+            self.assertNoPageErrors(r)
+            sys.stderr.write(textcontent(r))
+            raise AssertionError("%s%s != %s" % ("%s: "%msg_prefix if msg_prefix else '', r.status_code, code))
+            
+
     def __str__(self):
         return u"%s (%s.%s)" % (self._testMethodName, strclass(self.__class__),self._testMethodName)
 
-        
+
+    def debug_save_response(self, r):
+        """
+        This is intended as a debug help, to be inserted whenever one wants
+        to save a page response in a test case; not for production.
+        """
+        stack = inspect.stack()         # stack[0] is the current frame
+        caller = stack[1]
+        fn = caller.function + '.html'
+        with open(fn, 'bw') as f:
+            f.write(r.content)
+            sys.stderr.write(f'Wrote response to {fn}\n')
+            

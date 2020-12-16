@@ -11,6 +11,7 @@ import shutil
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -21,8 +22,7 @@ from ietf.group.factories import GroupFactory
 from ietf.person.models import Person
 from ietf.sync import iana, rfceditor
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 
 
 class IANASyncTests(TestCase):
@@ -35,11 +35,11 @@ class IANASyncTests(TestCase):
         self.assertEqual(len(rfc_names), 1)
         self.assertEqual(rfc_names[0], "rfc1234")
 
-        iana.update_rfc_log_from_protocol_page(rfc_names, datetime.datetime.now() - datetime.timedelta(days=1))
+        iana.update_rfc_log_from_protocol_page(rfc_names, timezone.now() - datetime.timedelta(days=1))
         self.assertEqual(DocEvent.objects.filter(doc=draft, type="rfc_in_iana_registry").count(), 1)
 
         # make sure it doesn't create duplicates
-        iana.update_rfc_log_from_protocol_page(rfc_names, datetime.datetime.now() - datetime.timedelta(days=1))
+        iana.update_rfc_log_from_protocol_page(rfc_names, timezone.now() - datetime.timedelta(days=1))
         self.assertEqual(DocEvent.objects.filter(doc=draft, type="rfc_in_iana_registry").count(), 1)
 
     def test_changes_sync(self):
@@ -191,7 +191,7 @@ ICANN
                         doc_name, review_time, by, comment = iana.parse_review_email(msg.encode('utf-8'))
     
                         self.assertEqual(doc_name, draft.name)
-                        self.assertEqual(review_time, datetime.datetime(2012, 5, 10, 5, 0, rtime))
+                        self.assertEqual(review_time.astimezone(timezone.utc), datetime.datetime(2012, 5, 10, 12, 0, rtime, tzinfo=timezone.utc))
                         self.assertEqual(by, Person.objects.get(user__username="iana"))
                         self.assertIn("there are no IANA Actions", comment.replace("\n", ""))
     
@@ -212,7 +212,7 @@ ICANN
         url = urlreverse("ietf.sync.views.notify", kwargs=dict(org="iana", notification="changes"))
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "new changes at")
 
         # we don't actually try posting as that would trigger a real run
@@ -247,7 +247,7 @@ class RFCSyncTests(TestCase):
         DocAlias.objects.create(name=updated_doc.name).docs.add(updated_doc)
         DocAlias.objects.create(name="rfc123").docs.add(updated_doc)
 
-        today = datetime.date.today()
+        today = timezone.now().date()
 
         t = '''<?xml version="1.0" encoding="UTF-8"?>
 <rfc-index xmlns="http://www.rfc-editor.org/rfc-index"
@@ -580,14 +580,14 @@ class RFCEditorUndoTests(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, e2.doc.name)
 
         # delete e2
         deleted_before = DeletedEvent.objects.count()
 
         r = self.client.post(url, dict(event=e2.id))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
 
         self.assertEqual(StateDocEvent.objects.filter(id=e2.id).count(), 0)
         self.assertEqual(draft.get_state("draft-rfceditor").slug, "auth")

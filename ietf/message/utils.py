@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
-import re, datetime, email
+import re, email
 
 from django.utils.encoding import force_str
+from django.utils import timezone
 
 from ietf.utils.mail import send_mail_text, send_mail_mime
 from ietf.message.models import Message
@@ -52,7 +53,7 @@ def send_scheduled_message_from_send_queue(queue_item):
         send_mail_mime(None, message.to, message.frm, message.subject,
                        msg, cc=message.cc, bcc=message.bcc)
 
-    queue_item.sent_at = datetime.datetime.now()
+    queue_item.sent_at = timezone.now()
     queue_item.save()
 
     queue_item.message.sent = queue_item.sent_at

@@ -1,8 +1,9 @@
+# Copyright The IETF Trust 2010-2020, All Rights Reserved
 # helpers for handling last calls on Internet Drafts
 
-import datetime
 
 from django.db.models import Q
+from django.utils import timezone
 
 from ietf.doc.models import Document, State, DocEvent, LastCallDocEvent, WriteupDocEvent
 from ietf.doc.models import IESG_SUBSTATE_TAGS
@@ -10,6 +11,7 @@ from ietf.person.models import Person
 from ietf.doc.utils import add_state_change_event
 from ietf.doc.mails import generate_ballot_writeup, generate_approval_mail, generate_last_call_announcement
 from ietf.doc.mails import send_last_call_request, email_last_call_expired, email_last_call_expired_with_downref
+
 
 def request_last_call(request, doc):
     if not doc.latest_event(type="changed_ballot_writeup_text"):
@@ -33,7 +35,7 @@ def request_last_call(request, doc):
     e.save()
 
 def get_expired_last_calls():
-    today = datetime.date.today()
+    today = timezone.now().date()
     for d in Document.objects.filter(Q(states__type="draft-iesg", states__slug="lc")
                                     | Q(states__type="statchg", states__slug="in-lc")):
         e = d.latest_event(LastCallDocEvent, type="sent_last_call")

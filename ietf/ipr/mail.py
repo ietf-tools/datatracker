@@ -42,7 +42,7 @@ def is_aware(date):
     if date.tzinfo and date.tzinfo.utcoffset(date) is not None:
         return True
     return False
-    
+
 def parsedate_to_datetime(date):
     """Returns a datetime object from string.  May return naive or aware datetime.
 
@@ -62,10 +62,7 @@ def parsedate_to_datetime(date):
 
 def utc_from_string(s):
     date = parsedate_to_datetime(s)
-    if is_aware(date):
-        return date.astimezone(pytz.utc).replace(tzinfo=None)
-    else:
-        return date
+    return date.astimezone(pytz.utc)
 
 # ----------------------------------------------------------------
 # Email Functions

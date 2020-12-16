@@ -5,7 +5,6 @@
 {% load ietf_filters %}
 {% load textfilters %}
 {% load htmlfilters %}
-
 {% block title %}
   IETF {{ schedule.meeting.number }} meeting agenda
   {% if "-utc" in request.path %}
@@ -96,16 +95,16 @@
         <table class="table table-condensed table-striped">
           {% for item in filtered_assignments %}
 
-            {% ifchanged item.timeslot.time|date:"Y-m-d" %}
+            {% ifchanged item.timeslot.local_start_time|date:"Y-m-d" %}
               <tr><th class="gap" colspan="5"></th></tr>
               <tr class="warning">
                 <th colspan="5">
 		   {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
-		   <div class="anchor-target" id="{{item.timeslot.time|slugify}}"></div>
+		   <div class="anchor-target" id="{{item.timeslot.local_start_time|date:'Y-m-d-His'}}"></div>
 	          {% if "-utc" in request.path %}
 	            {{ item.timeslot.utc_start_time|date:"l, F j, Y" }} (UTC)
 	          {% else %}
-	            {{ item.timeslot.time|date:"l, F j, Y" }} ({{item.timeslot.tzname}})
+	            {{ item.timeslot.local_start_time|date:"l, F j, Y" }} ({{item.timeslot.tzname}})
 	          {% endif %}
 	        </th>
               </tr>
@@ -126,7 +125,7 @@
 	            {% if "-utc" in request.path %}
 	              {{ item.timeslot.utc_start_time|date:"l"}}
 	            {% else %}
-	              {{ item.timeslot.time|date:"l"}}
+	              {{ item.timeslot.local_start_time|date:"l"}}
 	            {% endif %}
 	            {{item.timeslot.name|capfirst_allcaps}}
 	          </th>
@@ -307,8 +306,8 @@
     <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
       <ul class="nav nav-pills nav-stacked small" data-spy="affix">
         {% for item in filtered_assignments %}
-          {% ifchanged item.timeslot.time|date:"Y-m-d" %}
-            <li><a href="#{{item.timeslot.time|slugify}}">{{ item.timeslot.time|date:"l, F j, Y" }}</a></li>
+          {% ifchanged item.timeslot.local_start_time|date:"Y-m-d" %}
+            <li><a href="#{{item.timeslot.local_start_time|date:'Y-m-d-His'}}">{{ item.timeslot.local_start_time|date:"l, F j, Y" }}</a></li>
           {% endifchanged %}
         {% endfor %}
       </ul>

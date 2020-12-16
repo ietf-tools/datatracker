@@ -4,7 +4,6 @@
 
 import re
 import email
-import datetime
 import base64
 import os
 import pyzmail
@@ -28,6 +27,8 @@ from ietf.utils.accesstoken import generate_access_token
 from ietf.mailtrigger.utils import gather_address_lists, get_base_submission_message_address
 from ietf.submit.models import SubmissionEmailEvent, Submission
 from ietf.submit.checkers import DraftIdnitsChecker
+from ietf.utils.timezone import datetime_today
+
 
 def send_submission_confirmation(request, submission, chair_notice=False):
     subject = 'Confirm submission of I-D %s' % submission.name
@@ -273,7 +274,7 @@ def add_submission_email(request, remote_ip, name, rev, submission_pk, message, 
                     rev=rev,
                     title=name,
                     note="",
-                    submission_date=datetime.date.today(),
+                    submission_date=datetime_today(),
                     replaces="",
             )
             from ietf.submit.utils import create_submission_event, docevent_from_submission

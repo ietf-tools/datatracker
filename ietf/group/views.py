@@ -55,6 +55,7 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonRespons
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 from django.utils.html import escape
 from django.views.decorators.cache import cache_page, cache_control
 
@@ -121,7 +122,7 @@ from ietf.settings import MAILING_LIST_INFO_URL
 from ietf.utils.pipe import pipe
 from ietf.utils.response import permission_denied
 from ietf.utils.text import strip_suffix
-
+from ietf.utils.timezone import datetime_today_start
 
 
 # --- Helpers ----------------------------------------------------------
@@ -565,7 +566,7 @@ def all_status(request):
         if e:
             wg_reports.append(e)
 
-    wg_reports.sort(key=lambda x: (x.group.parent.acronym,datetime.datetime.now()-x.time))
+    wg_reports.sort(key=lambda x: (x.group.parent.acronym,timezone.now()-x.time))
 
     rg_reports = []
     for rg in rgs:
@@ -754,7 +755,7 @@ def email_aliases(request, acronym=None, group_type=None):
 def meetings(request, acronym=None, group_type=None):
     group = get_group_or_404(acronym,group_type) if acronym else None
 
-    four_years_ago = datetime.datetime.now()-datetime.timedelta(days=4*365)
+    four_years_ago = timezone.now()-datetime.timedelta(days=4*365)
 
     sessions = add_event_info_to_session_qs(
         group.session_set.filter(
@@ -916,7 +917,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                 try:
                     group = Group.objects.get(acronym=clean["acronym"])
                     save_group_in_history(group)
-                    group.time = datetime.datetime.now()
+                    group.time = timezone.now()
                     group.save()
                 except Group.DoesNotExist:
                     group = Group.objects.create(name=clean["name"],
@@ -984,7 +985,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                         change_text=title + ' deleted: ' + ", ".join(x.name_and_email() for x in deleted)
                         personnel_change_text+=change_text+"\n"
                         
-                        today = datetime.date.today()
+                        today = timezone.now().date()
                         for deleted_email in deleted:
                             active_assignments = ReviewAssignment.objects.filter(
                                 reviewer__person=deleted_email.person,
@@ -1019,7 +1020,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                         group.groupextresource_set.create(value=value, name_id=name, display_name=display_name)
                     changes.append(('resources', new_resources, desc('Resources', ", ".join(new_resources), ", ".join(old_resources))))
 
-            group.time = datetime.datetime.now()
+            group.time = timezone.now()
 
             if changes and not new_group:
                 for attr, new, desc in changes:
@@ -1324,7 +1325,7 @@ def get_open_review_requests_for_team(team, assignment_status=None):
     else:
         open_review_requests = suggested_review_requests_for_team(team) + list(open_review_requests)
 
-    #today = datetime.date.today()
+    #today = timezone.now().date()
     #unavailable_periods = current_unavailable_periods_for_reviewers(team)
     #for r in open_review_requests:
         #if r.reviewer:
@@ -1343,7 +1344,7 @@ def review_requests(request, acronym, group_type=None):
     unassigned_review_requests.sort(key=lambda r: r.doc.name)
 
     open_review_assignments = list(ReviewAssignment.objects.filter(review_request__team=group, state_id__in=('assigned','accepted')).order_by('-assigned_on'))
-    today = datetime.date.today()
+    today = timezone.now().date()
     unavailable_periods = current_unavailable_periods_for_reviewers(group)
     for a in open_review_assignments:
         a.reviewer_unavailable = any(p.availability == "unavailable"
@@ -1376,11 +1377,11 @@ def review_requests(request, acronym, group_type=None):
         }[since]
 
         closed_review_requests = closed_review_requests.filter(
-              Q(reviewrequestdocevent__type='closed_review_request', reviewrequestdocevent__time__gte=datetime.date.today() - date_limit)
-            | Q(reviewrequestdocevent__isnull=True, time__gte=datetime.date.today() - date_limit)
+              Q(reviewrequestdocevent__type='closed_review_request', reviewrequestdocevent__time__gte=datetime_today_start() - date_limit)
+            | Q(reviewrequestdocevent__isnull=True, time__gte=datetime_today_start() - date_limit)
         ).distinct()
 
-        closed_review_assignments = closed_review_assignments.filter(completed_on__gte = datetime.date.today() - date_limit)
+        closed_review_assignments = closed_review_assignments.filter(completed_on__gte = datetime_today_start() - date_limit)
 
     return render(request, 'group/review_requests.html',
                   construct_group_menu_context(request, group, "review requests", group_type, {
@@ -1411,7 +1412,7 @@ def reviewer_overview(request, acronym, group_type=None):
         unavailable_periods[p.person_id].append(p)
     reviewer_roles = { r.person_id: r for r in Role.objects.filter(group=group, name="reviewer").select_related("email") }
 
-    today = datetime.date.today()
+    today = timezone.now().date()
 
     max_closed_reqs = settings.GROUP_REVIEW_MAX_ITEMS_TO_SHOW_IN_REVIEWER_LIST
     days_back = settings.GROUP_REVIEW_DAYS_TO_SHOW_IN_REVIEWER_LIST
@@ -1454,6 +1455,7 @@ def reviewer_overview(request, acronym, group_type=None):
 
         days_since = 9999
         req_data = req_data_for_reviewers.get(person.pk, [])
+
         closed_reqs = 0
         latest_reqs = []
         for d in req_data:
@@ -1465,7 +1467,7 @@ def reviewer_overview(request, acronym, group_type=None):
                                     int(math.ceil(d.assignment_to_closure_days)) if d.assignment_to_closure_days is not None else None))
             if d.state in ["completed", "completed_in_time", "completed_late"]:
                 if d.assigned_time is not None:
-                    delta = datetime.datetime.now() - d.assigned_time
+                    delta = timezone.now() - d.assigned_time
                     if d.assignment_to_closure_days is not None:
                         days = int(delta.days - d.assignment_to_closure_days)
                         if days_since > days: days_since = days
@@ -1789,7 +1791,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
             period.save()
             update_change_reason(period, "Added unavailability period: {}".format(period))
 
-            today = datetime.date.today()
+            today = timezone.now().date()
 
             in_the_past = period.end_date and period.end_date < today
 
@@ -1830,7 +1832,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
                     period.delete()
                     update_change_reason(period, "Removed unavailability period: {}".format(period))
 
-                    today = datetime.date.today()
+                    today = timezone.now().date()
 
                     in_the_past = period.end_date and period.end_date < today
 

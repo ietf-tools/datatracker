@@ -13,6 +13,7 @@
     "js-cookie": "~2",
     "jquery": "~1",
     "jquery.tablesorter": "~2",
+    "moment": "~1",
     "respond": "~1",
     "select2": "~3",
     "select2-bootstrap-css": "~1",

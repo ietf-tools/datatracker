@@ -51,8 +51,8 @@ class VideoRecordingTestCase(TestCase):
         meeting = session.meeting
         number = meeting.number
         name = session.group.acronym
-        date = session.official_timeslotassignment().timeslot.time.strftime('%Y%m%d')
-        time = session.official_timeslotassignment().timeslot.time.strftime('%H%M')
+        date = session.official_timeslotassignment().timeslot.local_start_time().strftime('%Y%m%d')
+        time = session.official_timeslotassignment().timeslot.local_start_time().strftime('%H%M')
         self.assertEqual(_get_session(number,name,date,time),session)
 
     def test_get_urls_from_json(self):
@@ -121,7 +121,7 @@ class RecordingTestCase(TestCase):
         return "{prefix}-{room}-{date}.mp3".format(
             prefix=timeslot.meeting.type.slug + timeslot.meeting.number,
             room=normalize_room_name(timeslot.location.name),
-            date=timeslot.time.strftime('%Y%m%d-%H%M'))
+            date=timeslot.local_start_time().strftime('%Y%m%d-%H%M'))
 
     def test_import_audio_files_shared_timeslot(self):
         meeting = MeetingFactory(type_id='ietf',number='72')

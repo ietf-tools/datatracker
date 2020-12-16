@@ -1,16 +1,21 @@
+# Copyright The IETF Trust 2018-2020, All Rights Reserved
+# -*- coding: utf-8 -*-
+
+
 import datetime
 import debug    # pyflakes:ignore
 
 from ietf.doc.factories import DocumentFactory,NewRevisionDocEventFactory
+from ietf.meeting.factories import MeetingFactory
 from ietf.secr.proceedings.reports import report_id_activity, report_progress_report
 from ietf.utils.test_utils import TestCase
-from ietf.meeting.factories import MeetingFactory
+from ietf.utils.timezone import datetime_today
 
 class ReportsTestCase(TestCase):
 
     def test_report_id_activity(self):
 
-        today = datetime.datetime.today()
+        today = datetime_today()
         yesterday = today - datetime.timedelta(days=1)
         last_quarter = today - datetime.timedelta(days=3*30)
         next_week = today+datetime.timedelta(days=7)

@@ -162,7 +162,7 @@ def get_first_commit(path):
             else:
                 pass
     except OSError:
-        rev, who, when = None, None, datetime.datetime.now()
+        rev, who, when = None, None, timezone.now()
     return { path: { 'rev': rev, 'who': who, 'date': when.strftime('%Y-%m-%d %H:%M:%S'), }, }
 
 

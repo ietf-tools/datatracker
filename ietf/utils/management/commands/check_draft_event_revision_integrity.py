@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2015-2020, All Rights Reserved
+# Copyright The IETF Trust 2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -13,6 +13,7 @@ import django
 django.setup()
 
 from django.core.management.base import BaseCommand #, CommandError
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -29,7 +30,7 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        default_start = datetime.datetime.now() - datetime.timedelta(days=60)
+        default_start = timezone.now() - datetime.timedelta(days=60)
         parser.add_argument(
             '-d', '--from', type=str, default=default_start.strftime('%Y-%m-%d'),
             help='Limit the list to messages saved after the given date (default %(default)s).',

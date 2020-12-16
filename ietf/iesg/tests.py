@@ -13,6 +13,7 @@ from pyquery import PyQuery
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.utils.encoding import force_bytes
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -27,6 +28,8 @@ from ietf.iesg.models import TelechatDate
 from ietf.name.models import StreamName
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
+from ietf.utils.timezone import datetime_today
+
 
 class IESGTests(TestCase):
     def test_feed(self):
@@ -44,7 +47,7 @@ class IESGTests(TestCase):
         pos.save()
 
         r = self.client.get(urlreverse("ietf.iesg.views.discusses"))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         self.assertContains(r, draft.name)
         self.assertContains(r, pos.balloter.plain_name())
@@ -56,17 +59,17 @@ class IESGTests(TestCase):
         m = GroupMilestone.objects.create(group=draft.group,
                                           state_id="review",
                                           desc="Test milestone",
-                                          due=datetime.date.today())
+                                          due=datetime_today())
 
         url = urlreverse("ietf.iesg.views.milestones_needing_review")
         login_testing_unauthorized(self, "ad", url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, m.desc)
         draft.group.state_id = 'conclude'
         draft.group.save()
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertNotContains(r, m.desc)
         
 
@@ -82,13 +85,13 @@ class IESGTests(TestCase):
         url = urlreverse('ietf.iesg.views.review_decisions')
 
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.name)
 
     def test_photos(self):
         url = urlreverse("ietf.iesg.views.photos")
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         ads = Role.objects.filter(group__type='area', group__state='active', name_id='ad')
         self.assertEqual(len(q('div.photo-thumbnail img')), ads.count())
@@ -143,7 +146,7 @@ class IESGAgendaTests(TestCase):
         charter = self.telechat_docs["charter"]
 
         # put on agenda
-        date = datetime.date.today() + datetime.timedelta(days=50)
+        date = timezone.now().date() + datetime.timedelta(days=50)
         TelechatDate.objects.create(date=date)
         telechat_event = TelechatDocEvent.objects.create(
             type="scheduled_for_telechat",
@@ -306,7 +309,7 @@ class IESGAgendaTests(TestCase):
 
     def test_feed(self):
         r = self.client.get("/feed/iesg-agenda/")
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         for d in list(self.telechat_docs.values()):
             self.assertContains(r, d.name)
@@ -314,7 +317,7 @@ class IESGAgendaTests(TestCase):
 
     def test_agenda_json(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_json"))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
@@ -328,7 +331,7 @@ class IESGAgendaTests(TestCase):
 
     def test_agenda(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda"))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
@@ -340,7 +343,7 @@ class IESGAgendaTests(TestCase):
 
     def test_agenda_txt(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_txt"))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
@@ -352,7 +355,7 @@ class IESGAgendaTests(TestCase):
 
     def test_agenda_scribe_template(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_scribe_template"))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
@@ -365,7 +368,7 @@ class IESGAgendaTests(TestCase):
         url = urlreverse("ietf.iesg.views.agenda_moderator_package")
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
@@ -385,7 +388,7 @@ class IESGAgendaTests(TestCase):
         url = urlreverse("ietf.iesg.views.agenda_package")
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
@@ -398,7 +401,7 @@ class IESGAgendaTests(TestCase):
     def test_agenda_documents_txt(self):
         url = urlreverse("ietf.iesg.views.agenda_documents_txt")
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         for k, d in self.telechat_docs.items():
             self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name, ))
@@ -406,7 +409,7 @@ class IESGAgendaTests(TestCase):
     def test_agenda_documents(self):
         url = urlreverse("ietf.iesg.views.agenda_documents")
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         for k, d in self.telechat_docs.items():
             self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name, ))
@@ -416,13 +419,13 @@ class IESGAgendaTests(TestCase):
         url = urlreverse("ietf.iesg.views.past_documents")
         # We haven't put any documents on past telechats, so this should be empty
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         for k, d in self.telechat_docs.items():
             self.assertNotIn(d.name, unicontent(r))
             self.assertNotIn(d.title, unicontent(r))
         # Add the documents to a past telechat
         by = Person.objects.get(name="Areað Irector")
-        date = datetime.date.today() - datetime.timedelta(days=14)
+        date = timezone.now().date() - datetime.timedelta(days=14)
         approved = State.objects.get(type='draft-iesg', slug='approved')
         iesg_eval = State.objects.get(type='draft-iesg', slug='iesg-eva')
         for d in list(self.telechat_docs.values()):
@@ -438,7 +441,7 @@ class IESGAgendaTests(TestCase):
                 d.states.add(approved)
         # Now check that they are present on the past documents page
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         for k, d in self.telechat_docs.items():
             if d.states.get(type='draft-iesg').slug in ['approved', 'iesg-eva', ]:
                 self.assertIn(d.name, unicontent(r))
@@ -457,7 +460,7 @@ class IESGAgendaTests(TestCase):
 
         url = urlreverse("ietf.iesg.views.telechat_docs_tarfile", kwargs=dict(date=get_agenda_date().isoformat()))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         tar = tarfile.open(None, fileobj=io.BytesIO(r.content))
         names = tar.getnames()
@@ -477,7 +480,7 @@ class IESGAgendaTests(TestCase):
 
     def test_admin_change(self):
         draft = Document.objects.get(name="draft-ietf-mars-test")
-        today = datetime.date.today()
+        today = timezone.now().date()
         telechat_date = TelechatDate.objects.get(date=draft.telechat_date())
         url = urlreverse('admin:iesg_telechatdate_change', args=(telechat_date.id,))
         self.client.login(username="secretary", password="secretary+password")
@@ -507,7 +510,7 @@ class RescheduleOnAgendaTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         
         self.assertEqual(len(q('form select[name=%s-telechat_date]' % form_id)), 1)
@@ -520,12 +523,12 @@ class RescheduleOnAgendaTests(TestCase):
         r = self.client.post(url, { '%s-telechat_date' % form_id: d.isoformat(),
                                     '%s-clear_returning_item' % form_id: "1" })
 
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
 
         # check that it moved below the right header in the DOM on the
         # agenda docs page
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         content = unicontent(r)
         d_header_pos = content.find("IESG telechat %s" % d.isoformat())
         draft_pos = content[d_header_pos:].find(draft.name)

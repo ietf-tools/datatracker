@@ -1,4 +1,6 @@
-# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# Copyright The IETF Trust 2019-2020, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 
 import debug                            # pyflakes:ignore
 
@@ -279,20 +281,20 @@ class LeastRecentlyUsedReviewerQueuePolicyTest(TestCase):
         
         # Regular accepted assignments. Note that one is older and one is newer than reviewer 0's,
         # the newest one should count for ordering, i.e. reviewer 1 should be later in the list.
-        ReviewAssignmentFactory(reviewer=reviewers[1].email(), assigned_on='2019-01-01',
+        ReviewAssignmentFactory(reviewer=reviewers[1].email(), assigned_on='2019-01-01 12:00Z',
                                 state_id='accepted', review_request__team=team)
-        ReviewAssignmentFactory(reviewer=reviewers[1].email(), assigned_on='2017-01-01',
+        ReviewAssignmentFactory(reviewer=reviewers[1].email(), assigned_on='2017-01-01 12:00Z',
                                 state_id='accepted', review_request__team=team)
         # Rejected assignment, should not affect reviewer 2's position
-        ReviewAssignmentFactory(reviewer=reviewers[2].email(), assigned_on='2020-01-01',
+        ReviewAssignmentFactory(reviewer=reviewers[2].email(), assigned_on='2020-01-01 12:00Z',
                                 state_id='rejected', review_request__team=team)
         # Completed assignments, assigned before the most recent assignment of reviewer 1,
         # but completed after (assign date should count).
-        ReviewAssignmentFactory(reviewer=reviewers[0].email(), assigned_on='2018-01-01',
-                                completed_on='2020-01-01', state_id='completed',
+        ReviewAssignmentFactory(reviewer=reviewers[0].email(), assigned_on='2018-01-01 12:00Z',
+                                completed_on='2020-01-01 12:00Z', state_id='completed',
                                 review_request__team=team)
-        ReviewAssignmentFactory(reviewer=reviewers[0].email(), assigned_on='2018-05-01',
-                                completed_on='2020-01-01', state_id='completed',
+        ReviewAssignmentFactory(reviewer=reviewers[0].email(), assigned_on='2018-05-01 12:00Z',
+                                completed_on='2020-01-01 12:00Z', state_id='completed',
                                 review_request__team=team)
         rotation = policy.default_reviewer_rotation_list()
         self.assertNotIn(unavailable_reviewer, rotation)

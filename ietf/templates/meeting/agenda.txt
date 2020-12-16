@@ -1,4 +1,4 @@
-{% load humanize %}{% load ietf_filters %}{% autoescape off %}
+{% load humanize ietf_filters tz %}{% autoescape off %}{% localtime off %}
 
 {% filter center:72 %} Agenda of the {{ schedule.meeting.number|ordinal }} IETF Meeting {% endfilter %}
 {% if schedule.meeting.agenda_warning_note %}
@@ -7,13 +7,14 @@
 {% filter center:72 %}{{ schedule.meeting.agenda_info_note|striptags|wordwrap:72|safe }}{% endfilter %}
 {% endif %}
 {% filter center:72 %}{{ schedule.meeting.date|date:"F j" }}-{% if schedule.meeting.date.month != schedule.meeting.end_date.month %}{{ schedule.meeting.end_date|date:"F " }}{% endif %}{{ schedule.meeting.end_date|date:"j, Y" }}{% endfilter %}
+{% filter center:72 %}{{ schedule.meeting.city }}{% endfilter %}
 {% filter center:72 %}Updated {{ updated|date:"Y-m-d H:i:s T" }}{% endfilter %}
 
 {% filter center:72 %}IETF agendas are subject to change, up to and during the meeting.{% endfilter %}
 {% for item in filtered_assignments %}{% ifchanged  %}
 
 
-{{ item.timeslot.time|date:"l"|upper }}, {{ item.timeslot.time|date:"F j, Y" }}
+{{ item.timeslot.local_start_time|date:"l"|upper }}, {{ item.timeslot.local_start_time|date:"F j, Y" }}
 {% endifchanged %}{%       if item.timeslot.type.slug == "reg" %}
 {{ item.timeslot.time_desc  }}  {{ item.timeslot.name  }}{% if schedule.meeting.reg_area %} - {{ schedule.meeting.reg_area }}{% endif %}{% endif %}{%          if item.timeslot.type.slug == "plenary" %}
 {{ item.timeslot.time_desc }}  {{ item.session.name }} - {{ item.timeslot.location.name }}
@@ -28,4 +29,4 @@
 {{ item.timeslot.time_desc }}  {{ item.timeslot.name }} - {{ item.timeslot.location.name }}{% endif %}{% endfor %}
 
 ====================================================================
-{% endautoescape %}
+{% endlocaltime %}{% endautoescape %}

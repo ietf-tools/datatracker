@@ -8,7 +8,7 @@
   {% origin %}
 
   <h1>Approve slides proposed for {{ submission.session.meeting }} : {{ submission.session.group.acronym }}{% if session.name %} : {{submission.session.name}}{% endif %}</h1>
-{% if session_number %}<h2> Session {{session_number}} : {{submission.session.official_timeslotassignment.timeslot.time|date:"D M-d-Y Hi"}}</h2>{% endif %} 
+{% if session_number %}<h2> Session {{session_number}} : {{submission.session.official_timeslotassignment.timeslot.local_start_time|date:"D Y-m-d Hi"}}</h2>{% endif %} 
 
   <p>{{submission.submitter}} proposed these slides for this session: <a href="{{submission.staged_url}}">{{submission.staged_url}}</a>.</p>
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright The IETF Trust 2017-2019, All Rights Reserved
+# Copyright The IETF Trust 2017-2020, All Rights Reserved
 
 import datetime
 import os
@@ -140,7 +140,7 @@ for name in sorted(names):
                         doc = doc,
                         rev = rev,
                         by = system,
-                        desc = "Revision added from id-archive on %s by %s"%(datetime.date.today(),sys.argv[0]),
+                        desc = "Revision added from id-archive on %s by %s"%(timezone.now().date(),sys.argv[0]),
                         time=time,
                 )
                 events.append(e)

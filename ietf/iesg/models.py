@@ -38,6 +38,8 @@ import datetime
 
 from django.db import models
 
+from ietf.utils.timezone import datetime_today
+
 class TelechatAgendaItem(models.Model):
     TYPE_CHOICES = (
         (1, "Any Other Business (WG News, New Proposals, etc.)"),
@@ -72,11 +74,11 @@ def next_telechat_date():
     dates = TelechatDate.objects.order_by("-date")
     if dates:
         return dates[0].date + datetime.timedelta(days=14)
-    return datetime.date.today()
+    return datetime_today()
 
 class TelechatDateManager(models.Manager):
     def active(self):
-        return self.get_queryset().filter(date__gte=datetime.date.today())
+        return self.get_queryset().filter(date__gte=datetime_today())
 
 class TelechatDate(models.Model):
     objects = TelechatDateManager()

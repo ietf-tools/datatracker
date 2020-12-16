@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import pytz
 
 from django.template import Library
 from django.template.defaultfilters import date
@@ -25,3 +26,13 @@ def dateformat(value, arg=None):
     elif isinstance(value, datetime.date):
         arg = arg.translate(elide_timefmt).strip()
     return date(value, arg)
+
+@register.filter
+def astimezone (value, arg):
+    assert isinstance(value, datetime.datetime)
+    try:
+        tz = pytz.timezone(arg)
+    except KeyError:
+        return value
+    return value.astimezone(tz)
+    

@@ -8,13 +8,14 @@ from django.core.management.base import BaseCommand
 
 from ietf.liaisons.models import LiaisonStatement
 from ietf.liaisons.mails import possibly_send_deadline_reminder
+from ietf.utils.timezone import datetime_today
 
 
 class Command(BaseCommand):
     help = ("Check liaison deadlines and send a reminder if we are close to a deadline")
 
     def handle(self, *args, **options):
-        today = datetime.date.today()
+        today = datetime_today()
         cutoff = today - datetime.timedelta(14)
 
         msgs = []

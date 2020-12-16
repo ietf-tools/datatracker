@@ -1,6 +1,8 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
 {% load ietf_filters %}
 {% load textfilters %}
+{% load tz %}
+{% localtime off %}
 
 <div class="row">
   <div class="col-md-2 hidden-sm hidden-xs">
@@ -132,3 +134,4 @@
     {% endfor %}
   </div>
 </div>
+{% endlocaltime %}

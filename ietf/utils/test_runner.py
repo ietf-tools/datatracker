@@ -34,6 +34,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+import datetime
 import io
 import re
 import os
@@ -43,7 +44,6 @@ import json
 import pytz
 import importlib
 import socket
-import datetime
 import gzip
 import unittest
 import factory.random

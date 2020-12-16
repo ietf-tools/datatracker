@@ -15,7 +15,7 @@ class ReleasePagesTest(TestCase):
     def test_release(self):
         url = reverse('ietf.release.views.release', kwargs={'version':'6.0.0'})
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         releases = [ e.text.strip() for e in q('#content table td a') if e.text ]
         for num in ["2.00", "3.00", "4.00", "5.0.0"]:
@@ -24,7 +24,7 @@ class ReleasePagesTest(TestCase):
     def test_about(self):
         url = reverse('ietf.release.views.release')+"about"
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         text = q('#content').text()
         for word in ["About", "2.00", "3.00", "4.00", "5.0.0"]:

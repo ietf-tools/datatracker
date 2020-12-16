@@ -10,9 +10,10 @@ import re
 from unittest import skipIf
 
 import django
-from django.urls import reverse as urlreverse
-from django.utils.text import slugify
 from django.db.models import F
+from django.urls import reverse as urlreverse
+from django.utils import timezone
+from django.utils.text import slugify
 #from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore
@@ -101,7 +102,7 @@ class EditMeetingScheduleTests(MeetingTestCase):
         schedule = Schedule.objects.filter(meeting=meeting, owner__user__username="plain").first()
 
         room1 = Room.objects.get(name="Test Room")
-        slot1 = TimeSlot.objects.filter(meeting=meeting, location=room1).order_by('time').first()
+        slot1 = TimeSlot.objects.filter(meeting=meeting, location=room1).order_by('_time').first()
 
         room2 = Room.objects.create(meeting=meeting, name="Test Room2", capacity=1)
         room2.session_types.add('regular')
@@ -915,7 +916,7 @@ class InterimTests(MeetingTestCase):
 
         # Create a group with a plenary interim session for testing type filters
         somegroup = GroupFactory(acronym='sg', name='Some Group')
-        sg_interim = make_interim_meeting(somegroup, datetime.date.today() + datetime.timedelta(days=20))
+        sg_interim = make_interim_meeting(somegroup, timezone.now().date() + datetime.timedelta(days=20))
         sg_sess = sg_interim.session_set.first()
         sg_slot = sg_sess.timeslotassignments.first().timeslot
         sg_sess.type_id = 'plenary'
@@ -1083,7 +1084,7 @@ class InterimTests(MeetingTestCase):
         expected_assignments = list(SchedTimeSessAssignment.objects.filter(
             schedule__in=expected_schedules,
             session__in=expected_interim_sessions,
-            timeslot__time__gte=datetime.date.today(),
+            timeslot__time__gte=timezone.now().date(),
         ))
         # The UID formats should match those in the upcoming.ics template
         expected_uids = [

@@ -22,9 +22,9 @@ def run_script(script, *args):
     arg_str = " " + " ".join(args) if args else ""
     cmd_line = "%s%s > %s.output" % (script_path, arg_str, output_path)
     print "Running %s" % cmd_line
-    before = datetime.datetime.now()
+    before = timezone.now()
     returncode = subprocess.call(cmd_line, shell=True)
-    print "  (took %.3f seconds)" % (datetime.datetime.now() - before).total_seconds()
+    print "  (took %.3f seconds)" % (timezone.now() - before).total_seconds()
     return returncode
 
 # idindex
