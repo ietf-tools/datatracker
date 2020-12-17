@@ -310,7 +310,7 @@ $do svn cp $REPO/$SRC $REPO/tags/dev/$DEV -m "Creating new tag 'tags/dev/$DEV' f
 
 $do svn update -q
 
-[ -d ~/src/db/mail ] || mkdir ~/src/db/mail
+[ -d ~/src/db/mail ] || mkdir -p ~/src/db/mail
 echo "
 Hi,
 
@@ -338,6 +338,7 @@ cat ~/src/db/mail/release-mail-v$VER.txt | $do mail -s "New datatracker release:
 cat ~/src/db/mail/release-mail-v$VER.txt | $do mail -s "New datatracker release: v$VER" iesg@ietf.org wgchairs@ietf.org codesprints@ietf.org -b henrik@levkowetz.com
 
 
-$do toolsfeed control changelog /www/tools.ietf.org/tools/atomfeed.xml
-$do toolpush /www/tools.ietf.org/tools/atomfeed.xml
+# Removed at Henrik's suggestion
+#$do toolsfeed control changelog /www/tools.ietf.org/tools/atomfeed.xml
+#$do toolpush /www/tools.ietf.org/tools/atomfeed.xml
 
