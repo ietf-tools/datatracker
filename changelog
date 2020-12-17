@@ -1,3 +1,119 @@
+ietfdb (7.24.0) ietf; urgency=medium
+
+  **Bugfixes and minor features**
+
+  * Refactored the import_mailman_listinfo command to run faster (20s 
+    instead of 30+m) and added time logging (for --verbosity 2)
+
+  * Upgraded the required versions of mypy and django-stubs to the latest 
+    that support Django 2.2.  Fixed some issues found by after the upgrades.
+
+  * Fixed a test that was broken when run on December 1st.
+
+  * Added some comment information to settings.py
+
+  * Related to issue #2186:  The issue asked for changing review requests 
+    from state 'assigned' back to state 'requested' if the last associated 
+    assignment is withdrawn.  However, the code to implement this makes the 
+    change for all assignment states, and also when there has been no state 
+    change.  Changed to be more discerning.
+
+  * Make the order of addresses returned by gather_address_lists() 
+    consistent rather than randomly varying from invocation to invocation.
+
+  * Removed log noise when running in repair mode.
+
+  * Added ordering to Session.constraints() to make page renderings stable.
+
+  * When doing test-crawling, ignore variations of the 'next=' query arg.  
+    (The code ignores other query args if 'next' is given).
+
+  * It's very hard to distinguish the different constraint classes on the 
+    meeting requests summary page.  Added numbers 1) 2) 3) etc. to make that 
+    easier.
+
+  * Updated hold-for-merge and ready-for-merge lists
+
+  * Merged in [18714] from rjsparks@nostrum.com:
+    Send email to new mailtrigger controlled destinations when iana expert 
+    review state changes. Fixes #3121.  
+
+  * Merged in [18718] from rjsparks@nostrum.com:
+    Allow program leads to request meetings. Fixes #3141.  
+
+  * Added a README about the custom font-datatracker font library, and how 
+    to add glyphs to it.
+
+  * Added sorting of agenda filter keywords to make page rendering stable.
+
+  * Added additional sorting of Session.constraints() return value to make 
+    page rendering stable.
+
+  * Added sorting of sessions to make make the materials page rendering 
+    stable.
+
+  * Removed a timezone-naive invisible HTML element that had been used for 
+    debugging.
+
+  * Fixed some instances of invalid HTML.
+
+  * Updated the default settings to match document directories moved from 
+    /a/www/ietf-ftp/ to /a/ietfdata/doc/
+
+  * Merged in [18719] from housley@vigilsec.com:
+    Automatically move the IESG document state when a ballot is issued, 
+    prevent a writeup change or re-issue of ballot if the document is already 
+    approved, and warn about issuing ballots before the IETF Last Call is 
+    finished. Fixes #3119. 
+
+  * Merged in [18748] from rjsparks@nostrum.com:
+    Populate interim approved email correctly. Fixes #3150.  
+
+  * Merged in [18753] from henrik@levkowetz.com:
+    Added test case setUp() and tearDown() code to create yang model test 
+    directories for ApiSubmitTests.   
+
+  * Merged in [18723] from mrcullen42@gmail.com:
+    Fixes #3032: Only send expiration warnings for drafts with a 'draft' 
+    state of 'active', to match the drafts that we will actually expire.   
+
+  * Copy both rjsparks and henrik on messages about merged branches.
+
+  * Merged in [18724] from jennifer@painless-security.com:
+    Allow cancellation of individual sessions of multi-session interim 
+    meeting. Fixes #2959.  
+
+  * Merged in [18729] from rcross@amsl.com:
+    Add argument 'days' to get_meeting() to allow specifying lag time 
+
+  * Merged in [18736] from rjsparks@nostrum.com:
+    Fixup document that had no type. Remove dangling review document. Fixes 
+    #3145.  
+
+  * Merged in [18743] from rjsparks@nostrum.com:
+    Cleaning some pyflakes that made it into the last commit.  
+
+  * Merged in [18744] from rjsparks@nostrum.com:
+    Cleaner title on the document history page when the document is an rfc 
+    (or any other document where rev is empty).  
+
+  * Don't allow mysqlclient 2.0.2 due to compilation issues.
+
+  * Merged in [18751] from henrik@levkowetz.com:
+    Added a sort of author names for stability of some stats pages.   
+
+  * Merged in [18752] from henrik@levkowetz.com:
+    Added a 'dumptime' entry to the JSON return from /api/version, in order 
+    to be able to make sure that running 'test-crawl --diff' will use database 
+    data from the same dump to avoid false page diff positives.   
+
+  * Merged in [18765] from henrik@levkowetz.com:
+    Added 'De' as a surname particle, in addition to 'de' (for author Luca 
+    De Cicco).   
+
+ -- Robert Sparks <rjsparks@nostrum.com>  17 Dec 2020 15:42:58 +0000
+
+
 ietfdb (7.23.0) ietf; urgency=medium
 
   **Code Sprint 109, and more**
