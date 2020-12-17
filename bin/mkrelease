@@ -138,6 +138,9 @@ if [ $# -lt $ARGMIN ]; then
     die "$# arguments found, $ARGMIN required"
 fi
 
+by=$(getent passwd $(whoami) | cut -d ':' -f 5 | tr -d ',')
+[ -z "$by" ] && die "Can't determine the real name of the user running this script"
+
 VER=$1
 
 REPO=$(svn info | grep "^Repository Root:" | awk '{ print $3 }')
@@ -326,7 +329,7 @@ For development, copy the new development version instead:
 
 Regards,
 
-	Henrik
+	$by
 	(via the mkrelease script)
 " > ~/src/db/mail/release-mail-v$VER.txt
 
