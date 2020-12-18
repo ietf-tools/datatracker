@@ -16,7 +16,7 @@ from django.db import models
 from django.db.models.deletion import CASCADE
 from django.dispatch import receiver
 
-from simple_history.models import HistoricalRecords
+#from simple_history.models import HistoricalRecords
 
 import debug                            # pyflakes:ignore
 
@@ -213,7 +213,7 @@ validate_comma_separated_roles = RegexValidator(
 
 class GroupFeatures(models.Model):
     type = OneToOneField(GroupTypeName, primary_key=True, null=False, related_name='features')
-    history = HistoricalRecords()
+    #history = HistoricalRecords()
     #
     has_milestones          = models.BooleanField("Milestones", default=False)
     has_chartering_process  = models.BooleanField("Chartering", default=False)
