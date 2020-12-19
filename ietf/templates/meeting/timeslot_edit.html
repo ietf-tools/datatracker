@@ -33,7 +33,7 @@
     {% for day in time_slices %}
 	  {% for slot in slot_slices|lookup:day %}
 	      <th>
-                {{slot.time|date:'Hi'}}-{{slot.end_time|date:'Hi'}}
+                {{slot.local_start_time|date:'Hi'}}-{{slot.local_end_time|date:'Hi'}}
               </th>
 	  {% endfor %}
     {% endfor %}

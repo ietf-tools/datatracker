@@ -147,7 +147,7 @@ def create_recording(session, url, title=None, user=None):
     '''
     sequence = get_next_sequence(session.group,session.meeting,'recording')
     name = 'recording-{}-{}-{}'.format(session.meeting.number,session.group.acronym,sequence)
-    time = session.official_timeslotassignment().timeslot.time.strftime('%Y-%m-%d %H:%M')
+    time = session.official_timeslotassignment().timeslot.local_start_time().strftime('%Y-%m-%d %H:%M')
     if not title:
         if url.endswith('mp3'):
             title = 'Audio recording for {}'.format(time)

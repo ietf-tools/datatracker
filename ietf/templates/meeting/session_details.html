@@ -55,9 +55,9 @@
       <div id="proposedslidelist" class="panel-body">
         {% for s in pending_suggestions %}
           {% if can_manage_materials %}
-            <p><a href="{% url "ietf.meeting.views.approve_proposed_slides" slidesubmission_id=s.pk num=s.session.meeting.number %}">{{s.submitter}} - {{s.title}} ({{s.time}})</a></p>
+            <p><a href="{% url "ietf.meeting.views.approve_proposed_slides" slidesubmission_id=s.pk num=s.session.meeting.number %}">{{s.submitter}} - {{s.title}} ({{s.local_start_time}})</a></p>
           {% else %}
-            <p>{{s.title}} ({{s.time}})</p>
+            <p>{{s.title}} ({{s.local_start_time}})</p>
           {% endif %}
         {% endfor %}
       </div>

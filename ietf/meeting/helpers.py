@@ -85,7 +85,7 @@ def build_all_agenda_slices(meeting):
     date_slices = {}
 
     for ts in meeting.timeslot_set.filter(type__in=['regular',]).order_by('time','name'):
-            ymd = ts.time.date()
+            ymd = ts.local_date()
 
             if ymd not in date_slices and ts.location != None:
                 date_slices[ymd] = []
@@ -629,7 +629,7 @@ def send_interim_meeting_cancellation_notice(meeting):
         acronym=group.acronym,
         type=group.type.slug.upper(),
         date=meeting.date.strftime('%Y-%m-%d'))
-    start_time = session.official_timeslotassignment().timeslot.time.astimezone(meeting.tz())
+    start_time = session.official_timeslotassignment().timeslot.local_start_time()
     end_time = start_time + session.requested_duration
     is_multi_day = session.meeting.session_set.with_current_status().filter(current_status='sched').count() > 1
     template = 'meeting/interim_meeting_cancellation_notice.txt'
@@ -646,7 +646,7 @@ def send_interim_meeting_cancellation_notice(meeting):
 def send_interim_session_cancellation_notice(session):
     """Sends an email that one session of a scheduled interim meeting has been cancelled."""
     group = session.group
-    start_time = session.official_timeslotassignment().timeslot.time
+    start_time = session.official_timeslotassignment().timeslot.local_start_time()
     end_time = start_time + session.requested_duration
     (to_email, cc_list) = gather_address_lists('interim_cancelled',group=group)
     from_email = settings.INTERIM_ANNOUNCE_FROM_EMAIL_PROGRAM if group.type_id=='program' else settings.INTERIM_ANNOUNCE_FROM_EMAIL_DEFAULT

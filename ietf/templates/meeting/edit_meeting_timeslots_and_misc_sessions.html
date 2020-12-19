@@ -62,7 +62,7 @@
                         {{ t.type.name }}
                       {% endif %}
                     {% endfor %}
-                    <span class="time-label">{{ t.time|date:"G:i" }}-{{ t.end_time|date:"G:i" }}</span>
+                    <span class="time-label">{{ t.local_start_time|date:"G:i" }}-{{ t.local_end_time|date:"G:i" }}</span>
                   </div>
                 {% endfor %}
               </div>

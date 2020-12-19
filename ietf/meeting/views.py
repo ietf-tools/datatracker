@@ -654,8 +654,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             source_day = swap_days_form.cleaned_data['source_day']
             target_day = swap_days_form.cleaned_data['target_day']
 
-            source_timeslots = [ts for ts in timeslots_qs if ts.time.date() == source_day]
-            target_timeslots = [ts for ts in timeslots_qs if ts.time.date() == target_day]
+            source_timeslots = [ts for ts in timeslots_qs if ts.local_date() == source_day]
+            target_timeslots = [ts for ts in timeslots_qs if ts.local_date() == target_day]
             swap_meeting_schedule_timeslot_assignments(schedule, source_timeslots, target_timeslots, target_day - source_day)
 
             return HttpResponseRedirect(request.get_full_path())
@@ -668,10 +668,10 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     room_has_timeslots = set()
     for t in timeslots_qs:
         room_has_timeslots.add(t.location_id)
-        timeslots_by_room_and_day[(t.location_id, t.time.date())].append(t)
+        timeslots_by_room_and_day[(t.location_id, t.local_date())].append(t)
 
     days = []
-    for day in sorted(set(t.time.date() for t in timeslots_qs)):
+    for day in sorted(set(t.local_date() for t in timeslots_qs)):
         room_timeslots = []
         for r in rooms:
             if r.pk not in room_has_timeslots:
@@ -694,8 +694,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     # possible timeslot start/ends
     timeslot_groups = defaultdict(set)
     for ts in timeslots_qs:
-        ts.start_end_group = "ts-group-{}-{}".format(ts.time.strftime("%Y%m%d-%H%M"), int(ts.duration.total_seconds() / 60))
-        timeslot_groups[ts.time.date()].add((ts.time, ts.end_time(), ts.start_end_group))
+        ts.start_end_group = "ts-group-{}-{}".format(ts.local_start_time().strftime("%Y%m%d-%H%M"), int(ts.duration.total_seconds() / 60))
+        timeslot_groups[ts.local_date()].add((ts.local_start_time(), ts.local_end_time(), ts.start_end_group))
 
     # prepare sessions
     prepare_sessions_for_display(sessions)
@@ -792,7 +792,7 @@ class TimeSlotForm(forms.Form):
 
         if timeslot:
             self.initial = {
-                'day': timeslot.time.date(),
+                'day': timeslot.local_date(),
                 'time': timeslot.time.time(),
                 'duration': timeslot.duration,
                 'location': timeslot.location_id,
@@ -1033,7 +1033,7 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
 
     timeslots_by_day_and_room = defaultdict(list)
     for t in timeslot_qs:
-        timeslots_by_day_and_room[(t.time.date(), t.location_id)].append(t)
+        timeslots_by_day_and_room[(t.local_date(), t.location_id)].append(t)
 
     min_time = min([t.time.time() for t in timeslot_qs] + [datetime.time(8)])
     max_time = max([t.end_time().time() for t in timeslot_qs] + [datetime.time(22)])
@@ -1567,7 +1567,7 @@ def agenda_by_room(request, num=None, name=None, owner=None):
     for day in assignments.dates('timeslot__time','day'):
         ss_by_day[day]=[]
     for ss in assignments.order_by('timeslot__location__functional_name','timeslot__location__name','timeslot__time'):
-        day = ss.timeslot.time.date()
+        day = ss.timeslot.local_date()
         ss_by_day[day].append(ss)
     return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"schedule":schedule,"ss_by_day":ss_by_day})
 
@@ -3233,8 +3233,8 @@ def interim_request_session_cancel(request, sessionid):
             messages.success(request, 'Interim meeting session cancelled')
             return redirect(interim_request_details, number=session.meeting.number)
     else:
-        session_time = session.official_timeslotassignment().timeslot.time
-        form = InterimCancelForm(initial={'group': group.acronym, 'date': session_time.date()})
+        date = session.official_timeslotassignment().timeslot.local_date()
+        form = InterimCancelForm(initial={'group': group.acronym, 'date': date})
 
     return render(request, "meeting/interim_request_cancel.html", {
         "form": form,
@@ -3732,8 +3732,8 @@ def api_set_session_video_url(request):
             else:
                 return err(400, "URL is the same")
         else:
-            time = session.official_timeslotassignment().timeslot.time
-            title = 'Video recording for %s on %s at %s' % (acronym, time.date(), time.time())
+            timeslot = session.official_timeslotassignment().timeslot
+            title = 'Video recording for %s on %s at %s' % (acronym, timeslot.local_date(), timeslot.time.time())
             create_recording(session, url, title=title, user=user)
     else:
         return err(405, "Method not allowed")

@@ -94,7 +94,7 @@ def convert(apps, tzfrom, tzto):
         if values and inv_count:
             with open(datafn, "w") as f:
                 json.dump(values, f)
-                note(f"  Saved {inv_count} new unconverted datetime field values")
+                note(f"  Saved {inv_count:,} new unconverted datetime field values")
         else:
             note("  No new unconverted datetime field values")
     if error:

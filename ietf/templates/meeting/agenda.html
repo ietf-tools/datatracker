@@ -284,7 +284,7 @@
 		          {% if "-utc" in request.path %}
                             {{ item.session.rescheduled_to.utc_start_time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.utc_end_time|date:"G:i" }}
 		          {% else %}
-                            {{ item.session.rescheduled_to.time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.end_time|date:"G:i" }}
+                            {{ item.session.rescheduled_to.local_start_time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.local_end_time|date:"G:i" }}
 		          {% endif %}
                         {% endif %}
                       </span>

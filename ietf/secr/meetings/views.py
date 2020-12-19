@@ -553,7 +553,7 @@ def misc_session_edit(request, meeting_id, schedule_name, slot_id):
     else:
         # we need to pass the session to the form in order to disallow changing
         # of group after materials have been uploaded
-        delta = slot.time.date() - meeting.date
+        delta = slot.local_date() - meeting.date
         initial = {'location':slot.location,
                    'group':session.group,
                    'name':session.name,

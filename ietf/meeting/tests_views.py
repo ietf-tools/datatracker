@@ -1421,8 +1421,8 @@ class EditTests(TestCase):
 
         r = self.client.post(url, {
             'action': 'swapdays',
-            'source_day': timeslots[0].time.date().isoformat(),
-            'target_day': timeslots[2].time.date().isoformat(),
+            'source_day': timeslots[0].local_date().isoformat(),
+            'target_day': timeslots[2].local_date().isoformat(),
         })
         self.assertResponseStatus(r, 302)
 
@@ -1434,8 +1434,8 @@ class EditTests(TestCase):
         # swap back
         r = self.client.post(url, {
             'action': 'swapdays',
-            'source_day': timeslots[2].time.date().isoformat(),
-            'target_day': timeslots[0].time.date().isoformat(),
+            'source_day': timeslots[2].local_date().isoformat(),
+            'target_day': timeslots[0].local_date().isoformat(),
         })
         self.assertResponseStatus(r, 302)
 
@@ -1469,7 +1469,7 @@ class EditTests(TestCase):
 
         break_slot = TimeSlot.objects.get(location=break_room, type='break')
 
-        room_row = q(".room-row[data-day=\"{}\"][data-room=\"{}\"]".format(break_slot.time.date().isoformat(), break_slot.location_id))
+        room_row = q(".room-row[data-day=\"{}\"][data-room=\"{}\"]".format(break_slot.local_date().isoformat(), break_slot.location_id))
         self.assertTrue(room_row)
         self.assertTrue(room_row.find("#timeslot{}".format(break_slot.pk)))
 
@@ -1584,7 +1584,7 @@ class EditTests(TestCase):
 
         r = self.client.post(url, {
             'timeslot': assignment.timeslot_id,
-            'day': assignment.timeslot.time.date().isoformat(),
+            'day': assignment.timeslot.local_date().isoformat(),
             'time': assignment.timeslot.time.time().isoformat(),
             'duration': assignment.timeslot.duration,
             'location': assignment.timeslot.location_id,
@@ -3248,7 +3248,7 @@ class InterimTests(TestCase):
         data.update(form_initial)
         r = self.client.post(url, data)
         if r.status_code != 302:
-            self.save_response(r)
+            self.debug_save_response(r)
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number}))
         self.assertEqual(len(outbox),length_before+1)
         self.assertIn('CHANGED', outbox[-1]['Subject'])

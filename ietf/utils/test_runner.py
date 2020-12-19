@@ -35,23 +35,26 @@
 
 
 import datetime
+import factory.random
+import gzip
+import importlib
+import inspect
 import io
-import re
+import json
 import os
+import pytz
+import re
+import socket
 import sys
 import time
-import json
-import pytz
-import importlib
-import socket
-import gzip
 import unittest
-import factory.random
+
 from fnmatch import fnmatch
 
 from coverage.report import Reporter
 from coverage.results import Numbers
 from coverage.misc import NotPython
+from unittest.util import strclass
 
 import django
 from django.conf import settings
@@ -806,4 +809,18 @@ class IetfLiveServerTestCase(StaticLiveServerTestCase):
         super(IetfLiveServerTestCase, cls).tearDownClass()
         set_coverage_checking(True)
 
-    
+    def __str__(self):
+        return u"%s (%s.%s)" % (self._testMethodName, strclass(self.__class__),self._testMethodName)
+
+    def debug_save_response(self, r):
+        """
+        This is intended as a debug help, to be inserted whenever one wants
+        to save a page response in a test case; not for production.
+        """
+        stack = inspect.stack()         # stack[0] is the current frame
+        caller = stack[1]
+        fn = caller.function + '.html'
+        with open(fn, 'bw') as f:
+            f.write(r.content)
+            sys.stderr.write(f'Wrote response to {fn}\n')
+            

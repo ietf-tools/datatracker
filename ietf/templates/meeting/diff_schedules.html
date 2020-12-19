@@ -22,11 +22,11 @@
           <tr>
             <td>
               {% if d.change == 'schedule' %}
-                Scheduled <b>{{ d.session.session_label }}</b> to <b>{{ d.to.time|date:"l G:i" }} at {{ d.to.location.name }}</b>
+                Scheduled <b>{{ d.session.session_label }}</b> to <b>{{ d.to.local_start_time|date:"l G:i" }} at {{ d.to.location.name }}</b>
               {% elif d.change == 'move' %}
-                Moved <b>{{ d.session.session_label }}</b> from {{ d.from.time|date:"l G:i" }} at {{ d.from.location.name }} to <b>{{ d.to.time|date:"l G:i" }} at {{ d.to.location.name }}</b>
+                Moved <b>{{ d.session.session_label }}</b> from {{ d.from.local_start_time|date:"l G:i" }} at {{ d.from.location.name }} to <b>{{ d.to.local_start_time|date:"l G:i" }} at {{ d.to.location.name }}</b>
               {% elif d.change == 'unschedule' %}
-                Unscheduled <b>{{ d.session.session_label }}</b> from {{ d.from.time|date:"l G:i" }} at {{ d.from.location.name }}
+                Unscheduled <b>{{ d.session.session_label }}</b> from {{ d.from.local_start_time|date:"l G:i" }} at {{ d.from.location.name }}
               {% endif %}
             </td>
           </tr>
