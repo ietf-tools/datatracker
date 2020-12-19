@@ -16,7 +16,7 @@ from django.urls import reverse as urlreverse
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase
+from ietf.utils.test_utils import login_testing_unauthorized, DraftTestCase
 import ietf.stats.views
 
 from ietf.submit.models import Submission
@@ -33,7 +33,7 @@ from ietf.stats.utils import get_meeting_registration_data
 from ietf.utils.timezone import datetime_today_start
 
 
-class StatisticsTests(TestCase):
+class StatisticsTests(DraftTestCase):
     def test_stats_index(self):
         url = urlreverse(ietf.stats.views.stats_index)
         r = self.client.get(url)
