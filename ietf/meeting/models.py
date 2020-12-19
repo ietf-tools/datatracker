@@ -245,7 +245,7 @@ class Meeting(models.Model):
         for ts in self.timeslot_set.all():
             if ts.location_id is None:
                 continue
-            ymd = ts.time.date()
+            ymd = ts.local_date()
             if ymd not in time_slices:
                 time_slices[ymd] = []
                 slots[ymd] = []
@@ -474,9 +474,6 @@ class TimeSlot(models.Model):
         t = self.local_start_time()
         return "%s-%s" % (t.strftime("%H%M"), (t + self.duration).strftime("%H%M"))
 
-    def meeting_date(self):
-        return self.time.date()
-
     def registration(self):
         # below implements a object local cache
         # it tries to find a timeslot of type registration which starts at the same time as this slot
@@ -541,28 +538,21 @@ class TimeSlot(models.Model):
         return self._cached_tz
 
     def tzname(self):
-        if self.tz():
-            return self.tz().tzname(self.time.replace(tzinfo=None))
+        tz = self.tz()
+        return tz.tzname(self.time.replace(tzinfo=None)) if tz else None
     def utc_start_time(self):
-        if self.tz():
-            return self.time.astimezone(pytz.utc)
-        else:
-            return None
+        return self.time.astimezone(pytz.utc)
     def utc_end_time(self):
-        if self.tz():
-            return self.end_time().astimezone(pytz.utc)
-        else:
-            return None
+        return self.end_time().astimezone(pytz.utc)
     def local_start_time(self):
-        if self.tz():
-            return self.time.astimezone(self.tz())
-        else:
-            return None
+        tz = self.tz()
+        return self.time.astimezone(tz) if tz else None
     def local_end_time(self):
-        if self.tz():
-            return self.end_time().astimezone(self.tz())
-        else:
-            return None
+        tz = self.tz()
+        return self.end_time().astimezone(tz) if tz else None
+    def local_date(self):
+        tz = self.tz()
+        return self.time.astimezone(tz).date() if tz else None
 
     @property
     def js_identifier(self):
