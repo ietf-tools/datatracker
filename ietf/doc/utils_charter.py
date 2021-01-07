@@ -11,6 +11,7 @@ import shutil
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.encoding import smart_text, force_text
 
 import debug                            # pyflakes:ignore
@@ -24,6 +25,8 @@ from ietf.utils.mail import parse_preformatted
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.log import log
 from ietf.group.utils import save_group_in_history
+from ietf.utils.timezone import datetime_today
+
 
 def charter_name_for_group(group):
     if group.type_id == "rg":
@@ -73,7 +76,7 @@ def change_group_state_after_charter_approval(group, by):
 
     save_group_in_history(group)
     group.state = new_state
-    group.time = datetime.datetime.now()
+    group.time = timezone.now()
     group.save()
 
     # create an event for the group state change, too
@@ -132,7 +135,7 @@ def historic_milestones_for_charter(charter, rev):
         # revision (when approving a charter)
         just_before_next_rev = e[0].time - datetime.timedelta(seconds=5)
     else:
-        just_before_next_rev = datetime.datetime.now()
+        just_before_next_rev = timezone.now()
 
     res = []
     if hasattr(charter, 'chartered_group'):
@@ -197,7 +200,7 @@ def derive_new_work_text(review_text,group):
     return smart_text(m.as_string())
 
 def default_review_text(group, charter, by):
-    now = datetime.datetime.now()
+    now = timezone.now()
     addrs = gather_address_lists('charter_external_review',group=group).as_strings(compact=False)
 
     e1 = WriteupDocEvent(doc=charter, rev=charter.rev, by=by)
@@ -215,7 +218,7 @@ def default_review_text(group, charter, by):
                                     parent_ads=group.parent.role_set.filter(name='ad'),
                                     techadv=group.role_set.filter(name="techadv"),
                                     milestones=group.groupmilestone_set.filter(state="charter"),
-                                    review_date=(datetime.date.today() + datetime.timedelta(weeks=1)).isoformat(),
+                                    review_date=(datetime_today() + datetime.timedelta(weeks=1)).isoformat(),
                                     review_type="new" if group.state_id in ["proposed","bof"] else "recharter",
                                     to=addrs.to,
                                     cc=addrs.cc,

@@ -2,13 +2,11 @@
 # -*- coding: utf-8 -*-
 
 
-import os
-import shutil
-import datetime
-import io
-import lxml
-import sys
 import bibtexparser
+import datetime
+import lxml
+import os
+import sys
 
 if sys.version_info[0] == 2 and sys.version_info[1] < 7:
     import unittest2 as unittest
@@ -20,8 +18,9 @@ from pyquery import PyQuery
 from urllib.parse import urlparse, parse_qs
 from tempfile import NamedTemporaryFile
 
-from django.urls import reverse as urlreverse
 from django.conf import settings
+from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 from tastypie.test import ResourceTestCaseMixin
 
@@ -44,8 +43,9 @@ from ietf.person.models import Person
 from ietf.person.factories import PersonFactory
 from ietf.utils.mail import outbox
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, DraftTestCase
 from ietf.utils.text import normalize_text
+from ietf.utils.timezone import datetime_today
 
 class SearchTests(TestCase):
     def test_search(self):
@@ -59,76 +59,76 @@ class SearchTests(TestCase):
 
         # only show form, no search yet
         r = self.client.get(base_url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         # no match
         r = self.client.get(base_url + "?activedrafts=on&name=thisisnotadocumentname")
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "No documents match")
 
         r = self.client.get(base_url + "?rfcs=on&name=xyzzy")
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "No documents match")
 
         r = self.client.get(base_url + "?olddrafts=on&name=bar")
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "No documents match")
 
         r = self.client.get(base_url + "?olddrafts=on&name=foo")
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "draft-foo-mars-test")
 
         # find by rfc/active/inactive
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
         r = self.client.get(base_url + "?rfcs=on&name=%s" % draft.name)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.title)
 
         draft.set_state(State.objects.get(type="draft", slug="active"))
         r = self.client.get(base_url + "?activedrafts=on&name=%s" % draft.name)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.title)
 
         draft.set_state(State.objects.get(type="draft", slug="expired"))
         r = self.client.get(base_url + "?olddrafts=on&name=%s" % draft.name)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.title)
         
         draft.set_state(State.objects.get(type="draft", slug="active"))
 
         # find by title
         r = self.client.get(base_url + "?activedrafts=on&name=%s" % draft.title.split()[0])
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.title)
 
         # find by author
         r = self.client.get(base_url + "?activedrafts=on&by=author&author=%s" % draft.documentauthor_set.first().person.name_parts()[1])
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.title)
 
         # find by group
         r = self.client.get(base_url + "?activedrafts=on&by=group&group=%s" % draft.group.acronym)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.title)
 
         # find by area
         r = self.client.get(base_url + "?activedrafts=on&by=area&area=%s" % draft.group.parent_id)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.title)
 
         # find by area
         r = self.client.get(base_url + "?activedrafts=on&by=area&area=%s" % draft.group.parent_id)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.title)
 
         # find by AD
         r = self.client.get(base_url + "?activedrafts=on&by=ad&ad=%s" % draft.ad_id)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.title)
 
         # find by IESG state
         r = self.client.get(base_url + "?activedrafts=on&by=state&state=%s&substate=" % draft.get_state("draft-iesg").pk)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.title)
 
     def test_search_for_name(self):
@@ -149,68 +149,68 @@ class SearchTests(TestCase):
 
         # exact match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name)))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # prefix match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(draft.name.split("-")[:-1]))))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # non-prefix match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(draft.name.split("-")[1:]))))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # other doctypes than drafts
         doc = Document.objects.get(name='charter-ietf-mars')
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name='charter-ietf-ma')))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='conflict-review-').first()
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='status-change-').first()
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='agenda-').first()
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='minutes-').first()
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='slides-').first()
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         # match with revision
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name + "-" + prev_rev)))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=prev_rev)))
 
         # match with non-existing revision
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name + "-09")))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # match with revision and extension
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name + "-" + prev_rev + ".txt")))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=prev_rev)))
         
         # no match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="draft-ietf-doesnotexist-42")))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
 
         parsed = urlparse(r["Location"])
         self.assertEqual(parsed.path, urlreverse('ietf.doc.views_search.search'))
@@ -218,7 +218,7 @@ class SearchTests(TestCase):
 
     def test_frontpage(self):
         r = self.client.get("/")
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "Document Search")
 
     def test_docs_for_ad(self):
@@ -241,7 +241,7 @@ class SearchTests(TestCase):
         discuss_other = BallotPositionDocEventFactory(ballot=ballot, doc=ballot.doc, balloter=ad, pos=discuss_pos)
 
         r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad', kwargs=dict(name=ad.full_name_as_key())))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.name)
         self.assertContains(r, rfc.canonical_name())
         self.assertContains(r, conflrev.name)
@@ -259,7 +259,7 @@ class SearchTests(TestCase):
                                                ('draft-rfceditor', 'auth48')])
         r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad',
                                        kwargs=dict(name=ad.full_name_as_key())))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.name)
         self.assertContains(r, 'title="AUTH48"')  # title attribute of AUTH48 badge in auth48_alert_badge filter
 
@@ -267,7 +267,7 @@ class SearchTests(TestCase):
         draft = IndividualDraftFactory(pages=1)
         draft.set_state(State.objects.get(type="draft-iesg", slug="lc"))
         r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_last_call'))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.title)
 
     def test_in_iesg_process(self):
@@ -275,7 +275,7 @@ class SearchTests(TestCase):
         doc_in_process.set_state(State.objects.get(type='draft-iesg', slug='lc'))
         doc_not_in_process = IndividualDraftFactory()
         r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_iesg_process'))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, doc_in_process.title)
         self.assertNotContains(r, doc_not_in_process.title)
         
@@ -284,12 +284,12 @@ class SearchTests(TestCase):
         rfc = WgRfcFactory()
 
         r = self.client.get(urlreverse('ietf.doc.views_search.index_all_drafts'))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.name)
         self.assertContains(r, rfc.canonical_name().upper())
 
         r = self.client.get(urlreverse('ietf.doc.views_search.index_active_drafts'))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, draft.title)
 
     def test_ajax_search_docs(self):
@@ -301,7 +301,7 @@ class SearchTests(TestCase):
             "doc_type": "draft",
         })
         r = self.client.get(url, dict(q=draft.name))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         data = r.json()
         self.assertEqual(data[0]["id"], draft.pk)
 
@@ -314,7 +314,7 @@ class SearchTests(TestCase):
         })
 
         r = self.client.get(url, dict(q=doc_alias.name))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         data = r.json()
         self.assertEqual(data[0]["id"], doc_alias.pk)
 
@@ -322,206 +322,27 @@ class SearchTests(TestCase):
         # Three drafts to show with various warnings
         drafts = WgDraftFactory.create_batch(3,states=[('draft','active'),('draft-iesg','ad-eval')])
         for index, draft in enumerate(drafts):
-            StateDocEventFactory(doc=draft, state=('draft-iesg','ad-eval'), time=datetime.datetime.now()-datetime.timedelta(days=[1,15,29][index]))
+            StateDocEventFactory(doc=draft, state=('draft-iesg','ad-eval'), time=timezone.now()-datetime.timedelta(days=[1,15,29][index]))
 
         # And one draft that should not show (with the default of 7 days to view)
         old = WgDraftFactory()
-        old.docevent_set.filter(newrevisiondocevent__isnull=False).update(time=datetime.datetime.now()-datetime.timedelta(days=8))
-        StateDocEventFactory(doc=old, time=datetime.datetime.now()-datetime.timedelta(days=8))
+        old.docevent_set.filter(newrevisiondocevent__isnull=False).update(time=timezone.now()-datetime.timedelta(days=8))
+        StateDocEventFactory(doc=old, time=timezone.now()-datetime.timedelta(days=8))
 
         url = urlreverse('ietf.doc.views_search.recent_drafts')
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('td.doc')),3)
         self.assertEqual(q('td.status span.label-warning').text(),"for 15 days")
         self.assertEqual(q('td.status span.label-danger').text(),"for 29 days")        
 
-class DocDraftTestCase(TestCase):
-    draft_text = """
-
-
-
-Martian Special Interest Group (mars)                             P. Man
-Internet-Draft                                            March 21, 2015
-Intended status: Informational
-Expires: September 22, 2015
-
-
-                 Optimizing Martian Network Topologies
-                      draft-ietf-mars-test-02.txt
-
-Abstract
-
-   Techniques for achieving near-optimal Martian networks.
-
-Status of This Memo
-
-   This Internet-Draft is submitted in full conformance with the
-   provisions of BCP 78 and BCP 79.
-
-   Internet-Drafts are working documents of the Internet Engineering
-   Task Force (IETF).  Note that other groups may also distribute
-   working documents as Internet-Drafts.  The list of current Internet-
-   Drafts is at http://datatracker.ietf.org/drafts/current/.
-
-   Internet-Drafts are draft documents valid for a maximum of six months
-   and may be updated, replaced, or obsoleted by other documents at any
-   time.  It is inappropriate to use Internet-Drafts as reference
-   material or to cite them other than as "work in progress."
-
-   This Internet-Draft will expire on September 22, 2015.
-
-Copyright Notice
-
-   Copyright (c) 2015 IETF Trust and the persons identified as the
-   document authors.  All rights reserved.
-
-   This document is subject to BCP 78 and the IETF Trust's Legal
-   Provisions Relating to IETF Documents
-   (http://trustee.ietf.org/license-info) in effect on the date of
-   publication of this document.  Please review these documents
-   carefully, as they describe your rights and restrictions with respect
-   to this document.  Code Components extracted from this document must
-   include Simplified BSD License text as described in Section 4.e of
-   the Trust Legal Provisions and are provided without warranty as
-   described in the Simplified BSD License.
-
-   This document may contain material from IETF Documents or IETF
-   Contributions published or made publicly available before November
-   10, 2008.  The person(s) controlling the copyright in some of this
-
-
-
-Man                    Expires September 22, 2015               [Page 1]
-
-Internet-Draft    Optimizing Martian Network Topologies       March 2015
-
-
-   material may not have granted the IETF Trust the right to allow
-   modifications of such material outside the IETF Standards Process.
-   Without obtaining an adequate license from the person(s) controlling
-   the copyright in such materials, this document may not be modified
-   outside the IETF Standards Process, and derivative works of it may
-   not be created outside the IETF Standards Process, except to format
-   it for publication as an RFC or to translate it into languages other
-   than English.
-
-Table of Contents
-
-   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
-   2.  Security Considerations . . . . . . . . . . . . . . . . . . .   2
-   3.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   2
-   4.  Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .   3
-   5.  Normative References  . . . . . . . . . . . . . . . . . . . .   3
-   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .   3
-
-1.  Introduction
-
-   This document describes how to make the Martian networks work.  The
-   methods used in Earth do not directly translate to the efficent
-   networks on Mars, as the topographical differences caused by planets.
-   For example the avian carriers, cannot be used in the Mars, thus
-   RFC1149 ([RFC1149]) cannot be used in Mars.
-
-   Some optimizations can be done because Mars is smaller than Earth,
-   thus the round trip times are smaller.  Also as Mars has two moons
-   instead of only one as we have in Earth, we can use both Deimos and
-   Phobos when using reflecting radio links off the moon.
-
-   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
-   "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
-   document are to be interpreted as described in [RFC2119].
-
-2.  Security Considerations
-
-   As Martians are known to listen all traffic in Mars, all traffic in
-   the Mars MUST be encrypted.
-
-3.  IANA Considerations
-
-   There is no new IANA considerations in this document.
-
-
-
-
-
-
-
-
-Man                    Expires September 22, 2015               [Page 2]
-
-Internet-Draft    Optimizing Martian Network Topologies       March 2015
-
-
-4.  Acknowledgements
-
-   This document is created in the IETF-92 CodeSprint in Dallas, TX.
-
-5.  Normative References
-
-   [RFC1149]  Waitzman, D., "Standard for the transmission of IP
-              datagrams on avian carriers", RFC 1149, April 1990.
-
-   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
-              Requirement Levels", BCP 14, RFC 2119, March 1997.
-
-Author's Address
-
-   Plain Man
-   Deimos street
-   Mars City  MARS-000000
-   Mars
-
-   Email: aliens@example.mars
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Man                    Expires September 22, 2015               [Page 3]
-"""
-
-    def setUp(self):
-        self.id_dir = self.tempdir('id')
-        self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
-        settings.INTERNET_DRAFT_PATH = self.id_dir
-        self.saved_internet_all_drafts_archive_dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
-        settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR = self.id_dir
-        f = io.open(os.path.join(self.id_dir, 'draft-ietf-mars-test-01.txt'), 'w')
-        f.write(self.draft_text)
-        f.close()
-
-    def tearDown(self):
-        settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR = self.saved_internet_all_drafts_archive_dir
-        settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
-        shutil.rmtree(self.id_dir)
+class DocDraftTestCase(DraftTestCase):
+    """
+    Inherits from DraftTestCase, which provides .setUp() and .tearDown()
+    methods that handles set-up needed by the tests below.
+
+    """
 
     def test_document_draft(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01')
@@ -544,7 +365,7 @@ Man                    Expires September 22, 2015               [Page 3]
         # expand them
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "Active Internet-Draft")
         self.assertContains(r, "Show full document text")
         self.assertNotContains(r, "Deimos street")
@@ -561,7 +382,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertNotContains(r, updated_by.title)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=0")
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "Active Internet-Draft")
         self.assertNotContains(r, "Show full document text")
         self.assertContains(r, "Deimos street")
@@ -578,7 +399,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertNotContains(r, updated_by.title)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=foo")
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "Active Internet-Draft")
         self.assertNotContains(r, "Show full document text")
         self.assertContains(r, "Deimos street")
@@ -595,7 +416,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertNotContains(r, updated_by.title)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=1")
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "Active Internet-Draft")
         self.assertNotContains(r, "Show full document text")
         self.assertContains(r, "Deimos street")
@@ -613,7 +434,7 @@ Man                    Expires September 22, 2015               [Page 3]
 
         self.client.cookies = SimpleCookie({str('full_draft'): str('on')})
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "Active Internet-Draft")
         self.assertNotContains(r, "Show full document text")
         self.assertContains(r, "Deimos street")
@@ -631,7 +452,7 @@ Man                    Expires September 22, 2015               [Page 3]
 
         self.client.cookies = SimpleCookie({str('full_draft'): str('off')})
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "Active Internet-Draft")
         self.assertContains(r, "Show full document text")
         self.assertNotContains(r, "Deimos street")
@@ -649,7 +470,7 @@ Man                    Expires September 22, 2015               [Page 3]
 
         self.client.cookies = SimpleCookie({str('full_draft'): str('foo')})
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "Active Internet-Draft")
         self.assertContains(r, "Show full document text")
         self.assertNotContains(r, "Deimos street")
@@ -666,7 +487,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertNotContains(r, updated_by.title)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "Versions:")
         self.assertContains(r, "Deimos street")
         q = PyQuery(r.content)
@@ -675,13 +496,13 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(len(q('.rfcmarkup a[href]')), 31)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name, rev=draft.rev)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         # expired draft
         draft.set_state(State.objects.get(type="draft", slug="expired"))
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "Expired Internet-Draft")
 
         # replaced draft
@@ -689,7 +510,7 @@ Man                    Expires September 22, 2015               [Page 3]
 
         replacement = WgDraftFactory(
             name="draft-ietf-replacement",
-            time=datetime.datetime.now(),
+            time=timezone.now(),
             title="Replacement Draft",
             stream_id=draft.stream_id, group_id=draft.group_id, abstract=draft.abstract,stream=draft.stream, rev=draft.rev,
             pages=draft.pages, intended_std_level_id=draft.intended_std_level_id,
@@ -700,7 +521,7 @@ Man                    Expires September 22, 2015               [Page 3]
                                              relationship_id="replaces")
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "Replaced Internet-Draft")
         self.assertContains(r, replacement.canonical_name())
         self.assertContains(r, replacement.title)
@@ -718,12 +539,12 @@ Man                    Expires September 22, 2015               [Page 3]
         bcp_alias.docs.add(draft)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=bcp_alias.name)))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc_alias.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "RFC 123456")
         self.assertContains(r, draft.name)
         self.assertContains(r, replaced.canonical_name())
@@ -745,12 +566,12 @@ Man                    Expires September 22, 2015               [Page 3]
             stream_id="ise",
             std_level_id="ps")
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "RFC 1234567")
 
         # unknown draft
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name="draft-xyz123")))
-        self.assertEqual(r.status_code, 404)
+        self.assertResponseStatus(r, 404)
 
     def assert_correct_wg_group_link(self, r, group):
         """Assert correct format for WG-like group types"""
@@ -785,7 +606,7 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assert_correct_wg_group_link(r, group)
 
             rfc = WgRfcFactory(name='draft-rfc-document-%s' % group_type_id, group=group)
-            DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10')
+            DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10 12:00:00Z')
             # get the rfc name to avoid a redirect
             rfc_name = rfc.docalias.filter(name__startswith='rfc').first().name
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc_name)))
@@ -800,7 +621,7 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assert_correct_non_wg_group_link(r, group)
 
             rfc = WgRfcFactory(name='draft-rfc-document-%s' % group_type_id, group=group)
-            DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10')
+            DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10 12:00:00Z')
             # get the rfc name to avoid a redirect
             rfc_name = rfc.docalias.filter(name__startswith='rfc').first().name
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc_name)))
@@ -837,14 +658,14 @@ Man                    Expires September 22, 2015               [Page 3]
             doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertContains(r, "%s-01"%docname)
     
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name,rev="01")))
-            self.assertEqual(r.status_code, 302)
+            self.assertResponseStatus(r, 302)
      
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name,rev="00")))
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertContains(r, "%s-00"%docname)
 
     def test_rfcqueue_auth48_views(self):
@@ -860,20 +681,20 @@ Man                    Expires September 22, 2015               [Page 3]
         for state in [('draft-iesg', 'rfcqueue'), ('draft-rfceditor', 'rfc-edit')]:
             _change_state(draft, state)
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertNotContains(r, 'Auth48 status')
 
         # Put in auth48 state without a URL
         _change_state(draft, ('draft-rfceditor', 'auth48'))
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertNotContains(r, 'Auth48 status')
 
         # Now add a URL
         documenturl = draft.documenturl_set.create(tag_id='auth48', 
                                                    url='http://rfceditor.example.com/auth48-url')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, 'Auth48 status')
         self.assertContains(r, documenturl.url)
 
@@ -881,7 +702,7 @@ Man                    Expires September 22, 2015               [Page 3]
         draft.documenturl_set.filter(tag_id='auth48').delete()
         _change_state(draft, ('draft-rfceditor', 'auth48-done'))
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertNotContains(r, 'Auth48 status')
 
 
@@ -889,13 +710,13 @@ class DocTestCase(TestCase):
     def test_document_charter(self):
         CharterFactory(name='charter-ietf-mars')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name="charter-ietf-mars")))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
     def test_document_conflict_review(self):
         ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission')
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name='conflict-review-imaginary-irtf-submission')))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
     def test_document_material(self):
         MeetingFactory(type_id='ietf',number='72')
@@ -915,7 +736,7 @@ class DocTestCase(TestCase):
             name = "session-72-mars-1",
             meeting = Meeting.objects.get(number='72'),
             group = Group.objects.get(acronym='mars'),
-            modified = datetime.datetime.now(),
+            modified = timezone.now(),
             type_id = 'regular',
         )
         SchedulingEvent.objects.create(
@@ -926,7 +747,7 @@ class DocTestCase(TestCase):
         SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
     def test_document_ballot(self):
         doc = IndividualDraftFactory()
@@ -945,22 +766,22 @@ class DocTestCase(TestCase):
             type="changed_ballot_position",
             pos_id="yes",
             comment="Looks fine to me",
-            comment_time=datetime.datetime.now(),
+            comment_time=timezone.now(),
             balloter=Person.objects.get(user__username="ad"),
             by=Person.objects.get(name="(System)"))
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, pos.comment)
 
         # test with ballot_id
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot.pk)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, pos.comment)
 
         # test popup too while we're at it
         r = self.client.get(urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         # Now simulate a new revision and make sure positions on older revisions are marked as such
         oldrev = doc.rev
@@ -968,7 +789,7 @@ class DocTestCase(TestCase):
         doc.rev = e.rev
         doc.save_with_history([e])
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r,  '(%s for -%s)' % (pos.comment_time.strftime('%Y-%m-%d'), oldrev))
         
     def test_document_ballot_needed_positions(self):
@@ -991,7 +812,7 @@ class DocTestCase(TestCase):
         iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
         self.client.login(username='ad', password='ad+password')
         r = self.client.post(urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name)),dict(new_state=iesgeval_pk))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         r = self.client.get(r._headers["location"][1])
         self.assertContains(r, ">IESG Evaluation<")
 
@@ -1008,7 +829,7 @@ class DocTestCase(TestCase):
         doc = IndividualDraftFactory()
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_json", kwargs=dict(name=doc.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         data = r.json()
         self.assertEqual(doc.name, data['name'])
         self.assertEqual(doc.pages,data['pages'])
@@ -1042,7 +863,7 @@ class DocTestCase(TestCase):
 
         url = urlreverse('ietf.doc.views_doc.document_writeup', kwargs=dict(name=doc.name))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, appr.text)
         self.assertContains(r, notes.text)
         self.assertContains(r, rfced_note.text)
@@ -1059,7 +880,7 @@ class DocTestCase(TestCase):
 
         url = urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=doc.name))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, e.desc)
 
     def test_history_bis_00(self):
@@ -1069,7 +890,7 @@ class DocTestCase(TestCase):
 
         url = urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=bis_draft.name))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200) 
+        self.assertResponseStatus(r, 200) 
         q = PyQuery(unicontent(r))
         attr1='value="{}"'.format(rfcname)
         self.assertEqual(len(q('option['+attr1+'][selected="selected"]')), 1)
@@ -1086,7 +907,7 @@ class DocTestCase(TestCase):
             by=Person.objects.get(name="(System)"))
 
         r = self.client.get("/feed/document-changes/%s/" % doc.name)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, e.desc)
 
     def test_last_call_feed(self):
@@ -1100,10 +921,10 @@ class DocTestCase(TestCase):
             desc="Last call",
             type="sent_last_call",
             by=Person.objects.get(user__username="secretary"),
-            expires=datetime.date.today() + datetime.timedelta(days=7))
+            expires= datetime_today() + datetime.timedelta(days=7))
 
         r = self.client.get("/feed/last-call/")
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, doc.name)
 
     def test_rfc_feed(self):
@@ -1116,7 +937,7 @@ class DocTestCase(TestCase):
     def test_state_help(self):
         url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type="draft-iesg"))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, State.objects.get(type="draft-iesg", slug="lc").name)
 
     def test_document_nonietf_pubreq_button(self):
@@ -1124,30 +945,31 @@ class DocTestCase(TestCase):
 
         self.client.login(username='iab-chair', password='iab-chair+password')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertNotContains(r, "Request publication")
 
         Document.objects.filter(pk=doc.pk).update(stream='iab')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "Request publication")
 
         doc.states.add(State.objects.get(type_id='draft-stream-iab',slug='rfc-edit'))
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertNotContains(r, "Request publication")
 
 
     def test_document_bibtex(self):
 
+        tz = timezone.utc
         rfc = WgRfcFactory.create(
                   #other_aliases = ['rfc6020',],
                   states = [('draft','rfc'),('draft-iesg','pub')],
                   std_level_id = 'ps',
-                  time = datetime.datetime(2010,10,10),
+                  time = tz.localize(datetime.datetime(2010,10,10)),
               )
         num = rfc.rfc_number()
-        DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10')
+        DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10 12:00Z')
         #
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=rfc.name))
         r = self.client.get(url)
@@ -1164,10 +986,10 @@ class DocTestCase(TestCase):
                   stream_id =       'ise',
                   states =          [('draft','rfc'),('draft-iesg','pub')],
                   std_level_id =    'inf',
-                  time =            datetime.datetime(1990,0o4,0o1),
+                  time =            tz.localize(datetime.datetime(1990,0o4,0o1,9)),
               )
         num = april1.rfc_number()
-        DocEventFactory.create(doc=april1, type='published_rfc', time = '1990-04-01')
+        DocEventFactory.create(doc=april1, type='published_rfc', time = '1990-04-01 00:00-09')
         #
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=april1.name))
         r = self.client.get(url)
@@ -1218,7 +1040,7 @@ class AddCommentTestCase(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(unicontent(r))
         self.assertEqual(len(q('form textarea[name=comment]')), 1)
 
@@ -1227,7 +1049,7 @@ class AddCommentTestCase(TestCase):
         mailbox_before = len(outbox)
         
         r = self.client.post(url, dict(comment="This is a test."))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
 
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
         self.assertEqual("This is a test.", draft.latest_event().desc)
@@ -1242,7 +1064,7 @@ class AddCommentTestCase(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(unicontent(r))
         self.assertEqual(len(q('form textarea[name=comment]')), 1)
 
@@ -1262,11 +1084,11 @@ class ReferencesTest(TestCase):
         RelatedDocument.objects.get_or_create(source=doc1,target=doc2,relationship=DocRelationshipName.objects.get(slug='refnorm'))
         url = urlreverse('ietf.doc.views_doc.document_references', kwargs=dict(name=doc1.name))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, doc2.name)
         url = urlreverse('ietf.doc.views_doc.document_referenced_by', kwargs=dict(name=doc2.name))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, doc1.name)
        
 
@@ -1309,19 +1131,19 @@ expand-draft-ietf-ames-test.all@virtual.ietf.org  ames-author@example.ames, ames
         PersonFactory(user__username='plain')
         url = urlreverse('ietf.doc.urls.redirect.document_email', kwargs=dict(name="draft-ietf-mars-test"))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
 
         url = urlreverse('ietf.doc.views_doc.email_aliases', kwargs=dict())
         login_testing_unauthorized(self, "plain", url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertTrue(all([x in unicontent(r) for x in ['mars-test@','mars-test.authors@','mars-test.chairs@']]))
         self.assertTrue(all([x in unicontent(r) for x in ['ames-test@','ames-test.authors@','ames-test.chairs@']]))
 
     def testExpansions(self):
         url = urlreverse('ietf.doc.views_doc.document_email', kwargs=dict(name="draft-ietf-mars-test"))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, 'draft-ietf-mars-test.all@ietf.org')
         self.assertContains(r, 'iesg_ballot_saved')
 
@@ -1336,7 +1158,7 @@ class DocumentMeetingTests(TestCase):
         self.other_chair = PersonFactory()
         self.other_group.role_set.create(name_id='chair',person=self.other_chair,email=self.other_chair.email())
 
-        today = datetime.date.today()
+        today = datetime_today()
         cut_days = settings.MEETING_MATERIALS_DEFAULT_SUBMISSION_CORRECTION_DAYS
         self.past_cutoff = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=1+cut_days))
         self.past = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=cut_days/2))
@@ -1558,10 +1380,10 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
 
         chart_url = urlreverse('ietf.doc.views_stats.chart_newrevisiondocevent')
         r = self.client.get(chart_url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         r = self.client.get(chart_url + '?activedrafts=on&name=%s'%doc.name[6:12])
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         
     def test_personal_chart(self):
         person = PersonFactory.create()
@@ -1582,10 +1404,14 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         r = self.client.get(data_url)
         self.assertValidJSONResponse(r)
         d = r.json()
+        # If there's no count for today, the response can contain an entry
+        # for today with zero count.  Filter that out before doing the test
+        d = [ i for i in d if i[1] != 0 ]
+
         self.assertEqual(len(d), 1)
         self.assertEqual(len(d[0]), 2)
 
         page_url = urlreverse('ietf.person.views.profile', kwargs=dict(email_or_name=person.name))
         r = self.client.get(page_url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         

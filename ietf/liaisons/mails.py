@@ -2,14 +2,16 @@
 # -*- coding: utf-8 -*-
 
 
-import datetime
-
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils import timezone
+
+import debug                            # pyflakes:ignore
 
 from ietf.utils.mail import send_mail_text
 from ietf.group.models import Role
 from ietf.mailtrigger.utils import gather_address_lists
+
 
 def send_liaison_by_email(request, liaison):
     subject = 'New Liaison Statement, "%s"' % (liaison.title)
@@ -61,7 +63,7 @@ def possibly_send_deadline_reminder(liaison):
         0: 'today'
         }
 
-    days_to_go = (liaison.deadline - datetime.date.today()).days
+    days_to_go = (liaison.deadline - timezone.now().date()).days
     if not (days_to_go < 0 or days_to_go in list(PREVIOUS_DAYS.keys())):
         return None # no reminder
 

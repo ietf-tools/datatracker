@@ -3,13 +3,13 @@
 
 
 import io
-import datetime, os
+import os
 import operator
-
-from typing import Union            # pyflakes:ignore
 
 from email.utils import parseaddr
 from form_utils.forms import BetterModelForm
+from functools import reduce
+from typing import Union            # pyflakes:ignore
 
 from django import forms
 from django.conf import settings
@@ -34,7 +34,9 @@ from ietf.person.models import Email
 from ietf.person.fields import SearchableEmailField
 from ietf.doc.models import Document, DocAlias
 from ietf.utils.fields import DatepickerDateField
-from functools import reduce
+from ietf.utils.timezone import datetime_today, date2datetime
+
+
 
 '''
 NOTES:
@@ -185,7 +187,7 @@ class SearchLiaisonForm(forms.Form):
             end_date = self.cleaned_data.get('end_date')
             events = None
             if start_date:
-                events = LiaisonStatementEvent.objects.filter(type='posted', time__gte=start_date)
+                events = LiaisonStatementEvent.objects.filter(type='posted', time__gte=date2datetime(start_date))
                 if end_date:
                     events = events.filter(time__lte=end_date)
             elif end_date:
@@ -220,7 +222,7 @@ class LiaisonModelForm(BetterModelForm):
     to_groups = forms.ModelMultipleChoiceField(queryset=Group.objects,label='Groups',required=False)
     deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Deadline', required=True)
     related_to = SearchableLiaisonStatementsField(label='Related Liaison Statement', required=False)
-    submitted_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Submission date', required=True, initial=datetime.date.today())
+    submitted_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Submission date', required=True, initial=datetime_today())
     attachments = CustomModelMultipleChoiceField(queryset=Document.objects,label='Attachments', widget=ShowAttachmentsWidget, required=False)
     attach_title = forms.CharField(label='Title', required=False)
     attach_file = forms.FileField(label='File', required=False)
@@ -536,7 +538,7 @@ class EditLiaisonForm(LiaisonModelForm):
         super(EditLiaisonForm, self).save(*args,**kwargs)
         if self.has_changed() and 'submitted_date' in self.changed_data:
             event = self.instance.liaisonstatementevent_set.filter(type='submitted').first()
-            event.time = self.cleaned_data.get('submitted_date')
+            event.time = date2datetime(self.cleaned_data.get('submitted_date'))
             event.save()
 
         return self.instance

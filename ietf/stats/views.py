@@ -20,6 +20,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse as urlreverse
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
+from django.utils.timezone import utc
 
 import debug                            # pyflakes:ignore
 
@@ -40,6 +41,8 @@ from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries, co
 from ietf.ietfauth.utils import has_role
 from ietf.utils.log import log
 from ietf.utils.response import permission_denied
+from ietf.utils.timezone import datetime_today_start
+
 
 def stats_index(request):
     return render(request, "stats/index.html")
@@ -195,7 +198,7 @@ def document_stats(request, stats_type=None):
         if "y" in time_choice:
             try:
                 y = int(time_choice.rstrip("y"))
-                from_time = datetime.datetime.today() - dateutil.relativedelta.relativedelta(years=y)
+                from_time = datetime_today_start() - dateutil.relativedelta.relativedelta(years=y)
             except ValueError:
                 pass
 
@@ -636,7 +639,7 @@ def document_stats(request, stats_type=None):
             template_name = "yearly"
 
             years_from = from_time.year if from_time else 1
-            years_to = datetime.date.today().year - 1
+            years_to = datetime_today_start().year - 1
 
 
             if stats_type == "yearly/affiliation":
@@ -890,7 +893,7 @@ def meeting_stats(request, num=None, stats_type=None):
 
                 continents = {}
                 
-                meetings = Meeting.objects.filter(type='ietf', date__lte=datetime.date.today()).order_by('number')
+                meetings = Meeting.objects.filter(type='ietf', date__lte=datetime_today_start()).order_by('number')
                 for m in meetings:
                     country = CountryName.objects.get(slug=m.country)
                     continents[country.continent.name] = country.continent.name
@@ -1052,12 +1055,12 @@ def review_stats(request, stats_type=None, acronym=None):
         except ValueError:
             return None
 
-    today = datetime.date.today()
+    today = datetime_today_start()
     from_date = parse_date(request.GET.get("from")) or today - dateutil.relativedelta.relativedelta(years=1)
     to_date = parse_date(request.GET.get("to")) or today
 
-    from_time = datetime.datetime.combine(from_date, datetime.time.min)
-    to_time = datetime.datetime.combine(to_date, datetime.time.max)
+    from_time = utc.localize(datetime.datetime.combine(from_date, datetime.time.min))
+    to_time = utc.localize(datetime.datetime.combine(to_date, datetime.time.max))
 
     # teams/reviewers
     teams = list(Group.objects.exclude(reviewrequest=None).distinct().order_by("name"))

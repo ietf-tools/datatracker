@@ -49,20 +49,21 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib.sites.models import Site
 from django.utils.encoding import force_bytes
-#from django.views.decorators.cache import cache_page
-#from django.views.decorators.vary import vary_on_cookie
+from django.utils import timezone
 
 import debug               # pyflakes:ignore
 
 from ietf.doc.models import Document, State, LastCallDocEvent, ConsensusDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
 from ietf.doc.utils import update_telechat, augment_events_with_revision
+from ietf.doc.utils_search import fill_in_document_table_attributes, fill_in_telechat_date
 from ietf.group.models import GroupMilestone, Role
 from ietf.iesg.agenda import agenda_data, agenda_sections, fill_in_agenda_docs, get_agenda_date
 from ietf.iesg.models import TelechatDate
 from ietf.iesg.utils import telechat_page_count
 from ietf.ietfauth.utils import has_role, role_required, user_is_person
 from ietf.person.models import Person
-from ietf.doc.utils_search import fill_in_document_table_attributes, fill_in_telechat_date
+from ietf.utils.timezone import date2datetime
+
 
 def review_decisions(request, year=None):
     events = DocEvent.objects.filter(type__in=("iesg_disapproved", "iesg_approved"))
@@ -73,8 +74,8 @@ def review_decisions(request, year=None):
         year = int(year)
         events = events.filter(time__year=year)
     else:
-        d = datetime.date.today() - datetime.timedelta(days=185)
-        d = datetime.date(d.year, d.month, 1)
+        d = timezone.now().date() - datetime.timedelta(days=185)
+        d = date2datetime(datetime.date(d.year, d.month, 1))
         events = events.filter(time__gte=d)
 
     events = events.select_related("doc", "doc__intended_std_level").order_by("-time", "-id")
@@ -187,7 +188,7 @@ def agenda_json(request, date=None):
 #     # an agenda, because the code and data strucutes assume we're showing
 #     # the current agenda, and documents on later agendas won't show on
 #     # earlier agendas, even if they were actually on them.
-#     telechat_dates = TelechatDate.objects.filter(date__lt=datetime.date.today(), date__gte=datetime.date(2012,3,1))
+#     telechat_dates = TelechatDate.objects.filter(date__lt=datetime_today(), date__gte=datetime.date(2012,3,1))
 #     return render(request, 'iesg/past_agendas.html', {'telechat_dates': telechat_dates })
 
 def agenda(request, date=None):

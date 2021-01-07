@@ -68,14 +68,14 @@ class Downref(TestCase):
 
         # error - source is not in an approved state
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         r = self.client.post(url, dict(rfc=self.rfcalias.pk, drafts=(self.draft.pk, )))
         self.assertContains(r, 'Draft is not yet approved')
 
         # error - the target is not a normative reference of the source
         self.draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="pub"))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         r = self.client.post(url, dict(rfc=self.rfcalias.pk, drafts=(self.draft.pk, )))
         self.assertContains(r, 'There does not seem to be a normative reference to RFC')
         self.assertContains(r, 'Save downref anyway')
@@ -86,9 +86,9 @@ class Downref(TestCase):
         rfc_de_count_before = self.rfc.docevent_set.count()
 
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         r = self.client.post(url, dict(rfc=self.rfcalias.pk, drafts=(self.draft.pk, )))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         newurl = urlreverse('ietf.doc.views_downref.downref_registry')
         r = self.client.get(newurl)
         self.assertContains(r, '<a href="/doc/draft-ietf-mars-test')
@@ -106,7 +106,7 @@ class Downref(TestCase):
 
         # the announcement text should call out the downref to RFC 9999
         r = self.client.post(url, dict(regenerate_last_call_text="1"))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         text = q("[name=last_call_text]").text()
         self.assertIn('The document contains these normative downward references', text)
@@ -114,7 +114,7 @@ class Downref(TestCase):
         # now, the announcement text about the downref to RFC 9999 should be gone
         RelatedDocument.objects.create(source=draft, target=rfc9999.docalias.get(name='rfc9999'),relationship_id='downref-approval')
         r = self.client.post(url, dict(regenerate_last_call_text="1"))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         text = q("[name=last_call_text]").text()
         self.assertNotIn('The document contains these normative downward references', text)

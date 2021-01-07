@@ -37,7 +37,8 @@ from ietf.utils.pipe import pipe
 
 def find_ads_for_meeting(meeting):
     ads = []
-    meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
+    tz = meeting.tz()
+    meeting_time = tz.localize(datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0)))
 
     num = 0
     # get list of ADs which are/were active at the time of the meeting.
@@ -84,7 +85,7 @@ def build_all_agenda_slices(meeting):
     date_slices = {}
 
     for ts in meeting.timeslot_set.filter(type__in=['regular',]).order_by('time','name'):
-            ymd = ts.time.date()
+            ymd = ts.local_date()
 
             if ymd not in date_slices and ts.location != None:
                 date_slices[ymd] = []
@@ -187,7 +188,8 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
     # assignments = list(assignments_queryset) # make sure we're set in stone
     assignments = assignments_queryset
 
-    meeting_time = datetime.datetime.combine(meeting.date, datetime.time())
+    tz = meeting.tz()
+    meeting_time = tz.localize(datetime.datetime.combine(meeting.date, datetime.time()))
 
     # replace groups with historic counterparts
     groups = [ ]
@@ -421,7 +423,7 @@ def can_view_interim_request(meeting, user):
     return can_manage_group(user, group)
 
 
-def create_interim_meeting(group, date, city='', country='', timezone='UTC',
+def create_interim_meeting(group, date, city='', country='', time_zone='UTC',
                            person=None):
     """Helper function to create interim meeting and associated schedule"""
     if not person:
@@ -434,7 +436,7 @@ def create_interim_meeting(group, date, city='', country='', timezone='UTC',
         days=1,
         city=city,
         country=country,
-        time_zone=timezone)
+        time_zone=time_zone)
     schedule = Schedule.objects.create(
         meeting=meeting,
         owner=person,
@@ -627,7 +629,7 @@ def send_interim_meeting_cancellation_notice(meeting):
         acronym=group.acronym,
         type=group.type.slug.upper(),
         date=meeting.date.strftime('%Y-%m-%d'))
-    start_time = session.official_timeslotassignment().timeslot.time
+    start_time = session.official_timeslotassignment().timeslot.local_start_time()
     end_time = start_time + session.requested_duration
     is_multi_day = session.meeting.session_set.with_current_status().filter(current_status='sched').count() > 1
     template = 'meeting/interim_meeting_cancellation_notice.txt'
@@ -644,7 +646,7 @@ def send_interim_meeting_cancellation_notice(meeting):
 def send_interim_session_cancellation_notice(session):
     """Sends an email that one session of a scheduled interim meeting has been cancelled."""
     group = session.group
-    start_time = session.official_timeslotassignment().timeslot.time
+    start_time = session.official_timeslotassignment().timeslot.local_start_time()
     end_time = start_time + session.requested_duration
     (to_email, cc_list) = gather_address_lists('interim_cancelled',group=group)
     from_email = settings.INTERIM_ANNOUNCE_FROM_EMAIL_PROGRAM if group.type_id=='program' else settings.INTERIM_ANNOUNCE_FROM_EMAIL_DEFAULT
@@ -720,10 +722,13 @@ def sessions_post_save(request, forms):
 
 def update_interim_session_assignment(form):
     """Helper function to create / update timeslot assigned to interim session"""
-    time = datetime.datetime.combine(
-        form.cleaned_data['date'],
-        form.cleaned_data['time'])
     session = form.instance
+    meeting = session.meeting
+    tz = meeting.tz()
+    time = tz.localize(datetime.datetime.combine(
+        form.cleaned_data['date'],
+        form.cleaned_data['time'],
+        ))
     if session.official_timeslotassignment():
         slot = session.official_timeslotassignment().timeslot
         slot.time = time
@@ -731,14 +736,14 @@ def update_interim_session_assignment(form):
         slot.save()
     else:
         slot = TimeSlot.objects.create(
-            meeting=session.meeting,
+            meeting=meeting,
             type_id='regular',
             duration=session.requested_duration,
             time=time)
         SchedTimeSessAssignment.objects.create(
             timeslot=slot,
             session=session,
-            schedule=session.meeting.schedule)
+            schedule=meeting.schedule)
 
 def populate_important_dates(meeting):
     assert ImportantDate.objects.filter(meeting=meeting).exists() is False

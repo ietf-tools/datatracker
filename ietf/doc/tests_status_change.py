@@ -35,7 +35,7 @@ class StatusChangeTests(TestCase):
 
         # normal get should succeed and get a reasonable form
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form select[name=create_in_state]')),1)
 
@@ -46,25 +46,25 @@ class StatusChangeTests(TestCase):
 
         ## Must set a responsible AD
         r = self.client.post(url,dict(document_name="bogus",title="Bogus Title",ad="",create_in_state=state_strpk,notify='ipu@ietf.org'))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form .has-error')) > 0)
 
         ## Must set a name
         r = self.client.post(url,dict(document_name="",title="Bogus Title",ad=ad_strpk,create_in_state=state_strpk,notify='ipu@ietf.org'))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form .has-error')) > 0)
 
         ## Must not choose a document name that already exists
         r = self.client.post(url,dict(document_name="imaginary-mid-review",title="Bogus Title",ad=ad_strpk,create_in_state=state_strpk,notify='ipu@ietf.org'))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form .has-error')) > 0)
 
         ## Must set a title
         r = self.client.post(url,dict(document_name="bogus",title="",ad=ad_strpk,create_in_state=state_strpk,notify='ipu@ietf.org'))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form .has-error')) > 0)
 
@@ -72,7 +72,7 @@ class StatusChangeTests(TestCase):
         r = self.client.post(url,dict(document_name="imaginary-new",title="A new imaginary status change",ad=ad_strpk,
                                       create_in_state=state_strpk,notify='ipu@ietf.org',new_relation_row_blah="rfc9999",
                                       statchg_relation_row_blah="tois"))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         status_change = Document.objects.get(name='status-change-imaginary-new')        
         self.assertEqual(status_change.get_state('statchg').slug,'adrev')
         self.assertEqual(status_change.rev,'00')
@@ -89,20 +89,20 @@ class StatusChangeTests(TestCase):
 
         # normal get 
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form select[name=new_state]')),1)
         
         # faulty post
         r = self.client.post(url,dict(new_state=""))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form .has-error')) > 0)
 
         # successful change to AD Review
         adrev_pk = str(State.objects.get(slug='adrev',type__slug='statchg').pk)
         r = self.client.post(url,dict(new_state=adrev_pk,comment='RDNK84ZD'))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.get_state('statchg').slug,'adrev')
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('RDNK84ZD'))
@@ -114,7 +114,7 @@ class StatusChangeTests(TestCase):
         doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
         lc_req_pk = str(State.objects.get(slug='lc-req',type__slug='statchg').pk)
         r = self.client.post(url,dict(new_state=lc_req_pk))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.get_state('statchg').slug,'lc-req')
         self.assertEqual(len(outbox), messages_before + 1)
@@ -123,7 +123,7 @@ class StatusChangeTests(TestCase):
         # successful change to IESG Evaluation 
         iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
         r = self.client.post(url,dict(new_state=iesgeval_pk,comment='TGmZtEjt'))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.get_state('statchg').slug,'iesgeval')
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('TGmZtEjt'))
@@ -138,7 +138,7 @@ class StatusChangeTests(TestCase):
 
         # normal get 
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form input[name=notify]')),1)
         self.assertEqual(doc.notify,q('form input[name=notify]')[0].value)
@@ -146,7 +146,7 @@ class StatusChangeTests(TestCase):
         # change notice list
         newlist = '"Foo Bar" <foo@bar.baz.com>'
         r = self.client.post(url,dict(notify=newlist,save_addresses="1"))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.notify,newlist)
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Notification list changed'))       
@@ -157,7 +157,7 @@ class StatusChangeTests(TestCase):
 
         # Ask the form to regenerate the list
         r = self.client.post(url,dict(regenerate_addresses="1"))
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         # Regenerate does not save!
         self.assertEqual(doc.notify,newlist)
@@ -173,13 +173,13 @@ class StatusChangeTests(TestCase):
 
         # normal get 
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('input[name=title]')),1)
 
         # change title
         r = self.client.post(url,dict(title='New title'))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.title,'New title')
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Title changed'))       
@@ -192,14 +192,14 @@ class StatusChangeTests(TestCase):
 
         # normal get 
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('select[name=ad]')),1)
 
         # change ads
         ad2 = Person.objects.get(name='Ad No2')
         r = self.client.post(url,dict(ad=str(ad2.pk)))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.ad,ad2)
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Shepherding AD changed'))       
@@ -212,7 +212,7 @@ class StatusChangeTests(TestCase):
 
         # normal get 
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('select[name=telechat_date]')),1)
 
@@ -220,32 +220,32 @@ class StatusChangeTests(TestCase):
         self.assertFalse(doc.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
         telechat_date = TelechatDate.objects.active().order_by('date')[0].date
         r = self.client.post(url,dict(telechat_date=telechat_date.isoformat()))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date,telechat_date)
 
         # move it forward a telechat (this should NOT set the returning item bit)
         telechat_date = TelechatDate.objects.active().order_by('date')[1].date
         r = self.client.post(url,dict(telechat_date=telechat_date.isoformat()))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertFalse(doc.returning_item())
 
         # set the returning item bit without changing the date
         r = self.client.post(url,dict(telechat_date=telechat_date.isoformat(),returning_item="on"))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertTrue(doc.returning_item())
 
         # clear the returning item bit
         r = self.client.post(url,dict(telechat_date=telechat_date.isoformat()))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertFalse(doc.returning_item())
 
         # Take the doc back off any telechat
         r = self.client.post(url,dict(telechat_date=""))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date,None)
 
@@ -263,7 +263,7 @@ class StatusChangeTests(TestCase):
         
         # get
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form.edit-last-call-text')),1)
 
@@ -272,21 +272,21 @@ class StatusChangeTests(TestCase):
         
         # save
         r = self.client.post(url,dict(last_call_text="Bogus last call text",save_last_call_text="1"))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         last_call_event = doc.latest_event(WriteupDocEvent, type="changed_last_call_text")
         self.assertEqual(last_call_event.text,"Bogus last call text")
 
         # reset
         r = self.client.post(url,dict(regenerate_last_call_text="1"))
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         self.assertContains(r,  'RFC9999 from Proposed Standard to Internet Standard')
         self.assertContains(r,  'RFC9998 from Informational to Historic')
       
         # request last call
         messages_before = len(outbox)
         r = self.client.post(url,dict(last_call_text='stuff',send_last_call_request='Save+and+Request+Last+Call'))
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         self.assertContains(r,  'Last call requested')
         self.assertEqual(len(outbox), messages_before + 1)
         self.assertTrue('Last Call:' in outbox[-1]['Subject'])
@@ -307,7 +307,7 @@ class StatusChangeTests(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('[type=submit]:contains("Send announcement")')), 1)
         # There should be two messages to edit
@@ -320,7 +320,7 @@ class StatusChangeTests(TestCase):
         msg0=default_approval_text(doc,doc.relateddocument_set.all()[0])
         msg1=default_approval_text(doc,doc.relateddocument_set.all()[1])
         r = self.client.post(url,{'form-0-announcement_text':msg0,'form-1-announcement_text':msg1,'form-TOTAL_FORMS':'2','form-INITIAL_FORMS':'2','form-MAX_NUM_FORMS':''})
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
 
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.get_state_slug(),'appr-sent')
@@ -356,7 +356,7 @@ class StatusChangeTests(TestCase):
         r = self.client.post(url,dict(new_state=appr_pend_pk,comment='some comment or other'))
 
         # Check the results
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
 
         if role == 'ad':
             self.assertEqual(len(outbox), 1)
@@ -393,7 +393,7 @@ class StatusChangeTests(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('#content [type=submit]:contains("Save")')),1)
         # There should be three rows on the form
@@ -402,21 +402,21 @@ class StatusChangeTests(TestCase):
         # Try to add a relation to an RFC that doesn't exist
         r = self.client.post(url,dict(new_relation_row_blah="rfc9997",
                                       statchg_relation_row_blah="tois"))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
 
        # Try to add a relation leaving the relation type blank
         r = self.client.post(url,dict(new_relation_row_blah="rfc9999",
                                       statchg_relation_row_blah=""))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
 
        # Try to add a relation with an unknown relationship type
         r = self.client.post(url,dict(new_relation_row_blah="rfc9999",
                                       statchg_relation_row_blah="badslug"))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
         
@@ -427,7 +427,7 @@ class StatusChangeTests(TestCase):
                                       statchg_relation_row_foo="tobcp",
                                       new_relation_row_nob="rfc14",
                                       statchg_relation_row_nob="tohist"))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.relateddocument_set.count(),3)
         def verify_relations(doc,target_name,status):
@@ -454,7 +454,7 @@ class StatusChangeSubmitTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         q = PyQuery(r.content)
         self.assertTrue(q('textarea')[0].text.strip().startswith("Provide a description"))
         
@@ -466,7 +466,7 @@ class StatusChangeSubmitTests(TestCase):
         self.assertEqual(doc.rev,'00')
         self.assertFalse(os.path.exists(path))
         r = self.client.post(url,dict(content="Some initial review text\n",submit_response="1"))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.rev,'00')
         with io.open(path) as f:
@@ -489,11 +489,11 @@ class StatusChangeSubmitTests(TestCase):
         state_change_url = urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name))
         iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
         r = self.client.post(state_change_url,dict(new_state=iesgeval_pk))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
 
         # normal get
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         q = PyQuery(r.content)
         self.assertTrue(q('textarea')[0].text.strip().startswith("This is the old proposal."))
 
@@ -503,14 +503,14 @@ class StatusChangeSubmitTests(TestCase):
         test_file = StringIO("\x10\x11\x12") # post binary file
         test_file.name = "unnamed"
         r = self.client.post(url, dict(txt=test_file,submit_response="1"))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "does not appear to be a text file")
 
         # sane post uploading a file
         test_file = StringIO("This is a new proposal.")
         test_file.name = "unnamed"
         r = self.client.post(url,dict(txt=test_file,submit_response="1"))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.rev,'01')
         path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
@@ -521,14 +521,14 @@ class StatusChangeSubmitTests(TestCase):
 
         # verify reset text button works
         r = self.client.post(url,dict(reset_text="1"))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(q('textarea')[0].text.strip().startswith("Provide a description"))
 
         # make sure we can see the old revision
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=doc.name,rev='00'))
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         self.assertContains(r, "This is the old proposal.")
 
     def setUp(self):

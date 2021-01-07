@@ -35,14 +35,14 @@ li.daylistentry { margin-left:2em; font-weight: 400; }
   <li class="typelistentry {% cycle 'even' 'odd' %}">
     <h2>{{type.grouper|title}}</h2> {% if schedule == meeting.schedule %}<a id="ical-link" class="btn btn-primary" href="{% url "ietf.meeting.views.agenda_by_type_ics" num=meeting.number type=type.grouper %}">Download to Calendar</a>{% endif %}
     <ul class="daylist">
-    {% regroup type.list by timeslot.time|date:"l Y-M-d" as daylist %}
+    {% regroup type.list by timeslot.local_start_time|date:"l Y-M-d" as daylist %}
     {% for day in daylist %}
       <li class="daylistentry">
         <h3>{{ day.grouper }}</h3>
         <table class="sessiontable">
         {% for ss in day.list %}
           <tr {% if ss.schedule_id != meeting.schedule_id %}class="from-base-schedule"{% endif %}>
-            <td>{{ss.timeslot.time|date:"H:i"}}-{{ss.timeslot.end_time|date:"H:i"}}</td>
+            <td>{{ss.timeslot.local_start_time|date:"H:i"}}-{{ss.timeslot.local_end_time|date:"H:i"}}</td>
             <td>{{ss.timeslot.get_hidden_location}}</td>
             <td class="type-{{ss.session.type_id}}">{{ss.session.short_name}} </td>
             <td>{% if ss.session.type_id == 'regular' or ss.session.type_id == 'plenary' or ss.session.type_id == 'other' %} <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=ss.session.group.acronym %}">Materials</a>{% else %}&nbsp;{% endif %}</td>

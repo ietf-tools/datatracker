@@ -10,6 +10,7 @@ import datetime
 from typing import Optional         # pyflakes:ignore
 
 from django.conf import settings
+from django.utils import timezone
 
 from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor,
     StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent)
@@ -33,7 +34,7 @@ class BaseDocumentFactory(factory.DjangoModelFactory):
     rev = '00'
     std_level_id = None                 # type: Optional[str]
     intended_std_level_id = None
-    time = datetime.datetime.now()
+    time = timezone.now()
     expires = factory.LazyAttribute(lambda o: o.time+datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE))
     pages = factory.fuzzy.FuzzyInteger(2,400)
 
@@ -251,7 +252,7 @@ class ConflictReviewFactory(BaseDocumentFactory):
 # This is very skeletal. It is enough for the tests that use it now, but when it's needed, it will need to be improved with, at least, a group generator that backs the object with a review team.
 class ReviewFactory(BaseDocumentFactory):
     type_id = 'review'
-    name = factory.LazyAttribute(lambda o: 'review-doesnotexist-00-%s-%s'%(o.group.acronym,datetime.date.today().isoformat()))
+    name = factory.LazyAttribute(lambda o: 'review-doesnotexist-00-%s-%s'%(o.group.acronym,timezone.now().date().isoformat()))
     group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='review')
 
 class DocAliasFactory(factory.DjangoModelFactory):
@@ -341,7 +342,7 @@ class IRSGBallotDocEventFactory(BallotDocEventFactory):
     class Meta:
         model = IRSGBallotDocEvent
 
-    duedate = datetime.datetime.now() + datetime.timedelta(days=14)
+    duedate = timezone.now() + datetime.timedelta(days=14)
     ballot_type = factory.SubFactory(BallotTypeFactory, slug='irsg-approve')
 
 class BallotPositionDocEventFactory(DocEventFactory):

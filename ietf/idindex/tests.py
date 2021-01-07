@@ -8,6 +8,7 @@ import os
 import shutil
 
 from django.conf import settings
+from django.utils import timezone
 
 import debug    # pyflakes:ignore
 
@@ -130,7 +131,7 @@ class IndexTests(TestCase):
         draft.set_state(State.objects.get(type="draft", slug="active"))
         draft.set_state(State.objects.get(type="draft-iesg", slug="lc"))
 
-        e = LastCallDocEvent.objects.create(doc=draft, rev=draft.rev, type="sent_last_call", expires=datetime.datetime.now() + datetime.timedelta(days=14), by=draft.ad)
+        e = LastCallDocEvent.objects.create(doc=draft, rev=draft.rev, type="sent_last_call", expires=timezone.now() + datetime.timedelta(days=14), by=draft.ad)
 
         t = get_fields(all_id2_txt())
         self.assertEqual(t[11], e.expires.strftime("%Y-%m-%d"))

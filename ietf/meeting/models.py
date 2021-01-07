@@ -23,6 +23,7 @@ from django.conf import settings
 # mostly used by json_dict()
 #from django.template.defaultfilters import slugify, date as date_format, time as time_format
 from django.template.defaultfilters import date as date_format
+from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.safestring import mark_safe
 
@@ -35,7 +36,7 @@ from ietf.person.models import Person
 from ietf.utils.decorators import memoize
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.text import xslugify
-from ietf.utils.timezone import date2datetime
+from ietf.utils.timezone import date2datetime00
 from ietf.utils.models import ForeignKey
 
 countries = list(pytz.country_names.items())
@@ -75,7 +76,7 @@ class Meeting(models.Model):
     # We can't derive time-zone from country, as there are some that have
     # more than one timezone, and the pytz module doesn't provide timezone
     # lookup information for all relevant city/country combinations.
-    time_zone = models.CharField(blank=True, max_length=255, choices=timezones)
+    time_zone = models.CharField(max_length=255, choices=timezones)
     idsubmit_cutoff_day_offset_00 = models.IntegerField(blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_00,
         help_text = "The number of days before the meeting start date when the submission of -00 drafts will be closed.")
@@ -125,7 +126,7 @@ class Meeting(models.Model):
         return self.get_meeting_date(self.days-1)
 
     def get_00_cutoff(self):
-        start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day, tzinfo=pytz.utc)
+        start_date = pytz.utc.localize(datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day))
         importantdate = self.importantdate_set.filter(name_id='idcutoff').first()
         if not importantdate:
             importantdate = self.importantdate_set.filter(name_id='00cutoff').first()
@@ -133,11 +134,11 @@ class Meeting(models.Model):
             cutoff_date = importantdate.date
         else:
             cutoff_date = start_date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
-        cutoff_time = date2datetime(cutoff_date) + self.idsubmit_cutoff_time_utc
+        cutoff_time = date2datetime00(cutoff_date) + self.idsubmit_cutoff_time_utc
         return cutoff_time
 
     def get_01_cutoff(self):
-        start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day, tzinfo=pytz.utc)
+        start_date = pytz.utc.localize(datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day))
         importantdate = self.importantdate_set.filter(name_id='idcutoff').first()
         if not importantdate:
             importantdate = self.importantdate_set.filter(name_id='01cutoff').first()
@@ -145,7 +146,7 @@ class Meeting(models.Model):
             cutoff_date = importantdate.date
         else:
             cutoff_date = start_date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
-        cutoff_time = date2datetime(cutoff_date) + self.idsubmit_cutoff_time_utc
+        cutoff_time = date2datetime00(cutoff_date) + self.idsubmit_cutoff_time_utc
         return cutoff_time
 
     def get_reopen_time(self):
@@ -244,7 +245,7 @@ class Meeting(models.Model):
         for ts in self.timeslot_set.all():
             if ts.location_id is None:
                 continue
-            ymd = ts.time.date()
+            ymd = ts.local_date()
             if ymd not in time_slices:
                 time_slices[ymd] = []
                 slots[ymd] = []
@@ -290,21 +291,24 @@ class Meeting(models.Model):
                 pass
         return ''
 
+    def tz(self):
+        if not hasattr(self, '_cached_tz'):
+            self._cached_tz = pytz.timezone(self.time_zone)
+        return self._cached_tz
+
     def set_official_schedule(self, schedule):
         if self.schedule != schedule:
             self.schedule = schedule
             self.save()
 
     def updated(self):
-        min_time = datetime.datetime(1970, 1, 1, 0, 0, 0) # should be Meeting.modified, but we don't have that
+        min_time = pytz.utc.localize(datetime.datetime(1970, 1, 1, 0, 0, 0)) # should be Meeting.modified, but we don't have that
         timeslots_updated = self.timeslot_set.aggregate(Max('modified'))["modified__max"] or min_time
         sessions_updated = self.session_set.aggregate(Max('modified'))["modified__max"] or min_time
         assignments_updated = min_time
         if self.schedule:
             assignments_updated = SchedTimeSessAssignment.objects.filter(schedule__in=[self.schedule, self.schedule.base if self.schedule else None]).aggregate(Max('modified'))["modified__max"] or min_time
         ts = max(timeslots_updated, sessions_updated, assignments_updated)
-        tz = pytz.timezone(settings.PRODUCTION_TIMEZONE)
-        ts = tz.localize(ts)
         return ts
 
     @memoize
@@ -452,13 +456,12 @@ class TimeSlot(models.Model):
     meeting = ForeignKey(Meeting)
     type = ForeignKey(TimeSlotTypeName)
     name = models.CharField(max_length=255)
-    time = models.DateTimeField()
+    time = models.DateTimeField()       # local time
     duration = models.DurationField(default=datetime.timedelta(0))
     location = ForeignKey(Room, blank=True, null=True)
     show_location = models.BooleanField(default=True, help_text="Show location in agenda.")
     sessions = models.ManyToManyField('Session', related_name='slots', through='SchedTimeSessAssignment', blank=True, help_text="Scheduled session, if any.")
-    modified = models.DateTimeField(auto_now=True)
-    #
+    modified = models.DateTimeField(default=timezone.now)
 
     @property
     def session(self):
@@ -468,10 +471,8 @@ class TimeSlot(models.Model):
 
     @property
     def time_desc(self):
-        return "%s-%s" % (self.time.strftime("%H%M"), (self.time + self.duration).strftime("%H%M"))
-
-    def meeting_date(self):
-        return self.time.date()
+        t = self.local_start_time()
+        return "%s-%s" % (t.strftime("%H%M"), (t + self.duration).strftime("%H%M"))
 
     def registration(self):
         # below implements a object local cache
@@ -489,7 +490,7 @@ class TimeSlot(models.Model):
         if not location:
             location = u"(no location)"
 
-        return u"%s: %s-%s %s, %s" % (self.meeting.number, self.time.strftime("%m-%d %H:%M"), (self.time + self.duration).strftime("%H:%M"), self.name, location)
+        return u"%s: %s-%s %s, %s" % (self.meeting.number, self.time.strftime("%m-%d %H:%M"), (self.time + self.duration).strftime("%H:%M %z"), self.name, location)
 
     def end_time(self):
         return self.time + self.duration
@@ -537,39 +538,26 @@ class TimeSlot(models.Model):
         return self._cached_tz
 
     def tzname(self):
-        if self.tz():
-            return self.tz().tzname(self.time)
-        else:
-            return ""
+        tz = self.tz()
+        return tz.tzname(self.time.replace(tzinfo=None)) if tz else None
     def utc_start_time(self):
-        if self.tz():
-            local_start_time = self.tz().localize(self.time)
-            return local_start_time.astimezone(pytz.utc)
-        else:
-            return None
+        return self.time.astimezone(pytz.utc)
     def utc_end_time(self):
-        if self.tz():
-            local_end_time = self.tz().localize(self.end_time())
-            return local_end_time.astimezone(pytz.utc)
-        else:
-            return None
+        return self.end_time().astimezone(pytz.utc)
     def local_start_time(self):
-        if self.tz():
-            local_start_time = self.tz().localize(self.time)
-            return local_start_time
-        else:
-            return None
+        tz = self.tz()
+        return self.time.astimezone(tz) if tz else None
     def local_end_time(self):
-        if self.tz():
-            local_end_time = self.tz().localize(self.end_time())
-            return local_end_time
-        else:
-            return None
+        tz = self.tz()
+        return self.end_time().astimezone(tz) if tz else None
+    def local_date(self):
+        tz = self.tz()
+        return self.time.astimezone(tz).date() if tz else None
 
     @property
     def js_identifier(self):
         # this returns a unique identifier that is js happy.
-        #  {{s.timeslot.time|date:'Y-m-d'}}_{{ s.timeslot.time|date:'Hi' }}"
+        #  {{s.timeslot.local_start_time|date:'Y-m-d'}}_{{ s.timeslot.local_start_time|date:'Hi' }}"
         # also must match:
         #  {{r|slugify}}_{{day}}_{{slot.0|date:'Hi'}}
         dom_id="ts%u" % (self.pk)
@@ -810,7 +798,7 @@ class SchedTimeSessAssignment(models.Model):
         if not self.session or not (getattr(self.session, "historic_group", None) or self.session.group):
             components.append("unknown")
         else:
-            components.append(self.timeslot.time.strftime("%Y-%m-%d-%a-%H%M"))
+            components.append(self.timeslot.local_start_time().strftime("%Y-%m-%d-%a-%H%M"))
 
             g = getattr(self.session, "historic_group", None) or self.session.group
 
@@ -1141,7 +1129,7 @@ class Session(models.Model):
         return can_manage_materials(user,self.group)
 
     def is_material_submission_cutoff(self):
-        return datetime.date.today() > self.meeting.get_submission_correction_date()
+        return timezone.now().date() > self.meeting.get_submission_correction_date()
     
     def joint_with_groups_acronyms(self):
         return [group.acronym for group in self.joint_with_groups.all()]
@@ -1319,7 +1307,7 @@ class Session(models.Model):
 
 class SchedulingEvent(models.Model):
     session = ForeignKey(Session)
-    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
+    time = models.DateTimeField(default=timezone.now, help_text="When the event happened")
     status = ForeignKey(SessionStatusName)
     by = ForeignKey(Person)
 

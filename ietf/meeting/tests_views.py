@@ -6,6 +6,7 @@ import datetime
 import io
 import json
 import os
+import pytz
 import random
 import re
 import shutil
@@ -17,13 +18,14 @@ from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urlsplit
 
-from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.test import Client, override_settings
 from django.db.models import F
 from django.http import QueryDict
 from django.template import Context, Template
+from django.test import Client, override_settings
+from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 import debug           # pyflakes:ignore
 
@@ -53,6 +55,7 @@ from ietf.meeting.factories import ( SessionFactory, SessionPresentationFactory,
 from ietf.doc.factories import DocumentFactory, WgDraftFactory
 from ietf.submit.tests import submission_file
 from ietf.utils.test_utils import assert_ical_response_is_valid
+from ietf.utils.timezone import datetime_today
 
 if os.path.exists(settings.GHOSTSCRIPT_COMMAND):
     skip_pdf_tests = False
@@ -124,7 +127,7 @@ class MeetingTests(TestCase):
         #
         self.write_materials_files(meeting, session)
         #
-        future_year = datetime.date.today().year+1
+        future_year = datetime_today().year+1
         future_num =  (future_year-1984)*3            # valid for the mid-year meeting
         future_meeting = Meeting.objects.create(date=datetime.date(future_year, 7, 22), number=future_num, type_id='ietf',
                                 city="Panama City", country="PA", time_zone='America/Panama')
@@ -132,30 +135,30 @@ class MeetingTests(TestCase):
         registration_text = "Registration"
 
         # utc
-        time_interval = "%s-%s" % (slot.utc_start_time().strftime("%H:%M").lstrip("0"), (slot.utc_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
+        utc_time_interval = "%s-%s" % (slot.utc_start_time().strftime("%H:%M").lstrip("0"), (slot.utc_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
 
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number,utc='-utc')))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         agenda_content = q("#content").html()
         self.assertIn(session.group.acronym, agenda_content)
         self.assertIn(session.group.name, agenda_content)
         self.assertIn(session.group.parent.acronym.upper(), agenda_content)
         self.assertIn(slot.location.name, agenda_content)
-        self.assertIn(time_interval, agenda_content)
+        self.assertIn(utc_time_interval, agenda_content)
 
         # plain
-        time_interval = "%s-%s" % (slot.time.strftime("%H:%M").lstrip("0"), (slot.time + slot.duration).strftime("%H:%M").lstrip("0"))
+        local_time_interval = "%s-%s" % (slot.local_start_time().strftime("%H:%M").lstrip("0"), (slot.local_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
 
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         agenda_content = q("#content").html()
         self.assertIn(session.group.acronym, agenda_content)
         self.assertIn(session.group.name, agenda_content)
         self.assertIn(session.group.parent.acronym.upper(), agenda_content)
         self.assertIn(slot.location.name, agenda_content)
-        self.assertIn(time_interval, agenda_content)
+        self.assertIn(local_time_interval, agenda_content)
         self.assertIn(registration_text, agenda_content)
 
         # Make sure there's a frame for the session agenda and it points to the right place
@@ -174,7 +177,7 @@ class MeetingTests(TestCase):
 
         # text
         # the rest of the results don't have as nicely formatted times
-        time_interval = time_interval.replace(":", "")
+        time_interval = local_time_interval.replace(":", "")
 
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number, ext=".txt")))
         self.assertContains(r, session.group.acronym)
@@ -191,6 +194,8 @@ class MeetingTests(TestCase):
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=future_meeting.number, ext=".txt")))
         self.assertContains(r, "There is no agenda available yet.")
         self.assertTemplateUsed(r, 'meeting/no-agenda.txt')
+
+        time_interval = utc_time_interval.replace(":", "")
 
         # CSV
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number, ext=".csv")))
@@ -258,7 +263,7 @@ class MeetingTests(TestCase):
             self.assertContains(r, row_id)
 
     def test_agenda_iab_session(self):
-        date = datetime.date.today()
+        date = datetime_today()
         meeting = MeetingFactory(type_id='ietf', date=date )
         make_meeting_test_data(meeting=meeting)
         
@@ -289,7 +294,7 @@ class MeetingTests(TestCase):
         session_date = meeting.date + datetime.timedelta(days=1)
         slot3 = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
                                         duration=datetime.timedelta(minutes=60),
-                                        time=datetime.datetime.combine(session_date, datetime.time(13, 30)))
+                                        time=meeting.tz().localize(datetime.datetime.combine(session_date, datetime.time(13, 30))))
         SchedTimeSessAssignment.objects.create(timeslot=slot3, session=venus_session, schedule=meeting.schedule)
         url = urlreverse('ietf.meeting.views.agenda', kwargs=dict(num=meeting.number))
         r = self.client.get(url)
@@ -299,7 +304,7 @@ class MeetingTests(TestCase):
         self.assertIn('venus', venus_row)
         
     def test_agenda_current_audio(self):
-        date = datetime.date.today()
+        date = datetime_today()
         meeting = MeetingFactory(type_id='ietf', date=date )
         make_meeting_test_data(meeting=meeting)
         url = urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number))
@@ -350,7 +355,7 @@ class MeetingTests(TestCase):
         url = urlreverse("ietf.meeting.views.room_view",kwargs=dict(num=meeting.number))
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         self.assertTrue(all([x in unicontent(r) for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
         url = urlreverse("ietf.meeting.views.room_view",kwargs=dict(num=meeting.number,name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email()))
         r = self.client.get(url)
@@ -362,7 +367,7 @@ class MeetingTests(TestCase):
         meeting = make_meeting_test_data()
         url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "#farfut"
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         self.assertTrue(all([x in unicontent(r) for x in ['var all_items', 'maximize', 'draw_calendar', ]]))
 
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=False, MEETING_DOC_HREFS = settings.MEETING_DOC_CDN_HREFS)
@@ -395,9 +400,9 @@ class MeetingTests(TestCase):
                                                kwargs=dict(num=session.meeting.number, document=document))
                 r = self.client.get(url)
                 if session.meeting.number.isdigit() and int(session.meeting.number)<=96:
-                    self.assertEqual(r.status_code,200)
+                    self.assertResponseStatus(r,200)
                 else:
-                    self.assertEqual(r.status_code,302)
+                    self.assertResponseStatus(r,302)
                     self.assertEqual(r['Location'],document.get_href())
                     self.assertNotEqual(urlsplit(r['Location'])[2],url)
 
@@ -460,7 +465,7 @@ class MeetingTests(TestCase):
         if meeting.number.isdigit():
             url = urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number))
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             q = PyQuery(r.content)
             row = q('#content #%s' % str(session.group.acronym)).closest("tr")
             self.assertTrue(row.find('a:contains("Agenda")'))
@@ -471,7 +476,7 @@ class MeetingTests(TestCase):
             # test with no meeting number in url
             url = urlreverse("ietf.meeting.views.materials", kwargs=dict())
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             q = PyQuery(r.content)
             row = q('#content #%s' % str(session.group.acronym)).closest("tr")
             self.assertTrue(row.find('a:contains("Agenda")'))
@@ -483,7 +488,7 @@ class MeetingTests(TestCase):
             self.client.login(username="marschairman", password="marschairman+password")
             url = urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number))
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             q = PyQuery(r.content)
             row = q('#content #%s' % str(session.group.acronym)).closest("tr")
             self.assertTrue(row.find('a:contains("Agenda")'))
@@ -528,7 +533,7 @@ class MeetingTests(TestCase):
         self.write_materials_file(sp.session.meeting, sp.document, 'Fake slide contents')
         url = urlreverse("ietf.meeting.views.materials_document", kwargs=dict(document=sp.document.name,num=sp.session.meeting.number))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
     def test_proceedings(self):
         meeting = make_meeting_test_data()
@@ -541,7 +546,7 @@ class MeetingTests(TestCase):
 
         url = urlreverse("ietf.meeting.views.proceedings", kwargs=dict(num=meeting.number))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
     def test_proceedings_acknowledgements(self):
         make_meeting_test_data()
@@ -626,8 +631,10 @@ class MeetingTests(TestCase):
         s1 = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         a1 = s1.official_timeslotassignment()
         t1 = a1.timeslot
+        t1.time = t1.time.astimezone(meeting.tz())
         # Create an extra session
-        t2 = TimeSlotFactory.create(meeting=meeting, time=datetime.datetime.combine(meeting.date, datetime.time(11, 30)))
+        t2 = TimeSlotFactory.create(meeting=meeting, time=meeting.tz().localize(datetime.datetime.combine(meeting.date, datetime.time(11, 30))))
+        t2.time = t2.time.astimezone(meeting.tz())
         s2 = SessionFactory.create(meeting=meeting, group=s1.group, add_to_schedule=False)
         SchedTimeSessAssignment.objects.create(timeslot=t2, session=s2, schedule=meeting.schedule)
         #
@@ -796,7 +803,7 @@ class MeetingTests(TestCase):
         url = urlreverse('ietf.meeting.views.current_materials')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
-        MeetingFactory(type_id='ietf', date=datetime.date.today())
+        MeetingFactory(type_id='ietf', date=datetime_today())
         response = self.client.get(url)
         self.assertEqual(response.status_code, 302)
 
@@ -842,7 +849,7 @@ class MeetingTests(TestCase):
         session=SessionFactory(meeting__type_id='ietf',status_id='canceled')
         url = urlreverse('ietf.meeting.views.agenda_ical', kwargs=dict(num=session.meeting.number))
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         self.assertIn('STATUS:CANCELLED',unicontent(r))
         self.assertNotIn('STATUS:CONFIRMED',unicontent(r))
 
@@ -890,71 +897,71 @@ class ReorderSlidesTests(TestCase):
     def test_add_slides_to_session(self):
         for type_id in ('ietf','interim'):
             chair_role = RoleFactory(name_id='chair')
-            session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90), meeting__type_id=type_id)
+            session = SessionFactory(group=chair_role.group, meeting__date=timezone.now().date()-datetime.timedelta(days=90), meeting__type_id=type_id)
             slides = DocumentFactory(type_id='slides')
             url = urlreverse('ietf.meeting.views.ajax_add_slides_to_session', kwargs={'session_id':session.pk, 'num':session.meeting.number})
 
             # Not a valid user
             r = self.client.post(url, {'order':1, 'name':slides.name })
-            self.assertEqual(r.status_code, 403)
+            self.assertResponseStatus(r, 403)
             self.assertIn('have permission', unicontent(r))
 
             self.client.login(username=chair_role.person.user.username, password=chair_role.person.user.username+"+password")
 
             # Past submission cutoff
             r = self.client.post(url, {'order':0, 'name':slides.name })
-            self.assertEqual(r.status_code, 403)
+            self.assertResponseStatus(r, 403)
             self.assertIn('materials cutoff', unicontent(r))
 
-            session.meeting.date = datetime.date.today()
+            session.meeting.date = timezone.now().date()
             session.meeting.save()
 
             # Invalid order
             r = self.client.post(url, {})
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('No data',r.json()['error'])
 
             r = self.client.post(url, {'garbage':'garbage'})
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('order is not valid',r.json()['error'])
 
             r = self.client.post(url, {'order':0, 'name':slides.name })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('order is not valid',r.json()['error'])
 
             r = self.client.post(url, {'order':2, 'name':slides.name })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('order is not valid',r.json()['error'])
 
             r = self.client.post(url, {'order':'garbage', 'name':slides.name })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('order is not valid',r.json()['error'])
 
             # Invalid name
             r = self.client.post(url, {'order':1 })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('name is not valid',r.json()['error'])
 
             r = self.client.post(url, {'order':1, 'name':'garbage' })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('name is not valid',r.json()['error'])
 
             # Valid post
             r = self.client.post(url, {'order':1, 'name':slides.name })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session.sessionpresentation_set.count(),1)
 
             # Ingore a request to add slides that are already in a session
             r = self.client.post(url, {'order':1, 'name':slides.name })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session.sessionpresentation_set.count(),1)
 
@@ -971,21 +978,21 @@ class ReorderSlidesTests(TestCase):
 
             # Insert at beginning
             r = self.client.post(url, {'order':1, 'name':more_slides[0].name})
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session2.sessionpresentation_set.get(document=more_slides[0]).order,1)
             self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,5)))
 
             # Insert at end
             r = self.client.post(url, {'order':5, 'name':more_slides[1].name})
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session2.sessionpresentation_set.get(document=more_slides[1]).order,5)
             self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,6)))
 
             # Insert in middle
             r = self.client.post(url, {'order':3, 'name':more_slides[2].name})
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session2.sessionpresentation_set.get(document=more_slides[2]).order,3)
             self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,7)))
@@ -993,49 +1000,49 @@ class ReorderSlidesTests(TestCase):
     def test_remove_slides_from_session(self):
         for type_id in ['ietf','interim']:
             chair_role = RoleFactory(name_id='chair')
-            session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90), meeting__type_id=type_id)
+            session = SessionFactory(group=chair_role.group, meeting__date=timezone.now().date()-datetime.timedelta(days=90), meeting__type_id=type_id)
             slides = DocumentFactory(type_id='slides')
             url = urlreverse('ietf.meeting.views.ajax_remove_slides_from_session', kwargs={'session_id':session.pk, 'num':session.meeting.number})
 
             # Not a valid user
             r = self.client.post(url, {'oldIndex':1, 'name':slides.name })
-            self.assertEqual(r.status_code, 403)
+            self.assertResponseStatus(r, 403)
             self.assertIn('have permission', unicontent(r))
 
             self.client.login(username=chair_role.person.user.username, password=chair_role.person.user.username+"+password")
             
             # Past submission cutoff
             r = self.client.post(url, {'oldIndex':0, 'name':slides.name })
-            self.assertEqual(r.status_code, 403)
+            self.assertResponseStatus(r, 403)
             self.assertIn('materials cutoff', unicontent(r))
 
-            session.meeting.date = datetime.date.today()
+            session.meeting.date = timezone.now().date()
             session.meeting.save()
 
             # Invalid order
             r = self.client.post(url, {})
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('No data',r.json()['error'])
 
             r = self.client.post(url, {'garbage':'garbage'})
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
 
             r = self.client.post(url, {'oldIndex':0, 'name':slides.name })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
 
             r = self.client.post(url, {'oldIndex':'garbage', 'name':slides.name })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
            
             # No matching thing to delete
             r = self.client.post(url, {'oldIndex':1, 'name':slides.name })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
 
@@ -1043,12 +1050,12 @@ class ReorderSlidesTests(TestCase):
 
             # Bad names
             r = self.client.post(url, {'oldIndex':1})
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('name is not valid',r.json()['error'])
 
             r = self.client.post(url, {'oldIndex':1, 'name':'garbage' })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('name is not valid',r.json()['error'])
 
@@ -1056,19 +1063,19 @@ class ReorderSlidesTests(TestCase):
 
             # index/name mismatch
             r = self.client.post(url, {'oldIndex':1, 'name':slides2.name })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('SessionPresentation not found',r.json()['error'])
 
             session.sessionpresentation_set.create(document=slides2, rev=slides2.rev, order=2)
             r = self.client.post(url, {'oldIndex':1, 'name':slides2.name })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('Name does not match index',r.json()['error'])
 
             # valid removal
             r = self.client.post(url, {'oldIndex':1, 'name':slides.name })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session.sessionpresentation_set.count(),1)
 
@@ -1082,21 +1089,21 @@ class ReorderSlidesTests(TestCase):
 
             # delete at first of list
             r = self.client.post(url, {'oldIndex':1, 'name':sp_list[0].document.name })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertFalse(session2.sessionpresentation_set.filter(pk=sp_list[0].pk).exists())
             self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,5)))
 
             # delete in middle of list
             r = self.client.post(url, {'oldIndex':4, 'name':sp_list[4].document.name })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertFalse(session2.sessionpresentation_set.filter(pk=sp_list[4].pk).exists())
             self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,4)))
 
             # delete at end of list
             r = self.client.post(url, {'oldIndex':2, 'name':sp_list[2].document.name })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertFalse(session2.sessionpresentation_set.filter(pk=sp_list[2].pk).exists())
             self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,3)))
@@ -1104,7 +1111,7 @@ class ReorderSlidesTests(TestCase):
 
     def test_reorder_slides_in_session(self):
         chair_role = RoleFactory(name_id='chair')
-        session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90))
+        session = SessionFactory(group=chair_role.group, meeting__date=timezone.now().date()-datetime.timedelta(days=90))
         sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session)
         for num, sp in enumerate(sp_list, start=1):
             sp.order = num
@@ -1114,78 +1121,78 @@ class ReorderSlidesTests(TestCase):
         for type_id in ['ietf','interim']:
             
             session.meeting.type_id = type_id
-            session.meeting.date = datetime.date.today()-datetime.timedelta(days=90)
+            session.meeting.date = timezone.now().date()-datetime.timedelta(days=90)
             session.meeting.save()
 
             # Not a valid user
             r = self.client.post(url, {'oldIndex':1, 'newIndex':2 })
-            self.assertEqual(r.status_code, 403)
+            self.assertResponseStatus(r, 403)
             self.assertIn('have permission', unicontent(r))
 
             self.client.login(username=chair_role.person.user.username, password=chair_role.person.user.username+"+password")
 
             # Past submission cutoff
             r = self.client.post(url, {'oldIndex':1, 'newIndex':2 })
-            self.assertEqual(r.status_code, 403)
+            self.assertResponseStatus(r, 403)
             self.assertIn('materials cutoff', unicontent(r))
 
-            session.meeting.date = datetime.date.today()
+            session.meeting.date = timezone.now().date()
             session.meeting.save()
 
             # Bad index values
             r = self.client.post(url, {'oldIndex':0, 'newIndex':2 })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
 
             r = self.client.post(url, {'oldIndex':2, 'newIndex':6 })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
 
             r = self.client.post(url, {'oldIndex':2, 'newIndex':2 })
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
 
             # Move from beginning
             r = self.client.post(url, {'oldIndex':1, 'newIndex':3})
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,3,1,4,5])
 
             # Move to beginning
             r = self.client.post(url, {'oldIndex':3, 'newIndex':1})
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[1,2,3,4,5])
             
             # Move from end
             r = self.client.post(url, {'oldIndex':5, 'newIndex':3})
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[1,2,5,3,4])
 
             # Move to end
             r = self.client.post(url, {'oldIndex':3, 'newIndex':5})
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[1,2,3,4,5])
 
             # Move beginning to end
             r = self.client.post(url, {'oldIndex':1, 'newIndex':5})
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,3,4,5,1])
 
             # Move middle to middle 
             r = self.client.post(url, {'oldIndex':3, 'newIndex':4})
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,3,5,4,1])
 
             r = self.client.post(url, {'oldIndex':3, 'newIndex':2})
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,5,3,4,1])
 
@@ -1196,7 +1203,7 @@ class ReorderSlidesTests(TestCase):
 
     def test_slide_order_reconditioning(self):
         chair_role = RoleFactory(name_id='chair')
-        session = SessionFactory(group=chair_role.group, meeting__date=datetime.date.today()-datetime.timedelta(days=90))
+        session = SessionFactory(group=chair_role.group, meeting__date=timezone.now().date()-datetime.timedelta(days=90))
         sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session)
         for num, sp in enumerate(sp_list, start=1):
             sp.order = 2*num
@@ -1227,6 +1234,7 @@ class EditTests(TestCase):
  
     def test_edit_meeting_schedule(self):
         meeting = make_meeting_test_data()
+        tz = meeting.tz()
 
         self.client.login(username="secretary", password="secretary+password")
 
@@ -1262,7 +1270,9 @@ class EditTests(TestCase):
         room = Room.objects.get(meeting=meeting, session_types='regular')
         base_timeslot = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
                                                 duration=datetime.timedelta(minutes=50),
-                                                time=datetime.datetime.combine(meeting.date + datetime.timedelta(days=2), datetime.time(9, 30)))
+                                                time=tz.localize(datetime.datetime.combine(meeting.date + datetime.timedelta(days=2),
+                                                    datetime.time(9, 30))),
+                                            )
 
         timeslots = list(TimeSlot.objects.filter(meeting=meeting, type='regular').order_by('time'))
 
@@ -1333,7 +1343,7 @@ class EditTests(TestCase):
             'timeslot': timeslots[0].pk,
             'session': s1.pk,
         })
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
         
         # turn us into owner
         schedule = meeting.schedule
@@ -1411,10 +1421,10 @@ class EditTests(TestCase):
 
         r = self.client.post(url, {
             'action': 'swapdays',
-            'source_day': timeslots[0].time.date().isoformat(),
-            'target_day': timeslots[2].time.date().isoformat(),
+            'source_day': timeslots[0].local_date().isoformat(),
+            'target_day': timeslots[2].local_date().isoformat(),
         })
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
 
         self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot=timeslots[0])), [])
         self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot=timeslots[1])), [])
@@ -1424,10 +1434,10 @@ class EditTests(TestCase):
         # swap back
         r = self.client.post(url, {
             'action': 'swapdays',
-            'source_day': timeslots[2].time.date().isoformat(),
-            'target_day': timeslots[0].time.date().isoformat(),
+            'source_day': timeslots[2].local_date().isoformat(),
+            'target_day': timeslots[0].local_date().isoformat(),
         })
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
 
         self.assertEqual(len(SchedTimeSessAssignment.objects.filter(schedule=schedule, session=s1, timeslot=timeslots[0])), 1)
         self.assertEqual(list(SchedTimeSessAssignment.objects.filter(schedule=schedule, timeslot=timeslots[1])), [])
@@ -1435,6 +1445,7 @@ class EditTests(TestCase):
         
     def test_edit_meeting_timeslots_and_misc_sessions(self):
         meeting = make_meeting_test_data()
+        tz = meeting.tz()
 
         self.client.login(username="secretary", password="secretary+password")
 
@@ -1458,7 +1469,7 @@ class EditTests(TestCase):
 
         break_slot = TimeSlot.objects.get(location=break_room, type='break')
 
-        room_row = q(".room-row[data-day=\"{}\"][data-room=\"{}\"]".format(break_slot.time.date().isoformat(), break_slot.location_id))
+        room_row = q(".room-row[data-day=\"{}\"][data-room=\"{}\"]".format(break_slot.local_date().isoformat(), break_slot.location_id))
         self.assertTrue(room_row)
         self.assertTrue(room_row.find("#timeslot{}".format(break_slot.pk)))
 
@@ -1484,7 +1495,7 @@ class EditTests(TestCase):
         self.assertIn("#scroll=1234", r['Location'])
 
         test_timeslot = TimeSlot.objects.get(meeting=meeting, name="IETF Testing")
-        self.assertEqual(test_timeslot.time, datetime.datetime.combine(meeting.date, datetime.time(8, 30)))
+        self.assertEqual(test_timeslot.time, tz.localize(datetime.datetime.combine(meeting.date, datetime.time(8, 30))))
         self.assertEqual(test_timeslot.duration, datetime.timedelta(hours=1, minutes=30))
         self.assertEqual(test_timeslot.location_id, break_room.pk)
         self.assertEqual(test_timeslot.show_location, True)
@@ -1501,7 +1512,7 @@ class EditTests(TestCase):
             'timeslot': test_timeslot.pk,
             'action': 'edit-timeslot',
         })
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         edit_form_html = json.loads(r.content)['form']
         q = PyQuery(edit_form_html)
         self.assertEqual(q("[name=name]").val(), test_timeslot.name)
@@ -1526,7 +1537,7 @@ class EditTests(TestCase):
         })
         self.assertNoFormPostErrors(r)
         test_timeslot.refresh_from_db()
-        self.assertEqual(test_timeslot.time, datetime.datetime.combine(meeting.date, datetime.time(9, 30)))
+        self.assertEqual(test_timeslot.time, tz.localize(datetime.datetime.combine(meeting.date, datetime.time(9, 30))))
         self.assertEqual(test_timeslot.duration, datetime.timedelta(hours=1))
         self.assertEqual(test_timeslot.location_id, breakfast_room.pk)
         self.assertEqual(test_timeslot.show_location, False)
@@ -1573,7 +1584,7 @@ class EditTests(TestCase):
 
         r = self.client.post(url, {
             'timeslot': assignment.timeslot_id,
-            'day': assignment.timeslot.time.date().isoformat(),
+            'day': assignment.timeslot.local_date().isoformat(),
             'time': assignment.timeslot.time.time().isoformat(),
             'duration': assignment.timeslot.duration,
             'location': assignment.timeslot.location_id,
@@ -1596,7 +1607,7 @@ class EditTests(TestCase):
         # new from scratch
         url = urlreverse("ietf.meeting.views.new_meeting_schedule", kwargs=dict(num=meeting.number))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         r = self.client.post(url, {
             'name': "scratch",
@@ -1617,7 +1628,7 @@ class EditTests(TestCase):
         # copy
         url = urlreverse("ietf.meeting.views.new_meeting_schedule", kwargs=dict(num=meeting.number, owner=meeting.schedule.owner_email(), name=meeting.schedule.name))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         r = self.client.post(url, {
             'name': "copy",
@@ -1646,7 +1657,7 @@ class EditTests(TestCase):
                                                                        owner=meeting.schedule.owner_email(),
                                                                        name="foo"))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 404)
+        self.assertResponseStatus(r, 404)
 
         # save as new name (requires valid existing agenda)
         url = urlreverse("ietf.meeting.views.edit_schedule", kwargs=dict(num=meeting.number,
@@ -1657,7 +1668,7 @@ class EditTests(TestCase):
             'savename': "foo",
             'saveas': "saveas",
             })
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         # Verify that we actually got redirected to a new place.
         self.assertNotEqual(urlparse(r.url).path, url)
 
@@ -1667,7 +1678,7 @@ class EditTests(TestCase):
                                                                        owner=schedule.owner_email(),
                                                                        name="foo"))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         schedule.visible = True
         schedule.public = False
@@ -1676,13 +1687,13 @@ class EditTests(TestCase):
         # get as anonymous doesn't work
         self.client.logout()
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
 
         # public, now anonymous works
         schedule.public = True
         schedule.save()
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         # Secretariat can always see it
         schedule.visible = False
@@ -1690,7 +1701,7 @@ class EditTests(TestCase):
         schedule.save()
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
     def test_save_agenda_broken_names(self):
         meeting = make_meeting_test_data()
@@ -1704,7 +1715,7 @@ class EditTests(TestCase):
             'savename': "/no/this/should/not/work/it/is/too/long",
             'saveas': "saveas",
             })
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(urlparse(r.url).path, url)
         # TODO: Verify that an error message was in fact returned.
 
@@ -1713,7 +1724,7 @@ class EditTests(TestCase):
             'saveas': "saveas",
             })
         # TODO: Verify that an error message was in fact returned.
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(urlparse(r.url).path, url)
 
         # Non-ASCII alphanumeric characters
@@ -1722,7 +1733,7 @@ class EditTests(TestCase):
             'saveas': "saveas",
             })
         # TODO: Verify that an error message was in fact returned.
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(urlparse(r.url).path, url)
         
 
@@ -1738,9 +1749,9 @@ class EditTests(TestCase):
         url = urlreverse('ietf.meeting.views.edit_timeslot_type', kwargs=dict(num=timeslot.meeting.number,slot_id=timeslot.id))
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         r = self.client.post(url,{'type':'other',})
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         timeslot = TimeSlot.objects.get(id=timeslot.id)
         self.assertEqual(timeslot.type.slug,'other')
 
@@ -1767,7 +1778,7 @@ class SessionDetailsTests(TestCase):
     def test_session_details(self):
 
         group = GroupFactory.create(type_id='wg',state_id='active')
-        session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=datetime.date.today()+datetime.timedelta(days=90))
+        session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=timezone.now().date()+datetime.timedelta(days=90))
         SessionPresentationFactory.create(session=session,document__type_id='draft',rev=None)
         SessionPresentationFactory.create(session=session,document__type_id='minutes')
         SessionPresentationFactory.create(session=session,document__type_id='slides')
@@ -1787,7 +1798,7 @@ class SessionDetailsTests(TestCase):
     def test_session_details_past_interim(self):
         group = GroupFactory.create(type_id='wg',state_id='active')
         chair = RoleFactory(name_id='chair',group=group)
-        session = SessionFactory.create(meeting__type_id='interim',group=group, meeting__date=datetime.date.today()-datetime.timedelta(days=90))
+        session = SessionFactory.create(meeting__type_id='interim',group=group, meeting__date=timezone.now().date()-datetime.timedelta(days=90))
         SessionPresentationFactory.create(session=session,document__type_id='draft',rev=None)
         SessionPresentationFactory.create(session=session,document__type_id='minutes')
         SessionPresentationFactory.create(session=session,document__type_id='slides')
@@ -1795,10 +1806,10 @@ class SessionDetailsTests(TestCase):
 
         url = urlreverse('ietf.meeting.views.session_details', kwargs=dict(num=session.meeting.number, acronym=group.acronym))
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         self.assertNotIn('The materials upload cutoff date for this session has passed', unicontent(r))
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         self.client.login(username=chair.person.user.username,password=chair.person.user.username+'+password')
         self.assertTrue(all([x in unicontent(r) for x in ('slides','agenda','minutes','draft')]))
         
@@ -1806,7 +1817,7 @@ class SessionDetailsTests(TestCase):
         group = GroupFactory.create(type_id='wg',state_id='active')
         group_chair = PersonFactory.create()
         group.role_set.create(name_id='chair',person = group_chair, email = group_chair.email())
-        session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=datetime.date.today()+datetime.timedelta(days=90))
+        session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=timezone.now().date()+datetime.timedelta(days=90))
         SessionPresentationFactory.create(session=session,document__type_id='draft',rev=None)
         old_draft = session.sessionpresentation_set.filter(document__type='draft').first().document
         new_draft = DocumentFactory(type_id='draft')
@@ -1814,11 +1825,11 @@ class SessionDetailsTests(TestCase):
         url = urlreverse('ietf.meeting.views.add_session_drafts', kwargs=dict(num=session.meeting.number, session_id=session.pk))
 
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 404)
+        self.assertResponseStatus(r, 404)
 
         self.client.login(username="plain",password="plain+password")
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 404)
+        self.assertResponseStatus(r, 404)
 
         self.client.login(username=group_chair.user.username, password='%s+password'%group_chair.user.username)
         r = self.client.get(url)
@@ -1837,10 +1848,10 @@ class SessionDetailsTests(TestCase):
         session.meeting.date -= datetime.timedelta(days=180)
         session.meeting.save()
         r = self.client.get(url)
-        self.assertEqual(r.status_code,404)
+        self.assertResponseStatus(r,404)
         self.client.login(username='secretary',password='secretary+password')
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         q = PyQuery(r.content)
         self.assertEqual(1,len(q(".alert-warning:contains('may affect published proceedings')")))
 
@@ -1978,7 +1989,7 @@ class InterimTests(TestCase):
     def do_interim_skip_announcement_test(self, base_session=False, extra_session=False, canceled_session=False):
         make_meeting_test_data()
         group = Group.objects.get(acronym='irg')
-        date = datetime.date.today() + datetime.timedelta(days=30)
+        date = timezone.now().date() + datetime.timedelta(days=30)
         meeting = make_interim_meeting(group=group, date=date, status='scheda')
         session = meeting.session_set.first()
         if base_session:
@@ -1999,7 +2010,7 @@ class InterimTests(TestCase):
         url = urlreverse("ietf.meeting.views.interim_skip_announcement", kwargs={'number': meeting.number})
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         # check post
         len_before = len(outbox)
@@ -2052,9 +2063,6 @@ class InterimTests(TestCase):
         session = Session.objects.with_current_status().filter(
             meeting__type='interim', group__acronym='mars', current_status='apprw').first()
         meeting = session.meeting
-        meeting.time_zone = 'America/Los_Angeles'
-        meeting.save()
-
         if base_session:
             base_session = SessionFactory(meeting=meeting, status_id='apprw', add_to_schedule=False)
             meeting.schedule.base = Schedule.objects.create(
@@ -2074,7 +2082,7 @@ class InterimTests(TestCase):
         url = urlreverse("ietf.meeting.views.interim_send_announcement", kwargs={'number': meeting.number})
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         initial = r.context['form'].initial
 
         # send announcement
@@ -2085,11 +2093,11 @@ class InterimTests(TestCase):
         announcement_msg = outbox[-1]
         announcement_text = get_payload_text(announcement_msg)
         self.assertIn('WG Virtual Meeting', announcement_msg['Subject'])
-        self.assertIn('09:00 to 09:20 America/Los_Angeles', announcement_text)
+        self.assertIn('09:00 to 09:20 %s' % meeting.time_zone, announcement_text)
         for sess in [session, base_session, extra_session]:
             if sess:
                 timeslot = sess.official_timeslotassignment().timeslot
-                self.assertIn(timeslot.time.strftime('%Y-%m-%d'), announcement_text)
+                self.assertIn(timeslot.local_start_time().strftime('%Y-%m-%d'), announcement_text)
                 self.assertIn(
                     '(%s to %s UTC)' % (
                         timeslot.utc_start_time().strftime('%H:%M'),timeslot.utc_end_time().strftime('%H:%M')
@@ -2259,7 +2267,7 @@ class InterimTests(TestCase):
         self.do_interim_approve_by_secretariat_test(extra_session=True, canceled_session=True, base_session=True)
 
     def test_past(self):
-        today = datetime.date.today()
+        today = timezone.now().date()
         last_week = today - datetime.timedelta(days=7)
         ietf = SessionFactory(meeting__type_id='ietf',meeting__date=last_week,group__state_id='active',group__parent=GroupFactory(state_id='active'))
         SessionFactory(meeting__type_id='interim',meeting__date=last_week,status_id='canceled',group__state_id='active',group__parent=GroupFactory(state_id='active'))
@@ -2275,10 +2283,11 @@ class InterimTests(TestCase):
         if create_meeting:
             make_meeting_test_data(create_interims=True)
         url = urlreverse("ietf.meeting.views.upcoming")
+
         if querystring is not None:
             url += '?' + querystring
 
-        today = datetime.date.today()
+        today = timezone.now().date()
         interims = dict(
             mars=add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='mars')).filter(current_status='sched').first().meeting,
             ames=add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', meeting__date__gt=today, group__acronym='ames')).filter(current_status='canceled').first().meeting,
@@ -2302,8 +2311,8 @@ class InterimTests(TestCase):
         url = urlreverse("ietf.meeting.views.upcoming_ical")
         
         r = self.client.get(url)
+        self.assertResponseStatus(r, 200)
 
-        self.assertEqual(r.status_code, 200)
         # Expect events for important dates plus 3 - one for each WG and one for the IETF meeting
         assert_ical_response_is_valid(self, r,
                                       expected_event_summaries=[
@@ -2319,7 +2328,7 @@ class InterimTests(TestCase):
         url = urlreverse("ietf.meeting.views.upcoming_ical")
         r = self.client.get(url + '?show=mars')
 
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         assert_ical_response_is_valid(self, r,
                                       expected_event_summaries=[
                                           'mars - Martian Special Interest Group',
@@ -2342,7 +2351,7 @@ class InterimTests(TestCase):
         make_meeting_test_data(create_interims=True)
         url = urlreverse("ietf.meeting.views.upcoming_json")
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertEqual(r.get('Content-Type'), "application/json;charset=utf-8")
         data = r.json()
         self.assertEqual(len(data), 3)
@@ -2362,7 +2371,7 @@ class InterimTests(TestCase):
         r = self.client.get(upcoming_url)
         self.assertNotContains(r,'Request new interim meeting')
         r = self.client.get(request_url)
-        self.assertEqual(r.status_code, 403) 
+        self.assertResponseStatus(r, 403) 
         self.client.logout()
 
         # test authorized
@@ -2371,7 +2380,7 @@ class InterimTests(TestCase):
             r = self.client.get(upcoming_url)
             self.assertContains(r,'Request new interim meeting')
             r = self.client.get(request_url)
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             self.client.logout()
 
     def test_interim_request_options(self):
@@ -2380,7 +2389,7 @@ class InterimTests(TestCase):
         # secretariat can request for any group
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get("/meeting/interim/request/")
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         Group.objects.filter(type_id__in=GroupFeatures.objects.filter(has_meetings=True).values_list('type_id',flat=True), state__in=('active', 'proposed', 'bof'))
         self.assertEqual(Group.objects.filter(type_id__in=GroupFeatures.objects.filter(has_meetings=True).values_list('type_id',flat=True), state__in=('active', 'proposed', 'bof')).count(),
@@ -2390,7 +2399,7 @@ class InterimTests(TestCase):
         # wg chair
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get("/meeting/interim/request/")
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         user = User.objects.get(username='marschairman')
         person = user.person
@@ -2401,17 +2410,20 @@ class InterimTests(TestCase):
         group = Group.objects.get(acronym='irg')
         Role.objects.create(name_id='chair',group=group,person=person,email=person.email())
         r = self.client.get("/meeting/interim/request/")
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         count = person.role_set.filter(name='chair',group__type__in=('wg', 'rg'), group__state__in=('active', 'proposed')).count()
         self.assertEqual(count, len(q("#id_group option")) - 1)  # -1 for options placeholder
 
     def do_interim_request_single_virtual(self, emails_expected):
-        make_meeting_test_data()
+        meeting = make_meeting_test_data()
+
         group = Group.objects.get(acronym='mars')
-        date = datetime.date.today() + datetime.timedelta(days=30)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
-        dt = datetime.datetime.combine(date, time)
+        date = timezone.now().date() + datetime.timedelta(days=30)
+        time = timezone.now().time().replace(microsecond=0,second=0)
+        time_zone = 'UTC'
+        tz = pytz.timezone(time_zone)
+        dt = tz.localize(datetime.datetime.combine(date, time))
         duration = datetime.timedelta(hours=3)
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
@@ -2424,7 +2436,7 @@ class InterimTests(TestCase):
                 'meeting_type':'single',
                 'city':'',
                 'country':'',
-                'time_zone':'UTC',
+                'time_zone':time_zone,
                 'session_set-0-date':date.strftime("%Y-%m-%d"),
                 'session_set-0-time':time.strftime('%H:%M'),
                 'session_set-0-requested_duration':'03:00:00',
@@ -2478,13 +2490,14 @@ class InterimTests(TestCase):
     def test_interim_request_single_in_person(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
-        date = datetime.date.today() + datetime.timedelta(days=30)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
-        dt = datetime.datetime.combine(date, time)
+        date = timezone.now().date() + datetime.timedelta(days=30)
+        time = timezone.now().time().replace(microsecond=0,second=0)
+        time_zone = 'America/Los_Angeles'
+        tz = pytz.timezone(time_zone)
+        dt = tz.localize(datetime.datetime.combine(date, time))
         duration = datetime.timedelta(hours=3)
         city = 'San Francisco'
         country = 'US'
-        time_zone = 'America/Los_Angeles'
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -2523,16 +2536,17 @@ class InterimTests(TestCase):
 
     def test_interim_request_multi_day(self):
         make_meeting_test_data()
-        date = datetime.date.today() + datetime.timedelta(days=30)
+        date = timezone.now().date() + datetime.timedelta(days=30)
         date2 = date + datetime.timedelta(days=1)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
-        dt = datetime.datetime.combine(date, time)
-        dt2 = datetime.datetime.combine(date2, time)
+        time = timezone.now().time().replace(microsecond=0,second=0)
+        time_zone = 'America/Los_Angeles'
+        tz = pytz.timezone(time_zone)
+        dt = tz.localize(datetime.datetime.combine(date, time))
+        dt2 = tz.localize(datetime.datetime.combine(date2, time))
         duration = datetime.timedelta(hours=3)
         group = Group.objects.get(acronym='mars')
         city = 'San Francisco'
         country = 'US'
-        time_zone = 'America/Los_Angeles'
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -2587,13 +2601,13 @@ class InterimTests(TestCase):
 
     def test_interim_request_multi_day_non_consecutive(self):
         make_meeting_test_data()
-        date = datetime.date.today() + datetime.timedelta(days=30)
+        date = timezone.now().date() + datetime.timedelta(days=30)
         date2 = date + datetime.timedelta(days=2)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        time = timezone.now().time().replace(microsecond=0,second=0)
+        time_zone = 'America/Los_Angeles'
         group = Group.objects.get(acronym='mars')
         city = 'San Francisco'
         country = 'US'
-        time_zone = 'America/Los_Angeles'
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -2624,7 +2638,7 @@ class InterimTests(TestCase):
     def test_interim_request_multi_day_cancel(self):
         """All sessions of a multi-day interim request should be canceled"""
         length_before = len(outbox)
-        date = datetime.date.today()+datetime.timedelta(days=15)
+        date = timezone.now().date()+datetime.timedelta(days=15)
 
         # Set up an interim request with several sessions 
         num_sessions = 3
@@ -2647,7 +2661,7 @@ class InterimTests(TestCase):
     def test_interim_request_series(self):
         make_meeting_test_data()
         meeting_count_before = Meeting.objects.filter(type='interim').count()
-        date = datetime.date.today() + datetime.timedelta(days=30)
+        date = timezone.now().date() + datetime.timedelta(days=30)
         if (date.month, date.day) == (12, 31):
             # Avoid date and date2 in separate years
             # (otherwise the test will fail if run on December 1st)
@@ -2657,9 +2671,11 @@ class InterimTests(TestCase):
         if date.year != date2.year:
             date += datetime.timedelta(days=1)
             date2 += datetime.timedelta(days=1)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
-        dt = datetime.datetime.combine(date, time)
-        dt2 = datetime.datetime.combine(date2, time)
+        time = timezone.now().time().replace(microsecond=0,second=0)
+        time_zone = 'America/Los_Angeles'
+        tz = pytz.timezone(time_zone)
+        dt = tz.localize(datetime.datetime.combine(date, time))
+        dt2 = tz.localize(datetime.datetime.combine(date2, time))
         duration = datetime.timedelta(hours=3)
         group = Group.objects.get(acronym='mars')
         city = ''
@@ -2673,7 +2689,7 @@ class InterimTests(TestCase):
         next_num2 = "%02d" % (meeting_count+2)
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(urlreverse("ietf.meeting.views.interim_request"))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         data = {'group':group.pk,
                 'meeting_type':'series',
@@ -2734,7 +2750,6 @@ class InterimTests(TestCase):
 
 
     # test_interim_pending subsumed by test_appears_on_pending
-
 
     def test_can_approve_interim_request(self):
         make_interim_test_data()
@@ -2811,7 +2826,7 @@ class InterimTests(TestCase):
         url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         start_time = meeting.session_set.first().official_timeslotassignment().timeslot.time.strftime('%H:%M')
         utc_start_time = meeting.session_set.first().official_timeslotassignment().timeslot.utc_start_time().strftime('%H:%M')
         self.assertIn(start_time, unicontent(r))
@@ -2820,7 +2835,7 @@ class InterimTests(TestCase):
     def test_interim_request_details_announcement(self):
         '''Test access to Announce / Skip Announce features'''
         make_meeting_test_data()
-        date = datetime.date.today() + datetime.timedelta(days=30)
+        date = timezone.now().date() + datetime.timedelta(days=30)
         group = Group.objects.get(acronym='mars')
         meeting = make_interim_meeting(group=group, date=date, status='scheda')
         url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
@@ -2828,14 +2843,14 @@ class InterimTests(TestCase):
         # Chair, no access
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('Announce')")),0)
 
         # Secretariat has access
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('Announce')")),2)
 
@@ -3050,7 +3065,7 @@ class InterimTests(TestCase):
         comments = 'Bob cannot make it'
         self.client.login(username="ameschairman", password="ameschairman+password")
         r = self.client.post(url, {'comments': comments})
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
 
         # test cancelling before announcement
         self.client.login(username="marschairman", password="marschairman+password")
@@ -3159,20 +3174,22 @@ class InterimTests(TestCase):
         # test unauthorized access
         self.client.login(username="ameschairman", password="ameschairman+password")
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
         # test authorized use
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         # post changes
         length_before = len(outbox)
         form_initial = r.context['form'].initial
         formset_initial =  r.context['formset'].forms[0].initial
         new_time = formset_initial['time'] + datetime.timedelta(hours=1)
+        new_time = new_time.astimezone(meeting.tz())
         data = {'group':group.pk,
                 'meeting_type':'single',
+                'time_zone': meeting.time_zone,
                 'session_set-0-id':meeting.session_set.first().id,
-                'session_set-0-date':formset_initial['date'].strftime('%Y-%m-%d'),
+                'session_set-0-date':new_time.strftime('%Y-%m-%d'),
                 'session_set-0-time':new_time.strftime('%H:%M'),
                 'session_set-0-requested_duration': '00:30',
                 'session_set-0-remote_instructions':formset_initial['remote_instructions'],
@@ -3182,11 +3199,20 @@ class InterimTests(TestCase):
                 'session_set-INITIAL_FORMS':1}
         data.update(form_initial)
         r = self.client.post(url, data)
+        
+        if r.status_code != 302:
+            debug.show("formset_initial['time']")
+            debug.show('new_time')
+            fn = "test_interim_request_edit_no_notice.html"
+            with open(fn, "bw") as f:
+                f.write(r.content)
+                debug.say(f"Saved page HTML in {fn}")
+
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number}))
         self.assertEqual(len(outbox),length_before)
         session = meeting.session_set.first()
         timeslot = session.official_timeslotassignment().timeslot
-        self.assertEqual(timeslot.time,new_time)
+        self.assertEqual(timeslot.time.astimezone(meeting.tz()), new_time)
         
     def test_interim_request_edit(self):
         '''Edit request.  Send notice of change'''
@@ -3197,21 +3223,21 @@ class InterimTests(TestCase):
         # test unauthorized access
         self.client.login(username="ameschairman", password="ameschairman+password")
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
         # test authorized use
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         # post changes
         length_before = len(outbox)
         form_initial = r.context['form'].initial
         formset_initial =  r.context['formset'].forms[0].initial
-        new_time = formset_initial['time'] + datetime.timedelta(hours=1)
+        new_time = (formset_initial['time'] + datetime.timedelta(hours=1)).astimezone(meeting.tz())
         new_duration = formset_initial['requested_duration'] + datetime.timedelta(hours=1)
         data = {'group':group.pk,
                 'meeting_type':'single',
                 'session_set-0-id':meeting.session_set.first().id,
-                'session_set-0-date':formset_initial['date'].strftime('%Y-%m-%d'),
+                'session_set-0-date':new_time.strftime('%Y-%m-%d'),
                 'session_set-0-time':new_time.strftime('%H:%M'),
                 'session_set-0-requested_duration':self.strfdelta(new_duration, '{hours}:{minutes}'),
                 'session_set-0-remote_instructions':formset_initial['remote_instructions'],
@@ -3221,13 +3247,15 @@ class InterimTests(TestCase):
                 'session_set-INITIAL_FORMS':1}
         data.update(form_initial)
         r = self.client.post(url, data)
+        if r.status_code != 302:
+            self.debug_save_response(r)
         self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number}))
         self.assertEqual(len(outbox),length_before+1)
         self.assertIn('CHANGED', outbox[-1]['Subject'])
         session = meeting.session_set.first()
         timeslot = session.official_timeslotassignment().timeslot
-        self.assertEqual(timeslot.time,new_time)
-        self.assertEqual(timeslot.duration,new_duration)
+        self.assertEqual(timeslot.time.astimezone(meeting.tz()), new_time)
+        self.assertEqual(timeslot.duration, new_duration)
     
     def strfdelta(self, tdelta, fmt):
         d = {"days": tdelta.days}
@@ -3243,7 +3271,7 @@ class InterimTests(TestCase):
         # unprivileged user
         login_testing_unauthorized(self,"plain",url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
 
     def test_send_interim_approval_request(self):
         make_interim_test_data()
@@ -3293,11 +3321,12 @@ class InterimTests(TestCase):
     def test_group_ical(self):
         make_interim_test_data()
         meeting = Meeting.objects.filter(type='interim', session__group__acronym='mars').first()
+        tz = meeting.tz()
         s1 = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         a1 = s1.official_timeslotassignment()
         t1 = a1.timeslot
         # Create an extra session
-        t2 = TimeSlotFactory.create(meeting=meeting, time=datetime.datetime.combine(meeting.date, datetime.time(11, 30)))
+        t2 = TimeSlotFactory.create(meeting=meeting, time=tz.localize(datetime.datetime.combine(meeting.date, datetime.time(11, 30))))
         s2 = SessionFactory.create(meeting=meeting, group=s1.group, add_to_schedule=False)
         SchedTimeSessAssignment.objects.create(timeslot=t2, session=s2, schedule=meeting.schedule)
         #
@@ -3307,8 +3336,8 @@ class InterimTests(TestCase):
         self.assertContains(r, 'BEGIN:VEVENT')
         self.assertEqual(r.content.count(b'UID'), 2)
         self.assertContains(r, 'SUMMARY:mars - Martian Special Interest Group')
-        self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
-        self.assertContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t1.local_start_time().strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t2.local_start_time().strftime('%Y%m%dT%H%M%S'))
         self.assertContains(r, 'END:VEVENT')
         #
         url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number, 'session_id':s1.id, })
@@ -3317,8 +3346,8 @@ class InterimTests(TestCase):
         self.assertContains(r, 'BEGIN:VEVENT')
         self.assertEqual(r.content.count(b'UID'), 1)
         self.assertContains(r, 'SUMMARY:mars - Martian Special Interest Group')
-        self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
-        self.assertNotContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t1.local_start_time().strftime('%Y%m%dT%H%M%S'))
+        self.assertNotContains(r, t2.local_start_time().strftime('%Y%m%dT%H%M%S'))
         self.assertContains(r, 'END:VEVENT')
 
 
@@ -3327,23 +3356,23 @@ class AjaxTests(TestCase):
         # test bad queries
         url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=badtime&timezone=UTC"
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         data = r.json()
         self.assertEqual(data["error"], True)
         url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=25:99&timezone=UTC"
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         data = r.json()
         self.assertEqual(data["error"], True)
         url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=10:00am&timezone=UTC"
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         data = r.json()
         self.assertEqual(data["error"], True)
         # test good query
         url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=12:00&timezone=America/Los_Angeles"
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         data = r.json()
         self.assertIn('timezone', data)
         self.assertIn('time', data)
@@ -3365,11 +3394,11 @@ class FloorPlanTests(TestCase):
 
         url = urlreverse('ietf.meeting.views.floor_plan')
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         url = urlreverse('ietf.meeting.views.floor_plan', kwargs={'floor': xslugify(floorplan.name)} )
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
 class IphoneAppJsonTests(TestCase):
     def setUp(self):
@@ -3383,7 +3412,7 @@ class IphoneAppJsonTests(TestCase):
         meeting = Meeting.objects.filter(type_id='interim').order_by('id').last()
         url = urlreverse('ietf.meeting.views.agenda_json',kwargs={'num':meeting.number})
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         data = r.json()
         self.assertIn(meeting.number, data.keys())
         jsessions = [ s for s in data[meeting.number] if s['objtype'] == 'session' ]
@@ -3405,7 +3434,7 @@ class IphoneAppJsonTests(TestCase):
             room.save()
         url = urlreverse('ietf.meeting.views.agenda_json',kwargs={'num':meeting.number})
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         data = r.json()
         self.assertIn(meeting.number, data.keys())
         jsessions = [ s for s in data[meeting.number] if s['objtype'] == 'session' ]
@@ -3425,12 +3454,12 @@ class FinalizeProceedingsTests(TestCase):
         url = urlreverse('ietf.meeting.views.finalize_proceedings',kwargs={'num':meeting.number})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         self.assertEqual(meeting.proceedings_final,False)
         self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().sessionpresentation_set.filter(document__type="draft").first().rev,None)
         r = self.client.post(url,{'finalize':1})
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         meeting = Meeting.objects.get(pk=meeting.pk)
         self.assertEqual(meeting.proceedings_final,True)
         self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().sessionpresentation_set.filter(document__type="draft").first().rev,'00')
@@ -3458,7 +3487,7 @@ class MaterialsTests(TestCase):
         def follow(url):
             seen.add(url)
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             if not ('.' in url and url.rsplit('.', 1)[1] in ['tgz', 'pdf', ]):
                 if r.content:
                     page = unicontent(r)
@@ -3475,24 +3504,24 @@ class MaterialsTests(TestCase):
         url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         bs_doc = session.sessionpresentation_set.filter(document__type_id='bluesheets').first().document
         self.assertEqual(bs_doc.rev,'00')
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertIn('Revise', str(q("title")))
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some different text for a test')
         test_file.name = "also_not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         bs_doc = Document.objects.get(pk=bs_doc.pk)
         self.assertEqual(bs_doc.rev,'01')
     
@@ -3503,32 +3532,32 @@ class MaterialsTests(TestCase):
         url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
 
     def test_upload_bluesheets_interim(self):
         session=SessionFactory(meeting__type_id='interim')
         url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         bs_doc = session.sessionpresentation_set.filter(document__type_id='bluesheets').first().document
         self.assertEqual(bs_doc.rev,'00')
 
     def test_upload_bluesheets_interim_chair_access(self):
         make_meeting_test_data()
         mars = Group.objects.get(acronym='mars')
-        session=SessionFactory(meeting__type_id='interim',group=mars, meeting__date = datetime.date.today())
+        session=SessionFactory(meeting__type_id='interim',group=mars, meeting__date = timezone.now().date())
         url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
         
@@ -3543,7 +3572,7 @@ class MaterialsTests(TestCase):
             self.client.logout()
             login_testing_unauthorized(self,"secretary",url)
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             q = PyQuery(r.content)
             self.assertIn('Upload', str(q("Title")))
             self.assertFalse(session.sessionpresentation_set.exists())
@@ -3551,28 +3580,28 @@ class MaterialsTests(TestCase):
     
             session2 = SessionFactory(meeting=session.meeting,group=session.group)
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             q = PyQuery(r.content)
             self.assertTrue(q('form input[type="checkbox"]'))
     
             test_file = BytesIO(b'this is some text for a test')
             test_file.name = "not_really.json"
             r = self.client.post(url,dict(file=test_file))
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             q = PyQuery(r.content)
             self.assertTrue(q('form .has-error'))
     
             test_file = BytesIO(b'this is some text for a test'*1510000)
             test_file.name = "not_really.pdf"
             r = self.client.post(url,dict(file=test_file))
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             q = PyQuery(r.content)
             self.assertTrue(q('form .has-error'))
     
             test_file = BytesIO(b'<html><frameset><frame src="foo.html"></frame><frame src="bar.html"></frame></frameset></html>')
             test_file.name = "not_really.html"
             r = self.client.post(url,dict(file=test_file))
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             q = PyQuery(r.content)
             self.assertTrue(q('form .has-error'))
 
@@ -3580,7 +3609,7 @@ class MaterialsTests(TestCase):
             test_file = BytesIO(b'<html><head><title>Title</title></head><body><h1>Title</h1><section>Some text</section></body></html>')
             test_file.name = "some.html"
             r = self.client.post(url,dict(file=test_file))
-            self.assertEqual(r.status_code, 302)
+            self.assertResponseStatus(r, 302)
             doc = session.sessionpresentation_set.filter(document__type_id=doctype).first().document
             self.assertEqual(doc.rev,'00')
             text = doc.text()
@@ -3592,19 +3621,19 @@ class MaterialsTests(TestCase):
             test_file = BytesIO(b'This is some text for a test, with the word\nvirtual at the beginning of a line.')
             test_file.name = "some.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=False))
-            self.assertEqual(r.status_code, 302)
+            self.assertResponseStatus(r, 302)
             doc = session.sessionpresentation_set.filter(document__type_id=doctype).first().document
             self.assertEqual(doc.rev,'01')
             self.assertFalse(session2.sessionpresentation_set.filter(document__type_id=doctype))
     
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             q = PyQuery(r.content)
             self.assertIn('Revise', str(q("Title")))
             test_file = BytesIO(b'this is some different text for a test')
             test_file.name = "also_some.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=True))
-            self.assertEqual(r.status_code, 302)
+            self.assertResponseStatus(r, 302)
             doc = Document.objects.get(pk=doc.pk)
             self.assertEqual(doc.rev,'02')
             self.assertTrue(session2.sessionpresentation_set.filter(document__type_id=doctype))
@@ -3632,7 +3661,7 @@ class MaterialsTests(TestCase):
             self.client.logout()
             login_testing_unauthorized(self,"secretary",url)
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             q = PyQuery(r.content)
             self.assertIn('Upload', str(q("Title")))
             self.assertFalse(session.sessionpresentation_set.exists())
@@ -3641,7 +3670,7 @@ class MaterialsTests(TestCase):
             test_file = BytesIO(b'this is some text for a test')
             test_file.name = "not_really.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=False))
-            self.assertEqual(r.status_code, 410)
+            self.assertResponseStatus(r, 410)
 
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
     def test_upload_minutes_agenda_interim(self):
@@ -3654,14 +3683,14 @@ class MaterialsTests(TestCase):
             self.client.logout()
             login_testing_unauthorized(self,"secretary",url)
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             q = PyQuery(r.content)
             self.assertIn('Upload', str(q("title")))
             self.assertFalse(session.sessionpresentation_set.filter(document__type_id=doctype))
             test_file = BytesIO(b'this is some text for a test')
             test_file.name = "not_really.txt"
             r = self.client.post(url,dict(file=test_file))
-            self.assertEqual(r.status_code, 302)
+            self.assertResponseStatus(r, 302)
             doc = session.sessionpresentation_set.filter(document__type_id=doctype).first().document
             self.assertEqual(doc.rev,'00')
 
@@ -3677,14 +3706,14 @@ class MaterialsTests(TestCase):
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session1.meeting.number,'session_id':session1.id})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
         self.assertFalse(session1.sessionpresentation_set.filter(document__type_id='slides'))
         test_file = BytesIO(b'this is not really a slide')
         test_file.name = 'not_really.txt'
         r = self.client.post(url,dict(file=test_file,title='a test slide file',apply_to_all=True))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(session1.sessionpresentation_set.count(),1) 
         self.assertEqual(session2.sessionpresentation_set.count(),1) 
         sp = session2.sessionpresentation_set.first()
@@ -3695,7 +3724,7 @@ class MaterialsTests(TestCase):
         test_file = BytesIO(b'some other thing still not slidelike')
         test_file.name = 'also_not_really.txt'
         r = self.client.post(url,dict(file=test_file,title='a different slide file',apply_to_all=False))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(session1.sessionpresentation_set.count(),1)
         self.assertEqual(session2.sessionpresentation_set.count(),2)
         sp = session2.sessionpresentation_set.get(document__name__endswith='-a-different-slide-file')
@@ -3711,7 +3740,7 @@ class MaterialsTests(TestCase):
         test_file = BytesIO(b'new content for the second slide deck')
         test_file.name = 'doesnotmatter.txt'
         r = self.client.post(url,dict(file=test_file,title='rename the presentation',apply_to_all=False))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(session1.sessionpresentation_set.count(),1)
         self.assertEqual(session2.sessionpresentation_set.count(),2)
         sp = session2.sessionpresentation_set.get(order=2)
@@ -3723,14 +3752,14 @@ class MaterialsTests(TestCase):
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session1.meeting.number,'session_id':session1.id})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
         self.assertFalse(session1.sessionpresentation_set.filter(document__type_id='slides'))
         test_file = BytesIO(b'this is not really a slide')
         test_file.name = 'not_really.txt'
         r = self.client.post(url,dict(file=test_file,title='title with bad character \U0001fabc '))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(q('form .has-error'))
         self.assertIn("Unicode BMP", q('form .has-error div').text())
@@ -3763,39 +3792,39 @@ class MaterialsTests(TestCase):
         for type_id in ['ietf','interim']:
             session = SessionFactory(meeting__type_id=type_id)
             chair = RoleFactory(group=session.group,name_id='chair').person
-            session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+            session.meeting.importantdate_set.create(name_id='revsub',date=timezone.now().date()+datetime.timedelta(days=20))
             newperson = PersonFactory()
             
             session_overview_url = urlreverse('ietf.meeting.views.session_details',kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
             propose_url = urlreverse('ietf.meeting.views.propose_session_slides', kwargs={'session_id':session.pk, 'num': session.meeting.number})    
 
             r = self.client.get(session_overview_url)
-            self.assertEqual(r.status_code,200)
+            self.assertResponseStatus(r,200)
             q = PyQuery(r.content)
             self.assertFalse(q('#uploadslides'))
             self.assertFalse(q('#proposeslides'))
 
             self.client.login(username=newperson.user.username,password=newperson.user.username+"+password")
             r = self.client.get(session_overview_url)
-            self.assertEqual(r.status_code,200)
+            self.assertResponseStatus(r,200)
             q = PyQuery(r.content)
             self.assertTrue(q('#proposeslides'))
             self.client.logout()
 
             login_testing_unauthorized(self,newperson.user.username,propose_url)
             r = self.client.get(propose_url)
-            self.assertEqual(r.status_code,200)
+            self.assertResponseStatus(r,200)
             test_file = BytesIO(b'this is not really a slide')
             test_file.name = 'not_really.txt'
             empty_outbox()
             r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
-            self.assertEqual(r.status_code, 302)
+            self.assertResponseStatus(r, 302)
             session = Session.objects.get(pk=session.pk)
             self.assertEqual(session.slidesubmission_set.count(),1)
             self.assertEqual(len(outbox),1)
 
             r = self.client.get(session_overview_url)
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             q = PyQuery(r.content)
             self.assertEqual(len(q('#proposedslidelist p')), 1)
 
@@ -3804,41 +3833,41 @@ class MaterialsTests(TestCase):
             self.client.logout()
             self.client.login(username=chair.user.username, password=chair.user.username+"+password")
             r = self.client.get(session_overview_url)
-            self.assertEqual(r.status_code, 200)
+            self.assertResponseStatus(r, 200)
             q = PyQuery(r.content)
             self.assertEqual(len(q('#proposedslidelist p')), 2)
             self.client.logout()
 
     def test_disapprove_proposed_slides(self):
         submission = SlideSubmissionFactory()
-        submission.session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        submission.session.meeting.importantdate_set.create(name_id='revsub',date=timezone.now().date()+datetime.timedelta(days=20))
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 1)
         chair = RoleFactory(group=submission.session.group,name_id='chair').person
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         r = self.client.post(url,dict(title='some title',disapprove="disapprove"))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'rejected').count(), 1)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 0)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "These slides have already been  rejected")
 
     def test_approve_proposed_slides(self):
         submission = SlideSubmissionFactory()
         session = submission.session
-        session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        session.meeting.importantdate_set.create(name_id='revsub',date=timezone.now().date()+datetime.timedelta(days=20))
         chair = RoleFactory(group=submission.session.group,name_id='chair').person
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, url)
         self.assertEqual(submission.status_id, 'pending')
         self.assertIsNone(submission.doc)
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         r = self.client.post(url,dict(title='different title',approve='approve'))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 0)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'approved').count(), 1)
         submission = SlideSubmission.objects.get(id = submission.id)
@@ -3847,23 +3876,23 @@ class MaterialsTests(TestCase):
         self.assertEqual(session.sessionpresentation_set.count(),1)
         self.assertEqual(session.sessionpresentation_set.first().document.title,'different title')
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "These slides have already been  approved")
 
     def test_approve_proposed_slides_multisession_apply_one(self):
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
         session1 = submission.session
         session2 = SessionFactory(group=submission.session.group, meeting=submission.session.meeting)
-        submission.session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        submission.session.meeting.importantdate_set.create(name_id='revsub',date=timezone.now().date()+datetime.timedelta(days=20))
         chair = RoleFactory(group=submission.session.group,name_id='chair').person
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         q = PyQuery(r.content)
         self.assertTrue(q('#id_apply_to_all'))
         r = self.client.post(url,dict(title='yet another title',approve='approve'))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         self.assertEqual(session1.sessionpresentation_set.count(),1)
         self.assertEqual(session2.sessionpresentation_set.count(),0)
 
@@ -3871,21 +3900,21 @@ class MaterialsTests(TestCase):
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
         session1 = submission.session
         session2 = SessionFactory(group=submission.session.group, meeting=submission.session.meeting)
-        submission.session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        submission.session.meeting.importantdate_set.create(name_id='revsub',date=timezone.now().date()+datetime.timedelta(days=20))
         chair = RoleFactory(group=submission.session.group,name_id='chair').person
         url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         r = self.client.post(url,dict(title='yet another title',apply_to_all=1,approve='approve'))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         self.assertEqual(session1.sessionpresentation_set.count(),1)
         self.assertEqual(session2.sessionpresentation_set.count(),1)
 
     def test_submit_and_approve_multiple_versions(self):
         session = SessionFactory(meeting__type_id='ietf')
         chair = RoleFactory(group=session.group,name_id='chair').person
-        session.meeting.importantdate_set.create(name_id='revsub',date=datetime.date.today()+datetime.timedelta(days=20))
+        session.meeting.importantdate_set.create(name_id='revsub',date=timezone.now().date()+datetime.timedelta(days=20))
         newperson = PersonFactory()
         
         propose_url = urlreverse('ietf.meeting.views.propose_session_slides', kwargs={'session_id':session.pk, 'num': session.meeting.number})          
@@ -3894,7 +3923,7 @@ class MaterialsTests(TestCase):
         test_file = BytesIO(b'this is not really a slide')
         test_file.name = 'not_really.txt'
         r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.client.logout()
 
         submission = SlideSubmission.objects.get(session = session)
@@ -3902,7 +3931,7 @@ class MaterialsTests(TestCase):
         approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, approve_url)
         r = self.client.post(approve_url,dict(title=submission.title,approve='approve'))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         self.client.logout()
 
         self.assertEqual(session.sessionpresentation_set.first().document.rev,'00')
@@ -3911,12 +3940,12 @@ class MaterialsTests(TestCase):
         test_file = BytesIO(b'this is not really a slide, but it is another version of it')
         test_file.name = 'not_really.txt'
         r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
 
         test_file = BytesIO(b'this is not really a slide, but it is third version of it')
         test_file.name = 'not_really.txt'
         r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.client.logout()       
 
         (first_submission, second_submission) = SlideSubmission.objects.filter(session=session, status__slug = 'pending').order_by('id')
@@ -3924,11 +3953,11 @@ class MaterialsTests(TestCase):
         approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':second_submission.pk,'num':second_submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, approve_url)
         r = self.client.post(approve_url,dict(title=submission.title,approve='approve'))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
 
         disapprove_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':first_submission.pk,'num':first_submission.session.meeting.number})
         r = self.client.post(disapprove_url,dict(title='some title',disapprove="disapprove"))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         self.client.logout()
 
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(),0)
@@ -3971,7 +4000,7 @@ class SessionTests(TestCase):
                                   'subject': 'I changed the subject',
                                   'body': 'corpus',
                                  })
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         self.assertEqual(len(outbox),1)
 
 class HasMeetingsTests(TestCase):
@@ -3990,11 +4019,11 @@ class HasMeetingsTests(TestCase):
     def do_request_interim(self, url, group, user, meeting_count):
         login_testing_unauthorized(self,user.username, url)
         r = self.client.get(url) 
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(q('#id_group option[value="%d"]'%group.pk))
-        date = datetime.date.today() + datetime.timedelta(days=30+meeting_count)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        date = timezone.now().date() + datetime.timedelta(days=30+meeting_count)
+        time = timezone.now().time().replace(microsecond=0,second=0)
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -4068,7 +4097,7 @@ class HasMeetingsTests(TestCase):
         for gf in GroupFeatures.objects.exclude(has_meetings=True):
             nomeetings.append(GroupFactory(type_id=gf.type_id))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         for group in nomeetings:
             self.assertFalse(q('#id_group option[value="%d"]'%group.pk))
@@ -4080,7 +4109,7 @@ class HasMeetingsTests(TestCase):
                 role = RoleFactory(group__type_id=gf.type_id,name_id=role_name)
                 self.client.login(username=role.person.user.username, password=role.person.user.username+'+password')
                 r = self.client.get(url)
-                self.assertEqual(r.status_code, 403)
+                self.assertResponseStatus(r, 403)
                 self.client.logout()
 
     def test_appears_on_upcoming(self):
@@ -4137,7 +4166,7 @@ class HasMeetingsTests(TestCase):
             )
             sessions.append(session)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         for session in sessions:
             self.assertIn(session.meeting.number, q('.interim-meeting-link').text())

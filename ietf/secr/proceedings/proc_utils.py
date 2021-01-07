@@ -24,6 +24,7 @@ from ietf.meeting.models import Meeting, SessionPresentation, TimeSlot, SchedTim
 from ietf.person.models import Person
 from ietf.utils.log import log
 from ietf.utils.mail import send_mail
+from ietf.utils.timezone import date2datetime
 
 AUDIO_FILE_RE = re.compile(r'ietf(?P<number>[\d]+)-(?P<room>.*)-(?P<time>[\d]{8}-[\d]{4})')
 VIDEO_TITLE_RE = re.compile(r'IETF(?P<number>[\d]+)-(?P<name>.*)-(?P<date>\d{8})-(?P<time>\d{4})')
@@ -32,7 +33,7 @@ VIDEO_TITLE_RE = re.compile(r'IETF(?P<number>[\d]+)-(?P<name>.*)-(?P<date>\d{8})
 def _get_session(number,name,date,time):
     '''Lookup session using data from video title'''
     meeting = Meeting.objects.get(number=number)
-    timeslot_time = datetime.datetime.strptime(date + time,'%Y%m%d%H%M')
+    timeslot_time = meeting.tz().localize(datetime.datetime.strptime(date + time,'%Y%m%d%H%M'))
     try:
         assignment = SchedTimeSessAssignment.objects.get(
             schedule__in = [meeting.schedule, meeting.schedule.base],
@@ -102,7 +103,7 @@ def get_timeslot_for_filename(filename):
         try:
             meeting = Meeting.objects.get(number=match.groupdict()['number'])
             room_mapping = {normalize_room_name(room.name): room.name for room in meeting.room_set.all()}
-            time = datetime.datetime.strptime(match.groupdict()['time'],'%Y%m%d-%H%M')
+            time = meeting.tz().localize(datetime.datetime.strptime(match.groupdict()['time'],'%Y%m%d-%H%M'))
             slots = TimeSlot.objects.filter(
                 meeting=meeting,
                 location__name=room_mapping[match.groupdict()['room']],
@@ -146,7 +147,7 @@ def create_recording(session, url, title=None, user=None):
     '''
     sequence = get_next_sequence(session.group,session.meeting,'recording')
     name = 'recording-{}-{}-{}'.format(session.meeting.number,session.group.acronym,sequence)
-    time = session.official_timeslotassignment().timeslot.time.strftime('%Y-%m-%d %H:%M')
+    time = session.official_timeslotassignment().timeslot.local_start_time().strftime('%Y-%m-%d %H:%M')
     if not title:
         if url.endswith('mp3'):
             title = 'Audio recording for {}'.format(time)
@@ -211,6 +212,10 @@ def get_progress_stats(sdate,edate):
     data['sdate'] = sdate
     data['edate'] = edate
 
+    if isinstance(sdate, datetime.date):
+        sdate = date2datetime(sdate)
+    if isinstance(edate, datetime.date):
+        edate = date2datetime(edate)
     events = DocEvent.objects.filter(doc__type='draft',time__gte=sdate,time__lt=edate)
     
     data['actions_count'] = events.filter(type='iesg_approved').count()

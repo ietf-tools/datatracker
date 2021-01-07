@@ -34,7 +34,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-import datetime
 import glob
 import io
 import json
@@ -49,6 +48,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django import forms
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -166,7 +166,7 @@ def document_main(request, name, rev=None):
 
 
     telechat = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
-    if telechat and (not telechat.telechat_date or telechat.telechat_date < datetime.date.today()):
+    if telechat and (not telechat.telechat_date or telechat.telechat_date < timezone.now().date()):
        telechat = None
 
 
@@ -1241,11 +1241,11 @@ def telechat_date(request, name):
 
     warnings = []
     if e and e.telechat_date and doc.type.slug != 'charter':
-        if e.telechat_date==datetime.date.today():
+        if e.telechat_date==timezone.now().date():
             warnings.append( "This document is currently scheduled for today's telechat. "
                             +"Please set the returning item bit carefully.")
 
-        elif e.telechat_date<datetime.date.today() and has_same_ballot(doc,e.telechat_date):
+        elif e.telechat_date<timezone.now().date() and has_same_ballot(doc,e.telechat_date):
             initial_returning_item = True
             warnings.append(  "This document appears to have been on a previous telechat with the same ballot, "
                             +"so the returning item bit has been set. Clear it if that is not appropriate.")

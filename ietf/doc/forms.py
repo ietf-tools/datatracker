@@ -3,13 +3,17 @@
 
 
 import datetime
-import debug #pyflakes:ignore
+
 from django import forms
+from django.utils import timezone
+
+import debug                            #pyflakes:ignore
 
 from ietf.doc.fields import SearchableDocAliasesField, SearchableDocAliasField
 from ietf.doc.models import RelatedDocument
 from ietf.iesg.models import TelechatDate
 from ietf.iesg.utils import telechat_page_count
+
 
 class TelechatForm(forms.Form):
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, help_text="Page counts are the current page counts for the telechat, before this telechat date edit is made.")
@@ -28,7 +32,7 @@ class TelechatForm(forms.Form):
         for d in dates:
           self.page_count[d] = telechat_page_count(date=d).for_approval
           choice_display[d] = '%s (%s pages)' % (d.strftime("%Y-%m-%d"),self.page_count[d])
-          if d-datetime.date.today() < datetime.timedelta(days=13):
+          if d-timezone.now().date() < datetime.timedelta(days=13):
               choice_display[d] += ' : WARNING - this may not leave enough time for directorate reviews!'
         self.fields['telechat_date'].choices = [("", "(not on agenda)")] + [(d, choice_display[d]) for d in dates]
 

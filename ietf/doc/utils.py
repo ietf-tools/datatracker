@@ -16,8 +16,9 @@ from urllib.parse import quote
 from django.conf import settings
 from django.contrib import messages
 from django.forms import ValidationError
-from django.utils.html import escape
 from django.urls import reverse as urlreverse
+from django.utils import timezone
+from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 from ietf.community.models import CommunityList
@@ -36,6 +37,7 @@ from ietf.utils import draft, text
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils import log
+from ietf.utils.timezone import date2datetime
 
 def save_document_in_history(doc):
     """Save a snapshot of document and related objects in the database."""
@@ -477,12 +479,12 @@ def nice_consensus(consensus):
         }
     return mapping[consensus]
 
-def has_same_ballot(doc, date1, date2=datetime.date.today()):
+def has_same_ballot(doc, date1, date2=timezone.now().date()):
     """ Test if the most recent ballot created before the end of date1
         is the same as the most recent ballot created before the
         end of date 2. """
-    ballot1 = doc.latest_event(BallotDocEvent,type='created_ballot',time__lt=date1+datetime.timedelta(days=1))
-    ballot2 = doc.latest_event(BallotDocEvent,type='created_ballot',time__lt=date2+datetime.timedelta(days=1))
+    ballot1 = doc.latest_event(BallotDocEvent,type='created_ballot',time__lt=date2datetime(date1)+datetime.timedelta(days=1))
+    ballot2 = doc.latest_event(BallotDocEvent,type='created_ballot',time__lt=date2datetime(date2)+datetime.timedelta(days=1))
     return ballot1==ballot2
 
 def make_notify_changed_event(request, doc, by, new_notify, time=None):
@@ -529,7 +531,7 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
          and on_agenda
          and prev_agenda
          and new_telechat_date != prev_telechat
-         and prev_telechat < datetime.date.today()
+         and prev_telechat < timezone.now().date()
          and has_same_ballot(doc,prev.telechat_date)
        ):
         returning = True
@@ -560,7 +562,7 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
 
     e.save()
 
-    has_short_fuse = doc.type_id=='draft' and new_telechat_date and (( new_telechat_date - datetime.date.today() ) < datetime.timedelta(days=13))
+    has_short_fuse = doc.type_id=='draft' and new_telechat_date and (( new_telechat_date - timezone.now().date() ) < datetime.timedelta(days=13))
 
     from ietf.doc.mails import email_update_telechat
 
@@ -645,7 +647,7 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
             cc.update(other_addrs.cc)
             RelatedDocument.objects.filter(source=doc, target=d, relationship=relationship).delete()
             if not RelatedDocument.objects.filter(target=d, relationship=relationship):
-                s = 'active' if d.document.expires > datetime.datetime.now() else 'expired'
+                s = 'active' if d.document.expires > timezone.now() else 'expired'
                 d.document.set_state(State.objects.get(type='draft', slug=s))
 
     for d in new_replaces:
@@ -878,7 +880,7 @@ def build_doc_meta_block(doc, path):
             lines[i] = line
         return lines
     #
-    now = datetime.datetime.now()
+    now = timezone.now()
     draft_state = doc.get_state('draft')
     block = ''
     meta = {}

@@ -16,6 +16,8 @@ from ietf.utils.test_utils import TestCase
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.secr.telechat.views import get_next_telechat_date
+from ietf.utils.timezone import datetime_today
+
 
 SECR_USER='secretary'
 
@@ -94,7 +96,7 @@ class SecrTelechatTestCase(TestCase):
     def test_doc_detail_charter(self):
         by=Person.objects.get(name="(System)")
         charter = CharterFactory(states=[('charter','intrev')])
-        last_week = datetime.date.today()-datetime.timedelta(days=7)
+        last_week = datetime_today()-datetime.timedelta(days=7)
         BallotDocEvent.objects.create(type='created_ballot',by=by,doc=charter, rev=charter.rev,
                                       ballot_type=BallotType.objects.get(doc_type=charter.type,slug='r-extrev'),
                                       time=last_week)
@@ -123,7 +125,7 @@ class SecrTelechatTestCase(TestCase):
     def test_doc_detail_post_update_ballot(self):
         by=Person.objects.get(name="(System)")
         charter = CharterFactory(states=[('charter','intrev')])
-        last_week = datetime.date.today()-datetime.timedelta(days=7)
+        last_week = datetime_today()-datetime.timedelta(days=7)
         BallotDocEvent.objects.create(type='created_ballot',by=by,doc=charter, rev=charter.rev,
                                       ballot_type=BallotType.objects.get(doc_type=charter.type,slug='r-extrev'),
                                       time=last_week)
@@ -161,7 +163,7 @@ class SecrTelechatTestCase(TestCase):
     def test_doc_detail_post_update_state(self):
         by=Person.objects.get(name="(System)")
         charter = CharterFactory(states=[('charter','intrev')])
-        last_week = datetime.date.today()-datetime.timedelta(days=7)
+        last_week = datetime_today()-datetime.timedelta(days=7)
         BallotDocEvent.objects.create(type='created_ballot',by=by,doc=charter, rev=charter.rev,
                                       ballot_type=BallotType.objects.get(doc_type=charter.type,slug='r-extrev'),
                                       time=last_week)

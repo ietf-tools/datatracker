@@ -3,7 +3,6 @@
 
 
 import os
-import datetime
 import collections
 import io
 
@@ -14,6 +13,7 @@ import debug                            # pyflakes:ignore
 from django.core.management.base import AppCommand
 from django.db import models
 from django.template import Template, Context
+from django.utils import timezone
 
 from tastypie.resources import ModelResource
 
@@ -89,7 +89,7 @@ class Command(AppCommand):
                     info = dict(
                         app=app.name,
                         app_label=app.label,
-                        date=datetime.datetime.now()
+                        date=timezone.now()
                     )
                     new_models = {}
                     for model, rclass_name in missing_resources:

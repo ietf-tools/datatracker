@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-import datetime
 import hashlib
 import os
 import re
@@ -21,6 +20,8 @@ from django.urls import reverse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 
+import debug                            # pyflakes:ignore
+
 from ietf.dbtemplate.models import DBTemplate
 from ietf.person.models import Email, Person
 from ietf.mailtrigger.utils import gather_address_lists
@@ -28,8 +29,8 @@ from ietf.utils.pipe import pipe
 from ietf.utils.mail import send_mail_text, send_mail, get_payload_text
 from ietf.utils.log import log
 from ietf.person.name import unidecode_name
+from ietf.utils.timezone import datetime_today
 
-import debug                            # pyflakes:ignore
 
 MAIN_NOMCOM_TEMPLATE_PATH = '/nomcom/defaults/'
 QUESTIONNAIRE_TEMPLATE = 'position/questionnaire.txt'
@@ -223,7 +224,7 @@ def validate_public_key(public_key):
 
 
 def send_accept_reminder_to_nominee(nominee_position):
-    today = datetime.date.today().strftime('%Y%m%d')
+    today = datetime_today().strftime('%Y%m%d')
     subject = 'Reminder: please accept (or decline) your nomination.'
     domain = Site.objects.get_current().domain
     position = nominee_position.position
@@ -315,7 +316,7 @@ def make_nomineeposition(nomcom, candidate, position, author):
         from_email = settings.NOMCOM_FROM_EMAIL.format(year=nomcom.year())
         (to_email, cc) = gather_address_lists('nomination_new_nominee',nominee=nominee.email.address)
         domain = Site.objects.get_current().domain
-        today = datetime.date.today().strftime('%Y%m%d')
+        today = datetime_today().strftime('%Y%m%d')
         hash = get_hash_nominee_position(today, nominee_position.id)
         accept_url = reverse('ietf.nomcom.views.process_nomination_status',
                               None,

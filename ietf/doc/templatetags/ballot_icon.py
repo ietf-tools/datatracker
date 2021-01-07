@@ -39,6 +39,7 @@ from django import template
 from django.urls import reverse as urlreverse
 from django.db.models import Q
 from django.utils.safestring import mark_safe
+from django.utils import timezone
 
 from ietf.ietfauth.utils import user_is_person, has_role
 from ietf.doc.models import BallotPositionDocEvent, IESG_BALLOT_ACTIVE_STATES
@@ -179,7 +180,7 @@ def state_age_colored(doc):
             ).order_by('-time')[0].time.date()
         except IndexError:
             state_date = datetime.date(1990,1,1)
-        days = (datetime.date.today() - state_date).days
+        days = (timezone.now().date() - state_date).days
         # loosely based on
         # http://trac.tools.ietf.org/group/iesg/trac/wiki/PublishPath
         if iesg_state == "lc":

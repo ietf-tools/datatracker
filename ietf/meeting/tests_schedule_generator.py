@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
 import calendar
 import datetime
+
 from io import StringIO
 
 from django.core.management.base import CommandError
@@ -32,9 +33,9 @@ class ScheduleGeneratorTest(TestCase):
                     t = TimeSlotFactory(
                         meeting=self.meeting,
                         location=room,
-                        time=datetime.datetime.combine(
+                        time=self.meeting.tz().localize(datetime.datetime.combine(
                             self.meeting.date + datetime.timedelta(days=day),
-                            datetime.time(hour, 0),
+                            datetime.time(hour, 0))
                         ),
                         duration=datetime.timedelta(minutes=60),
                     )

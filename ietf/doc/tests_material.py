@@ -4,7 +4,6 @@
 
 import os
 import shutil
-import datetime
 import io
 
 from pyquery import PyQuery
@@ -13,6 +12,7 @@ import debug              # pyflakes:ignore
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 from ietf.doc.models import Document, State, DocAlias, NewRevisionDocEvent
 from ietf.group.factories import RoleFactory
@@ -69,12 +69,12 @@ class GroupMaterialTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "Slides")
 
         url = urlreverse('ietf.doc.views_material.choose_material_type', kwargs=dict(acronym='mars'))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 404)
+        self.assertResponseStatus(r, 404)
 
     def test_upload_slides(self):
         group = Group.objects.create(type_id="team", acronym="testteam", name="Test Team", state_id="active")
@@ -84,7 +84,7 @@ class GroupMaterialTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         content = "%PDF-1.5\n..."
         test_file = io.StringIO(content)
@@ -93,7 +93,7 @@ class GroupMaterialTests(TestCase):
         # faulty post
         r = self.client.post(url, dict(title="", name="", state="", material=test_file))
 
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('.has-error')) > 0)
 
@@ -105,7 +105,7 @@ class GroupMaterialTests(TestCase):
                                        name="slides-%s-test-file" % group.acronym,
                                        state=State.objects.get(type="slides", slug="active").pk,
                                        material=test_file))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
 
         doc = Document.objects.get(name="slides-%s-test-file" % group.acronym)
         self.assertEqual(doc.rev, "00")
@@ -122,7 +122,7 @@ class GroupMaterialTests(TestCase):
                                        name=doc.name,
                                        state=State.objects.get(type="slides", slug="active").pk,
                                        material=test_file))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertTrue(len(q('.has-error')) > 0)
         
     def test_change_state(self):
@@ -133,7 +133,7 @@ class GroupMaterialTests(TestCase):
 
         # post
         r = self.client.post(url, dict(state=State.objects.get(type="slides", slug="deleted").pk))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         doc = Document.objects.get(name=doc.name)
         self.assertEqual(doc.get_state_slug(), "deleted")
 
@@ -145,7 +145,7 @@ class GroupMaterialTests(TestCase):
 
         # post
         r = self.client.post(url, dict(title="New title"))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         doc = Document.objects.get(name=doc.name)
         self.assertEqual(doc.title, "New title")
 
@@ -156,7 +156,7 @@ class GroupMaterialTests(TestCase):
             name = "session-42-mars-1",
             meeting = Meeting.objects.get(number='42'),
             group = Group.objects.get(acronym='mars'),
-            modified = datetime.datetime.now(),
+            modified = timezone.now(),
             type_id='regular',
         )
         SchedulingEvent.objects.create(
@@ -178,7 +178,7 @@ class GroupMaterialTests(TestCase):
                                        abstract="New abstract",
                                        state=State.objects.get(type="slides", slug="active").pk,
                                        material=test_file))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         doc = Document.objects.get(name=doc.name)
         self.assertEqual(doc.rev, "02")
         self.assertEqual(doc.title, "New title")

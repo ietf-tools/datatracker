@@ -36,26 +36,26 @@ class ConflictReviewTests(TestCase):
         
         # can't start conflict reviews on documents not in the ise or irtf streams 
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 404)
+        self.assertResponseStatus(r, 404)
 
         doc.stream = StreamName.objects.get(slug='ise')
         doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         # normal get should succeed and get a reasonable form
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form select[name=create_in_state]')),1)
 
         # faulty posts
         r = self.client.post(url,dict(create_in_state=""))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form .has-error')) > 0)
         self.assertEqual(Document.objects.filter(name='conflict-review-imaginary-independent-submission').count() , 0)
 
         r = self.client.post(url,dict(ad=""))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form .has-error')) > 0)
         self.assertEqual(Document.objects.filter(name='conflict-review-imaginary-independent-submission').count() , 0)
@@ -64,7 +64,7 @@ class ConflictReviewTests(TestCase):
         ad_strpk = str(Person.objects.get(name='Areað Irector').pk)
         state_strpk = str(State.objects.get(used=True, slug='needshep',type__slug='conflrev').pk)        
         r = self.client.post(url,dict(ad=ad_strpk,create_in_state=state_strpk,notify='ipu@ietf.org'))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         review_doc = Document.objects.get(name='conflict-review-imaginary-independent-submission')
         self.assertEqual(review_doc.get_state('conflrev').slug,'needshep')
         self.assertEqual(review_doc.rev,'00')
@@ -79,7 +79,7 @@ class ConflictReviewTests(TestCase):
         
         # verify you can't start a review when a review is already in progress
         r = self.client.post(url,dict(ad="Areað Irector",create_in_state="Needs Shepherd",notify='ipu@ietf.org'))
-        self.assertEqual(r.status_code, 404)
+        self.assertResponseStatus(r, 404)
 
 
     def test_start_review_as_stream_owner(self):
@@ -91,20 +91,20 @@ class ConflictReviewTests(TestCase):
 
         # can't start conflict reviews on documents not in a stream
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 404)
+        self.assertResponseStatus(r, 404)
 
 
         # can't start conflict reviews on documents in some other stream
         doc.stream = StreamName.objects.get(slug='irtf')
         doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 404)
+        self.assertResponseStatus(r, 404)
 
         # successful get 
         doc.stream = StreamName.objects.get(slug='ise')
         doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form input[name=notify]')),1)
         self.assertEqual(len(q('form select[name=ad]')),0)
@@ -112,7 +112,7 @@ class ConflictReviewTests(TestCase):
         # successfully starts a review, and notifies the secretariat
         messages_before = len(outbox)
         r = self.client.post(url,dict(notify='ipu@ietf.org'))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         review_doc = Document.objects.get(name='conflict-review-imaginary-independent-submission')
         self.assertEqual(review_doc.get_state('conflrev').slug,'needshep')
         self.assertEqual(review_doc.rev,'00')
@@ -140,20 +140,20 @@ class ConflictReviewTests(TestCase):
 
         # normal get 
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form select[name=review_state]')),1)
         
         # faulty post
         r = self.client.post(url,dict(review_state=""))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form .has-error')) > 0)
 
         # successful change to AD Review
         adrev_pk = str(State.objects.get(used=True, slug='adrev',type__slug='conflrev').pk)
         r = self.client.post(url,dict(review_state=adrev_pk,comment='RDNK84ZD'))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         review_doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEqual(review_doc.get_state('conflrev').slug,'adrev')
         self.assertTrue(review_doc.latest_event(DocEvent,type="added_comment").desc.startswith('RDNK84ZD'))
@@ -162,7 +162,7 @@ class ConflictReviewTests(TestCase):
         # successful change to IESG Evaluation 
         iesgeval_pk = str(State.objects.get(used=True, slug='iesgeval',type__slug='conflrev').pk)
         r = self.client.post(url,dict(review_state=iesgeval_pk,comment='TGmZtEjt'))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         review_doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEqual(review_doc.get_state('conflrev').slug,'iesgeval')
         self.assertTrue(review_doc.latest_event(DocEvent,type="added_comment").desc.startswith('TGmZtEjt'))
@@ -178,7 +178,7 @@ class ConflictReviewTests(TestCase):
 
         # normal get 
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form input[name=notify]')),1)
         self.assertEqual(doc.notify,q('form input[name=notify]')[0].value)
@@ -186,14 +186,14 @@ class ConflictReviewTests(TestCase):
         # change notice list
         newlist = '"Foo Bar" <foo@bar.baz.com>'
         r = self.client.post(url,dict(notify=newlist,save_addresses="1"))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEqual(doc.notify,newlist)
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Notification list changed'))       
 
         # Ask the form to regenerate the list
         r = self.client.post(url,dict(regenerate_addresses="1"))
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         # Regenerate does not save!
         self.assertEqual(doc.notify,newlist)
@@ -208,14 +208,14 @@ class ConflictReviewTests(TestCase):
 
         # normal get 
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('select[name=ad]')),1)
 
         # change ads
         ad2 = Person.objects.get(name='Ad No2')
         r = self.client.post(url,dict(ad=str(ad2.pk)))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEqual(doc.ad,ad2)
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Shepherding AD changed'))       
@@ -229,7 +229,7 @@ class ConflictReviewTests(TestCase):
 
         # normal get 
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('select[name=telechat_date]')),1)
 
@@ -237,32 +237,32 @@ class ConflictReviewTests(TestCase):
         self.assertFalse(doc.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
         telechat_date = TelechatDate.objects.active().order_by('date')[0].date
         r = self.client.post(url,dict(telechat_date=telechat_date.isoformat()))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEqual(doc.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date,telechat_date)
 
         # move it forward a telechat (this should NOT set the returning item bit)
         telechat_date = TelechatDate.objects.active().order_by('date')[1].date
         r = self.client.post(url,dict(telechat_date=telechat_date.isoformat()))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertFalse(doc.returning_item())
 
         # set the returning item bit without changing the date
         r = self.client.post(url,dict(telechat_date=telechat_date.isoformat(),returning_item="on"))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertTrue(doc.returning_item())
 
         # clear the returning item bit
         r = self.client.post(url,dict(telechat_date=telechat_date.isoformat()))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertFalse(doc.returning_item())
 
         # Take the doc back off any telechat
         r = self.client.post(url,dict(telechat_date=""))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertEqual(doc.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date,None)
 
     def approve_test_helper(self,approve_type):
@@ -278,7 +278,7 @@ class ConflictReviewTests(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('[type=submit]:contains("Send announcement")')), 1)
         if approve_type == 'appr-noprob':
@@ -289,7 +289,7 @@ class ConflictReviewTests(TestCase):
         # submit
         empty_outbox()
         r = self.client.post(url,dict(announcement_text=default_approval_text(doc)))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
 
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEqual(doc.get_state_slug(),approve_type+'-sent')
@@ -335,7 +335,7 @@ class ConflictReviewTests(TestCase):
         r = self.client.post(url,dict(review_state=pending_pk,comment='some comment or other'))
 
         # Check the results
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
 
         # If we received a notification, check the common features for all approve_types
         if len(outbox) > 0:
@@ -379,7 +379,7 @@ class ConflictReviewSubmitTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         q = PyQuery(r.content)
         self.assertTrue(q('textarea[name="content"]')[0].text.strip().startswith("[Edit this page"))
         
@@ -391,7 +391,7 @@ class ConflictReviewSubmitTests(TestCase):
         self.assertEqual(doc.rev,'00')
         self.assertFalse(os.path.exists(path))
         r = self.client.post(url,dict(content="Some initial review text\n",submit_response="1"))
-        self.assertEqual(r.status_code,302)
+        self.assertResponseStatus(r,302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEqual(doc.rev,'00')
         with io.open(path) as f:
@@ -414,7 +414,7 @@ class ConflictReviewSubmitTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
+        self.assertResponseStatus(r,200)
         q = PyQuery(r.content)
         self.assertTrue(q('textarea')[0].text.strip().startswith("This is the old proposal."))
 
@@ -424,14 +424,14 @@ class ConflictReviewSubmitTests(TestCase):
         test_file = io.StringIO("\x10\x11\x12") # post binary file
         test_file.name = "unnamed"
         r = self.client.post(url, dict(txt=test_file,submit_response="1"))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertContains(r, "does not appear to be a text file")
 
         # sane post uploading a file
         test_file = io.StringIO("This is a new proposal.")
         test_file.name = "unnamed"
         r = self.client.post(url,dict(txt=test_file,submit_response="1"))
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEqual(doc.rev,'01')
         path = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
@@ -442,7 +442,7 @@ class ConflictReviewSubmitTests(TestCase):
 
         # verify reset text button works
         r = self.client.post(url,dict(reset_text="1"))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         q = PyQuery(r.content)
         self.assertTrue(q('textarea')[0].text.strip().startswith("[Edit this page"))
         

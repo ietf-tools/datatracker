@@ -26,6 +26,7 @@ from ietf.person.utils import (merge_persons, determine_merge_order, send_merge_
     handle_users, get_extra_primary, dedupe_aliases, move_related_objects, merge_nominees, merge_users)
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.timezone import datetime_today
 
 
 def get_person_no_user():
@@ -40,7 +41,7 @@ class PersonTests(TestCase):
         person = PersonFactory()
 
         r = self.client.get(urlreverse("ietf.person.views.ajax_select2_search", kwargs={ "model_name": "email"}), dict(q=person.name))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         data = r.json()
         self.assertEqual(data[0]["id"], person.email_address())
 
@@ -71,7 +72,7 @@ class PersonTests(TestCase):
 
         photo_url = q("div.bio-text img.bio-photo").attr("src")
         r = self.client.get(photo_url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
     def test_person_photo(self):
         person = PersonFactory(with_bio=True)
@@ -82,13 +83,13 @@ class PersonTests(TestCase):
         url = urlreverse("ietf.person.views.photo", kwargs={ "email_or_name": person.email()})
         r = self.client.get(url)
         self.assertEqual(r['Content-Type'], 'image/jpg')
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         img = Image.open(BytesIO(r.content))
         self.assertEqual(img.width, 80)
 
         r = self.client.get(url+'?size=200')
         self.assertEqual(r['Content-Type'], 'image/jpg')
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         img = Image.open(BytesIO(r.content))
         self.assertEqual(img.width, 200)
 
@@ -120,7 +121,7 @@ class PersonTests(TestCase):
         url = urlreverse("ietf.person.views.merge")
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
     def test_merge_with_params(self):
         p1 = get_person_no_user()
@@ -172,7 +173,7 @@ class PersonUtilsTests(TestCase):
         self.assertEqual(results,(p1,p3))
 
         # both have User
-        today = datetime.datetime.today()
+        today = datetime_today()
         p2.user.last_login = today
         p2.user.save()
         p4.user.last_login = today - datetime.timedelta(days=30)

@@ -3,10 +3,12 @@
 
 
 import datetime
+import pytz
 
 from urllib.parse import urlsplit
 
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -62,30 +64,30 @@ class ApiTests(TestCase):
         # not logged in
         # faulty delete 
         r = do_unschedule(mars_scheduled)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
         self.assertEqual(SchedTimeSessAssignment.objects.get(pk=mars_scheduled.pk).session, mars_session)
         # faulty post
         r = do_schedule(schedule,ames_session,mars_slot)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
 
         # logged in as non-owner
         # faulty delete
         self.client.login(username="ad", password="ad+password")
         r = do_unschedule(mars_scheduled)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
         self.assertTrue("error" in r.json())
         # faulty post
         r = do_schedule(schedule,ames_session,mars_slot)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
 
         # Put ames in the same timeslot as mars
         self.client.login(username="plain", password='plain+password')
         r = do_unschedule(ames_scheduled)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertNotIn("error", r.json())
 
         r = do_schedule(schedule,ames_session,mars_slot)
-        self.assertEqual(r.status_code, 201)
+        self.assertResponseStatus(r, 201)
 
         # Move the two timeslots close enough together for extension to work
         ames_slot_qs=TimeSlot.objects.filter(id=ames_slot.id)
@@ -93,13 +95,13 @@ class ApiTests(TestCase):
         
         # Extend the mars session
         r = do_extend(schedule,mars_scheduled)
-        self.assertEqual(r.status_code, 201)
+        self.assertResponseStatus(r, 201)
         self.assertTrue("error" not in r.json())
         self.assertEqual(mars_session.timeslotassignments.filter(schedule__name='test-schedule').count(),2)
 
         # Unschedule mars 
         r = do_unschedule(mars_scheduled)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertNotIn("error", r.json())
         # Make sure it got both the original and extended session
         self.assertEqual(mars_session.timeslotassignments.filter(schedule__name='test-schedule').count(),0)
@@ -131,7 +133,7 @@ class ApiTests(TestCase):
         c_timerange.timeranges.set(TimerangeName.objects.filter(slug__startswith='monday'))
 
         r = self.client.get(urlreverse("ietf.meeting.ajax.session_constraints", kwargs=dict(num=meeting.number, sessionid=session.pk)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         constraints = r.json()
         expected_keys = set([c_ames.pk, c_person.pk, c_adjacent.pk, c_time_relation.pk, c_timerange.pk])
         self.assertEqual(expected_keys, set(c["constraint_id"] for c in constraints))
@@ -140,7 +142,7 @@ class ApiTests(TestCase):
         meeting = make_meeting_test_data()
 
         r = self.client.get(urlreverse("ietf.meeting.ajax.meeting_json", kwargs=dict(num=meeting.number)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         info = r.json()
         self.assertEqual(info["name"], meeting.number)
 
@@ -149,7 +151,7 @@ class ApiTests(TestCase):
         room = meeting.room_set.first()
 
         r = self.client.get(urlreverse("ietf.meeting.ajax.timeslot_roomurl", kwargs=dict(num=meeting.number, roomid=room.pk)))
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         info = r.json()
         self.assertEqual(info["name"], room.name)
 
@@ -162,13 +164,13 @@ class ApiTests(TestCase):
 
         # unauthorized post
         r = self.client.post(url, post_data)
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertTrue(not meeting.room_set.filter(name="new room"))
 
         # create room
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, post_data)
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertTrue(meeting.room_set.filter(name="new room"))
 
         timeslots_after = meeting.timeslot_set.filter(type='regular').count()
@@ -186,7 +188,7 @@ class ApiTests(TestCase):
 
         # unauthorized delete
         r = self.client.delete(url)
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertTrue(meeting.room_set.filter(pk=room.pk))
 
         # delete
@@ -202,7 +204,7 @@ class ApiTests(TestCase):
 
         url = urlreverse("ietf.group.views.group_json", kwargs=dict(acronym=group.acronym))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         info = r.json()
         self.assertEqual(info["name"], group.name)
 
@@ -213,7 +215,7 @@ class ApiTests(TestCase):
 
         url = urlreverse("ietf.person.ajax.person_json", kwargs=dict(personid=person.pk))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         info = r.json()
         self.assertEqual(info["name"], person.name)
 
@@ -222,7 +224,7 @@ class ApiTests(TestCase):
  
         url = urlreverse("ietf.meeting.ajax.sessions_json",kwargs=dict(num=meeting.number))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         info = r.json()
         self.assertEqual(set([x['short_name'] for x in info]),set([s.session.short_name for s in meeting.schedule.assignments.filter(session__type_id='regular')]))
 
@@ -230,7 +232,7 @@ class ApiTests(TestCase):
         url = urlreverse("ietf.meeting.ajax.assignments_json",
                          kwargs=dict(num=meeting.number,owner=schedule.owner_email(),name=schedule.name))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         info = r.json()
         self.assertEqual(len(info),schedule.assignments.count())
 
@@ -242,35 +244,38 @@ class ApiTests(TestCase):
         url = urlreverse("ietf.meeting.ajax.timeslot_sloturl",
                          kwargs=dict(num=meeting.number, slotid=slot.pk))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         info = r.json()
         self.assertEqual(info["timeslot_id"], slot.pk)
 
     def test_create_new_slot(self):
         meeting = make_meeting_test_data()
+        tz = meeting.tz()
 
-        slot_time = datetime.date.today()
+        slot_time = tz.localize(datetime.datetime.combine(timezone.now().date(), datetime.time(12, 0)))
+        slot_utc = slot_time.astimezone(pytz.utc)
 
         url = urlreverse("ietf.meeting.ajax.timeslot_slotsurl",
                          kwargs=dict(num=meeting.number))
         post_data = {
             'type' : 'plenary',
-            'time' : slot_time.strftime("%Y-%m-%d"),
+            'time' : slot_time.strftime("%Y-%m-%d %H:%M"),
             'duration': '08:00:00',
+            'location': 'Dinner Room',
         }
 
         # unauthorized post
         prior_slotcount = meeting.timeslot_set.count()
         self.client.login(username="ad", password="ad+password")
         r = self.client.post(url, post_data)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
         self.assertEqual(meeting.timeslot_set.count(),prior_slotcount)
 
         # create slot
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, post_data)
-        self.assertEqual(r.status_code, 201)
-        self.assertTrue(meeting.timeslot_set.filter(time=slot_time))
+        self.assertResponseStatus(r, 201)
+        self.assertTrue(meeting.timeslot_set.filter(time=slot_utc))
         self.assertEqual(meeting.timeslot_set.count(),prior_slotcount+1)
 
     def test_delete_slot(self):
@@ -283,7 +288,7 @@ class ApiTests(TestCase):
         # unauthorized delete
         self.client.login(username="ad", password="ad+password")
         r = self.client.delete(url)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
 
         # delete
         self.client.login(username="secretary", password="secretary+password")
@@ -314,13 +319,13 @@ class ApiTests(TestCase):
         # unauthorized post
         self.client.login(username="plain", password="plain+password")
         r = self.client.post(url, post_data)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
         self.assertTrue(not meeting.schedule_set.filter(name='new-schedule'))
 
         # create new schedule
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, post_data)
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         self.assertTrue(meeting.schedule_set.filter(name='new-schedule'))
 
     def test_update_meeting_schedule(self):
@@ -341,15 +346,15 @@ class ApiTests(TestCase):
         # unauthorized posts
         self.client.logout()
         r = self.client.post(url, post_data)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
         self.client.login(username="ad", password="ad+password")
         r = self.client.post(url, post_data)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
 
         # change schedule
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, post_data)
-        self.assertEqual(r.status_code, 302)
+        self.assertResponseStatus(r, 302)
         changed_schedule = Schedule.objects.get(pk=meeting.schedule.pk)
         self.assertTrue(not changed_schedule.visible)
         self.assertEqual(changed_schedule.name, "new-test-name")
@@ -364,12 +369,12 @@ class ApiTests(TestCase):
         # unauthorized delete
         self.client.login(username="plain", password="plain+password")
         r = self.client.delete(url)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
 
         # delete
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.delete(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertTrue(not Schedule.objects.filter(pk=meeting.schedule.pk))
 
     def test_set_meeting_schedule(self):
@@ -384,12 +389,12 @@ class ApiTests(TestCase):
         # unauthorized post
         self.client.login(username="ad", password="ad+password")
         r = self.client.post(url, post_data)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
 
         # clear
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, post_data)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertTrue(not Meeting.objects.get(pk=meeting.pk).schedule)
 
         # set schedule - first fail with non-public
@@ -410,7 +415,7 @@ class ApiTests(TestCase):
         # Setting a meeting as official no longer sends mail immediately
         prior_length= len(outbox)
         r = self.client.post(url, post_data)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         self.assertEqual(Meeting.objects.get(pk=meeting.pk).schedule, schedule)
         self.assertEqual(len(outbox),prior_length)
 
@@ -421,7 +426,7 @@ class ApiTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         url = '/meeting/%s/agenda/%s/%s/permissions' % (meeting.number, meeting.schedule.owner.email_address(), meeting.schedule.name);
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         info = r.json()
         self.assertEqual(info['secretariat'], True)
@@ -434,7 +439,7 @@ class ApiTests(TestCase):
                           password=meeting.schedule.owner.user.username+"+password")
         url = '/meeting/%s/agenda/%s/%s/permissions' % (meeting.number, meeting.schedule.owner.email_address(), meeting.schedule.name);
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
 
         info = r.json()
         self.assertEqual(info['secretariat'], False)
@@ -454,7 +459,7 @@ class ApiTests(TestCase):
 
         # unauthorized post gets failure (no redirect)
         r = self.client.put(url, post_data)
-        self.assertEqual(r.status_code, 403,
+        self.assertResponseStatus(r, 403,
                          "post to %s should have failed, no permission, got: %u/%s" %
                          (url, r.status_code, r.content))
         self.assertTrue(not SchedTimeSessAssignment.objects.get(pk=scheduled.pk).pinned)
@@ -468,7 +473,7 @@ class ApiTests(TestCase):
 
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.put(url, post_data)
-        self.assertEqual(r.status_code, 200,
+        self.assertResponseStatus(r, 200,
                          "post to %s should have worked, but got: %u/%s" %
                          (url, r.status_code, r.content))
         self.assertTrue(SchedTimeSessAssignment.objects.get(pk=scheduled.pk).pinned)
@@ -489,13 +494,13 @@ class TimeSlotEditingApiTests(TestCase):
         # Fail as non-secretariat
         self.client.login(username="plain", password="plain+password")
         r = self.client.post(url, modify_post_data)
-        self.assertEqual(r.status_code, 403)
+        self.assertResponseStatus(r, 403)
         slot.refresh_from_db()
         self.assertEqual(slot.type_id, 'regular')
 
         # Successful change of purpose
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, modify_post_data)
-        self.assertEqual(r.status_code, 200)
+        self.assertResponseStatus(r, 200)
         slot.refresh_from_db()
         self.assertEqual(slot.type_id, 'plenary')

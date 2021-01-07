@@ -25,6 +25,7 @@ from django.utils.html import mark_safe # type:ignore
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string, TemplateDoesNotExist
 from django.urls import reverse as urlreverse
+from django.utils import timezone
 
 from ietf.doc.models import (Document, NewRevisionDocEvent, State, DocAlias,
                              LastCallDocEvent, ReviewRequestDocEvent, ReviewAssignmentDocEvent, DocumentAuthor)
@@ -51,6 +52,7 @@ from ietf.utils.mail import send_mail_message
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.fields import MultiEmailField
 from ietf.utils.response import permission_denied
+
 
 def clean_doc_revision(doc, rev):
     if rev:
@@ -91,7 +93,7 @@ class RequestReviewForm(forms.ModelForm):
 
     def clean_deadline(self):
         v = self.cleaned_data.get('deadline')
-        if v < datetime.date.today():
+        if v < timezone.now().date():
             raise forms.ValidationError("Select today or a date in the future.")
         return v
 
@@ -116,7 +118,7 @@ def request_review(request, name):
     if not can_request_review_of_doc(request.user, doc):
         permission_denied(request, "You do not have permission to perform this action")
 
-    now = datetime.datetime.now()
+    now = timezone.now()
 
     lc_ends = None
     e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
@@ -344,7 +346,7 @@ class RejectReviewerAssignmentForm(forms.Form):
 def reject_reviewer_assignment(request, name, assignment_id):
     doc = get_object_or_404(Document, name=name)
     review_assignment = get_object_or_404(ReviewAssignment, pk=assignment_id, state__in=["assigned", "accepted"])
-    review_request_past_deadline = review_assignment.review_request.deadline < datetime.date.today()
+    review_request_past_deadline = review_assignment.review_request.deadline < timezone.now().date()
 
     if not review_assignment.reviewer:
         return redirect(review_request, name=review_assignment.review_request.doc.name, request_id=review_assignment.review_request.pk)
@@ -360,7 +362,7 @@ def reject_reviewer_assignment(request, name, assignment_id):
         if form.is_valid():
             # reject the assignment
             review_assignment.state = ReviewAssignmentStateName.objects.get(slug="rejected")
-            review_assignment.completed_on = datetime.datetime.now()
+            review_assignment.completed_on = timezone.now()
             review_assignment.save()
 
             descr = "Assignment of request for {} review by {} to {} was rejected".format(
@@ -715,7 +717,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                     type=form.cleaned_data['review_type'],
                     doc=doc,
                     team=team,
-                    deadline=datetime.date.today(),
+                    deadline=timezone.now().date(),
                     requested_by=Person.objects.get(user=request.user),
                     requested_rev=form.cleaned_data['reviewed_rev'],
                 )
@@ -723,13 +725,13 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                     review_request=review_request,
                     state_id='assigned',
                     reviewer=form.cleaned_data['reviewer'].role_email('reviewer', group=team),
-                    assigned_on=datetime.datetime.now(),
+                    assigned_on=timezone.now(),
                     review = review,
                 )
 
             review.rev = "00" if not review.rev else "{:02}".format(int(review.rev) + 1)
             review.title = "{} Review of {}-{}".format(assignment.review_request.type.name, assignment.review_request.doc.name, form.cleaned_data["reviewed_rev"])
-            review.time = datetime.datetime.now()
+            review.time = timezone.now()
             if review_submission == "link":
                 review.external_url = form.cleaned_data['review_url']
 
@@ -756,9 +758,9 @@ def complete_review(request, name, assignment_id=None, acronym=None):
             with io.open(filename, 'w', encoding='utf-8') as destination:
                 destination.write(content)
 
-            completion_datetime = datetime.datetime.now()
+            completion_datetime = timezone.now()
             if "completion_date" in form.cleaned_data:
-                completion_datetime = datetime.datetime.combine(form.cleaned_data["completion_date"], form.cleaned_data.get("completion_time") or datetime.time.min)
+                completion_datetime = timezone.utc.localize(datetime.datetime.combine(form.cleaned_data["completion_date"], form.cleaned_data.get("completion_time") or datetime.time.min))
 
             # complete assignment
             assignment.state = form.cleaned_data["state"]
@@ -770,7 +772,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
 
             need_to_email_review = review_submission != "link" and assignment.review_request.team.list_email and not revising_review
 
-            submitted_on_different_date = completion_datetime.date() != datetime.date.today()
+            submitted_on_different_date = completion_datetime.date() != timezone.now().date()
             desc = "Request for {} review by {} {}: {}. Reviewer: {}.".format(
                 assignment.review_request.type.name,
                 assignment.review_request.team.acronym.upper(),
@@ -791,7 +793,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
             close_event.by = request.user.person
             close_event.desc = desc
             close_event.state = assignment.state
-            close_event.time = datetime.datetime.now()
+            close_event.time = timezone.now()
             close_event.save()
             
             # If the completion date is different, record when the initial review was made too.
@@ -887,7 +889,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
 
         try:
             initial['review_content'] = render_to_string('/group/%s/review/content_templates/%s.txt' % (assignment.review_request.team.acronym,
-                                                                                                        request_type.slug), {'assignment':assignment, 'today':datetime.date.today()}) 
+                                                                                                        request_type.slug), {'assignment':assignment, 'today':timezone.now().date()}) 
         except (TemplateDoesNotExist, AttributeError):
             pass
 
@@ -976,7 +978,7 @@ class EditReviewRequestDeadlineForm(forms.ModelForm):
 
     def clean_deadline(self):
         v = self.cleaned_data.get('deadline')
-        if v < datetime.date.today():
+        if v < timezone.now().date():
             raise forms.ValidationError("Select today or a date in the future.")
         return v
 
