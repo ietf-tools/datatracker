@@ -3,6 +3,7 @@
 
 
 import json
+import html
 import os
 import shutil
 import sys
@@ -14,7 +15,7 @@ from django.apps import apps
 from django.conf import settings
 from django.test import Client
 from django.urls import reverse as urlreverse
-from django.utils import html, timezone
+from django.utils import timezone
 
 from tastypie.test import ResourceTestCaseMixin
 
@@ -55,10 +56,10 @@ class CustomApiTests(TestCase):
         # try invalid method GET
         url = urlreverse('ietf.meeting.views.api_import_recordings', kwargs={'number':meeting.number})
         r = client.get(url)
-        self.assertResponseStatus(r, 405)
+        self.assertEqual(r.status_code, 405)
         # try valid method POST
         r = client.post(url)
-        self.assertResponseStatus(r, 201)
+        self.assertEqual(r.status_code, 201)
 
     def test_api_help_page(self):
         url = urlreverse('ietf.api.views.api_help')
@@ -281,7 +282,7 @@ class CustomApiTests(TestCase):
 
         # working case
         r = self.client.post(url, {'apikey': apikey.hash(), 'email': secretariat.email().address, '_expand': 'user'})
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         jsondata = r.json()
         data = jsondata['person.person'][str(secretariat.id)]
         self.assertEqual(data['name'], secretariat.name)

@@ -6,22 +6,20 @@ import datetime
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.utils import timezone
 from django.utils.encoding import smart_text
 
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, DocEvent, RelatedDocument, NewRevisionDocEvent
 from ietf.group.models import Group, GroupHistory, Role, RoleHistory
-from ietf.group.utils import setup_default_community_list_for_group
 from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import HolderIprDisclosure, IprDocRel, IprDisclosureStateName, IprLicenseTypeName
 from ietf.meeting.models import Meeting, ResourceAssociation
 from ietf.name.models import StreamName, DocRelationshipName, RoomResourceName
 from ietf.person.models import Person, Email
-from ietf.person.name import unidecode_name
+from ietf.group.utils import setup_default_community_list_for_group
 from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, ReviewTypeName, ReviewTeamSettings )
-from ietf.utils.timezone import datetime_today
+from ietf.person.name import unidecode_name
 
 
 def create_person(group, role_name, name=None, username=None, email_address=None, password=None, is_staff=False, is_superuser=False):
@@ -53,7 +51,7 @@ def make_immutable_base_data():
     all tests in a run."""
 
     # telechat dates
-    t = datetime_today() + datetime.timedelta(days=1)
+    t = datetime.date.today() + datetime.timedelta(days=1)
     old = TelechatDate.objects.create(date=t - datetime.timedelta(days=14)).date        # pyflakes:ignore
     date1 = TelechatDate.objects.create(date=t).date                                    # pyflakes:ignore
     date2 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14)).date      # pyflakes:ignore
@@ -272,14 +270,14 @@ def make_test_data():
     # old draft
     old_draft = Document.objects.create(
         name="draft-foo-mars-test",
-        time=timezone.now() - datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
+        time=datetime.datetime.now() - datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
         type_id="draft",
         title="Optimizing Martian Network Topologies",
         stream_id="ietf",
         abstract="Techniques for achieving near-optimal Martian networks.",
         rev="00",
         pages=2,
-        expires=timezone.now(),
+        expires=datetime.datetime.now(),
         )
     old_draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
     old_alias = DocAlias.objects.create(name=old_draft.name)
@@ -288,7 +286,7 @@ def make_test_data():
     # draft
     draft = Document.objects.create(
         name="draft-ietf-mars-test",
-        time=timezone.now(),
+        time=datetime.datetime.now(),
         type_id="draft",
         title="Optimizing Martian Network Topologies",
         stream_id="ietf",
@@ -299,7 +297,7 @@ def make_test_data():
         intended_std_level_id="ps",
         shepherd=email,
         ad=ad,
-        expires=timezone.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
+        expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
         notify="aliens@example.mars",
         note="",
         )
@@ -365,7 +363,7 @@ def make_test_data():
     Meeting.objects.create(
         number="72",
         type_id="ietf",
-        date=datetime_today() + datetime.timedelta(days=180),
+        date=datetime.date.today() + datetime.timedelta(days=180),
         city="New York",
         country="US",
         time_zone="US/Eastern",
@@ -456,7 +454,7 @@ def make_review_data(doc):
         doc=doc,
         team=team1,
         type_id="early",
-        deadline=timezone.now() + datetime.timedelta(days=20),
+        deadline=datetime.datetime.now() + datetime.timedelta(days=20),
         state_id="accepted",
         requested_by=reviewer,
         reviewer=email,

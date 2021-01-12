@@ -7,7 +7,6 @@ import email
 import jsonfield
 
 from django.db import models
-from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -80,7 +79,7 @@ class Submission(models.Model):
         return any ( [ c.checker=='yang validation' and c.passed is not None for c in self.latest_checks()] )
         
 class SubmissionCheck(models.Model):
-    time = models.DateTimeField(default=timezone.now)
+    time = models.DateTimeField(default=datetime.datetime.now)
     submission = ForeignKey(Submission, related_name='checks')
     checker = models.CharField(max_length=256, blank=True)
     passed = models.BooleanField(null=True, default=False)
@@ -99,7 +98,7 @@ class SubmissionCheck(models.Model):
 
 class SubmissionEvent(models.Model):
     submission = ForeignKey(Submission)
-    time = models.DateTimeField(default=timezone.now)
+    time = models.DateTimeField(default=datetime.datetime.now)
     by = ForeignKey(Person, null=True, blank=True)
     desc = models.TextField()
 
@@ -117,7 +116,7 @@ class Preapproval(models.Model):
     """Pre-approved draft submission name."""
     name = models.CharField(max_length=255, db_index=True)
     by = ForeignKey(Person)
-    time = models.DateTimeField(default=timezone.now)
+    time = models.DateTimeField(default=datetime.datetime.now)
 
     def __str__(self):
         return self.name

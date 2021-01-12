@@ -1,23 +1,25 @@
-# Copyright The IETF Trust 2019-2020, All Rights Reserved
+# Copyright The IETF Trust 2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+
+# import datetime
+# from pyquery import PyQuery
+
+import debug                            # pyflakes:ignore
 
 import datetime
 
 from django.urls import reverse as urlreverse
-from django.utils import timezone
 
-import debug                            # pyflakes:ignore
-
+from ietf.utils.mail import outbox, empty_outbox, get_payload_text
+from ietf.utils.test_utils import TestCase, unicontent, login_testing_unauthorized
 from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, RgDraftFactory, RgRfcFactory, BallotDocEventFactory, IRSGBallotDocEventFactory, BallotPositionDocEventFactory
 from ietf.doc.models import BallotDocEvent, BallotPositionDocEvent
 from ietf.doc.utils import create_ballot_if_not_open, close_ballot
 from ietf.person.utils import get_active_irsg, get_active_ads
 from ietf.group.factories import RoleFactory
 from ietf.person.models import Person
-from ietf.utils.mail import outbox, empty_outbox, get_payload_text
-from ietf.utils.test_utils import TestCase, unicontent, login_testing_unauthorized
-from ietf.utils.timezone import datetime_today
+
 
 class IssueIRSGBallotTests(TestCase):
 
@@ -34,28 +36,28 @@ class IssueIRSGBallotTests(TestCase):
 
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=individual_draft.name))
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         self.assertNotIn("Issue IRSG ballot", unicontent(r))
 
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=wg_draft.name))
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         self.assertNotIn("Issue IRSG ballot", unicontent(r))
 
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=rg_draft.name))
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         self.assertIn("Issue IRSG ballot", unicontent(r))
 
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=rg_rfc.name))
         r = self.client.get(url, follow = True)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         self.assertNotIn("Issue IRSG ballot", unicontent(r))        
 
         self.client.logout()
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=rg_draft.name))
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         self.assertNotIn("Issue IRSG ballot", unicontent(r))
 
     def test_close_ballot_button(self):
@@ -74,34 +76,34 @@ class IssueIRSGBallotTests(TestCase):
         # Get the page with the Issue IRSG Ballot Yes/No buttons
         url = urlreverse('ietf.doc.views_ballot.issue_irsg_ballot',kwargs=dict(name=rg_draft1.name))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # Press the Yes button
         r = self.client.post(url,dict(irsg_button="Yes", duedate="2038-01-19"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertTrue(rg_draft1.ballot_open('irsg-approve'))
 
         # Get the page with the Issue IRSG Ballot Yes/No buttons
         url = urlreverse('ietf.doc.views_ballot.issue_irsg_ballot',kwargs=dict(name=rg_draft2.name))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # Press the Yes button
         r = self.client.post(url,dict(irsg_button="Yes", duedate="2038-01-18"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertTrue(rg_draft2.ballot_open('irsg-approve'))
 
         # Logout - the Close button should not be available
         self.client.logout()
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=rg_draft1.name))
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         self.assertNotIn("Close IRSG ballot", unicontent(r))
 
         # Login as an IESG member to see if the ballot close button appears
         self.client.login(username=iesgmember.user.username, password=iesgmember.user.username+"password")
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         self.assertNotIn("Close IRSG ballot", unicontent(r))
 
         # Try to get the ballot closing page directly
@@ -117,17 +119,17 @@ class IssueIRSGBallotTests(TestCase):
         # The close button should now be available
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=rg_draft1.name))
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         self.assertIn("Close IRSG ballot", unicontent(r))
 
         # Get the page with the Close IRSG Ballot Yes/No buttons
         url = urlreverse('ietf.doc.views_ballot.close_irsg_ballot',kwargs=dict(name=rg_draft1.name))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # Press the Yes button
         r = self.client.post(url,dict(irsg_button="Yes"))
-        self.assertResponseStatus(r,302)
+        self.assertEqual(r.status_code,302)
         # Expect the draft not to have an open IRSG ballot anymore
         self.assertFalse(rg_draft1.ballot_open('irsg-approve'))
 
@@ -137,24 +139,24 @@ class IssueIRSGBallotTests(TestCase):
         # The close button should now be available
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=rg_draft2.name))
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         self.assertIn("Close IRSG ballot", unicontent(r))
 
         # Get the page with the Close IRSG Ballot Yes/No buttons
         url = urlreverse('ietf.doc.views_ballot.close_irsg_ballot',kwargs=dict(name=rg_draft2.name))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # Press the Yes button
         r = self.client.post(url,dict(irsg_button="Yes"))
-        self.assertResponseStatus(r,302)
+        self.assertEqual(r.status_code,302)
         # Expect the draft not to have an open IRSG ballot anymore
         self.assertFalse(rg_draft2.ballot_open('irsg-approve'))
 
         # Individual, IETF, and RFC docs should not show the Close button.  Sample test using IRTF RFC:
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=rg_rfc.name))
         r = self.client.get(url, follow = True)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         self.assertNotIn("Close IRSG ballot", unicontent(r))        
 
 
@@ -171,17 +173,17 @@ class IssueIRSGBallotTests(TestCase):
         # Get the page with the Issue IRSG Ballot Yes/No buttons
         url = urlreverse('ietf.doc.views_ballot.issue_irsg_ballot',kwargs=dict(name=rg_draft1.name))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         # Buttons present?
         self.assertIn("irsg_button", unicontent(r))
 
         # Press the No button - expect nothing but a redirect back to the draft's main page
         r = self.client.post(url,dict(irsg_button="No"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         # Press the Yes button
         r = self.client.post(url,dict(irsg_button="Yes", duedate="2038-01-19"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         ballot_created = list(BallotDocEvent.objects.filter(doc=rg_draft1,
                                                 type="created_ballot"))
         self.assertNotEqual(len(ballot_created), 0)
@@ -189,7 +191,7 @@ class IssueIRSGBallotTests(TestCase):
         # Having issued a ballot, the Issue IRSG ballot button should be gone
         url = urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=rg_draft1.name))
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         self.assertNotIn("Issue IRSG ballot", unicontent(r))
 
         # The IRSG evaluation record tab should exist
@@ -200,7 +202,7 @@ class IssueIRSGBallotTests(TestCase):
         # We should find an IRSG member's name on the IRSG evaluation tab regardless of any positions taken or not
         url = urlreverse('ietf.doc.views_doc.document_irsg_ballot',kwargs=dict(name=rg_draft1.name))
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         irsgmembers = get_active_irsg()
         self.assertNotEqual(len(irsgmembers), 0)
         self.assertIn(irsgmembers[0].name, unicontent(r))
@@ -208,7 +210,7 @@ class IssueIRSGBallotTests(TestCase):
         # Having issued a ballot, it should appear on the IRSG Ballot Status page
         url = urlreverse('ietf.doc.views_ballot.irsg_ballot_status')
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         # Does the draft name appear on the page?
         self.assertIn(rg_draft1.name, unicontent(r))
 
@@ -233,13 +235,13 @@ class IssueIRSGBallotTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
 
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         # Buttons present?
         self.assertIn("irsg_button", unicontent(r))
 
         # Press the Yes button
         r = self.client.post(url,dict(irsg_button="Yes", duedate="2038-01-19"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         self.client.logout()
 
@@ -252,7 +254,7 @@ class IssueIRSGBallotTests(TestCase):
         irsgmember = get_active_irsg()[0]
         secr = RoleFactory(group__acronym='secretariat',name_id='secr')
         wg_ballot = create_ballot_if_not_open(None, wg_draft, ad.person, 'approve')
-        due = datetime_today()+datetime.timedelta(days=14)
+        due = datetime.date.today()+datetime.timedelta(days=14)
         rg_ballot = create_ballot_if_not_open(None, rg_draft, secr.person, 'irsg-approve', due)
 
         url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=wg_draft.name, ballot_id=wg_ballot.pk))
@@ -262,7 +264,7 @@ class IssueIRSGBallotTests(TestCase):
 
         # But Pre-ADs cannot take a position
         r = self.client.post(url, dict(position="discuss", discuss="Test discuss text"))
-        self.assertResponseStatus(r, 403)
+        self.assertEqual(r.status_code, 403)
 
         self.client.logout()
 
@@ -274,7 +276,7 @@ class IssueIRSGBallotTests(TestCase):
         # IESG members should not be able to take positions on IRSG ballots
         url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=rg_draft.name, ballot_id=rg_ballot.pk))
         r = self.client.post(url, dict(position="yes"))
-        self.assertResponseStatus(r, 403)
+        self.assertEqual(r.status_code, 403)
         self.client.logout()
 
         # IRSG members should be able to enter a position on IRSG ballots
@@ -304,7 +306,7 @@ class IssueIRSGBallotTests(TestCase):
         r = self.client.post(url, dict(
             ballot_writeup="This is a test.",
             issue_ballot="1"))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         self.client.logout()
 
@@ -314,29 +316,29 @@ class IssueIRSGBallotTests(TestCase):
         login_testing_unauthorized(self, irsgmember.user.username, url)
 
         r = self.client.post(url, dict(position="discuss", discuss="Test discuss text"))
-        self.assertResponseStatus(r, 403)
+        self.assertEqual(r.status_code, 403)
 
 class BaseManipulationTests():
 
     def test_issue_ballot(self):
         draft = RgDraftFactory()
         url = urlreverse('ietf.doc.views_ballot.issue_irsg_ballot',kwargs=dict(name=draft.name))
-        due = timezone.now().date()+datetime.timedelta(days=14)
+        due = datetime.date.today()+datetime.timedelta(days=14)
         empty_outbox()
 
         login_testing_unauthorized(self, self.username , url)
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         r = self.client.post(url,{'irsg_button':'No', 'duedate':due })
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertIsNone(draft.ballot_open('irsg-approve'))
 
         # No notifications should have been generated yet
         self.assertEqual(len(outbox), 0)
 
         r = self.client.post(url,{'irsg_button':'Yes', 'duedate':due })
-        self.assertResponseStatus(r,302)
+        self.assertEqual(r.status_code,302)
         self.assertIsNotNone(draft.ballot_open('irsg-approve'))
 
         # Should have sent a notification about the new ballot
@@ -357,10 +359,10 @@ class BaseManipulationTests():
 
         login_testing_unauthorized(self, self.username, url)
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         r = self.client.post(url, dict(position='yes', comment='oib239sb', send_mail='Save and send email'))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         e = draft.latest_event(BallotPositionDocEvent)
         self.assertEqual(e.pos.slug,'yes')
         self.assertEqual(e.comment, 'oib239sb')
@@ -368,10 +370,10 @@ class BaseManipulationTests():
         url = urlreverse('ietf.doc.views_ballot.send_ballot_comment', kwargs=dict(name=draft.name, ballot_id=ballot.pk)) + self.balloter
 
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         r = self.client.post(url, dict(cc_choices=['doc_authors','doc_group_chairs','doc_group_mail_list'], body="Stuff"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox),1)
         self.assertNotIn('discuss-criteria', get_payload_text(outbox[0]))
 
@@ -383,17 +385,17 @@ class BaseManipulationTests():
 
         login_testing_unauthorized(self, self.username, url)
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         r = self.client.post(url,dict(irsg_button='No'))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertIsNotNone(draft.ballot_open('irsg-approve'))
 
         # Should not have generated a notification yet
         self.assertEqual(len(outbox), 0)
 
         r = self.client.post(url,dict(irsg_button='Yes'))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertIsNone(draft.ballot_open('irsg-approve'))
 
         # Closing the ballot should have generated a notification
@@ -411,7 +413,7 @@ class BaseManipulationTests():
         url = urlreverse('ietf.doc.views_ballot.irsg_ballot_status')
 
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertIn(draft.name, unicontent(r))
 
         close_ballot(draft, Person.objects.get(user__username=self.username), 'irsg-approve')
@@ -439,15 +441,15 @@ class IRSGMemberTests(TestCase):
 
     def test_cant_issue_irsg_ballot(self):
         draft = RgDraftFactory()
-        due = datetime_today()+datetime.timedelta(days=14)
+        due = datetime.date.today()+datetime.timedelta(days=14)
         url = urlreverse('ietf.doc.views_ballot.close_irsg_ballot', kwargs=dict(name=draft.name))
 
         self.client.login(username = self.username, password = self.username+'+password')
         r = self.client.get(url)
-        self.assertResponseStatus(r, 403)
+        self.assertEqual(r.status_code, 403)
 
         r = self.client.post(url,{'irsg_button':'Yes', 'duedate':due })
-        self.assertResponseStatus(r, 403)
+        self.assertEqual(r.status_code, 403)
 
     def test_cant_close_irsg_ballot(self):
         draft = RgDraftFactory()
@@ -456,10 +458,10 @@ class IRSGMemberTests(TestCase):
 
         self.client.login(username = self.username, password = self.username+'+password')
         r = self.client.get(url)
-        self.assertResponseStatus(r, 403)
+        self.assertEqual(r.status_code, 403)
 
         r = self.client.post(url,dict(irsg_button='Yes'))
-        self.assertResponseStatus(r, 403)
+        self.assertEqual(r.status_code, 403)
 
     def test_cant_take_position_on_iesg_ballot(self):
         draft = WgDraftFactory()
@@ -468,10 +470,10 @@ class IRSGMemberTests(TestCase):
 
         self.client.login(username = self.username, password = self.username+'+password')
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         r = self.client.post(url, dict(position='yes', comment='oib239sb', send_mail='Save and send email'))
-        self.assertResponseStatus(r, 403)
+        self.assertEqual(r.status_code, 403)
 
     def test_take_and_email_position(self):
         draft = RgDraftFactory()
@@ -481,10 +483,10 @@ class IRSGMemberTests(TestCase):
 
         login_testing_unauthorized(self, self.username, url)
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         r = self.client.post(url, dict(position='yes', comment='oib239sb', send_mail='Save and send email'))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         e = draft.latest_event(BallotPositionDocEvent)
         self.assertEqual(e.pos.slug,'yes')
         self.assertEqual(e.comment, 'oib239sb')
@@ -492,10 +494,10 @@ class IRSGMemberTests(TestCase):
         url = urlreverse('ietf.doc.views_ballot.send_ballot_comment', kwargs=dict(name=draft.name, ballot_id=ballot.pk))
 
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         r = self.client.post(url, dict(cc_choices=['doc_authors','doc_group_chairs','doc_group_mail_list'], body="Stuff"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox),1)
 
 class IESGMemberTests(TestCase):
@@ -508,10 +510,10 @@ class IESGMemberTests(TestCase):
         self.assertEqual(self.client.login(username = 'ad', password = 'ad+password'), True)
         
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         r = self.client.post(url, dict(position='yes', comment='oib239sb', send_mail='Save and send email'))
-        self.assertResponseStatus(r, 403)
+        self.assertEqual(r.status_code, 403)
 
 class NobodyTests(TestCase):
 
@@ -522,7 +524,7 @@ class NobodyTests(TestCase):
 
         url = urlreverse('ietf.doc.views_doc.document_irsg_ballot',kwargs=dict(name=draft.name))
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         self.assertIn('b2390sn3',unicontent(r))
 
     def test_cant_take_position_on_irtf_ballot(self):
@@ -531,9 +533,9 @@ class NobodyTests(TestCase):
         url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=draft.name, ballot_id=ballot.pk))
 
         r = self.client.get(url)
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertIn('/accounts/login', r['Location'])
 
         r = self.client.post(url, dict(position='yes', comment='oib239sb', send_mail='Save and send email'))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertIn('/accounts/login', r['Location'])

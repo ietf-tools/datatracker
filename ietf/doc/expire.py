@@ -4,21 +4,20 @@
 
 
 from django.conf import settings
-from django.utils import timezone
 
 import datetime, os, shutil, glob, re
 from pathlib import Path
 
 from typing import List, Tuple      # pyflakes:ignore
 
-from ietf.doc.models import Document, DocEvent, State, IESG_SUBSTATE_TAGS
-from ietf.doc.utils import add_state_change_event
-from ietf.mailtrigger.utils import gather_address_lists
-from ietf.meeting.models import Meeting
-from ietf.person.models import Person 
 from ietf.utils import log
 from ietf.utils.mail import send_mail
-from ietf.utils.timezone import datetime_today
+from ietf.doc.models import Document, DocEvent, State, IESG_SUBSTATE_TAGS
+from ietf.person.models import Person 
+from ietf.meeting.models import Meeting
+from ietf.doc.utils import add_state_change_event
+from ietf.mailtrigger.utils import gather_address_lists
+
 
 def expirable_draft(draft):
     """Return whether draft is in an expirable state or not. This is
@@ -67,17 +66,17 @@ def expirable_drafts(queryset=None):
     return d.distinct()
 
 def get_soon_to_expire_drafts(days_of_warning):
-    start_date = datetime_today() - datetime.timedelta(1)
+    start_date = datetime.date.today() - datetime.timedelta(1)
     end_date = start_date + datetime.timedelta(days_of_warning)
 
     return expirable_drafts().filter(expires__gte=start_date, expires__lt=end_date)
 
 def get_expired_drafts():
-    return expirable_drafts().filter(expires__lt=datetime_today() + datetime.timedelta(1))
+    return expirable_drafts().filter(expires__lt=datetime.date.today() + datetime.timedelta(1))
 
 def in_draft_expire_freeze(when=None):
     if when == None:
-        when = timezone.now()
+        when = datetime.datetime.now()
 
     meeting = Meeting.objects.filter(type='ietf', date__gte=when-datetime.timedelta(days=7)).order_by('date').first()
 
@@ -180,7 +179,7 @@ def expire_draft(doc):
 
 def clean_up_draft_files():
     """Move unidentified and old files out of the Internet Draft directory."""
-    cut_off = timezone.now().date()
+    cut_off = datetime.date.today()
 
     pattern = os.path.join(settings.INTERNET_DRAFT_PATH, "draft-*.*")
     filename_re = re.compile(r'^(.*)-(\d\d)$')

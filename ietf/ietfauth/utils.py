@@ -2,11 +2,15 @@
 # -*- coding: utf-8 -*-
 
 
-from functools import wraps
-
 # various authentication and authorization utilities
+
+import datetime
+
 import oidc_provider.lib.claims
 from oidc_provider.models import Client as ClientRecord
+
+
+from functools import wraps
 
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
@@ -17,13 +21,11 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse as urlreverse
 from django.utils.decorators import available_attrs
 from django.utils.http import urlquote
-from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
 from ietf.group.models import Role, GroupFeatures
 from ietf.person.models import Person
-
 
 def user_is_person(user, person):
     """Test whether user is associated with person."""
@@ -263,7 +265,7 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
         info = {}
         if regs:
             # maybe register attendance if logged in to follow a meeting
-            today = timezone.now().date()
+            today = datetime.date.today()
             if meeting.date <= today <= meeting.end_date():
                 client = ClientRecord.objects.get(client_id=self.client.client_id)
                 if client.name == 'Meetecho':

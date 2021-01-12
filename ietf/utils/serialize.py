@@ -1,4 +1,3 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
 from django.db import models
 
 def object_as_shallow_dict(obj):
@@ -15,7 +14,7 @@ def object_as_shallow_dict(obj):
         if isinstance(f, models.ManyToManyField):
             v = list(v.values_list("pk", flat=True))
         elif isinstance(f, models.DateTimeField):
-            v = v.strftime('%Y-%m-%d %H:%M:%S%z')
+            v = v.strftime('%Y-%m-%d %H:%M:%S')
         elif isinstance(f, models.DateField):
             v = v.strftime('%Y-%m-%d')
 

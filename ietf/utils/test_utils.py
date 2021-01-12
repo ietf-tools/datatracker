@@ -34,13 +34,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-import email
-import html5lib
-import inspect
-import io
 import os
 import re
-import shutil
+import email
+import html5lib
 import sys
 
 from urllib.parse import unquote
@@ -171,16 +168,6 @@ class TestCase(django.test.TestCase):
             os.mkdir(path)
         return path
 
-    def assertNoPageErrors(self, response, error_css_selector=".has-error"):
-        from pyquery import PyQuery
-        from lxml import html
-        self.maxDiff = None
-
-        errors = [html.tostring(n).decode() for n in PyQuery(response.content)(error_css_selector)]
-        if errors:
-            explanation = "Got page with errors:\n----\n" + "----\n".join(errors)
-            raise AssertionError(explanation)
-
     def assertNoFormPostErrors(self, response, error_css_selector=".has-error"):
         """Try to fish out form errors, if none found at least check the
         status code to be a redirect.
@@ -192,7 +179,14 @@ class TestCase(django.test.TestCase):
         """
 
         if response.status_code == 200:
-            self.assertNoPageErrors(response, error_css_selector)
+            from pyquery import PyQuery
+            from lxml import html
+            self.maxDiff = None
+
+            errors = [html.tostring(n).decode() for n in PyQuery(response.content)(error_css_selector)]
+            if errors:
+                explanation = "{} != {}\nGot form back with errors:\n----\n".format(response.status_code, 302) + "----\n".join(errors)
+                self.assertEqual(response.status_code, 302, explanation)
 
         self.assertEqual(response.status_code, 302)
         
@@ -221,214 +215,7 @@ class TestCase(django.test.TestCase):
         else:
             self.assertGreater(len(mlist), 0)
 
-    def assertResponseStatus(self, r, code, msg_prefix=None):
-        if r.status_code != code:
-            self.assertNoPageErrors(r)
-            sys.stderr.write(textcontent(r))
-            raise AssertionError("%s%s != %s" % ("%s: "%msg_prefix if msg_prefix else '', r.status_code, code))
-            
-
     def __str__(self):
         return u"%s (%s.%s)" % (self._testMethodName, strclass(self.__class__),self._testMethodName)
 
-
-    def debug_save_response(self, r):
-        """
-        This is intended as a debug help, to be inserted whenever one wants
-        to save a page response in a test case; not for production.
-        """
-        stack = inspect.stack()         # stack[0] is the current frame
-        caller = stack[1]
-        fn = caller.function + '.html'
-        with open(fn, 'bw') as f:
-            f.write(r.content)
-            if sys.stderr.isatty():
-                sys.stderr.write(f'Wrote response to {fn}\n')
-
-class DraftTestCase(TestCase):
-    draft_text = """
-
-
-
-Martian Special Interest Group (mars)                             P. Man
-Internet-Draft                                            March 21, 2015
-Intended status: Informational
-Expires: September 22, 2015
-
-
-                 Optimizing Martian Network Topologies
-                      draft-ietf-mars-test-02.txt
-
-Abstract
-
-   Techniques for achieving near-optimal Martian networks.
-
-Status of This Memo
-
-   This Internet-Draft is submitted in full conformance with the
-   provisions of BCP 78 and BCP 79.
-
-   Internet-Drafts are working documents of the Internet Engineering
-   Task Force (IETF).  Note that other groups may also distribute
-   working documents as Internet-Drafts.  The list of current Internet-
-   Drafts is at http://datatracker.ietf.org/drafts/current/.
-
-   Internet-Drafts are draft documents valid for a maximum of six months
-   and may be updated, replaced, or obsoleted by other documents at any
-   time.  It is inappropriate to use Internet-Drafts as reference
-   material or to cite them other than as "work in progress."
-
-   This Internet-Draft will expire on September 22, 2015.
-
-Copyright Notice
-
-   Copyright (c) 2015 IETF Trust and the persons identified as the
-   document authors.  All rights reserved.
-
-   This document is subject to BCP 78 and the IETF Trust's Legal
-   Provisions Relating to IETF Documents
-   (http://trustee.ietf.org/license-info) in effect on the date of
-   publication of this document.  Please review these documents
-   carefully, as they describe your rights and restrictions with respect
-   to this document.  Code Components extracted from this document must
-   include Simplified BSD License text as described in Section 4.e of
-   the Trust Legal Provisions and are provided without warranty as
-   described in the Simplified BSD License.
-
-   This document may contain material from IETF Documents or IETF
-   Contributions published or made publicly available before November
-   10, 2008.  The person(s) controlling the copyright in some of this
-
-
-
-Man                    Expires September 22, 2015               [Page 1]
-
-Internet-Draft    Optimizing Martian Network Topologies       March 2015
-
-
-   material may not have granted the IETF Trust the right to allow
-   modifications of such material outside the IETF Standards Process.
-   Without obtaining an adequate license from the person(s) controlling
-   the copyright in such materials, this document may not be modified
-   outside the IETF Standards Process, and derivative works of it may
-   not be created outside the IETF Standards Process, except to format
-   it for publication as an RFC or to translate it into languages other
-   than English.
-
-Table of Contents
-
-   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
-   2.  Security Considerations . . . . . . . . . . . . . . . . . . .   2
-   3.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   2
-   4.  Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .   3
-   5.  Normative References  . . . . . . . . . . . . . . . . . . . .   3
-   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .   3
-
-1.  Introduction
-
-   This document describes how to make the Martian networks work.  The
-   methods used in Earth do not directly translate to the efficent
-   networks on Mars, as the topographical differences caused by planets.
-   For example the avian carriers, cannot be used in the Mars, thus
-   RFC1149 ([RFC1149]) cannot be used in Mars.
-
-   Some optimizations can be done because Mars is smaller than Earth,
-   thus the round trip times are smaller.  Also as Mars has two moons
-   instead of only one as we have in Earth, we can use both Deimos and
-   Phobos when using reflecting radio links off the moon.
-
-   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
-   "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
-   document are to be interpreted as described in [RFC2119].
-
-2.  Security Considerations
-
-   As Martians are known to listen all traffic in Mars, all traffic in
-   the Mars MUST be encrypted.
-
-3.  IANA Considerations
-
-   There is no new IANA considerations in this document.
-
-
-
-
-
-
-
-
-Man                    Expires September 22, 2015               [Page 2]
-
-Internet-Draft    Optimizing Martian Network Topologies       March 2015
-
-
-4.  Acknowledgements
-
-   This document is created in the IETF-92 CodeSprint in Dallas, TX.
-
-5.  Normative References
-
-   [RFC1149]  Waitzman, D., "Standard for the transmission of IP
-              datagrams on avian carriers", RFC 1149, April 1990.
-
-   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
-              Requirement Levels", BCP 14, RFC 2119, March 1997.
-
-Author's Address
-
-   Plain Man
-   Deimos street
-   Mars City  MARS-000000
-   Mars
-
-   Email: aliens@example.mars
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Man                    Expires September 22, 2015               [Page 3]
-"""
-
-    def setUp(self):
-        self.id_dir = self.tempdir('id')
-        self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
-        settings.INTERNET_DRAFT_PATH = self.id_dir
-        self.saved_internet_all_drafts_archive_dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
-        settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR = self.id_dir
-        f = io.open(os.path.join(self.id_dir, 'draft-ietf-mars-test-01.txt'), 'w')
-        f.write(self.draft_text)
-        f.close()
-
-    def tearDown(self):
-        settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR = self.saved_internet_all_drafts_archive_dir
-        settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
-        shutil.rmtree(self.id_dir)
-
-            
+        

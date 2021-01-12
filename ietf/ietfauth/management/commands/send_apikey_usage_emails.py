@@ -8,7 +8,6 @@ from textwrap import dedent
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -38,7 +37,7 @@ class Command(BaseCommand):
 
         keys = PersonalApiKey.objects.filter(valid=True)
         for key in keys:
-            earliest = timezone.now() - datetime.timedelta(days=days)
+            earliest = datetime.datetime.now() - datetime.timedelta(days=days)
             events = PersonApiKeyEvent.objects.filter(key=key, time__gt=earliest)
             count = events.count()
             events = events[:32]

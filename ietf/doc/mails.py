@@ -10,7 +10,6 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
 from django.urls import reverse as urlreverse
-from django.utils import timezone
 from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
@@ -23,7 +22,6 @@ from ietf.doc.utils import needed_ballot_positions
 from ietf.group.models import Role
 from ietf.doc.models import Document
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.utils.timezone import datetime_today
 
 
 def email_state_changed(request, doc, text, mailtrigger_id=None):
@@ -175,7 +173,7 @@ def generate_ballot_rfceditornote(request, doc):
     return e
 
 def generate_last_call_announcement(request, doc):
-    expiration_date = datetime_today() + datetime.timedelta(days=14)
+    expiration_date = datetime.date.today() + datetime.timedelta(days=14)
     if doc.group.type_id in ("individ", "area"):
         group = "an individual submitter"
         expiration_date += datetime.timedelta(days=14)
@@ -402,7 +400,7 @@ def generate_issue_ballot_mail(request, doc, ballot):
     
     e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
     last_call_expires = e.expires if e else None
-    last_call_has_expired = last_call_expires and last_call_expires < timezone.now()
+    last_call_has_expired = last_call_expires and last_call_expires < datetime.datetime.now()
 
     return render_to_string("doc/mail/issue_iesg_ballot_mail.txt",
                             dict(doc=doc,
@@ -421,7 +419,7 @@ def _send_irsg_ballot_email(request, doc, ballot, subject, template):
     (to, cc) = gather_address_lists('irsg_ballot_issued', doc=doc)
     sender = 'IESG Secretary <iesg-secretary@ietf.org>'
 
-    ballot_expired = ballot.duedate < timezone.now()
+    ballot_expired = ballot.duedate < datetime.datetime.now()
     active_ballot = doc.active_ballot()
     if active_ballot is None:
         needed_bps = ''

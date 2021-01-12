@@ -1,11 +1,6 @@
-# Copyright The IETF Trust 2017-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
-
-
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 import factory
 import datetime
-
-from django.utils import timezone
 
 from ietf.review.models import ReviewTeamSettings, ReviewRequest, ReviewAssignment, ReviewerSettings
 from ietf.name.models import ReviewTypeName, ReviewResultName
@@ -54,7 +49,7 @@ class ReviewAssignmentFactory(factory.DjangoModelFactory):
     review_request = factory.SubFactory('ietf.review.factories.ReviewRequestFactory')
     state_id = 'assigned'
     reviewer = factory.SubFactory('ietf.person.factories.EmailFactory')
-    assigned_on = timezone.now()
+    assigned_on = datetime.datetime.now()
 
 class ReviewerSettingsFactory(factory.DjangoModelFactory):
     class Meta:

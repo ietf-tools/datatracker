@@ -1,11 +1,6 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
-
-
 import datetime
 
 from django.template.loader import render_to_string
-from django.utils import timezone
 
 from ietf.meeting.models import Meeting
 from ietf.doc.models import DocEvent, Document
@@ -14,11 +9,11 @@ from ietf.secr.proceedings.proc_utils import get_progress_stats
 def report_id_activity(start,end):
 
     # get previous meeting
-    meeting = Meeting.objects.filter(date__lt=timezone.now(),type='ietf').order_by('-date')[0]
+    meeting = Meeting.objects.filter(date__lt=datetime.datetime.now(),type='ietf').order_by('-date')[0]
     syear,smonth,sday = start.split('-')
     eyear,emonth,eday = end.split('-')
-    sdate = timezone.utc.localize(datetime.datetime(int(syear),int(smonth),int(sday),0,0))
-    edate = timezone.utc.localize(datetime.datetime(int(eyear),int(emonth),int(eday),23,59))
+    sdate = datetime.datetime(int(syear),int(smonth),int(sday))
+    edate = datetime.datetime(int(eyear),int(emonth),int(eday))
     
     #queryset = Document.objects.filter(type='draft').annotate(start_date=Min('docevent__time'))
     new_docs = Document.objects.filter(type='draft').filter(docevent__type='new_revision',
@@ -49,7 +44,7 @@ def report_id_activity(start,end):
     approved = events.filter(type='iesg_approved').count()
     
     # get 4 weeks
-    monday = timezone.utc.localize(datetime.datetime.combine(Meeting.get_current_meeting().get_ietf_monday(), datetime.time(0,0)))
+    monday = Meeting.get_current_meeting().get_ietf_monday()
     cutoff = monday + datetime.timedelta(days=3)
     ff1_date = cutoff - datetime.timedelta(days=28)
     #ff2_date = cutoff - datetime.timedelta(days=21)

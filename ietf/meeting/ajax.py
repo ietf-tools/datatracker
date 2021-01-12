@@ -1,6 +1,4 @@
-# Copyright The IETF Trust 2013-2020, All Rights Reserved
-
-
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
 import json
 
 from django.shortcuts import get_object_or_404, redirect
@@ -178,7 +176,6 @@ def timeslot_addslot(request, meeting):
 
     newslot = addslotform.save(commit=False)
     newslot.meeting = meeting
-    newslot.time = meeting.tz().localize(newslot.time.replace(tzinfo=None))
     newslot.save()
 
     # XXX FIXME: timeslot_dayurl is undefined.  Placeholder:

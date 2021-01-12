@@ -6,7 +6,6 @@ import email
 import datetime
 
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -26,7 +25,7 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        default_start = timezone.now() - datetime.timedelta(days=14)
+        default_start = datetime.datetime.now() - datetime.timedelta(days=14)
         parser.add_argument(
             '-t', '--start', '--from', type=str, default=default_start.strftime('%Y-%m-%d %H:%M'),
             help='Limit the list to messages saved after the given time (default %(default)s).',

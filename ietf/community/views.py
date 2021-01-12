@@ -10,7 +10,6 @@ import uuid
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.decorators import login_required
-from django.utils import timezone
 from django.utils.html import strip_tags
 
 import debug                            # pyflakes:ignore
@@ -216,7 +215,7 @@ def feed(request, username=None, acronym=None, group_type=None):
     significant = request.GET.get('significant', '') == '1'
 
     documents = docs_tracked_by_community_list(clist).values_list('pk', flat=True)
-    since = timezone.now() - datetime.timedelta(days=14)
+    since = datetime.datetime.now() - datetime.timedelta(days=14)
 
     events = DocEvent.objects.filter(
         doc__id__in=documents,
@@ -241,7 +240,7 @@ def feed(request, username=None, acronym=None, group_type=None):
         'title': title,
         'subtitle': subtitle,
         'id': feed_id.urn,
-        'updated': timezone.now(),
+        'updated': datetime.datetime.now(),
     }, content_type='text/xml')
 
 

@@ -11,7 +11,7 @@ def hack_recording_title(recording,add_timestamp=False):
    if recording.title.startswith('Audio recording for') or recording.title.startswith('Video recording for'):
        hacked_title = recording.title[:15]
        if add_timestamp:
-           hacked_title += ' '+recording.sessionpresentation_set.first().session.official_timeslotassignment().timeslot.local_start_time().strftime("%a %H:%M")
+           hacked_title += ' '+recording.sessionpresentation_set.first().session.official_timeslotassignment().timeslot.time.strftime("%a %H:%M")
        return hacked_title
    else:
        return recording.title

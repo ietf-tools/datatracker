@@ -3,11 +3,8 @@
 
 
 import datetime
-import pytz
-import random
 
 from django.utils.text import slugify
-from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -25,10 +22,8 @@ from ietf.utils.test_data import make_test_data
 
 def make_interim_meeting(group,date,status='sched'):
     system_person = Person.objects.get(name="(System)")
-    time_zone = random.choice(pytz.common_timezones)
-    meeting_tz = pytz.timezone(time_zone)
-    time = meeting_tz.localize(datetime.datetime.combine(date, datetime.time(9)))
-    meeting = create_interim_meeting(group=group, date=date, time_zone=time_zone)
+    time = datetime.datetime.combine(date, datetime.time(9))
+    meeting = create_interim_meeting(group=group,date=date)
     session = Session.objects.create(meeting=meeting, group=group,
         attendees=10,
         requested_duration=datetime.timedelta(minutes=20),
@@ -105,26 +100,25 @@ def make_meeting_test_data(meeting=None, create_interims=False):
     reg_room.session_types.add("reg")
 
     # slots
-    tz = meeting.tz()
     session_date = meeting.date + datetime.timedelta(days=1)
     slot1 = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
                                     duration=datetime.timedelta(minutes=60),
-                                    time=tz.localize(datetime.datetime.combine(session_date, datetime.time(9, 30))))
+                                    time=datetime.datetime.combine(session_date, datetime.time(9, 30)))
     slot2 = TimeSlot.objects.create(meeting=meeting, type_id='regular', location=room,
                                     duration=datetime.timedelta(minutes=60),
-                                    time=tz.localize(datetime.datetime.combine(session_date, datetime.time(10, 50))))
+                                    time=datetime.datetime.combine(session_date, datetime.time(10, 50)))
     breakfast_slot = TimeSlot.objects.create(meeting=meeting, type_id="lead", location=breakfast_room,
                                     duration=datetime.timedelta(minutes=90),
-                                    time=tz.localize(datetime.datetime.combine(session_date, datetime.time(7,0))))
+                                    time=datetime.datetime.combine(session_date, datetime.time(7,0)))
     reg_slot = TimeSlot.objects.create(meeting=meeting, type_id="reg", location=reg_room,
-                                    duration=datetime.timedelta(minutes=480),
-                                    time=tz.localize(datetime.datetime.combine(session_date, datetime.time(9,0))))
+                                       duration=datetime.timedelta(minutes=480),
+                                       time=datetime.datetime.combine(session_date, datetime.time(9,0)))
     break_slot = TimeSlot.objects.create(meeting=meeting, type_id="break", location=break_room,
-                                    duration=datetime.timedelta(minutes=90),
-                                    time=tz.localize(datetime.datetime.combine(session_date, datetime.time(7,0))))
+                                         duration=datetime.timedelta(minutes=90),
+                                         time=datetime.datetime.combine(session_date, datetime.time(7,0)))
     plenary_slot = TimeSlot.objects.create(meeting=meeting, type_id="plenary", location=room,
-                                    duration=datetime.timedelta(minutes=60),
-                                    time=tz.localize(datetime.datetime.combine(session_date, datetime.time(11,0))))
+                                         duration=datetime.timedelta(minutes=60),
+                                         time=datetime.datetime.combine(session_date, datetime.time(11,0)))
     # mars WG
     mars = Group.objects.get(acronym='mars')
     mars_session = Session.objects.create(meeting=meeting, group=mars,
@@ -206,9 +200,8 @@ def make_meeting_test_data(meeting=None, create_interims=False):
     mars_session.sessionpresentation_set.add(pres)
     
     # Future Interim Meetings
-    today = timezone.now().date()
-    date = today + datetime.timedelta(days=365)
-    date2 = today + datetime.timedelta(days=1000)
+    date = datetime.date.today() + datetime.timedelta(days=365)
+    date2 = datetime.date.today() + datetime.timedelta(days=1000)
     ames = Group.objects.get(acronym="ames")
 
     if create_interims:
@@ -220,15 +213,14 @@ def make_meeting_test_data(meeting=None, create_interims=False):
     return meeting
 
 def make_interim_test_data():
-    today = timezone.now().date()
-    date = today + datetime.timedelta(days=365)
-    date2 = today + datetime.timedelta(days=1000)
+    date = datetime.date.today() + datetime.timedelta(days=365)
+    date2 = datetime.date.today() + datetime.timedelta(days=1000)
     PersonFactory(user__username='plain')
     area = GroupFactory(type_id='area')
     ad = Person.objects.get(user__username='ad')
     RoleFactory(group=area,person=ad,name_id='ad')
-    mars = GroupFactory(acronym='mars', parent=area, name='Martian Special Interest Group')
-    ames = GroupFactory(acronym='ames', parent=area, name='Asteroid Mining Equipment Standardization Group')
+    mars = GroupFactory(acronym='mars',parent=area,name='Martian Special Interest Group')
+    ames = GroupFactory(acronym='ames',parent=area,name='Asteroid Mining Equipment Standardization Group')
     RoleFactory(group=mars,person__user__username='marschairman',name_id='chair')
     RoleFactory(group=ames,person__user__username='ameschairman',name_id='chair')
 

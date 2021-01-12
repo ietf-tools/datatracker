@@ -396,7 +396,7 @@ class Draft():
                         month = int(mon)
                     else:
                         continue
-                    today = datetime.datetime.now(datetime.timezone.utc).date()
+                    today = datetime.date.today()
                     if day==0:
                         # if the date was given with only month and year, use
                         # today's date if month and year is today's month and

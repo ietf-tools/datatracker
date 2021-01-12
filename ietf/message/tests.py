@@ -5,7 +5,6 @@
 import datetime
 
 from django.urls import reverse as urlreverse
-from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -15,12 +14,10 @@ from ietf.message.utils import send_scheduled_message_from_send_queue
 from ietf.person.models import Person
 from ietf.utils.mail import outbox, send_mail_text, send_mail_message, get_payload_text
 from ietf.utils.test_utils import TestCase
-from ietf.utils.timezone import datetime_today
-
 
 class MessageTests(TestCase):
     def test_message_view(self):
-        nomcom = GroupFactory(name="nomcom%s" % datetime_today().year, type_id="nomcom")
+        nomcom = GroupFactory(name="nomcom%s" % datetime.date.today().year, type_id="nomcom")
         msg = Message.objects.create(
             by=Person.objects.get(name="(System)"),
             subject="This is a test",
@@ -32,7 +29,7 @@ class MessageTests(TestCase):
         msg.related_groups.add(nomcom)
 
         r = self.client.get(urlreverse("ietf.message.views.message", kwargs=dict(message_id=msg.id)))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, msg.subject)
         self.assertContains(r, msg.to)
         self.assertContains(r, msg.frm)
@@ -90,7 +87,7 @@ class SendScheduledAnnouncementsTests(TestCase):
         q = SendQueue.objects.create(
             by=Person.objects.get(name="(System)"),
             message=msg,
-            send_at=timezone.now() + datetime.timedelta(hours=12)
+            send_at=datetime.datetime.now() + datetime.timedelta(hours=12)
             )
 
         mailbox_before = len(outbox)
@@ -116,7 +113,7 @@ class SendScheduledAnnouncementsTests(TestCase):
         q = SendQueue.objects.create(
             by=Person.objects.get(name="(System)"),
             message=msg,
-            send_at=timezone.now() + datetime.timedelta(hours=12)
+            send_at=datetime.datetime.now() + datetime.timedelta(hours=12)
             )
         
         mailbox_before = len(outbox)

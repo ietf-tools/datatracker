@@ -18,7 +18,6 @@ warnings.filterwarnings("ignore", message="The logout\(\) view is superseded by"
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="{% load staticfiles %} is deprecated")
 warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
-warnings.filterwarnings("error", message="DateTimeField")
 
 try:
     import syslog
@@ -102,8 +101,7 @@ DATABASE_TEST_OPTIONS = {
 # although not all variations may be possible on all operating systems.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'UTC'
-RFCED_TZ  = 'PST8PDT'
+TIME_ZONE = 'PST8PDT'
 
 # Language code for this installation. All choices can be found here:
 # http://www.w3.org/TR/REC-html40/struct/dirlang.html#langcodes
@@ -116,8 +114,7 @@ SITE_ID = 1
 # to load the internationalization machinery.
 USE_I18N = False
 
-USE_TZ = True
-#USE_TZ = False
+USE_TZ = False
 
 if SERVER_MODE == 'production':
     MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
@@ -986,6 +983,8 @@ YOUTUBE_API_SERVICE_NAME = 'youtube'
 YOUTUBE_API_VERSION = 'v3'
 YOUTUBE_BASE_URL = 'https://www.youtube.com/watch'
 YOUTUBE_IETF_CHANNEL_ID = 'UC8dtK9njBLdFnBahHFp0eZQ'
+
+PRODUCTION_TIMEZONE = "America/Los_Angeles"
 
 PYFLAKES_DEFAULT_ARGS= ["ietf", ]
 VULTURE_DEFAULT_ARGS= ["ietf", ]

@@ -1,8 +1,6 @@
 {% extends "group/group_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load tz %}
-{% localtime off %}
 
 {% block title %}Meetings{% if group %} for {{group.acronym}}{% endif %}{% endblock %}
 
@@ -65,4 +63,3 @@
 <div>This page shows meetings within the last four years. For earlier meetings, please see the proceedings.</div>
 
 {% endblock %}
-{% endlocaltime %}

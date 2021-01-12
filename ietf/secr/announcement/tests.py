@@ -37,7 +37,7 @@ class SecrAnnouncementTestCase(TestCase):
         url = reverse('ietf.secr.announcement.views.main')
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
     
     def test_main_announce_from(self):
         url = reverse('ietf.secr.announcement.views.main')
@@ -45,14 +45,14 @@ class SecrAnnouncementTestCase(TestCase):
         # Secretariat
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('#id_frm option')),3)
 
         # IAB Chair
         self.client.login(username="iab-chair", password="iab-chair+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('#id_frm option')),1)
         self.assertTrue('<iab-chair@iab.org>' in q('#id_frm option').val())
@@ -60,7 +60,7 @@ class SecrAnnouncementTestCase(TestCase):
         # IETF Chair
         self.client.login(username="ietf-chair", password="ietf-chair+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('#id_frm option')),1)
         self.assertTrue('<chair@ietf.org>' in q('#id_frm option').val())
@@ -72,7 +72,7 @@ class UnauthorizedAnnouncementCase(TestCase):
         person = RoleFactory(name_id='chair',group__acronym='mars').person
         self.client.login(username=person.user.username, password=person.user.username+"+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 403)
+        self.assertEqual(r.status_code, 403)
     
 class SubmitAnnouncementCase(TestCase):
     def test_invalid_submit(self):
@@ -81,7 +81,7 @@ class SubmitAnnouncementCase(TestCase):
         post_data = {'id_subject':''}
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url,post_data)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
         

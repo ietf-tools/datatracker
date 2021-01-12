@@ -32,7 +32,7 @@ from ietf.message.models import SendQueue
 
 mode = sys.argv[1]
 
-now = timezone.now()
+now = datetime.datetime.now()
 
 needs_sending = SendQueue.objects.filter(sent_at=None).select_related("message")
 if mode == "specific":

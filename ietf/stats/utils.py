@@ -67,7 +67,6 @@ def get_aliased_affiliations(affiliations):
 
         # strip ending
         name = ending_re.sub("", affiliation)
-        stripped_affiliation = name
         if name != affiliation:
             affiliation = name
             res[original_affiliation] = affiliation
@@ -78,7 +77,7 @@ def get_aliased_affiliations(affiliations):
             affiliation = name
             res[original_affiliation] = affiliation
 
-        affiliations_with_case_spellings[stripped_affiliation.lower()].add(stripped_affiliation)
+        affiliations_with_case_spellings[affiliation.lower()].add(original_affiliation)
         case_spelling_count[affiliation] += 1
 
     def affiliation_sort_key(affiliation):
@@ -91,7 +90,6 @@ def get_aliased_affiliations(affiliations):
     for similar_affiliations in affiliations_with_case_spellings.values():
         if len(similar_affiliations) > 1:
             most_popular = sorted(similar_affiliations, key=affiliation_sort_key, reverse=True)[0]
-            assert isinstance(most_popular, str)
             for affiliation in similar_affiliations:
                 if affiliation != most_popular:
                     res[affiliation] = most_popular

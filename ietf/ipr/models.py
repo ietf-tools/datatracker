@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 
+import datetime
+
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
-from django.utils import timezone
 
 from ietf.doc.models import DocAlias, DocEvent
 from ietf.name.models import DocRelationshipName,IprDisclosureStateName,IprLicenseTypeName,IprEventTypeName
@@ -219,7 +220,7 @@ class IprEvent(models.Model):
         """Returns true if it's beyond the response_due date and no response has been
         received"""
         qs = IprEvent.objects.filter(disclosure=self.disclosure,in_reply_to=self.message)
-        if not qs and timezone.now().date() > self.response_due.date():
+        if not qs and datetime.datetime.now().date() > self.response_due.date():
             return True
         else:
             return False

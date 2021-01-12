@@ -9,7 +9,6 @@ from pyquery import PyQuery
 from urllib.parse import quote
 
 from django.urls import reverse as urlreverse
-from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -27,7 +26,6 @@ from ietf.message.models import Message
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.text import text_to_dict
-from ietf.utils.timezone import datetime_today
 
 
 def make_data_from_content(content):
@@ -102,17 +100,17 @@ class IprTests(TestCase):
     def test_show_parked(self):
         ipr = HolderIprDisclosureFactory(state_id='parked')
         r = self.client.get(urlreverse("ietf.ipr.views.show", kwargs=dict(id=ipr.pk)))
-        self.assertResponseStatus(r, 403)
+        self.assertEqual(r.status_code, 403)
 
     def test_show_pending(self):
         ipr = HolderIprDisclosureFactory(state_id='pending')
         r = self.client.get(urlreverse("ietf.ipr.views.show", kwargs=dict(id=ipr.pk)))
-        self.assertResponseStatus(r, 403)
+        self.assertEqual(r.status_code, 403)
         
     def test_show_rejected(self):
         ipr = HolderIprDisclosureFactory(state_id='rejected')
         r = self.client.get(urlreverse("ietf.ipr.views.show", kwargs=dict(id=ipr.pk)))
-        self.assertResponseStatus(r, 403)
+        self.assertEqual(r.status_code, 403)
         
     def test_show_removed(self):
         ipr = HolderIprDisclosureFactory(state_id='removed')
@@ -153,7 +151,7 @@ class IprTests(TestCase):
         url = urlreverse("ietf.ipr.views.search")
 
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(q("form input[name=draft]"))
 
@@ -218,7 +216,7 @@ class IprTests(TestCase):
         r = self.client.post(url, {
             "holder_legal_name": "Test Legal",
             })
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q("form .has-error")) > 0)
 
@@ -463,7 +461,7 @@ class IprTests(TestCase):
             "submitter_name": "Test Holder",
             "submitter_email": "test@holder.com",
             })
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(q("#id_updates").parents(".form-group").hasClass("has-error"))
 
@@ -472,12 +470,12 @@ class IprTests(TestCase):
         url = urlreverse('ietf.ipr.views.add_comment', kwargs={ "id": ipr.id })
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         
         # public comment
         comment = 'Test comment'
         r = self.client.post(url, dict(comment=comment))
-        self.assertResponseStatus(r,302)
+        self.assertEqual(r.status_code,302)
         qs = ipr.iprevent_set.filter(type='comment',desc=comment)
         self.assertTrue(qs.count(),1)
         
@@ -493,7 +491,7 @@ class IprTests(TestCase):
         url = urlreverse('ietf.ipr.views.add_email', kwargs={ "id": ipr.id })
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         
         # post
         r = self.client.post(url, {
@@ -520,7 +518,7 @@ I would like to revoke this declaration.
         num = IprDisclosureBase.objects.filter(state='pending').count()
         
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
         x = len(q('table.ipr-table tbody tr'))
         self.assertEqual(num,x)
@@ -534,7 +532,7 @@ I would like to revoke this declaration.
         num = IprDisclosureBase.objects.filter(state__in=('removed','rejected')).count()
         
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
         x = len(q('table.ipr-table tbody tr'))
         self.assertEqual(num,x)
@@ -547,9 +545,9 @@ I would like to revoke this declaration.
         url = urlreverse('ietf.ipr.views.state', kwargs={'id':ipr.id})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         r = self.client.post(url,{'state':'posted'})
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         ipr = HolderIprDisclosure.objects.get(id=ipr.id)
         self.assertTrue(ipr.iprevent_set.filter(type='posted').exists())
 
@@ -565,23 +563,23 @@ I would like to revoke this declaration.
         login_testing_unauthorized(self, "secretary", url)
 
         r = self.client.get(url,follow=True)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         len_before = len(outbox)
         # successful post
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url,follow=True)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         ipr = IprDisclosureBase.objects.get(pk=ipr.pk)
         self.assertEqual(ipr.state.slug,'posted')
         url = urlreverse('ietf.ipr.views.notify',kwargs={ 'id':ipr.id, 'type':'posted'})
         r = self.client.get(url,follow=True)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         data = make_data_from_content(r.content)
         r = self.client.post(url, data )
-        self.assertResponseStatus(r,302)
+        self.assertEqual(r.status_code,302)
         self.assertEqual(len(outbox),len_before+2)
         self.assertTrue('george@acme.com' in outbox[len_before]['To'])
-        self.assertIn('posted on '+datetime_today().strftime("%Y-%m-%d"), get_payload_text(outbox[len_before]).replace('\n',' '))
+        self.assertIn('posted on '+datetime.date.today().strftime("%Y-%m-%d"), get_payload_text(outbox[len_before]).replace('\n',' '))
         self.assertTrue('draft-ietf-mars-test@ietf.org' in outbox[len_before+1]['To'])
         self.assertTrue('mars-wg@ietf.org' in outbox[len_before+1]['Cc'])
         self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), get_payload_text(outbox[len_before+1]).replace('\n',' '))
@@ -598,7 +596,7 @@ I would like to revoke this declaration.
         self.assertTrue(r.status_code, 200)
         data = make_data_from_content(r.content)
         r = self.client.post(url, data )
-        self.assertResponseStatus(r,302)
+        self.assertEqual(r.status_code,302)
         self.assertEqual(len(outbox),2)
         self.assertIn('Secretariat on '+ipr.get_latest_event_submitted().time.strftime("%Y-%m-%d"), get_payload_text(outbox[1]).replace('\n',' '))
 
@@ -607,7 +605,7 @@ I would like to revoke this declaration.
         ipr = HolderIprDisclosureFactory()
         url = urlreverse('ietf.ipr.views.email',kwargs={ "id": ipr.id })
         self.client.login(username="secretary", password="secretary+password")
-        yesterday = timezone.now().date() - datetime.timedelta(1)
+        yesterday = datetime.date.today() - datetime.timedelta(1)
         data = dict(
             to='joe@test.com',
             frm='ietf-ipr@ietf.org',
@@ -617,7 +615,8 @@ I would like to revoke this declaration.
             response_due=yesterday.isoformat())
         empty_outbox()
         r = self.client.post(url,data,follow=True)
-        self.assertResponseStatus(r,200)
+        #print r.content
+        self.assertEqual(r.status_code,200)
         q = Message.objects.filter(reply_to=data['reply_to'])
         self.assertEqual(q.count(),1)
         event = q[0].msgevents.first()
@@ -632,7 +631,7 @@ Cc: {}
 From: joe@test.com
 Date: {}
 Subject: test
-""".format(addrs.to, addrs.cc, timezone.now().ctime())
+""".format(addrs.to, addrs.cc, datetime.datetime.now().ctime())
         result = process_response_email(message_string)
         self.assertIsNone(result)
         
@@ -641,7 +640,7 @@ Subject: test
 From: joe@test.com
 Date: {}
 Subject: test
-""".format(data['reply_to'],timezone.now().ctime())
+""".format(data['reply_to'],datetime.datetime.now().ctime())
         result = process_response_email(message_string)
 
         self.assertIsInstance(result,Message)

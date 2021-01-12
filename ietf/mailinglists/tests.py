@@ -20,7 +20,7 @@ class MailingListTests(TestCase):
         # only those with an archive
         group = GroupFactory()
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("#content a:contains(\"%s\")" % group.acronym)), 0)
 

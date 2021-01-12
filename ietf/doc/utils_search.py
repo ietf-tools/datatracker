@@ -9,8 +9,6 @@ from ietf.doc.models import Document, DocAlias, RelatedDocument, DocEvent, Telec
 from ietf.doc.expire import expirable_draft
 from ietf.doc.utils import augment_docs_and_user_with_user_info
 from ietf.meeting.models import SessionPresentation, Meeting, Session
-from ietf.utils.timezone import datetime_today
-
 
 def wrap_value(v):
     return lambda: v
@@ -31,8 +29,8 @@ def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
             seen.add(e.doc_id)
 
 def fill_in_document_sessions(docs, doc_dict, doc_ids):
-    beg_date = datetime_today()-datetime.timedelta(days=7)
-    end_date = datetime_today()+datetime.timedelta(days=30)
+    beg_date = datetime.date.today()-datetime.timedelta(days=7)
+    end_date = datetime.date.today()+datetime.timedelta(days=30)
     meetings = Meeting.objects.filter(date__gte=beg_date, date__lte=end_date).prefetch_related('session_set')
     # get sessions
     sessions = Session.objects.filter(meeting_id__in=[ m.id for m in meetings ])

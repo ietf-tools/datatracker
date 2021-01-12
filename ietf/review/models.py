@@ -7,7 +7,6 @@ import datetime
 from simple_history.models import HistoricalRecords
 
 from django.db import models
-from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -18,7 +17,6 @@ from ietf.name.models import ReviewTypeName, ReviewRequestStateName, ReviewResul
     ReviewAssignmentStateName, ReviewerQueuePolicyName
 from ietf.utils.validators import validate_regular_expression_string
 from ietf.utils.models import ForeignKey, OneToOneField
-
 
 class ReviewerSettings(models.Model):
     """Keeps track of admin data associated with a reviewer in a team."""
@@ -80,7 +78,8 @@ class UnavailablePeriod(models.Model):
     reason       = models.TextField(verbose_name="Reason why reviewer is unavailable (Optional)", max_length=2048, blank=True, help_text="Provide (for the secretary's benefit) the reason why the review is unavailable", default='')
 
     def state(self):
-        today = timezone.now().date()
+        import datetime
+        today = datetime.date.today()
         if self.start_date is None or self.start_date <= today:
             if not self.end_date or today <= self.end_date:
                 return "active"
@@ -94,7 +93,7 @@ class UnavailablePeriod(models.Model):
 
 class ReviewWish(models.Model):
     """Reviewer wishes to review a document when it becomes available for review."""
-    time        = models.DateTimeField(default=timezone.now)
+    time        = models.DateTimeField(default=datetime.datetime.now)
     team        = ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     person      = ForeignKey(Person)
     doc         = ForeignKey(Document)
@@ -124,7 +123,7 @@ class ReviewRequest(models.Model):
 
     # Fields filled in on the initial record creation - these
     # constitute the request part.
-    time          = models.DateTimeField(default=timezone.now)
+    time          = models.DateTimeField(default=datetime.datetime.now)
     type          = ForeignKey(ReviewTypeName)
     doc           = ForeignKey(Document, related_name='reviewrequest_set')
     team          = ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))

@@ -20,8 +20,6 @@ from ietf.iesg.models import TelechatDate, TelechatAgendaItem, Telechat
 from ietf.iesg.agenda import agenda_data, get_doc_section
 from ietf.ietfauth.utils import role_required
 from ietf.secr.telechat.forms import BallotForm, ChangeStateForm, DateSelectForm, TELECHAT_TAGS
-from ietf.utils.timezone import datetime_today
-
 
 '''
 EXPECTED CHANGES:
@@ -82,14 +80,14 @@ def get_last_telechat_date():
     This function returns the date of the last telechat
     Tried TelechatDocEvent.objects.latest but that will return today's telechat
     '''
-    return TelechatDate.objects.filter(date__lt=datetime_today()).order_by('-date')[0].date
+    return TelechatDate.objects.filter(date__lt=datetime.date.today()).order_by('-date')[0].date
     #return '2011-11-01' # uncomment for testing
 
 def get_next_telechat_date():
     '''
     This function returns the date of the next telechat
     '''
-    return TelechatDate.objects.filter(date__gte=datetime_today()).order_by('date')[0].date
+    return TelechatDate.objects.filter(date__gte=datetime.date.today()).order_by('date')[0].date
 
 def get_section_header(doc, agenda):
     '''

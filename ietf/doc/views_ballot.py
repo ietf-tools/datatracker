@@ -42,8 +42,6 @@ from ietf.utils import log
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.utils.decorators import require_api_key
 from ietf.utils.response import permission_denied
-from ietf.utils.timezone import date2datetime, datetime_today
-
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -1007,16 +1005,6 @@ def make_last_call(request, name):
         announcement_event = generate_last_call_announcement(request, doc)
     announcement = announcement_event.text
 
-    if doc.type.slug == 'draft':
-        # This logic is repeated in the code that edits last call text - why?
-        expire_days = 14
-        if doc.group.type_id in ("individ", "area"):
-            expire_days = 28
-        templ = 'doc/draft/make_last_call.html'
-    else:
-        expire_days=28
-        templ = 'doc/status_change/make_last_call.html'
-
     if request.method == 'POST':
         form = MakeLastCallForm(request.POST)
         if form.is_valid():
@@ -1060,8 +1048,8 @@ def make_last_call(request, name):
             e.desc += announcement
 
             if form.cleaned_data['last_call_sent_date'] != e.time.date():
-                e.time = e.time.tzinfo.localize(datetime.datetime.combine(form.cleaned_data['last_call_sent_date'], e.time.time()))
-            e.expires = date2datetime(expiration_date)
+                e.time = datetime.datetime.combine(form.cleaned_data['last_call_sent_date'], e.time.time())
+            e.expires = expiration_date
             e.save()
             events.append(e)
 
@@ -1084,8 +1072,19 @@ def make_last_call(request, name):
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
         initial = {}
-        initial["last_call_sent_date"] = datetime_today()
-        initial["last_call_expiration_date"] = datetime_today() + datetime.timedelta(days=expire_days)
+        initial["last_call_sent_date"] = datetime.date.today()
+        if doc.type.slug == 'draft':
+            # This logic is repeated in the code that edits last call text - why?
+            expire_days = 14
+            if doc.group.type_id in ("individ", "area"):
+                expire_days = 28
+            templ = 'doc/draft/make_last_call.html'
+        else:
+            expire_days=28
+            templ = 'doc/status_change/make_last_call.html'
+
+        initial["last_call_expiration_date"] = datetime.date.today() + datetime.timedelta(days=expire_days)
+        
         form = MakeLastCallForm(initial=initial)
   
     return render(request, templ,
@@ -1101,7 +1100,7 @@ def issue_irsg_ballot(request, name):
         raise Http404
 
     by = request.user.person
-    fillerdate = datetime_today() + datetime.timedelta(weeks=2)
+    fillerdate = datetime.date.today() + datetime.timedelta(weeks=2)
 
     if request.method == 'POST':
         button = request.POST.get("irsg_button")
@@ -1110,7 +1109,7 @@ def issue_irsg_ballot(request, name):
             e = IRSGBallotDocEvent(doc=doc, rev=doc.rev, by=request.user.person)
             if (duedate == None or duedate==""):
                 duedate = str(fillerdate)
-            e.duedate = date2datetime(datetime.datetime.strptime(duedate, '%Y-%m-%d'))
+            e.duedate = datetime.datetime.strptime(duedate, '%Y-%m-%d')
             e.type = "created_ballot"
             e.desc = "Created IRSG Ballot"
             ballot_type = BallotType.objects.get(doc_type=doc.type, slug="irsg-approve")

@@ -17,7 +17,7 @@ import tastypie.resources
 from tastypie.api import Api
 from tastypie.bundle import Bundle
 from tastypie.exceptions import ApiFieldError
-from tastypie.serializers import Serializer as TastypieSerializer
+from tastypie.serializers import Serializer # pyflakes:ignore (we're re-exporting this)
 from tastypie.fields import ApiField
 
 _api_list = []
@@ -152,19 +152,3 @@ class ToOneField(tastypie.fields.ToOneField):
             dehydrated = self.dehydrate_related(fk_bundle, fk_resource, for_list=for_list)
             fk_resource._meta.cache.set(cache_key, dehydrated)
         return dehydrated
-
-class Serializer(TastypieSerializer):
-
-    def format_datetime(self, data):
-        """
-        Subclassed to let tastypie produce timezone-aware serialization of
-        datetime objects.
-        """
-        from tastypie.utils.formatting import format_datetime
-        if self.datetime_formatting == 'rfc-2822':
-            return format_datetime(data)
-        if self.datetime_formatting == 'iso-8601-strict':
-            # Remove microseconds to strictly adhere to iso-8601
-            data = data - datetime.timedelta(microseconds=data.microsecond)
-        return data.isoformat()
-    

@@ -38,7 +38,6 @@ from django.db.models import F, Min, Max, Q
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
-from django.utils import timezone
 from django.utils.encoding import force_str
 from django.utils.functional import curry
 from django.utils.text import slugify
@@ -101,7 +100,7 @@ from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 from ietf.utils.response import permission_denied
 from ietf.utils.text import xslugify
-from ietf.utils.timezone import date2datetime, datetime_today
+from ietf.utils.timezone import date2datetime
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
     InterimCancelForm, InterimSessionInlineFormSet, FileUploadForm, RequestMinutesForm,)
@@ -132,8 +131,8 @@ def materials(request, num=None):
     begin_date = meeting.get_submission_start_date()
     cut_off_date = meeting.get_submission_cut_off_date()
     cor_cut_off_date = meeting.get_submission_correction_date()
-    now = timezone.now().date()
-    old = timezone.now() - datetime.timedelta(days=1)
+    now = datetime.date.today()
+    old = datetime.datetime.now() - datetime.timedelta(days=1)
     if settings.SERVER_MODE != 'production' and '_testoverride' in request.GET:
         pass
     elif now > cor_cut_off_date:
@@ -147,7 +146,7 @@ def materials(request, num=None):
                 'cor_cut_off_date': cor_cut_off_date
             })
 
-    past_cutoff_date = timezone.now().date() > meeting.get_submission_correction_date()
+    past_cutoff_date = datetime.date.today() > meeting.get_submission_correction_date()
 
     schedule = get_schedule(meeting, None)
 
@@ -191,7 +190,7 @@ def materials(request, num=None):
     })
 
 def current_materials(request):
-    today = timezone.now().date()
+    today = datetime.date.today()
     meetings = Meeting.objects.exclude(number__startswith='interim-').filter(date__lte=today).order_by('-date')
     if meetings:
         return redirect(materials, meetings[0].number)
@@ -623,7 +622,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
                         timeslot=old_timeslot,
                     )
 
-                existing_assignments.update(timeslot=timeslot, modified=timezone.now())
+                existing_assignments.update(timeslot=timeslot, modified=datetime.datetime.now())
             else:
                 SchedTimeSessAssignment.objects.create(
                     session=session,
@@ -654,8 +653,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             source_day = swap_days_form.cleaned_data['source_day']
             target_day = swap_days_form.cleaned_data['target_day']
 
-            source_timeslots = [ts for ts in timeslots_qs if ts.local_date() == source_day]
-            target_timeslots = [ts for ts in timeslots_qs if ts.local_date() == target_day]
+            source_timeslots = [ts for ts in timeslots_qs if ts.time.date() == source_day]
+            target_timeslots = [ts for ts in timeslots_qs if ts.time.date() == target_day]
             swap_meeting_schedule_timeslot_assignments(schedule, source_timeslots, target_timeslots, target_day - source_day)
 
             return HttpResponseRedirect(request.get_full_path())
@@ -668,10 +667,10 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     room_has_timeslots = set()
     for t in timeslots_qs:
         room_has_timeslots.add(t.location_id)
-        timeslots_by_room_and_day[(t.location_id, t.local_date())].append(t)
+        timeslots_by_room_and_day[(t.location_id, t.time.date())].append(t)
 
     days = []
-    for day in sorted(set(t.local_date() for t in timeslots_qs)):
+    for day in sorted(set(t.time.date() for t in timeslots_qs)):
         room_timeslots = []
         for r in rooms:
             if r.pk not in room_has_timeslots:
@@ -694,8 +693,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     # possible timeslot start/ends
     timeslot_groups = defaultdict(set)
     for ts in timeslots_qs:
-        ts.start_end_group = "ts-group-{}-{}".format(ts.local_start_time().strftime("%Y%m%d-%H%M"), int(ts.duration.total_seconds() / 60))
-        timeslot_groups[ts.local_date()].add((ts.local_start_time(), ts.local_end_time(), ts.start_end_group))
+        ts.start_end_group = "ts-group-{}-{}".format(ts.time.strftime("%Y%m%d-%H%M"), int(ts.duration.total_seconds() / 60))
+        timeslot_groups[ts.time.date()].add((ts.time, ts.end_time(), ts.start_end_group))
 
     # prepare sessions
     prepare_sessions_for_display(sessions)
@@ -792,7 +791,7 @@ class TimeSlotForm(forms.Form):
 
         if timeslot:
             self.initial = {
-                'day': timeslot.local_date(),
+                'day': timeslot.time.date(),
                 'time': timeslot.time.time(),
                 'duration': timeslot.duration,
                 'location': timeslot.location_id,
@@ -842,7 +841,6 @@ class TimeSlotForm(forms.Form):
 @role_required('Area Director', 'Secretariat')
 def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name=None):
     meeting = get_meeting(num)
-    tz = meeting.tz()
     if name is None:
         schedule = meeting.schedule
     else:
@@ -900,7 +898,7 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
                 meeting=meeting,
                 type=c['type'],
                 name=c['name'],
-                time=tz.localize(datetime.datetime.combine(c['day'], c['time'])),
+                time=datetime.datetime.combine(c['day'], c['time']),
                 duration=c['duration'],
                 location=c['location'],
                 show_location=c['show_location'],
@@ -948,7 +946,7 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
 
             timeslot.type = c['type']
             timeslot.name = c['name']
-            timeslot.time = tz.localize(datetime.datetime.combine(c['day'], c['time']))
+            timeslot.time = datetime.datetime.combine(c['day'], c['time'])
             timeslot.duration = c['duration']
             timeslot.location = c['location']
             timeslot.show_location = c['show_location']
@@ -1033,7 +1031,7 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
 
     timeslots_by_day_and_room = defaultdict(list)
     for t in timeslot_qs:
-        timeslots_by_day_and_room[(t.local_date(), t.location_id)].append(t)
+        timeslots_by_day_and_room[(t.time.date(), t.location_id)].append(t)
 
     min_time = min([t.time.time() for t in timeslot_qs] + [datetime.time(8)])
     max_time = max([t.end_time().time() for t in timeslot_qs] + [datetime.time(22)])
@@ -1058,7 +1056,7 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
                     if s:
                         t.assigned_sessions.append(s)
 
-                t.left_offset = 100.0 * (t.time - tz.localize(datetime.datetime.combine(t.time.date(), min_time))) / min_max_delta
+                t.left_offset = 100.0 * (t.time - datetime.datetime.combine(t.time.date(), min_time)) / min_max_delta
                 t.layout_width = min(100.0 * t.duration / min_max_delta, 100 - t.left_offset)
                 ts.append(t)
 
@@ -1460,7 +1458,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         "updated": updated,
         "filter_categories": filter_categories,
         "non_area_keywords": [label.lower() for label in non_area_labels],
-        "now": timezone.now(),
+        "now": datetime.datetime.now().astimezone(pytz.UTC),
         "is_current_meeting": is_current_meeting,
         "use_codimd": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
         "cache_time": 150 if is_current_meeting else 3600,
@@ -1567,7 +1565,7 @@ def agenda_by_room(request, num=None, name=None, owner=None):
     for day in assignments.dates('timeslot__time','day'):
         ss_by_day[day]=[]
     for ss in assignments.order_by('timeslot__location__functional_name','timeslot__location__name','timeslot__time'):
-        day = ss.timeslot.local_date()
+        day = ss.timeslot.time.date()
         ss_by_day[day].append(ss)
     return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"schedule":schedule,"ss_by_day":ss_by_day})
 
@@ -1729,15 +1727,10 @@ def week_view(request, num=None, name=None, owner=None):
 #    saturday_after = saturday_before + datetime.timedelta(days=7)
 #    filtered_assignments = filtered_assignments.filter(timeslot__time__gte=saturday_before,timeslot__time__lt=saturday_after)
     filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
-    tz = meeting.tz()
-    
     tag_assignments_with_filter_keywords(filtered_assignments)
 
     items = []
     for a in filtered_assignments:
-        # If the database doesn't support timezone-aware datetimes, the time
-        # will be in UTC.  Convert to the meeting timezone before using.
-        a.timeslot.time = a.timeslot.time.astimezone(tz)
         # we don't HTML escape any of these as the week-view code is using createTextNode
         item = {
             "key": str(a.timeslot.pk),
@@ -1831,7 +1824,7 @@ def room_view(request, num=None, name=None, owner=None):
         raise Http404
 
     base_time = earliest
-    base_day = base_time.tzinfo.localize(datetime.datetime(base_time.year,base_time.month,base_time.day))
+    base_day = datetime.datetime(base_time.year,base_time.month,base_time.day)
 
     day = base_day
     days = []
@@ -1845,11 +1838,9 @@ def room_view(request, num=None, name=None, owner=None):
         t.day = (t.time-base_day).days
 
     assignments = list(assignments)
-    tz = meeting.tz()
     for ss in assignments:
         ss.delta_from_beginning = (ss.timeslot.time - base_time).total_seconds()
         ss.day = (ss.timeslot.time-base_day).days
-        ss.timeslot.time = ss.timeslot.time.astimezone(tz)
 
     template = "meeting/room-view.html"
     return render(request, template,{"meeting":meeting,"schedule":schedule,"unavailable":unavailable,"assignments":assignments,"rooms":rooms,"days":days})
@@ -2076,14 +2067,16 @@ def agenda_json(request, num=None):
     meetinfo.sort(key=lambda x: x['modified'],reverse=True)
     last_modified = meetinfo and meetinfo[0]['modified']
 
+    tz = pytz.timezone(settings.PRODUCTION_TIMEZONE)
+
     for obj in meetinfo:
-        obj['modified'] = obj['modified'].astimezone(pytz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        obj['modified'] = tz.localize(obj['modified']).astimezone(pytz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
     data = {"%s"%num: meetinfo}
 
     response = HttpResponse(json.dumps(data, indent=2, sort_keys=True), content_type='application/json;charset=%s'%settings.DEFAULT_CHARSET)
     if last_modified:
-        last_modified = last_modified.astimezone(pytz.utc)
+        last_modified = tz.localize(last_modified).astimezone(pytz.utc)
         response['Last-Modified'] = format_date_time(timegm(last_modified.timetuple()))
     return response
 
@@ -2137,7 +2130,7 @@ def session_details(request, num, acronym):
 
     # Find the time of the meeting, so that we can look back historically 
     # for what the group was called at the time. 
-    meeting_time = date2datetime(meeting.date)
+    meeting_time = datetime.datetime.combine(meeting.date, datetime.time()) 
 
     groups = list(set([ s.group for s in sessions ]))
     group_replacements = find_history_replacements_active_at(groups, meeting_time) 
@@ -2204,8 +2197,8 @@ def session_details(request, num, acronym):
                     'is_materials_manager' : session.group.has_role(request.user, session.group.features.matman_roles),
                     'can_manage_materials' : can_manage,
                     'can_view_request': can_view_request,
-                    'thisweek': timezone.now().date()-datetime.timedelta(days=7),
-                    'now': timezone.now(),
+                    'thisweek': datetime.date.today()-datetime.timedelta(days=7),
+                    'now': datetime.datetime.now(),
                     'use_codimd': True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
                   })
 
@@ -3233,8 +3226,8 @@ def interim_request_session_cancel(request, sessionid):
             messages.success(request, 'Interim meeting session cancelled')
             return redirect(interim_request_details, number=session.meeting.number)
     else:
-        date = session.official_timeslotassignment().timeslot.local_date()
-        form = InterimCancelForm(initial={'group': group.acronym, 'date': date})
+        session_time = session.official_timeslotassignment().timeslot.time
+        form = InterimCancelForm(initial={'group': group.acronym, 'date': session_time.date()})
 
     return render(request, "meeting/interim_request_cancel.html", {
         "form": form,
@@ -3369,7 +3362,7 @@ def past(request):
 
 def upcoming(request):
     '''List of upcoming meetings'''
-    today = timezone.now().date()
+    today = datetime.date.today()
 
     # Get ietf meetings starting 7 days ago, and interim meetings starting today
     ietf_meetings = Meeting.objects.filter(type_id='ietf', date__gte=today-datetime.timedelta(days=7))
@@ -3380,7 +3373,7 @@ def upcoming(request):
         Session.objects.filter(
             meeting__type_id='interim', 
             timeslotassignments__schedule=F('meeting__schedule'),
-            timeslotassignments__timeslot__time__gte=date2datetime(today),
+            timeslotassignments__timeslot__time__gte=today
         )
     ).filter(current_status__in=('sched','canceled'))
 
@@ -3418,7 +3411,7 @@ def upcoming(request):
 
     entries = list(ietf_meetings)
     entries.extend(list(interim_sessions))
-    entries.sort(key = lambda o: date2datetime(o.date) if isinstance(o,Meeting) else o.official_timeslotassignment().timeslot.utc_start_time())
+    entries.sort(key = lambda o: pytz.utc.localize(datetime.datetime.combine(o.date, datetime.datetime.min.time())) if isinstance(o,Meeting) else o.official_timeslotassignment().timeslot.utc_start_time())
     
     # add menu entries
     menu_entries = get_interim_menu_entries(request)
@@ -3449,8 +3442,8 @@ def upcoming(request):
                   'menu_actions': actions,
                   'menu_entries': menu_entries,
                   'selected_menu_entry': selected_menu_entry,
-                  'now': timezone.now(),
-                  'use_codimd': True if timezone.now().date()>=settings.MEETING_USES_CODIMD_DATE else False,
+                  'now': datetime.datetime.now(),
+                  'use_codimd': True if datetime.date.today()>=settings.MEETING_USES_CODIMD_DATE else False,
                   })
 
 
@@ -3464,7 +3457,7 @@ def upcoming_ical(request):
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
         
-    today = datetime_today()
+    today = datetime.date.today()
 
     # get meetings starting 7 days ago -- we'll filter out sessions in the past further down
     meetings = data_for_meetings_overview(Meeting.objects.filter(date__gte=today-datetime.timedelta(days=7)).prefetch_related('schedule').order_by('date'))
@@ -3511,7 +3504,7 @@ def upcoming_ical(request):
 
 def upcoming_json(request):
     '''Return Upcoming meetings in json format'''
-    today = timezone.now().date()
+    today = datetime.date.today()
 
     # get meetings starting 7 days ago -- we'll filter out sessions in the past further down
     meetings = data_for_meetings_overview(Meeting.objects.filter(date__gte=today-datetime.timedelta(days=7)).order_by('date'))
@@ -3553,7 +3546,7 @@ def proceedings(request, num=None):
     begin_date = meeting.get_submission_start_date()
     cut_off_date = meeting.get_submission_cut_off_date()
     cor_cut_off_date = meeting.get_submission_correction_date()
-    now = timezone.now().date()
+    now = datetime.date.today()
 
     schedule = get_schedule(meeting, None)
     sessions  = add_event_info_to_session_qs(
@@ -3732,8 +3725,8 @@ def api_set_session_video_url(request):
             else:
                 return err(400, "URL is the same")
         else:
-            timeslot = session.official_timeslotassignment().timeslot
-            title = 'Video recording for %s on %s at %s' % (acronym, timeslot.local_date(), timeslot.time.time())
+            time = session.official_timeslotassignment().timeslot.time
+            title = 'Video recording for %s on %s at %s' % (acronym, time.date(), time.time())
             create_recording(session, url, title=title, user=user)
     else:
         return err(405, "Method not allowed")
@@ -3813,7 +3806,7 @@ def important_dates(request, num=None, output_format=None):
     base_num = int(meeting.number)
 
     user = request.user
-    today = timezone.now().date()
+    today = datetime.date.today()
     meetings = []
     if meeting.show_important_dates or meeting.date < today:
         meetings.append(meeting)

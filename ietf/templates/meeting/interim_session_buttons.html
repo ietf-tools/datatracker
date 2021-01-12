@@ -29,7 +29,7 @@
     {% endif %}
 
   {# show stream buttons up till end of session, then show archive buttons #}
-  {% if now < item.timeslot.local_end_time %}
+  {% if now < item.timeslot.end_time %}
       <!-- Jabber -->
       <a class="" href="xmpp:{{session.jabber_room_name}}@jabber.ietf.org?join" title="Jabber room for {{session.jabber_room_name}}"><span class="fa fa-fw fa-lightbulb-o"></span></a>
       <!-- Remote call-in -->

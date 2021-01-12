@@ -1,12 +1,8 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
-# -*- coding: utf-8 -*-
-
-
 import pytz
+import email.utils
 import datetime
 
 from django.conf import settings
-from django.utils import timezone
 
 def local_timezone_to_utc(d):
     """Takes a naive datetime in the local timezone and returns a
@@ -17,24 +13,27 @@ def local_timezone_to_utc(d):
 
     return d.replace(tzinfo=None)
 
+def utc_to_local_timezone(d):
+    """Takes a naive datetime UTC and returns a naive datetime in the
+    local time zone."""
+    local_timezone = pytz.timezone(settings.TIME_ZONE)
+
+    d = local_timezone.normalize(d.replace(tzinfo=pytz.utc).astimezone(local_timezone))
+
+    return d.replace(tzinfo=None)
+
+def email_time_to_local_timezone(date_string):
+    """Takes a time string from an email and returns a naive datetime
+    in the local time zone."""
+
+    t = email.utils.parsedate_tz(date_string)
+    d = datetime.datetime(*t[:6])
+
+    if t[7] != None:
+        d += datetime.timedelta(seconds=t[9])
+
+    return utc_to_local_timezone(d)
+
 def date2datetime(date, tz=pytz.utc):
-    return tz.localize(datetime.datetime(*(date.timetuple()[:3]), 12, 0))
-date2datetime12 = date2datetime
-    
-def date2datetime00(date, tz=pytz.utc):
-    return tz.localize(datetime.datetime(*(date.timetuple()[:3]), 0, 0))
-
-def datetime_today(tzinfo=pytz.utc):
-    """
-    Return a timezone-aware datetime representing today, for use
-    with datetime fields representing a date.
-    """
-    return tzinfo.localize(datetime.datetime.combine(datetime.datetime.now(tz=tzinfo).date(), datetime.time(12)))
-
-def datetime_today_start(tzinfo=pytz.utc):
-    """
-    Return a timezone-aware datetime representing today, for use
-    with datetime fields representing a date.
-    """
-    return tzinfo.localize(datetime.datetime.combine(timezone.now().date(), datetime.time(0)))
+    return datetime.datetime(*(date.timetuple()[:6]), tzinfo=tz)
     

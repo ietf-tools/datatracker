@@ -41,7 +41,7 @@ parser.add_option("-d", dest="skip_date",
 
 options, args = parser.parse_args()
 
-skip_date = timezone.now().date() - datetime.timedelta(days=365)
+skip_date = datetime.date.today() - datetime.timedelta(days=365)
 if options.skip_date:
     skip_date = datetime.datetime.strptime(options.skip_date, "%Y-%m-%d").date()
 

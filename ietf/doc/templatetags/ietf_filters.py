@@ -10,14 +10,13 @@ from email.utils import parseaddr
 
 from django import template
 from django.conf import settings
-from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags
-from django.urls import reverse as urlreverse
-from django.utils import timezone
-from django.utils.encoding import force_str # pyflakes:ignore force_str is used in the doctests
-from django.utils.encoding import force_text
 from django.utils.html import escape
-from django.utils.html import strip_tags
+from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags
 from django.utils.safestring import mark_safe, SafeData
+from django.utils.html import strip_tags
+from django.utils.encoding import force_text
+from django.utils.encoding import force_str # pyflakes:ignore force_str is used in the doctests
+from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
@@ -277,7 +276,7 @@ def timesince_days(date):
     """Returns the number of days since 'date' (relative to now)"""
     if date.__class__ is not datetime.datetime:
         date = datetime.datetime(date.year, date.month, date.day)
-    delta = timezone.now() - date
+    delta = datetime.datetime.now() - date
     return delta.days
 
 @register.filter(name='truncate_ellipsis')

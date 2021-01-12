@@ -10,7 +10,6 @@ from django.conf import settings
 from django.contrib.auth import login
 from django.http import HttpResponse
 from django.shortcuts import render
-from django.utils import timezone
 from django.utils.encoding import force_bytes
 
 import debug                            # pyflakes:ignore
@@ -65,7 +64,7 @@ def require_api_key(f, request, *args, **kwargs):
     person = key.person
     last_login = person.user.last_login
     if not person.user.is_staff:
-        time_limit = (timezone.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS))
+        time_limit = (datetime.datetime.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS))
         if last_login == None or last_login < time_limit:
             return err(400, "Too long since last regular login")
     # Log in
@@ -75,7 +74,7 @@ def require_api_key(f, request, *args, **kwargs):
     person.user.save()
     # Update stats
     key.count += 1
-    key.latest = timezone.now()
+    key.latest = datetime.datetime.now()
     key.save()
     PersonApiKeyEvent.objects.create(person=person, type='apikey_login', key=key, desc="Logged in with key ID %s, endpoint %s" % (key.id, key.endpoint))
     # Execute decorated function

@@ -16,22 +16,22 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email 
 from django.db import transaction
 from django.http import HttpRequest     # pyflakes:ignore
-from django.utils import timezone
 from django.utils.module_loading import import_string
 
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, State, DocAlias, DocEvent, SubmissionDocEvent,
-    DocumentAuthor, AddedMessageEvent, NewRevisionDocEvent, RelatedDocument, DocRelationshipName )
-from ietf.community.utils import update_name_contains_indexes_with_new_doc
-from ietf.doc.mails import send_review_possibly_replaces_request
+    DocumentAuthor, AddedMessageEvent )
+from ietf.doc.models import NewRevisionDocEvent
+from ietf.doc.models import RelatedDocument, DocRelationshipName
 from ietf.doc.utils import add_state_change_event, rebuild_reference_relations
 from ietf.doc.utils import set_replaces_for_document
+from ietf.doc.mails import send_review_possibly_replaces_request
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import StreamName, FormalLanguageName
 from ietf.person.models import Person, Email
-from ietf.person.name import unidecode_name
+from ietf.community.utils import update_name_contains_indexes_with_new_doc
 from ietf.submit.mail import ( announce_to_lists, announce_new_version, announce_to_authors,
     send_approval_request_to_group, send_submission_confirmation, announce_new_wg_00 )
 from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName, SubmissionCheck
@@ -39,7 +39,7 @@ from ietf.utils import log
 from ietf.utils.accesstoken import generate_random_key
 from ietf.utils.draft import Draft
 from ietf.utils.mail import is_valid_email
-from ietf.utils.timezone import datetime_today
+from ietf.person.name import unidecode_name
 
 
 def validate_submission(submission):
@@ -305,7 +305,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
         if stream_slug:
             draft.stream = StreamName.objects.get(slug=stream_slug)
 
-    draft.expires = timezone.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
+    draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
     log.log(f"{submission.name}: got draft details")
 
     events = []
@@ -544,7 +544,7 @@ def ensure_person_email_info_exists(name, email, docname):
             email.active = active
         email.person = person
         if email.time is None:
-            email.time = timezone.now()
+            email.time = datetime.datetime.now()
         email.origin = "author: %s" % docname
         email.save()
 
@@ -639,7 +639,7 @@ def recently_approved_by_user(user, since):
     return res.filter(group__role__name="chair", group__role__person__user=user)
 
 def expirable_submissions(older_than_days):
-    cutoff = datetime_today() - datetime.timedelta(days=older_than_days)
+    cutoff = datetime.date.today() - datetime.timedelta(days=older_than_days)
     return Submission.objects.exclude(state__in=("cancel", "posted")).filter(submission_date__lt=cutoff)
 
 def expire_submission(submission, by):
@@ -760,7 +760,7 @@ def fill_in_submission(form, submission, authors, abstract, file_size):
     submission.file_size = file_size
     submission.file_types = ','.join(form.file_types)
     submission.xml_version = form.xml_version
-    submission.submission_date = timezone.now().date()
+    submission.submission_date = datetime.date.today()
     submission.document_date = form.parsed_draft.get_creation_date()
     submission.replaces = ""
 

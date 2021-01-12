@@ -27,7 +27,7 @@ from ietf.review.utils import (
     send_review_reminder_overdue_assignment, send_reminder_unconfirmed_assignments)
 from ietf.utils.log import log
 
-today = timezone.now().date()
+today = datetime.date.today()
 
 for assignment in review_assignments_needing_reviewer_reminder(today):
     email_reviewer_reminder(assignment)

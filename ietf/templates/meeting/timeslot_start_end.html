@@ -1,5 +1,5 @@
 	            {% if "-utc" in request.path %}
 	              {{item.timeslot.utc_start_time|date:"G:i"}}-{{item.timeslot.utc_end_time|date:"G:i"}}
 	            {% else %}
-	              {{item.timeslot.local_start_time|date:"G:i"}}-{{item.timeslot.local_end_time|date:"G:i"}}
+	              {{item.timeslot.time|date:"G:i"}}-{{item.timeslot.end_time|date:"G:i"}}
 	            {% endif %}

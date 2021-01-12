@@ -2,41 +2,37 @@
 # -*- coding: utf-8 -*-
 
 
-import datetime
-import os
-import pytz
-import re
-import shutil
 import time
-
+import datetime
+import shutil
+import os
+import re
 from unittest import skipIf
 
 import django
-from django.db.models import F
 from django.urls import reverse as urlreverse
 from django.utils.text import slugify
+from django.db.models import F
 #from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore
 
-from ietf import settings
 from ietf.doc.factories import DocumentFactory
 from ietf.doc.models import State
 from ietf.group import colors
-from ietf.group.factories import GroupFactory
+from ietf.person.models import Person
 from ietf.group.models import Group
+from ietf.group.factories import GroupFactory
 from ietf.meeting.factories import SessionFactory
+from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.models import (Schedule, SchedTimeSessAssignment, Session,
                                  Room, TimeSlot, Constraint, ConstraintName,
-                                 Meeting, SchedulingEvent, SessionStatusName,
-                                 Person)
-from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
+                                 Meeting, SchedulingEvent, SessionStatusName)
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.utils.pipe import pipe
 from ietf.utils.test_runner import IetfLiveServerTestCase
 from ietf.utils.test_utils import assert_ical_response_is_valid
-from ietf.utils.timezone import datetime_today_start
-
+from ietf import settings
 
 skip_selenium = False
 skip_message  = ""
@@ -268,14 +264,14 @@ class EditMeetingScheduleTests(MeetingTestCase):
         # hide timeslots
         self.driver.find_element_by_css_selector(".timeslot-group-toggles button").click()
         self.assertTrue(self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal").is_displayed())
-        self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal [value=\"{}\"]".format("ts-group-{}-{}".format(slot2.local_start_time().strftime("%Y%m%d-%H%M"), int(slot2.duration.total_seconds() / 60)))).click()
+        self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal [value=\"{}\"]".format("ts-group-{}-{}".format(slot2.time.strftime("%Y%m%d-%H%M"), int(slot2.duration.total_seconds() / 60)))).click()
         self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal [data-dismiss=\"modal\"]").click()
         self.assertTrue(not self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal").is_displayed())
 
         # swap days
-        self.driver.find_element_by_css_selector(".day [data-target=\"#swap-days-modal\"][data-dayid=\"{}\"]".format(slot4.local_date().isoformat())).click()
+        self.driver.find_element_by_css_selector(".day [data-target=\"#swap-days-modal\"][data-dayid=\"{}\"]".format(slot4.time.date().isoformat())).click()
         self.assertTrue(self.driver.find_element_by_css_selector("#swap-days-modal").is_displayed())
-        self.driver.find_element_by_css_selector("#swap-days-modal input[name=\"target_day\"][value=\"{}\"]".format(slot1.local_date().isoformat())).click()
+        self.driver.find_element_by_css_selector("#swap-days-modal input[name=\"target_day\"][value=\"{}\"]".format(slot1.time.date().isoformat())).click()
         self.driver.find_element_by_css_selector("#swap-days-modal button[type=\"submit\"]").click()
 
         self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{} #session{}'.format(slot4.pk, s1.pk)))
@@ -737,15 +733,13 @@ class AgendaTests(MeetingTestCase):
         # for others (break, reg, other):
         #   row-<meeting#>-<year>-<month>-<day>-<DoW>-<HHMM>-<group acro>-<session name slug>
         meeting_number = components[1]
-        meeting = Meeting.objects.get(number=meeting_number)
-        tz = pytz.timezone(meeting.time_zone)
-        start_time = tz.localize(datetime.datetime(
+        start_time = datetime.datetime(
             year=int(components[2]),
             month=int(components[3]),
             day=int(components[4]),
             hour=int(components[6][0:2]),
             minute=int(components[6][2:4]),
-        ))
+        )
         # If labeled as plenary, it's plenary...
         if components[7] == '1plenary':
             session_type = 'plenary'
@@ -761,7 +755,8 @@ class AgendaTests(MeetingTestCase):
             else:
                 # Last component was a group, this is a regular session
                 session_type = 'regular'
-
+        
+        meeting = Meeting.objects.get(number=meeting_number)
         possible_assignments = SchedTimeSessAssignment.objects.filter(
             schedule__in=[meeting.schedule, meeting.schedule.base],
             timeslot__time=start_time,
@@ -920,7 +915,7 @@ class InterimTests(MeetingTestCase):
 
         # Create a group with a plenary interim session for testing type filters
         somegroup = GroupFactory(acronym='sg', name='Some Group')
-        sg_interim = make_interim_meeting(somegroup, datetime_today_start() + datetime.timedelta(days=20))
+        sg_interim = make_interim_meeting(somegroup, datetime.date.today() + datetime.timedelta(days=20))
         sg_sess = sg_interim.session_set.first()
         sg_slot = sg_sess.timeslotassignments.first().timeslot
         sg_sess.type_id = 'plenary'
@@ -950,7 +945,7 @@ class InterimTests(MeetingTestCase):
             Session.objects.filter(
                 meeting__type_id='interim',
                 timeslotassignments__schedule=F('meeting__schedule'),
-                timeslotassignments__timeslot__time__gte=datetime_today_start()
+                timeslotassignments__timeslot__time__gte=datetime.datetime.today()
             )
         ).filter(current_status__in=('sched','canceled'))
         meetings = []
@@ -963,7 +958,7 @@ class InterimTests(MeetingTestCase):
     def all_ietf_meetings(self):
         meetings = Meeting.objects.filter(
             type_id='ietf',
-            date__gte=datetime_today_start()-datetime.timedelta(days=7)
+            date__gte=datetime.datetime.today()-datetime.timedelta(days=7)
         )
         for m in meetings:
             m.calendar_label = 'IETF %s' % m.number
@@ -1088,7 +1083,7 @@ class InterimTests(MeetingTestCase):
         expected_assignments = list(SchedTimeSessAssignment.objects.filter(
             schedule__in=expected_schedules,
             session__in=expected_interim_sessions,
-            timeslot__time__gte=datetime_today_start(),
+            timeslot__time__gte=datetime.date.today(),
         ))
         # The UID formats should match those in the upcoming.ics template
         expected_uids = [

@@ -7,14 +7,11 @@ import time
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person, PersonEvent
 from ietf.utils.mail import send_mail
-from ietf.utils.timezone import datetime_today
-
 
 class Command(BaseCommand):
     help = ("""
@@ -60,15 +57,15 @@ class Command(BaseCommand):
             except ValueError as e:
                 raise CommandError('%s' % e)
         else:
-            date = datetime_today() + datetime.timedelta(days=30)
-        days = (date - datetime_today()).days
+            date = datetime.date.today() + datetime.timedelta(days=30)
+        days = (date - datetime.date.today()).days
         if days <= 1:
             raise CommandError('date must be more than 1 day in the future')
         # --rate
         delay = 1.0/options['rate']
         # --minimum_interval
         minimum_interval = options['minimum_interval']
-        latest_previous = timezone.now() - datetime.timedelta(days=minimum_interval)
+        latest_previous = datetime.datetime.now() - datetime.timedelta(days=minimum_interval)
         # user
         self.stdout.write('Querying the database for matching person records ...')
         if 'user' in options and options['user']:

@@ -38,7 +38,7 @@ CLOCK_SKEW_COMPENSATION = 5 # seconds
 MAX_INTERVAL_ACCEPTED_BY_IANA = datetime.timedelta(hours=23)
 
 
-start = timezone.now() - datetime.timedelta(hours=23) + datetime.timedelta(seconds=CLOCK_SKEW_COMPENSATION)
+start = datetime.datetime.now() - datetime.timedelta(hours=23) + datetime.timedelta(seconds=CLOCK_SKEW_COMPENSATION)
 if options.start:
     start = datetime.datetime.strptime(options.start, "%Y-%m-%d %H:%M:%S")
 

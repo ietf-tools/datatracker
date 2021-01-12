@@ -10,7 +10,6 @@ from django.apps import apps
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import models
-from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -54,7 +53,7 @@ class Command(BaseCommand):
     def handle(self, *app_labels, **options):
         self.verbosity = options['verbosity']
         self.quiet = self.verbosity < 1
-        stop = timezone.now()
+        stop = datetime.datetime.now()
         start = stop - datetime.timedelta(days=14)
 
         for name, appconf in apps.app_configs.items():

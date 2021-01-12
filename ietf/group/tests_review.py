@@ -3,13 +3,11 @@
 
 
 import datetime
+import debug      # pyflakes:ignore
 
 from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
-from django.utils import html, timezone
-
-import debug      # pyflakes:ignore
 
 from ietf.review.policies import get_reviewer_queue_policy
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, reload_db_objects
@@ -34,8 +32,6 @@ from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.doc.factories import DocumentFactory
 from ietf.group.factories import RoleFactory, ReviewTeamFactory, GroupFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
-from ietf.utils.timezone import datetime_today, datetime_today_start, date2datetime
-
 
 class ReviewTests(TestCase):
     def test_review_requests(self):
@@ -46,9 +42,9 @@ class ReviewTests(TestCase):
         for url in [urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym }),
                     urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym , 'group_type': group.type_id})]:
             r = self.client.get(url)
-            self.assertResponseStatus(r, 200)
+            self.assertEqual(r.status_code, 200)
             self.assertContains(r, review_req.doc.name)
-            self.assertContains(r, html.escape(str(assignment.reviewer.person)).encode('utf-8'))
+            self.assertContains(r, str(assignment.reviewer.person).encode('utf-8'))
 
         url = urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym })
 
@@ -58,7 +54,7 @@ class ReviewTests(TestCase):
         review_req.save()
 
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, review_req.doc.name)
 
     def test_suggested_review_requests(self):
@@ -141,7 +137,7 @@ class ReviewTests(TestCase):
         doc.states.add(State.objects.get(type="draft-iesg", slug="lc", used=True))
         LastCallDocEvent.objects.create(
             doc=doc,
-            expires=timezone.now() + datetime.timedelta(days=365),
+            expires=datetime.datetime.now() + datetime.timedelta(days=365),
             by=Person.objects.get(name="(System)"),
             rev=doc.rev
         )
@@ -165,7 +161,7 @@ class ReviewTests(TestCase):
             review_request__doc=review_req1.doc,
             review_request__team=review_req1.team,
             review_request__type_id="early",
-            review_request__deadline=datetime_today_start() + datetime.timedelta(days=30),
+            review_request__deadline=datetime.date.today() + datetime.timedelta(days=30),
             review_request__state_id="assigned",
             review_request__requested_by=Person.objects.get(user__username="reviewer"),
             state_id = "accepted",
@@ -175,7 +171,7 @@ class ReviewTests(TestCase):
         UnavailablePeriod.objects.create(
             team=review_req1.team,
             person=reviewer,
-            start_date=datetime_today_start() - datetime.timedelta(days=10),
+            start_date=datetime.date.today() - datetime.timedelta(days=10),
             availability="unavailable",
         )
 
@@ -189,7 +185,7 @@ class ReviewTests(TestCase):
         for url in [urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym }),
                     urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })]:
             r = self.client.get(url)
-            self.assertResponseStatus(r, 200)
+            self.assertEqual(r.status_code, 200)
             self.assertContains(r, str(reviewer))
             self.assertContains(r, review_req1.doc.name)
             # without a login, reason for being unavailable should not be seen
@@ -198,19 +194,19 @@ class ReviewTests(TestCase):
         url = urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym })
         self.client.login(username="plain", password="plain+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         # not on review team, should not see reason for being unavailable
         self.assertNotContains(r, "Availability")
 
         self.client.login(username="reviewer", password="reviewer+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         # review team members can see reason for being unavailable
         self.assertContains(r, "Availability")
 
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         # secretariat can see reason for being unavailable
         self.assertContains(r, "Availability")
 
@@ -220,7 +216,7 @@ class ReviewTests(TestCase):
             review_request__doc=review_req2.doc,
             review_request__team=review_req2.team,
             review_request__type_id="lc",
-            review_request__deadline=datetime_today_start() - datetime.timedelta(days=30),
+            review_request__deadline=datetime.date.today() - datetime.timedelta(days=30),
             review_request__state_id="assigned",
             review_request__requested_by=Person.objects.get(user__username="reviewer"),
             state_id = "no-response",
@@ -228,7 +224,7 @@ class ReviewTests(TestCase):
         )
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         # We should see the new document with status of no response
         self.assertContains(r, "No Response")
         self.assertContains(r, review_req1.doc.name)
@@ -241,18 +237,18 @@ class ReviewTests(TestCase):
         review_req3 = ReviewRequestFactory(state_id='completed', team=team)
         ReviewAssignmentFactory(
             review_request__doc=review_req3.doc,
-            review_request__time=datetime_today_start() - datetime.timedelta(days=30),
+            review_request__time=datetime.date.today() - datetime.timedelta(days=30),
             review_request__team=review_req3.team,
             review_request__type_id="telechat",
-            review_request__deadline=datetime_today_start() - datetime.timedelta(days=25),
+            review_request__deadline=datetime.date.today() - datetime.timedelta(days=25),
             review_request__state_id="completed",
             review_request__requested_by=Person.objects.get(user__username="reviewer"),
             state_id = "completed",
             reviewer=reviewer.email_set.first(),
-            assigned_on=datetime_today_start() - datetime.timedelta(days=30)
+            assigned_on=datetime.date.today() - datetime.timedelta(days=30)
         )
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Completed")
         self.assertContains(r, review_req1.doc.name)
         self.assertContains(r, review_req2.doc.name)
@@ -262,18 +258,18 @@ class ReviewTests(TestCase):
         for i in range(10):
             ReviewAssignmentFactory(
                 review_request__doc=reqs[i].doc,
-                review_request__time=datetime_today_start() - datetime.timedelta(days=i*30),
+                review_request__time=datetime.date.today() - datetime.timedelta(days=i*30),
                 review_request__team=reqs[i].team,
                 review_request__type_id="telechat",
-                review_request__deadline=datetime_today_start() - datetime.timedelta(days=i*20),
+                review_request__deadline=datetime.date.today() - datetime.timedelta(days=i*20),
                 review_request__state_id="completed",
                 review_request__requested_by=Person.objects.get(user__username="reviewer"),
                 state_id = "completed",
                 reviewer=reviewer.email_set.first(),
-                assigned_on=datetime_today_start() - datetime.timedelta(days=i*30)
+                assigned_on=datetime.date.today() - datetime.timedelta(days=i*30)
             )
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Completed")
         self.assertContains(r, review_req1.doc.name)
         self.assertContains(r, review_req2.doc.name)
@@ -290,7 +286,7 @@ class ReviewTests(TestCase):
         secretary_settings.max_items_to_show_in_reviewer_list = 15
         secretary_settings.save()
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, review_req1.doc.name)
         self.assertContains(r, review_req2.doc.name)
         self.assertContains(r, review_req3.doc.name)
@@ -300,7 +296,7 @@ class ReviewTests(TestCase):
         secretary_settings.days_to_show_in_reviewer_list = 100
         secretary_settings.save()
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, review_req1.doc.name)
         self.assertContains(r, review_req2.doc.name)
         self.assertContains(r, review_req3.doc.name)
@@ -314,31 +310,31 @@ class ReviewTests(TestCase):
         review_req4 = ReviewRequestFactory(state_id='completed', team=team)
         ReviewAssignmentFactory(
             review_request__doc=review_req4.doc,
-            review_request__time=datetime_today_start() - datetime.timedelta(days=80),
+            review_request__time=datetime.date.today() - datetime.timedelta(days=80),
             review_request__team=review_req4.team,
             review_request__type_id="lc",
-            review_request__deadline=datetime_today_start() - datetime.timedelta(days=60),
+            review_request__deadline=datetime.date.today() - datetime.timedelta(days=60),
             review_request__state_id="assigned",
             review_request__requested_by=Person.objects.get(user__username="reviewer"),
             state_id = "accepted",
             reviewer=reviewer.email_set.first(),
-            assigned_on=datetime_today_start() - datetime.timedelta(days=80)
+            assigned_on=datetime.date.today() - datetime.timedelta(days=80)
         )
         review_req5 = ReviewRequestFactory(state_id='completed', team=team)
         ReviewAssignmentFactory(
             review_request__doc=review_req5.doc,
-            review_request__time=datetime_today_start() - datetime.timedelta(days=120),
+            review_request__time=datetime.date.today() - datetime.timedelta(days=120),
             review_request__team=review_req5.team,
             review_request__type_id="lc",
-            review_request__deadline=datetime_today_start() - datetime.timedelta(days=100),
+            review_request__deadline=datetime.date.today() - datetime.timedelta(days=100),
             review_request__state_id="assigned",
             review_request__requested_by=Person.objects.get(user__username="reviewer"),
             state_id = "accepted",
             reviewer=reviewer.email_set.first(),
-            assigned_on=datetime_today_start() - datetime.timedelta(days=120)
+            assigned_on=datetime.date.today() - datetime.timedelta(days=120)
         )
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, review_req1.doc.name)
         self.assertContains(r, review_req2.doc.name)
         self.assertContains(r, review_req3.doc.name)
@@ -353,7 +349,7 @@ class ReviewTests(TestCase):
         secretary_settings.max_items_to_show_in_reviewer_list = 1
         secretary_settings.save()
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, review_req1.doc.name)
         self.assertContains(r, review_req2.doc.name)
         self.assertNotContains(r, review_req3.doc.name)
@@ -387,7 +383,7 @@ class ReviewTests(TestCase):
 
         # get
         r = self.client.get(unassigned_url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, review_req1.doc.name)
         self.assertContains(r, doc_author.plain_name())
 
@@ -416,7 +412,7 @@ class ReviewTests(TestCase):
 
             "action": "save",
         })
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         review_req3 = reload_db_objects(review_req3)
         settings = ReviewerSettings.objects.filter(team=review_req3.team, person=another_reviewer).first()
@@ -441,7 +437,7 @@ class ReviewTests(TestCase):
         doc.states.add(State.objects.get(type="draft-iesg", slug="lc", used=True))
         LastCallDocEvent.objects.create(
             doc=doc,
-            expires=timezone.now() + datetime.timedelta(days=365),
+            expires=datetime.datetime.now() + datetime.timedelta(days=365),
             by=Person.objects.get(name="(System)"),
             rev=doc.rev
         )
@@ -453,7 +449,7 @@ class ReviewTests(TestCase):
 
         # get
         r = self.client.get(unassigned_url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, doc.name)
 
         # Submit as lc review
@@ -464,7 +460,7 @@ class ReviewTests(TestCase):
 
             "action": "save",
         })
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         review_request = doc.reviewrequest_set.get()
         self.assertEqual(review_request.type_id, 'lc')
         
@@ -479,7 +475,7 @@ class ReviewTests(TestCase):
 
             "action": "save",
         })
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         review_request = doc.reviewrequest_set.get()
         self.assertEqual(review_request.type_id, 'telechat')
         
@@ -487,7 +483,7 @@ class ReviewTests(TestCase):
         review_req1 = ReviewRequestFactory()
         review_assignment_completed = ReviewAssignmentFactory(review_request=review_req1,reviewer=EmailFactory(person__user__username='marschairman'), state_id='completed', reviewed_rev=0)
         ReviewAssignmentFactory(review_request=review_req1,reviewer=review_assignment_completed.reviewer)
-        TelechatDocEvent.objects.create(telechat_date=datetime_today(), type='scheduled_for_telechat', by=review_assignment_completed.reviewer.person, doc=review_req1.doc, rev=0)
+        TelechatDocEvent.objects.create(telechat_date=datetime.date.today(), type='scheduled_for_telechat', by=review_assignment_completed.reviewer.person, doc=review_req1.doc, rev=0)
 
         DBTemplateFactory.create(path='/group/defaults/email/open_assignments.txt',
                                  type_id='django',
@@ -516,7 +512,7 @@ class ReviewTests(TestCase):
         url = urlreverse(ietf.group.views.email_open_review_assignments, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })
 
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         generated_text = q("[name=body]").text()
         # The document should be listed both for the telechat, and in the last call section,
@@ -535,7 +531,7 @@ class ReviewTests(TestCase):
             "body": "Test body",
             "action": "email",
         })
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), 1)
         self.assertIn('toaddr', outbox[0]["To"])
         self.assertIn('ccaddr', outbox[0]["Cc"])
@@ -566,8 +562,8 @@ class ReviewTests(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
-        self.assertEqual(r.context['period_form']['start_date'].initial, timezone.now().date())
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.context['period_form']['start_date'].initial, datetime.date.today())
 
         # set settings
         empty_outbox()
@@ -580,7 +576,7 @@ class ReviewTests(TestCase):
             "request_assignment_next": "1",
             "expertise": "Some expertise",
         })
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         settings = ReviewerSettings.objects.get(person=reviewer, team=review_req.team)
         self.assertEqual(settings.min_interval, 7)
         self.assertEqual(settings.filter_re, "test-[regexp]")
@@ -603,12 +599,12 @@ class ReviewTests(TestCase):
             "remind_days_before_deadline": "6",
             "skip_next" : "2",
         })
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         settings = ReviewerSettings.objects.get(person=reviewer, team=review_req.team)
         self.assertEqual(settings.skip_next, 0)
 
         # add unavailable period
-        start_date = timezone.now().date() + datetime.timedelta(days=10)
+        start_date = datetime.date.today() + datetime.timedelta(days=10)
         empty_outbox()
         r = self.client.post(url, {
             "action": "add_period",
@@ -617,7 +613,7 @@ class ReviewTests(TestCase):
             'availability': "unavailable",
             'reason': "Whimsy",
         })
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         period = UnavailablePeriod.objects.get(person=reviewer, team=review_req.team, start_date=start_date)
         self.assertEqual(period.end_date, None)
         self.assertEqual(period.availability, "unavailable")
@@ -636,7 +632,7 @@ class ReviewTests(TestCase):
             'period_id': period.pk,
             'end_date': end_date.isoformat(),
         })
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         period = reload_db_objects(period)
         self.assertEqual(period.end_date, end_date)
         self.assertEqual(len(outbox), 1)
@@ -652,7 +648,7 @@ class ReviewTests(TestCase):
             "action": "delete_period",
             'period_id': period.pk,
         })
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertEqual(UnavailablePeriod.objects.filter(person=reviewer, team=review_req.team, start_date=start_date).count(), 0)
         self.assertEqual(len(outbox), 1)
         msg_content = get_payload_text(outbox[0])
@@ -671,7 +667,7 @@ class ReviewTests(TestCase):
                 "remind_days_before_deadline": "6",
                 "skip_next" : skip_next_val,
             })
-            self.assertResponseStatus(r, 302)
+            self.assertEqual(r.status_code, 302)
             settings = ReviewerSettings.objects.get(person=reviewer, team=review_req.team)
             self.assertEqual(settings.skip_next, int(skip_next_val))
             
@@ -693,7 +689,7 @@ class ReviewTests(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # set settings
         r = self.client.post(url, {
@@ -701,7 +697,7 @@ class ReviewTests(TestCase):
             "max_items_to_show_in_reviewer_list": 10,
             "days_to_show_in_reviewer_list": 365
         })
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         settings = ReviewSecretarySettings.objects.get(person=secretary, team=review_req.team)
         self.assertEqual(settings.remind_days_before_deadline, 6)
         self.assertEqual(settings.max_items_to_show_in_reviewer_list, 10)
@@ -727,7 +723,7 @@ class ReviewTests(TestCase):
         secretary_settings.remind_days_before_deadline = remind_days
         secretary_settings.save()
 
-        today = timezone.now().date()
+        today = datetime.date.today()
 
         review_req.reviewer = reviewer.email_set.first()
         review_req.deadline = today + datetime.timedelta(days=remind_days)
@@ -774,7 +770,7 @@ class ReviewTests(TestCase):
         secretary = RoleFactory(group=review_team, person__user__username='reviewsecretary',
                                 person__user__email='reviewsecretary@example.com', name_id='secr')
         empty_outbox()
-        today = timezone.now().date()
+        today = datetime.date.today()
         UnavailablePeriod.objects.create(
             team=review_team,
             person=reviewer.person,
@@ -819,26 +815,21 @@ class ReviewTests(TestCase):
         self.assertTrue(review_team.acronym in log[0])
 
     def test_send_review_reminder_overdue_assignment(self):
-        today = timezone.now().date()
+        today = datetime.date.today()
 
         # An assignment that's exactly on the date at which the grace period expires
         review_req = ReviewRequestFactory(state_id='assigned', deadline=today - datetime.timedelta(5))
         reviewer = RoleFactory(name_id='reviewer', group=review_req.team,person__user__username='reviewer').person
-        ReviewAssignmentFactory(review_request=review_req, state_id='assigned', assigned_on=review_req.time,
-                                reviewer=reviewer.email_set.first())
+        ReviewAssignmentFactory(review_request=review_req, state_id='assigned', assigned_on=review_req.time, reviewer=reviewer.email_set.first())
         secretary = RoleFactory(name_id='secr', group=review_req.team, person__user__username='reviewsecretary')
 
         # A assignment that is not yet overdue
-        not_overdue = date2datetime(today) + datetime.timedelta(days=1)
-        ReviewAssignmentFactory(review_request__team=review_req.team, review_request__state_id='assigned',
-                                review_request__deadline=not_overdue, state_id='assigned',
-                                assigned_on=not_overdue, reviewer=reviewer.email_set.first())
+        not_overdue = today + datetime.timedelta(days=1)
+        ReviewAssignmentFactory(review_request__team=review_req.team, review_request__state_id='assigned', review_request__deadline=not_overdue, state_id='assigned', assigned_on=not_overdue, reviewer=reviewer.email_set.first())
 
         # An assignment that is overdue but is not past the grace period
-        in_grace_period = date2datetime(today) - datetime.timedelta(days=1)
-        ReviewAssignmentFactory(review_request__team=review_req.team, review_request__state_id='assigned',
-                                review_request__deadline=in_grace_period, state_id='assigned',
-                                assigned_on=in_grace_period, reviewer=reviewer.email_set.first())
+        in_grace_period = today - datetime.timedelta(days=1)
+        ReviewAssignmentFactory(review_request__team=review_req.team, review_request__state_id='assigned', review_request__deadline=in_grace_period, state_id='assigned', assigned_on=in_grace_period, reviewer=reviewer.email_set.first())
 
         empty_outbox()
         log = send_review_reminder_overdue_assignment(today)
@@ -862,7 +853,7 @@ class ReviewTests(TestCase):
         ReviewerSettingsFactory(team=review_req.team, person=reviewer, remind_days_open_reviews=1)
 
         empty_outbox()
-        today = timezone.now().date()
+        today = datetime.date.today()
         log = send_reminder_all_open_reviews(today)
 
         self.assertEqual(len(outbox), 1)
@@ -882,7 +873,7 @@ class ReviewTests(TestCase):
         reviewer = RoleFactory(name_id='reviewer', group=review_req.team, person__user__username='reviewer').person
         ReviewAssignmentFactory(review_request=review_req, state_id='assigned', assigned_on=review_req.time, reviewer=reviewer.email_set.first())
         RoleFactory(name_id='secr', group=review_req.team, person__user__username='reviewsecretary')
-        today = timezone.now().date()
+        today = datetime.date.today()
         
         # By default, these reminders are disabled for all teams.
         empty_outbox()
@@ -936,7 +927,7 @@ class BulkAssignmentTests(TestCase):
         postdict['action'] = 'save'
         self.client.login(username=secretary.person.user.username,password=secretary.person.user.username+'+password')
         r = self.client.post(unassigned_url, postdict)
-        self.assertResponseStatus(r,302)
+        self.assertEqual(r.status_code,302)
         self.assertEqual(expected_ending_head_of_rotation, policy.default_reviewer_rotation_list()[0])
         self.assertMailboxContains(outbox, subject='Last Call assignment', text='Requested by', count=4)
      
@@ -947,13 +938,13 @@ class ResetNextReviewerInTeamTests(TestCase):
         url = urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym })
 
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertFalse(q('#reset_next_reviewer'))
 
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(q('#reset_next_reviewer'))
 
@@ -961,7 +952,7 @@ class ResetNextReviewerInTeamTests(TestCase):
         group.reviewteamsettings.save()
 
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertFalse(q('#reset_next_reviewer'))
 
@@ -971,10 +962,10 @@ class ResetNextReviewerInTeamTests(TestCase):
         for group in (GroupFactory(), ReviewTeamFactory(settings__reviewer_queue_policy_id='LeastRecentlyUsed')):
             url = urlreverse('ietf.group.views.reset_next_reviewer', kwargs=dict(acronym=group.acronym))
             r = self.client.get(url)
-            self.assertResponseStatus(r, 302)
+            self.assertEqual(r.status_code, 302)
             self.client.login(username='plain',password='plain+password')
             r = self.client.get(url)
-            self.assertResponseStatus(r, 404)
+            self.assertEqual(r.status_code, 404)
             self.client.logout()
 
         group = ReviewTeamFactory(settings__reviewer_queue_policy_id='RotateAlphabetically')
@@ -987,9 +978,9 @@ class ResetNextReviewerInTeamTests(TestCase):
         for user in (secr.user.username, 'secretary'):
             login_testing_unauthorized(self,user,url)
             r = self.client.get(url)
-            self.assertResponseStatus(r,200)
+            self.assertEqual(r.status_code,200)
             r = self.client.post(url,{'next_reviewer':reviewers[target_index].person.pk})
-            self.assertResponseStatus(r,302)
+            self.assertEqual(r.status_code,302)
             self.assertEqual(NextReviewerInTeam.objects.get(team=group).next_reviewer, reviewers[target_index].person)
             self.client.logout()
             target_index += 2

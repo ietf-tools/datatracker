@@ -7,6 +7,7 @@ import os
 import re
 import datetime
 import email
+import pytz
 import sys
 import tempfile
 import xml2rfc
@@ -16,9 +17,8 @@ from unidecode import unidecode
 
 from django import forms
 from django.conf import settings
-from django.urls import reverse as urlreverse
-from django.utils import timezone
 from django.utils.html import mark_safe # type:ignore
+from django.urls import reverse as urlreverse
 from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
@@ -40,8 +40,6 @@ from ietf.submit.parsers.xml_parser import XMLParser
 from ietf.utils import log
 from ietf.utils.draft import Draft
 from ietf.utils.text import normalize_text
-from ietf.utils.timezone import datetime_today
-
 
 class SubmissionBaseUploadForm(forms.Form):
     xml = forms.FileField(label='.xml format', required=True)
@@ -77,7 +75,7 @@ class SubmissionBaseUploadForm(forms.Form):
         self.base_formats = None        # None will raise an exception in clean() if this isn't changed in a subclass
 
     def set_cutoff_warnings(self):
-        now = timezone.now()
+        now = datetime.datetime.now(pytz.utc)
         meeting = Meeting.get_current_meeting()
         #
         cutoff_00 = meeting.get_00_cutoff()
@@ -375,7 +373,7 @@ class SubmissionBaseUploadForm(forms.Form):
                 raise forms.ValidationError(mark_safe(self.cutoff_warning))
 
             # check thresholds
-            today = datetime_today()
+            today = datetime.date.today()
 
             self.check_submissions_tresholds(
                 "for the draft %s" % self.filename,

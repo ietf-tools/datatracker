@@ -3,6 +3,7 @@
 
 
 import re
+import datetime
 import debug                            # pyflakes:ignore
 
 from typing import List, Optional   # pyflakes:ignore
@@ -11,8 +12,6 @@ from django.conf import settings
 from django.template.defaultfilters import filesizeformat
 
 from ietf.utils.mime import get_mime_type
-from ietf.utils.timezone import datetime_today
-
 
 class MetaData(object):
     rev = None
@@ -61,7 +60,7 @@ class FileParser(object):
         self.parse_max_size();
         self.parse_filename_extension()
         self.parse_file_type()
-        self.parsed_info.metadata.submission_date = datetime_today()
+        self.parsed_info.metadata.submission_date = datetime.date.today()
         return self.parsed_info
 
     def parse_invalid_chars_in_filename(self):

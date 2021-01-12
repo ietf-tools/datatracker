@@ -44,7 +44,6 @@ from django.urls import reverse as urlreverse
 from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
-from django.utils import timezone
 from django.utils.cache import _generate_cache_key # type: ignore
 
 
@@ -385,7 +384,7 @@ def ad_dashboard_sort_key(doc):
         ageseconds = 0
         changetime= doc.latest_event(type='changed_document')
         if changetime:
-            ad = (timezone.now()-doc.latest_event(type='changed_document').time)
+            ad = (datetime.datetime.now()-doc.latest_event(type='changed_document').time)
             ageseconds = (ad.microseconds + (ad.seconds + ad.days * 24 * 3600) * 10**6) / 10**6
         return "1%d%s%s%010d" % (state[0].order,seed,doc.type.slug,ageseconds)
 
@@ -486,7 +485,7 @@ def drafts_in_iesg_process(request):
             })
 
 def recent_drafts(request, days=7):
-    since = timezone.now()-datetime.timedelta(days=days)
+    since = datetime.datetime.now()-datetime.timedelta(days=days)
     state = State.objects.get(type='draft', slug='active')
     events = NewRevisionDocEvent.objects.filter(time__gt=since)
     names = [ e.doc.name for e in events ]

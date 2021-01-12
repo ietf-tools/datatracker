@@ -7,19 +7,18 @@ import io
 import os
 import shutil
 
-from io import StringIO
-from pyquery import PyQuery
+import debug    # pyflakes:ignore
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.urls import reverse as urlreverse
 from django.db.models import Q
-from django.utils import timezone
-
-import debug    # pyflakes:ignore
+from io import StringIO
+from pyquery import PyQuery
 
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox
+
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.liaisons.factories import ( LiaisonStatementFactory, 
     LiaisonStatementEventFactory, LiaisonStatementAttachmentFactory, )
@@ -29,7 +28,6 @@ from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.liaisons.mails import send_sdo_reminder, possibly_send_deadline_reminder
 from ietf.liaisons.views import contacts_from_roles
-from ietf.utils.timezone import datetime_today
 
 # -------------------------------------------------
 # Helper Functions
@@ -64,40 +62,40 @@ class LiaisonTests(TestCase):
         liaison = LiaisonStatementFactory()
 
         r = self.client.get(urlreverse('ietf.liaisons.views.liaison_list'))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, liaison.title)
 
     def test_details(self):
         liaison = LiaisonStatementFactory()
 
         r = self.client.get(urlreverse("ietf.liaisons.views.liaison_detail", kwargs={ 'object_id': liaison.pk }))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, liaison.title)
 
     def test_feeds(self):
         liaison = LiaisonStatementFactory(title="Comment from United League of Marsmen")
 
         r = self.client.get('/feed/liaison/recent/')
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, liaison.title)
 
         r = self.client.get('/feed/liaison/from/%s/' % liaison.from_groups.first().acronym)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, liaison.title)
 
         r = self.client.get('/feed/liaison/to/%s/' % liaison.to_groups.first().acronym)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, liaison.title)
 
         r = self.client.get('/feed/liaison/subject/marsmen/')
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, liaison.title)
 
     def test_sitemap(self):
         liaison = LiaisonStatementFactory()
 
         r = self.client.get('/sitemap-liaison.xml')
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, urlreverse("ietf.liaisons.views.liaison_detail", kwargs={ 'object_id': liaison.pk }))
 
     def test_help_pages(self):
@@ -193,7 +191,7 @@ class AjaxTests(TestCase):
         url = urlreverse('ietf.liaisons.views.ajax_get_liaison_info') + "?to_groups=&from_groups="
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         data = r.json()
         self.assertEqual(data["error"], False)
         self.assertEqual(data["post_only"], False)
@@ -211,7 +209,7 @@ class AjaxTests(TestCase):
         url = urlreverse('ietf.liaisons.views.ajax_get_liaison_info') + "?to_groups={}&from_groups=".format(group.pk)
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         data = r.json()
         self.assertEqual(data["to_contacts"],['test@example.com'])
 
@@ -222,14 +220,14 @@ class AjaxTests(TestCase):
         url = urlreverse('ietf.liaisons.views.ajax_select2_search_liaison_statements') + "?q=%s" % liaison.title[:5]
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         data = r.json()
         self.assertTrue(liaison.pk in [ x['id'] for x in data ])
 
         # test id search
         url = urlreverse('ietf.liaisons.views.ajax_select2_search_liaison_statements') + "?q=%s" % liaison.pk
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         data = r.json()
         self.assertTrue(liaison.pk in [ x['id'] for x in data ])
 
@@ -238,7 +236,7 @@ class ManagementCommandTests(TestCase):
     def test_check_liaison_deadlines(self):
         from django.core.management import call_command
 
-        LiaisonStatementFactory(deadline=datetime_today()+datetime.timedelta(days=1))
+        LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
 
         out = io.StringIO()
         mailbox_before = len(outbox)
@@ -271,7 +269,7 @@ class LiaisonManagementTests(TestCase):
         url = urlreverse('ietf.liaisons.views.liaison_add', kwargs={'type':'incoming'})
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
     def test_add_comment(self):
         liaison = LiaisonStatementFactory()
@@ -280,7 +278,7 @@ class LiaisonManagementTests(TestCase):
         addurl = urlreverse('ietf.liaisons.views.add_comment',kwargs=dict(object_id=liaison.pk))
         url = urlreverse('ietf.liaisons.views.liaison_history',kwargs=dict(object_id=liaison.pk))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('Add Comment')")), 0)
         login_testing_unauthorized(self, "secretary", addurl)
@@ -290,7 +288,7 @@ class LiaisonManagementTests(TestCase):
 
         # Check add_comment page
         r = self.client.get(addurl)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("h1:contains('Add comment')")), 1)
         self.assertEqual(len(q("form div label:contains('Comment')")), 1)
@@ -300,25 +298,25 @@ class LiaisonManagementTests(TestCase):
         # public comment
         comment = 'Test comment'
         r = self.client.post(addurl, dict(comment=comment))
-        self.assertResponseStatus(r,302)
+        self.assertEqual(r.status_code,302)
         qs = liaison.liaisonstatementevent_set.filter(type='comment',desc=comment)
         self.assertTrue(qs.count(),1)
         
         # private comment
         r = self.client.post(addurl, dict(comment='Private comment',private=True),follow=True)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         self.assertContains(r, 'Private comment')
         self.client.logout()
         r = self.client.get(url)
         self.assertNotContains(r, 'Private comment')
 
     def test_taken_care_of(self):
-        liaison = LiaisonStatementFactory(deadline=datetime_today()+datetime.timedelta(days=1))
+        liaison = LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
 
         url = urlreverse('ietf.liaisons.views.liaison_detail', kwargs=dict(object_id=liaison.pk))
         # normal get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form input[name=do_action_taken]')), 0)
 
@@ -326,13 +324,13 @@ class LiaisonManagementTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
 
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form input[name=do_action_taken]')), 1)
 
         # mark action taken
         r = self.client.post(url, dict(do_action_taken="1"))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form input[name=do_action_taken]')), 0)
         liaison = LiaisonStatement.objects.get(id=liaison.id)
@@ -350,14 +348,14 @@ class LiaisonManagementTests(TestCase):
         url = urlreverse('ietf.liaisons.views.liaison_list', kwargs=dict(state='pending'))
         login_testing_unauthorized(self, "ad", url)
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, liaison.title)
 
         # check the detail page / unauthorized
         url = urlreverse('ietf.liaisons.views.liaison_detail', kwargs=dict(object_id=liaison.pk))
         self.client.logout()
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, liaison.title)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form input[name=approved]')), 0)
@@ -365,7 +363,7 @@ class LiaisonManagementTests(TestCase):
         # check the detail page / authorized
         self.client.login(username="ulm-liaiman", password="ulm-liaiman+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, liaison.title)
         q = PyQuery(r.content)
         from ietf.liaisons.utils import can_edit_liaison
@@ -376,7 +374,7 @@ class LiaisonManagementTests(TestCase):
         # approve
         mailbox_before = len(outbox)
         r = self.client.post(url, dict(approved="1"))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         liaison = LiaisonStatement.objects.get(id=liaison.id)
         self.assertTrue(liaison.approved)
@@ -387,8 +385,8 @@ class LiaisonManagementTests(TestCase):
         self.assertTrue(liaison.liaisonstatementevent_set.filter(type='posted'))
 
     def test_edit_liaison(self):
-        liaison = LiaisonStatementFactory(deadline=timezone.now().date()+datetime.timedelta(days=1))
-        LiaisonStatementEventFactory(statement=liaison,type_id='submitted', time=timezone.now()-datetime.timedelta(days=1))
+        liaison = LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
+        LiaisonStatementEventFactory(statement=liaison,type_id='submitted', time=datetime.datetime.now()-datetime.timedelta(days=1))
         LiaisonStatementEventFactory(statement=liaison,type_id='posted')
         from_group = liaison.from_groups.first()
         to_group = liaison.to_groups.first()
@@ -398,7 +396,7 @@ class LiaisonManagementTests(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form input[name=from_contact]')), 1)
 
@@ -421,7 +419,7 @@ class LiaisonManagementTests(TestCase):
                                   attach_file_1=test_file,
                                   attach_title_1="attachment",
                                   ))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         new_liaison = LiaisonStatement.objects.get(id=liaison.id)
         self.assertEqual(new_liaison.from_groups.first(), from_group)
@@ -460,7 +458,7 @@ class LiaisonManagementTests(TestCase):
 
         # public user no access
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('New incoming liaison')")), 0)
         r = self.client.get(addurl)
@@ -469,38 +467,38 @@ class LiaisonManagementTests(TestCase):
         # regular Chair no access
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('New incoming liaison')")), 0)
         r = self.client.get(addurl)
-        self.assertResponseStatus(r, 403)
+        self.assertEqual(r.status_code, 403)
 
         # Liaison Manager has access
         self.client.login(username="ulm-liaiman", password="ulm-liaiman+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('a.btn:contains("New incoming liaison")')), 1)
         r = self.client.get(addurl)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # Authorized Individual has access
         self.client.login(username="ulm-auth", password="ulm-auth+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('New incoming liaison')")), 1)
         r = self.client.get(addurl)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # Secretariat has access
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('New incoming liaison')")), 1)
         r = self.client.get(addurl)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
     def test_outgoing_access(self):
 
@@ -515,7 +513,7 @@ class LiaisonManagementTests(TestCase):
 
         # public user no access
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('New outgoing liaison')")), 0)
         r = self.client.get(addurl)
@@ -524,83 +522,83 @@ class LiaisonManagementTests(TestCase):
         # AD has access
         self.assertTrue(self.client.login(username="ad", password="ad+password"))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('New outgoing liaison')")), 1)
         r = self.client.get(addurl)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # WG Chair has access
         self.assertTrue(self.client.login(username="marschairman", password="marschairman+password"))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('New outgoing liaison')")), 1)
         r = self.client.get(addurl)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # WG Secretary has access
         self.assertTrue(self.client.login(username="mars-secr", password="mars-secr+password"))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('New outgoing liaison')")), 1)
         r = self.client.get(addurl)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # IETF Chair has access
         self.assertTrue(self.client.login(username="ietf-chair", password="ietf-chair+password"))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('New outgoing liaison')")), 1)
         r = self.client.get(addurl)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # IAB Chair has access
         self.assertTrue(self.client.login(username="iab-chair", password="iab-chair+password"))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('New outgoing liaison')")), 1)
         r = self.client.get(addurl)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # IAB Executive Director
         self.assertTrue(self.client.login(username="iab-execdir", password="iab-execdir+password"))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('New outgoing liaison')")), 1)
         r = self.client.get(addurl)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # Liaison Manager has access
         self.assertTrue(self.client.login(username="ulm-liaiman", password="ulm-liaiman+password"))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('a.btn:contains("New outgoing liaison")')), 1)
         r = self.client.get(addurl)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # Authorized Individual has no access
         self.assertTrue(self.client.login(username="ulm-auth", password="ulm-auth+password"))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('New outgoing liaison')")), 0)
         r = self.client.get(addurl)
-        self.assertResponseStatus(r, 403)
+        self.assertEqual(r.status_code, 403)
 
         # Secretariat has access
         self.assertTrue(self.client.login(username="secretary", password="secretary+password"))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('New outgoing liaison')")), 1)
         r = self.client.get(addurl)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
     def test_incoming_options(self):
         '''Check from_groups, to_groups options for different user classes'''
@@ -620,7 +618,7 @@ class LiaisonManagementTests(TestCase):
         # to_groups = all IETF entities
         login_testing_unauthorized(self, "ulm-liaiman", url)
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('select#id_from_groups option')), 1)
         self.assertEqual(len(q('select#id_to_groups option')), all_entity_count)
@@ -630,7 +628,7 @@ class LiaisonManagementTests(TestCase):
         # to_groups = all IETF entities
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         all_sdos = Group.objects.filter(type_id='sdo',state='active').count()
         self.assertEqual(len(q('select#id_from_groups option')), all_sdos)
@@ -654,7 +652,7 @@ class LiaisonManagementTests(TestCase):
         person = Person.objects.filter(role__name='chair',role__group__acronym='mars').first()
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         groups = Group.objects.filter(role__person=person,role__name='chair',state='active',type='wg')
         all_sdos = Group.objects.filter(state='active',type='sdo')
@@ -670,7 +668,7 @@ class LiaisonManagementTests(TestCase):
         # to_groups = all active SDOs
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         all_sdos = Group.objects.filter(type_id='sdo',state='active').count()
         self.assertEqual(len(q('select#id_from_groups option')), all_entity_count)
@@ -688,7 +686,7 @@ class LiaisonManagementTests(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form textarea[name=body]')), 1)
 
@@ -699,7 +697,7 @@ class LiaisonManagementTests(TestCase):
         from_groups = [ str(g.pk) for g in Group.objects.filter(type="sdo") ]
         to_group = Group.objects.get(acronym="mars")
         submitter = Person.objects.get(user__username="marschairman")
-        today = timezone.now().date()
+        today = datetime.date.today()
         related_liaison = liaison
         r = self.client.post(url,
                              dict(from_groups=from_groups,
@@ -720,7 +718,7 @@ class LiaisonManagementTests(TestCase):
                                   attach_title_1="attachment",
                                   send="1",
                                   ))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         l = LiaisonStatement.objects.all().order_by("-id")[0]
         self.assertEqual(l.from_groups.count(),2)
@@ -767,7 +765,7 @@ class LiaisonManagementTests(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form textarea[name=body]')), 1)
 
@@ -778,7 +776,7 @@ class LiaisonManagementTests(TestCase):
         from_group = Group.objects.get(acronym="mars")
         to_group = Group.objects.filter(type="sdo")[0]
         submitter = Person.objects.get(user__username="marschairman")
-        today = timezone.now().date()
+        today = datetime.date.today()
         related_liaison = liaison
         r = self.client.post(url,
                              dict(from_groups=str(from_group.pk),
@@ -799,7 +797,7 @@ class LiaisonManagementTests(TestCase):
                                   attach_title_1="attachment",
                                   send="1",
                                   ))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         l = LiaisonStatement.objects.all().order_by("-id")[0]
         self.assertSequenceEqual(l.from_groups.all(), [from_group])
@@ -846,7 +844,7 @@ class LiaisonManagementTests(TestCase):
         from_group = Group.objects.get(acronym="mars")
         to_group = Group.objects.filter(type="sdo")[0]
         submitter = Person.objects.get(user__username="marschairman")
-        today = datetime_today()
+        today = datetime.date.today()
         r = self.client.post(url,
                              dict(from_groups=str(from_group.pk),
                                   from_contact=submitter.email_address(),
@@ -859,13 +857,13 @@ class LiaisonManagementTests(TestCase):
                                   body="body",
                                   post_only="1",
                                   ))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         l = LiaisonStatement.objects.all().order_by("-id")[0]
         self.assertEqual(l.state.slug,'pending')
         self.assertEqual(len(outbox), mailbox_before + 1)
 
     def test_liaison_add_attachment(self):
-        liaison = LiaisonStatementFactory(deadline=timezone.now().date()+datetime.timedelta(days=1))
+        liaison = LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
         LiaisonStatementEventFactory(statement=liaison,type_id='submitted')
 
         self.assertEqual(liaison.attachments.count(),0)
@@ -895,7 +893,7 @@ class LiaisonManagementTests(TestCase):
         #    q = PyQuery(r.content)
         #    print(q('div.has-error div.alert').text())
         #    print r.content
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertEqual(liaison.attachments.count(),1)
         event = liaison.liaisonstatementevent_set.order_by('id').last()
         self.assertTrue(event.desc.startswith('Added attachment'))
@@ -906,11 +904,11 @@ class LiaisonManagementTests(TestCase):
         url = urlreverse('ietf.liaisons.views.liaison_edit_attachment', kwargs=dict(object_id=attachment.statement_id,doc_id=attachment.document_id))
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         post_data = dict(title='New Title')
         r = self.client.post(url,post_data)
         attachment = LiaisonStatementAttachment.objects.get(pk=attachment.pk)
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertEqual(attachment.document.title,'New Title')
 
     def test_liaison_delete_attachment(self):
@@ -919,7 +917,7 @@ class LiaisonManagementTests(TestCase):
         url = urlreverse('ietf.liaisons.views.liaison_delete_attachment', kwargs=dict(object_id=liaison.pk,attach_id=attachment.pk))
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertEqual(liaison.liaisonstatementattachment_set.filter(removed=False).count(),0)
 
     def test_in_response(self):
@@ -933,7 +931,7 @@ class LiaisonManagementTests(TestCase):
         data['purpose'] = 'response'
         r = self.client.post(url,data)
         q = PyQuery(r.content)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertTrue(q("form .has-error"))
 
     def test_liaison_history(self):
@@ -942,7 +940,7 @@ class LiaisonManagementTests(TestCase):
         url = urlreverse('ietf.liaisons.views.liaison_history',kwargs=dict(object_id=liaison.pk))
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         event_count = liaison.liaisonstatementevent_set.count()
         self.assertEqual(len(q('tr')),event_count + 1)  # +1 for header row
 
@@ -954,7 +952,7 @@ class LiaisonManagementTests(TestCase):
 
         mailbox_before = len(outbox)
         r = self.client.get(url)
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue(liaison.liaisonstatementevent_set.filter(type='resent'))
@@ -971,7 +969,7 @@ class LiaisonManagementTests(TestCase):
         url = urlreverse('ietf.liaisons.views.liaison_detail', kwargs=dict(object_id=liaison.pk))
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, dict(dead="1"))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # need to reacquire object to check current state
         liaison = LiaisonStatement.objects.get(pk=liaison.pk)
@@ -985,7 +983,7 @@ class LiaisonManagementTests(TestCase):
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         dead_liaison_count = LiaisonStatement.objects.filter(state='dead').count()
         self.assertEqual(len(q('tr')),dead_liaison_count + 1)  # +1 for header row
 
@@ -996,21 +994,21 @@ class LiaisonManagementTests(TestCase):
         # unauthorized, no reply to button
         url = urlreverse('ietf.liaisons.views.liaison_detail', kwargs=dict(object_id=liaison.pk))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('Reply to liaison')")), 0)
 
         # authorized
         self.client.login(username="ulm-liaiman", password="ulm-liaiman+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('Reply to liaison')")), 1)
 
         # check form initial values
         url = urlreverse('ietf.liaisons.views.liaison_reply', kwargs=dict(object_id=liaison.pk))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         reply_to_group_id = str(liaison.from_groups.first().pk)
         reply_from_group_id = str(liaison.to_groups.first().pk)
@@ -1023,21 +1021,21 @@ class LiaisonManagementTests(TestCase):
         LiaisonStatementEventFactory(type_id='posted', statement__body="Has recently in its body",statement__from_groups=[GroupFactory(type_id='sdo',acronym='ulm'),])
         # Statement 2
         s2 = LiaisonStatementEventFactory(type_id='posted', statement__body="That word does not occur here", statement__title="Nor does it occur here")
-        s2.time = timezone.utc.localize(datetime.datetime(2010,1,1))
+        s2.time=datetime.datetime(2010,1,1)
         s2.save()
 
         # test list only, no search filters
         url = urlreverse('ietf.liaisons.views.liaison_list')
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(len(q('tr')),3)        # two results
 
         # test 0 results
         url = urlreverse('ietf.liaisons.views.liaison_list') + "?text=gobbledygook&source=&destination=&start_date=&end_date="
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(len(q('tr')),0)        # no results
 
         # test body text
@@ -1048,21 +1046,21 @@ class LiaisonManagementTests(TestCase):
         url = urlreverse('ietf.liaisons.views.liaison_list') + "?text=recently&source=&destination=&start_date=&end_date="
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(len(q('tr')),2)        # one result
 
         # test from group
         url = urlreverse('ietf.liaisons.views.liaison_list') + "?text=&source=ulm&destination=&start_date=&end_date="
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(len(q('tr')),2)        # one result
 
         # test start date
         url = urlreverse('ietf.liaisons.views.liaison_list') + "?text=&source=&destination=&start_date=2015-01-01&end_date="
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(len(q('tr')),2)        # one result
 
     # -------------------------------------------------
@@ -1072,7 +1070,7 @@ class LiaisonManagementTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         url = urlreverse('ietf.liaisons.views.redirect_add')
         r = self.client.get(url)
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
     def test_redirect_for_approval(self):
         liaison = LiaisonStatementFactory(state_id='pending')
@@ -1080,10 +1078,10 @@ class LiaisonManagementTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         url = urlreverse('ietf.liaisons.views.redirect_for_approval')
         r = self.client.get(url)
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         url = urlreverse('ietf.liaisons.views.redirect_for_approval', kwargs={'object_id':liaison.pk})
         r = self.client.get(url)
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
     # -------------------------------------------------
     # Form validations
@@ -1097,7 +1095,7 @@ class LiaisonManagementTests(TestCase):
 
         r = self.client.post(url,get_liaison_post_data(),follow=True)
 
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'As an IETF Liaison Manager you can not send incoming liaison statements')
 
     def test_deadline_field(self):
@@ -1120,7 +1118,7 @@ class LiaisonManagementTests(TestCase):
         r = self.client.post(url,post_data,follow=True)
 
         q = PyQuery(r.content)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         result = q('#id_technical_contacts').parent().parent('.has-error')
         result = q('#id_action_holder_contacts').parent().parent('.has-error')
         result = q('#id_cc_contacts').parent().parent('.has-error')
@@ -1137,7 +1135,7 @@ class LiaisonManagementTests(TestCase):
         post_data['body'] = ''
         r = self.client.post(url,post_data,follow=True)
 
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'You must provide a body or attachment files')
 
     def test_send_sdo_reminder(self):
@@ -1150,7 +1148,7 @@ class LiaisonManagementTests(TestCase):
         self.assertTrue('ulm-liaiman@' in outbox[-1]['To'])
 
     def test_send_liaison_deadline_reminder(self):
-        liaison = LiaisonStatementFactory(deadline=timezone.now().date()+datetime.timedelta(days=1))
+        liaison = LiaisonStatementFactory(deadline=datetime.date.today()+datetime.timedelta(days=1))
 
         mailbox_before = len(outbox)
         possibly_send_deadline_reminder(liaison)

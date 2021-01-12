@@ -17,9 +17,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.encoding import force_bytes, force_text
-from django.utils import timezone
 
-import debug                  # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import group_template_edit, group_template_show
@@ -27,6 +25,7 @@ from ietf.name.models import NomineePositionStateName, FeedbackTypeName
 from ietf.group.models import Group, GroupEvent, Role 
 from ietf.message.models import Message
 from ietf.meeting.models import Meeting
+
 from ietf.nomcom.decorators import nomcom_private_key_required
 from ietf.nomcom.forms import (NominateForm, NominateNewPersonForm, FeedbackForm, QuestionnaireForm,
                                MergeNomineeForm, MergePersonForm, NomComTemplateForm, PositionForm,
@@ -44,8 +43,8 @@ from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person
 from ietf.utils import log
 from ietf.utils.response import permission_denied
-from ietf.utils.timezone import datetime_today, date2datetime
 
+import debug                  # pyflakes:ignore
 
 def index(request):
     nomcom_list = Group.objects.filter(type__slug='nomcom').order_by('acronym')
@@ -701,7 +700,7 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
     expiration_days = getattr(settings, 'DAYS_TO_EXPIRE_NOMINATION_LINK', None)
     if expiration_days:
         request_date = datetime.date(int(date[:4]), int(date[4:6]), int(date[6:]))
-        if timezone.now().date() > (request_date + datetime.timedelta(days=settings.DAYS_TO_EXPIRE_NOMINATION_LINK)):
+        if datetime.date.today() > (request_date + datetime.timedelta(days=settings.DAYS_TO_EXPIRE_NOMINATION_LINK)):
             permission_denied(request, "Link expired.")
 
     need_confirmation = True
@@ -951,7 +950,7 @@ def view_feedback_topic(request, year, topic_id):
     feedback_types = FeedbackTypeName.objects.filter(slug__in=['comment',])
 
     last_seen = TopicFeedbackLastSeen.objects.filter(reviewer=request.user.person,topic=topic).first()
-    last_seen_time = (last_seen and last_seen.time) or date2datetime(datetime.datetime(year=1,month=1,day=1))
+    last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1,month=1,day=1)
     if last_seen:
         last_seen.save()
     else:
@@ -973,7 +972,7 @@ def view_feedback_nominee(request, year, nominee_id):
     feedback_types = FeedbackTypeName.objects.filter(slug__in=settings.NOMINEE_FEEDBACK_TYPES)
 
     last_seen = FeedbackLastSeen.objects.filter(reviewer=request.user.person,nominee=nominee).first()
-    last_seen_time = (last_seen and last_seen.time) or date2datetime(datetime.datetime(year=1,month=1,day=1)) # 
+    last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1,month=1,day=1)
     if last_seen:
         last_seen.save()
     else:
@@ -1279,7 +1278,7 @@ def eligible(request, year):
     # This should probably be refined.  If the nomcom year is this year, then
     # today's date makes sense; for previous nomcoms, we should probably get
     # the date of the announcement of the Call for Volunteers, instead
-    date = datetime_today()
+    date = datetime.date.today()
     previous_five = ( Meeting.objects.filter(type='ietf',date__lte=date)
                         .exclude(city='').exclude(city='Virtual')
                         .order_by('-date')[:5] )

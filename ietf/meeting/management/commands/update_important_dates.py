@@ -5,7 +5,6 @@
 import datetime
 
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
@@ -30,7 +29,7 @@ class Command(BaseCommand):
             if not meeting:
                 self.stderr.write("\nMeeting not found: %s\n" % (m, ))
                 continue
-            if meeting.date < timezone.now().date() + datetime.timedelta(days=max_offset):
+            if meeting.date < datetime.date.today() + datetime.timedelta(days=max_offset):
                 self.stderr.write("\nMeeting %s: Won't change dates for meetings in the past or close future\n" % (meeting, ))
                 continue
             self.stdout.write('\n%s\n\n' % (meeting, ))

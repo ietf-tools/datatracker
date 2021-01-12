@@ -12,10 +12,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render
-from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-
-import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DeletedEvent, StateDocEvent, DocEvent
 from ietf.ietfauth.utils import role_required, has_role
@@ -121,12 +118,12 @@ def rfceditor_undo(request):
     events = []
     events.extend(StateDocEvent.objects.filter(
         state_type="draft-rfceditor",
-        time__gte=timezone.now() - datetime.timedelta(weeks=1)
+        time__gte=datetime.datetime.now() - datetime.timedelta(weeks=1)
     ).order_by("-time", "-id"))
 
     events.extend(DocEvent.objects.filter(
         type="sync_from_rfc_editor",
-        time__gte=timezone.now() - datetime.timedelta(weeks=1)
+        time__gte=datetime.datetime.now() - datetime.timedelta(weeks=1)
     ).order_by("-time", "-id"))
 
     events.sort(key=lambda e: (e.time, e.id), reverse=True)

@@ -1,12 +1,10 @@
 {% extends "base.html" %}
 {% load ams_filters %}
-{% load dateformat %}
-{% load origin %}
 
 {% block title %}IETF {{ meeting.number }} Proceedings - Progress Report{% endblock %}
 
 {% block content %}
-{% origin %}
+
 <h1><a href="{% url 'ietf.meeting.views.proceedings' num=meeting.number %}">IETF {{ meeting.number }} Proceedings</a></h1>
 <h2>IETF Progress Report</h2>
 
@@ -46,7 +44,7 @@
       <td><a href="{{ rfc.doc.get_absolute_url }}">{{ rfc.doc.canonical_name|upper }}</a></td>
       <td>{{ rfc.doc.intended_std_level.name|abbr_status }}</td>
       <td>({{ rfc.doc.group.acronym }})</td>
-      <td>{{ rfc.time|astimezone:settings.RFCED_TZ|date:"F Y" }}</td>
+      <td>{{ rfc.time|date:"F Y" }}</td>
       <td>{{ rfc.doc.title }}</td>
     </tr>
   {% endfor %}

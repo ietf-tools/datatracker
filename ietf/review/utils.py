@@ -7,18 +7,16 @@ import itertools
 
 from collections import defaultdict, namedtuple
 
-from django.contrib.sites.models import Site
 from django.db.models import Q, Max, F
 from django.template.defaultfilters import pluralize
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
-from django.utils import timezone
-
+from django.contrib.sites.models import Site
 from simple_history.utils import update_change_reason
 
 import debug                            # pyflakes:ignore
-
 from ietf.dbtemplate.models import DBTemplate
+
 from ietf.group.models import Group, Role
 from ietf.doc.models import (Document, ReviewRequestDocEvent, ReviewAssignmentDocEvent, State,
                              LastCallDocEvent, TelechatDocEvent)
@@ -32,8 +30,6 @@ from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewRequestSt
 from ietf.utils.mail import send_mail
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 from ietf.utils import log
-from ietf.utils.timezone import datetime_today, date2datetime
-
 
 # The origin date is used to have a single reference date for "every X days".
 # This date is arbitrarily chosen and has no special meaning, but should be consistent.
@@ -93,12 +89,12 @@ def no_review_from_teams_on_doc(doc, rev):
 
 def unavailable_periods_to_list(past_days=14):
     return UnavailablePeriod.objects.filter(
-        Q(end_date=None) | Q(end_date__gte=datetime_today() - datetime.timedelta(days=past_days)),
+        Q(end_date=None) | Q(end_date__gte=datetime.date.today() - datetime.timedelta(days=past_days)),
     ).order_by("start_date")
 
 def current_unavailable_periods_for_reviewers(team):
     """Return dict with currently active unavailable periods for reviewers."""
-    today = datetime_today()
+    today = datetime.date.today()
 
     unavailable_period_qs = UnavailablePeriod.objects.filter(
         Q(end_date__gte=today) | Q(end_date=None),
@@ -123,7 +119,7 @@ def days_needed_to_fulfill_min_interval_for_reviewers(team):
 
     min_intervals = dict(ReviewerSettings.objects.filter(team=team).values_list("person_id", "min_interval"))
 
-    now = timezone.now()
+    now = datetime.datetime.now()
 
     res = {}
     for person_id, latest_assignment_time in latest_assignments.items():
@@ -193,7 +189,7 @@ def extract_review_assignment_data(teams=None, reviewers=None, time_from=None, t
         assigned_time = assigned_on
         closed_time = completed_on
 
-        late_days = positive_days(date2datetime(deadline), closed_time)
+        late_days = positive_days(datetime.datetime.combine(deadline, datetime.time.max), closed_time)
         request_to_assignment_days = positive_days(requested_time, assigned_time)
         assignment_to_closure_days = positive_days(assigned_time, closed_time)
         request_to_closure_days = positive_days(requested_time, closed_time)
@@ -284,7 +280,7 @@ def latest_review_assignments_for_reviewers(team, days_back=365):
 
     extracted_data = extract_review_assignment_data(
         teams=[team],
-        time_from=datetime_today() - datetime.timedelta(days=days_back),
+        time_from=datetime.date.today() - datetime.timedelta(days=days_back),
         ordering=["reviewer"],
     )
 
@@ -385,7 +381,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
         review_req.state_id = 'assigned'
         review_req.save()
         
-    assignment = review_req.reviewassignment_set.create(state_id='assigned', reviewer = reviewer, assigned_on = timezone.now())
+    assignment = review_req.reviewassignment_set.create(state_id='assigned', reviewer = reviewer, assigned_on = datetime.datetime.now())
 
     from ietf.review.policies import get_reviewer_queue_policy
     get_reviewer_queue_policy(review_req.team).update_policy_state_for_assignment(reviewer.person, add_skip)
@@ -499,7 +495,7 @@ def suggested_review_requests_for_team(team):
 
     requests = {}
 
-    now = timezone.now()
+    now = datetime.datetime.now()
 
     reviewable_docs_qs = Document.objects.filter(type="draft").exclude(stream="ise")
 
@@ -860,7 +856,7 @@ def email_reviewer_reminder(assignment):
     review_request = assignment.review_request
     team = review_request.team
 
-    deadline_days = (review_request.deadline - timezone.now().date()).days
+    deadline_days = (review_request.deadline - datetime.date.today()).days
 
     subject = "Reminder: deadline for review of {} in {} is {}".format(review_request.doc.name, team.acronym, review_request.deadline.isoformat())
 
@@ -905,7 +901,7 @@ def email_secretary_reminder(assignment, secretary_role):
     review_request = assignment.review_request
     team = review_request.team
 
-    deadline_days = (review_request.deadline - timezone.now().date()).days
+    deadline_days = (review_request.deadline - datetime.date.today()).days
 
     subject = "Reminder: deadline for review of {} in {} is {}".format(review_request.doc.name, team.acronym, review_request.deadline.isoformat())
 

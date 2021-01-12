@@ -16,7 +16,6 @@ from django.conf import settings
 from django.core.files import File
 from django.contrib.auth.models import User
 from django.urls import reverse
-from django.utils import timezone
 from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
@@ -42,8 +41,6 @@ from ietf.person.models import Email, Person
 from ietf.stats.models import MeetingRegistration
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
-from ietf.utils.timezone import datetime_today
-
 
 client_test_cert_files = None
 
@@ -165,7 +162,7 @@ class NomcomViewsTest(TestCase):
         test_data = {"action": "set_as_accepted",
                      "selected": [nom_pos.pk]}
         r = self.client.post(self.private_index_url, test_data)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(q('.alert-success'))
         self.assertEqual(NomineePosition.objects.filter(state='accepted').count (), 1)
@@ -177,7 +174,7 @@ class NomcomViewsTest(TestCase):
         test_data = {"action": "set_as_declined",
                      "selected": [nom_pos.pk]}
         r = self.client.post(self.private_index_url, test_data)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(q('.alert-success'))
         self.assertEqual(NomineePosition.objects.filter(state='declined').count (), 1)
@@ -189,7 +186,7 @@ class NomcomViewsTest(TestCase):
         test_data = {"action": "set_as_pending",
                      "selected": [nom_pos.pk]}
         r = self.client.post(self.private_index_url, test_data)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(q('.alert-success'))
         self.assertEqual(NomineePosition.objects.filter(state='pending').count (), 1)
@@ -471,7 +468,7 @@ class NomcomViewsTest(TestCase):
             'reminderdates_set-0-id': str(list(reminder_dates.keys())[0]),
             'reminderdates_set-0-date': '',
         })
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # Check that reminder date has been removed
         reminder_dates = dict([ (d.id,str(d.date)) for d in ReminderDates.objects.filter(nomcom=nomcom) ])
@@ -488,7 +485,7 @@ class NomcomViewsTest(TestCase):
         login_testing_unauthorized(self, CHAIR_USER, self.edit_position_url)
         test_data = {"action" : "add", "name": "testpos" }
         r = self.client.post(self.edit_position_url, test_data)
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertEqual(nomcom.position_set.all().count(), count+1)
 
 
@@ -513,7 +510,7 @@ class NomcomViewsTest(TestCase):
         msg.related_groups.add(nomcom)
         
         r = self.client.get(reverse('ietf.nomcom.views.announcements'))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, ("Messages from %s" % nomcom.time.year))
         self.assertContains(r, nomcom.role_set.filter(name="chair")[0].person.email_address())
         self.assertContains(r, msg.subject)
@@ -1028,7 +1025,7 @@ class ReminderTest(TestCase):
         rai = Position.objects.get(nomcom=self.nomcom,name='RAI')
         iab = Position.objects.get(nomcom=self.nomcom,name='IAB')
 
-        today = datetime_today()
+        today = datetime.date.today()
         t_minus_3 = today - datetime.timedelta(days=3)
         t_minus_4 = today - datetime.timedelta(days=4)
         e1 = EmailFactory(address="nominee1@example.org", person=PersonFactory(name="Nominee 1"), origin='test')
@@ -1063,7 +1060,7 @@ class ReminderTest(TestCase):
 
     def test_is_time_to_send(self):
         self.nomcom.reminder_interval = 4
-        today = datetime_today()
+        today = datetime.date.today()
         self.assertTrue(is_time_to_send(self.nomcom,today+datetime.timedelta(days=4),today))
         for delta in range(4):
             self.assertFalse(is_time_to_send(self.nomcom,today+datetime.timedelta(days=delta),today))
@@ -1167,7 +1164,7 @@ class InactiveNomcomTests(TestCase):
             self.assertIn( 'closed', q('.alert-warning').text())
 
     def test_acceptance_closed(self):
-        today = datetime_today().strftime('%Y%m%d')
+        today = datetime.date.today().strftime('%Y%m%d')
         pid = self.nc.position_set.first().nomineeposition_set.order_by('pk').first().id 
         url = reverse('ietf.nomcom.views.process_nomination_status', kwargs = {
                       'year' : self.nc.year(),
@@ -1322,7 +1319,7 @@ class FeedbackLastSeenTests(TestCase):
             f.nominees.add(self.nominee)
         f = FeedbackFactory.create(author=self.author,nomcom=self.nc,type_id='comment')
         f.topics.add(self.topic)
-        now = timezone.now() 
+        now = datetime.datetime.now() 
         self.hour_ago = now - datetime.timedelta(hours=1)
         self.half_hour_ago = now - datetime.timedelta(minutes=30)
         self.second_from_now = now + datetime.timedelta(seconds=1)
@@ -1369,8 +1366,6 @@ class FeedbackLastSeenTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        with open('test_feedback_nominee_badges.html', 'wb') as file:
-            file.write(response.content)
         self.assertEqual( len(q('.label-success')), 3 )
 
         f = self.nc.feedback_set.first()
@@ -1821,7 +1816,7 @@ Junk body for testing
             assert year >= 1991
             return (year-1985)*3+2
         # Create meetings to ensure we have the 'last 5'
-        meeting_start = first_meeting_of_year(datetime_today().year-2)
+        meeting_start = first_meeting_of_year(datetime.date.today().year-2)
         # Populate the meeting registration records
         for number in range(meeting_start, meeting_start+10):
             meeting = MeetingFactory.create(type_id='ietf', number=number)
@@ -2104,9 +2099,9 @@ class TopicTests(TestCase):
             self.assertNotContains(r, topic.subject)
             topic_url = feedback_url + '?topic=%d'%topic.pk
             r = self.client.get(topic_url)
-            self.assertResponseStatus(r,404)
+            self.assertEqual(r.status_code,404)
             r = self.client.post(topic_url, {'comment_text':'junk', 'confirmation':False})
-            self.assertResponseStatus(r,404)
+            self.assertEqual(r.status_code,404)
 
             self.client.logout()
             if audience == 'nomcom':
@@ -2117,8 +2112,8 @@ class TopicTests(TestCase):
             r = self.client.get(feedback_url)
             self.assertContains(r, topic.subject)
             r = self.client.get(topic_url)
-            self.assertResponseStatus(r,200)
+            self.assertEqual(r.status_code,200)
             r = self.client.post(topic_url, {'comment_text':'junk', 'confirmation':False})
-            self.assertResponseStatus(r,200)
+            self.assertEqual(r.status_code,200)
             self.assertEqual(topic.feedback_set.count(),1)
             self.client.logout()

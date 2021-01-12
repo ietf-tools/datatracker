@@ -7,15 +7,14 @@ import glob
 import itertools
 import os
 
+import debug                            # pyflakes:ignore
+
 from django.conf import settings
 from django.contrib import messages
 from django.urls import reverse
 from django.db.models import Max
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
-from django.utils import timezone
-
-import debug                            # pyflakes:ignore
 
 from ietf.secr.utils.decorators import sec_only
 from ietf.secr.utils.group import get_my_groups
@@ -25,9 +24,9 @@ from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.meeting.models import Meeting, Session
 from ietf.meeting.utils import add_event_info_to_session_qs
+
 from ietf.secr.proceedings.forms import RecordingForm, RecordingEditForm 
 from ietf.secr.proceedings.proc_utils import (create_recording)
-
 
 # -------------------------------------------------
 # Globals 
@@ -155,7 +154,7 @@ def main(request):
         meetings = Meeting.objects.filter(type='ietf').order_by('-number')
     else:
         # select meetings still within the cutoff period
-        today = timezone.now().date()
+        today = datetime.date.today()
         meetings = [m for m in Meeting.objects.filter(type='ietf').order_by('-number') if m.get_submission_correction_date()>=today]
 
     groups = get_my_groups(request.user)
@@ -166,7 +165,7 @@ def main(request):
         m.group = m.session_set.first().group
 
     # we today's date to see if we're past the submissio cutoff
-    today = timezone.now().date()
+    today = datetime.date.today()
 
     return render(request, 'proceedings/main.html',{
         'meetings': meetings,

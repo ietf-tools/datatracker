@@ -1,4 +1,4 @@
-{% load origin ietf_filters textfilters tz dateformat %}{% origin %}{% localtime off %}
+{% load origin ietf_filters textfilters tz dateformat %}{% origin %}
 
   {% for session in sessions %}
     {% with item=session.official_timeslotassignment %}
@@ -152,4 +152,3 @@
       </div>
     {% endwith %}
   {% endfor %}
-{% endlocaltime %}

@@ -27,7 +27,6 @@ from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils.timezone import datetime_today
 
 class ViewCharterTests(TestCase):
     def test_view_revisions(self):
@@ -114,13 +113,13 @@ class EditCharterTests(TestCase):
 
             # normal get
             r = self.client.get(url)
-            self.assertResponseStatus(r, 200)
+            self.assertEqual(r.status_code, 200)
 
             # post
             self.write_charter_file(charter)
 
             r = self.client.post(url, dict(message="test message"))
-            self.assertResponseStatus(r, 302)
+            self.assertEqual(r.status_code, 302)
             if option == "abandon":
                 self.assertTrue("abandoned" in charter.latest_event(type="changed_document").desc.lower())
                 telechat_doc_event = charter.latest_event(TelechatDocEvent)
@@ -153,13 +152,13 @@ class EditCharterTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form select[name=charter_state]')), 1)
         
         # faulty post
         r = self.client.post(url, dict(charter_state="-12345"))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form .has-error')) > 0)
         self.assertEqual(charter.get_state(), first_state)
@@ -172,7 +171,7 @@ class EditCharterTests(TestCase):
             empty_outbox()
         
             r = self.client.post(url, dict(charter_state=str(s.pk), message="test message"))
-            self.assertResponseStatus(r, 302)
+            self.assertEqual(r.status_code, 302)
         
             charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
             self.assertEqual(charter.get_state_slug(), slug)
@@ -229,7 +228,7 @@ class EditCharterTests(TestCase):
         url = urlreverse('ietf.doc.views_charter.change_state', kwargs=dict(name=charter.name))
         empty_outbox()
         r = self.client.post(url, dict(charter_state=str(State.objects.get(used=True,type="charter",slug="intrev").pk), message="test"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertTrue("A new charter" in get_payload_text(outbox[-3]))
 
     def test_change_rg_state(self):
@@ -246,7 +245,7 @@ class EditCharterTests(TestCase):
         empty_outbox()
     
         r = self.client.post(url, dict(charter_state=str(s.pk), message="test message"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
     
         self.assertIn("Internal RG Review", outbox[-3]['Subject'])
         self.assertIn("iab@", outbox[-3]['To'])
@@ -309,12 +308,12 @@ class EditCharterTests(TestCase):
 
         # get the charter state change page
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # put the charter in "intrev" state
         s = State.objects.get(used=True, type="charter", slug="intrev")
         r = self.client.post(url, dict(charter_state=str(s.pk), message="test message"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertEqual(charter.get_state_slug(), "intrev")
         self.assertTrue(charter.ballot_open("r-extrev"))
 
@@ -322,12 +321,12 @@ class EditCharterTests(TestCase):
 
         # get the charter state change page again
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # put the charter in "extrev" state without closing the previous ballot
         s = State.objects.get(used=True, type="charter", slug="extrev")
         r = self.client.post(url, dict(charter_state=str(s.pk), message="test message"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
         self.assertEqual(charter.get_state_slug(), "extrev")
         self.assertTrue(charter.ballot_open("approve"))
@@ -346,12 +345,12 @@ class EditCharterTests(TestCase):
 
         # get the charter state change page for a third time
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # put the charter back in "intrev" state without closing the previous ballot
         s = State.objects.get(used=True, type="charter", slug="intrev")
         r = self.client.post(url, dict(charter_state=str(s.pk), message="test message"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
         self.assertEqual(charter.get_state_slug(), "intrev")
         self.assertTrue(charter.ballot_open("r-extrev"))
@@ -371,13 +370,13 @@ class EditCharterTests(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # add to telechat
         self.assertTrue(not charter.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
         telechat_date = TelechatDate.objects.active()[0].date
         r = self.client.post(url, dict(name=group.name, acronym=group.acronym, telechat_date=telechat_date.isoformat()))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name=charter.name)
         self.assertTrue(charter.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
@@ -386,7 +385,7 @@ class EditCharterTests(TestCase):
         # change telechat
         telechat_date = TelechatDate.objects.active()[1].date
         r = self.client.post(url, dict(name=group.name, acronym=group.acronym, telechat_date=telechat_date.isoformat()))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name=charter.name)
         self.assertEqual(charter.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, telechat_date)
@@ -394,7 +393,7 @@ class EditCharterTests(TestCase):
         # remove from agenda
         telechat_date = ""
         r = self.client.post(url, dict(name=group.name, acronym=group.acronym, telechat_date=telechat_date))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name=charter.name)
         self.assertTrue(not charter.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date)
@@ -409,7 +408,7 @@ class EditCharterTests(TestCase):
 
         # Make it so that the charter has been through internal review, and passed its external review
         # ballot on a previous telechat 
-        last_week = datetime_today()-datetime.timedelta(days=7)
+        last_week = datetime.date.today()-datetime.timedelta(days=7)
         BallotDocEvent.objects.create(type='created_ballot',by=login,doc=charter, rev=charter.rev,
                                       ballot_type=BallotType.objects.get(doc_type=charter.type,slug='r-extrev'),
                                       time=last_week)
@@ -420,7 +419,7 @@ class EditCharterTests(TestCase):
         # Put the charter onto a future telechat and verify returning item is not set
         telechat_date = TelechatDate.objects.active()[1].date
         r = self.client.post(url, dict(name=group.name, acronym=group.acronym, telechat_date=telechat_date.isoformat()))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         
         charter = Document.objects.get(name=charter.name)
         telechat_event = charter.latest_event(TelechatDocEvent, "scheduled_for_telechat")
@@ -435,20 +434,20 @@ class EditCharterTests(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         # post
         self.assertTrue(not charter.notify)
         newlist = "someone@example.com, someoneelse@example.com"
         r = self.client.post(url, dict(notify=newlist,save_addresses="1"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name=charter.name)
         self.assertEqual(charter.notify, newlist)
 
         # Ask the form to regenerate the list
         r = self.client.post(url,dict(regenerate_addresses="1"))
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         charter= Document.objects.get(name=charter.name)
         # Regenerate does not save!
         self.assertEqual(charter.notify,newlist)
@@ -465,7 +464,7 @@ class EditCharterTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('select[name=ad]')),1)
 
@@ -473,7 +472,7 @@ class EditCharterTests(TestCase):
         self.assertTrue(not charter.ad)
         ad2 = Person.objects.get(name='Ad No2')
         r = self.client.post(url,dict(ad=str(ad2.pk)))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name=charter.name)
         self.assertEqual(charter.ad, ad2)
@@ -487,7 +486,7 @@ class EditCharterTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form input[name=txt]')), 1)
 
@@ -496,7 +495,7 @@ class EditCharterTests(TestCase):
         test_file.name = "unnamed"
 
         r = self.client.post(url, dict(txt=test_file))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "does not appear to be a text file")
 
         # post
@@ -508,7 +507,7 @@ class EditCharterTests(TestCase):
         test_file.name = "unnamed"
 
         r = self.client.post(url, dict(txt=test_file))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
         self.assertEqual(charter.rev, next_revision(prev_rev))
@@ -525,7 +524,7 @@ class EditCharterTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form input[name=txt]')), 1)
 
@@ -534,7 +533,7 @@ class EditCharterTests(TestCase):
         test_file.name = "unnamed"
 
         r = self.client.post(url, dict(txt=test_file))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
         self.assertEqual(charter.rev, "00-00")
@@ -555,7 +554,7 @@ class EditCharterTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=announcement_text]')), 1)
         self.assertEqual(len(q('textarea[name=new_work_text]')), 1)
@@ -602,7 +601,7 @@ class EditCharterTests(TestCase):
                 announcement_text="This is a simple test.",
                 new_work_text="New work gets something different.",
                 save_text="1"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertTrue("This is a simple test" in charter.latest_event(WriteupDocEvent, type="changed_review_announcement").text)
         self.assertTrue("New work gets something different." in charter.latest_event(WriteupDocEvent, type="changed_new_work_text").text)
 
@@ -611,7 +610,7 @@ class EditCharterTests(TestCase):
                 announcement_text="This is a simple test.",
                 new_work_text="Too simple perhaps?",
                 regenerate_text="1"))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         charter = Document.objects.get(name=charter.name)
         self.assertTrue(group.name in charter.latest_event(WriteupDocEvent, type="changed_review_announcement").text)
@@ -641,7 +640,7 @@ class EditCharterTests(TestCase):
                 announcement_text=announcement_text,
                 new_work_text=new_work_text,
                 send_both="1"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), 2)
         self.assertTrue(all(['RG Review' in m['Subject'] for m in outbox]))
         self.assertTrue('ietf-announce@' in outbox[0]['To'])
@@ -664,7 +663,7 @@ class EditCharterTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=announcement_text]')), 1)
 
@@ -672,7 +671,7 @@ class EditCharterTests(TestCase):
         r = self.client.post(url, dict(
                 announcement_text="This is a simple test.",
                 save_text="1"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         charter = Document.objects.get(name=charter.name)
         self.assertTrue("This is a simple test" in charter.latest_event(WriteupDocEvent, type="changed_action_announcement").text)
 
@@ -680,7 +679,7 @@ class EditCharterTests(TestCase):
         r = self.client.post(url, dict(
                 announcement_text="This is a simple test.",
                 regenerate_text="1"))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         charter = Document.objects.get(name=charter.name)
         self.assertTrue(group.name in charter.latest_event(WriteupDocEvent, type="changed_action_announcement").text)
@@ -708,7 +707,7 @@ class EditCharterTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
 
@@ -716,7 +715,7 @@ class EditCharterTests(TestCase):
         r = self.client.post(url, dict(
             ballot_writeup="This is a simple test.",
             save_ballot_writeup="1"))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertTrue("This is a simple test" in charter.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text").text)
 
         # send
@@ -753,7 +752,7 @@ class EditCharterTests(TestCase):
 
         charter.set_state(State.objects.get(used=True, type="charter", slug="iesgrev"))
 
-        due_date = datetime_today() + datetime.timedelta(days=180)
+        due_date = datetime.date.today() + datetime.timedelta(days=180)
         m1 = GroupMilestone.objects.create(group=group,
                                            state_id="active",
                                            desc="Has been copied",
@@ -777,7 +776,7 @@ class EditCharterTests(TestCase):
 
         # normal get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(q('[type=submit]:contains("Send announcement")'))
         self.assertEqual(len(q('pre')), 1)
@@ -786,7 +785,7 @@ class EditCharterTests(TestCase):
         empty_outbox()
 
         r = self.client.post(url, dict())
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         charter = Document.objects.get(name=charter.name)
         self.assertEqual(charter.get_state_slug(), "approved")
@@ -831,12 +830,12 @@ class EditCharterTests(TestCase):
         m = GroupMilestone.objects.create(group=charter.group,
                                           state_id="active",
                                           desc="Test milestone",
-                                          due=datetime_today(),
+                                          due=datetime.date.today(),
                                           resolved="")
 
         url = urlreverse('ietf.doc.views_charter.charter_with_milestones_txt', kwargs=dict(name=charter.name, rev=charter.rev))
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, m.desc)
 
     def test_chartering_from_bof(self):

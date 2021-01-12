@@ -36,7 +36,7 @@
 
 import importlib
 
-from datetime import timedelta as TimeDelta, date as Date
+from datetime import datetime as DateTime, timedelta as TimeDelta, date as Date
 from collections import defaultdict
 
 import django.core.signing
@@ -55,7 +55,6 @@ from django.urls import reverse as urlreverse
 from django.utils.safestring import mark_safe
 from django.http import Http404, HttpResponseRedirect  #, HttpResponse, 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.utils import timezone
 from django.utils.encoding import force_bytes
 
 import debug                            # pyflakes:ignore
@@ -116,7 +115,7 @@ def create_account(request):
             to_email = form.cleaned_data['email'] # This will be lowercase if form.is_valid()
             existing = Subscribed.objects.filter(email=to_email).first()
             ok_to_create = ( Whitelisted.objects.filter(email=to_email).exists()
-                or existing and (existing.time + TimeDelta(seconds=settings.LIST_ACCOUNT_DELAY)) < timezone.now() )
+                or existing and (existing.time + TimeDelta(seconds=settings.LIST_ACCOUNT_DELAY)) < DateTime.now() )
             if ok_to_create:
                 send_account_creation_email(request, to_email)
             else:

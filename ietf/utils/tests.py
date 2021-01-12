@@ -409,7 +409,7 @@ class AdminTestCase(TestCase):
 #                 url = static(file)
 #                 debug.show('url')
 #                 r = self.client.get(url)
-#                 self.assertResponseStatus(r, 200)
+#                 self.assertEqual(r.status_code, 200)
 
 class TestBowerStaticFiles(TestCase):
 

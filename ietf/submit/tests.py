@@ -16,7 +16,6 @@ from pyquery import PyQuery
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
-from django.utils import timezone
 from django.utils.encoding import force_str, force_text
 
 import debug                            # pyflakes:ignore
@@ -41,7 +40,6 @@ from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.models import VersionInfo
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.draft import Draft
-from ietf.utils.timezone import datetime_today
 
 
 def submission_file(name, rev, group, format, templatename, author=None, email=None, title=None, year=None, ascii=True):
@@ -57,14 +55,14 @@ def submission_file(name, rev, group, format, templatename, author=None, email=N
     if title is None:
         title = "Test Document"
     if year is None:
-        year = datetime_today().strftime("%Y")
+        year = datetime.date.today().strftime("%Y")
 
     submission_text = template % dict(
-            date=datetime_today().strftime("%d %B %Y"),
-            expiration=(datetime_today() + datetime.timedelta(days=100)).strftime("%d %B, %Y"),
+            date=datetime.date.today().strftime("%d %B %Y"),
+            expiration=(datetime.date.today() + datetime.timedelta(days=100)).strftime("%d %B, %Y"),
             year=year,
-            month=datetime_today().strftime("%B"),
-            day=datetime_today().strftime("%d"),
+            month=datetime.date.today().strftime("%B"),
+            day=datetime.date.today().strftime("%d"),
             name="%s-%s" % (name, rev),
             group=group or "",
             author=author.ascii if ascii else author.name,
@@ -99,7 +97,7 @@ def create_draft_submission_with_rev_mismatch(rev='01'):
     sub = Submission.objects.create(
         name=draft_name,
         group=None,
-        submission_date=datetime_today() - datetime.timedelta(days=1),
+        submission_date=datetime.date.today() - datetime.timedelta(days=1),
         rev=rev,
         state_id='posted',
     )
@@ -145,7 +143,7 @@ class SubmitTests(TestCase):
         settings.SUBMIT_YANG_CATALOG_MODEL_DIR = self.yang_catalog_model_dir
 
         # Submit views assume there is a "next" IETF to look for cutoff dates against
-        MeetingFactory(type_id='ietf', date=datetime_today()+datetime.timedelta(days=180))
+        MeetingFactory(type_id='ietf', date=datetime.date.today()+datetime.timedelta(days=180))
 
     def tearDown(self):
         shutil.rmtree(self.staging_dir)
@@ -192,7 +190,7 @@ class SubmitTests(TestCase):
         # get
         url = urlreverse('ietf.submit.views.upload_submission')
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('input[type=file][name=txt]')), 1)
         self.assertEqual(len(q('input[type=file][name=xml]')), 1)
@@ -265,7 +263,7 @@ class SubmitTests(TestCase):
         # prepare draft to suggest replace
         sug_replaced_draft = Document.objects.create(
             name="draft-ietf-ames-sug-replaced",
-            time=timezone.now(),
+            time=datetime.datetime.now(),
             type_id="draft",
             title="Draft to be suggested to be replaced",
             stream_id="ietf",
@@ -276,7 +274,7 @@ class SubmitTests(TestCase):
             words=100,
             intended_std_level_id="ps",
             ad=draft.ad,
-            expires=timezone.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
+            expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             notify="aliens@example.mars",
             note="",
         )
@@ -296,7 +294,7 @@ class SubmitTests(TestCase):
         r = self.supply_extra_metadata(name, status_url, author.ascii, author.email().address.lower(),
                                        replaces=str(replaced_alias.pk) + "," + str(sug_replaced_alias.pk))
 
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("New draft waiting for approval" in outbox[-1]["Subject"])
@@ -306,7 +304,7 @@ class SubmitTests(TestCase):
         self.client.login(username="marschairman", password="marschairman+password")
 
         r = self.client.get(status_url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         self.assertContains(r, 'xym')
         self.assertContains(r, 'pyang')
@@ -322,7 +320,7 @@ class SubmitTests(TestCase):
         # approve submission
         mailbox_before = len(outbox)
         r = self.client.post(status_url, dict(action=action))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
@@ -335,7 +333,7 @@ class SubmitTests(TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, rev))))
         self.assertEqual(draft.type_id, "draft")
         self.assertEqual(draft.stream_id, "ietf")
-        self.assertTrue(draft.expires >= timezone.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))
+        self.assertTrue(draft.expires >= datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))
         self.assertEqual(draft.get_state("draft-stream-%s" % draft.stream_id).slug, "wg-doc")
         authors = draft.documentauthor_set.all()
         self.assertEqual(len(authors), 1)
@@ -452,10 +450,10 @@ class SubmitTests(TestCase):
         # supply submitter info, then previous authors get a confirmation email
         mailbox_before = len(outbox)
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "submitter@example.com", replaces="")
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "The submission is pending approval by the authors")
 
         self.assertEqual(len(outbox), mailbox_before + 1)
@@ -493,7 +491,7 @@ class SubmitTests(TestCase):
         # confirm
         mailbox_before = len(outbox)
         r = self.client.post(confirmation_url, {'action':'confirm'})
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         new_docevents = draft.docevent_set.exclude(pk__in=[event.pk for event in old_docevents])
 
@@ -561,7 +559,7 @@ class SubmitTests(TestCase):
         self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
         self.assertTrue(name in get_payload_text(outbox[-1]))
         r = self.client.get(urlreverse('ietf.doc.views_search.recent_drafts'))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
         self.assertContains(r, draft.title)
         # Check submission settings
@@ -607,10 +605,10 @@ class SubmitTests(TestCase):
         mailbox_before = len(outbox)
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "submitter@example.com", replaces="")
 
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "The submission is pending email authentication")
 
         self.assertEqual(len(outbox), mailbox_before + 1)
@@ -632,7 +630,7 @@ class SubmitTests(TestCase):
         # confirm
         mailbox_before = len(outbox)
         r = self.client.post(confirmation_url, {'action':'confirm'})
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
@@ -666,10 +664,10 @@ class SubmitTests(TestCase):
         mailbox_before = len(outbox)
         r = self.supply_extra_metadata(name, status_url, author.name, username, replaces="")
 
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "New version accepted")
 
         self.assertEqual(len(outbox), mailbox_before+2)
@@ -709,19 +707,19 @@ class SubmitTests(TestCase):
         mailbox_before = len(outbox)
         replaced_alias = draft.docalias.first()
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'cannot replace itself')
         replaced_alias = DocAlias.objects.get(name='draft-ietf-random-thing')
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'cannot replace an RFC')
         replaced_alias.document.set_state(State.objects.get(type='draft-iesg',slug='approved'))
         replaced_alias.document.set_state(State.objects.get(type='draft',slug='active'))
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'approved by the IESG and cannot')
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces='')
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
         self.assertEqual(len(outbox), mailbox_before + 1)
@@ -729,7 +727,7 @@ class SubmitTests(TestCase):
         self.assertFalse("chairs have been copied" in str(outbox[-1]))
         mailbox_before = len(outbox)
         r = self.client.post(confirmation_url, {'action':'confirm'})
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before+3)
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
@@ -749,14 +747,14 @@ class SubmitTests(TestCase):
         status_url, author = self.do_submission(name, rev)
         mailbox_before = len(outbox)
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces='')
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
         self.assertEqual(len(outbox), mailbox_before + 1)
         confirmation_url = self.extract_confirmation_url(outbox[-1])
         mailbox_before = len(outbox)
         r = self.client.post(confirmation_url, {'action':'cancel'})
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before)
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, old_rev)
@@ -798,7 +796,7 @@ class SubmitTests(TestCase):
 
         # check we got cancel button
         r = self.client.get(status_url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         cancel_button = q('[type=submit]:contains("Cancel")')
         self.assertEqual(len(cancel_button), 1)
@@ -820,7 +818,7 @@ class SubmitTests(TestCase):
 
         # check we have edit button
         r = self.client.get(status_url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         adjust_button = q('[type=submit]:contains("Adjust")')
         self.assertEqual(len(adjust_button), 1)
@@ -829,19 +827,19 @@ class SubmitTests(TestCase):
 
         # go to edit, we do this by posting, slightly weird
         r = self.client.post(status_url, dict(action=action))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         edit_url = r['Location']
 
         # check page
         r = self.client.get(edit_url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('input[name=edit-title]')), 1)
 
         # edit
         mailbox_before = len(outbox)
         # FIXME If this test is started before midnight, and ends after, it will fail
-        document_date = timezone.now().date() - datetime.timedelta(days=-3)
+        document_date = datetime.date.today() - datetime.timedelta(days=-3)
         r = self.client.post(edit_url, {
             "edit-title": "some title",
             "edit-rev": "00",
@@ -889,7 +887,7 @@ class SubmitTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
 
         r = self.client.get(status_url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         post_button = q('[type=submit]:contains("Force")')
         self.assertEqual(len(post_button), 1)
@@ -899,7 +897,7 @@ class SubmitTests(TestCase):
         # force post
         mailbox_before = len(outbox)
         r = self.client.post(status_url, dict(action=action))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
@@ -915,17 +913,17 @@ class SubmitTests(TestCase):
 
         # search status page
         r = self.client.get(urlreverse("ietf.submit.views.search_submission"))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, "submission status")
 
         # search
         r = self.client.post(urlreverse("ietf.submit.views.search_submission"), dict(name=name))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         unprivileged_status_url = r['Location']
 
         # search with rev
         r = self.client.post(urlreverse("ietf.submit.views.search_submission"), dict(name=name+'-'+rev))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         unprivileged_status_url = r['Location']
 
         # status page as unpriviliged => no edit button
@@ -946,12 +944,12 @@ class SubmitTests(TestCase):
 
         # go to edit, we do this by posting, slightly weird
         r = self.client.post(unprivileged_status_url, dict(action=action))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         edit_url = r['Location']
 
         # check page
         r = self.client.get(edit_url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
     def test_request_full_url(self):
         # submit -> request full URL to be sent
@@ -967,7 +965,7 @@ class SubmitTests(TestCase):
 
         # check we got request full URL button
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         request_button = q('[type=submit]:contains("Request full access")')
         self.assertEqual(len(request_button), 1)
@@ -977,7 +975,7 @@ class SubmitTests(TestCase):
 
         action = request_button.parents("form").find('input[type=hidden][name="action"]').val()
         r = self.client.post(url, dict(action=action))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Full URL for managing submission" in outbox[-1]["Subject"])
@@ -1009,7 +1007,7 @@ class SubmitTests(TestCase):
     def test_expire_submissions(self):
         s = Submission.objects.create(name="draft-ietf-mars-foo",
                                       group=None,
-                                      submission_date=datetime_today() - datetime.timedelta(days=10),
+                                      submission_date=datetime.date.today() - datetime.timedelta(days=10),
                                       rev="00",
                                       state_id="uploaded")
 
@@ -1035,10 +1033,10 @@ class SubmitTests(TestCase):
 
     def test_help_pages(self):
         r = self.client.get(urlreverse("ietf.submit.views.note_well"))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
 
         r = self.client.get(urlreverse("ietf.submit.views.tool_instructions"))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         
     def test_blackout_access(self):
         # get
@@ -1046,18 +1044,18 @@ class SubmitTests(TestCase):
 
         # Put today in the blackout period
         meeting = Meeting.get_current_meeting()
-        meeting.importantdate_set.create(name_id='idcutoff',date=datetime_today()-datetime.timedelta(days=2))
+        meeting.importantdate_set.create(name_id='idcutoff',date=datetime.date.today()-datetime.timedelta(days=2))
         
         # regular user, no access
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('input[type=file][name=txt]')), 0)
         
         # Secretariat has access
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('input[type=file][name=txt]')), 1)
 
@@ -1065,32 +1063,32 @@ class SubmitTests(TestCase):
         url = urlreverse('ietf.submit.views.upload_submission')
 
         meeting = Meeting.get_current_meeting()
-        meeting.date = timezone.now().date()+datetime.timedelta(days=7)
+        meeting.date = datetime.date.today()+datetime.timedelta(days=7)
         meeting.save()
         meeting.importantdate_set.filter(name_id='idcutoff').delete()
-        meeting.importantdate_set.create(name_id='idcutoff', date=datetime_today()+datetime.timedelta(days=7))
+        meeting.importantdate_set.create(name_id='idcutoff', date=datetime.date.today()+datetime.timedelta(days=7))
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('input[type=file][name=txt]')), 1)        
 
         meeting = Meeting.get_current_meeting()
-        meeting.date = timezone.now().date()
+        meeting.date = datetime.date.today()
         meeting.save()
         meeting.importantdate_set.filter(name_id='idcutoff').delete()
-        meeting.importantdate_set.create(name_id='idcutoff', date=datetime_today())
+        meeting.importantdate_set.create(name_id='idcutoff', date=datetime.date.today())
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('input[type=file][name=txt]')), 1)        
 
         meeting = Meeting.get_current_meeting()
-        meeting.date = timezone.now().date()-datetime.timedelta(days=1)
+        meeting.date = datetime.date.today()-datetime.timedelta(days=1)
         meeting.save()
         meeting.importantdate_set.filter(name_id='idcutoff').delete()
-        meeting.importantdate_set.create(name_id='idcutoff', date=datetime_today()-datetime.timedelta(days=1))
+        meeting.importantdate_set.create(name_id='idcutoff', date=datetime.date.today()-datetime.timedelta(days=1))
         r = self.client.get(url)
-        self.assertResponseStatus(r,200)
+        self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('input[type=file][name=txt]')), 1)        
 
@@ -1105,7 +1103,7 @@ class SubmitTests(TestCase):
         # get
         url = urlreverse('ietf.submit.views.upload_submission')
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
 
         # submit
@@ -1115,7 +1113,7 @@ class SubmitTests(TestCase):
 
         r = self.client.post(url, files)
 
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q("form .has-error")) > 0)
         m = q('div.has-error div.alert').text()
@@ -1135,7 +1133,7 @@ class SubmitTests(TestCase):
 
         r = self.client.post(url, files)
 
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q("form .has-error")) > 0)
         m = q('div.has-error div.alert').text()
@@ -1185,7 +1183,7 @@ class SubmitTests(TestCase):
         # get
         url = urlreverse('ietf.submit.views.upload_submission')
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
 
         # submit
@@ -1199,7 +1197,7 @@ class SubmitTests(TestCase):
 
             r = self.client.post(url, files)
 
-            self.assertResponseStatus(r, 200)
+            self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             m = q('div.alert-danger').text()
 
@@ -1213,7 +1211,7 @@ class SubmitTests(TestCase):
         # get
         url = urlreverse('ietf.submit.views.upload_submission')
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
 
         # submit
@@ -1225,7 +1223,7 @@ class SubmitTests(TestCase):
         files = {"txt": file }
 
         r = self.client.post(url, files)
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
         q = PyQuery(r.content)
@@ -1247,7 +1245,7 @@ class SubmitTests(TestCase):
         # submit
         url = urlreverse('ietf.submit.views.upload_submission')
         r = self.client.post(url, files)
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
         q = PyQuery(r.content)
@@ -1271,7 +1269,7 @@ class SubmitTests(TestCase):
         # submit
         url = urlreverse('ietf.submit.views.upload_submission')
         r = self.client.post(url, files)
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
         q = PyQuery(r.content)
@@ -1290,7 +1288,7 @@ class SubmitTests(TestCase):
 
         url = urlreverse('ietf.submit.views.upload_submission')
         r = self.client.post(url, files)
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
         q = PyQuery(r.content)
@@ -1352,18 +1350,18 @@ class ApprovalsTestCase(TestCase):
 
         Submission.objects.create(name="draft-ietf-mars-foo",
                                   group=Group.objects.get(acronym="mars"),
-                                  submission_date=datetime_today(),
+                                  submission_date=datetime.date.today(),
                                   rev="00",
                                   state_id="posted")
         Submission.objects.create(name="draft-ietf-mars-bar",
                                   group=Group.objects.get(acronym="mars"),
-                                  submission_date=datetime_today(),
+                                  submission_date=datetime.date.today(),
                                   rev="00",
                                   state_id="grp-appr")
 
         # get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
 
         self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-foo")')), 0)
@@ -1380,20 +1378,20 @@ class ApprovalsTestCase(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('[type=submit]:contains("Save")')), 1)
 
         # faulty post
         r = self.client.post(url, dict(name="draft-test-nonexistingwg-something"))
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q("form .has-error")) > 0)
 
         # add
         name = "draft-ietf-mars-foo"
         r = self.client.post(url, dict(name=name))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         self.assertEqual(len(Preapproval.objects.filter(name=name)), 1)
 
@@ -1407,13 +1405,13 @@ class ApprovalsTestCase(TestCase):
 
         # get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('[type=submit]:contains("Cancel")')), 1)
 
         # cancel
         r = self.client.post(url, dict(action="cancel"))
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         self.assertEqual(len(Preapproval.objects.filter(name=preapproval.name)), 0)
 
@@ -1427,17 +1425,17 @@ class ManualPostsTestCase(TestCase):
 
         Submission.objects.create(name="draft-ietf-mars-foo",
                                   group=Group.objects.get(acronym="mars"),
-                                  submission_date=datetime_today(),
+                                  submission_date=datetime.date.today(),
                                   state_id="manual")
         Submission.objects.create(name="draft-ietf-mars-bar",
                                   group=Group.objects.get(acronym="mars"),
-                                  submission_date=datetime_today(),
+                                  submission_date=datetime.date.today(),
                                   rev="00",
                                   state_id="grp-appr")
 
         # get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
 
         self.assertEqual(len(q('.submissions a:contains("draft-ietf-mars-foo")')), 1)
@@ -1452,7 +1450,7 @@ Subject: test submission via email
 Please submit my draft at http://test.com/mydraft.txt
 
 Thank you
-""".format(timezone.now().ctime())
+""".format(datetime.datetime.now().ctime())
         message = email.message_from_string(force_str(message_string))
         submission, submission_email_event = (
             add_submission_email(request=None,
@@ -1470,7 +1468,7 @@ Thank you
 
         # get
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
 
         self.assertEqual(len(q('.waiting-for-draft a:contains("draft-my-new-draft")')), 1)
@@ -1491,10 +1489,10 @@ Thank you
             "submission_id": submission.pk,
             "access_token": submission.access_token(),
         })
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         url = r["Location"]
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('.waiting-for-draft a:contains("draft-my-new-draft")')), 0)
 
@@ -1534,7 +1532,7 @@ Content-Disposition: attachment; filename="attach.txt"
 QW4gZXhhbXBsZSBhdHRhY2htZW50IHd0aG91dCB2ZXJ5IG11Y2ggaW4gaXQuCgpBIGNvdXBs
 ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
 --------------090908050800030909090207--
-""".format(frm, timezone.now().ctime())
+""".format(frm, datetime.datetime.now().ctime())
 
         message = email.message_from_string(force_str(message_string))
         submission, submission_email_event = (
@@ -1590,7 +1588,7 @@ Content-Disposition: attachment; filename="attachment.txt"
 QW4gZXhhbXBsZSBhdHRhY2htZW50IHd0aG91dCB2ZXJ5IG11Y2ggaW4gaXQuCgpBIGNvdXBs
 ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
 --------------090908050800030909090207--
-""".format(timezone.now().ctime())
+""".format(datetime.datetime.now().ctime())
 
         # Back to secretariat
         self.client.login(username="secretary", password="secretary+password")
@@ -1601,7 +1599,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
 
         # Get the form
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         #self.assertEqual(len(q('input[name=edit-title]')), 1)
 
@@ -1616,7 +1614,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
             q = PyQuery(r.content)
             print(q)
 
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
         
 
         #self.check_manualpost_page(submission, submission_email_event,
@@ -1654,7 +1652,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
 
             # Get the form
             r = self.client.get(reply_url)
-            self.assertResponseStatus(r, 200)
+            self.assertEqual(r.status_code, 200)
             reply_q = PyQuery(r.content)
             self.assertEqual(len(reply_q('input[name=to]')), 1)
         else:
@@ -1699,7 +1697,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
 
         # Fetch the attachment
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         
         # Attempt a reply if we can
         if reply_href == None:
@@ -1716,7 +1714,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
             # Can add an email to the submission
             # add_email_url set previously
             r = self.client.get(add_email_url)
-            self.assertResponseStatus(r, 200)
+            self.assertEqual(r.status_code, 200)
             add_email_q = PyQuery(r.content)
             self.assertEqual(len(add_email_q('input[name=submission_pk]')), 1)
 
@@ -1729,7 +1727,7 @@ Subject: Another message
 About my submission
 
 Thank you
-""".format(timezone.now().ctime())
+""".format(datetime.datetime.now().ctime())
 
             r = self.client.post(add_email_url, {
                 "name": "{}-{}".format(submission.name, submission.rev),
@@ -1742,11 +1740,11 @@ Thank you
                 q = PyQuery(r.content)
                 print(q)
 
-            self.assertResponseStatus(r, 302)
+            self.assertEqual(r.status_code, 302)
 
     def request_and_parse(self, url):
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         return r, PyQuery(r.content)
 
         
@@ -1780,7 +1778,7 @@ Thank you
             "body": body,
         })
 
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         self.assertEqual(len(outbox), 1)
 
@@ -1796,7 +1794,7 @@ Thank you
 From: {}
 Date: {}
 Subject: test
-""".format(reply_to, to, timezone.now().ctime())
+""".format(reply_to, to, datetime.datetime.now().ctime())
 
         result = process_response_email(message_string)
         self.assertIsInstance(result, Message)
@@ -1809,7 +1807,7 @@ Subject: test
         # get
         url = urlreverse('ietf.submit.views.upload_submission')
         r = self.client.get(url)
-        self.assertResponseStatus(r, 200)
+        self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('input[type=file][name=txt]')), 1)
         self.assertEqual(len(q('input[type=file][name=xml]')), 1)
@@ -1824,7 +1822,7 @@ Subject: test
             q = PyQuery(r.content)
             print(q('div.has-error span.help-block div').text())
 
-        self.assertResponseStatus(r, 302)
+        self.assertEqual(r.status_code, 302)
 
         status_url = r["Location"]
         for format in formats:
@@ -1896,7 +1894,7 @@ class ApiSubmitTests(TestCase):
         self.catalog_model_dir = self.tempdir('yang-catalogmod')
         settings.SUBMIT_YANG_CATALOG_MODEL_DIR = self.catalog_model_dir
 
-        MeetingFactory(type_id='ietf', date=datetime_today()+datetime.timedelta(days=60))
+        MeetingFactory(type_id='ietf', date=datetime.date.today()+datetime.timedelta(days=60))
 
     def tearDown(self):
         shutil.rmtree(self.staging_dir)
@@ -1941,7 +1939,7 @@ class ApiSubmitTests(TestCase):
     def test_api_submit_bad_method(self):
         url = urlreverse('ietf.submit.views.api_submit')
         r = self.client.put(url)
-        self.assertResponseStatus(r, 405)
+        self.assertEqual(r.status_code, 405)
 
     def test_api_submit_ok(self):
         r, author, name = self.do_post_submission('00')

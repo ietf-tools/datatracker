@@ -1,8 +1,6 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}{% origin %}
 {% load static %}
-{% load tz %}
-{% localtime off %}
 <html> <head>
   <script src="{% static 'ietf/js/agenda/agenda_filter.js' %}"></script>
   <script type="text/javascript">
@@ -513,4 +511,3 @@
 <body>
   <div id="cal"><span>Error loading calendar</span></div>
 </body></html>
-{% endlocaltime %}

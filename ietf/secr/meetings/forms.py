@@ -30,9 +30,6 @@ def get_next_slot(slot):
     aren't any.  You must check availability of the slot as we sometimes need to get the next
     slot whether it's available or not.  For use with combine option.
     '''
-    # timezone-aware note: The following works because the slot times are
-    # saved as if they were local timezone-naive times, even if Django sees
-    # them as UTC times when USE_TZ == True.
     same_day_slots = TimeSlot.objects.filter(meeting=slot.meeting,location=slot.location,time__day=slot.time.day).order_by('time')
     try:
         i = list(same_day_slots).index(slot)
