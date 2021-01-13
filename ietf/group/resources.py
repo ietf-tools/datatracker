@@ -13,7 +13,7 @@ from ietf import api
 
 from ietf.group.models import (Group, GroupStateTransitions, GroupMilestone, GroupHistory, # type: ignore
     GroupURL, Role, GroupEvent, RoleHistory, GroupMilestoneHistory, MilestoneGroupEvent,
-    ChangeStateGroupEvent, GroupFeatures, HistoricalGroupFeatures, GroupExtResource)
+    ChangeStateGroupEvent, GroupFeatures, GroupExtResource)
 
 
 from ietf.person.resources import PersonResource
@@ -313,41 +313,6 @@ class GroupFeaturesResource(ModelResource):
         }
 api.group.register(GroupFeaturesResource())
 
-from ietf.name.resources import GroupTypeNameResource, AgendaTypeNameResource
-from ietf.utils.resources import UserResource
-class HistoricalGroupFeaturesResource(ModelResource):
-    type             = ToOneField(GroupTypeNameResource, 'type', null=True)
-    agenda_type      = ToOneField(AgendaTypeNameResource, 'agenda_type', null=True)
-    history_user     = ToOneField(UserResource, 'history_user', null=True)
-    class Meta:
-        queryset = HistoricalGroupFeatures.objects.all()
-        serializer = api.Serializer()
-        cache = SimpleCache()
-        #resource_name = 'historicalgroupfeatures'
-        ordering = ['id', ]
-        filtering = { 
-            "has_milestones": ALL,
-            "has_chartering_process": ALL,
-            "has_documents": ALL,
-            "has_dependencies": ALL,
-            "has_nonsession_materials": ALL,
-            "has_meetings": ALL,
-            "has_reviews": ALL,
-            "has_default_jabber": ALL,
-            "customize_workflow": ALL,
-            "about_page": ALL,
-            "default_tab": ALL,
-            "material_types": ALL,
-            "admin_roles": ALL,
-            "history_id": ALL,
-            "history_change_reason": ALL,
-            "history_date": ALL,
-            "history_type": ALL,
-            "type": ALL_WITH_RELATIONS,
-            "agenda_type": ALL_WITH_RELATIONS,
-            "history_user": ALL_WITH_RELATIONS,
-        }
-api.group.register(HistoricalGroupFeaturesResource())
 
 
 from ietf.name.resources import ExtResourceNameResource
