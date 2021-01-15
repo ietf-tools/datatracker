@@ -100,7 +100,6 @@ from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 from ietf.utils.response import permission_denied
 from ietf.utils.text import xslugify
-from ietf.utils.timezone import date2datetime
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
     InterimCancelForm, InterimSessionInlineFormSet, FileUploadForm, RequestMinutesForm,)
@@ -1719,13 +1718,6 @@ def week_view(request, num=None, name=None, owner=None):
         schedule__in=[schedule, schedule.base],
         timeslot__type__private=False,
     )
-    # Only show assignments from the traditional meeting "week" (Sat-Fri). 
-    # We'll determine this using the saturday before the first scheduled regular session.
-    first_regular_session = meeting.schedule.qs_assignments_with_sessions.filter(session__type_id='regular').order_by('timeslot__time').first()
-    first_regular_session_time = first_regular_session.timeslot.time if first_regular_session else date2datetime(meeting.date)
-    saturday_before = first_regular_session_time.replace(hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(days=(first_regular_session_time.weekday() - 5)%7)
-#    saturday_after = saturday_before + datetime.timedelta(days=7)
-#    filtered_assignments = filtered_assignments.filter(timeslot__time__gte=saturday_before,timeslot__time__lt=saturday_after)
     filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
     tag_assignments_with_filter_keywords(filtered_assignments)
 
@@ -1734,16 +1726,8 @@ def week_view(request, num=None, name=None, owner=None):
         # we don't HTML escape any of these as the week-view code is using createTextNode
         item = {
             "key": str(a.timeslot.pk),
-            "day": (a.timeslot.time - saturday_before).days - 1,
-            "time": a.timeslot.time.strftime("%H%M") + "-" + a.timeslot.end_time().strftime("%H%M"),
+            "utc_time": a.timeslot.utc_start_time().strftime("%Y%m%dT%H%MZ"),  # ISO8601 compliant
             "duration": a.timeslot.duration.seconds,
-            "time_id": a.timeslot.time.strftime("%m%d%H%M"),
-            "dayname": "{weekday}, {month} {day_of_month}, {year}".format(
-                weekday=a.timeslot.time.strftime("%A").upper(),
-                month=a.timeslot.time.strftime("%B"),
-                day_of_month=a.timeslot.time.strftime("%d").lstrip("0"),
-                year=a.timeslot.time.strftime("%Y"),
-            ),
             "type": a.timeslot.type.name,
             "filter_keywords": ",".join(a.filter_keywords),
         }
@@ -1780,6 +1764,7 @@ def week_view(request, num=None, name=None, owner=None):
 
     return render(request, "meeting/week-view.html", {
         "items": json.dumps(items),
+        "timezone": meeting.time_zone,
     })
 
 @role_required('Area Director','Secretariat','IAB')
@@ -1866,20 +1851,14 @@ def parse_agenda_filter_params(querydict):
     if len(querydict) == 0:
         return None
 
-    # Parse group filters from GET parameters. The keys in this dict define the
-    # allowed querystring parameters.
+    # Parse group filters from GET parameters. Other params are ignored.
     filt_params = {'show': set(), 'hide': set(), 'showtypes': set(), 'hidetypes': set()}
 
     for key, value in querydict.items():
-        if key not in filt_params:
-            raise ValueError('Unrecognized parameter "%s"' % key)
-        if value is None:
-            return ValueError(
-                'Parameter "%s" is not assigned a value (use "key=" for an empty value)' % key
-            )
-        vals = unquote(value).lower().split(',')
-        vals = [v.strip() for v in vals]
-        filt_params[key] = set([v for v in vals if len(v) > 0])  # remove empty strings
+        if key in filt_params:
+            vals = unquote(value).lower().split(',')
+            vals = [v.strip() for v in vals]
+            filt_params[key] = set([v for v in vals if len(v) > 0])  # remove empty strings
 
     return filt_params
 

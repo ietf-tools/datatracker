@@ -13,6 +13,7 @@ import django
 from django.urls import reverse as urlreverse
 from django.utils.text import slugify
 from django.db.models import F
+from pytz import timezone
 #from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore
@@ -23,7 +24,7 @@ from ietf.group import colors
 from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
-from ietf.meeting.factories import SessionFactory
+from ietf.meeting.factories import SessionFactory, TimeSlotFactory
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.models import (Schedule, SchedTimeSessAssignment, Session,
                                  Room, TimeSlot, Constraint, ConstraintName,
@@ -903,6 +904,200 @@ class AgendaTests(MeetingTestCase):
             with self.assertRaises(NoSuchElementException):
                 self.driver.find_element_by_xpath('//a[text()="%s"]' % slide.title)
 
+
+@skipIf(skip_selenium, skip_message)
+class WeekviewTests(MeetingTestCase):
+    def setUp(self):
+        super(WeekviewTests, self).setUp()
+        self.meeting = make_meeting_test_data()
+
+    def get_expected_items(self):
+        expected_items = self.meeting.schedule.assignments.exclude(timeslot__type__in=['lead', 'offagenda'])
+        self.assertGreater(len(expected_items), 0, 'Test setup generated an empty schedule')
+        return expected_items
+
+    def test_timezone_default(self):
+        """Week view should show local times by default"""
+        self.assertNotEqual(self.meeting.time_zone.lower(), 'utc',
+                            'Cannot test local time weekview because meeting is using UTC time.')
+        self.login()
+        self.driver.get(self.absreverse('ietf.meeting.views.week_view'))
+        for item in self.get_expected_items():
+            if item.session.name:
+                expected_name = item.session.name
+            elif item.timeslot.type_id == 'break':
+                expected_name = item.timeslot.name
+            else:
+                expected_name = item.session.group.name
+            expected_time = '-'.join([item.timeslot.local_start_time().strftime('%H%M'),
+                                      item.timeslot.local_end_time().strftime('%H%M')])
+            WebDriverWait(self.driver, 2).until(
+                expected_conditions.presence_of_element_located(
+                    (By.XPATH, 
+                     '//div/div[contains(text(), "%s")]/span[contains(text(), "%s")]' % (
+                         expected_time, expected_name))
+                )
+            )
+
+    def test_timezone_selection(self):
+        """Week view should show time zones when requested"""
+        # Must test utc; others are picked arbitrarily
+        zones_to_test = ['utc', 'America/Halifax', 'Asia/Bangkok', 'Africa/Dakar', 'Europe/Dublin']
+        self.login()
+        for zone_name in zones_to_test:
+            zone = timezone(zone_name)
+            self.driver.get(self.absreverse('ietf.meeting.views.week_view') + '?tz=' + zone_name)
+            for item in self.get_expected_items():
+                if item.session.name:
+                    expected_name = item.session.name
+                elif item.timeslot.type_id == 'break':
+                    expected_name = item.timeslot.name
+                else:
+                    expected_name = item.session.group.name
+
+                start_time = item.timeslot.utc_start_time().astimezone(zone)
+                end_time = item.timeslot.utc_end_time().astimezone(zone)
+                expected_time = '-'.join([start_time.strftime('%H%M'),
+                                          end_time.strftime('%H%M')])
+
+                WebDriverWait(self.driver, 2).until(
+                    expected_conditions.presence_of_element_located(
+                        (By.XPATH, 
+                         '//div/div[contains(text(), "%s")]/span[contains(text(), "%s")]' % (
+                             expected_time, expected_name))
+                    ),
+                    'Could not find event "%s" at %s for time zone %s' % (expected_name, 
+                                                                          expected_time,
+                                                                          zone_name),
+                )
+
+    def test_event_wrapping(self):
+        """Events that overlap midnight should be shown on both days
+        
+        This assumes that the meeting is in America/New_York timezone.
+        """
+        def _assert_wrapped(displayed, expected_time_string):
+            self.assertEqual(len(displayed), 2)
+            first = displayed[0]
+            first_parent = first.find_element_by_xpath('..')
+            second = displayed[1]
+            second_parent = second.find_element_by_xpath('..')
+            self.assertNotIn('continued', first.text)
+            self.assertIn(expected_time_string, first_parent.text)
+            self.assertIn('continued', second.text)
+            self.assertIn(expected_time_string, second_parent.text)
+
+        def _assert_not_wrapped(displayed, expected_time_string):
+            self.assertEqual(len(displayed), 1)
+            first = displayed[0]
+            first_parent = first.find_element_by_xpath('..')
+            self.assertNotIn('continued', first.text)
+            self.assertIn(expected_time_string, first_parent.text)
+
+        duration = datetime.timedelta(minutes=120)  # minutes
+
+        # Session during a single day in meeting local time but multi-day UTC
+        # Compute a time that overlaps midnight, UTC, but won't when shifted to a local time zone
+        start_time_utc = timezone('UTC').localize(
+            datetime.datetime.combine(self.meeting.date, datetime.time(23,0))
+        )
+        start_time_local = start_time_utc.astimezone(timezone(self.meeting.time_zone))
+
+        daytime_session = SessionFactory(
+            meeting=self.meeting,
+            name='Single Day Session for Wrapping Test',
+            add_to_schedule=False,
+        )
+        daytime_timeslot = TimeSlotFactory(
+            meeting=self.meeting,
+            time=start_time_local.replace(tzinfo=None),  # drop timezone for Django
+            duration=duration,
+        )
+        daytime_session.timeslotassignments.create(timeslot=daytime_timeslot, schedule=self.meeting.schedule)
+
+        # Session that overlaps midnight in meeting local time
+        overnight_session = SessionFactory(
+            meeting=self.meeting,
+            name='Overnight Session for Wrapping Test',
+            add_to_schedule=False,
+        )
+        overnight_timeslot = TimeSlotFactory(
+            meeting=self.meeting,
+            time=datetime.datetime.combine(self.meeting.date, datetime.time(23,0)),
+            duration=duration,
+        )
+        overnight_session.timeslotassignments.create(timeslot=overnight_timeslot, schedule=self.meeting.schedule)
+
+        # Check assumptions about events overlapping midnight
+        self.assertEqual(daytime_timeslot.local_start_time().day,
+                         daytime_timeslot.local_end_time().day,
+                         'Daytime event should not overlap midnight in local time')
+        self.assertNotEqual(daytime_timeslot.utc_start_time().day,
+                           daytime_timeslot.utc_end_time().day,
+                           'Daytime event should overlap midnight in UTC')
+
+        self.assertNotEqual(overnight_timeslot.local_start_time().day,
+                            overnight_timeslot.local_end_time().day,
+                            'Overnight event should overlap midnight in local time')
+        self.assertEqual(overnight_timeslot.utc_start_time().day,
+                         overnight_timeslot.utc_end_time().day,
+                         'Overnight event should not overlap midnight in UTC')
+
+        self.login()
+        
+        # Test in meeting local time
+        self.driver.get(self.absreverse('ietf.meeting.views.week_view'))
+
+        time_string = '-'.join([daytime_timeslot.local_start_time().strftime('%H%M'),
+                                daytime_timeslot.local_end_time().strftime('%H%M')])
+        displayed = WebDriverWait(self.driver, 2).until(
+            expected_conditions.presence_of_all_elements_located(
+                (By.XPATH,
+                 '//div/div[contains(text(), "%s")]/span[contains(text(), "%s")]' % (
+                     time_string,
+                     daytime_session.name))
+            )
+        )
+        _assert_not_wrapped(displayed, time_string)
+
+        time_string = '-'.join([overnight_timeslot.local_start_time().strftime('%H%M'),
+                                overnight_timeslot.local_end_time().strftime('%H%M')])
+        displayed = WebDriverWait(self.driver, 2).until(
+            expected_conditions.presence_of_all_elements_located(
+                (By.XPATH,
+                 '//div/div[contains(text(), "%s")]/span[contains(text(), "%s")]' % (
+                     time_string,
+                     overnight_session.name))
+            )
+        )
+        _assert_wrapped(displayed, time_string)
+
+        # Test in utc time
+        self.driver.get(self.absreverse('ietf.meeting.views.week_view') + '?tz=utc')
+
+        time_string = '-'.join([daytime_timeslot.utc_start_time().strftime('%H%M'),
+                                daytime_timeslot.utc_end_time().strftime('%H%M')])
+        displayed = WebDriverWait(self.driver, 2).until(
+            expected_conditions.presence_of_all_elements_located(
+                (By.XPATH,
+                 '//div/div[contains(text(), "%s")]/span[contains(text(), "%s")]' % (
+                     time_string,
+                     daytime_session.name))
+            )
+        )
+        _assert_wrapped(displayed, time_string)
+
+        time_string = '-'.join([overnight_timeslot.utc_start_time().strftime('%H%M'),
+                                overnight_timeslot.utc_end_time().strftime('%H%M')])
+        displayed = WebDriverWait(self.driver, 2).until(
+            expected_conditions.presence_of_all_elements_located(
+                (By.XPATH,
+                 '//div/div[contains(text(), "%s")]/span[contains(text(), "%s")]' % (
+                     time_string,
+                     overnight_session.name))
+            )
+        )
+        _assert_not_wrapped(displayed, time_string)
 
 @skipIf(skip_selenium, skip_message)
 class InterimTests(MeetingTestCase):
