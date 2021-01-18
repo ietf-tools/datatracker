@@ -4877,6 +4877,17 @@
   {
     "fields": {
       "cc": [],
+      "desc": "Recipients for a message requesting AD approval of a revised draft submission",
+      "to": [
+        "sub_group_parent_directors"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "sub_director_approval_requested"
+  },
+  {
+    "fields": {
+      "cc": [],
       "desc": "Recipients for a message with the full URL for managing a draft submission",
       "to": [
         "submission_confirmers"
@@ -4925,6 +4936,28 @@
     },
     "model": "mailtrigger.mailtrigger",
     "pk": "sub_new_wg_00"
+  },
+  {
+    "fields": {
+      "cc": [],
+      "desc": "Recipients for a message requesting chair approval of a replaced WG document",
+      "to": [
+        "doc_group_chairs"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "sub_replaced_doc_chair_approval_requested"
+  },
+  {
+    "fields": {
+      "cc": [],
+      "desc": "Recipients for a message requesting AD approval of a replaced WG document",
+      "to": [
+        "doc_group_parent_directors"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "sub_replaced_doc_director_approval_requested"
   },
   {
     "fields": {
@@ -5029,6 +5062,14 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "doc_group_mail_list"
+  },
+  {
+    "fields": {
+      "desc": "ADs for the parent group of a doc",
+      "template": null
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "doc_group_parent_directors"
   },
   {
     "fields": {
@@ -5517,6 +5558,14 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "stream_managers"
+  },
+  {
+    "fields": {
+      "desc": "ADs for the parent group of a submission",
+      "template": null
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "sub_group_parent_directors"
   },
   {
     "fields": {
@@ -9689,6 +9738,20 @@
   {
     "fields": {
       "desc": "",
+      "name": "Awaiting AD Approval",
+      "next_states": [
+        "cancel",
+        "posted"
+      ],
+      "order": 5,
+      "used": true
+    },
+    "model": "name.draftsubmissionstatename",
+    "pk": "ad-appr"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Awaiting Approval from Previous Version Authors",
       "next_states": [
         "confirmed",
@@ -9721,7 +9784,7 @@
       "desc": "",
       "name": "Cancelled",
       "next_states": [],
-      "order": 6,
+      "order": 7,
       "used": true
     },
     "model": "name.draftsubmissionstatename",
@@ -9763,7 +9826,7 @@
         "cancel",
         "posted"
       ],
-      "order": 5,
+      "order": 6,
       "used": true
     },
     "model": "name.draftsubmissionstatename",
@@ -9774,7 +9837,7 @@
       "desc": "",
       "name": "Posted",
       "next_states": [],
-      "order": 7,
+      "order": 8,
       "used": true
     },
     "model": "name.draftsubmissionstatename",
@@ -9805,7 +9868,7 @@
         "cancel",
         "posted"
       ],
-      "order": 8,
+      "order": 9,
       "used": true
     },
     "model": "name.draftsubmissionstatename",
@@ -15008,7 +15071,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2020-10-09T00:17:03.141",
+      "time": "2020-11-14T00:10:15.888",
       "used": true,
       "version": "xym 0.4.8"
     },
@@ -15019,9 +15082,9 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2020-10-09T00:17:04.888",
+      "time": "2020-11-14T00:10:17.069",
       "used": true,
-      "version": "pyang 2.3.2"
+      "version": "pyang 2.4.0"
     },
     "model": "utils.versioninfo",
     "pk": 2
@@ -15030,7 +15093,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2020-10-09T00:17:05.228",
+      "time": "2020-11-14T00:10:17.405",
       "used": true,
       "version": "yanglint SO 1.6.7"
     },
@@ -15041,9 +15104,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2020-10-09T00:17:07.630",
+      "time": "2020-11-14T00:10:19.405",
       "used": true,
-      "version": "xml2rfc 3.2.1"
+      "version": "xml2rfc 3.4.0"
     },
     "model": "utils.versioninfo",
     "pk": 4

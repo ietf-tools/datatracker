@@ -24,7 +24,7 @@ from ietf.doc.models import ( Document, State, DocAlias, DocEvent, SubmissionDoc
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.models import RelatedDocument, DocRelationshipName
 from ietf.doc.utils import add_state_change_event, rebuild_reference_relations
-from ietf.doc.utils import set_replaces_for_document
+from ietf.doc.utils import set_replaces_for_document, prettify_std_name
 from ietf.doc.mails import send_review_possibly_replaces_request
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
@@ -32,7 +32,7 @@ from ietf.name.models import StreamName, FormalLanguageName
 from ietf.person.models import Person, Email
 from ietf.community.utils import update_name_contains_indexes_with_new_doc
 from ietf.submit.mail import ( announce_to_lists, announce_new_version, announce_to_authors,
-    send_approval_request_to_group, send_submission_confirmation, announce_new_wg_00 )
+    announce_new_wg_00, send_approval_request, send_submission_confirmation )
 from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName, SubmissionCheck
 from ietf.utils import log
 from ietf.utils.accesstoken import generate_random_key
@@ -604,12 +604,19 @@ def approvable_submissions_for_user(user):
     if not user.is_authenticated:
         return []
 
-    res = Submission.objects.filter(state="grp-appr").order_by('-submission_date')
+    # Submissions that are group / AD approvable by someone
+    group_approvable = Submission.objects.filter(state="grp-appr")
+    ad_approvable = Submission.objects.filter(state="ad-appr")
     if has_role(user, "Secretariat"):
-        return res
+        return (group_approvable | ad_approvable).order_by('-submission_date')
 
-    # those we can reach as chair
-    return res.filter(group__role__name="chair", group__role__person__user=user)
+    # group-approvable that we can reach as chair plus group-approvable that we can reach as AD
+    # plus AD-approvable that we can reach as ad
+    return (
+        group_approvable.filter(group__role__name="chair", group__role__person__user=user)
+        | group_approvable.filter(group__parent__role__name="ad", group__parent__role__person__user=user)
+        | ad_approvable.filter(group__parent__role__name="ad", group__parent__role__person__user=user)
+    ).order_by('-submission_date')
 
 def preapprovals_for_user(user):
     if not user.is_authenticated:
@@ -620,7 +627,11 @@ def preapprovals_for_user(user):
     if has_role(user, "Secretariat"):
         return res
 
-    acronyms = [g.acronym for g in Group.objects.filter(role__person__user=user, type__features__req_subm_approval=True)]
+    accessible_groups = (
+        Group.objects.filter(role__person__user=user, type__features__req_subm_approval=True)
+        | Group.objects.filter(parent__role__name='ad', parent__role__person__user=user, type__features__req_subm_approval=True)
+    )
+    acronyms = [g.acronym for g in accessible_groups]
 
     res = res.filter(name__regex="draft-[^-]+-(%s)-.*" % "|".join(acronyms))
 
@@ -634,8 +645,11 @@ def recently_approved_by_user(user, since):
     if has_role(user, "Secretariat"):
         return res
 
-    # those we can reach as chair
-    return res.filter(group__role__name="chair", group__role__person__user=user)
+    # those we can reach as chair or ad
+    return (
+        res.filter(group__role__name="chair", group__role__person__user=user)
+        | res.filter(group__parent__role__name="ad", group__parent__role__person__user=user)
+    )
 
 def expirable_submissions(older_than_days):
     cutoff = datetime.date.today() - datetime.timedelta(days=older_than_days)
@@ -793,26 +807,107 @@ def apply_checkers(submission, file_name):
     tau = time.time() - mark
     log.log(f"ran submission checks ({tau:.3}s) for {file_name}")
 
-def send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval):
-    docevent_from_submission(request, submission, desc="Uploaded new revision")
+def accept_submission_requires_prev_auth_approval(submission):
+    """Does acceptance process require approval of previous authors?"""
+    return Document.objects.filter(name=submission.name).exists()
 
-    if requires_group_approval:
+def accept_submission_requires_group_approval(submission):
+    """Does acceptance process require group approval?
+    
+    Depending on the state of the group, this approval may come from group chair or area director.
+    """
+    return (
+        submission.rev == '00'
+        and submission.group and submission.group.features.req_subm_approval
+        and not Preapproval.objects.filter(name=submission.name).exists()
+    )
+
+def accept_submission(request, submission, autopost=False):
+    """Accept a submission and post or put in correct state to await approvals
+    
+    If autopost is True, will post draft if submitter is authorized to do so.
+    """
+    doc = submission.existing_document()
+    prev_authors = [] if not doc else [ author.person for author in doc.documentauthor_set.all() ]
+    curr_authors = [ get_person_from_name_email(author["name"], author.get("email"))
+                     for author in submission.authors ]
+    # Is the user authenticated as an author who can approve this submission?
+    user_is_author = (
+        request.user.is_authenticated
+        and request.user.person in (prev_authors if submission.rev != '00' else curr_authors) # type: ignore
+    )
+
+    # If "who" is None, docevent_from_submission will pull it out of submission
+    docevent_from_submission(
+        request,
+        submission,
+        desc="Uploaded new revision",
+        who=request.user.person if user_is_author else None,
+    )
+
+    replaces = DocAlias.objects.filter(name__in=submission.replaces_names)
+    pretty_replaces = '(none)' if not replaces else (
+        ', '.join(prettify_std_name(r.name) for r in replaces)
+    )
+
+    active_wg_drafts_replaced = submission.active_wg_drafts_replaced
+    closed_wg_drafts_replaced = submission.closed_wg_drafts_replaced
+
+    # Determine which approvals are required
+    requires_prev_authors_approval = accept_submission_requires_prev_auth_approval(submission)
+    requires_group_approval = accept_submission_requires_group_approval(submission)
+    requires_ad_approval = submission.revises_wg_draft and not submission.group.is_active
+    if submission.is_individual:
+        requires_prev_group_approval = active_wg_drafts_replaced.exists()
+        requires_prev_ad_approval = closed_wg_drafts_replaced.exists()
+    else:
+        requires_prev_group_approval = False
+        requires_prev_ad_approval = False
+
+    # Partial message for submission event
+    sub_event_desc = 'Set submitter to \"%s\", replaces to %s' % (submission.submitter, pretty_replaces)
+    docevent_desc = None
+    address_list = []
+    if requires_ad_approval or requires_prev_ad_approval:
+        submission.state_id = "ad-appr"
+        submission.save()
+
+        if closed_wg_drafts_replaced.exists():
+            replaced_document = closed_wg_drafts_replaced.first()
+        else:
+            replaced_document = None
+
+        address_list = send_approval_request(
+            request,
+            submission,
+            replaced_document,  # may be None
+        )
+        sent_to = ', '.join(address_list)
+        sub_event_desc += ' and sent approval email to AD: %s' % sent_to
+        docevent_desc = "Request for posting approval emailed to AD: %s" % sent_to
+    elif requires_group_approval or requires_prev_group_approval:
         submission.state = DraftSubmissionStateName.objects.get(slug="grp-appr")
         submission.save()
 
-        sent_to = send_approval_request_to_group(request, submission)
+        if active_wg_drafts_replaced.exists():
+            replaced_document = active_wg_drafts_replaced.first()
+        else:
+            replaced_document = None
 
-        desc = "sent approval email to group chairs: %s" % ", ".join(sent_to)
-        docDesc = "Request for posting approval emailed to group chairs: %s" % ", ".join(sent_to)
-
+        address_list = send_approval_request(
+            request,
+            submission,
+            replaced_document,  # may be None
+        )
+        sent_to = ', '.join(address_list)
+        sub_event_desc += ' and sent approval email to group chairs: %s' % sent_to
+        docevent_desc = "Request for posting approval emailed to group chairs: %s" % sent_to
+    elif user_is_author and autopost:
+        # go directly to posting submission
+        sub_event_desc = "New version accepted (logged-in submitter: %s)" % request.user.person # type: ignore
+        post_submission(request, submission, sub_event_desc, sub_event_desc)
+        sub_event_desc = None  # do not create submission event below, post_submission() handles it
     else:
-        group_authors_changed = False
-        doc = submission.existing_document()
-        if doc and doc.group:
-            old_authors = [ author.person for author in doc.documentauthor_set.all() ]
-            new_authors = [ get_person_from_name_email(author["name"], author.get("email")) for author in submission.authors ]
-            group_authors_changed = set(old_authors)!=set(new_authors)
-
         submission.auth_key = generate_random_key()
         if requires_prev_authors_approval:
             submission.state = DraftSubmissionStateName.objects.get(slug="aut-appr")
@@ -820,14 +915,29 @@ def send_confirmation_emails(request, submission, requires_group_approval, requi
             submission.state = DraftSubmissionStateName.objects.get(slug="auth")
         submission.save()
 
-        sent_to = send_submission_confirmation(request, submission, chair_notice=group_authors_changed)
+        group_authors_changed = False
+        doc = submission.existing_document()
+        if doc and doc.group:
+            old_authors = [ author.person for author in doc.documentauthor_set.all() ]
+            new_authors = [ get_person_from_name_email(author["name"], author.get("email")) for author in submission.authors ]
+            group_authors_changed = set(old_authors)!=set(new_authors)
 
+        address_list = send_submission_confirmation(
+            request,
+            submission,
+            chair_notice=group_authors_changed
+        )
+        sent_to = ', '.join(address_list)
         if submission.state_id == "aut-appr":
-            desc = "sent confirmation email to previous authors: %s" % ", ".join(sent_to)
-            docDesc = "Request for posting confirmation emailed to previous authors: %s" % ", ".join(sent_to)
+            sub_event_desc += " and sent confirmation email to previous authors: %s" % sent_to
+            docevent_desc = "Request for posting confirmation emailed to previous authors: %s" % sent_to
         else:
-            desc = "sent confirmation email to submitter and authors: %s" % ", ".join(sent_to)
-            docDesc = "Request for posting confirmation emailed to submitter and authors: %s" % ", ".join(sent_to)
-    return sent_to, desc, docDesc
+            sub_event_desc += " and sent confirmation email to submitter and authors: %s" % sent_to
+            docevent_desc = "Request for posting confirmation emailed to submitter and authors: %s" % sent_to
 
-    
+    if sub_event_desc:
+        create_submission_event(request, submission, sub_event_desc)
+    if docevent_desc:
+        docevent_from_submission(request, submission, docevent_desc, who=Person.objects.get(name="(System)"))
+        
+    return address_list

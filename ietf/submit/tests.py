@@ -379,6 +379,85 @@ class SubmitTests(TestCase):
     def text_submit_new_wg_txt_xml(self):
         self.submit_new_wg(["txt", "xml"])
 
+    def test_submit_new_wg_as_author(self):
+        """A new WG submission by a logged-in author needs chair approval"""
+        # submit new -> supply submitter info -> approve
+        mars = GroupFactory(type_id='wg', acronym='mars')
+        draft = WgDraftFactory(group=mars)
+        setup_default_community_list_for_group(draft.group)
+
+        name = "draft-ietf-mars-testing-tests"
+        rev = "00"
+        group = "mars"
+
+        status_url, author = self.do_submission(name, rev, group)
+        username = author.user.email
+
+        # supply submitter info, then draft should be in and ready for approval
+        mailbox_before = len(outbox)
+        self.client.login(username=username, password=username+'+password')  # log in as the author
+        r = self.supply_extra_metadata(name, status_url, author.ascii, author.email().address.lower(), replaces='')
+        self.assertEqual(r.status_code, 302)
+        status_url = r["Location"]
+
+        # Draft should be in the 'grp-appr' state to await approval by WG chair
+        submission = Submission.objects.get(name=name, rev=rev)
+        self.assertEqual(submission.state_id, 'grp-appr')
+
+        # Approval request notification should be sent to the WG chair
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue("New draft waiting for approval" in outbox[-1]["Subject"])
+        self.assertTrue(name in outbox[-1]["Subject"])
+        print(outbox[-1]["To"])
+        self.assertTrue('mars-chairs@ietf.org' in outbox[-1]['To'])
+
+        # Status page should show that group chair approval is needed
+        r = self.client.get(status_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'The submission is pending approval by the group chairs.')
+
+    def submit_new_concluded_wg_as_author(self, group_state_id='conclude'):
+        """A new concluded WG submission by a logged-in author needs AD approval"""
+        mars = GroupFactory(type_id='wg', acronym='mars', state_id=group_state_id)
+        draft = WgDraftFactory(group=mars)
+        setup_default_community_list_for_group(draft.group)
+
+        name = "draft-ietf-mars-testing-tests"
+        rev = "00"
+        group = "mars"
+
+        status_url, author = self.do_submission(name, rev, group)
+        username = author.user.email
+
+        # Should receive an error because group is not active
+        self.client.login(username=username, password=username+'+password')  # log in as the author
+        r = self.client.get(status_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Group exists but is not an active group')
+        q = PyQuery(r.content)
+        post_button = q('[type=submit]:contains("Post")')
+        self.assertEqual(len(post_button), 0)  # no UI option to post the submission in this state
+        
+        # Try to post anyway
+        r = self.client.post(status_url,
+                             {'submitter-name': author.name, 
+                              'submitter-email': username, 
+                              'action': 'autopost', 
+                              'replaces': ''})
+        # Attempt should fail and draft should remain in the uploaded state
+        self.assertEqual(r.status_code, 403)
+        submission = Submission.objects.get(name=name, rev=rev)
+        self.assertEqual(submission.state_id, 'uploaded')
+
+    def test_submit_new_concluded_wg_as_author(self):
+        self.submit_new_concluded_wg_as_author()
+
+    def test_submit_new_bofconc_wg_as_author(self):
+        self.submit_new_concluded_wg_as_author('bof-conc')
+
+    def test_submit_new_replaced_wg_as_author(self):
+        self.submit_new_concluded_wg_as_author('replaced')
+
     def submit_existing(self, formats, change_authors=True, group_type='wg', stream_type='ietf'):
         # submit new revision of existing -> supply submitter info -> prev authors confirm
         if stream_type == 'ietf':
@@ -592,6 +671,67 @@ class SubmitTests(TestCase):
     def test_submit_existing_iab(self):
         self.submit_existing(["txt"],stream_type='iab', group_type='individ')
 
+    def do_submit_existing_concluded_wg_test(self, group_state_id='conclude', submit_as_author=False):
+        """A revision to an existing WG draft should go to AD for approval if WG is not active"""
+        ad = Person.objects.get(user__username='ad')
+        area = GroupFactory(type_id='area')
+        RoleFactory(name_id='ad', group=area, person=ad)
+        group = GroupFactory(type_id='wg', state_id=group_state_id, parent=area, acronym='mars')
+        author = PersonFactory()
+        draft = WgDraftFactory(group=group, authors=[author])
+        draft.set_state(State.objects.get(type_id='draft-stream-ietf', slug='wg-doc'))
+
+        name = draft.name
+        rev = "%02d" % (int(draft.rev) + 1)
+
+        if submit_as_author:
+            username = author.user.email
+            self.client.login(username=username, password=username + '+password')
+        status_url, author = self.do_submission(name, rev, group, author=author)
+        mailbox_before = len(outbox)
+
+        # Try to post anyway
+        r = self.client.post(status_url,
+                             {'submitter-name': author.name,
+                              'submitter-email': 'submitter@example.com',
+                              'action': 'autopost',
+                              'replaces': ''})
+        self.assertEqual(r.status_code, 302)
+        status_url = r["Location"]
+
+        # Draft should be in the 'ad-appr' state to await approval
+        submission = Submission.objects.get(name=name, rev=rev)
+        self.assertEqual(submission.state_id, 'ad-appr')
+
+        # Approval request notification should be sent to the AD for the group
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue("New draft waiting for approval" in outbox[-1]["Subject"])
+        self.assertTrue(name in outbox[-1]["Subject"])
+        self.assertTrue(ad.user.email in outbox[-1]['To'])
+
+        # Status page should show that AD approval is needed
+        r = self.client.get(status_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'The submission is pending approval by the area director.')
+
+    def test_submit_existing_concluded_wg(self):
+        self.do_submit_existing_concluded_wg_test()
+
+    def test_submit_existing_concluded_wg_as_author(self):
+        self.do_submit_existing_concluded_wg_test(submit_as_author=True)
+
+    def test_submit_existing_bofconc_wg(self):
+        self.do_submit_existing_concluded_wg_test(group_state_id='bof-conc')
+
+    def test_submit_existing_bofconc_wg_as_author(self):
+        self.do_submit_existing_concluded_wg_test(group_state_id='bof-conc', submit_as_author=True)
+
+    def test_submit_existing_replaced_wg(self):
+        self.do_submit_existing_concluded_wg_test(group_state_id='replaced')
+
+    def test_submit_existing_replaced_wg_as_author(self):
+        self.do_submit_existing_concluded_wg_test(group_state_id='replaced', submit_as_author=True)
+
     def submit_new_individual(self, formats):
         # submit new -> supply submitter info -> confirm
 
@@ -736,6 +876,51 @@ class SubmitTests(TestCase):
         r = self.client.get(urlreverse('ietf.doc.views_search.recent_drafts'))
         self.assertContains(r, draft.name)
         self.assertContains(r, draft.title)
+
+    def submit_new_individual_replacing_wg(self, logged_in=False, group_state_id='active', notify_ad=False):
+        """Chair of an active WG should be notified if individual draft is proposed to replace a WG draft"""
+        name = "draft-authorname-testing-tests"
+        rev = "00"
+        group = None
+        status_url, author = self.do_submission(name, rev, group)
+
+        ad = Person.objects.get(user__username='ad')
+        replaced_draft = WgDraftFactory(group__state_id=group_state_id)
+        RoleFactory(name_id='ad', group=replaced_draft.group.parent, person=ad)
+        if logged_in:
+            username = author.user.email
+            self.client.login(username=username, password=username + '+password')
+
+        mailbox_before = len(outbox)
+        self.supply_extra_metadata(
+            name,
+            status_url,
+            "Submitter Name",
+            "submitter@example.com",
+            replaces=str(replaced_draft.docalias.first().pk),
+        )
+        
+        submission = Submission.objects.get(name=name, rev=rev)
+        self.assertEqual(submission.state_id, 'ad-appr' if notify_ad else 'grp-appr')
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        notice = outbox[-1]
+        self.assertIn(
+            ad.user.email if notify_ad else '%s-chairs@ietf.org' % replaced_draft.group.acronym,
+            notice['To']
+        )
+        self.assertIn('New draft waiting for approval', notice['Subject'])
+
+    def test_submit_new_individual_replacing_wg(self):
+        self.submit_new_individual_replacing_wg()
+
+    def test_submit_new_individual_replacing_wg_logged_in(self):
+        self.submit_new_individual_replacing_wg(logged_in=True)
+
+    def test_submit_new_individual_replacing_concluded_wg(self):
+        self.submit_new_individual_replacing_wg(group_state_id='conclude', notify_ad=True)
+
+    def test_submit_new_individual_replacing_concluded_wg_logged_in(self):
+        self.submit_new_individual_replacing_wg(group_state_id='conclude', notify_ad=True, logged_in=True)
 
     def test_submit_cancel_confirmation(self):
         ad=Person.objects.get(user__username='ad')
@@ -1338,12 +1523,110 @@ class SubmitTests(TestCase):
         """An existing SubmissionDocEvent with later rev should trigger manual processing"""
         self.submit_conflicting_submissiondocevent_rev('01', '02')
 
+    def do_wg_approval_auth_test(self, state, chair_can_approve=False):
+        """Helper to test approval authorization
+        
+        Assumes approval allowed by AD and secretary and, optionally, chair of WG
+        """
+        class _SubmissionFactory:
+            """Helper class to generate fresh submissions"""
+            def __init__(self, author, state):
+                self.author = author
+                self.state = state
+                self.index = 0
+
+            def next(self):
+                self.index += 1
+                sub = Submission.objects.create(name="draft-ietf-mars-bar-%d" % self.index,
+                                                group=Group.objects.get(acronym="mars"),
+                                                submission_date=datetime.date.today(),
+                                                authors=[dict(name=self.author.name,
+                                                              email=self.author.user.email,
+                                                              affiliation='affiliation',
+                                                              country='country')],
+                                                rev="00",
+                                                state_id=self.state)
+                status_url = urlreverse('ietf.submit.views.submission_status',
+                                        kwargs=dict(submission_id=sub.pk,
+                                                    access_token=sub.access_token()))
+                return sub, status_url
+
+        def _assert_approval_refused(username, submission_factory, user_description):
+            """Helper to attempt to approve a document and check that it fails"""
+            if username:
+                self.client.login(username=username, password=username + '+password')
+            submission, status_url = submission_factory.next()
+            r = self.client.post(status_url, dict(action='approve'))
+            self.assertEqual(r.status_code, 403, '%s should not be able to approve' % user_description.capitalize())
+            submission = Submission.objects.get(pk=submission.pk)  # refresh from DB
+            self.assertEqual(submission.state_id, state,
+                             'Submission should still be awaiting approval after %s approval attempt fails' % user_description)
+
+        def _assert_approval_allowed(username, submission_factory, user_description):
+            """Helper to attempt to approve a document and check that it succeeds"""
+            self.client.login(username=username, password=username + '+password')
+            submission, status_url = submission_factory.next()
+            r = self.client.post(status_url, dict(action='approve'))
+            self.assertEqual(r.status_code, 302, '%s should be able to approve' % user_description.capitalize())
+            submission = Submission.objects.get(pk=submission.pk)  # refresh from DB
+            self.assertEqual(submission.state_id, 'posted',
+                             'Submission should be posted after %s approves' % user_description)
+
+        # create WGs
+        area = GroupFactory(type_id='area', acronym='area')
+        mars = GroupFactory(type_id='wg', acronym='mars', parent=area)  # WG for submission
+        ames = GroupFactory(type_id='wg', acronym='ames', parent=area)  # another WG
+        
+        # create / get users and roles
+        ad = Person.objects.get(user__username='ad')
+        RoleFactory(name_id='ad', group=area, person=ad)
+        RoleFactory(name_id='chair', group=mars, person__user__username='marschairman')
+        RoleFactory(name_id='chair', group=ames, person__user__username='ameschairman')
+        author = PersonFactory(user__username='author_user')
+        PersonFactory(user__username='ordinary_user')
+        
+        submission_factory = _SubmissionFactory(author, state)
+
+        # Most users should not be allowed to approve
+        _assert_approval_refused(None, submission_factory, 'anonymous user')
+        _assert_approval_refused('ordinary_user', submission_factory, 'ordinary user')
+        _assert_approval_refused('author_user', submission_factory, 'author')
+        _assert_approval_refused('ameschairman', submission_factory, 'wrong WG chair')
+
+        # chair of correct wg should be able to approve if chair_can_approve == True
+        if chair_can_approve:
+            _assert_approval_allowed('marschairman', submission_factory, 'WG chair')
+        else:
+            _assert_approval_refused('marschairman', submission_factory, 'WG chair')
+
+        # ADs and secretaries can always approve
+        _assert_approval_allowed('ad', submission_factory, 'AD')
+        _assert_approval_allowed('secretary', submission_factory, 'secretary')
+
+    def test_submit_wg_group_approval_auth(self):
+        """Group chairs should be able to approve submissions in grp-appr state"""
+        self.do_wg_approval_auth_test('grp-appr', chair_can_approve=True)
+
+    def test_submit_wg_ad_approval_auth(self):
+        """Area directors should be able to approve submissions in ad-appr state"""
+        self.do_wg_approval_auth_test('ad-appr', chair_can_approve=False)
 
 class ApprovalsTestCase(TestCase):
     def test_approvals(self):
-        RoleFactory(name_id='chair', group__acronym='mars', person__user__username='marschairman')
+        RoleFactory(name_id='chair',
+                    group__acronym='mars',
+                    person__user__username='marschairman')
+        RoleFactory(name_id='chair',
+                    group__acronym='ames',
+                    person__user__username='ameschairman')
+        RoleFactory(name_id='ad',
+                    group=Group.objects.get(acronym='mars').parent,
+                    person=Person.objects.get(user__username='ad'))
+        RoleFactory(name_id='ad',
+                    group=Group.objects.get(acronym='ames').parent,
+                    person__user__username='other-ad')
+
         url = urlreverse('ietf.submit.views.approvals')
-        self.client.login(username="marschairman", password="marschairman+password")
 
         Preapproval.objects.create(name="draft-ietf-mars-foo", by=Person.objects.get(user__username="marschairman"))
         Preapproval.objects.create(name="draft-ietf-mars-baz", by=Person.objects.get(user__username="marschairman"))
@@ -1358,17 +1641,101 @@ class ApprovalsTestCase(TestCase):
                                   submission_date=datetime.date.today(),
                                   rev="00",
                                   state_id="grp-appr")
+        Submission.objects.create(name="draft-ietf-mars-quux",
+                                  group=Group.objects.get(acronym="mars"),
+                                  submission_date=datetime.date.today(),
+                                  rev="00",
+                                  state_id="ad-appr")
 
-        # get
+        # get as wg chair
+        self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
 
         self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-foo")')), 0)
         self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-bar")')), 1)
+        self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-quux")')), 0)  # wg chair does not see ad-appr
         self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-foo")')), 0)
         self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-baz")')), 1)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-bar")')), 0)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-quux")')), 0)
         self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-foo")')), 1)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-baz")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-bar")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-quux")')), 0)
+
+        # get as AD - sees everything
+        self.client.login(username="ad", password="ad+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-foo")')), 0)
+        self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-bar")')), 1)  # AD sees grp-appr in their area 
+        self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-quux")')), 1)  # AD does see ad-appr
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-foo")')), 0)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-baz")')), 1)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-bar")')), 0)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-quux")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-foo")')), 1)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-baz")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-bar")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-quux")')), 0)
+
+        # get as wg chair for a different group - should see nothing
+        self.client.login(username="ameschairman", password="ameschairman+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-foo")')), 0)
+        self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-bar")')), 0)
+        self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-quux")')), 0)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-foo")')), 0)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-baz")')), 0)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-bar")')), 0)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-quux")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-foo")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-baz")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-bar")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-quux")')), 0)
+
+        # get as AD for a different area - should see nothing
+        self.client.login(username="other-ad", password="other-ad+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-foo")')), 0)
+        self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-bar")')), 0) 
+        self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-quux")')), 0)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-foo")')), 0)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-baz")')), 0)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-bar")')), 0)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-quux")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-foo")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-baz")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-bar")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-quux")')), 0)
+
+        # get as secretary - should see everything
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-foo")')), 0)
+        self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-bar")')), 1)
+        self.assertEqual(len(q('.approvals a:contains("draft-ietf-mars-quux")')), 1)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-foo")')), 0)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-baz")')), 1)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-bar")')), 0)
+        self.assertEqual(len(q('.preapprovals td:contains("draft-ietf-mars-quux")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-foo")')), 1)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-baz")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-bar")')), 0)
+        self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-quux")')), 0)
 
     def test_add_preapproval(self):
         RoleFactory(name_id='chair', group__acronym='mars', person__user__username='marschairman')
