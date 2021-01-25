@@ -327,7 +327,7 @@
         <li id="timezone">
           <select style="width: 12em;" id="timezone_select"></select>
         </li>
-        {% if settings.DEBUG %}
+        {% if settings.DEBUG and settings.DEBUG_AGENDA %}
         <li><hr/></li>
         <li><span id="current-time"></span></li>
         {% endif %}
@@ -496,7 +496,7 @@
   <script src="{% static 'ietf/js/agenda/timezone.js' %}"></script>
   <script>
 
-  {% if settings.DEBUG %}
+  {% if settings.DEBUG and settings.DEBUG_AGENDA %}
   speedup = +$.urlParam('speedup');
   if (speedup < 1) {
       speedup = 1;
