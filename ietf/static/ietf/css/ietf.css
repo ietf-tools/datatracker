@@ -1460,3 +1460,63 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   width: 10em;
 }
 
+.rightmarker, .leftmarker {
+    width: 3px;
+    padding-right: 0px !important;
+    padding-left: 0px !important;
+}
+.ongoing > td:first-child {
+    background-color: red !important;
+}
+
+.ongoing > td:last-child {
+    background-color: red !important;
+}
+
+.timetooltip {
+    position: relative;
+}
+
+.timetooltip .timetooltiptext {
+  visibility: hidden;
+  background-color: #eee;
+  color: #000;
+  text-align: left;
+  border-radius: 6px;
+  padding: 5px 5px;
+  position: absolute;
+  z-index: 110;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -60px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  width: 60em;
+}
+
+.reschedtimetooltip .timetooltiptext {
+    margin-left: -300px;
+}
+
+.timetooltiptext table tr td {
+    padding: 1px 5px;
+}
+
+.timetooltiptext table tr th {
+    text-align: center;
+}
+
+.timehead {
+    text-align: right;
+    font-weight: bold;
+}
+
+.timetooltip:hover .timetooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+
+#current-time {
+    display: inline-block;
+}
+

@@ -1458,6 +1458,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         "filter_categories": filter_categories,
         "non_area_keywords": [label.lower() for label in non_area_labels],
         "now": datetime.datetime.now().astimezone(pytz.UTC),
+        "timezone": meeting.time_zone,
         "is_current_meeting": is_current_meeting,
         "use_codimd": True if meeting.date>=settings.MEETING_USES_CODIMD_DATE else False,
         "cache_time": 150 if is_current_meeting else 3600,
@@ -3392,6 +3393,16 @@ def upcoming(request):
     entries.extend(list(interim_sessions))
     entries.sort(key = lambda o: pytz.utc.localize(datetime.datetime.combine(o.date, datetime.datetime.min.time())) if isinstance(o,Meeting) else o.official_timeslotassignment().timeslot.utc_start_time())
     
+    for o in entries:
+        if isinstance(o, Meeting):
+            o.start_timestamp = int(pytz.utc.localize(datetime.datetime.combine(o.date, datetime.datetime.min.time())).timestamp())
+            o.end_timestamp = int(pytz.utc.localize(datetime.datetime.combine(o.end, datetime.datetime.max.time())).timestamp())
+        else:
+            o.start_timestamp = int(o.official_timeslotassignment().
+                               timeslot.utc_start_time().timestamp());
+            o.end_timestamp = int(o.official_timeslotassignment().
+                               timeslot.utc_end_time().timestamp());
+
     # add menu entries
     menu_entries = get_interim_menu_entries(request)
     selected_menu_entry = 'upcoming'

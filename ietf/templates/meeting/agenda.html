@@ -50,7 +50,7 @@
       {# cache this part -- it takes 3-6 seconds to generate #}
       {% load cache %}
       {% cache cache_time ietf_meeting_agenda_utc schedule.meeting.number request.path %}
-        <h1>Agenda</h1>
+        <h1>Agenda <small id="title-timezone" class="pull-right" >{{timezone}}</small></h1>
 
       {% if is_current_meeting %}
 	<p class="alert alert-info">
@@ -97,23 +97,22 @@
           {% for item in filtered_assignments %}
 
             {% ifchanged item.timeslot.time|date:"Y-m-d" %}
-              <tr><th class="gap" colspan="5"></th></tr>
+              <tr><th class="gap" colspan="7"></th></tr>
               <tr class="warning">
-                <th colspan="5">
+                <th colspan="7">
 		   {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
 		   <div class="anchor-target" id="{{item.timeslot.time|slugify}}"></div>
-	          {% if "-utc" in request.path %}
-	            {{ item.timeslot.utc_start_time|date:"l, F j, Y" }} (UTC)
-	          {% else %}
-	            {{ item.timeslot.time|date:"l, F j, Y" }} ({{item.timeslot.tzname}})
-	          {% endif %}
+	          {{ item.timeslot.time|date:"l, F j, Y" }}
 	        </th>
               </tr>
             {% endifchanged %}
 
             {% if item.timeslot.type_id == 'regular' %}
               {% ifchanged %}
-                <tr class="info">
+                <tr class="info"
+                    data-slot-start-ts="{{item.start_timestamp}}"
+                    data-slot-end-ts="{{item.end_timestamp}}">
+                  <td class="leftmarker"></td>
 	          <th class="text-nowrap text-right">
                     <span class="hidden-xs">
                        {% include "meeting/timeslot_start_end.html" %}
@@ -123,19 +122,19 @@
                     <span class="hidden-sm hidden-md hidden-lg">
                        {% include "meeting/timeslot_start_end.html" %}
                     </span>
-	            {% if "-utc" in request.path %}
-	              {{ item.timeslot.utc_start_time|date:"l"}}
-	            {% else %}
-	              {{ item.timeslot.time|date:"l"}}
-	            {% endif %}
+	            {{ item.timeslot.time|date:"l"}}
 	            {{item.timeslot.name|capfirst_allcaps}}
 	          </th>
+                  <td class="rightmarker"></td>
                 </tr>
               {% endifchanged %}
             {% endif %}
 
             {% if item.timeslot.type.slug == 'break' or item.timeslot.type.slug == 'reg' or item.timeslot.type.slug == 'other' %}
-                <tr id="row-{{ item.slug }}" data-filter-keywords="{{ item.filter_keywords|join:',' }}">
+                <tr id="row-{{ item.slug }}" data-filter-keywords="{{ item.filter_keywords|join:',' }}"
+                    data-slot-start-ts="{{item.start_timestamp}}"
+                    data-slot-end-ts="{{item.end_timestamp}}">
+                  <td class="leftmarker"></td>
 	          <td class="text-nowrap text-right">
                     <span class="hidden-xs">
                        {% include "meeting/timeslot_start_end.html" %}
@@ -189,6 +188,7 @@
                       </div>
 		    {% endif %}
 		  </td>
+                  <td class="rightmarker"></td>
                 </tr>
             {% endif %}
 
@@ -196,7 +196,10 @@
               {% if item.session.historic_group %}
                 <tr id="row-{{item.slug}}" 
                     {% if item.timeslot.type.slug == 'plenary' %}class="{{item.timeslot.type.slug}}danger"{% endif %}
-                    data-filter-keywords="{{ item.filter_keywords|join:',' }}">
+                    data-filter-keywords="{{ item.filter_keywords|join:',' }}"
+                    data-slot-start-ts="{{item.start_timestamp}}"
+                    data-slot-end-ts="{{item.end_timestamp}}">
+                  <td class="leftmarker"></td>
 		  {% if item.timeslot.type.slug == 'plenary' %}
 	            <th class="text-nowrap text-right">
                       <span class="hidden-xs">
@@ -282,11 +285,13 @@
                         RESCHEDULED
                         {% if item.session.rescheduled_to %}
                           TO
+                          <span class="timetooltip reschedtimetooltip"><span class="time" data-start-time="{{item.session.rescheduled_to.utc_start_time|date:"U"}}" data-end-time="{{item.session.rescheduled_to.utc_end_time|date:"U"}}" {% if item.timeslot.time|date:"l" != item.session.rescheduled_to.time|date:"l" %} weekday="1"{% endif %}>
 		          {% if "-utc" in request.path %}
                             {{ item.session.rescheduled_to.utc_start_time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.utc_end_time|date:"G:i" }}
 		          {% else %}
                             {{ item.session.rescheduled_to.time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.end_time|date:"G:i" }}
 		          {% endif %}
+                          </span></span>
                         {% endif %}
                       </span>
                     {% endif %}
@@ -297,6 +302,7 @@
                       <br><span class="text-danger">{{item.session.agenda_note}}</span>
                     {% endif %}
 		  </td>
+                  <td class="rightmarker"></td>
 		</tr>
               {% endif %}
             {% endif %}
@@ -306,11 +312,25 @@
     </div>
     <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
       <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+        <li><a href="#now">Now</a></li>
         {% for item in filtered_assignments %}
           {% ifchanged item.timeslot.time|date:"Y-m-d" %}
             <li><a href="#{{item.timeslot.time|slugify}}">{{ item.timeslot.time|date:"l, F j, Y" }}</a></li>
           {% endifchanged %}
         {% endfor %}
+        <li><hr/></li>
+
+        <li class="tzselect">Select timezone:</li>
+        <li><a id="meeting-timezone" onclick="use_timezone(0)">Meeting Timezone</a></li>
+        <li><a id="local-timezone" onclick="use_timezone(1)">Local Timezone</a></li>
+        <li><a id="utc-timezone" onclick="use_timezone(2)">UTC</a></li>
+        <li id="timezone">
+          <select style="width: 12em;" id="timezone_select"></select>
+        </li>
+        {% if settings.DEBUG %}
+        <li><hr/></li>
+        <li><span id="current-time"></span></li>
+        {% endif %}
       </ul>
     </div>
   </div>
@@ -469,6 +489,44 @@
    $(".modal").on("show.bs.modal", function () {
        retrieve_session_modal($(this).find(".session-materials"));
    });
+
+  </script>
+  <script src="{% static 'moment/min/moment.min.js' %}"></script>
+  <script src="{% static 'moment-timezone/builds/moment-timezone-with-data-10-year-range.min.js' %}"></script>
+  <script src="{% static 'ietf/js/agenda/timezone.js' %}"></script>
+  <script>
+
+  {% if settings.DEBUG %}
+  speedup = +$.urlParam('speedup');
+  if (speedup < 1) {
+      speedup = 1;
+  }
+  start_time = moment().utc();
+  if ($.urlParam('date')) {
+      offset_time = moment.tz(decodeURIComponent($.urlParam('date')), "UTC");
+  } else {
+      offset_time = start_time;
+  }
+  if (speedup > 1 || offset_time != start_time) {
+      moment.now = function () {
+          return (+new Date() - start_time) * speedup + offset_time;
+      }
+  }
+  {% else %}
+  speedup = 1;
+  {% endif %}
+
+  // Get meeting and local times, initialize timezone system
+  meeting_timezone = "{{timezone}}";
+  local_timezone = moment.tz.guess();
+  current_timezone = 'UTC';
+  {% if "-utc" in request.path %}
+  timezone_init('UTC');
+  {% else %}
+  timezone_init(meeting_timezone);
+  {% endif %}
+
+  init_timers();
 
   </script>
 {% endblock %}
