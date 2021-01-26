@@ -1,3 +1,6 @@
+// Callback for timezone change - called after current_timezone is updated
+var timezone_change_callback;
+
 // Initialize moments
 function initialize_moments() {
     var times=$('span.time')
@@ -195,7 +198,9 @@ function update_times(newtz) {
     });
     update_tooltips_all();
     update_clock();
-    // update_calendar(agenda_filter.get_filter())
+    if (timezone_change_callback) {
+        timezone_change_callback(newtz);
+    }
 }
 
 // Highlight ongoing based on the current time
@@ -253,3 +258,7 @@ function init_timers() {
     setInterval(function() { update_tooltips_all(); }, 3600000 / speedup);
 }
 
+// Register a callback for timezone change
+function set_tz_change_callback(cb) {
+    timezone_change_callback = cb;
+}

@@ -342,7 +342,9 @@
 
   <script src="{% static 'ietf/js/agenda/agenda_filter.js' %}"></script>
   <script>
-   // Update the agenda display with specified filters
+  var current_timezone = 'UTC';
+
+  // Update the agenda display with specified filters
    function update_agenda_display(filter_params) {
        var agenda_rows=$('[id^="row-"]')
 
@@ -380,45 +382,43 @@
        }
    }
 
-      function update_weekview(filter_params) {
-          var weekview = $("#weekview");
-
-          if (!agenda_filter.filtering_is_enabled(filter_params)) {
-              weekview.addClass("hidden");
-              return;
-          }
-
-          // Filtering is enabled
-          weekview.removeClass("hidden");
-          
-          var wv_iframe = document.getElementById('weekview');
-          var wv_window = wv_iframe.contentWindow;
-          var queryparams = window.location.search;
-          {% if "-utc" in request.path %}
-              if (queryparams) {
-                  queryparams += '&tz=utc';
-              } else {
-                  queryparams = '?tz=utc';
-              }
-          {% endif %} 
-          var new_url = 'week-view.html' + queryparams;
-          if (wv_iframe.src && wv_window.history && wv_window.history.replaceState) {
-              wv_window.history.replaceState({}, '', new_url);
-              wv_window.redraw_weekview();
-          } else {
-              // either have not yet loaded the iframe or we do not support history replacement
-              wv_iframe.src = new_url;
-          }
-      }
-
+   function update_weekview(filter_params) {
+       var weekview = $("#weekview");
+       if (agenda_filter.filtering_is_enabled(filter_params)) {
+           weekview.removeClass("hidden");
+       } else {
+           weekview.addClass("hidden");
+       }
+       update_weekview_display();
+   }
+   
+   function update_weekview_display() {
+       var weekview = $("#weekview");
+       if (!weekview.hasClass('hidden')) {
+           var queryparams = window.location.search;
+           if (queryparams) {
+               queryparams += '&tz=' + current_timezone.toLowerCase();
+           } else {
+               queryparams = '?tz=' + current_timezone.toLowerCase();
+           }
+           var new_url = 'week-view.html' + queryparams;
+           var wv_iframe = document.getElementById('weekview');
+           var wv_window = wv_iframe.contentWindow;
+           if (wv_iframe.src && wv_window.history && wv_window.history.replaceState) {
+               wv_window.history.replaceState({}, '', new_url);
+               wv_window.redraw_weekview();
+           } else {
+               // either have not yet loaded the iframe or we do not support history replacement
+               wv_iframe.src = new_url;
+           }
+       }       
+   }
+   
    function update_view(filter_params) {
        update_agenda_display(filter_params);
        update_weekview(filter_params)
        update_ical_links(filter_params)
    }
-
-   agenda_filter.set_update_callback(update_view);
-   agenda_filter.enable();
 
    /**
     * Retrieve and display materials for a session
@@ -519,7 +519,6 @@
   // Get meeting and local times, initialize timezone system
   meeting_timezone = "{{timezone}}";
   local_timezone = moment.tz.guess();
-  current_timezone = 'UTC';
   {% if "-utc" in request.path %}
   timezone_init('UTC');
   {% else %}
@@ -527,6 +526,10 @@
   {% endif %}
 
   init_timers();
+
+  set_tz_change_callback(update_weekview_display);
+  agenda_filter.set_update_callback(update_view);
+  agenda_filter.enable();
 
   </script>
 {% endblock %}
