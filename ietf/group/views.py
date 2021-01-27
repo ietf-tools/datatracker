@@ -221,7 +221,6 @@ def wg_summary_area(request, group_type):
         raise Http404
     areas = Group.objects.filter(type="area", state="active").order_by("name")
     for area in areas:
-        area.ads = sorted(roles(area, "ad"), key=extract_last_name)
         area.groups = Group.objects.filter(parent=area, type="wg", state="active").order_by("acronym")
         for group in area.groups:
             group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
@@ -250,13 +249,11 @@ def wg_charters(request, group_type):
         raise Http404
     areas = Group.objects.filter(type="area", state="active").order_by("name")
     for area in areas:
-        area.ads = sorted(roles(area, "ad"), key=extract_last_name)
         area.groups = Group.objects.filter(parent=area, type="wg", state="active").order_by("name")
         for group in area.groups:
             fill_in_charter_info(group)
             fill_in_wg_roles(group)
             fill_in_wg_drafts(group)
-            group.area = area
     return render(request, 'group/1wg-charters.txt',
                   { 'areas': areas },
                   content_type='text/plain; charset=UTF-8')
@@ -265,17 +262,12 @@ def wg_charters(request, group_type):
 def wg_charters_by_acronym(request, group_type):
     if group_type != "wg":
         raise Http404
-    areas = dict((a.id, a) for a in Group.objects.filter(type="area", state="active").order_by("name"))
-
-    for area in areas.values():
-        area.ads = sorted(roles(area, "ad"), key=extract_last_name)
 
     groups = Group.objects.filter(type="wg", state="active").exclude(parent=None).order_by("acronym")
     for group in groups:
         fill_in_charter_info(group)
         fill_in_wg_roles(group)
         fill_in_wg_drafts(group)
-        group.area = areas.get(group.parent_id)
     return render(request, 'group/1wg-charters-by-acronym.txt',
                   { 'groups': groups },
                   content_type='text/plain; charset=UTF-8')
@@ -313,7 +305,6 @@ def active_dirs(request):
     dirs = Group.objects.filter(type__in=['dir', 'review'], state="active").order_by("name")
     for group in dirs:
         group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
-        group.ads = sorted(roles(group, "ad"), key=extract_last_name)
         group.secretaries = sorted(roles(group, "secr"), key=extract_last_name)
     return render(request, 'group/active_dirs.html', {'dirs' : dirs })
 
@@ -321,7 +312,6 @@ def active_review_dirs(request):
     dirs = Group.objects.filter(type="review", state="active").order_by("name")
     for group in dirs:
         group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
-        group.ads = sorted(roles(group, "ad"), key=extract_last_name)
         group.secretaries = sorted(roles(group, "secr"), key=extract_last_name)
     return render(request, 'group/active_review_dirs.html', {'dirs' : dirs })
 
@@ -345,14 +335,15 @@ def active_wgs(request):
     areas = Group.objects.filter(type="area", state="active").order_by("name")
     for area in areas:
         # dig out information for template
-        area.ads = (list(sorted(roles(area, "ad"), key=extract_last_name))
-                    + list(sorted(roles(area, "pre-ad"), key=extract_last_name)))
+        area.ads_and_pre_ads = (
+            list(area.ads) + list(sorted(roles(area, "pre-ad"), key=extract_last_name))
+        )
 
         area.groups = Group.objects.filter(parent=area, type="wg", state="active").order_by("acronym")
         area.urls = area.groupextresource_set.all().order_by("name")
         for group in area.groups:
             group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
-            group.ad_out_of_area = group.ad_role() and group.ad_role().person not in [role.person for role in area.ads]
+            group.ad_out_of_area = group.ad_role() and group.ad_role().person not in [role.person for role in area.ads_and_pre_ads]
             # get the url for mailing list subscription
             if group.list_subscribe.startswith('http'):
                 group.list_subscribe_url = group.list_subscribe
@@ -378,7 +369,6 @@ def active_ags(request):
     groups = Group.objects.filter(type="ag", state="active").order_by("acronym")
     for group in groups:
         group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
-        group.ads = sorted(roles(group, "ad"), key=extract_last_name)
 
     return render(request, 'group/active_ags.html', { 'groups': groups })
 

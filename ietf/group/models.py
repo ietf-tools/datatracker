@@ -49,6 +49,8 @@ class GroupInfo(models.Model):
 
     uses_milestone_dates = models.BooleanField(default=True)
 
+    ACTIVE_STATE_IDS = ('active', 'bof', 'proposed')  # states considered "active"
+    
     def __str__(self):
         return self.name
 
@@ -72,12 +74,39 @@ class GroupInfo(models.Model):
     def is_bof(self):
         return self.state_id in ["bof", "bof-conc"]
 
+    @property
+    def is_wg(self):
+        return self.type_id == 'wg'
+
+    @property
+    def is_active(self):
+        # N.B., this has only been thought about for groups of type WG!
+        return self.state_id in self.ACTIVE_STATE_IDS
+
+    @property
+    def is_individual(self):
+        return self.acronym == 'none'
+
+    @property
+    def area(self):
+        if self.type_id == 'area':
+            return self
+        elif not self.is_individual and self.parent:
+            return self.parent
+        return None
+
     class Meta:
         abstract = True
 
 class GroupManager(models.Manager):
+    def wgs(self):
+        return self.get_queryset().filter(type='wg')
+
     def active_wgs(self):
-        return self.get_queryset().filter(type='wg', state__in=('bof','proposed','active'))
+        return self.wgs().filter(state__in=Group.ACTIVE_STATE_IDS)
+
+    def closed_wgs(self):
+        return self.wgs().exclude(state__in=Group.ACTIVE_STATE_IDS)
 
 class Group(GroupInfo):
     objects = GroupManager()
@@ -113,6 +142,13 @@ class Group(GroupInfo):
     def get_chair(self):
         chair = self.role_set.filter(name__slug='chair')[:1]
         return chair and chair[0] or None
+
+    @property
+    def ads(self):
+        return sorted(
+            self.role_set.filter(name="ad").select_related("email", "person"),
+            key=lambda role: role.person.name_parts()[3],  # gets last name
+        )
 
     # these are copied to Group because it is still proxied.
     @property

@@ -22,23 +22,23 @@ from django.views.decorators.csrf import csrf_exempt
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, DocAlias, AddedMessageEvent
-from ietf.doc.utils import prettify_std_name
 from ietf.group.models import Group
 from ietf.group.utils import group_features_group_filter
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message, MessageAttachment
-from ietf.person.models import Person, Email
+from ietf.person.models import Email
 from ietf.submit.forms import ( SubmissionManualUploadForm, SubmissionAutoUploadForm, AuthorForm,
     SubmitterForm, EditSubmissionForm, PreapprovalForm, ReplacesForm, SubmissionEmailForm, MessageModelForm )
-from ietf.submit.mail import ( send_full_url, send_manual_post_request, add_submission_email, get_reply_to )
+from ietf.submit.mail import send_full_url, send_manual_post_request, add_submission_email, get_reply_to
 from ietf.submit.models import (Submission, Preapproval,
     DraftSubmissionStateName, SubmissionEmailEvent )
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
     recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
     post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
-    get_submission, fill_in_submission, apply_checkers, send_confirmation_emails, save_files,
-    get_person_from_name_email, check_submission_revision_consistency )
+    get_submission, fill_in_submission, apply_checkers, save_files, 
+    check_submission_revision_consistency, accept_submission, accept_submission_requires_group_approval,
+    accept_submission_requires_prev_auth_approval)
 from ietf.stats.utils import clean_country_name
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.log import log
@@ -174,18 +174,7 @@ def api_submit(request):
                     raise ValidationError('Submitter %s is not one of the document authors' % user.username)
 
                 submission.submitter = user.person.formatted_email()
-                docevent_from_submission(request, submission, desc="Uploaded new revision")
-
-                requires_group_approval = (submission.rev == '00'
-                    and submission.group and submission.group.features.req_subm_approval
-                    and not Preapproval.objects.filter(name=submission.name).exists())
-                requires_prev_authors_approval = Document.objects.filter(name=submission.name)
-
-                sent_to, desc, docDesc = send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval)
-                msg = "Set submitter to \"%s\" and %s" % (submission.submitter, desc)
-                create_submission_event(request, submission, msg)
-                docevent_from_submission(request, submission, docDesc, who=Person.objects.get(name="(System)"))
-
+                sent_to = accept_submission(request, submission)
 
                 return HttpResponse(
                     "Upload of %s OK, confirmation requests sent to:\n  %s" % (submission.name, ',\n  '.join(sent_to)),
@@ -253,10 +242,14 @@ def submission_status(request, submission_id, access_token=None):
 
     is_secretariat = has_role(request.user, "Secretariat")
     is_chair = submission.group and submission.group.has_role(request.user, "chair")
+    area = submission.area
+    is_ad = area and area.has_role(request.user, "ad")
 
     can_edit = can_edit_submission(request.user, submission, access_token) and submission.state_id == "uploaded"
     can_cancel = (key_matched or is_secretariat) and submission.state.next_states.filter(slug="cancel")
-    can_group_approve = (is_secretariat or is_chair) and submission.state_id == "grp-appr"
+    can_group_approve = (is_secretariat or is_ad or is_chair) and submission.state_id == "grp-appr"
+    can_ad_approve = (is_secretariat or is_ad) and submission.state_id == "ad-appr"
+
     can_force_post = (
             is_secretariat
         and submission.state.next_states.filter(slug="posted").exists()
@@ -273,25 +266,17 @@ def submission_status(request, submission_id, access_token=None):
     # Convert from RFC 2822 format if needed
     confirmation_list = [ "%s <%s>" % parseaddr(a) for a in addresses ]
 
-    requires_group_approval = (submission.rev == '00'
-        and submission.group and submission.group.features.req_subm_approval
-        and not Preapproval.objects.filter(name=submission.name).exists())
-
-    requires_prev_authors_approval = Document.objects.filter(name=submission.name)
-
     message = None
-
-
-
     if submission.state_id == "cancel":
         message = ('error', 'This submission has been cancelled, modification is no longer possible.')
     elif submission.state_id == "auth":
         message = ('success', 'The submission is pending email authentication. An email has been sent to: %s' % ", ".join(confirmation_list))
     elif submission.state_id == "grp-appr":
         message = ('success', 'The submission is pending approval by the group chairs.')
+    elif submission.state_id == "ad-appr":
+        message = ('success', 'The submission is pending approval by the area director.')
     elif submission.state_id == "aut-appr":
         message = ('success', 'The submission is pending approval by the authors of the previous version. An email has been sent to: %s' % ", ".join(confirmation_list))
-
 
     submitter_form = SubmitterForm(initial=submission.submitter_parsed(), prefix="submitter")
     replaces_form = ReplacesForm(name=submission.name,initial=DocAlias.objects.filter(name__in=submission.replaces.split(",")))
@@ -313,6 +298,9 @@ def submission_status(request, submission_id, access_token=None):
 
                 approvals_received = submitter_form.cleaned_data['approvals_received']
                 
+                if submission.rev == '00' and submission.group and not submission.group.is_active:
+                    permission_denied(request, 'Posting a new draft for an inactive group is not permitted.')
+
                 if approvals_received:
                     if not is_secretariat:
                         permission_denied(request, 'You do not have permission to perform this action')
@@ -324,26 +312,8 @@ def submission_status(request, submission_id, access_token=None):
                     post_submission(request, submission, desc, desc)
 
                 else:
-                    doc = submission.existing_document()
-                    prev_authors = [] if not doc else [ author.person for author in doc.documentauthor_set.all() ]
-                    curr_authors = [ get_person_from_name_email(author["name"], author.get("email")) for author in submission.authors ]
+                    accept_submission(request, submission, autopost=True)
 
-                    if request.user.is_authenticated and request.user.person in (prev_authors if submission.rev != '00' else curr_authors): # type: ignore
-                        # go directly to posting submission
-                        docevent_from_submission(request, submission, desc="Uploaded new revision", who=request.user.person) # type: ignore
-
-                        desc = "New version accepted (logged-in submitter: %s)" % request.user.person # type: ignore
-                        post_submission(request, submission, desc, desc)
-
-                    else:
-                        sent_to, desc, docDesc = send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval)
-                        msg = "Set submitter to \"%s\", replaces to %s and %s" % (
-                            submission.submitter,
-                            ", ".join(prettify_std_name(r.name) for r in replaces) if replaces else "(none)",
-                            desc)
-                        create_submission_event(request, submission, msg)
-                        docevent_from_submission(request, submission, docDesc, who=Person.objects.get(name="(System)"))
-    
                 if access_token:
                     return redirect("ietf.submit.views.submission_status", submission_id=submission.pk, access_token=access_token)
                 else:
@@ -372,6 +342,13 @@ def submission_status(request, submission_id, access_token=None):
 
             return redirect("ietf.submit.views.submission_status", submission_id=submission_id)
 
+        elif action == "approve" and submission.state_id == "ad-appr":
+            if not can_ad_approve:
+                permission_denied(request, 'You do not have permission to perform this action.')
+
+            post_submission(request, submission, "WG -00 approved", "Approved and posted submission")
+
+            return redirect("ietf.doc.views_doc.document_main", name=submission.name)
 
         elif action == "approve" and submission.state_id == "grp-appr":
             if not can_group_approve:
@@ -380,7 +357,6 @@ def submission_status(request, submission_id, access_token=None):
             post_submission(request, submission, "WG -00 approved", "Approved and posted submission")
 
             return redirect("ietf.doc.views_doc.document_main", name=submission.name)
-
 
         elif action == "forcepost" and submission.state.next_states.filter(slug="posted"):
             if not can_force_post:
@@ -416,8 +392,8 @@ def submission_status(request, submission_id, access_token=None):
         'can_group_approve': can_group_approve,
         'can_cancel': can_cancel,
         'show_send_full_url': show_send_full_url,
-        'requires_group_approval': requires_group_approval,
-        'requires_prev_authors_approval': requires_prev_authors_approval,
+        'requires_group_approval': accept_submission_requires_group_approval(submission),
+        'requires_prev_authors_approval': accept_submission_requires_prev_auth_approval(submission),
         'confirmation_list': confirmation_list,
     })
 

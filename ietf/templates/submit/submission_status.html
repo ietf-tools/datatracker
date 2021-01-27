@@ -295,13 +295,11 @@
 
       <p>
         {% if requires_group_approval %}
-          Notifies group chairs to get approval.
-        {% else %}
-          {% if requires_prev_authors_approval %}
+            Notifies group chairs to get approval.
+        {% elif requires_prev_authors_approval %}
             Notifies authors of previous revision of draft to get approval.
-          {% else %}
+        {% else %}
             Notifies submitter and authors for confirmation.
-          {% endif %}
         {% endif %}
       </p>
     {% endif %}
