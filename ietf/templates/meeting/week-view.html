@@ -601,8 +601,8 @@
     // Set up events for drawing the calendar
     function redraw_weekview() {
         var query_params = agenda_filter.parse_query_params(window.location.search); 
-        var timezone_name = query_params.tz || '{{ timezone }}';
-
+        var timezone_name = query_params.tz || 'utc';
+        
         items = prepare_items(all_items, timezone_name);
         draw_calendar(items, agenda_filter.get_filter_params(query_params));
     }

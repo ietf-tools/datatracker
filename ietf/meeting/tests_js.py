@@ -917,7 +917,7 @@ class WeekviewTests(MeetingTestCase):
         return expected_items
 
     def test_timezone_default(self):
-        """Week view should show local times by default"""
+        """Week view should show UTC times by default"""
         self.assertNotEqual(self.meeting.time_zone.lower(), 'utc',
                             'Cannot test local time weekview because meeting is using UTC time.')
         self.login()
@@ -929,8 +929,8 @@ class WeekviewTests(MeetingTestCase):
                 expected_name = item.timeslot.name
             else:
                 expected_name = item.session.group.name
-            expected_time = '-'.join([item.timeslot.local_start_time().strftime('%H%M'),
-                                      item.timeslot.local_end_time().strftime('%H%M')])
+            expected_time = '-'.join([item.timeslot.utc_start_time().strftime('%H%M'),
+                                      item.timeslot.utc_end_time().strftime('%H%M')])
             WebDriverWait(self.driver, 2).until(
                 expected_conditions.presence_of_element_located(
                     (By.XPATH, 
@@ -974,7 +974,7 @@ class WeekviewTests(MeetingTestCase):
     def test_event_wrapping(self):
         """Events that overlap midnight should be shown on both days
         
-        This assumes that the meeting is in America/New_York timezone.
+        This assumes that the meeting is in US/Eastern timezone.
         """
         def _assert_wrapped(displayed, expected_time_string):
             self.assertEqual(len(displayed), 2)
@@ -995,6 +995,9 @@ class WeekviewTests(MeetingTestCase):
             self.assertIn(expected_time_string, first_parent.text)
 
         duration = datetime.timedelta(minutes=120)  # minutes
+        local_tz = self.meeting.time_zone
+        self.assertEqual(local_tz.lower(), 'us/eastern',
+                         'Test logic error - meeting local time zone must be US/Eastern')
 
         # Session during a single day in meeting local time but multi-day UTC
         # Compute a time that overlaps midnight, UTC, but won't when shifted to a local time zone
@@ -1046,7 +1049,7 @@ class WeekviewTests(MeetingTestCase):
         self.login()
         
         # Test in meeting local time
-        self.driver.get(self.absreverse('ietf.meeting.views.week_view'))
+        self.driver.get(self.absreverse('ietf.meeting.views.week_view') + '?tz=%s' % local_tz.lower())
 
         time_string = '-'.join([daytime_timeslot.local_start_time().strftime('%H%M'),
                                 daytime_timeslot.local_end_time().strftime('%H%M')])

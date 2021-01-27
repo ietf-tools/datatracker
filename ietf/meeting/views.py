@@ -1765,7 +1765,6 @@ def week_view(request, num=None, name=None, owner=None):
 
     return render(request, "meeting/week-view.html", {
         "items": json.dumps(items),
-        "timezone": meeting.time_zone,
     })
 
 @role_required('Area Director','Secretariat','IAB')
