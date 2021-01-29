@@ -731,12 +731,29 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     session_parents = sorted(set(
         s.group.parent for s in sessions
-        if s.group and s.group.parent and (s.group.parent.type_id == 'area' or s.group.parent.acronym == 'irtf')
+        if s.group and s.group.parent and (s.group.parent.type_id == 'area' or s.group.parent.acronym in ('irtf','iab'))
     ), key=lambda p: p.acronym)
+
+    liz_preferred_colors = {
+        'art' : { 'dark' : (204, 121, 167) , 'light' : (234, 232, 230) },
+        'gen' : { 'dark' : (29, 78, 17) , 'light' : (232, 237, 231) },
+        'iab' : { 'dark' : (255, 165, 0) , 'light' : (255, 246, 230) },
+        'int' : { 'dark' : (132, 240, 240) , 'light' : (232, 240, 241) },
+        'irtf' : { 'dark' : (154, 119, 230) , 'light' : (243, 239, 248) },
+        'ops' : { 'dark' : (199, 133, 129) , 'light' : (250, 240, 242) },
+        'rtg' : { 'dark' : (222, 219, 124) , 'light' : (247, 247, 233) },
+        'sec' : { 'dark' : (0, 114, 178) , 'light' : (245, 252, 248) },
+        'tsv' : { 'dark' : (117,201,119) , 'light' : (251, 252, 255) },
+    }    
     for i, p in enumerate(session_parents):
-        rgb_color = cubehelix(i, len(session_parents))
-        p.scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round(x * 255)) for x in rgb_color))
-        p.light_scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round((0.9 + 0.1 * x) * 255)) for x in rgb_color))
+        if p.acronym in liz_preferred_colors:
+            colors = liz_preferred_colors[p.acronym]
+            p.scheduling_color = "rgb({}, {}, {})".format(*colors['dark'])
+            p.light_scheduling_color = "rgb({}, {}, {})".format(*colors['light'])
+        else:
+            rgb_color = cubehelix(i, len(session_parents))
+            p.scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round(x * 255)) for x in rgb_color))
+            p.light_scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round((0.9 + 0.1 * x) * 255)) for x in rgb_color))
 
     return render(request, "meeting/edit_meeting_schedule.html", {
         'meeting': meeting,
