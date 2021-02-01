@@ -373,10 +373,10 @@ class SubmitTests(TestCase):
     def test_submit_new_wg_txt(self):
         self.submit_new_wg(["txt"])
 
-    def text_submit_new_wg_xml(self):
+    def test_submit_new_wg_xml(self):
         self.submit_new_wg(["xml"])
 
-    def text_submit_new_wg_txt_xml(self):
+    def test_submit_new_wg_txt_xml(self):
         self.submit_new_wg(["txt", "xml"])
 
     def test_submit_new_wg_as_author(self):
