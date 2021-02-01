@@ -1,3 +1,46 @@
+ietfdb (7.25.0) ietf; urgency=medium
+
+  **Timezone tools on agenda page, other enhancements **
+
+  * Merged in [18712] from jennifer@painless-security.com:
+    Add timezone support to agenda weekview; display UTC on UTC agenda
+    page. Fixes #3111.
+
+  * Merged in [18689] from kivinen@iki.fi:
+    New version of the timezone support for agenda. Now the ongoing
+    bars work. This also moves the javascript from the agenda.html
+    to separate timezone.js file. This commit does not include the
+    moment and moment-timezone javascript libraries that are
+    needed to get this working, they need to be added to
+    ietf/externals/static separately.
+
+  * Add a more granular setting for enabling extra debugging on the agenda
+    page. Commit ready for merge.
+
+  * Merged in [18803] from jennifer@painless-security.com:
+    Integrate week-view timezone handling with changes to main agenda page.
+
+  * recursively create place to stage mail from mkrelease. Remove
+    toolsfeed/toolspush from mkrelease.
+
+  * Allow setuptools to progress past py27
+
+  * Merged in [18782] from rjsparks@nostrum.com:
+    Remove HistoricalGroupFeatures. Fixes #3152.
+
+  * Merged in [18791] from rjsparks@nostrum.com:
+    Allow ballot text to be edited after the ballot is approved. Fixes
+    #3157. Related to #3119.
+
+  * Merged in [18798] from jennifer@painless-security.com:
+    Improve handling of submissions for closed working groups. Fixes #3058.
+
+  * Merged in [18808] from rjsparks@nostrum.com:
+    Tweaked schedule editor colors to match preferences chosen by Liz.
+    Added coloration for sessions having the IAB as a parent.
+
+ -- Robert Sparks <rjsparks@nostrum.com>  01 Feb 2021 16:23:17 +0000
+
 ietfdb (7.24.0) ietf; urgency=medium
 
   **Bugfixes and minor features**
