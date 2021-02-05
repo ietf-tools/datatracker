@@ -353,8 +353,6 @@ class ReviewTests(TestCase):
         secretary_settings.max_items_to_show_in_reviewer_list = 1
         secretary_settings.save()
         r = self.client.get(url)
-        with open('test_reviewer_overview.html', 'wb') as file:
-            file.write(r.content)
         self.assertResponseStatus(r, 200)
         self.assertContains(r, review_req1.doc.name)
         self.assertContains(r, review_req2.doc.name)

@@ -5,16 +5,11 @@
 {% localtime off %}
 <html> <head>
   <script src="{% static 'ietf/js/agenda/agenda_filter.js' %}"></script>
+    <script src="{% static 'moment/min/moment.min.js' %}"></script>
+    <script src="{% static 'moment-timezone/builds/moment-timezone-with-data-10-year-range.min.js' %}"></script>
   <script type="text/javascript">
 
     var all_items = {{ items|safe }};
-
-    /* Also, process clock times to "minutes past midnight" */
-    all_items.forEach(function(item) {
-      item.start_time = parseInt(item.time.substr(0,2),10) * 60 +
-                                 parseInt(item.time.substr(2,2),10);
-      item.end_time = item.start_time + (item.duration / 60)
-    });
 
     var color = {
       'app':   { fg: "#008", bg: "#eef"},
@@ -125,15 +120,11 @@
 
     //===========================================================================
 
-    function draw_calendar() {
+    function draw_calendar(items, filter_params) {
       var width = document.body.clientWidth;
       var height = document.body.clientHeight;
 
-      var visible_items = all_items;
-      var filter_params = agenda_filter.get_filter_params(
-              agenda_filter.parse_query_params(window.location.search)
-      );
-      
+      var visible_items = items;
       if (agenda_filter.filtering_is_enabled(filter_params)) {
           visible_items = visible_items.filter(is_visible(filter_params));
       }
@@ -145,8 +136,8 @@
           day_start = visible_items[0].start_time;
       } else {
           // fallback in case all items were filtered
-          start_day = all_items[0].day;
-          day_start = all_items[0].start_time;
+          start_day = items[0].day;
+          day_start = items[0].start_time;
       }
       var end_day = start_day;
       var day_end = 0;
@@ -499,9 +490,123 @@
     }
 
     //===========================================================================
+    //
+    function get_first_item(items, type) {
+        var earliest;
+        for (var ii=0; ii < items.length; ii++) {
+            var this_item = items[ii];
+            if (type && (this_item.type !== type)) {
+                continue;
+            }
+            // Update earliest if we don't have an earliest item yet or this_item is earlier
+            if (!earliest || (items[ii].utc_time < earliest.utc_time)) {
+                earliest = items[ii];
+            }
+        }
+        return earliest;
+    }
+    
+    //===========================================================================
+    //
+    function prepare_items(items, timezone_name) {
+        function make_display_item(item) {
+            return {
+                name: item.name,
+                group: item.group,
+                area: item.area,
+                room: item.room,
+                agenda: item.agenda,
+                key: item.key,
+                type: item.type,
+                filter_keywords: item.filter_keywords
+            }
+        };
+
+        /* Ported from Django view, which had the following comment:
+         *    Only show assignments from the traditional meeting "week" (Sat-Fri).
+         *    We'll determine this using the saturday before the first scheduled regular session. */
+        var first_session = get_first_item(items, 'Regular');
+        if (!first_session) {
+            first_session = get_first_item(items); // any type
+        }
+        var first_session_time = moment(first_session.utc_time).utc();
+        if (timezone_name) {
+            first_session_time.tz(timezone_name); // mutates the moment
+        }
+        
+        // Moment.js day() uses 0 == Sunday, 6 == Saturday 
+        days_since_saturday = first_session_time.day() - 6;
+        if (days_since_saturday < 0) {
+            days_since_saturday += 7;
+        }
+        saturday_before = first_session_time.clone().startOf('day').subtract(days_since_saturday, 'days'); 
+        
+        var display_items = [];
+        for (var ii = 0; ii < items.length; ii++) {
+            var this_item = items[ii];
+
+            /* It's possible an event overlaps the moment of a daylight savings shift.
+             * Calculate the end_moment in utc() time, which has no DST. Once we switch
+             * to a time zone, end time minus start time may not equal duration. */
+            var start_moment = moment(this_item.utc_time).utc();
+            var end_moment = start_moment.clone().add(this_item.duration, 'seconds');
+            if (timezone_name) {
+                start_moment.tz(timezone_name);
+                end_moment.tz(timezone_name);
+            }
+            // Avoid off-by-one day number calculations if a session ends at midnight
+            var just_before_end_moment = end_moment.clone().subtract(1, 'millisecond');
+
+            var start_day = start_moment.diff(saturday_before, 'days') - 1; // shift so sunday = 0
+            var end_day = just_before_end_moment.diff(saturday_before, 'days') - 1; // shift so sunday = 0
+
+            // Generate display items - create multiple if item ends on different day than starts
+            for (var day = start_day; day <= end_day; day++) {
+                var display_item = make_display_item(this_item);
+                display_item.day = day;
+                if (day === start_day) {
+                    // First day of session - compute start time
+                    display_item.start_time = start_moment.diff(
+                            start_moment.clone().startOf('day'),
+                            'minutes'
+                    );
+                } else {
+                    // Not first day, start at midnight
+                    display_item.start_time = 0;
+                    display_item.name += " - continued";
+                }
+                if (day === end_day) {
+                    // Last day of session - compute end time
+                    display_item.end_time = end_moment.diff(
+                            just_before_end_moment.clone().startOf('day'),
+                            'minutes'
+                    );
+                } else {
+                    /* Not last day, use full day. Calculate this on the fly to account for
+                     * daylight savings shifts, when a calendar day is not 24*60 minutes long. */
+                    display_item.end_time = just_before_end_moment.clone().endOf('day').diff(
+                            just_before_end_moment.clone().startOf('day'),
+                            'minutes'
+                    );
+                }
+
+                display_item.time = start_moment.format('HHmm') + '-' + end_moment.format('HHmm');
+                display_item.dayname = start_moment.format('dddd, ').toUpperCase() +
+                        start_moment.format('MMMM D, Y');        
+                display_items.push(display_item);
+            }
+        }
+        return display_items;
+    }
+
+    //===========================================================================
     // Set up events for drawing the calendar
     function redraw_weekview() {
-        draw_calendar();
+        var query_params = agenda_filter.parse_query_params(window.location.search); 
+        var timezone_name = query_params.tz || 'utc';
+        
+        items = prepare_items(all_items, timezone_name);
+        draw_calendar(items, agenda_filter.get_filter_params(query_params));
     }
 
     window.addEventListener("resize", redraw_weekview, false);

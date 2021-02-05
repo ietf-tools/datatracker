@@ -242,6 +242,27 @@ class Recipient(models.Model):
                 addrs.extend(Recipient.objects.get(slug='group_chairs').gather(**{'group':submission.group}))
         return addrs
 
+    def gather_sub_group_parent_directors(self, **kwargs):
+        addrs = []
+        if 'submission' in kwargs:
+            submission = kwargs['submission']
+            if submission.group and submission.group.parent:
+                addrs.extend(
+                    Recipient.objects.get(
+                        slug='group_responsible_directors').gather(group=submission.group.parent)
+                )
+        return addrs
+
+    def gather_doc_group_parent_directors(self, **kwargs):
+        addrs = []
+        doc = kwargs.get('doc')
+        if doc and doc.group and doc.group.parent:
+            addrs.extend(
+                Recipient.objects.get(
+                    slug='group_responsible_directors').gather(group=doc.group.parent)
+            )
+        return addrs
+
     def gather_submission_confirmers(self, **kwargs):
         """If a submitted document is revising an existing document, the confirmers 
            are the authors of that existing document, and the chairs if the document is

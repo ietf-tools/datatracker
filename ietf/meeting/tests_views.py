@@ -365,10 +365,16 @@ class MeetingTests(TestCase):
 
     def test_agenda_week_view(self):
         meeting = make_meeting_test_data()
-        url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "#farfut"
+        url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "?show=farfut"
         r = self.client.get(url)
         self.assertResponseStatus(r,200)
         self.assertTrue(all([x in unicontent(r) for x in ['var all_items', 'maximize', 'draw_calendar', ]]))
+
+        # Specifying a time zone should not change the output (time zones are handled by the JS)
+        url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "?show=farfut&tz=Asia/Bangkok"
+        r_with_tz = self.client.get(url)
+        self.assertEqual(r_with_tz.status_code,200)
+        self.assertEqual(r.content, r_with_tz.content)
 
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=False, MEETING_DOC_HREFS = settings.MEETING_DOC_CDN_HREFS)
     def test_materials_through_cdn(self):
@@ -693,9 +699,6 @@ class MeetingTests(TestCase):
 
         self.assertIsNone(parse_agenda_filter_params(QueryDict('')))
 
-        self.assertRaises(ValueError, parse_agenda_filter_params, QueryDict('unknown'))  # unknown param
-        self.assertRaises(ValueError, parse_agenda_filter_params, QueryDict('unknown=x'))  # unknown param
-
         # test valid combos (not exhaustive)
         for qstr, expected in (
             ('show=', _r()), ('hide=', _r()), ('showtypes=', _r()), ('hidetypes=', _r()),
@@ -714,16 +717,6 @@ class MeetingTests(TestCase):
                 expected,
                 'Parsed "%s" incorrectly' % qstr,
             )
-
-    def test_ical_filter_invalid_syntaxes(self):
-        meeting = make_meeting_test_data()
-        url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number})
-        
-        r = self.client.get(url + '?unknownparam=mars')
-        self.assertEqual(r.status_code, 400, 'Unknown parameter should be rejected')
-
-        r = self.client.get(url + '?mars')
-        self.assertEqual(r.status_code, 400, 'Missing parameter name should be rejected')
 
     def do_ical_filter_test(self, meeting, querystring, expected_session_summaries):
         url = urlreverse('ietf.meeting.views.agenda_ical', kwargs={'num':meeting.number})
@@ -2336,16 +2329,6 @@ class InterimTests(TestCase):
                                       ],
                                       expected_event_count=2)
 
-
-    def test_upcoming_ical_filter_invalid_syntaxes(self):
-        make_meeting_test_data()
-        url = urlreverse('ietf.meeting.views.upcoming_ical')
-
-        r = self.client.get(url + '?unknownparam=mars')
-        self.assertEqual(r.status_code, 400, 'Unknown parameter should be rejected')
-
-        r = self.client.get(url + '?mars')
-        self.assertEqual(r.status_code, 400, 'Missing parameter name should be rejected')
 
     def test_upcoming_json(self):
         make_meeting_test_data(create_interims=True)

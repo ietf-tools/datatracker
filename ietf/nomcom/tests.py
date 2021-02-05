@@ -1369,8 +1369,6 @@ class FeedbackLastSeenTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        with open('test_feedback_nominee_badges.html', 'wb') as file:
-            file.write(response.content)
         self.assertEqual( len(q('.label-success')), 3 )
 
         f = self.nc.feedback_set.first()

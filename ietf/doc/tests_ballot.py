@@ -394,9 +394,6 @@ class BallotWriteupsTests(TestCase):
                 ballot_writeup="This is a simple test.",
                 save_ballot_writeup="1"))
         self.assertEqual(r.status_code, 200)
-        msgs = [m for m in r.context['messages']]
-        self.assertTrue(1 == len(msgs))
-        self.assertTrue("Writeup not changed" in msgs[0].message)
         d = Document.objects.get(name=draft.name)
         self.assertTrue('approved' == d.get_state_slug('draft-iesg'))
 

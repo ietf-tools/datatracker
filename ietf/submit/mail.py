@@ -68,22 +68,48 @@ def send_full_url(request, submission):
     all_addrs.extend(cc)
     return all_addrs
 
-def send_approval_request_to_group(request, submission):
+
+def send_approval_request(request, submission, replaced_doc=None):
+    """Send an approval request for a submission
+    
+    If replaced_doc is not None, requests will be sent to the wg chairs or ADs
+    responsible for that doc's group instead of the submission. 
+    """
     subject = 'New draft waiting for approval: %s' % submission.name
     from_email = settings.IDSUBMIT_FROM_EMAIL
-    (to_email,cc) = gather_address_lists('sub_chair_approval_requested',submission=submission)
+
+    # Sort out which MailTrigger to use
+    mt_kwargs = dict(submission=submission)
+    if replaced_doc:
+        mt_kwargs['doc'] = replaced_doc
+    if submission.state_id == 'ad-appr':
+        approval_type = 'ad'
+        if replaced_doc:
+            mt_slug = 'sub_replaced_doc_director_approval_requested'
+        else:
+            mt_slug = 'sub_director_approval_requested'
+    else:
+        approval_type = 'chair'
+        if replaced_doc:
+            mt_slug = 'sub_replaced_doc_chair_approval_requested'
+        else:
+            mt_slug = 'sub_chair_approval_requested'
+
+    (to_email,cc) = gather_address_lists(mt_slug, **mt_kwargs)
     if not to_email:
         return to_email
 
-    send_mail(request, to_email, from_email, subject, 'submit/approval_request.txt', 
+    send_mail(request, to_email, from_email, subject, 'submit/approval_request.txt',
               {
-                'submission': submission,
-                'domain': Site.objects.get_current().domain,
+                  'submission': submission,
+                  'domain': Site.objects.get_current().domain,
+                  'approval_type': approval_type,
               },
               cc=cc)
     all_addrs = to_email
     all_addrs.extend(cc)
     return all_addrs
+
 
 def send_manual_post_request(request, submission, errors):
     subject = 'Manual Post Requested for %s' % submission.name

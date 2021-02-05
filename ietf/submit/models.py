@@ -78,7 +78,42 @@ class Submission(models.Model):
 
     def has_yang(self):
         return any ( [ c.checker=='yang validation' and c.passed is not None for c in self.latest_checks()] )
-        
+
+    @property
+    def replaces_names(self):
+        return self.replaces.split(',')
+
+    @property
+    def area(self):
+        return self.group.area if self.group else None
+
+    @property
+    def is_individual(self):
+        return self.group.is_individual if self.group else True
+
+    @property
+    def revises_wg_draft(self):
+        return (
+            self.rev != '00'
+            and self.group
+            and self.group.is_wg
+        )
+
+    @property
+    def active_wg_drafts_replaced(self):
+        return Document.objects.filter(
+            docalias__name__in=self.replaces.split(','),
+            group__in=Group.objects.active_wgs()
+        )
+
+    @property
+    def closed_wg_drafts_replaced(self):
+        return Document.objects.filter(
+            docalias__name__in=self.replaces.split(','),
+            group__in=Group.objects.closed_wgs()
+        )
+
+
 class SubmissionCheck(models.Model):
     time = models.DateTimeField(default=timezone.now)
     submission = ForeignKey(Submission, related_name='checks')

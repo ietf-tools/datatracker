@@ -13,7 +13,8 @@
     "js-cookie": "~2",
     "jquery": "~1",
     "jquery.tablesorter": "~2",
-    "moment": "~1",
+    "moment": "~2",
+    "moment-timezone": "~0",
     "respond": "~1",
     "select2": "~3",
     "select2-bootstrap-css": "~1",
@@ -33,6 +34,11 @@
         "./css/font-awesome.min.css",
         "./fonts/*"
       ]
+    },
+    "moment": {
+        "main": [
+             "min/moment.min.js"
+        ]
     },
     "tablesorter": {
         "main": [

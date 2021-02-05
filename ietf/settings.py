@@ -35,6 +35,8 @@ import debug
 DEBUG = True
 debug.debug = DEBUG
 
+DEBUG_AGENDA = False
+
 # Valid values:
 # 'production', 'test', 'development'
 # Override this in settings_local.py if it's not the desired setting:

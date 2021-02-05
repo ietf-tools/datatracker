@@ -8,7 +8,6 @@ import datetime, json
 
 from django import forms
 from django.conf import settings
-from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.defaultfilters import striptags
@@ -610,19 +609,19 @@ def ballot_writeupnotes(request, name):
         if form.is_valid():
             if prev_state.slug in ['ann', 'approved', 'rfcqueue', 'pub']:
                 ballot_already_approved = True
-                messages.warning(request, "There is an approved ballot for %s.  Writeup not changed." % doc.name)
             else:
                 ballot_already_approved = False
-                t = form.cleaned_data["ballot_writeup"]
-                if t != existing.text:
-                    e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login)
-                    e.by = login
-                    e.type = "changed_ballot_writeup_text"
-                    e.desc = "Ballot writeup was changed"
-                    e.text = t
-                    e.save()
-                elif existing.pk == None:
-                    existing.save()
+
+            t = form.cleaned_data["ballot_writeup"]
+            if t != existing.text:
+                e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login)
+                e.by = login
+                e.type = "changed_ballot_writeup_text"
+                e.desc = "Ballot writeup was changed"
+                e.text = t
+                e.save()
+            elif existing.pk == None:
+                existing.save()
 
             if "issue_ballot" in request.POST and not ballot_already_approved:
                 if prev_state.slug in ['watching', 'writeupw', 'goaheadw']:
