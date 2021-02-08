@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore", message=r"group\.HistoricalGroupFeatures\.\w+ 
 # ----------------------------------------------------------------------
 
 def forward(apps, schema_editor):
-    tzfrom = pytz.timezone(settings.TIME_ZONE)
+    tzfrom = pytz.timezone('PST8PDT')
     tzto   = pytz.utc
     convert(apps, tzfrom, tzto)
 
