@@ -291,6 +291,8 @@ def normalize_for_diff(page):
     return page
 
 def get_differences(a, b):
+    #open('a.html','wb').write(a)
+    #open('b.html','wb').write(b)
     a = a.decode().splitlines()
     b = b.decode().splitlines()
     for group in difflib.SequenceMatcher(None,a,b).get_grouped_opcodes():

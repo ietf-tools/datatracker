@@ -2306,14 +2306,14 @@ class InterimTests(TestCase):
         r = self.client.get(url)
         self.assertResponseStatus(r, 200)
 
-        # Expect events for important dates plus 3 - one for each WG and one for the IETF meeting
+        # Expect events 3 sessions - one for each WG and one for the IETF meeting
         assert_ical_response_is_valid(self, r,
                                       expected_event_summaries=[
                                           'ames - Asteroid Mining Equipment Standardization Group',
                                           'mars - Martian Special Interest Group',
                                           'IETF 72',
                                       ],
-                                      expected_event_count=3 + meeting.importantdate_set.count())
+                                      expected_event_count=3)
 
     def test_upcoming_ical_filter(self):
         # Just a quick check of functionality - details tested by test_js.InterimTests

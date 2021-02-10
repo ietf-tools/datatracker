@@ -28,4 +28,4 @@ DTEND;VALUE=DATE{% if meeting.time_zone %};TZID={{ meeting.time_zone|ics_esc }}{
 DTSTAMP:{{ meeting.cached_updated|date:"Ymd" }}T{{ meeting.cached_updated|date:"His" }}Z
 URL:{{ request.scheme }}://{{ request.get_host }}{% url 'ietf.meeting.views.agenda' num=meeting.number %}
 END:VEVENT
-{% include "meeting/important_dates_for_meeting.ics" %}{% endfor %}END:VCALENDAR{% endlocaltime %}{% endautoescape %}
+{% endfor %}END:VCALENDAR{% endlocaltime %}{% endautoescape %}
