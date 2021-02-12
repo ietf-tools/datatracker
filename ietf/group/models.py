@@ -45,7 +45,7 @@ class GroupInfo(models.Model):
     unused_states = models.ManyToManyField('doc.State', help_text="Document states that have been disabled for the group.", blank=True)
     unused_tags = models.ManyToManyField(DocTagName, help_text="Document tags that have been disabled for the group.", blank=True)
 
-    used_roles = jsonfield.JSONField(max_length=128, blank=True, default=[], help_text="Leave an empty list to get the group_type's default used roles")
+    used_roles = jsonfield.JSONField(max_length=256, blank=True, default=[], help_text="Leave an empty list to get the group_type's default used roles")
 
     uses_milestone_dates = models.BooleanField(default=True)
 
@@ -272,7 +272,7 @@ class GroupFeatures(models.Model):
     about_page              = models.CharField(max_length=64, blank=False, default="ietf.group.views.group_about" )
     default_tab             = models.CharField(max_length=64, blank=False, default="ietf.group.views.group_about" )
     material_types          = jsonfield.JSONField(max_length=64, blank=False, default=["slides"])
-    default_used_roles      = jsonfield.JSONField(max_length=128, blank=False, default=[])
+    default_used_roles      = jsonfield.JSONField(max_length=256, blank=False, default=[])
     admin_roles             = jsonfield.JSONField(max_length=64, blank=False, default=["chair"]) # Trac Admin
     docman_roles            = jsonfield.JSONField(max_length=128, blank=False, default=["ad","chair","delegate","secr"])
     groupman_roles          = jsonfield.JSONField(max_length=128, blank=False, default=["ad","chair",])

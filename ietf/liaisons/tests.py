@@ -23,11 +23,11 @@ from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.liaisons.factories import ( LiaisonStatementFactory, 
     LiaisonStatementEventFactory, LiaisonStatementAttachmentFactory, )
 from ietf.liaisons.models import (LiaisonStatement, LiaisonStatementPurposeName,
-    LiaisonStatementGroupContacts, LiaisonStatementAttachment)
+    LiaisonStatementAttachment)
 from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.liaisons.mails import send_sdo_reminder, possibly_send_deadline_reminder
-from ietf.liaisons.views import contacts_from_roles
+from ietf.liaisons.views import contacts_from_roles, contact_email_from_role
 
 # -------------------------------------------------
 # Helper Functions
@@ -132,15 +132,20 @@ class UnitTests(TestCase):
         sdo = RoleFactory(name_id='liaiman',group__type_id='sdo',).group
         cc = get_cc(sdo)
         self.assertTrue(contacts_from_roles([sdo.role_set.filter(name='liaiman').first()]) in cc)
+        # test a cc_contact role
+        cc_contact_role = RoleFactory(name_id='liaison_cc_contact', group=sdo)
+        cc = get_cc(sdo)
+        self.assertIn(contact_email_from_role(cc_contact_role), cc)
 
     def test_get_contacts_for_group(self):
         from ietf.liaisons.views import get_contacts_for_group, EMAIL_ALIASES
 
         # test explicit
         sdo = GroupFactory(type_id='sdo')
-        LiaisonStatementGroupContacts.objects.create(group=sdo,contacts='bob@world.com')
+        contact_email = RoleFactory(name_id='liaison_contact', group=sdo).email.address
         contacts = get_contacts_for_group(sdo)
-        self.assertTrue('bob@world.com' in contacts)
+        self.assertIsNotNone(contact_email)
+        self.assertIn(contact_email, contacts)
         # test area
         area = Group.objects.filter(type='area').first()
         contacts = get_contacts_for_group(area)
@@ -204,14 +209,14 @@ class AjaxTests(TestCase):
         area = RoleFactory(name_id='ad',group__type_id='area').group
         group = GroupFactory(parent=area)
         LiaisonStatementFactory(to_groups=[group,])
-        LiaisonStatementGroupContacts.objects.create(group=group,contacts='test@example.com')
+        contact_email = contact_email_from_role(RoleFactory(name_id='liaison_contact', group=group))
 
         url = urlreverse('ietf.liaisons.views.ajax_get_liaison_info') + "?to_groups={}&from_groups=".format(group.pk)
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         data = r.json()
-        self.assertEqual(data["to_contacts"],['test@example.com'])
+        self.assertEqual(data["to_contacts"],[contact_email])
 
     def test_ajax_select2_search_liaison_statements(self):
         liaison = LiaisonStatementFactory()

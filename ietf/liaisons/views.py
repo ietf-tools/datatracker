@@ -89,9 +89,12 @@ def _find_person_in_emails(liaison, person):
 
     return False
 
+def contact_email_from_role(role):
+    return '{} <{}>'.format(role.person.plain_name(), role.email.address)
+
 def contacts_from_roles(roles):
     '''Returns contact string for given roles'''
-    emails = [ '{} <{}>'.format(r.person.plain_name(),r.email.address) for r in roles ]
+    emails = [ contact_email_from_role(r) for r in roles ]
     return ','.join(emails)
 
 def get_cc(group):
@@ -111,34 +114,34 @@ def get_cc(group):
     elif group.type_id == 'area':
         emails.append(EMAIL_ALIASES['IETFCHAIR'])
         ad_roles = group.role_set.filter(name='ad')
-        emails.extend([ '{} <{}>'.format(r.person.plain_name(),r.email.address) for r in ad_roles ])
+        emails.extend([ contact_email_from_role(r) for r in ad_roles ])
     elif group.type_id == 'wg':
         ad_roles = group.parent.role_set.filter(name='ad')
-        emails.extend([ '{} <{}>'.format(r.person.plain_name(),r.email.address) for r in ad_roles ])
+        emails.extend([ contact_email_from_role(r) for r in ad_roles ])
         chair_roles = group.role_set.filter(name='chair')
-        emails.extend([ '{} <{}>'.format(r.person.plain_name(),r.email.address) for r in chair_roles ])
+        emails.extend([ contact_email_from_role(r) for r in chair_roles ])
         if group.list_email:
             emails.append('{} Discussion List <{}>'.format(group.name,group.list_email))
     elif group.type_id == 'sdo':
         liaiman_roles = group.role_set.filter(name='liaiman')
-        emails.extend([ '{} <{}>'.format(r.person.plain_name(),r.email.address) for r in liaiman_roles ])
+        emails.extend([ contact_email_from_role(r) for r in liaiman_roles ])
 
     # explicit CCs
-    if group.liaisonstatementgroupcontacts_set.exists() and group.liaisonstatementgroupcontacts_set.first().cc_contacts:
-        emails = emails + group.liaisonstatementgroupcontacts_set.first().cc_contacts.split(',')
+    liaison_cc_roles = group.role_set.filter(name='liaison_cc_contact')
+    emails.extend([ contact_email_from_role(r) for r in liaison_cc_roles ])
 
     return emails
 
 def get_contacts_for_group(group):
     '''Returns default contacts for groups as a comma separated string'''
-    contacts = []
-
     # use explicit default contacts if defined
-    if group.liaisonstatementgroupcontacts_set.first():
-        contacts.append(group.liaisonstatementgroupcontacts_set.first().contacts)
+    explicit_contacts = contacts_from_roles(group.role_set.filter(name='liaison_contact'))
+    if explicit_contacts:
+        return explicit_contacts
 
     # otherwise construct based on group type
-    elif group.type_id == 'area':
+    contacts = []
+    if group.type_id == 'area':
         roles = group.role_set.filter(name='ad')
         contacts.append(contacts_from_roles(roles))
     elif group.type_id == 'wg':

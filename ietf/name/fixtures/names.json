@@ -2579,7 +2579,7 @@
       "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"ad\"\n]",
+      "default_used_roles": "[\n    \"ad\",\n    \"liaison_contact\",\n    \"liaison_cc_contact\"\n]",
       "docman_roles": "[\n    \"ad\",\n    \"delegate\",\n    \"secr\"\n]",
       "groupman_authroles": "[\n    \"Secretariat\"\n]",
       "groupman_roles": "[\n    \"ad\"\n]",
@@ -3091,7 +3091,7 @@
       "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
-      "default_used_roles": "[\n    \"liaiman\",\n    \"ceo\",\n    \"coord\",\n    \"auth\",\n    \"chair\"\n]",
+      "default_used_roles": "[\n    \"liaiman\",\n    \"ceo\",\n    \"coord\",\n    \"auth\",\n    \"chair\",\n    \"liaison_contact\",\n    \"liaison_cc_contact\"\n]",
       "docman_roles": "[\n    \"liaiman\",\n    \"matman\"\n]",
       "groupman_authroles": "[\n    \"Secretariat\"\n]",
       "groupman_roles": "[]",
@@ -3155,7 +3155,7 @@
       "custom_group_roles": false,
       "customize_workflow": true,
       "default_tab": "ietf.group.views.group_documents",
-      "default_used_roles": "[\n    \"ad\",\n    \"editor\",\n    \"delegate\",\n    \"secr\",\n    \"chair\",\n    \"matman\",\n    \"techadv\"\n]",
+      "default_used_roles": "[\n    \"ad\",\n    \"editor\",\n    \"delegate\",\n    \"secr\",\n    \"chair\",\n    \"matman\",\n    \"techadv\",\n    \"liaison_contact\",\n    \"liaison_cc_contact\"\n]",
       "docman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
       "groupman_authroles": "[\n    \"Secretariat\",\n    \"Area Director\"\n]",
       "groupman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
@@ -11909,6 +11909,26 @@
     },
     "model": "name.rolename",
     "pk": "liaison"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Liaison CC Contact",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.rolename",
+    "pk": "liaison_cc_contact"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Liaison Contact",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.rolename",
+    "pk": "liaison_contact"
   },
   {
     "fields": {

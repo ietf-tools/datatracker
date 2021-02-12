@@ -61,8 +61,6 @@ def main():
              'group.add_groupevent','group.change_groupevent','group.delete_groupevent',
              'iesg.add_telechatagendaitem','iesg.change_telechatagendaitem','iesg.delete_telechatagendaitem',
              'iesg.add_telechatdate','iesg.change_telechatdate','iesg.delete_telechatdate',
-             'liaisons.add_liaisonstatementgroupcontacts','liaisons.change_liaisonstatementgroupcontacts',
-             'liaisons.delete_liaisonstatementgroupcontacts',
              'mailinglists.add_list','mailinglists.change_list','mailinglists.delete_list',
              'mailtrigger.add_mailtrigger','mailtrigger.change_mailtrigger','mailtrigger.delete_mailtrigger',
              'mailtrigger.add_recipient','mailtrigger.change_recipient','mailtrigger.delete_recipient',

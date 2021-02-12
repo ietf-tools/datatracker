@@ -8,6 +8,7 @@ from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person
 from ietf.secr.groups.forms import RoleForm, SearchForm
 from ietf.secr.utils.meeting import get_current_meeting
+from ietf.liaisons.views import contacts_from_roles
 
 # -------------------------------------------------
 # Helper Functions
@@ -42,7 +43,12 @@ def add_legacy_fields(group):
     group.techadvisors = group.role_set.filter(name="techadv")
     group.editors = group.role_set.filter(name="editor")
     group.secretaries = group.role_set.filter(name="secr")
-    group.liaison_contacts = group.liaisonstatementgroupcontacts_set.first()
+    # Note: liaison_contacts is now a dict instead of a model instance with fields. In
+    # templates, the dict can still be accessed using '.contacts' and .cc_contacts', though.
+    group.liaison_contacts = dict(
+        contacts=contacts_from_roles(group.role_set.filter(name='liaison_contact')),
+        cc_contacts=contacts_from_roles(group.role_set.filter(name='liaison_cc_contact')),
+    )
 
     #fill_in_charter_info(group)
 

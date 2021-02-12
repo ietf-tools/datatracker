@@ -11,8 +11,8 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.liaisons.models import (LiaisonStatement, LiaisonStatementGroupContacts,
-    LiaisonStatementEvent, LiaisonStatementAttachment, RelatedLiaisonStatement)
+from ietf.liaisons.models import (LiaisonStatement, LiaisonStatementEvent, LiaisonStatementAttachment,
+                                  RelatedLiaisonStatement)
 
 
 from ietf.person.resources import EmailResource
@@ -55,23 +55,6 @@ class LiaisonStatementResource(ModelResource):
             "attachments": ALL_WITH_RELATIONS,
         }
 api.liaisons.register(LiaisonStatementResource())
-
-from ietf.group.resources import GroupResource
-class LiaisonStatementGroupContactsResource(ModelResource):
-    group            = ToOneField(GroupResource, 'group')
-    class Meta:
-        cache = SimpleCache()
-        queryset = LiaisonStatementGroupContacts.objects.all()
-        serializer = api.Serializer()
-        #resource_name = 'liaisonstatementgroupcontacts'
-        ordering = ['id', ]
-        filtering = { 
-            "id": ALL,
-            "contacts": ALL,
-            "cc_contacts": ALL,
-            "group": ALL_WITH_RELATIONS,
-        }
-api.liaisons.register(LiaisonStatementGroupContactsResource())
 
 from ietf.person.resources import PersonResource
 from ietf.name.resources import LiaisonStatementEventTypeNameResource

@@ -31,9 +31,9 @@ from ietf.group.factories import (GroupFactory, RoleFactory, GroupEventFactory,
 from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions, Role
 from ietf.group.utils import save_group_in_history, setup_default_community_list_for_group
 from ietf.meeting.factories import SessionFactory
-from ietf.name.models import DocTagName, GroupStateName, GroupTypeName, ExtResourceName
+from ietf.name.models import DocTagName, GroupStateName, GroupTypeName, ExtResourceName, RoleName
 from ietf.person.models import Person, Email
-from ietf.person.factories import PersonFactory
+from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
@@ -309,7 +309,6 @@ class GroupPagesTests(TestCase):
         for group in test_groups:
 
             for url in [group.about_url(),] + group_urlreverse_list(group, 'ietf.group.views.group_about'):
-                url = group.about_url()
                 r = self.client.get(url)
                 self.assertEqual(r.status_code, 200)
                 self.assertContains(r, group.name)
@@ -323,6 +322,19 @@ class GroupPagesTests(TestCase):
     
                 for username in list(set(interesting_users)-set(can_edit[group.type_id])):
                     verify_cannot_edit_group(url, group, username)
+
+    def test_group_about_personnel(self):
+        """Correct personnel should appear on the group About page"""
+        group = GroupFactory()
+        for role_name in group.features.default_used_roles:
+            RoleFactory.create_batch(2, group=group, name=RoleName.objects.get(slug=role_name))
+
+        for url in [group.about_url(),] + group_urlreverse_list(group, 'ietf.group.views.group_about'):
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            
+            for role in group.role_set.all():
+                self.assertContains(r, role.person.plain_name())
 
     def test_materials(self):
         group = GroupFactory(type_id="team", acronym="testteam", name="Test Team", state_id="active")
@@ -606,6 +618,8 @@ class GroupEditTests(TestCase):
                                   state=state.pk,
                                   chair_roles="aread@example.org, ad1@example.org",
                                   secr_roles="aread@example.org, ad1@example.org, ad2@example.org",
+                                  liaison_contact_roles="ad1@example.org",
+                                  liaison_cc_contact_roles="aread@example.org, ad2@example.org",
                                   techadv_roles="aread@example.org",
                                   delegate_roles="ad2@example.org",
                                   list_email="mars@mail",
@@ -618,8 +632,13 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.name, "Mars Not Special Interest Group")
         self.assertEqual(group.parent, area)
         self.assertEqual(group.ad_role().person, ad)
-        for k in ("chair", "secr", "techadv"):
+        for k in ("chair", "secr", "techadv", "liaison_cc_contact"):
             self.assertTrue(group.role_set.filter(name=k, email__address="aread@example.org"))
+        self.assertTrue(group.role_set.filter(name='liaison_contact', email__address='ad1@example.org'))
+        self.assertFalse(group.role_set.filter(name='liaison_contact', email__address='aread@example.org'))
+        self.assertFalse(group.role_set.filter(name='liaison_contact', email__address='ad2@example.org'))
+        self.assertFalse(group.role_set.filter(name='liaison_cc_contact', email__address='ad1@example.org'))
+        self.assertTrue(group.role_set.filter(name='liaison_cc_contact', email__address='ad2@example.org'))
         self.assertTrue(group.role_set.filter(name="delegate", email__address="ad2@example.org"))
         self.assertEqual(group.list_email, "mars@mail")
         self.assertEqual(group.list_subscribe, "subscribe.mars")
@@ -682,40 +701,47 @@ class GroupEditTests(TestCase):
 
 
     def test_edit_field(self):
+        def _test_field(group, field_name, field_content, prohibited_form_names):
+            url = urlreverse('ietf.group.views.edit', 
+                             kwargs=dict(
+                                 acronym=group.acronym, 
+                                 action="edit", 
+                                 field=field_name
+                             ))
+            login_testing_unauthorized(self, "secretary", url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('div#content > form input[name=%s]' % field_name)), 1)
+            for prohibited_name in prohibited_form_names:
+                self.assertEqual(len(q('div#content > form input[name=%s]' % prohibited_name)), 0)
+
+            # edit info
+            r = self.client.post(url, {field_name: field_content})
+            self.assertEqual(r.status_code, 302)
+
+            #
+            group = Group.objects.get(acronym=group.acronym)
+            if field_name.endswith('_roles'):
+                role_name = field_name[:-len('_roles')]
+                self.assertSetEqual(
+                    {fc.strip() for fc in field_content.split(',')},
+                    set(group.role_set.filter(name=role_name).values_list('email', flat=True))
+                )
+            else:
+                self.assertEqual(getattr(group, field_name), field_content)
+            self.client.logout()
+
         group = GroupFactory(acronym="mars")
+        EmailFactory(address='user@example.com')
+        EmailFactory(address='other_user@example.com')
 
-        # Edit name
-        url = urlreverse('ietf.group.views.edit', kwargs=dict(acronym=group.acronym, action="edit", field="name"))
-        login_testing_unauthorized(self, "secretary", url)
-        # normal get
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q('div#content > form input[name=name]')), 1)
-        self.assertEqual(len(q('form input[name=acronym]')), 0)
-        # edit info
-        r = self.client.post(url, dict(name="Mars Not Special Interest Group"))
-        self.assertEqual(r.status_code, 302)
-        #
-        group = Group.objects.get(acronym="mars")
-        self.assertEqual(group.name, "Mars Not Special Interest Group")
-
-
-        # Edit list email
-        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit", field="list_email"))
-        # normal get
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q('div#content > form input[name=list_email]')), 1)
-        self.assertEqual(len(q('div#content > form input[name=name]')), 0)
-        # edit info
-        r = self.client.post(url, dict(list_email="mars@mail"))
-        self.assertEqual(r.status_code, 302)
-        #
-        group = Group.objects.get(acronym="mars")
-        self.assertEqual(group.list_email, "mars@mail")
-
+        # Test various fields
+        _test_field(group, 'name', 'Mars Not Special Interest Group', ['acronym'])
+        _test_field(group, 'list_email', 'mars@mail', ['name'])
+        _test_field(group, 'liaison_contact_roles', 'user@example.com, other_user@example.com', ['list_email'])
+        _test_field(group, 'liaison_cc_contact_roles', 'user@example.com, other_user@example.com', ['liaison_contact'])
 
     def test_edit_reviewers(self):
         group=GroupFactory(type_id='review',parent=GroupFactory(type_id='area'))
