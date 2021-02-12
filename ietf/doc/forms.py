@@ -10,6 +10,8 @@ from ietf.doc.fields import SearchableDocAliasesField, SearchableDocAliasField
 from ietf.doc.models import RelatedDocument
 from ietf.iesg.models import TelechatDate
 from ietf.iesg.utils import telechat_page_count
+from ietf.person.fields import SearchablePersonsField
+
 
 class TelechatForm(forms.Form):
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, help_text="Page counts are the current page counts for the telechat, before this telechat date edit is made.")
@@ -53,6 +55,15 @@ class NotifyForm(forms.Form):
     def clean_notify(self):
         addrspecs = [x.strip() for x in self.cleaned_data["notify"].split(',')]
         return ', '.join(addrspecs)
+
+class ActionHoldersForm(forms.Form):
+    action_holders = SearchablePersonsField(required=False)    
+    reason = forms.CharField(
+        label='Reason for change',
+        required=False,
+        max_length=255,
+        strip=True,
+    )
 
 IESG_APPROVED_STATE_LIST = ("ann", "rfcqueue", "pub")
 

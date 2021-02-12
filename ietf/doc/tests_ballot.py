@@ -339,6 +339,8 @@ class BallotWriteupsTests(TestCase):
                 send_last_call_request="1"))
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "lc-req")
+        self.assertCountEqual(draft.action_holders.all(), [ad])
+        self.assertIn('Changed action holders', draft.latest_event(type='changed_action_holders').desc)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Last Call" in outbox[-1]['Subject'])
         self.assertTrue(draft.name in outbox[-1]['Subject'])
@@ -501,6 +503,7 @@ class BallotWriteupsTests(TestCase):
         self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
         self.assertFalse(q('[class=help-block]:contains("not completed IETF Last Call")'))
         self.assertTrue(q('[type=submit]:contains("Save")'))
+        self.assertCountEqual(draft.action_holders.all(), [])
 
         # save
         r = self.client.post(url, dict(
@@ -508,7 +511,8 @@ class BallotWriteupsTests(TestCase):
                 issue_ballot="1"))
         self.assertEqual(r.status_code, 200)
         d = Document.objects.get(name=draft.name)
-        self.assertTrue('iesg-eva' == d.get_state_slug('draft-iesg')) 
+        self.assertTrue('iesg-eva' == d.get_state_slug('draft-iesg'))
+        self.assertCountEqual(draft.action_holders.all(), [ad])
 
     def test_issue_ballot_warn_if_early(self):
         ad = Person.objects.get(user__username="ad")
@@ -727,13 +731,17 @@ class ApproveBallotTests(TestCase):
         self.assertTrue(not outbox[-1]['CC'])
         self.assertTrue('drafts-approval@icann.org' in outbox[-1]['To'])
         self.assertTrue("Protocol Action" in draft.message_set.order_by("-time")[0].subject)
+        # in 'ann' state, action holders should be empty
+        self.assertCountEqual(draft.action_holders.all(), [])
 
     def test_disapprove_ballot(self):
         # This tests a codepath that is not used in production
         # and that has already had some drift from usefulness (it results in a
         # older-style conflict review response). 
-        draft = IndividualDraftFactory()
+        ad = Person.objects.get(name="Areað Irector")
+        draft = IndividualDraftFactory(ad=ad)
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="nopubadw"))
+        draft.action_holders.set([ad])
 
         url = urlreverse('ietf.doc.views_ballot.approve_ballot', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
@@ -748,6 +756,8 @@ class ApproveBallotTests(TestCase):
         self.assertEqual(draft.get_state_slug("draft-iesg"), "dead")
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("NOT be published" in str(outbox[-1]))
+        self.assertCountEqual(draft.action_holders.all(), [])
+        self.assertIn('Removed all action holders', draft.latest_event(type='changed_action_holders').desc)
 
     def test_clear_ballot(self):
         draft = IndividualDraftFactory()
@@ -846,6 +856,7 @@ class MakeLastCallTests(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "lc")
         self.assertEqual(draft.latest_event(LastCallDocEvent, "sent_last_call").expires.strftime("%Y-%m-%d"), expire_date)
+        self.assertCountEqual(draft.action_holders.all(), [ad])
 
         self.assertEqual(len(outbox), mailbox_before + 2)
 
@@ -940,7 +951,12 @@ class DeferUndeferTestCase(TestCase):
         if doc.type_id in defer_states:
            self.assertEqual(doc.get_state(defer_states[doc.type_id][0]).slug,defer_states[doc.type_id][1])
         self.assertTrue(doc.active_defer_event())
-
+        if doc.type_id == 'draft':
+            self.assertCountEqual(doc.action_holders.all(), [doc.ad])
+            self.assertIn('Changed action holders', doc.latest_event(type='changed_action_holders').desc)
+        else:
+            self.assertIsNone(doc.latest_event(type='changed_action_holders'))
+    
         self.assertEqual(len(outbox), mailbox_before + 2)
 
         self.assertTrue('Telechat update' in outbox[-2]['Subject'])
@@ -1000,6 +1016,11 @@ class DeferUndeferTestCase(TestCase):
         if doc.type_id in undefer_states:
            self.assertEqual(doc.get_state(undefer_states[doc.type_id][0]).slug,undefer_states[doc.type_id][1])
         self.assertFalse(doc.active_defer_event())
+        if doc.type_id == 'draft':
+            self.assertCountEqual(doc.action_holders.all(), [doc.ad])
+            self.assertIn('Changed action holders', doc.latest_event(type='changed_action_holders').desc)
+        else:
+            self.assertIsNone(doc.latest_event(type='changed_action_holders'))
         self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue("Telechat update" in outbox[-2]['Subject'])
         self.assertTrue('iesg-secretary@' in outbox[-2]['To'])
@@ -1035,7 +1056,8 @@ class DeferUndeferTestCase(TestCase):
     # when charters support being deferred, be sure to test them here
 
     def setUp(self):
-        IndividualDraftFactory(name='draft-ietf-mars-test',states=[('draft','active'),('draft-iesg','iesg-eva')])
+        IndividualDraftFactory(name='draft-ietf-mars-test',states=[('draft','active'),('draft-iesg','iesg-eva')],
+                               ad=Person.objects.get(user__username='ad'))
         DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',states=[('statchg','iesgeval')])
         DocumentFactory(type_id='conflrev',name='conflict-review-imaginary-irtf-submission',states=[('conflrev','iesgeval')])
 

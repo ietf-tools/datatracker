@@ -1,5 +1,5 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
-{% load ietf_filters ballot_icon %}
+{% load ietf_filters ballot_icon person_filters %}
 
 <td class="status">
   <div class="pull-right" id="ballot-icon-{{doc.name}}">
@@ -61,6 +61,12 @@
       <span title="Part of {{ m.group.acronym }} milestone: {{ m.desc }}" class="milestone">{{ m.due|date:"M Y" }}</span>{% if not forloop.last %}, {% endif %}
     {% endfor %}
 
+    {% if doc.action_holders_enabled and doc.action_holders.exists %}
+        <br>Action Holders:
+        {% for action_holder in doc.documentactionholder_set.all %}
+            <wbr>{% person_link action_holder.person title=action_holder.role_for_doc %}{{ action_holder|action_holder_badge }}{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    {% endif %}
   {% else %}{# RFC #}
     {{ doc.std_level|safe }} RFC
 

@@ -16,7 +16,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.person.models import Email, Person
 
-def select2_id_name_json(objs):
+def select2_id_name(objs):
     def format_email(e):
         return escape("%s <%s>" % (e.person.name, e.address))
     def format_person(p):
@@ -33,10 +33,13 @@ def select2_id_name_json(objs):
         for p in objs:
            p.name_count = c[p.name]
         
-
     formatter = format_email if objs and isinstance(objs[0], Email) else format_person
+    return [{ "id": o.pk, "text": formatter(o) } for o in objs if o]
 
-    return json.dumps([{ "id": o.pk, "text": formatter(o) } for o in objs if o])
+
+def select2_id_name_json(objs):
+    return json.dumps(select2_id_name(objs))
+
 
 class SearchablePersonsField(forms.CharField):
     """Server-based multi-select field for choosing
@@ -48,12 +51,19 @@ class SearchablePersonsField(forms.CharField):
 
     The field uses a comma-separated list of primary keys in a
     CharField element as its API with some extra attributes used by
-    the Javascript part."""
+    the Javascript part.
+    
+    If the field will be programmatically updated, any model instances
+    that may be added to the initial set should be included in the extra_prefetch
+    list. These can then be added by updating val() and triggering the 'change'
+    event on the select2 field in JavaScript.
+    """
 
     def __init__(self,
                  max_entries=None, # max number of selected objs
                  only_users=False, # only select persons who also have a user
                  all_emails=False, # select only active email addresses
+                 extra_prefetch=None, # extra data records to include in prefetch
                  model=Person, # or Email
                  hint_text="Type in name to search for person.",
                  *args, **kwargs):
@@ -70,6 +80,9 @@ class SearchablePersonsField(forms.CharField):
         self.widget.attrs["data-placeholder"] = hint_text
         if self.max_entries != None:
             self.widget.attrs["data-max-entries"] = self.max_entries
+        
+        self.extra_prefetch = extra_prefetch or []
+        assert all([isinstance(obj, self.model) for obj in self.extra_prefetch])
 
     def parse_select2_value(self, value):
         return [x.strip() for x in value.split(",") if x.strip()]
@@ -96,7 +109,12 @@ class SearchablePersonsField(forms.CharField):
         if isinstance(value, self.model):
             value = [value]
 
-        self.widget.attrs["data-pre"] = select2_id_name_json(value)
+        # data-pre is a map from ID to full data. It includes records needed by the
+        # initial value of the field plus any added via extra_prefetch.
+        prefetch_set = set(value).union(set(self.extra_prefetch))  # eliminate duplicates 
+        self.widget.attrs["data-pre"] = json.dumps({
+            d['id']: d for d in select2_id_name(list(prefetch_set))
+        })
 
         # doing this in the constructor is difficult because the URL
         # patterns may not have been fully constructed there yet

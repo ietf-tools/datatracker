@@ -12,7 +12,7 @@ from django.utils.functional import curry
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDocEvent, BallotType, WriteupDocEvent
-from ietf.doc.utils import add_state_change_event
+from ietf.doc.utils import add_state_change_event, update_action_holders
 from ietf.person.models import Person
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.mails import email_state_changed
@@ -284,12 +284,18 @@ def doc_detail(request, date, name):
                         doc.tags.remove(*prev_tags)
                         doc.tags.add(*new_tags)
 
-                    e = add_state_change_event(doc, login, prev_state, new_state,
+                    events = []
+                    sce = add_state_change_event(doc, login, prev_state, new_state,
                                                prev_tags=prev_tags, new_tags=new_tags)
+                    if sce:
+                        events.append(sce)
+                    e = update_action_holders(doc, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
                     if e:
-                        doc.save_with_history([e])
+                        events.append(e)
+                    if events:
+                        doc.save_with_history(events)
 
-                    email_state_changed(request, doc, e.desc, 'doc_state_edited')
+                    email_state_changed(request, doc, sce.desc, 'doc_state_edited')
     
                     if new_state.slug == "lc-req":
                         request_last_call(request, doc)

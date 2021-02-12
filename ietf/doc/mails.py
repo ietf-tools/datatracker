@@ -15,6 +15,7 @@ from django.utils.encoding import force_text
 import debug                            # pyflakes:ignore
 from ietf.doc.templatetags.mail_filters import std_level_prompt
 
+from ietf.utils import log
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ipr.utils import iprs_from_docs, related_docs
 from ietf.doc.models import WriteupDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
@@ -125,6 +126,22 @@ def email_iesg_processing_document(request, doc, changes):
               dict(doc=doc,
                    changes=tagless_changes,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
+              cc=addrs.cc)
+
+def email_remind_action_holders(request, doc, note=None):
+    addrs = gather_address_lists('doc_remind_action_holders', doc=doc)
+    log.assertion(
+        'not doc.action_holders.exclude(email__in=addrs.to).exists()',
+        note='All action holders should receive a reminder email. Failed for %s.' % doc.name,
+    )
+    send_mail(request, addrs.to, None,
+              'Reminder: action needed for %s' % doc.display_name(),
+              'doc/mail/remind_action_holders_mail.txt',
+              dict(
+                  doc=doc,
+                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                  note=note,
+              ),
               cc=addrs.cc)
 
 def html_to_text(html):

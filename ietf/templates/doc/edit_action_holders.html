@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2020, All Rights Reserved #}
+{% load origin %}
+{% load static %}
+{% load bootstrap3 %}
+
+{% block title %}
+  Edit action holders for {{ titletext }}
+{% endblock %}
+
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+    <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Edit action holders<br><small>{{titletext}}</small></h1>
+
+  <form enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+      <div class="form-group">
+          <label for="role-toolbar">Related people</label>
+          <div class="btn-toolbar" role="toolbar" id="role-toolbar-{{ role_type_label|slugify }}">
+          {% for doc_role in role_labels %}
+              <div class="btn-group-vertical btn-group-sm" role="group">
+                  <button type="button" class="btn btn-default"
+                          id="add-{{ doc_role.slug }}"
+                          onclick="local_js.add_ah('{{ doc_role.slug }}')">
+                      Add {{ doc_role.label }}
+                  </button>
+                  <button type="button" class="btn btn-default"
+                          id="del-{{ doc_role.slug }}"
+                          onclick="local_js.del_ah('{{ doc_role.slug }}')">
+                      Remove {{ doc_role.label }}
+                  </button>
+              </div>
+          {% endfor %}
+          </div>
+      </div>
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" name="submit" value="Save">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Back</a>
+    {% endbuttons %}
+  </form>
+
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'select2/select2.min.js' %}"></script>
+    <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+    <script type="text/javascript">
+    local_js = function () {
+        let select2_elem = $('.select2-field');
+        let role_ids = select2_elem.data('role-ids');
+
+        /* Updates select2 selection in element elem. Data should be an array of
+         * objects with id and text as keys. */
+        function update_selection(elem, entries) {
+            elem.val(entries.join(',')).trigger('change');
+        }
+
+        function add_ah(role) {
+            if (role_ids[role]) {
+                let ids;
+                if (select2_elem.val()) {
+                    ids = select2_elem.val().split(',').map(Number).concat(role_ids[role]);
+                } else {
+                    ids = role_ids[role];
+                }
+                update_selection(select2_elem, ids);
+            }
+        }
+
+        function del_ah(role) {
+            if (role_ids[role] && select2_elem.val()) {
+                update_selection(select2_elem, select2_elem.val().split(',').filter(
+                        function(id){return -1 === role_ids[role].indexOf(Number(id))}
+                ));
+            }
+        }
+
+        function all_selected(elem, role) {
+            if (!elem.val()) {return false}
+            
+            let data_ids = elem.val().split(',').map(Number);
+            for (let ii=0; ii < role_ids[role].length; ii++) {
+                if (-1 === data_ids.indexOf(role_ids[role][ii])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function none_selected(elem, role) {
+            if (!elem.val()) {return true}
+            
+            let data_ids = elem.val().split(',').map(Number);
+            for (let ii=0; ii < role_ids[role].length; ii++) {
+                if (-1 !== data_ids.indexOf(role_ids[role][ii])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function update_buttons() {
+            for (let role_slug in role_ids) {
+                if (!role_ids.hasOwnProperty(role_slug)) { return };
+                
+                if (all_selected(select2_elem, role_slug)) {
+                    $('#add-' + role_slug).attr('disabled', true);
+                } else {
+                    $('#add-' + role_slug).attr('disabled', false);
+                }
+
+                if (none_selected(select2_elem, role_slug)) {
+                    $('#del-' + role_slug).attr('disabled', true);
+                } else {
+                    $('#del-' + role_slug).attr('disabled', false);
+                }
+            }
+
+        }
+
+        select2_elem.on('change', update_buttons);
+        $(document).ready(update_buttons);
+
+        return {
+            add_ah: add_ah, del_ah: del_ah
+        };
+    }();
+
+    </script>
+{% endblock %}

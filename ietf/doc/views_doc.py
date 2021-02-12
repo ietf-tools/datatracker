@@ -54,21 +54,21 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent, BallotType,
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
-    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS )
+    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder )
 from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content, build_doc_meta_block,
-    augment_docs_and_user_with_user_info, irsg_needed_ballot_positions )
+    augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event )
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_group_type, can_manage_materials, group_features_role_filter
 from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is_person,
     role_required, is_individual_draft_author)
 from ietf.name.models import StreamName, BallotPositionName
 from ietf.utils.history import find_history_active_at
-from ietf.doc.forms import TelechatForm, NotifyForm
-from ietf.doc.mails import email_comment
+from ietf.doc.forms import TelechatForm, NotifyForm, ActionHoldersForm
+from ietf.doc.mails import email_comment, email_remind_action_holders
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions, add_event_info_to_session_qs
@@ -1275,6 +1275,14 @@ def telechat_date(request, name):
                                    warnings=warnings,
                                    login=login))
 
+
+def doc_titletext(doc):
+    if doc.type.slug=='conflrev':
+        conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
+        return 'the conflict review of %s' % conflictdoc.canonical_name()
+    return doc.canonical_name()
+    
+    
 def edit_notify(request, name):
     """Change the set of email addresses document change notificaitions go to."""
 
@@ -1311,17 +1319,149 @@ def edit_notify(request, name):
         init = { "notify" : doc.notify }
         form = NotifyForm(initial=init)
 
-    if doc.type.slug=='conflrev':
-        conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
-        titletext = 'the conflict review of %s' % conflictdoc.canonical_name()
-    else:
-        titletext = '%s' % doc.canonical_name()
     return render(request, 'doc/edit_notify.html',
                               {'form':   form,
                                'doc': doc,
-                               'titletext': titletext,
+                               'titletext': doc_titletext(doc),
                               },
                           )
+
+
+@role_required('Area Director', 'Secretariat')
+def edit_action_holders(request, name):
+    """Change the set of action holders for a doc"""
+    doc = get_object_or_404(Document, name=name)
+    
+    if request.method == 'POST':
+        form = ActionHoldersForm(request.POST)
+        if form.is_valid() and 'action_holders' in request.POST:
+            new_action_holders = form.cleaned_data['action_holders']  # Person queryset
+            prev_action_holders = list(doc.action_holders.all())
+            
+            # Now update the action holders. We can't use the simple approach of clearing
+            # the set and then adding back the entire new_action_holders. If we did that,
+            # the timestamps that track when each person became an action holder would
+            # reset every time the list was modified. So we need to be careful only
+            # to delete the ones that are really being removed.
+            #
+            # Also need to take care not to delete the people! doc.action_holders.all()
+            # (and other querysets) give the Person objects. We only want to add/delete
+            # the DocumentActionHolder 'through' model objects. That means working directly
+            # with the model or using doc.action_holders.add() and .remove(), which take
+            # Person objects as arguments.
+            existing = DocumentActionHolder.objects.filter(document=doc)  # through model  
+            to_remove = existing.exclude(person__in=new_action_holders)  # through model
+            to_remove.delete()  # deletes the DocumentActionHolder objects, leaves the Person objects
+
+            # Get all the Persons who do not have a DocumentActionHolder for this document
+            added_people = new_action_holders.exclude(documentactionholder__document=doc)
+            doc.action_holders.add(*added_people)
+            
+            add_action_holder_change_event(doc, request.user.person, prev_action_holders,
+                                           form.cleaned_data['reason'])
+
+        return redirect('ietf.doc.views_doc.document_main', name=doc.name)
+    
+    # When not a POST
+    # Data for quick add/remove of various related Persons
+    doc_role_labels = []  # labels for document-related roles
+    group_role_labels = []  # labels for group-related roles
+    role_ids = dict()  # maps role slug to list of Person IDs (assumed numeric in the JavaScript)
+    extra_prefetch = []  # list of Person objects to prefetch for select2 field
+
+    if len(doc.authors()) > 0:
+        doc_role_labels.append(dict(slug='authors', label='Authors'))
+        authors = doc.authors()
+        role_ids['authors'] = [p.pk for p in authors]
+        extra_prefetch += authors
+
+    if doc.ad:
+        doc_role_labels.append(dict(slug='ad', label='Responsible AD'))
+        role_ids['ad'] = [doc.ad.pk]
+        extra_prefetch.append(doc.ad)
+        
+    if doc.shepherd:
+        # doc.shepherd is an Email, which is allowed not to have a Person.
+        # The Emails used for shepherds should always have one, though. If not, log the
+        # event and move on without the shepherd. This just means there will not be
+        # add/remove shepherd buttons.
+        log.assertion('doc.shepherd.person',
+                      note="A document's shepherd should always have a Person'.  Failed for %s"%doc.name)
+        if doc.shepherd.person:
+            doc_role_labels.append(dict(slug='shep', label='Shepherd'))
+            role_ids['shep'] = [doc.shepherd.person.pk]
+            extra_prefetch.append(doc.shepherd.person)
+
+    if doc.group:
+        # UI buttons to add / remove will appear in same order as this list
+        group_roles = doc.group.role_set.filter(
+            name__in=DocumentActionHolder.GROUP_ROLES_OF_INTEREST,
+        ).select_related('name', 'person')  # name is a RoleName
+
+        # Gather all the roles for this group
+        for role in group_roles:
+            key = 'group_%s' % role.name.slug
+            existing_list = role_ids.get(key)
+            if existing_list:
+                existing_list.append(role.person.pk)
+            else:
+                role_ids[key] = [role.person.pk]
+                group_role_labels.append(dict(
+                    sort_order=DocumentActionHolder.GROUP_ROLES_OF_INTEREST.index(role.name.slug),
+                    slug=key,
+                    label='Group ' + role.name.name,  # friendly role name
+                ))
+            extra_prefetch.append(role.person)
+    
+    # Ensure group role button order is stable
+    group_role_labels.sort(key=lambda r: r['sort_order'])
+
+    form = ActionHoldersForm(initial={'action_holders': doc.action_holders.all()})
+    form.fields['action_holders'].extra_prefetch = extra_prefetch
+    form.fields['action_holders'].widget.attrs["data-role-ids"] = json.dumps(role_ids)
+
+    return render(
+        request,
+        'doc/edit_action_holders.html',
+        {
+            'form': form, 
+            'doc': doc, 
+            'titletext': doc_titletext(doc),
+            'role_labels': doc_role_labels + group_role_labels,
+        }
+    )
+
+
+class ReminderEmailForm(forms.Form):
+    note = forms.CharField(
+        widget=forms.Textarea, 
+        label='Note to action holders',
+        help_text='Optional message to the action holders',
+        required=False,
+        strip=True,
+    )
+
+@role_required('Area Director', 'Secretariat')
+def remind_action_holders(request, name):
+    doc = get_object_or_404(Document, name=name)
+    
+    if request.method == 'POST':
+        form = ReminderEmailForm(request.POST)
+        if form.is_valid():
+            email_remind_action_holders(request, doc, form.cleaned_data['note'])
+        return redirect('ietf.doc.views_doc.document_main', name=doc.canonical_name())
+
+    form = ReminderEmailForm()
+    return render(
+        request,
+        'doc/remind_action_holders.html',
+        {
+            'form': form,
+            'doc': doc,
+            'titletext': doc_titletext(doc),
+        }
+    )
+
 
 def email_aliases(request,name=''):
     doc = get_object_or_404(Document, name=name) if name else None

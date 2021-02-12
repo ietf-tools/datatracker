@@ -12,7 +12,8 @@ from typing import Optional         # pyflakes:ignore
 from django.conf import settings
 
 from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor,
-    StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent)
+    StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent,
+    DocumentActionHolder)
 from ietf.group.models import Group
 
 def draft_name_generator(type_id,group,n):
@@ -358,3 +359,9 @@ class BallotPositionDocEventFactory(DocEventFactory):
     balloter = factory.SubFactory('ietf.person.factories.PersonFactory')
     pos_id = 'discuss'
 
+class DocumentActionHolderFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = DocumentActionHolder
+        
+    document = factory.SubFactory(WgDraftFactory)
+    person = factory.SubFactory('ietf.person.factories.PersonFactory')

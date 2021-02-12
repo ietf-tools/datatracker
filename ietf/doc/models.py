@@ -630,6 +630,45 @@ class DocumentAuthor(DocumentAuthorInfo):
         return u"%s %s (%s)" % (self.document.name, self.person, self.order)
 
 
+class DocumentActionHolder(models.Model):
+    """Action holder for a document"""
+    document = ForeignKey('Document')
+    person = ForeignKey(Person)
+    time_added = models.DateTimeField(default=datetime.datetime.now)
+
+    CLEAR_ACTION_HOLDERS_STATES = ['approved', 'ann', 'rfcqueue', 'pub', 'dead']  # draft-iesg state slugs
+    GROUP_ROLES_OF_INTEREST = ['chair', 'techadv', 'editor', 'secr']
+
+    def __str__(self):
+        return str(self.person)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['document', 'person'], name='unique_action_holder')
+        ]
+
+    def role_for_doc(self):
+        """Brief string description of this person's relationship to the doc"""
+        roles = []
+        if self.person in self.document.authors():
+            roles.append('Author')
+        if self.person == self.document.ad:
+            roles.append('Responsible AD')
+        if self.document.shepherd and self.person == self.document.shepherd.person:
+            roles.append('Shepherd')
+        if self.document.group:
+            roles.extend([
+                'Group %s' % role.name.name 
+                for role in self.document.group.role_set.filter(
+                    name__in=self.GROUP_ROLES_OF_INTEREST,
+                    person=self.person,
+                )
+            ])
+
+        if not roles:
+            roles.append('Action Holder')
+        return ', '.join(roles) 
+
 validate_docname = RegexValidator(
     r'^[-a-z0-9]+$',
     "Provide a valid document name consisting of lowercase letters, numbers and hyphens.",
@@ -638,6 +677,8 @@ validate_docname = RegexValidator(
 
 class Document(DocumentInfo):
     name = models.CharField(max_length=255, validators=[validate_docname,], unique=True)           # immutable
+    
+    action_holders = models.ManyToManyField(Person, through=DocumentActionHolder, blank=True)
 
     def __str__(self):
         return self.name
@@ -869,6 +910,11 @@ class Document(DocumentInfo):
 
         return dh
 
+    def action_holders_enabled(self):
+        """Is the action holder list active for this document?"""
+        iesg_state = self.get_state('draft-iesg')
+        return iesg_state and iesg_state.slug != 'idexists'
+
 class DocumentURL(models.Model):
     doc  = ForeignKey(Document)
     tag  = ForeignKey(DocUrlTagName)
@@ -1000,6 +1046,7 @@ EVENT_TYPES = [
     ("published_rfc", "Published RFC"),
     ("added_suggested_replaces", "Added suggested replacement relationships"),
     ("reviewed_suggested_replaces", "Reviewed suggested replacement relationships"),
+    ("changed_action_holders", "Changed action holders for document"),
 
     # WG events
     ("changed_group", "Changed group"),

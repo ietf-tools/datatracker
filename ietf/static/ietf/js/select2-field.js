@@ -6,7 +6,7 @@ function setupSelect2Field(e) {
         return;
 
     var maxEntries = e.data("max-entries");
-    var multiple = maxEntries != 1;
+    var multiple = maxEntries !== 1;
     var prefetched = e.data("pre");
     e.select2({
         multiple: multiple,
@@ -27,7 +27,7 @@ function setupSelect2Field(e) {
             results: function (results) {
                 return {
                     results: results,
-                    more: results.length == 10
+                    more: results.length === 10
                 };
             }
         },
@@ -35,11 +35,27 @@ function setupSelect2Field(e) {
             return m;
         },
         initSelection: function (element, cb) {
-            if (!multiple && prefetched.length > 0)
-                cb(prefetched[0]);
-            else
-                cb(prefetched);
+            element = $(element);  // jquerify
 
+            // The original data set will contain any values looked up via ajax
+            var data = element.select2('data');
+            var data_map = {};
+            
+            // map id to its data representation
+            for (var ii = 0; ii < data.length; ii++) {
+                var this_item = data[ii];
+                data_map[this_item.id] = this_item;
+            }
+            
+            // convert values to data objects, letting element data supersede prefetch
+            var ids = element.val().split(','); 
+            if (!multiple && ids.length > 0) {
+                cb(data_map[ids[0]] || prefetched[ids[0]]);
+            } else {
+                cb(ids.map(function(id) {
+                    return data_map[id] || prefetched[id];
+                }));
+            }
         },
         dropdownCssClass: "bigdrop"
     });

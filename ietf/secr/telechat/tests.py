@@ -10,11 +10,12 @@ import debug    # pyflakes:ignore
 from django.urls import reverse
 
 from ietf.doc.factories import WgDraftFactory, IndividualRfcFactory, CharterFactory
-from ietf.doc.models import BallotDocEvent, BallotType, BallotPositionDocEvent
+from ietf.doc.models import BallotDocEvent, BallotType, BallotPositionDocEvent, State, Document
 from ietf.doc.utils import update_telechat, create_ballot_if_not_open
 from ietf.utils.test_utils import TestCase
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
+from ietf.person.factories import PersonFactory
 from ietf.secr.telechat.views import get_next_telechat_date
 
 SECR_USER='secretary'
@@ -180,3 +181,62 @@ class SecrTelechatTestCase(TestCase):
         )
         self.assertEqual(response.status_code,302)
         self.assertEqual(charter.get_state('charter').slug,'notrev')
+
+    def test_doc_detail_post_update_state_action_holder_automation(self):
+        """Updating IESG state of a draft should update action holders"""
+        by = Person.objects.get(name='(System)')
+        draft = WgDraftFactory(
+            states=[('draft-iesg', 'iesg-eva')],
+            ad=Person.objects.get(user__username='ad'),
+            authors=PersonFactory.create_batch(3),
+        )
+        last_week = datetime.date.today()-datetime.timedelta(days=7)
+        BallotDocEvent.objects.create(type='created_ballot',by=by,doc=draft, rev=draft.rev,
+                                      ballot_type=BallotType.objects.get(doc_type=draft.type,slug='approve'),
+                                      time=last_week)
+        d = get_next_telechat_date()
+        date = d.strftime('%Y-%m-%d')
+        update_telechat(None, draft, by, d)
+        url = reverse('ietf.secr.telechat.views.doc_detail', kwargs={'date':date, 'name':draft.name})
+        self.client.login(username="secretary", password="secretary+password")
+
+        # Check that there are no action holder DocEvents yet
+        self.assertEqual(draft.docevent_set.filter(type='changed_action_holders').count(), 0)
+        
+        # setting to defer should add AD, adding need-rev should add authors 
+        response = self.client.post(url,{
+            'submit': 'update_state',
+            'state': State.objects.get(type_id='draft-iesg', slug='defer').pk,
+            'substate': 'need-rev',
+        })
+        self.assertEqual(response.status_code,302)
+        draft = Document.objects.get(name=draft.name)
+        self.assertEqual(draft.get_state('draft-iesg').slug,'defer')
+        self.assertCountEqual(draft.action_holders.all(), [draft.ad] + draft.authors())
+        self.assertEqual(draft.docevent_set.filter(type='changed_action_holders').count(), 1)
+
+        # Removing need-rev should remove authors
+        response = self.client.post(url,{
+            'submit': 'update_state',
+            'state': State.objects.get(type_id='draft-iesg', slug='iesg-eva').pk,
+            'substate': '',
+        })
+        self.assertEqual(response.status_code,302)
+        draft = Document.objects.get(name=draft.name)
+        self.assertEqual(draft.get_state('draft-iesg').slug,'iesg-eva')
+        self.assertCountEqual(draft.action_holders.all(), [draft.ad])
+        self.assertEqual(draft.docevent_set.filter(type='changed_action_holders').count(), 2)
+
+        # Setting to approved should remove all action holders
+        # noinspection DjangoOrm
+        draft.action_holders.add(*(draft.authors()))  # add() with through model ok in Django 2.2+
+        response = self.client.post(url,{
+            'submit': 'update_state',
+            'state': State.objects.get(type_id='draft-iesg', slug='approved').pk,
+            'substate': '',
+        })
+        self.assertEqual(response.status_code,302)
+        draft = Document.objects.get(name=draft.name)
+        self.assertEqual(draft.get_state('draft-iesg').slug,'approved')
+        self.assertCountEqual(draft.action_holders.all(), [])
+        self.assertEqual(draft.docevent_set.filter(type='changed_action_holders').count(), 3)

@@ -22,7 +22,7 @@ from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent,
     IRSGBallotDocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent,
     IESG_SUBSTATE_TAGS, RelatedDocument, BallotType )
 from ietf.doc.utils import ( add_state_change_event, close_ballot, close_open_ballots,
-    create_ballot_if_not_open, update_telechat )
+    create_ballot_if_not_open, update_telechat, update_action_holders )
 from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred, 
     extra_automation_headers, generate_last_call_announcement, 
     generate_issue_ballot_mail, generate_ballot_writeup, generate_ballot_rfceditornote,
@@ -79,9 +79,12 @@ def do_undefer_ballot(request, doc):
     doc.tags.remove(*prev_tags)
 
     events = []
-    state_change_event = add_state_change_event(doc, by, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
-    if state_change_event:
-        events.append(state_change_event)
+    e = add_state_change_event(doc, by, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
+    if e:
+        events.append(e)
+    e = update_action_holders(doc, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
+    if e:
+        events.append(e)
 
     e = update_telechat(request, doc, by, telechat_date)
     if e:
@@ -453,9 +456,12 @@ def defer_ballot(request, name):
 
         events = []
 
-        state_change_event = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
-        if state_change_event:
-            events.append(state_change_event)
+        e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
+        if e:
+            events.append(e)
+        e = update_action_holders(doc, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
+        if e:
+            events.append(e)
 
         e = update_telechat(request, doc, login, telechat_date)
         if e:
@@ -547,10 +553,16 @@ def lastcalltext(request, name):
                     doc.set_state(new_state)
                     doc.tags.remove(*prev_tags)
 
+                    events = []
                     e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
-
                     if e:
-                        doc.save_with_history([e])
+                        events.append(e)
+                    e = update_action_holders(doc, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
+                    if e:
+                        events.append(e)
+
+                    if events:
+                        doc.save_with_history(events)
 
                     request_last_call(request, doc)
                     
@@ -628,9 +640,15 @@ def ballot_writeupnotes(request, name):
                     doc.set_state(new_state)
                     doc.tags.remove(*prev_tags)
 
-                    sce = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
-                    if sce:
-                        doc.save_with_history([sce])
+                    events = []
+                    e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
+                    if e:
+                        events.append(e)
+                    e = update_action_holders(doc, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
+                    if e:
+                        events.append(e)
+                    if events:
+                        doc.save_with_history(events)
 
                 if not ballot_already_approved:
                     e = create_ballot_if_not_open(request, doc, login, "approve") # pyflakes:ignore
@@ -893,9 +911,11 @@ def approve_ballot(request, name):
             e.desc = "IESG has approved the document"
         e.save()
         events.append(e)
-        
-        e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
 
+        e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
+        if e:
+            events.append(e)
+        e = update_action_holders(doc, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
         if e:
             events.append(e)
 
@@ -1040,6 +1060,9 @@ def make_last_call(request, name):
             e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
             if e:
                 events.append(e)
+            e = update_action_holders(doc, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
+            if e:
+                events.append(e)
             expiration_date = form.cleaned_data['last_call_expiration_date']
             e = LastCallDocEvent(doc=doc, rev=doc.rev, by=login)
             e.type = "sent_last_call"
@@ -1129,9 +1152,12 @@ def issue_irsg_ballot(request, name):
             doc.tags.remove(*prev_tags)
 
             events = []
-            state_change_event = add_state_change_event(doc, by, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
-            if state_change_event:
-                events.append(state_change_event)
+            e = add_state_change_event(doc, by, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
+            if e:
+                events.append(e)
+            e = update_action_holders(doc, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
+            if e:
+                events.append(e)
 
             if events:
                 doc.save_with_history(events)

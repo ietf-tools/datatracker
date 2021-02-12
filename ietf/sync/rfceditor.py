@@ -18,7 +18,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, DocAlias, State, StateType, DocEvent, DocRelationshipName,
     DocTagName, DocTypeName, RelatedDocument )
 from ietf.doc.expire import move_draft_files_to_archive
-from ietf.doc.utils import add_state_change_event, prettify_std_name
+from ietf.doc.utils import add_state_change_event, prettify_std_name, update_action_holders
 from ietf.group.models import Group
 from ietf.name.models import StdLevelName, StreamName
 from ietf.person.models import Person
@@ -186,6 +186,9 @@ def update_drafts_from_queue(drafts):
 
             d.set_state(next_iesg_state)
             e = add_state_change_event(d, system, prev_iesg_state, next_iesg_state)
+            if e:
+                events.append(e)
+            e = update_action_holders(d, prev_iesg_state, next_iesg_state)
             if e:
                 events.append(e)
             changed.add(name)
@@ -457,12 +460,16 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
             rfc_published = True
 
         for t in ("draft-iesg", "draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"):
-            slug = doc.get_state_slug(t)
-            if slug and slug not in ("pub", "idexists"):
-                new_state = State.objects.select_related("type").get(used=True, type=t, slug="pub")
-                doc.set_state(new_state)
-                changes.append("changed %s to %s" % (new_state.type.label, new_state))
-            if t == 'draft-iesg' and not slug:
+            prev_state = doc.get_state(t)
+            if prev_state is not None:
+                if prev_state.slug not in ("pub", "idexists"):
+                    new_state = State.objects.select_related("type").get(used=True, type=t, slug="pub")
+                    doc.set_state(new_state)
+                    changes.append("changed %s to %s" % (new_state.type.label, new_state))
+                    e = update_action_holders(doc, prev_state, new_state)
+                    if e:
+                        events.append(e)
+            elif t == 'draft-iesg':
                 doc.set_state(State.objects.get(type_id='draft-iesg', slug='idexists'))
 
         def parse_relation_list(l):

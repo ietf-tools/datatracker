@@ -26,7 +26,7 @@ from ietf.community.utils import docs_tracked_by_community_list
 from ietf.doc.models import Document, DocHistory, State, DocumentAuthor, DocHistoryAuthor
 from ietf.doc.models import DocAlias, RelatedDocument, RelatedDocHistory, BallotType, DocReminder
 from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBallotDocEvent, NewRevisionDocEvent, StateDocEvent
-from ietf.doc.models import TelechatDocEvent
+from ietf.doc.models import TelechatDocEvent, DocumentActionHolder
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role, Group
 from ietf.ietfauth.utils import has_role
@@ -406,10 +406,14 @@ def get_document_content(key, filename, split=True, markup=True):
 def tags_suffix(tags):
     return ("::" + "::".join(t.name for t in tags)) if tags else ""
 
-def add_state_change_event(doc, by, prev_state, new_state, prev_tags=[], new_tags=[], timestamp=None):
+def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_tags=None, timestamp=None):
     """Add doc event to explain that state change just happened."""
     if prev_state and new_state:
         assert prev_state.type_id == new_state.type_id
+
+    # convert default args to empty lists
+    prev_tags = prev_tags or []
+    new_tags = new_tags or []
 
     if prev_state == new_state and set(prev_tags) == set(new_tags):
         return None
@@ -425,6 +429,88 @@ def add_state_change_event(doc, by, prev_state, new_state, prev_tags=[], new_tag
         e.time = timestamp
     e.save()
     return e
+
+
+def add_action_holder_change_event(doc, by, prev_set, reason=None):
+    set_changed = False
+    if doc.documentactionholder_set.exclude(person__in=prev_set).exists():
+        set_changed = True  # doc has an action holder not in the old set
+    # If set_changed is still False, then all of the current action holders were in
+    # prev_set. Either the sets are the same or the prev_set contains at least one 
+    # Person not in the current set, so just check length.
+    if doc.documentactionholder_set.count() != len(prev_set):
+        set_changed = True
+
+    if not set_changed:
+        return None
+    
+    if doc.action_holders.exists():
+        ah_names = [person.plain_name() for person in doc.action_holders.all()]
+        description = 'Changed action holders to %s' % ', '.join(ah_names)
+    else:
+        description = 'Removed all action holders'
+    if reason:
+        description += ' (%s)' % reason
+
+    return DocEvent.objects.create(
+        type='changed_action_holders',
+        doc=doc,
+        by=by,
+        rev=doc.rev,
+        desc=description,
+    )
+
+
+def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, new_tags=None):
+    """Update the action holders for doc based on state transition
+    
+    Returns an event describing the change which should be passed to doc.save_with_history()
+    
+    Only cares about draft-iesg state changes. Places where other state types are updated
+    may not call this method. If you add rules for updating action holders on other state
+    types, be sure this is called in the places that change that state.
+    """
+    # Should not call this with different state types
+    if prev_state and new_state:
+        assert prev_state.type_id == new_state.type_id
+
+    # Convert tags to sets of slugs    
+    prev_tag_slugs = {t.slug for t in (prev_tags or [])}
+    new_tag_slugs = {t.slug for t in (new_tags or [])}
+
+    # Do nothing if state / tag have not changed
+    if (prev_state == new_state) and (prev_tag_slugs == new_tag_slugs):
+        return None
+    
+    # Remember original list of action holders to later check if it changed
+    prev_set = list(doc.action_holders.all())
+    # Only draft-iesg states are of interest (for now)
+    if (prev_state != new_state) and (getattr(new_state, 'type_id') == 'draft-iesg'):
+        # Clear the action_holders list on a state change. This will reset the age of any that get added back.
+        doc.action_holders.clear()
+        if doc.ad and new_state.slug not in DocumentActionHolder.CLEAR_ACTION_HOLDERS_STATES:
+            # Default to responsible AD for states other than these
+            doc.action_holders.add(doc.ad)
+    
+    if prev_tag_slugs != new_tag_slugs:
+        # If we have added or removed the need-rev tag, add or remove authors as action holders
+        if ('need-rev' in prev_tag_slugs) and ('need-rev' not in new_tag_slugs):
+            # Removed the 'need-rev' tag - drop authors from the action holders list
+            DocumentActionHolder.objects.filter(document=doc, person__in=doc.authors()).delete()
+        elif ('need-rev' not in prev_tag_slugs) and ('need-rev' in new_tag_slugs):
+            # Added the 'need-rev' tag - add authors to the action holders list
+            for auth in doc.authors():
+                if not doc.action_holders.filter(pk=auth.pk).exists():
+                    doc.action_holders.add(auth)
+
+    # Now create an event if we changed the set
+    return add_action_holder_change_event(
+        doc, 
+        Person.objects.get(name='(System)'), 
+        prev_set,
+        reason='IESG state changed',
+    )
+
 
 def update_reminder(doc, reminder_type_slug, event, due_date):
     reminder_type = DocReminderTypeName.objects.get(slug=reminder_type_slug)
