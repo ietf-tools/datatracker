@@ -3576,6 +3576,17 @@
   {
     "fields": {
       "cc": [],
+      "desc": "Recipients when sending a reminder email to action holders for a document",
+      "to": [
+        "doc_action_holders"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "doc_remind_action_holders"
+  },
+  {
+    "fields": {
+      "cc": [],
       "desc": "Recipients when what a document replaces or is replaced by changes",
       "to": [
         "doc_authors_expanded"
@@ -4998,6 +5009,14 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "conflict_review_stream_manager"
+  },
+  {
+    "fields": {
+      "desc": "Action holders for a document",
+      "template": "{% for action_holder in doc.action_holders.all %}{% if doc.shepherd and action_holder == doc.shepherd.person %}{{ doc.shepherd }}{% else %}{{ action_holder.email }}{% endif %}{% if not forloop.last %},{%endif %}{% endfor %}"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "doc_action_holders"
   },
   {
     "fields": {

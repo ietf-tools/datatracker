@@ -104,6 +104,8 @@ urlpatterns = [
     url(r'^%(name)s/edit/stream/$' % settings.URL_REGEXPS, views_draft.change_stream),
     url(r'^%(name)s/edit/replaces/$' % settings.URL_REGEXPS, views_draft.replaces),
     url(r'^%(name)s/edit/notify/$' % settings.URL_REGEXPS, views_doc.edit_notify),
+    url(r'^%(name)s/edit/actionholders/$' % settings.URL_REGEXPS, views_doc.edit_action_holders),
+    url(r'^%(name)s/edit/remindactionholders/$' % settings.URL_REGEXPS, views_doc.remind_action_holders),
     url(r'^%(name)s/edit/suggested-replaces/$' % settings.URL_REGEXPS, views_draft.review_possibly_replaces),
     url(r'^%(name)s/edit/status/$' % settings.URL_REGEXPS, views_draft.change_intention),
     url(r'^%(name)s/edit/telechat/$' % settings.URL_REGEXPS, views_doc.telechat_date),

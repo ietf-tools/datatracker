@@ -457,6 +457,29 @@
           </td>
         </tr>
 
+        {% if doc.action_holders_enabled %}
+          <tr>
+            <th></th>
+            <th>Action Holders</th>
+            <td class="edit">
+            {% if can_edit %}
+                <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.edit_action_holders' name=doc.name %}">Edit</a>
+            {% endif %}
+            </td>
+            <td>
+              <div> 
+                  {% if doc.action_holders.exists %}
+                      {% for action_holder in doc.documentactionholder_set.all %}
+                        <div>{% person_link action_holder.person title=action_holder.role_for_doc %} {{ action_holder|action_holder_badge }}</div>
+                      {% endfor %}
+                      {% if can_edit %}<a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_doc.remind_action_holders" name=doc.name %}"><span class="fa fa-envelope-o"></span> Send reminder email </a>{% endif %}
+                  {% else %}
+                      (None)
+                  {% endif %}
+              </div>
+            </td>
+        {% endif %}
+        
         {% if consensus and doc.stream_id == 'ietf' %}
           <tr>
             <th></th>

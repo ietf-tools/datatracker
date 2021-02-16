@@ -9,6 +9,7 @@ import io
 import lxml
 import sys
 import bibtexparser
+import mock
 
 if sys.version_info[0] == 2 and sys.version_info[1] < 7:
     import unittest2 as unittest
@@ -224,6 +225,7 @@ class SearchTests(TestCase):
     def test_docs_for_ad(self):
         ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person
         draft = IndividualDraftFactory(ad=ad)
+        draft.action_holders.set([PersonFactory()])
         draft.set_state(State.objects.get(type='draft-iesg', slug='lc'))
         rfc = IndividualDraftFactory(ad=ad)
         rfc.set_state(State.objects.get(type='draft', slug='rfc'))
@@ -243,6 +245,7 @@ class SearchTests(TestCase):
         r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad', kwargs=dict(name=ad.full_name_as_key())))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
+        self.assertContains(r, draft.action_holders.first().plain_name())
         self.assertContains(r, rfc.canonical_name())
         self.assertContains(r, conflrev.name)
         self.assertContains(r, statchg.name)
@@ -265,18 +268,22 @@ class SearchTests(TestCase):
 
     def test_drafts_in_last_call(self):
         draft = IndividualDraftFactory(pages=1)
+        draft.action_holders.set([PersonFactory()])
         draft.set_state(State.objects.get(type="draft-iesg", slug="lc"))
         r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_last_call'))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
+        self.assertContains(r, draft.action_holders.first().plain_name())
 
     def test_in_iesg_process(self):
         doc_in_process = IndividualDraftFactory()
+        doc_in_process.action_holders.set([PersonFactory()])
         doc_in_process.set_state(State.objects.get(type='draft-iesg', slug='lc'))
         doc_not_in_process = IndividualDraftFactory()
         r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_iesg_process'))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, doc_in_process.title)
+        self.assertContains(r, doc_in_process.action_holders.first().plain_name())
         self.assertNotContains(r, doc_not_in_process.title)
         
     def test_indexes(self):
@@ -323,6 +330,7 @@ class SearchTests(TestCase):
         drafts = WgDraftFactory.create_batch(3,states=[('draft','active'),('draft-iesg','ad-eval')])
         for index, draft in enumerate(drafts):
             StateDocEventFactory(doc=draft, state=('draft-iesg','ad-eval'), time=datetime.datetime.now()-datetime.timedelta(days=[1,15,29][index]))
+            draft.action_holders.set([PersonFactory()])
 
         # And one draft that should not show (with the default of 7 days to view)
         old = WgDraftFactory()
@@ -335,7 +343,9 @@ class SearchTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('td.doc')),3)
         self.assertEqual(q('td.status span.label-warning').text(),"for 15 days")
-        self.assertEqual(q('td.status span.label-danger').text(),"for 29 days")        
+        self.assertEqual(q('td.status span.label-danger').text(),"for 29 days")
+        for ah in [draft.action_holders.first() for draft in drafts]:
+            self.assertContains(r, ah.plain_name())
 
 class DocDraftTestCase(TestCase):
     draft_text = """
@@ -774,6 +784,95 @@ Man                    Expires September 22, 2015               [Page 3]
             },
             msg_prefix='Non-WG-like group %s (%s) should not include group type in link' % (group.acronym, group.type),
         )
+
+    @staticmethod
+    def _pyquery_select_action_holder_string(q, s):
+        """Helper to use PyQuery to find an action holder in the draft HTML"""
+        # selector grabs the action holders heading and finds siblings with a div containing the search string
+        return q('th:contains("Action Holders") ~ td>div:contains("%s")' % s)
+
+    @mock.patch.object(Document, 'action_holders_enabled', return_value=False, new_callable=mock.PropertyMock)
+    def test_document_draft_hides_action_holders(self, mock_method):
+        """Draft should not show action holders when appropriate"""
+        draft = WgDraftFactory()
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name))
+        r = self.client.get(url)
+        self.assertNotContains(r, 'Action Holders')  # should not show action holders...
+
+        draft.action_holders.set([PersonFactory()])
+        r = self.client.get(url)
+        self.assertNotContains(r, 'Action Holders')  # ...even if they are assigned
+
+    @mock.patch.object(Document, 'action_holders_enabled', return_value=True, new_callable=mock.PropertyMock)
+    def test_document_draft_shows_action_holders(self, mock_method):
+        """Draft should show action holders when appropriate"""
+        draft = WgDraftFactory()
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name))
+
+        # No action holders case should be shown properly
+        r = self.client.get(url)
+        self.assertContains(r, 'Action Holders')  # should show action holders
+        q = PyQuery(r.content)
+        self.assertEqual(len(self._pyquery_select_action_holder_string(q, '(None)')), 1)
+        
+        # Action holders should be listed when assigned
+        draft.action_holders.set(PersonFactory.create_batch(3))
+        
+        # Make one action holder "old"
+        old_action_holder = draft.documentactionholder_set.first()
+        old_action_holder.time_added -= datetime.timedelta(days=30)
+        old_action_holder.save()
+
+        with self.settings(DOC_ACTION_HOLDER_AGE_LIMIT_DAYS=20):
+            r = self.client.get(url)
+
+        self.assertContains(r, 'Action Holders')  # should still be shown
+        q = PyQuery(r.content)
+        self.assertEqual(len(self._pyquery_select_action_holder_string(q, '(None)')), 0)
+        for person in draft.action_holders.all():
+            self.assertEqual(len(self._pyquery_select_action_holder_string(q, person.plain_name())), 1)
+        # check that one action holder was marked as old
+        self.assertEqual(len(self._pyquery_select_action_holder_string(q, 'for 30 days')), 1)
+
+    @mock.patch.object(Document, 'action_holders_enabled', return_value=True, new_callable=mock.PropertyMock)
+    def test_document_draft_action_holders_buttons(self, mock_method):
+        """Buttons for action holders should be shown when AD or secretary"""
+        draft = WgDraftFactory()
+        draft.action_holders.set([PersonFactory()])
+
+        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=draft.name))
+        edit_ah_url = urlreverse('ietf.doc.views_doc.edit_action_holders', kwargs=dict(name=draft.name))
+        remind_ah_url = urlreverse('ietf.doc.views_doc.remind_action_holders', kwargs=dict(name=draft.name))
+
+        def _run_test(username=None, expect_buttons=False):
+            if username:
+                self.client.login(username=username, password=username + '+password')
+            r = self.client.get(url)
+            q = PyQuery(r.content)
+
+            self.assertEqual(
+                len(q('th:contains("Action Holders") ~ td a[href="%s"]' % edit_ah_url)),
+                1 if expect_buttons else 0,
+                '%s should%s see the edit action holders button but %s' % (
+                    username if username else 'unauthenticated user',
+                    '' if expect_buttons else ' not',
+                    'did not' if expect_buttons else 'did',
+                )
+            )
+            self.assertEqual(
+                len(q('th:contains("Action Holders") ~ td a[href="%s"]' % remind_ah_url)),
+                1 if expect_buttons else 0,
+                '%s should%s see the remind action holders button but %s' % (
+                    username if username else 'unauthenticated user',
+                    '' if expect_buttons else ' not',
+                    'did not' if expect_buttons else 'did',
+                )
+            )
+
+        _run_test(None, False)
+        _run_test('plain', False)
+        _run_test('ad', True)
+        _run_test('secretary', True)
 
     def test_draft_group_link(self):
         """Link to group 'about' page should have correct format"""

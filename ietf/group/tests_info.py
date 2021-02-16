@@ -205,19 +205,32 @@ class GroupPagesTests(TestCase):
         group = GroupFactory()
         setup_default_community_list_for_group(group)
         draft = WgDraftFactory(group=group)
+        draft.action_holders.set([PersonFactory()])
         draft2 = WgDraftFactory(group=group)
+        draft3 = WgDraftFactory(group=group)
+        draft3.set_state(State.objects.get(type='draft-iesg', slug='pub-req'))
+        draft3.action_holders.set(PersonFactory.create_batch(2))
+        old_dah = draft3.documentactionholder_set.first()
+        old_dah.time_added -= datetime.timedelta(days=173)  # make an "old" action holder
+        old_dah.save()
 
         clist = CommunityList.objects.get(group=group)
         related_docs_rule = clist.searchrule_set.get(rule_type='name_contains')
         reset_name_contains_index_for_rule(related_docs_rule)
 
         for url in group_urlreverse_list(group, 'ietf.group.views.group_documents'):
-            r = self.client.get(url)
+            with self.settings(DOC_ACTION_HOLDER_MAX_AGE_DAYS=20):
+                r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, draft.name)
             self.assertContains(r, group.name)
             self.assertContains(r, group.acronym)
+            self.assertNotContains(r, draft.action_holders.first().plain_name())
             self.assertContains(r, draft2.name)
+            self.assertContains(r, draft3.name)
+            for ah in draft3.action_holders.all():
+                self.assertContains(r, ah.plain_name())
+            self.assertContains(r, 'for 173 days', count=1)  # the old_dah should be tagged
 
         # Make sure that a logged in user is presented with an opportunity to add results to their community list
         self.client.login(username="secretary", password="secretary+password")

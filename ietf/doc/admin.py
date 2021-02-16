@@ -11,7 +11,7 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     StateDocEvent, ConsensusDocEvent, BallotType, BallotDocEvent, WriteupDocEvent, LastCallDocEvent,
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
-    ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource )
+    ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder )
 
 from ietf.utils.validators import validate_external_resource_value
 
@@ -32,6 +32,11 @@ admin.site.register(State, StateAdmin)
 class DocAuthorInline(admin.TabularInline):
     model = DocumentAuthor
     raw_id_fields = ['person', 'email']
+    extra = 1
+
+class DocActionHolderInline(admin.TabularInline):
+    model = DocumentActionHolder
+    raw_id_fields = ['person']
     extra = 1
 
 class RelatedDocumentInline(admin.TabularInline):
@@ -72,7 +77,7 @@ class DocumentAdmin(admin.ModelAdmin):
     search_fields = ['name']
     list_filter = ['type']
     raw_id_fields = ['group', 'shepherd', 'ad']
-    inlines = [DocAuthorInline, RelatedDocumentInline, AdditionalUrlInLine]
+    inlines = [DocAuthorInline, DocActionHolderInline, RelatedDocumentInline, AdditionalUrlInLine]
     form = DocumentForm
 
     def save_model(self, request, obj, form, change):
@@ -136,6 +141,13 @@ admin.site.register(DocHistoryAuthor, DocHistoryAuthorAdmin)
 class BallotTypeAdmin(admin.ModelAdmin):
     list_display = ["slug", "doc_type", "name", "question"]
 admin.site.register(BallotType, BallotTypeAdmin)
+
+
+class DocumentActionHolderAdmin(admin.ModelAdmin):
+    list_display = ['id', 'document', 'person', 'time_added']
+    raw_id_fields = ['document', 'person']
+admin.site.register(DocumentActionHolder, DocumentActionHolderAdmin)
+
 
 # events
 

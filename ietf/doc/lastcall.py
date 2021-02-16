@@ -7,7 +7,7 @@ from django.db.models import Q
 from ietf.doc.models import Document, State, DocEvent, LastCallDocEvent, WriteupDocEvent
 from ietf.doc.models import IESG_SUBSTATE_TAGS
 from ietf.person.models import Person
-from ietf.doc.utils import add_state_change_event
+from ietf.doc.utils import add_state_change_event, update_action_holders
 from ietf.doc.mails import generate_ballot_writeup, generate_approval_mail, generate_last_call_announcement
 from ietf.doc.mails import send_last_call_request, email_last_call_expired, email_last_call_expired_with_downref
 
@@ -60,9 +60,14 @@ def expire_last_call(doc):
     doc.tags.remove(*prev_tags)
 
     system = Person.objects.get(name="(System)")
+    events = []
     e = add_state_change_event(doc, system, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
     if e:
-        doc.save_with_history([e])
+        events.append(e)
+    e = update_action_holders(doc, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
+    if e:
+        events.append(e)
+    doc.save_with_history(events)
 
     email_last_call_expired(doc)
 

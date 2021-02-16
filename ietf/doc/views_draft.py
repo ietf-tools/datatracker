@@ -33,7 +33,7 @@ from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_reques
     email_iesg_processing_document, email_ad_approved_doc,
     email_iana_expert_review_state_changed )
 from ietf.doc.utils import ( add_state_change_event, can_adopt_draft, can_unadopt_draft,
-    get_tags_for_stream_id, nice_consensus,
+    get_tags_for_stream_id, nice_consensus, update_action_holders,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify,
     set_replaces_for_document, default_consensus, tags_suffix, )
 from ietf.doc.lastcall import request_last_call
@@ -115,6 +115,7 @@ def change_state(request, name):
 
                 events = []
 
+
                 e = add_state_change_event(doc, login, prev_state, new_state,
                                            prev_tags=prev_tags, new_tags=new_tags)
 
@@ -123,6 +124,10 @@ def change_state(request, name):
                     msg += "(The previous state was %s)\n\n"%(prev_state.name + tags_suffix(prev_tags))
                 
                 events.append(e)
+
+                e = update_action_holders(doc, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
+                if e:
+                    events.append(e)
 
                 if comment:
                     c = DocEvent(type="added_comment")
@@ -596,6 +601,9 @@ def to_iesg(request,name):
                 new_state = target_state[target_map[state_type]]
                 if not prev_state==new_state:
                     doc.set_state(new_state)
+                    e = update_action_holders(doc, prev_state, new_state)
+                    if e:
+                        events.append(e)
                     events.append(add_state_change_event(doc=doc,by=by,prev_state=prev_state,new_state=new_state))
 
             if not doc.ad == ad :
@@ -763,6 +771,16 @@ def edit_info(request, name):
                 events.append(e)
 
             doc.save_with_history(events)
+
+            if new_document:
+                # If we created a new doc, update the action holders as though it
+                # started in idexists and moved to its create_in_state. Do this
+                # after the doc has been updated so, e.g., doc.ad is set.
+                update_action_holders(
+                    doc,
+                    State.objects.get(type='draft-iesg', slug='idexists'),
+                    r['create_in_state']
+                )
 
             if changes:
                 email_iesg_processing_document(request, doc, changes)

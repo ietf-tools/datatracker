@@ -25,7 +25,7 @@ from ietf.doc.utils import get_tags_for_stream_id, create_ballot_if_not_open
 from ietf.name.models import StreamName, DocTagName
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group, Role
-from ietf.person.factories import PersonFactory
+from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting, MeetingTypeName
 from ietf.iesg.models import TelechatDate
@@ -41,6 +41,7 @@ class ChangeStateTests(TestCase):
         draft = WgDraftFactory(ad=ad,states=[('draft','active'),('draft-iesg','iesg-eva')])
         DocEventFactory(type='started_iesg_process',by=ad,doc=draft,rev=draft.rev,desc="Started IESG Process")
         draft.tags.add("ad-f-up")
+        draft.action_holders.add(ad)
 
         url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "ad", url)
@@ -67,10 +68,12 @@ class ChangeStateTests(TestCase):
         self.assertEqual(draft.get_state_slug("draft-iesg"), "approved")
         self.assertTrue(not draft.tags.filter(slug="approved"))
         self.assertFalse(draft.tags.exists())
-        self.assertEqual(draft.docevent_set.count(), events_before + 2)
+        self.assertEqual(draft.docevent_set.count(), events_before + 3)
         self.assertTrue("Test comment" in draft.docevent_set.all()[0].desc)
-        self.assertTrue("IESG state changed" in draft.docevent_set.all()[1].desc)
-        
+        self.assertTrue("Removed all action holders" in draft.docevent_set.all()[1].desc)
+        self.assertTrue("IESG state changed" in draft.docevent_set.all()[2].desc)
+        self.assertCountEqual(draft.action_holders.all(), [])
+
         # should have sent two emails, the second one to the iesg with approved message
         self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue("Approved: " in outbox[-1]['Subject'])
@@ -79,8 +82,15 @@ class ChangeStateTests(TestCase):
         
     def test_change_state(self):
         ad = Person.objects.get(user__username="ad")
-        draft = WgDraftFactory(name='draft-ietf-mars-test',group__acronym='mars',ad=ad,states=[('draft','active'),('draft-iesg','ad-eval')])
+        draft = WgDraftFactory(
+            name='draft-ietf-mars-test',
+            group__acronym='mars',
+            ad=ad,
+            authors=PersonFactory.create_batch(3),
+            states=[('draft','active'),('draft-iesg','ad-eval')]
+        )
         DocEventFactory(type='started_iesg_process',by=ad,doc=draft,rev=draft.rev,desc="Started IESG Process")
+        draft.action_holders.add(ad)
 
         url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
@@ -105,7 +115,7 @@ class ChangeStateTests(TestCase):
         self.assertTrue(len(q('form .has-error')) > 0)
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state("draft-iesg"), first_state)
-
+        self.assertCountEqual(draft.action_holders.all(), [ad])
         
         # change state
         events_before = draft.docevent_set.count()
@@ -122,9 +132,11 @@ class ChangeStateTests(TestCase):
         self.assertEqual(draft.get_state_slug("draft-iesg"), "review-e")
         self.assertTrue(not draft.tags.filter(slug="ad-f-up"))
         self.assertTrue(draft.tags.filter(slug="need-rev"))
-        self.assertEqual(draft.docevent_set.count(), events_before + 2)
+        self.assertCountEqual(draft.action_holders.all(), [ad] + draft.authors())
+        self.assertEqual(draft.docevent_set.count(), events_before + 3)
         self.assertTrue("Test comment" in draft.docevent_set.all()[0].desc)
-        self.assertTrue("IESG state changed" in draft.docevent_set.all()[1].desc)
+        self.assertTrue("Changed action holders" in draft.docevent_set.all()[1].desc)
+        self.assertTrue("IESG state changed" in draft.docevent_set.all()[2].desc)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("State Update Notice" in outbox[-1]['Subject'])
         self.assertTrue('draft-ietf-mars-test@' in outbox[-1]['To'])
@@ -139,8 +151,13 @@ class ChangeStateTests(TestCase):
 
     def test_pull_from_rfc_queue(self):
         ad = Person.objects.get(user__username="ad")
-        draft = WgDraftFactory(ad=ad,states=[('draft-iesg','rfcqueue')])
+        draft = WgDraftFactory(
+            ad=ad,
+            authors=PersonFactory.create_batch(3),
+            states=[('draft-iesg','rfcqueue')],
+        )
         DocEventFactory(type='started_iesg_process',by=ad,doc=draft,rev=draft.rev,desc="Started IESG Process")
+        draft.action_holders.add(*(draft.authors()))
 
         url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
@@ -156,7 +173,7 @@ class ChangeStateTests(TestCase):
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "review-e")
-
+        self.assertCountEqual(draft.action_holders.all(), [ad])
         self.assertEqual(len(outbox), mailbox_before + 2)
 
         self.assertTrue(draft.name in outbox[-1]['Subject'])
@@ -234,8 +251,13 @@ class ChangeStateTests(TestCase):
 
     def test_request_last_call(self):
         ad = Person.objects.get(user__username="ad")
-        draft = WgDraftFactory(ad=ad,states=[('draft-iesg','ad-eval')])
+        draft = WgDraftFactory(
+            ad=ad,
+            authors=PersonFactory.create_batch(3),
+            states=[('draft-iesg','ad-eval')],
+        )
         DocEventFactory(type='started_iesg_process',by=ad,doc=draft,rev=draft.rev,desc="Started IESG Process")
+        draft.action_holders.add(*(draft.authors()))
 
         self.client.login(username="secretary", password="secretary+password")
         url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
@@ -246,6 +268,8 @@ class ChangeStateTests(TestCase):
         r = self.client.post(url, dict(state=State.objects.get(used=True, type="draft-iesg", slug="lc-req").pk))
         self.assertEqual(r.status_code,200)
         self.assertContains(r, "Your request to issue")
+
+        draft = Document.objects.get(name=draft.name)
 
         # last call text
         e = draft.latest_event(WriteupDocEvent, type="changed_last_call_text")
@@ -278,6 +302,9 @@ class ChangeStateTests(TestCase):
 
         # comment
         self.assertTrue("Last call was requested" in draft.latest_event().desc)
+        
+        # action holders
+        self.assertCountEqual(draft.action_holders.all(), [ad])
         
 
 class EditInfoTests(TestCase):
@@ -449,9 +476,10 @@ class EditInfoTests(TestCase):
         self.assertEqual(draft.ad, ad)
         self.assertEqual(draft.note, "This is a note")
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
-        self.assertEqual(draft.docevent_set.count(), events_before + 4)
+        self.assertEqual(draft.docevent_set.count(), events_before + 5)
+        self.assertCountEqual(draft.action_holders.all(), [draft.ad])
         events = list(draft.docevent_set.order_by('time', 'id'))
-        self.assertEqual(events[-4].type, "started_iesg_process")
+        self.assertEqual(events[-5].type, "started_iesg_process")
         self.assertEqual(len(outbox), mailbox_before+1)
         self.assertTrue('IESG processing' in outbox[-1]['Subject'])
         self.assertTrue('draft-ietf-mars-test2@' in outbox[-1]['To']) 
@@ -460,6 +488,7 @@ class EditInfoTests(TestCase):
         draft.set_state(State.objects.get(type_id='draft-iesg', slug='idexists'))
         draft.set_state(State.objects.get(type='draft-stream-ietf',slug='writeupw'))
         draft.stream = StreamName.objects.get(slug='ietf')
+        draft.action_holders.clear()
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
         r = self.client.post(url,
                              dict(intended_std_level=str(draft.intended_std_level_id),
@@ -473,6 +502,7 @@ class EditInfoTests(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug('draft-iesg'),'pub-req')
         self.assertEqual(draft.get_state_slug('draft-stream-ietf'),'sub-pub')
+        self.assertCountEqual(draft.action_holders.all(), [draft.ad])
 
     def test_edit_consensus(self):
         draft = WgDraftFactory()
@@ -668,8 +698,9 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
 
     def test_expire_drafts(self):
         mars = GroupFactory(type_id='wg',acronym='mars')
-        ad_role = RoleFactory(group=mars, name_id='ad', person=Person.objects.get(user__username='ad'))
-        draft = WgDraftFactory(name='draft-ietf-mars-test',group=mars)
+        ad = Person.objects.get(user__username='ad')
+        ad_role = RoleFactory(group=mars, name_id='ad', person=ad)
+        draft = WgDraftFactory(name='draft-ietf-mars-test',group=mars,ad=ad)
         DocEventFactory(type='started_iesg_process',by=ad_role.person,doc=draft,rev=draft.rev,desc="Started IESG Process")
         
         self.assertEqual(len(list(get_expired_drafts())), 0)
@@ -688,6 +719,8 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva"))
 
         self.assertEqual(len(list(get_expired_drafts())), 0)
+        
+        draft.action_holders.set([draft.ad])
         
         # test notice
         mailbox_before = len(outbox)
@@ -710,6 +743,8 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         self.assertEqual(draft.get_state_slug(), "expired")
         self.assertEqual(draft.get_state_slug("draft-iesg"), "dead")
         self.assertTrue(draft.latest_event(type="expired_document"))
+        self.assertCountEqual(draft.action_holders.all(), [])
+        self.assertIn('Removed all action holders', draft.latest_event(type='changed_action_holders').desc)
         self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, txt)))
 
@@ -815,12 +850,14 @@ class ExpireLastCallTests(TestCase):
         # expire it
         mailbox_before = len(outbox)
         events_before = draft.docevent_set.count()
-        
+
         expire_last_call(drafts[0])
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "writeupw")
-        self.assertEqual(draft.docevent_set.count(), events_before + 1)
+        self.assertEqual(draft.docevent_set.count(), events_before + 2)
+        self.assertCountEqual(draft.action_holders.all(), [ad])
+        self.assertIn('Changed action holders', draft.latest_event(type='changed_action_holders').desc)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Last Call Expired" in outbox[-1]["Subject"])
         self.assertTrue('iesg-secretary@' in outbox[-1]['Cc'])
@@ -844,13 +881,15 @@ class ExpireLastCallTests(TestCase):
         drafts = list(get_expired_last_calls())
         self.assertEqual(len(drafts), 1)
 
-        mailbox_before = len(outbox)    
+        mailbox_before = len(outbox)
         expire_last_call(drafts[0])
 
         d = Document.objects.get(name=draft.name)
         self.assertEqual(len(outbox), mailbox_before + 2)
         self.assertTrue("Review Downrefs From Expired Last Call" in outbox[-1]["Subject"])
         self.assertTrue(d.ad.email().address in outbox[-1]['To'])
+        self.assertCountEqual(d.action_holders.all(), [ad])
+        self.assertIn('Changed action holders', d.latest_event(type='changed_action_holders').desc)
 
 class IndividualInfoFormsTests(TestCase):
 
@@ -1202,12 +1241,117 @@ class IndividualInfoFormsTests(TestCase):
         self.assertEqual(doc.docextresource_set.get(name__slug='github_repo').display_name, 'Some display text')
         self.assertIn(doc.docextresource_set.first().name.slug,str(doc.docextresource_set.first()))
 
+    # This is in views_doc, not views_draft, but there's already mixing and this keeps it with similar tests
+    def do_doc_change_action_holders_test(self, username):
+        # Set up people related to the doc to be sure shortcut buttons appear.
+        doc = Document.objects.get(name=self.docname)
+        doc.documentauthor_set.create(person=PersonFactory())
+        doc.ad = Person.objects.get(user__username='ad')
+        doc.shepherd = EmailFactory()
+        doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        RoleFactory(name_id='chair', person=PersonFactory(), group=doc.group)
+        RoleFactory(name_id='techadv', person=PersonFactory(), group=doc.group)
+        RoleFactory(name_id='editor', person=PersonFactory(), group=doc.group)
+        RoleFactory(name_id='secr', person=PersonFactory(), group=doc.group)
+        
+        url = urlreverse('ietf.doc.views_doc.edit_action_holders', kwargs=dict(name=doc.name))
+        
+        login_testing_unauthorized(self, username, url)
+        
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form input[id=id_reason]')), 1)
+        self.assertEqual(len(q('form input[id=id_action_holders]')), 1)
+        for role_name in [
+            'Author',
+            'Responsible AD',
+            'Shepherd',
+            'Group Chair',
+            'Group Tech Advisor',
+            'Group Editor',
+            'Group Secretary',
+        ]:
+            self.assertEqual(len(q('button:contains("Add %s")' % role_name)), 1, 
+                             'Expected "Add %s" button' % role_name)
+            self.assertEqual(len(q('button:contains("Remove %s")' % role_name)), 1,
+                             'Expected "Remove %s" button for' % role_name)
+
+        def _test_changing_ah(action_holders, reason):
+            r = self.client.post(url, dict(
+                reason=reason,
+                action_holders=','.join([str(p.pk) for p in action_holders]),
+            ))
+            self.assertEqual(r.status_code, 302)
+            doc = Document.objects.get(name=self.docname)
+            self.assertCountEqual(doc.action_holders.all(), action_holders)
+            event = doc.latest_event(type='changed_action_holders')
+            self.assertIn(reason, event.desc)
+            if action_holders:
+                for ah in action_holders:
+                    self.assertIn(ah.plain_name(), event.desc)
+            else:
+                self.assertIn('Removed all', event.desc)
+
+        _test_changing_ah([doc.ad, doc.shepherd.person], 'this is a first test')
+        _test_changing_ah([doc.ad], 'this is a second test')
+        _test_changing_ah(doc.authors(), 'authors can do it, too')
+        _test_changing_ah([], 'clear it back out')
+
+    def test_doc_change_action_holders_as_secretary(self):
+        self.do_doc_change_action_holders_test('secretary')
+
+    def test_doc_change_action_holders_as_ad(self):
+        self.do_doc_change_action_holders_test('ad')
+
+    def do_doc_remind_action_holders_test(self, username):
+        doc = Document.objects.get(name=self.docname)
+        doc.action_holders.set(PersonFactory.create_batch(3))
+        
+        url = urlreverse('ietf.doc.views_doc.remind_action_holders', kwargs=dict(name=doc.name))
+        
+        login_testing_unauthorized(self, username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form textarea[id=id_note]')), 1)
+        self.assertEqual(len(q('button:contains("Send")')), 1)
+        for ah in doc.action_holders.all():
+            self.assertContains(r, ah.plain_name())
+
+        empty_outbox()
+        r = self.client.post(url, dict(note='this is my note'))  # note should be < 78 chars to avoid wrapping
+        self.assertEqual(r.status_code, 302)
+
+        self.assertEqual(len(outbox), 1)
+        for ah in doc.action_holders.all():
+            self.assertIn('Reminder: action needed', outbox[0]['Subject'])
+            self.assertIn(ah.email_address(), outbox[0]['To'])
+            self.assertIn(doc.display_name(), outbox[0].as_string())
+            self.assertIn(doc.get_absolute_url(), outbox[0].as_string())
+            self.assertIn('this is my note', outbox[0].as_string())
+
+        # check that nothing is sent when no action holders
+        doc.action_holders.clear()
+        self.client.post(url)
+        self.assertEqual(len(outbox), 1)  # still 1
+
+    def test_doc_remind_action_holders_as_ad(self):
+        self.do_doc_remind_action_holders_test('ad')
+
+    def test_doc_remind_action_holders_as_secretary(self):
+        self.do_doc_remind_action_holders_test('secretary')
 
 class SubmitToIesgTests(TestCase):
 
     def setUp(self):
         role=RoleFactory(group__acronym='mars',name_id='chair',person=PersonFactory(user__username='marschairman'))
-        doc=WgDraftFactory(name='draft-ietf-mars-test',group=role.group,ad=Person.objects.get(user__username='ad'))
+        doc=WgDraftFactory(
+            name='draft-ietf-mars-test',
+            group=role.group,
+            ad=Person.objects.get(user__username='ad'),
+            authors=PersonFactory.create_batch(3),
+        )
         self.docname=doc.name
 
     def test_verify_permissions(self):
@@ -1242,6 +1386,7 @@ class SubmitToIesgTests(TestCase):
 
         doc = Document.objects.get(name=self.docname)
         self.assertEqual(doc.get_state_slug('draft-iesg'),'idexists')
+        self.assertCountEqual(doc.action_holders.all(), [])
 
     def test_confirm_submission(self):
         url = urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=self.docname))
@@ -1258,16 +1403,14 @@ class SubmitToIesgTests(TestCase):
         self.assertTrue(doc.get_state('draft-iesg').slug=='pub-req')
         self.assertTrue(doc.get_state('draft-stream-ietf').slug=='sub-pub')
 
-        # It's not clear what this testing - the view can certainly
-        # leave the document without an ad. This line as written only
-        # checks whether the setup document had an ad or not.
-        self.assertTrue(doc.ad!=None)
+        self.assertCountEqual(doc.action_holders.all(), [doc.ad])
 
         new_docevents = set(doc.docevent_set.all()) - docevents_pre
-        self.assertEqual(len(new_docevents),3)
+        self.assertEqual(len(new_docevents), 4)
         new_docevent_type_count = Counter([e.type for e in new_docevents])
         self.assertEqual(new_docevent_type_count['changed_state'],2)
         self.assertEqual(new_docevent_type_count['started_iesg_process'],1)
+        self.assertEqual(new_docevent_type_count['changed_action_holders'], 1)
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Publication has been requested" in outbox[-1]['Subject'])

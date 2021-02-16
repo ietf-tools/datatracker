@@ -239,9 +239,14 @@ class RFCSyncTests(TestCase):
 
     def test_rfc_index(self):
         area = GroupFactory(type_id='area')
-        doc = WgDraftFactory(group__parent=area,states=[('draft-iesg','rfcqueue'),('draft-stream-ise','rfc-edit')])
+        doc = WgDraftFactory(
+            group__parent=area,
+            states=[('draft-iesg','rfcqueue'),('draft-stream-ise','rfc-edit')],
+            ad=Person.objects.get(user__username='ad'),
+        )
         # it's a bit strange to have draft-stream-ise set when draft-iesg is set
         # too, but for testing purposes ...
+        doc.action_holders.add(doc.ad)  # not normally set, but add to be sure it's cleared
 
         updated_doc = Document.objects.create(name="draft-ietf-something")
         DocAlias.objects.create(name=updated_doc.name).docs.add(updated_doc)
@@ -358,9 +363,11 @@ class RFCSyncTests(TestCase):
 
         doc = Document.objects.get(name=doc.name)
 
-        self.assertEqual(doc.docevent_set.all()[0].type, "sync_from_rfc_editor")
-        self.assertEqual(doc.docevent_set.all()[1].type, "published_rfc")
-        self.assertEqual(doc.docevent_set.all()[1].time.date(), today)
+        events = doc.docevent_set.all()
+        self.assertEqual(events[0].type, "sync_from_rfc_editor")
+        self.assertEqual(events[1].type, "changed_action_holders")
+        self.assertEqual(events[2].type, "published_rfc")
+        self.assertEqual(events[2].time.date(), today)
         self.assertTrue("errata" in doc.tags.all().values_list("slug", flat=True))
         self.assertTrue(DocAlias.objects.filter(name="rfc1234", docs=doc))
         self.assertTrue(DocAlias.objects.filter(name="bcp1", docs=doc))
@@ -371,6 +378,7 @@ class RFCSyncTests(TestCase):
         self.assertEqual(doc.abstract, "This is some interesting text.")
         self.assertEqual(doc.get_state_slug(), "rfc")
         self.assertEqual(doc.get_state_slug("draft-iesg"), "pub")
+        self.assertCountEqual(doc.action_holders.all(), [])
         self.assertEqual(doc.get_state_slug("draft-stream-ise"), "pub")
         self.assertEqual(doc.std_level_id, "ps")
         self.assertEqual(doc.pages, 42)
@@ -413,7 +421,9 @@ class RFCSyncTests(TestCase):
         return t
 
     def test_rfc_queue(self):
-        draft = WgDraftFactory(states=[('draft-iesg','ann')])
+        draft = WgDraftFactory(states=[('draft-iesg','ann')], ad=Person.objects.get(user__username='ad'))
+        draft.action_holders.add(draft.ad)  # add an action holder so we can test that it's removed later
+
         expected_auth48_url = "http://www.rfc-editor.org/auth48/rfc1234"
         t = self._generate_rfc_queue_xml(draft,
                                          state='EDIT*R*A(1G)',
@@ -433,10 +443,13 @@ class RFCSyncTests(TestCase):
         draft = Document.objects.get(pk=draft.pk)
         self.assertEqual(draft.get_state_slug("draft-rfceditor"), "edit")
         self.assertEqual(draft.get_state_slug("draft-iesg"), "rfcqueue")
+        self.assertCountEqual(draft.action_holders.all(), [])
         self.assertEqual(set(draft.tags.all()), set(DocTagName.objects.filter(slug__in=("iana", "ref"))))
-        self.assertEqual(draft.docevent_set.all()[0].type, "changed_state") # changed draft-iesg state
-        self.assertEqual(draft.docevent_set.all()[1].type, "changed_state") # changed draft-rfceditor state
-        self.assertEqual(draft.docevent_set.all()[2].type, "rfc_editor_received_announcement")
+        events = draft.docevent_set.all()
+        self.assertEqual(events[0].type, "changed_state") # changed draft-iesg state
+        self.assertEqual(events[1].type, "changed_action_holders")
+        self.assertEqual(events[2].type, "changed_state") # changed draft-rfceditor state
+        self.assertEqual(events[3].type, "rfc_editor_received_announcement")
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("RFC Editor queue" in outbox[-1]["Subject"])

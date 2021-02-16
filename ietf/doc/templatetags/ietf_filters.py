@@ -581,3 +581,35 @@ def can_ballot(user,doc):
         return has_role(user,'IRSG Member')
     else:
         return user.person.role_set.filter(name="ad", group__type="area", group__state="active")
+
+@register.filter
+def action_holder_badge(action_holder):
+    """Add a warning tag if action holder age exceeds limit
+    
+    >>> from ietf.doc.factories import DocumentActionHolderFactory
+    >>> old_limit = settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS
+    >>> settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS = 15
+    >>> action_holder_badge(DocumentActionHolderFactory())
+    ''
+    
+    >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=15)))
+    ''
+
+    >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=16)))
+    '<span class="label label-danger" title="Goal is &lt;15 days">for 16 days</span>'
+
+    >>> action_holder_badge(DocumentActionHolderFactory(time_added=datetime.datetime.now() - datetime.timedelta(days=30)))
+    '<span class="label label-danger" title="Goal is &lt;15 days">for 30 days</span>'
+
+    >>> settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS = old_limit
+    """
+    age_limit = settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS
+    age = (datetime.datetime.now() - action_holder.time_added).days
+    if age > age_limit:
+        return mark_safe('<span class="label label-danger" title="Goal is &lt;%d days">for %d day%s</span>' % (
+            age_limit,
+            age,
+            's' if age != 1 else ''))
+    else:
+        return ''  # no alert needed
+

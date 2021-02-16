@@ -2,7 +2,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load ietf_filters static %}
-{% load textfilters %}
+{% load textfilters person_filters %}
 
 {% block pagehead %}
   <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
@@ -43,6 +43,12 @@
             <td>
 	      <a href="{% url "ietf.doc.views_doc.document_main" doc.name %}">{{ doc.name }}</a>
           <br><b>{{ doc.title }}</b>
+            {% if doc.action_holders_enabled and doc.action_holders.exists %}
+            <br>Action holders:
+                {% for action_holder in doc.documentactionholder_set.all %}
+                    {% person_link action_holder.person title=action_holder.role_for_doc %}{{ action_holder|action_holder_badge }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            {% endif %}
 	      {% if doc.note %}
 	        <br><i>Note: {{ doc.note|linkify|linebreaksbr }}</i>
 	      {% endif %}

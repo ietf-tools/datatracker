@@ -15,7 +15,7 @@ from ietf.utils.mail import send_mail
 from ietf.doc.models import Document, DocEvent, State, IESG_SUBSTATE_TAGS
 from ietf.person.models import Person 
 from ietf.meeting.models import Meeting
-from ietf.doc.utils import add_state_change_event
+from ietf.doc.utils import add_state_change_event, update_action_holders
 from ietf.mailtrigger.utils import gather_address_lists
 
 
@@ -169,6 +169,9 @@ def expire_draft(doc):
             doc.set_state(new_state)
             doc.tags.remove(*prev_tags)
             e = add_state_change_event(doc, system, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
+            if e:
+                events.append(e)
+            e = update_action_holders(doc, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
             if e:
                 events.append(e)
 

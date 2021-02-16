@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2020, All Rights Reserved #}
+{% load origin %}
+{% load static %}
+{% load bootstrap3 %}
+{% load person_filters %}
+
+{% block title %}
+    Send reminder to action holders for {{ titletext }}
+{% endblock %}
+
+{% block content %}
+    {% origin %}
+    <h1>Send reminder to action holders<br><small>{{ titletext }}</small></h1>
+    
+    <form enctype="multipart/form-data" method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+    
+        <p>This reminder will be sent to 
+            {% for person in doc.action_holders.all %}
+                {% if forloop.last and not forloop.first %} and {% endif %}{%  person_link person %}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
+        {% buttons %}
+            <button type="submit" class="btn btn-primary" name="submit" value="Send reminder">Send</button>
+            <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Cancel</a>
+        {% endbuttons %}
+    </form>
+{% endblock %}

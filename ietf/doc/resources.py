@@ -17,7 +17,7 @@ from ietf.doc.models import (BallotType, DeletedEvent, StateType, State, Documen
     InitialReviewDocEvent, DocHistoryAuthor, BallotDocEvent, RelatedDocument,
     RelatedDocHistory, BallotPositionDocEvent, AddedMessageEvent, SubmissionDocEvent,
     ReviewRequestDocEvent, ReviewAssignmentDocEvent, EditedAuthorsDocEvent, DocumentURL,
-    IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource )
+    IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder )
 
 from ietf.name.resources import BallotPositionNameResource, DocTypeNameResource
 class BallotTypeResource(ModelResource):
@@ -787,3 +787,22 @@ class DocExtResourceResource(ModelResource):
             "name": ALL_WITH_RELATIONS,
         }
 api.doc.register(DocExtResourceResource())
+
+
+from ietf.person.resources import PersonResource
+class DocumentActionHolderResource(ModelResource):
+    document         = ToOneField(DocumentResource, 'document')
+    person           = ToOneField(PersonResource, 'person')
+    class Meta:
+        queryset = DocumentActionHolder.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'documentactionholder'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "time_added": ALL,
+            "document": ALL_WITH_RELATIONS,
+            "person": ALL_WITH_RELATIONS,
+        }
+api.doc.register(DocumentActionHolderResource())
