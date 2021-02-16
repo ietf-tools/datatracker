@@ -64,7 +64,7 @@ svn>=1.0.1
 tblib>=1.3.0
 tqdm>=3.7.0
 #Trac>=1.0.10,<1.2
-Unidecode>=0.4.18
+Unidecode>=0.4.18,<1.2.0
 #wsgiref>=0.1.2
 xml2rfc>=2.35.0
 xym>=0.4.4,!=0.4.7,<1.0
