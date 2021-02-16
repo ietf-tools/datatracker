@@ -4,6 +4,8 @@
 import re
 
 from django.db.models.aggregates import Max
+from django.utils import timezone
+from simple_history.utils import bulk_update_with_history
 
 from ietf.doc.models import DocumentAuthor, DocAlias
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
@@ -16,6 +18,7 @@ from ietf.review.utils import (current_unavailable_periods_for_reviewers,
                                days_needed_to_fulfill_min_interval_for_reviewers, 
                                get_default_filter_re,
                                latest_review_assignments_for_reviewers)
+from ietf.utils import log
 
 """
 This file contains policies regarding reviewer queues.
@@ -39,15 +42,47 @@ def get_reviewer_queue_policy(team):
     return policy(team)
 
 
+def persons_with_previous_review(team, review_req, possible_person_ids, state_id):
+    """ Collect anyone in possible_person_ids that have reviewed the document before
+    
+    Also considers ancestor documents. The possible_person_ids elements can be Person objects or PKs
+    Returns a set of Person IDs.
+    """
+    doc_names = {review_req.doc.name}.union(*extract_complete_replaces_ancestor_mapping_for_docs([review_req.doc.name]).values())
+    has_reviewed_previous = ReviewRequest.objects.filter(
+        doc__name__in=doc_names,
+        reviewassignment__reviewer__person__in=possible_person_ids,
+        reviewassignment__state=state_id,
+        team=team,
+    ).distinct()
+    if review_req.pk is not None:
+        has_reviewed_previous = has_reviewed_previous.exclude(pk=review_req.pk)
+    has_reviewed_previous = set(
+        has_reviewed_previous.values_list("reviewassignment__reviewer__person", flat=True))
+    return has_reviewed_previous
+
+
 class AbstractReviewerQueuePolicy:
     def __init__(self, team):
         self.team = team
         
-    def default_reviewer_rotation_list(self, dont_skip_person_ids=None):
+    def assign_reviewer(self, review_req, reviewer, add_skip):
+        """Assign a reviewer to a request and update policy state accordingly"""
+        # Update policy state first - needed by LRU policy to correctly compute whether assignment was in-order
+        self.update_policy_state_for_assignment(review_req, reviewer.person, add_skip)
+        return review_req.reviewassignment_set.create(state_id='assigned', reviewer=reviewer, assigned_on=timezone.now())
+
+    def default_reviewer_rotation_list(self, include_unavailable=False):
+        """ Return a list of reviewers (Person objects) in the default reviewer rotation for a policy.
+        
+        Subclasses should pretty much always override this. The default implementation provides the filtering
+        behavior expected of queue policies.
         """
-        Return a list of reviewers (Person objects) in the default reviewer rotation for a policy.
-        """
-        raise NotImplementedError  # pragma: no cover
+        # Default is just a filtered list of reviewers for the team, in arbitrary order.
+        rotation_list = list(Person.objects.filter(role__name="reviewer", role__group=self.team))
+        if not include_unavailable:
+            rotation_list = self._filter_unavailable_reviewers(rotation_list)
+        return rotation_list
 
     def return_reviewer_to_rotation_top(self, reviewer_person):
         """
@@ -63,62 +98,68 @@ class AbstractReviewerQueuePolicy:
         """
         return [r for r in self.default_reviewer_rotation_list() if not self._reviewer_settings_for(r).skip_next]
 
-    def update_policy_state_for_assignment(self, assignee_person, add_skip=False):
-        """
-        Update the skip_count if the assignment was in order, and
-        update NextReviewerInTeam. Note that NextReviewerInTeam is
-        not used by all policies. 
-        """
-        settings = self._reviewer_settings_for(assignee_person)
-        settings.request_assignment_next = False
-        settings.save()
-        rotation_list = self.default_reviewer_rotation_list(
-            dont_skip_person_ids=[assignee_person.pk])
+    def update_policy_state_for_assignment(self, review_req, assignee_person, add_skip=False):
+        """Update the skip_count if the assignment was in order."""
+        self._clear_request_next_assignment(assignee_person)
 
-        def reviewer_at_index(i):
-            if not rotation_list:
-                return None
-            return rotation_list[i % len(rotation_list)]
+        rotation = self._filter_unavailable_reviewers(
+            self.default_reviewer_rotation_list(include_unavailable=True),  # we are going to filter for ourselves
+            review_req,
+        )
 
-        if not rotation_list:
+        # Use PKs, not objects, to avoid bugs arising from object identity comparisons
+        rotation_pks = [r.pk for r in rotation]
+        if len(rotation_pks) == 0:
             return
+        # assignee_person should be in the rotation list, otherwise they should not have been an option
+        log.assertion('assignee_person.pk in rotation_pks')
 
-        rotation_list_without_skip = self.default_reviewer_rotation_list_without_skipped()
-        # In order means: assigned to the first person in the rotation list with skip_next=0
-        # If the assignment is not in order, skip_next and NextReviewerInTeam are not modified.
-        in_order_assignment = rotation_list_without_skip[0] == assignee_person
-
-        # Loop through the list until finding the first person with skip_next=0, who is not the
-        # current assignee. Anyone with skip_next>0 encountered before has their skip_next
-        # decreased. There is a cap on the number of iterations, which can be hit e.g. if there
-        # is only a single reviewer, and the current assignee is excluded from being set as
-        # NextReviewerInTeam.
-        current_idx = 0
-        max_iter = sum([self._reviewer_settings_for(r).skip_next for r in rotation_list]) + len(rotation_list)
-        if in_order_assignment:
-            while current_idx <= max_iter:
-                current_idx_person = reviewer_at_index(current_idx)
-                settings = self._reviewer_settings_for(current_idx_person)
-                if settings.skip_next > 0:
-                    settings.skip_next -= 1
-                    settings.save()
-                elif current_idx_person != assignee_person:
-                    # NextReviewerInTeam is not used by all policies to determine
-                    # default rotation order, but updated regardless.
-                    nr = NextReviewerInTeam.objects.filter(
-                        team=self.team).first() or NextReviewerInTeam(
-                        team=self.team)
-                    nr.next_reviewer = current_idx_person
-                    nr.save()
-
-                    break
-                current_idx += 1
+        if self._assignment_in_order(rotation_pks, assignee_person):
+            self._update_skip_next(rotation_pks, assignee_person)
 
         if add_skip:
-            settings = self._reviewer_settings_for(assignee_person)
-            settings.skip_next += 1
-            settings.save()
-            
+            self._add_skip(assignee_person)
+
+    def _update_skip_next(self, rotation_pks, assignee_person):
+        """Decrement skip_next for all users skipped"""
+        assignee_index = rotation_pks.index(assignee_person.pk)
+        skipped = rotation_pks[0:assignee_index]
+        skipped_settings = self.team.reviewersettings_set.filter(person__in=skipped)  # list of PKs is valid here
+        for ss in skipped_settings:
+            ss.skip_next = max(0, ss.skip_next - 1)  # ensure we don't go negative
+        bulk_update_with_history(skipped_settings,
+                                 ReviewerSettings,
+                                 ['skip_next'],
+                                 default_change_reason='skipped')
+
+    def _assignment_in_order(self, rotation_pks, assignee_person):
+        """Is this an in-order assignment?"""
+        if assignee_person.pk not in rotation_pks:
+            return False  # picking from off the list is not in order
+
+        # map from person ID to skip_next
+        skip_next = dict(
+            self.team.reviewersettings_set.filter(
+                person__in=rotation_pks
+            ).values_list('person_id', 'skip_next')
+        )
+        rotation_skips = [skip_next.get(pk, 0) for pk in rotation_pks]
+        min_skip = min(rotation_skips)  # usually 0, but not guaranteed
+        assignee_index = rotation_pks.index(assignee_person.pk)
+        assignee_skip = rotation_skips[assignee_index]
+        
+        # If the assignee should be skipped, the selection is not in order
+        if assignee_skip != min_skip:
+            return False
+        
+        # If any of the preceding reviewers should not have been skipped, the selection is not in order
+        for earlier_skip in rotation_skips[0:assignee_index]: 
+            if earlier_skip <= min_skip:
+                return False
+
+        # The selection was in order
+        return True
+
     # TODO : Change this field to deal with multiple already assigned reviewers???
     def setup_reviewer_field(self, field, review_req):
         """
@@ -162,28 +203,66 @@ class AbstractReviewerQueuePolicy:
         """
         if review_req.team != self.team:
             raise ValueError('Reviewer queue policy was passed a review request belonging to a different team.')            
-        resolver = AssignmentOrderResolver(email_queryset, review_req, self.default_reviewer_rotation_list())
+        resolver = AssignmentOrderResolver(
+            email_queryset,
+            review_req,
+            self._filter_unavailable_reviewers(
+                self.default_reviewer_rotation_list(include_unavailable=True),
+                review_req,
+            )
+        )
         return [(r['email'].pk, r['label']) for r in resolver.determine_ranking()]
         
-    def _entirely_unavailable_reviewers(self, dont_skip_person_ids=None):
+    def _filter_unavailable_reviewers(self, reviewers, review_req=None):
+        """Remove any reviewers who are not available for the specified review request
+        
+        Reviewers who have an unavailability reason of 'unavailable' are always excluded from the
+        output.
+        
+        If review_req is specified, 'canfinish' reviewers who have previously completed a review of
+        the doc in the ReviewRequest will be treated as available.
+        
+        If no review_req is None, reviewers who are 'canfinish' for *any* review are included in the
+        output. Only 'unavailable' reviewers are excluded. In this case, the caller must account for
+        these 'canfinish' reviewers only being available for some reviews. 
+        
+        If multiple UnavailablePeriods apply, a 'canfinish' will take priority over an 'unavailable'.
         """
-        Return a set of PKs of Persons that should not be considered
-        to be in the rotation list at all. 
-        """
-        reviewers_to_skip = set()
-        if not dont_skip_person_ids:
-            dont_skip_person_ids = []
-
         unavailable_periods = current_unavailable_periods_for_reviewers(self.team)
-        for person_id, periods in unavailable_periods.items():
-            if periods and person_id not in dont_skip_person_ids and not any(p.availability == "canfinish" for p in periods):
-                reviewers_to_skip.add(person_id)
-                
-        return reviewers_to_skip
-    
+        if len(unavailable_periods) == 0:
+            return reviewers.copy()  # nothing to do
+
+        available_reviewers = []
+        if review_req:
+            previous_reviewers = persons_with_previous_review(self.team,
+                                                              review_req,
+                                                              [r.pk for r in reviewers],
+                                                              'completed')
+        else:
+            # treat all reviewers as previous_reviewers if no review_req
+            previous_reviewers = [r.pk for r in reviewers]
+
+        for reviewer in reviewers:
+            current_periods = unavailable_periods.get(reviewer.pk)
+            keep = (current_periods is None) or (
+                'canfinish' in [p.availability for p in current_periods] and reviewer.pk in previous_reviewers
+            )
+            if keep:
+                available_reviewers.append(reviewer)
+        return available_reviewers
+
+    def _clear_request_next_assignment(self, person):
+        s = self._reviewer_settings_for(person)
+        s.request_assignment_next = False
+        s.save()
+
+    def _add_skip(self, person):
+        s = self._reviewer_settings_for(person)
+        s.skip_next += 1
+        s.save()
+
     def _reviewer_settings_for(self, person):
-            return (ReviewerSettings.objects.filter(team=self.team, person=person).first()
-                    or ReviewerSettings(team=self.team, person=person))
+        return ReviewerSettings.objects.get_or_create(team=self.team, person=person)[0]
 
                 
 class AssignmentOrderResolver:
@@ -217,8 +296,12 @@ class AssignmentOrderResolver:
         self.unavailable_periods = current_unavailable_periods_for_reviewers(self.team)
 
         # This data is collected as a set of person IDs.
-        self.has_completed_review_previous = self._persons_with_previous_review(self.review_req, self.possible_person_ids, 'completed')
-        self.has_rejected_review_previous = self._persons_with_previous_review(self.review_req, self.possible_person_ids, 'rejected')
+        self.has_completed_review_previous = persons_with_previous_review(
+            self.team, self.review_req, self.possible_person_ids, 'completed'
+        )
+        self.has_rejected_review_previous = persons_with_previous_review(
+            self.team, self.review_req, self.possible_person_ids, 'rejected'
+        )
         self.wish_to_review = set(ReviewWish.objects.filter(team=self.team, person__in=self.possible_person_ids,
                                                        doc=self.doc).values_list("person", flat=True))
         
@@ -227,12 +310,7 @@ class AssignmentOrderResolver:
         Determine the ranking of reviewers.
         Returns a list of tuples, each tuple containing an Email pk and an explanation label.
         """
-        ranking = []
-        for e in self.possible_emails:
-            ranking_for_email = self._ranking_for_email(e)
-            if ranking_for_email:
-                ranking.append(ranking_for_email)
-
+        ranking = [self._ranking_for_email(e) for e in self.possible_emails if e.person_id in self.rotation_index]
         ranking.sort(key=lambda r: r["scores"], reverse=True)
         return ranking
 
@@ -243,7 +321,11 @@ class AssignmentOrderResolver:
         The scores are a list of individual scores, i.e. they are prioritised, not
         cumulative; so when comparing scores, elements later in the scores list
         will only matter if all earlier scores in the list are equal.
+        
+        Only valid if email.person_id is in self.rotation_index.
         """
+        log.assertion('email.person_id in self.rotation_index')
+
         settings = self.reviewer_settings.get(email.person_id)
         scores = []
         explanations = []
@@ -253,18 +335,7 @@ class AssignmentOrderResolver:
             if expr and explanation:
                 explanations.append(explanation)
 
-        if email.person_id not in self.rotation_index:
-            return
-
-        # If a reviewer is unavailable at the moment, they are ignored.
         periods = self.unavailable_periods.get(email.person_id, [])
-        unavailable_at_the_moment = periods and not (
-            email.person_id in self.has_completed_review_previous and
-            all(p.availability == "canfinish" for p in periods)
-        )
-        if unavailable_at_the_moment:
-            return
-        
         def format_period(p):
             if p.end_date:
                 res = "unavailable until {}".format(p.end_date.isoformat())
@@ -357,25 +428,6 @@ class AssignmentOrderResolver:
             connections[author] = "is author of document"
         return connections
 
-    def _persons_with_previous_review(self, review_req, possible_person_ids, state_id):
-        """
-        Collect anyone in possible_person_ids that have reviewed the document before,
-        or an ancestor document.
-        Returns a set with Person IDs of anyone who has.
-        """
-        doc_names = {review_req.doc.name}.union(*extract_complete_replaces_ancestor_mapping_for_docs([review_req.doc.name]).values())
-        has_reviewed_previous = ReviewRequest.objects.filter(
-            doc__name__in=doc_names,
-            reviewassignment__reviewer__person__in=possible_person_ids,
-            reviewassignment__state=state_id,
-            team=self.team,
-        ).distinct()
-        if review_req.pk is not None:
-            has_reviewed_previous = has_reviewed_previous.exclude(pk=review_req.pk)
-        has_reviewed_previous = set(
-            has_reviewed_previous.values_list("reviewassignment__reviewer__person", flat=True))
-        return has_reviewed_previous
-    
     def _reviewer_settings_for_person_ids(self, person_ids):
         reviewer_settings = {
             r.person_id: r
@@ -394,8 +446,11 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
     NextReviewerInTeam is used to store a pointer to where the queue is currently
     positioned.
     """
-    def default_reviewer_rotation_list(self, include_unavailable=False, dont_skip_person_ids=None):
-        reviewers = list(Person.objects.filter(role__name="reviewer", role__group=self.team))
+    def default_reviewer_rotation_list(self, include_unavailable=False):
+        reviewers = super(
+            RotateAlphabeticallyReviewerQueuePolicy, self
+        ).default_reviewer_rotation_list(include_unavailable)
+
         reviewers.sort(key=lambda p: p.last_name())
         next_reviewer_index = 0
     
@@ -415,13 +470,7 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
             else:
                 next_reviewer_index = reviewers.index(next_reviewer)
     
-        rotation_list = reviewers[next_reviewer_index:] + reviewers[:next_reviewer_index]
-    
-        if not include_unavailable:
-            reviewers_to_skip = self._entirely_unavailable_reviewers(dont_skip_person_ids)
-            rotation_list = [p for p in rotation_list if p.pk not in reviewers_to_skip]
-        
-        return rotation_list
+        return reviewers[next_reviewer_index:] + reviewers[:next_reviewer_index]
 
     def return_reviewer_to_rotation_top(self, reviewer_person):
         # As RotateAlphabetically does not keep a full rotation list,
@@ -431,14 +480,75 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         settings.request_assignment_next = True
         settings.save()
 
+    def _update_skip_next(self, rotation_pks, assignee_person):
+        """Decrement skip_next for all users skipped
+
+        In addition to the base class behavior, this looks ahead to the next reviewer in the
+        team and updates NextReviewerInTeam appropriately. Accounts for skip counts along the
+        way.   
+        """
+
+        super(RotateAlphabeticallyReviewerQueuePolicy, self)._update_skip_next(rotation_pks,
+                                                                               assignee_person)
+        # All reviewers in the list ahead of the assignee have already had their skip_next
+        # values decremented. Now need to update NextReviewerInTeam.
+        
+        # Copy and unfold the rotation list, putting the assignee at the front
+        unfolded_rotation_pks = rotation_pks.copy()
+        assignee_index = unfolded_rotation_pks.index(assignee_person.pk)
+        unfolded_rotation_pks = unfolded_rotation_pks[assignee_index:] + unfolded_rotation_pks[:assignee_index]
+        # Then remove the assignee
+        unfolded_rotation_pks.pop(0)
+
+        # Nothing to do if the assignee is the only person in the list
+        if len(unfolded_rotation_pks) == 0:
+            return
+        
+        # Get a map from person PK to their settings, if any
+        rotation_settings = {
+            settings.person_id: settings
+            for settings in self.team.reviewersettings_set.filter(person__in=unfolded_rotation_pks)
+        }
+
+        # Update any skip_counts we skip while finding the next reviewer. Handle the case where all skip_count > 0.
+        if len(rotation_settings) < len(unfolded_rotation_pks):
+            min_skip_next = 0  # one or more reviewers has no settings object, so they have skip_count=0   
+        else:
+            min_skip_next = min([rs.skip_next for rs in rotation_settings.values()])
+
+        next_reviewer_index = None
+        for index, pk in enumerate(unfolded_rotation_pks):
+            rs = rotation_settings.get(pk)
+            if (rs is None) or (rs.skip_next == min_skip_next):
+                next_reviewer_index = index
+                break
+            else:
+                rs.skip_next = max(0, rs.skip_next - 1)  # ensure never negative
+                
+        log.assertion('next_reviewer_index is not None')  # some entry in the list must have the minimum value
+
+        bulk_update_with_history(rotation_settings.values(),
+                                 ReviewerSettings,
+                                 ['skip_next'],
+                                 default_change_reason='skipped')
+
+        next_reviewer_pk = unfolded_rotation_pks[next_reviewer_index]
+        NextReviewerInTeam.objects.update_or_create(
+            team=self.team,
+            defaults=dict(next_reviewer_id=next_reviewer_pk)
+        )
+
 
 class LeastRecentlyUsedReviewerQueuePolicy(AbstractReviewerQueuePolicy):
     """
     A policy where the default rotation list is based on the most recent
     assigned, accepted or completed review assignment.
     """
-    def default_reviewer_rotation_list(self, include_unavailable=False, dont_skip_person_ids=None):
-        reviewers = list(Person.objects.filter(role__name="reviewer", role__group=self.team))
+    def default_reviewer_rotation_list(self, include_unavailable=False):
+        reviewers = super(
+            LeastRecentlyUsedReviewerQueuePolicy, self
+        ).default_reviewer_rotation_list(include_unavailable)
+
         reviewers_dict = {p.pk: p for p in reviewers}
         assignments = ReviewAssignment.objects.filter(
             review_request__team=self.team,
@@ -454,11 +564,6 @@ class LeastRecentlyUsedReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         
         rotation_list = sorted(list(reviewers_without_assignment), key=lambda r: r.pk)
         rotation_list += reviewers_with_assignment
-        
-        if not include_unavailable:
-            reviewers_to_skip = self._entirely_unavailable_reviewers(dont_skip_person_ids)
-            rotation_list = [p for p in rotation_list if p.pk not in reviewers_to_skip]
-
         return rotation_list
 
     def return_reviewer_to_rotation_top(self, reviewer_person):
