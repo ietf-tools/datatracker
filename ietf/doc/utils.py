@@ -848,6 +848,70 @@ def join_justified(left, right, width=72):
             break
     return lines
 
+def build_file_urls(doc):
+    if doc.get_state_slug() == "rfc":
+        name = doc.canonical_name()
+        base_path = os.path.join(settings.RFC_PATH, name + ".")
+        possible_types = settings.RFC_FILE_TYPES
+        found_types = [t for t in possible_types if os.path.exists(base_path + t)]
+
+        base = "https://www.rfc-editor.org/rfc/"
+
+        file_urls = []
+        for t in found_types:
+            label = "plain text" if t == "txt" else t
+            file_urls.append((label, base + name + "." + t))
+
+        if "pdf" not in found_types and "txt" in found_types:
+            file_urls.append(("pdf", base + "pdfrfc/" + name + ".txt.pdf"))
+
+        if "txt" in found_types:
+            file_urls.append(("htmlized", settings.TOOLS_ID_HTML_URL + name))
+            if doc.tags.filter(slug="verified-errata").exists():
+                file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
+        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=name))+"bibtex"))
+    else:
+        base_path = os.path.join(settings.INTERNET_DRAFT_PATH, doc.name + "-" + doc.rev + ".")
+        possible_types = settings.IDSUBMIT_FILE_TYPES
+        found_types = [t for t in possible_types if os.path.exists(base_path + t)]
+        base = settings.IETF_ID_ARCHIVE_URL
+        file_urls = []
+        for t in found_types:
+            label = "plain text" if t == "txt" else t
+            file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t))
+
+        if "pdf" not in found_types:
+            file_urls.append(("pdf", settings.TOOLS_ID_PDF_URL + doc.name + "-" + doc.rev + ".pdf"))
+        file_urls.append(("htmlized (tools)", settings.TOOLS_ID_HTML_URL + doc.name + "-" + doc.rev))
+        file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
+        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=doc.name,rev=doc.rev))+"bibtex"))
+
+    return file_urls, found_types
+
+def build_doc_supermeta_block(doc):
+    # TODO: rework all of these using f-strings
+
+    items = []
+    #items.append = '[Docs]'
+
+    file_urls, found_types = build_file_urls(doc)
+    file_urls = [('txt',url) if label=='plain text' else (label,url) for label,url in file_urls]
+
+    if file_urls:
+        items.append('[' + '|'.join([f'<a href="{url}">{label}</a>' for label,url in file_urls if 'htmlized' not in label]) + ']')
+
+    items.append('[<a href="' + urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=doc.name)) + '">Tracker</a>]')
+    if doc.group.acronym != 'none':
+        items.append('[<a href="' + urlreverse('ietf.group.views.group_home',kwargs=dict(acronym=doc.group.acronym)) + '">WG</a>]')
+    items.append('[<a href="mailto:' + doc.name + '@ietf.org?subject=' + doc.name + '">Email</a>]')
+    if doc.rev != "00":
+        items.append('[<a href="' + settings.RFCDIFF_BASE_URL + '?difftype=--hwdiff&url2=' + doc.name + '-' + doc.rev + '.txt" title="Inline diff (wdiff)">Diff1</a>]')
+        items.append('[<a href="' + settings.RFCDIFF_BASE_URL + '?url2=' + doc.name + '-' + doc.rev + '.txt" title="Side-by-side diff">Diff2</a>]')
+    items.append('[<a href="' + settings.IDNITS_BASE_URL + '?url=' + settings.IETF_ID_ARCHIVE_URL + doc.name + '-' + doc.rev + '.txt" title="Run an idnits check of this document">Nits</a>]')
+
+    #[Docs] [formats] [<a href="{% url 'ietf.doc.views_doc.document_main' name=doc.name %}">Tracker</a>]{% if doc.group.acronym != 'none' %} [<a href="{% url 'ietf.group.views.group_home' acronym=doc.group.acronym %}">WG</a>]{% endif%} [<a href="mailto:{{doc.name}}@ietf.org?subject={{doc.name}} ">Email</a>] [<a href="{{settings.RFCDIFF_BASE_URL}}?difftype=--hwdiff&url2={{doc.name}}-{{doc.rev}}.txt" title="Inline diff (wdiff)">Diff1</a>]{% if doc.rev != "00" %} [<a href="{{settings.RFCDIFF_BASE_URL}}?url2={{doc.name}}-{{doc.rev}}.txt" title="Side-by-side diff">Diff2</a>]{% endif %} [<a href="{{settings.IDNITS_BASE_URL}}?url={{settings.IETF_ID_ARCHIVE_URL}}{{doc.name}}-{{doc.rev}}.txt" title="Run an idnits check of this document">Nits</a>]
+    return ' '.join(items)
+
 def build_doc_meta_block(doc, path):
     def add_markup(path, doc, lines):
         is_hst = doc.is_dochistory()

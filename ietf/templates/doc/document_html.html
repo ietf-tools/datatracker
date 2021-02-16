@@ -13,6 +13,14 @@
 
 {% block morecss %}
 .inline	{ display: inline; }
+.rfcmarkup pre {
+  font-size: 10pt;
+  font-family: courier;
+  overflow: visible;
+}
+.rfcmarkup pre.meta-info {
+  width: 100ex;
+}
 {% endblock %}
 
 {% block title %}
@@ -27,16 +35,13 @@
 
 {% block content %}
   {% origin %}
-  <div class="hidden-print">
-  {{ top | safe }}
-  </div>
-
-{#  {% include "doc/revisions_list.html" %} #}
-  <div class="col-md-2"></div>
+ 
   <div class="col-md-8 rfcmarkup">
     {% if doc.meta %}
       <div class="hidden-print">
-	 <pre class="meta-info">{{ doc.meta|safe }}</pre>
+	 <pre class="meta-info">{{ doc.supermeta|safe }}
+
+{{ doc.meta|safe }}</pre>
       </div>
     {% endif %}
 
@@ -55,8 +60,7 @@
     </div>
 
   </div>
-  <div class="col-md-1"></div>
-  <div class="col-md-1"></div>
+  <div class="col-md-4"></div>
 
 {% endblock %}
 
