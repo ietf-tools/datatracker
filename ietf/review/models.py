@@ -45,6 +45,8 @@ class ReviewerSettings(models.Model):
 
     class Meta:
         verbose_name_plural = "reviewer settings"
+        constraints = [models.UniqueConstraint(fields=['team', 'person'],
+                                               name='unique_reviewer_settings_per_team_person')]
 
 class ReviewSecretarySettings(models.Model):
     """Keeps track of admin data associated with a secretary in a team."""
