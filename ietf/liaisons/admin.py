@@ -6,7 +6,7 @@ from django.contrib import admin
 from django.urls import reverse
 
 from ietf.liaisons.models import  ( LiaisonStatement, LiaisonStatementEvent,
-    LiaisonStatementGroupContacts, RelatedLiaisonStatement, LiaisonStatementAttachment )
+    RelatedLiaisonStatement, LiaisonStatementAttachment )
 
 
 class RelatedLiaisonStatementInline(admin.TabularInline):
@@ -49,12 +49,5 @@ class LiaisonStatementEventAdmin(admin.ModelAdmin):
     search_fields = ["statement__title", "by__name"]
     raw_id_fields = ["statement", "by"]
 
-class LiaisonStatementGroupContactsAdmin(admin.ModelAdmin):
-    list_display = ["group", "contacts"]
-    raw_id_fields = ["group"]
-    search_fields = ["group__acronym", "contacts"]
-    ordering = ["group__name"]
-
 admin.site.register(LiaisonStatement, LiaisonStatementAdmin)
 admin.site.register(LiaisonStatementEvent, LiaisonStatementEventAdmin)
-admin.site.register(LiaisonStatementGroupContacts, LiaisonStatementGroupContactsAdmin)

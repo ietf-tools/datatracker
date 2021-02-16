@@ -217,15 +217,6 @@ class RelatedLiaisonStatement(models.Model):
         return "%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
 
 
-class LiaisonStatementGroupContacts(models.Model):
-    group = ForeignKey(Group, unique=True, null=True)
-    contacts = models.CharField(max_length=255,blank=True)
-    cc_contacts = models.CharField(max_length=255,blank=True)
-
-    def __str__(self):
-        return "%s" % self.group.name
-
-
 class LiaisonStatementEvent(models.Model):
     time = models.DateTimeField(auto_now_add=True)
     type = ForeignKey(LiaisonStatementEventTypeName)
