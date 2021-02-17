@@ -7,14 +7,9 @@ import shutil
 import datetime
 import io
 import lxml
-import sys
 import bibtexparser
 import mock
 
-if sys.version_info[0] == 2 and sys.version_info[1] < 7:
-    import unittest2 as unittest
-else:
-    import unittest
 
 from http.cookies import SimpleCookie
 from pyquery import PyQuery
@@ -1346,7 +1341,7 @@ class AddCommentTestCase(TestCase):
         self.assertEqual(len(q('form textarea[name=comment]')), 1)
 
 
-class TemplateTagTest(unittest.TestCase):
+class TemplateTagTest(TestCase):
     def test_template_tags(self):
         import doctest
         from ietf.doc.templatetags import ietf_filters
