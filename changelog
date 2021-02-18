@@ -1,3 +1,35 @@
+ietfdb (7.26.0) ietf; urgency=medium
+
+  **IESG 'Who has the action', bugfixes**
+
+  * Bump the required setuptools to at least the 51 releases to avoid 
+    issues with some python3.6 -mvenv installed setuptools.
+
+  * Enable two tests that were not running because of typos in the test 
+    name. Thanks to Jennifer for spotting the typos.
+
+  * Merged in [18821] from rjsparks@nostrum.com:
+    Add proper folding for static content in the DESCRIPTION in the 
+    important-dates ics feed. Remove important-dates from the upcoming meetings 
+    ics. 
+
+  * Hold Unidecode before 1.2.0 for awhile before adjusting patch to match 
+    changed __init__.py
+
+  * Merged in [18828] from jennifer@painless-security.com:
+    Use Roles instead of dedicated model for liaison statement group 
+    contacts. Fixes #3100.  
+
+  * Merged in [18829] from jennifer@painless-security.com:
+    Allow assignment of Person as 'action holder' for a Doc, plus 
+    rudimentary automation of assignment. Fixes #3146.  
+
+  * Merged in [18833] from jennifer@painless-security.com:
+    Refactor reviewer queue policy handling of 'skip' setting. Fixes #3038. 
+ 
+
+ -- Robert Sparks <rjsparks@nostrum.com>  18 Feb 2021 16:57:27 +0000
+
 ietfdb (7.25.0) ietf; urgency=medium
 
   **Timezone tools on agenda page, other enhancements **
