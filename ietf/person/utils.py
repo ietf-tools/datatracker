@@ -30,7 +30,10 @@ def merge_persons(request, source, target, file=sys.stdout, verbose=False):
         email.save()
         changes.append('EMAIL ACTION: {} no longer marked as primary'.format(email.address))
 
-    changes.append(handle_users(source,target))
+    changes.append(handle_users(source, target))
+    reviewer_changes = handle_reviewer_settings(source, target)
+    if reviewer_changes:
+        changes.extend(reviewer_changes)
     merge_nominees(source, target)
     move_related_objects(source, target, file=file, verbose=verbose)
     dedupe_aliases(target)
@@ -66,6 +69,19 @@ def get_extra_primary(source,target):
         return source.email_set.filter(primary=True)
     else:
         return []
+
+def handle_reviewer_settings(source, target):
+    '''
+    Person.ReviewerSettings are restricted to one object per team. If
+    both source and target have ReviewerSettings for the same team
+    remove the source ReviewerSetting and report action. 
+    '''
+    changes = []
+    for rs in source.reviewersettings_set.all():
+        if target.reviewersettings_set.filter(team=rs.team):
+            changes.append('REVIEWER SETTINGS ACTION: dropping duplicate ReviewSettings for team: {}'.format(rs.team))
+            rs.delete()      
+    return changes
 
 def handle_users(source,target,check_only=False):
     '''
