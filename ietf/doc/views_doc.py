@@ -139,9 +139,6 @@ def document_main(request, name, rev=None):
 
     gh = None
     if rev != None:
-        if rev == doc.rev:
-            return redirect('ietf.doc.views_doc.document_main', name=name)
-
         # find the entry in the history
         for h in doc.history_set.order_by("-time"):
             if rev == h.rev:
@@ -210,7 +207,7 @@ def document_main(request, name, rev=None):
 
         latest_revision = None
 
-        if doc.get_state_slug() == "rfc":
+        if not snapshot and doc.get_state_slug() == "rfc":
             # content
             content = doc.text_or_error() # pyflakes:ignore
             content = markup_txt.markup(maybe_split(content, split=split_content))

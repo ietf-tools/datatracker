@@ -7,7 +7,7 @@
 
 {% block pagehead %}
   <link rel="alternate" type="application/atom+xml" title="Document changes" href="/feed/document-changes/{{ name }}/">
-  <meta name="description" content="{{ doc.title }} {% if doc.get_state_slug == "rfc" %}(RFC {{ rfc_number }}{% if published %}, {{ published.time|date:"F Y" }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:", " }}{% endif %}){% else %}(Internet-Draft, {{ doc.time|date:"Y" }}){% endif %}">
+  <meta name="description" content="{{ doc.title }} {% if doc.get_state_slug == "rfc" and not snapshot %}(RFC {{ rfc_number }}{% if published %}, {{ published.time|date:"F Y" }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:", " }}{% endif %}){% else %}(Internet-Draft, {{ doc.time|date:"Y" }}){% endif %}">
   <script src="{% static 'd3/d3.min.js' %}"></script>
   <script src="{% static 'jquery/jquery.min.js' %}"></script>
   <script src="{% static 'ietf/js/document_timeline.js' %}"></script>
@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block title %}
-  {% if doc.get_state_slug == "rfc" %}
+  {% if doc.get_state_slug == "rfc" and not snapshot %}
     RFC {{ rfc_number }} - {{ doc.title }}
   {% else %}
     {{ name }}-{{ doc.rev }} - {{ doc.title }}
@@ -38,7 +38,11 @@
           {% if doc.rev != latest_rev %}
           <th colspan="4" class="alert-warning">The information below is for an old version of the document</th>
           {% else %}
-          <th colspan="4"></th>
+            {% if doc.get_state_slug == "rfc" and snapshot %}
+            <th colspan="4" class="alert-warning">The information below is for an old version of the document that is already published as an RFC</th>
+	    {% else %}
+            <th colspan="4"></th>
+            {% endif %}
           {% endif %}
        </tr>
     </thead>
@@ -49,7 +53,7 @@
         <th>Type</th>
         <td class="edit"></td>
         <td>
-          {% if doc.get_state_slug == "rfc" %}
+          {% if doc.get_state_slug == "rfc" and not snapshot %}
             RFC - {{ doc.std_level }}
             ({% if published %}{{ published.time|date:"F Y" }}{% else %}publication date unknown{% endif %}{% if has_errata %}; <a href="https://www.rfc-editor.org/errata_search.php?rfc={{ rfc_number }}" rel="nofollow">Errata</a>{% else %}; No errata{% endif %})
 
@@ -170,7 +174,7 @@
         </td>
       </tr>
 
-      {% if doc.get_state_slug != "rfc" %}
+      {% if doc.get_state_slug != "rfc" and not snapshot %}
         <tr>
           <th></th>
           <th>Intended RFC status</th>
