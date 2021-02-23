@@ -660,7 +660,6 @@ def document_html(request, name, rev=None):
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    top = render_document_top(request, doc, "status", name)
     if not rev and not name.startswith('rfc'):
         rev = doc.rev
     if rev:
@@ -673,8 +672,26 @@ def document_html(request, name, rev=None):
         doc.supermeta = build_doc_supermeta_block(doc)
         doc.meta = build_doc_meta_block(doc, settings.HTMLIZER_URL_PREFIX)
 
-    # TODO: not using top - clean put building and passing it
-    return render(request, "doc/document_html.html", {"doc":doc, "top":top, "navbar_mode":"navbar-static-top",  })
+    doccolor = 'bgwhite' # Unknown
+    if doc.type_id=='draft':
+        if doc.is_rfc():
+            if doc.related_that('obs'):
+                doccolor = 'bgbrown'
+            else:
+                doccolor = {
+                    'ps'   : 'bgblue',
+                    'exp'  : 'bgyellow',
+                    'inf'  : 'bgorange',
+                    'ds'   : 'bgcyan',
+                    'hist' : 'bggrey',
+                    'std'  : 'bggreen',
+                    'bcp'  : 'bgmagenta',
+                    'unkn' : 'bgwhite',
+                }.get(doc.std_level_id, 'bgwhite')
+        else:
+            doccolor = 'bgred' # Draft
+
+    return render(request, "doc/document_html.html", {"doc":doc, "doccolor":doccolor })
 
 def check_doc_email_aliases():
     pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')

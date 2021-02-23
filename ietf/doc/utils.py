@@ -889,27 +889,38 @@ def build_file_urls(doc):
     return file_urls, found_types
 
 def build_doc_supermeta_block(doc):
-    # TODO: rework all of these using f-strings
-
     items = []
-    #items.append = '[Docs]'
+    items.append(f'<a href="{ settings.IDTRACKER_BASE_URL }" title="Document search and retrieval page">[Search]</a>')
 
     file_urls, found_types = build_file_urls(doc)
     file_urls = [('txt',url) if label=='plain text' else (label,url) for label,url in file_urls]
 
     if file_urls:
-        items.append('[' + '|'.join([f'<a href="{url}">{label}</a>' for label,url in file_urls if 'htmlized' not in label]) + ']')
+        file_labels = {
+            'txt' : 'Plaintext version of this document',
+            'xml' : 'XML source for this document',
+            'pdf' : 'PDF version of this document',
+            'html' : 'HTML version of this document, from XML2RFC',
+            'bibtex' : 'BibTex entry for this document',
+        }
+        parts=[]
+        for label,url in file_urls:
+            if 'htmlized' not in label:
+                file_label=file_labels.get(label,'')
+                title_attribute = f' title="{file_label}"' if file_label else ''
+                partstring = f'<a href="{url}"{title_attribute}>{label}</a>' 
+                parts.append(partstring)
+        items.append('[' + '|'.join(parts) + ']')
 
-    items.append('[<a href="' + urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=doc.name)) + '">Tracker</a>]')
+    items.append(f'[<a href="{ urlreverse("ietf.doc.views_doc.document_main",kwargs=dict(name=doc.canonical_name())) }" title="Datatracker information for this document">Tracker</a>]')
     if doc.group.acronym != 'none':
-        items.append('[<a href="' + urlreverse('ietf.group.views.group_home',kwargs=dict(acronym=doc.group.acronym)) + '">WG</a>]')
-    items.append('[<a href="mailto:' + doc.name + '@ietf.org?subject=' + doc.name + '">Email</a>]')
+        items.append(f'[<a href="{urlreverse("ietf.group.views.group_home",kwargs=dict(acronym=doc.group.acronym))}" title="The working group handling this document">WG</a>]')
+    items.append(f'[<a href="mailto:{doc.name}@ietf.org?subject={doc.name}" title="Send email to the document authors">Email</a>]')
     if doc.rev != "00":
-        items.append('[<a href="' + settings.RFCDIFF_BASE_URL + '?difftype=--hwdiff&url2=' + doc.name + '-' + doc.rev + '.txt" title="Inline diff (wdiff)">Diff1</a>]')
-        items.append('[<a href="' + settings.RFCDIFF_BASE_URL + '?url2=' + doc.name + '-' + doc.rev + '.txt" title="Side-by-side diff">Diff2</a>]')
-    items.append('[<a href="' + settings.IDNITS_BASE_URL + '?url=' + settings.IETF_ID_ARCHIVE_URL + doc.name + '-' + doc.rev + '.txt" title="Run an idnits check of this document">Nits</a>]')
+        items.append(f'[<a href="{settings.RFCDIFF_BASE_URL}?difftype=--hwdiff&url2={doc.name}-{doc.rev}.txt" title="Inline diff (wdiff)">Diff1</a>]')
+        items.append(f'[<a href="{settings.RFCDIFF_BASE_URL}?url2={doc.name}-{doc.rev}.txt" title="Side-by-side diff">Diff2</a>]')
+    items.append(f'[<a href="{settings.IDNITS_BASE_URL}?url={settings.IETF_ID_ARCHIVE_URL}{doc.name}-{doc.rev}.txt" title="Run an idnits check of this document">Nits</a>]')
 
-    #[Docs] [formats] [<a href="{% url 'ietf.doc.views_doc.document_main' name=doc.name %}">Tracker</a>]{% if doc.group.acronym != 'none' %} [<a href="{% url 'ietf.group.views.group_home' acronym=doc.group.acronym %}">WG</a>]{% endif%} [<a href="mailto:{{doc.name}}@ietf.org?subject={{doc.name}} ">Email</a>] [<a href="{{settings.RFCDIFF_BASE_URL}}?difftype=--hwdiff&url2={{doc.name}}-{{doc.rev}}.txt" title="Inline diff (wdiff)">Diff1</a>]{% if doc.rev != "00" %} [<a href="{{settings.RFCDIFF_BASE_URL}}?url2={{doc.name}}-{{doc.rev}}.txt" title="Side-by-side diff">Diff2</a>]{% endif %} [<a href="{{settings.IDNITS_BASE_URL}}?url={{settings.IETF_ID_ARCHIVE_URL}}{{doc.name}}-{{doc.rev}}.txt" title="Run an idnits check of this document">Nits</a>]
     return ' '.join(items)
 
 def build_doc_meta_block(doc, path):

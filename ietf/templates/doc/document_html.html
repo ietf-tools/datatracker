@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "doc/htmlized_base.html" %}
 {# Copyright The IETF Trust 2016, All Rights Reserved #}
 {% load origin %}
 {% load static %}
@@ -12,15 +12,28 @@
 {% endblock %}
 
 {% block morecss %}
-.inline	{ display: inline; }
-.rfcmarkup pre {
-  font-size: 10pt;
-  font-family: courier;
-  overflow: visible;
+
+.bgwhite  { background-color: white; }
+.bgred    { background-color: #F44; }
+.bggrey   { background-color: #666; }
+.bgbrown  { background-color: #840; }            
+.bgorange { background-color: #FA0; }
+.bgyellow { background-color: #EE0; }
+.bgmagenta{ background-color: #F4F; }
+.bgblue   { background-color: #66F; }
+.bgcyan   { background-color: #4DD; }
+.bggreen  { background-color: #4F4; }
+
+.colorbar {
+  height: 6px;
+  position: absolute;
+  width: 100%;
+  margin-left:-0.5em;
+  margin-bottom:0;
 }
-.rfcmarkup pre.meta-info {
-  width: 100ex;
-}
+
+.draftcontent { margin-top:0px !important;}
+
 {% endblock %}
 
 {% block title %}
@@ -36,34 +49,76 @@
 {% block content %}
   {% origin %}
  
-  <div class="col-md-8 rfcmarkup">
+  <div class="col-md-6 rfcmarkup">
+    <div class="row" style="height: 0px; margin-top:0;">
+      <div onmouseover="this.style.cursor='pointer';"
+         onclick="showElem('legend');"
+         onmouseout="hideElem('legend')"
+         style="height: 6px; position: absolute; margin-top:0; "
+         class="colorbar {{doccolor}}"
+         title="Click for colour legend." ></div>
+      <div id="legend"
+           class="docinfo noprint pre legend"
+           style="position:absolute; top: 4px; left: 4ex; visibility:hidden; background-color: white; padding: 4px 9px 5px 7px; border: solid #345 1px; "
+           onmouseover="showElem('legend');"
+           onmouseout="hideElem('legend');">
+      </div>
+    </div>
+
     {% if doc.meta %}
-      <div class="hidden-print">
+      <div class="row hidden-print" style="margin-top:6px;">
 	 <pre class="meta-info">{{ doc.supermeta|safe }}
 
 {{ doc.meta|safe }}</pre>
       </div>
     {% endif %}
 
-    {% comment %}
-    {% if doc.is_dochistory %}
-      {% if doc.rev != doc.doc.rev %}
-        <pre class="meta-info alert-warning text-center">A newer version of the document below exists</pre>
-      {% elif doc.doc.is_rfc %}
-        <pre class="meta-info alert-info text-center">The draft below has been published as <a href="{% url 'ietf.doc.views_doc.document_html' name=doc.doc.canonical_name %}">RFC {{doc.doc.rfc_number}}</a></pre>
-      {% endif %}
-    {% endif %}
-    {% endcomment %}
-
-    <div>
+    <div class="row draftcontent">
     {{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
     </div>
 
   </div>
-  <div class="col-md-4"></div>
+  <div class="col-md-6"></div>
 
 {% endblock %}
 
-{% block footer %}
-<div></div>
+{% block js %}
+    <script type="text/javascript"><!--
+    function addHeaderTags() {
+        var spans = document.getElementsByTagName("span");
+        for (var i=0; i < spans.length; i++) {
+            var elem = spans[i];
+            if (elem) {
+                var level = elem.getAttribute("class");
+                if (level == "h1" || level == "h2" || level == "h3" || level == "h4" || level == "h5" || level == "h6") {
+                    elem.innerHTML = "<"+level+">"+elem.innerHTML+"</"+level+">";
+                }
+            }
+        }
+    }
+    var legend_html = "Colour legend:<br /> \
+     <table> \
+        <tr><td>Unknown:</td>                   <td><span class='cplate bgwhite'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Draft:</td>                     <td><span class='cplate bgred'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Informational:</td>             <td><span class='cplate bgorange'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Experimental:</td>              <td><span class='cplate bgyellow'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Best Common Practice:</td>      <td><span class='cplate bgmagenta'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Proposed Standard:</td>         <td><span class='cplate bgblue'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Draft Standard (old designation):</td> <td><span class='cplate bgcyan'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Internet Standard:</td>         <td><span class='cplate bggreen'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Historic:</td>                  <td><span class='cplate bggrey'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+        <tr><td>Obsolete:</td>                  <td><span class='cplate bgbrown'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
+    </table>";
+    function showElem(id) {
+        var elem = document.getElementById(id);
+        elem.innerHTML = eval(id+"_html");
+        elem.style.visibility='visible';
+    }
+    function hideElem(id) {
+        var elem = document.getElementById(id);
+        elem.style.visibility='hidden';
+        elem.innerHTML = "";
+    }
+    // -->
+    </script>
 {% endblock %}
