@@ -832,6 +832,11 @@ def document_history(request, name):
 
 
 def document_bibtex(request, name, rev=None):
+    # If URL_REGEXPS put trailing digits in rev, they must be two digits
+    if rev != None and len(rev) != 2:
+        name = name+"-"+rev
+        rev = None
+
     doc = get_object_or_404(Document, docalias__name=name)
 
     latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
@@ -870,6 +875,9 @@ def document_bibxml_ref(request, name, rev=None):
         raise Http404()
     if not name.startswith('draft-'):
         name = 'draft-'+name
+    if rev != None and len(rev) != 2:
+        name = name+"-"+rev
+        rev = None
     return document_bibxml(request, name, rev=rev)
     
 def document_bibxml(request, name, rev=None):
@@ -877,6 +885,12 @@ def document_bibxml(request, name, rev=None):
     # the RFC-Editor.
     if re.search(r'^rfc\d+$', name):
         raise Http404()
+
+    # If URL_REGEXPS put trailing digits in rev, they must be two digits
+    if rev != None and len(rev) != 2:
+        name = name+"-"+rev
+        rev = None
+
     doc = get_object_or_404(Document, name=name, type_id='draft')
 
     latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
