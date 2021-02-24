@@ -672,7 +672,7 @@ Man                    Expires September 22, 2015               [Page 3]
         q = PyQuery(r.content)
         self.assertEqual(len(q('.rfcmarkup pre')), 4)
         self.assertEqual(len(q('.rfcmarkup span.h1')), 2)
-        self.assertEqual(len(q('.rfcmarkup a[href]')), 31)
+        self.assertEqual(len(q('.rfcmarkup a[href]')), 41)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name, rev=draft.rev)))
         self.assertEqual(r.status_code, 200)
