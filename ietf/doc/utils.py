@@ -890,7 +890,7 @@ def build_file_urls(doc):
 
 def build_doc_supermeta_block(doc):
     items = []
-    items.append(f'<a href="{ settings.IDTRACKER_BASE_URL }" title="Document search and retrieval page">[Search]</a>')
+    items.append(f'[<a href="{ settings.IDTRACKER_BASE_URL }" title="Document search and retrieval page">Search</a>]')
 
     file_urls, found_types = build_file_urls(doc)
     file_urls = [('txt',url) if label=='plain text' else (label,url) for label,url in file_urls]
