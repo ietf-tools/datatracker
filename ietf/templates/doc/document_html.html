@@ -24,14 +24,6 @@
 .bgcyan   { background-color: #4DD; }
 .bggreen  { background-color: #4F4; }
 
-.colorbar {
-  height: 6px;
-  position: absolute;
-  width: 80ex;
-  margin-left:-0.5em;
-  margin-bottom:0;
-}
-
 .draftcontent { margin-top:0px !important;}
 
 {% endblock %}
@@ -44,21 +36,21 @@
   {% endif %}
 {% endblock %}
 
-{% block bodyAttrs %}style="padding-top: 0;"{% endblock %}
+{% block bodyAttrs %}onload="addHeaderTags()" style="padding-top: 0;"{% endblock %}
 
 {% block content %}
   {% origin %}
  
-  <div class="col-md-6 rfcmarkup">
-    <div class="row" style="height: 0px; margin-top:0;">
+  <div class="rfcmarkup">
+    <div class="noprint" style="height: 6px;">
       <div onmouseover="this.style.cursor='pointer';"
          onclick="showElem('legend');"
          onmouseout="hideElem('legend')"
-         style="height: 6px; position: absolute; margin-top:0; "
-         class="colorbar {{doccolor}}"
-         title="Click for colour legend." ></div>
+         style="height: 6px; min-height: 6px; width: 96ex; position: absolute; margin-top:0; "
+         class="meta-info {{doccolor}}"
+         title="Click for colour legend." >&nbsp;</div>
       <div id="legend"
-           class="docinfo noprint pre legend"
+           class="meta-info noprint pre legend"
            style="position:absolute; top: 4px; left: 4ex; visibility:hidden; background-color: white; padding: 4px 9px 5px 7px; border: solid #345 1px; "
            onmouseover="showElem('legend');"
            onmouseout="hideElem('legend');">
@@ -66,19 +58,18 @@
     </div>
 
     {% if doc.meta %}
-      <div class="row hidden-print" style="margin-top:6px;">
-	 <pre class="meta-info">{{ doc.supermeta|safe }}
+      <div class="noprint">
+	 <pre class="pre meta-info">{{ doc.supermeta|safe }}
 
 {{ doc.meta|safe }}</pre>
       </div>
     {% endif %}
 
-    <div class="row draftcontent">
+    <div class="draftcontent">
     {{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
     </div>
 
   </div>
-  <div class="col-md-6"></div>
 
 {% endblock %}
 

@@ -1,127 +1,124 @@
 <!DOCTYPE html> {% load ietf_filters static %}
 {# Copyright The IETF Trust 2021, All Rights Reserved #}
 {% load origin %}{% origin %}
-{% load bootstrap3 %}
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>{% block title %}No title{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <link href="{% static 'ptmono/stylesheet.css' %}" rel='stylesheet' type='text/css'>
-    <link href="{% static 'ptsans/stylesheet.css' %}" rel='stylesheet' type='text/css'>
-    <link href="{% static 'ptserif/stylesheet.css' %}" rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" href="{% static 'font-awesome/css/font-awesome.min.css' %}">
-    <link rel="stylesheet" href="{% static 'ietf/font-datatracker/css/font-datatracker.css' %}">
-    <link rel="stylesheet" href="{% static 'ietf/bootstrap/css/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="{% static 'ietf/bootstrap/css/bootstrap-theme.min.css' %}">
-<!--    <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}"> -->
-    {% if debug %}
-       <link rel="stylesheet" href="{% static 'jquery.tablesorter/css/theme.bootstrap.min.css' %}">
-    {% endif %}
     <style>
-.rfcmarkup div {
-  margin-top: 1em;
-}
-.rfcmarkup pre {
-  font-size: 10pt;
-  border: 0;
-  margin: 0;
-  padding: 0;
-  padding-bottom: 1em;
-  background-color: white;
-  line-height: 1.12;
-  font-family: monospace;
-  overflow: visible;
-}
 
-.rfcmarkup pre span.h1,
-.rfcmarkup pre span.h2,
-.rfcmarkup pre span.h3,
-.rfcmarkup pre span.h4,
-.rfcmarkup pre span.h5,
-.rfcmarkup pre span.h6 {
-  font-weight: bold;
-  line-height: 0pt;
-  display: inline;
-  white-space: pre;
-  font-family: monospace;
-  font-size: 1em;
-  font-weight: bold;
-
-}
-.rfcmarkup pre span.invisible {
-  text-decoration: none;
-  color: white;
-}
-
-.rfcmarkup pre a { text-decoration: underline; }
-
-.rfcmarkup pre .grey,
-.rfcmarkup pre .grey a:link,
-.rfcmarkup pre .grey a:visited {
-  color: #777;
-}
-
-.rfcmarkup pre.meta-info {
-  padding: 0.5em;
-  margin-left: -0.5em;
-  background-color: #f8f8f8;
-  border: 1px solid #e0e0e0;
-  width: 98.5ex;
-  padding-top: 0;
-}
-
-.rfcmarkup hr {
-  margin: 0;
-  width: 80ex;
-}
-
-.rfcmarkup .text-warning,
-.rfcmarkup a.text-warning,
-.rfcmarkup a.text-warning:focus,
-.rfcmarkup a.text-warning:active,
-.rfcmarkup a.text-warning:visited,
-.rfcmarkup a.text-warning:hover
-{
-  color: #d9534f;     /* brand-danger colour */
-}
-
-@media screen {
-  body { margin-left:3em; }
-}
-
-@media print {
-  body { margin-top:5em; }
-
-  .rfcmarkup .noprint { display: none; }
-  .rfcmarkup a,
-  .rfcmarkup a:visited,
-  .rfcmarkup pre a,
-  .rfcmarkup pre a:visited {
-    text-decoration: none;
+  @media only screen 
+    and (min-width: 992px)
+    and (max-width: 1199px) {
+      body { font-size: 14pt; }
+            div.content { width: 96ex; margin: 0 auto; }
+        }
+  @media only screen 
+    and (min-width: 768px)
+    and (max-width: 991px) {
+            body { font-size: 14pt; }
+            div.content { width: 96ex; margin: 0 auto; }
+        }
+  @media only screen 
+    and (min-width: 480px)
+    and (max-width: 767px) {
+            body { font-size: 11pt; }
+            div.content { width: 96ex; margin: 0 auto; }
+        }
+  @media only screen 
+    and (max-width: 479px) {
+            body { font-size: 8pt; }
+            div.content { width: 96ex; margin: 0 auto; }
+        }
+  @media only screen 
+    and (min-device-width : 375px) 
+    and (max-device-width : 667px) {
+            body { font-size: 9.5pt; }
+            div.content { width: 96ex; margin: 0; }
+        }
+  @media only screen 
+    and (min-device-width: 1200px) {
+            body { font-size: 10pt; margin: 0 4em; }
+            div.content { width: 96ex; margin: 0; }
+        }
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+      font-weight: bold;
+            /* line-height: 0pt; */
+            display: inline;
+            white-space: pre;
+            font-family: monospace;
+            font-size: 1em;
+      font-weight: bold;
+        }
+        pre {
+            font-size: 1em;
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+  .pre {
+      white-space: pre;
+      font-family: monospace;
   }
-  .rfcmarkup a[href]:after {
-    content: "";
+  .header{
+      font-weight: bold;
   }
-  .rfcmarkup abbr[title]:after {
-    content: "";
-  }
-  .rfcmarkup pre {
-    font-size: 10.5pt;
+        .newpage {
+            page-break-before: always;
+        }
+        .invisible {
+            text-decoration: none;
+            color: white;
+        }
+        @media print {
+            body {
+                margin-top: 5em;
+                font-family: monospace;
+                font-size: 10.5pt;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                font-size: 1em;
+            }
+        
+            a:link, a:visited {
+                color: inherit;
+                text-decoration: none;
+            }
+            .noprint {
+                display: none;
+            }
+        }
+  @media screen {
+      .grey, .grey a:link, .grey a:visited {
+    color: #777;
+      }
+            .meta-info {
+                background-color: #EEE;
+            }
+            .top {
+                border-top: 7px solid #EEE;
+            }
+            .pad {
+                padding-top: 7px;
+                line-height: 24px;
+                padding-bottom: 4px;
+            }
+            .bgwhite  { background-color: white; }
+            .bgred    { background-color: #F44; }
+            .bggrey   { background-color: #666; }
+            .bgbrown  { background-color: #840; }            
+            .bgorange { background-color: #FA0; }
+            .bgyellow { background-color: #EE0; }
+            .bgmagenta{ background-color: #F4F; }
+            .bgblue   { background-color: #66F; }
+            .bgcyan   { background-color: #4DD; }
+            .bggreen  { background-color: #4F4; }
 
-    margin-top: 0;
-    margin-bottom: 0;
-    margin-left: auto;
-    margin-right: auto;
+            .legend   { font-size: 90%; }
+            .cplate   { font-size: 70%; border: solid grey 1px; }
+  }
     
-
-  }
-  .rfcmarkup .newpage {
-    page-break-before: always;
-  }
-}
      {% block morecss %}{% endblock %}
     </style>
 
@@ -141,12 +138,7 @@
 
   <body {% block bodyAttrs %}{%endblock%}>
 
-      <div class="container-fluid-narrow">
-        {% comment %} {% bootstrap_messages %} {% endcomment %}
-        {% for message in messages %}
-            <div class="alert{% if message.level_tag %} alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag }}{% endif %}{% endif %}{% if message.extra_tags %} {{message.extra_tags}}{% endif %} alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&#215;</button>{{ message }}</div>
-        {% endfor %}
-	  <div class="col-md-12 col-sm-12" id="content">
+	  <div class="content" id="content">
         {% block content %}{{ content|safe }}{% endblock %}
         {% block content_end %}{% endblock %}
 	  </div>
@@ -155,23 +147,15 @@
 
 	{% endblock %}
 
-      </div>
+    </div>
 
-      {% include "debug.html" %}
-
-      <script src="{% static 'jquery/jquery.min.js' %}"></script>
       {% comment %}
       <!-- Remove the *-nojs attributes if we are running js.  This depends on jQuery's removeClass(): -->
       <!-- Do this as early as possible (after loading the page and jQuery) to avoid rendering changes -->
       {% endcomment %}
       <script>$(".visible-nojs").removeClass("visible-nojs");</script>
       <script>$(".hidden-nojs").removeClass("hidden-nojs");</script>
-      <script src="{% static 'js-cookie/src/js.cookie.js' %}"></script>
-      <script src="{% static 'ietf/bootstrap/js/bootstrap.min.js' %}"></script>
       {% block js %}{% endblock %}
-      {% if debug %}
-	 <script src="{% static 'jquery.tablesorter/js/jquery.tablesorter.combined.min.js' %}"></script>
-      {% endif %}
   </body>
 </html>
 
