@@ -12,8 +12,14 @@ import debug                            # pyflakes:ignore
 
 from ietf.ipr.models import IprDisclosureBase
 
+def select2_id_ipr_title(objs):
+    return [{
+        "id": o.pk, 
+        "text": escape("%s <%s>" % (o.title, o.time.date().isoformat())),
+    } for o in objs]
+    
 def select2_id_ipr_title_json(value):
-    return json.dumps([{ "id": o.pk, "text": escape("%s <%s>" % (o.title, o.time.date().isoformat())) } for o in value])
+    return json.dumps(select2_id_ipr_title(value))
 
 class SearchableIprDisclosuresField(forms.CharField):
     """Server-based multi-select field for choosing documents using
@@ -61,7 +67,9 @@ class SearchableIprDisclosuresField(forms.CharField):
         if isinstance(value, self.model):
             value = [value]
 
-        self.widget.attrs["data-pre"] = select2_id_ipr_title_json(value)
+        self.widget.attrs["data-pre"] = json.dumps({
+            d['id']: d for d in select2_id_ipr_title(value)
+        })
 
         # doing this in the constructor is difficult because the URL
         # patterns may not have been fully constructed there yet

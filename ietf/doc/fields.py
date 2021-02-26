@@ -14,8 +14,15 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import Document, DocAlias
 from ietf.doc.utils import uppercase_std_abbreviated_name
 
+def select2_id_doc_name(objs):
+    return [{
+        "id": o.pk, 
+        "text": escape(uppercase_std_abbreviated_name(o.name)), 
+    } for o in objs]
+
+
 def select2_id_doc_name_json(objs):
-    return json.dumps([{ "id": o.pk, "text": escape(uppercase_std_abbreviated_name(o.name)) } for o in objs])
+    return json.dumps(select2_id_doc_name(objs))
 
 # FIXME: select2 version 4 uses a standard select for the AJAX case -
 # switching to that would allow us to derive from the standard
@@ -71,7 +78,9 @@ class SearchableDocumentsField(forms.CharField):
         if isinstance(value, self.model):
             value = [value]
 
-        self.widget.attrs["data-pre"] = select2_id_doc_name_json(value)
+        self.widget.attrs["data-pre"] = json.dumps({
+            d['id']: d for d in select2_id_doc_name(value)
+        }) 
 
         # doing this in the constructor is difficult because the URL
         # patterns may not have been fully constructed there yet

@@ -10,8 +10,14 @@ from django.urls import reverse as urlreverse
 
 from ietf.liaisons.models import LiaisonStatement
 
+def select2_id_liaison(objs):
+    return [{
+        "id": o.pk, 
+        "text":"[{}] {}".format(o.pk, escape(o.title)), 
+    } for o in objs]
+    
 def select2_id_liaison_json(objs):
-    return json.dumps([{ "id": o.pk, "text":"[{}] {}".format(o.pk, escape(o.title)) } for o in objs])
+    return json.dumps(select2_id_liaison(objs))
 
 def select2_id_group_json(objs):
     return json.dumps([{ "id": o.pk, "text": escape(o.acronym) } for o in objs])
@@ -56,7 +62,9 @@ class SearchableLiaisonStatementsField(forms.CharField):
         if isinstance(value, LiaisonStatement):
             value = [value]
 
-        self.widget.attrs["data-pre"] = select2_id_liaison_json(value)
+        self.widget.attrs["data-pre"] = json.dumps({
+            d['id']: d for d in select2_id_liaison(value)
+        })
 
         # doing this in the constructor is difficult because the URL
         # patterns may not have been fully constructed there yet
