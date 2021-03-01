@@ -60,7 +60,7 @@ from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_wit
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content, build_doc_meta_block,
-    augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event )
+    augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event, build_doc_supermeta_block, build_file_urls )
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_group_type, can_manage_materials, group_features_role_filter
 from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is_person,
@@ -210,31 +210,12 @@ def document_main(request, name, rev=None):
 
         latest_revision = None
 
+        file_urls, found_types = build_file_urls(doc)
+
+        content = doc.text_or_error() # pyflakes:ignore
+        content = markup_txt.markup(maybe_split(content, split=split_content))
+
         if doc.get_state_slug() == "rfc":
-            # content
-            content = doc.text_or_error() # pyflakes:ignore
-            content = markup_txt.markup(maybe_split(content, split=split_content))
-
-            # file types
-            base_path = os.path.join(settings.RFC_PATH, name + ".")
-            possible_types = settings.RFC_FILE_TYPES
-            found_types = [t for t in possible_types if os.path.exists(base_path + t)]
-
-            base = "https://www.rfc-editor.org/rfc/"
-
-            file_urls = []
-            for t in found_types:
-                label = "plain text" if t == "txt" else t
-                file_urls.append((label, base + name + "." + t))
-
-            if "pdf" not in found_types and "txt" in found_types:
-                file_urls.append(("pdf", base + "pdfrfc/" + name + ".txt.pdf"))
-
-            if "txt" in found_types:
-                file_urls.append(("htmlized", settings.TOOLS_ID_HTML_URL + name))
-                if doc.tags.filter(slug="verified-errata").exists():
-                    file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=rfc_number)))
-
             if not found_types:
                 content = "This RFC is not currently available online."
                 split_content = False
@@ -242,36 +223,7 @@ def document_main(request, name, rev=None):
                 content = "This RFC is not available in plain text format."
                 split_content = False
         else:
-            content = doc.text_or_error() # pyflakes:ignore
-            content = markup_txt.markup(maybe_split(content, split=split_content)) 
-
-            # file types
-            base_path = os.path.join(settings.INTERNET_DRAFT_PATH, doc.name + "-" + doc.rev + ".")
-            possible_types = settings.IDSUBMIT_FILE_TYPES
-            found_types = [t for t in possible_types if os.path.exists(base_path + t)]
-
-            # if not snapshot and doc.get_state_slug() == "active":
-            #     base = settings.IETF_ID_URL
-            # else:
-            #     base = settings.IETF_ID_ARCHIVE_URL
-            base = settings.IETF_ID_ARCHIVE_URL
-
-            file_urls = []
-            for t in found_types:
-                label = "plain text" if t == "txt" else t
-                file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t))
-
-            if "pdf" not in found_types:
-                file_urls.append(("pdf", settings.TOOLS_ID_PDF_URL + doc.name + "-" + doc.rev + ".pdf"))
-            #file_urls.append(("htmlized", settings.TOOLS_ID_HTML_URL + doc.name + "-" + doc.rev))
-            file_urls.append(("htmlized (tools)", settings.TOOLS_ID_HTML_URL + doc.name + "-" + doc.rev))
-            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
-
-            # latest revision
             latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
-
-        # bibtex
-        file_urls.append(("bibtex", "bibtex"))
 
         # ballot
         iesg_ballot_summary = None
@@ -707,7 +659,6 @@ def document_html(request, name, rev=None):
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    top = render_document_top(request, doc, "status", name)
     if not rev and not name.startswith('rfc'):
         rev = doc.rev
     if rev:
@@ -717,9 +668,29 @@ def document_html(request, name, rev=None):
         else:
             doc = doc.fake_history_obj(rev)
     if doc.type_id in ['draft',]:
+        doc.supermeta = build_doc_supermeta_block(doc)
         doc.meta = build_doc_meta_block(doc, settings.HTMLIZER_URL_PREFIX)
 
-    return render(request, "doc/document_html.html", {"doc":doc, "top":top, "navbar_mode":"navbar-static-top",  })
+    doccolor = 'bgwhite' # Unknown
+    if doc.type_id=='draft':
+        if doc.is_rfc():
+            if doc.related_that('obs'):
+                doccolor = 'bgbrown'
+            else:
+                doccolor = {
+                    'ps'   : 'bgblue',
+                    'exp'  : 'bgyellow',
+                    'inf'  : 'bgorange',
+                    'ds'   : 'bgcyan',
+                    'hist' : 'bggrey',
+                    'std'  : 'bggreen',
+                    'bcp'  : 'bgmagenta',
+                    'unkn' : 'bgwhite',
+                }.get(doc.std_level_id, 'bgwhite')
+        else:
+            doccolor = 'bgred' # Draft
+
+    return render(request, "doc/document_html.html", {"doc":doc, "doccolor":doccolor })
 
 def check_doc_email_aliases():
     pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')

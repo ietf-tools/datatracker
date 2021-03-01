@@ -675,7 +675,7 @@
     <a class="btn btn-default btn-xs" href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}" rel="nofollow"><span class="fa fa-bolt"></span> IPR {% if doc.related_ipr %} <span class="badge">{{doc.related_ipr|length}}</span>{% endif %}</a>
     <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_references' doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
     <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
-    <a class="btn btn-default btn-xs" href="https://www.ietf.org/tools/idnits?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}" rel="nofollow" target="_blank"><span class="fa fa-exclamation"></span> Nits</a>
+    <a class="btn btn-default btn-xs" href="{{settings.IDNITS_BASE_URL}}?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}" rel="nofollow" target="_blank"><span class="fa fa-exclamation"></span> Nits</a>
     <div class="dropdown inline">
       <button class="btn btn-default btn-xs dropdown-toggle" type="button" id="ddSearchMenu" data-toggle="dropdown" aria-expanded="true">
           <span class="fa fa-search"></span> Search lists <span class="caret"></span>
