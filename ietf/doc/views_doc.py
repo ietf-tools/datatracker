@@ -891,11 +891,19 @@ def document_bibxml(request, name, rev=None):
     if rev and rev != doc.rev:
         raise Http404("Revision not found")
 
-    try:
-        doc_event = NewRevisionDocEvent.objects.get(doc__name=doc.name, rev=(rev or latest_rev))
+    ### PATCH to deal with unexpected multiple NewRevisionDocEvent objects for the same revision on a document
+    doc_event_qs = NewRevisionDocEvent.objects.filter(doc__name=doc.name, rev=(rev or latest_rev))
+    if doc_event_qs.count():
+        doc_event = doc_event_qs.order_by('time').last()
         doc.date = doc_event.time.date()
-    except DocEvent.DoesNotExist:
+    else:
         doc.date = doc.time.date()      # Even if this may be incoreect, what would be better?
+        
+#    try:
+#        doc_event = NewRevisionDocEvent.objects.get(doc__name=doc.name, rev=(rev or latest_rev))
+#        doc.date = doc_event.time.date()
+#    except DocEvent.DoesNotExist:
+#        doc.date = doc.time.date()      # Even if this may be incoreect, what would be better?
 
     return render(request, "doc/bibxml.xml",
                               dict(
