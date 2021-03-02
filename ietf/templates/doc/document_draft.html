@@ -166,7 +166,8 @@
           {% endif %}
         </td>
         <td>
-          {{ doc.stream|default:"(None)" }}
+          {# {{ doc.stream|default:"(None)" }} #}
+          {{ stream_desc }}
         </td>
       </tr>
 
