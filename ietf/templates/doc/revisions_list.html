@@ -3,7 +3,7 @@
   <li class="disabled"><a><b>Versions</b></a></li>
   {% for rev in revisions %}
     <li {% if rev == doc.rev %}{% if snapshot or not doc.get_state_slug == "rfc" %}{% if rev == latest_rev and not doc.get_state_slug == "rfc" %}class="active"{% else %}class="warning"{% endif %}{% endif %}{% endif %}>
-      <a href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}{{ rev }}/" {% if rev != "00" and rev != latest_rev %}rel="nofollow"{% endif %} >{{ rev }}</a>
+      <a href="{% if snapshot and doc.get_state_slug == "rfc" %}{% url "ietf.doc.views_doc.document_main" name=doc.doc.name %}{% else %}{% url "ietf.doc.views_doc.document_main" name=doc.name %}{% endif %}{{ rev }}/" {% if rev != "00" and rev != latest_rev %}rel="nofollow"{% endif %} >{{ rev }}</a>
     </li>
   {% endfor %}
 </ul>

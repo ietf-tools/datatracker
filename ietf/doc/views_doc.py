@@ -242,8 +242,12 @@ def document_main(request, name, rev=None):
             content = doc.text_or_error() # pyflakes:ignore
             content = markup_txt.markup(maybe_split(content, split=split_content)) 
 
+            if snapshot:
+                name = doc.doc.name
+            else:
+                name = doc.name
             # file types
-            base_path = os.path.join(settings.INTERNET_DRAFT_PATH, doc.name + "-" + doc.rev + ".")
+            base_path = os.path.join(settings.INTERNET_DRAFT_PATH, name + "-" + doc.rev + ".")
             possible_types = settings.IDSUBMIT_FILE_TYPES
             found_types = [t for t in possible_types if os.path.exists(base_path + t)]
 
@@ -256,13 +260,13 @@ def document_main(request, name, rev=None):
             file_urls = []
             for t in found_types:
                 label = "plain text" if t == "txt" else t
-                file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t))
+                file_urls.append((label, base + name + "-" + doc.rev + "." + t))
 
             if "pdf" not in found_types:
-                file_urls.append(("pdf", settings.TOOLS_ID_PDF_URL + doc.name + "-" + doc.rev + ".pdf"))
-            #file_urls.append(("htmlized", settings.TOOLS_ID_HTML_URL + doc.name + "-" + doc.rev))
-            file_urls.append(("htmlized (tools)", settings.TOOLS_ID_HTML_URL + doc.name + "-" + doc.rev))
-            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
+                file_urls.append(("pdf", settings.TOOLS_ID_PDF_URL + name + "-" + doc.rev + ".pdf"))
+            #file_urls.append(("htmlized", settings.TOOLS_ID_HTML_URL + name + "-" + doc.rev))
+            file_urls.append(("htmlized (tools)", settings.TOOLS_ID_HTML_URL + name + "-" + doc.rev))
+            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=name, rev=doc.rev))))
 
             # latest revision
             latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
