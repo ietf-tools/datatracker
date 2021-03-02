@@ -930,21 +930,13 @@ Man                    Expires September 22, 2015               [Page 3]
             doc.rev = "01"
             doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
-            # Fetch the main page resulting latest version
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, "%s-01"%docname)
-
-            # Fetch 01 version even when it is last version
+    
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name,rev="01")))
-            self.assertEqual(r.status_code, 200)
-            self.assertContains(r, "%s-01"%docname)
-
-            # Fetch version number which is too large, that should redirect to main page
-            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name,rev="02")))
             self.assertEqual(r.status_code, 302)
-
-            # Fetch 00 version which should result that version
+     
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name,rev="00")))
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, "%s-00"%docname)
