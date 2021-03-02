@@ -196,14 +196,14 @@ class PersonUtilsTests(TestCase):
         source = PersonFactory()
         target = PersonFactory()
         result = handle_reviewer_settings(source, target)
-        self.assertEqual(result, '')
+        self.assertEqual(result, [])
 
         # source ReviewerSettings only
         source = PersonFactory()
         target = PersonFactory()
         ReviewerSettings.objects.create(team=groups[0],person=source,min_interval=14)
         result = handle_reviewer_settings(source, target)
-        self.assertEqual(result, '')
+        self.assertEqual(result, [])
 
         # source and target ReviewerSettings, non-conflicting
         source = PersonFactory()
@@ -211,7 +211,7 @@ class PersonUtilsTests(TestCase):
         rs1 = ReviewerSettings.objects.create(team=groups[0],person=source,min_interval=14)
         ReviewerSettings.objects.create(team=groups[1],person=target,min_interval=14)
         result = handle_reviewer_settings(source, target)
-        self.assertEqual(result, '')
+        self.assertEqual(result, [])
 
         # source and target ReviewerSettings, conflicting
         source = PersonFactory()
@@ -220,7 +220,7 @@ class PersonUtilsTests(TestCase):
         ReviewerSettings.objects.create(team=groups[0],person=target,min_interval=7)
         self.assertEqual(source.reviewersettings_set.count(), 1)
         result = handle_reviewer_settings(source, target)
-        self.assertEqual(result, 'REVIEWER SETTINGS ACTION: dropping duplicate ReviewSettings for team: {}'.format(rs1.team))
+        self.assertEqual(result, ['REVIEWER SETTINGS ACTION: dropping duplicate ReviewSettings for team: {}'.format(rs1.team)])
         self.assertEqual(source.reviewersettings_set.count(), 0)
         self.assertEqual(target.reviewersettings_set.count(), 1)
 
