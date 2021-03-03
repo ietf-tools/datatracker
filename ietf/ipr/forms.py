@@ -233,7 +233,7 @@ class GenericDisclosureForm(forms.Form):
             for k in patent_fields:
                 if not cleaned_data.get(k):
                     self.add_error(k, "This field is required if you are filing a patent-specific disclosure.")
-            raise forms.ValidationError("A generic IPR disclosure cannot have any patent-specific information, "
+            raise forms.ValidationError("A general IPR disclosure cannot have any patent-specific information, "
                                         "but a patent-specific disclosure must provide full patent information.")
 
         patent_fields += ['patent_notes']

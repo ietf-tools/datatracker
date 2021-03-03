@@ -484,6 +484,18 @@ def by_draft_recursive_txt(request):
 def new(request, type, updates=None):
     """Submit a new IPR Disclosure.  If the updates field != None, this disclosure
     updates one or more other disclosures."""
+    # Note that URL patterns won't ever send updates - updates is only non-null when called from code
+
+    # This odd construct flipping generic and general allows the URLs to say 'general' while having a minimal impact on the code.
+    # A cleanup to change the code to switch on type 'general' should follow.
+    if type == 'generic' and updates: # Only happens when called directly from the updates view
+        pass
+    elif type == 'generic':
+        return HttpResponseRedirect(urlreverse('ietf.ipr.views.new',kwargs=dict(type='general')))
+    elif type == 'general':
+        type = 'generic'
+    else:
+        pass
 
     # 1 to show initially + the template
     DraftFormset = inlineformset_factory(IprDisclosureBase, IprDocRel, form=DraftForm, can_delete=False, extra=1 + 1)

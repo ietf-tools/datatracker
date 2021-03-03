@@ -6,7 +6,7 @@ import datetime
 
 
 from pyquery import PyQuery
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 from django.urls import reverse as urlreverse
 
@@ -208,9 +208,17 @@ class IprTests(TestCase):
         self.assertContains(r, "/ipr/%s/" % ipr.pk)
 
     def test_new_generic(self):
-        """Add a new generic disclosure.  Note: submitter does not need to be logged in.
-        """
+        """Ensure new-generic redirects to new-general"""
         url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "generic" })
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.ipr.views.new", kwargs={ "type": "general"}))
+
+
+    def test_new_general(self):
+        """Add a new general disclosure.  Note: submitter does not need to be logged in.
+        """
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "general" })
 
         # invalid post
         r = self.client.post(url, {

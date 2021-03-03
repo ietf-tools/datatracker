@@ -37,7 +37,7 @@
       patent applicants.</p>
 
   {% else %}
-    <h1>The Patent Disclosure and Licensing Declaration Template for Generic IPR Disclosures</h1>
+    <h1>The Patent Disclosure and Licensing Declaration Template for General IPR Disclosures</h1>
     <p>This document is an IETF IPR Patent Disclosure and Licensing
       Declaration Template and is submitted to inform the IETF of a) patent
       or patent application information that is not related to a specific
@@ -49,18 +49,27 @@
       <a href="https://www.ietf.org/rfc/rfc8179.txt">RFC 8179</a>,
       "Intellectual Property Rights in IETF Technology," you
       are still required to file specific disclosures on IPR unless your
-      generic disclosure satisfies certain conditions. Please see the
+      general disclosure satisfies certain conditions. Please see the
       RFC for details.</p>
   {% endif %}
 
   <p>
-    If you wish to submit your IPR disclosure by e-mail, then please send
-    it to <a href="mailto:ietf-ipr@ietf.org">ietf-ipr@ietf.org</a>.
-    Submissions made by e-mail that do not comply with the formal
+    Submissions that do not comply with the formal
     requirements of Section 5, "IPR Disclosures," of
     <a href="https://www.ietf.org/rfc/rfc8179.txt">RFC 8179</a>,
     "Intellectual Property Rights in IETF Technology",
-    will be posted, but will be marked as "non-compliant".
+    may be 
+    {% if form.instance|to_class_name != "GenericIprDisclosure" %}
+      rejected or may be published as general disclosures.
+    {% else %}
+      rejected.
+    {% endif %}
+  </p>
+
+  <p>
+    If you have any questions or problems with form then please contact
+    <a href="mailto:ietf-ipr@ietf.org">ietf-ipr@ietf.org</a>. We do not
+    accept IPR disclosures by email.
   </p>
 
 
