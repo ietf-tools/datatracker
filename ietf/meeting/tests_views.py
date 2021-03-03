@@ -143,6 +143,10 @@ class MeetingTests(TestCase):
         self.assertIn(session.group.parent.acronym.upper(), agenda_content)
         self.assertIn(slot.location.name, agenda_content)
         self.assertIn(time_interval, agenda_content)
+        self.assertIsNotNone(q(':input[value="%s"]' % meeting.time_zone),
+                             'Time zone selector should show meeting timezone')
+        self.assertIsNotNone(q('.nav *:contains("%s")' % meeting.time_zone),
+                             'Time zone indicator should be in nav sidebar')
 
         # plain
         time_interval = "%s-%s" % (slot.time.strftime("%H:%M").lstrip("0"), (slot.time + slot.duration).strftime("%H:%M").lstrip("0"))

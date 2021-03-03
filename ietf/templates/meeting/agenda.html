@@ -28,6 +28,27 @@
   .session-materials .agenda-frame,.minutes-frame {
   white-space: normal;
   }
+  div.tz-display {
+    margin-bottom: 0.5em;
+    margin-top: 1em;
+    text-align: right;
+  }
+  .tz-display a {
+    cursor: pointer;
+  }
+  .tz-display label {
+    font-weight: normal;
+  }
+  .tz-display select {
+  min-width: 15em;
+  }
+  #affix .nav li.tz-display {
+  padding: 4px 20px;
+  }
+  #affix .nav li.tz-display a {
+  display: inline;
+  padding: 0;
+  }
 {% endblock %}
 
 {% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
@@ -50,8 +71,23 @@
       {# cache this part -- it takes 3-6 seconds to generate #}
       {% load cache %}
       {% cache cache_time ietf_meeting_agenda_utc schedule.meeting.number request.path %}
-        <h1>Agenda <small id="title-timezone" class="pull-right" >{{timezone}}</small></h1>
-
+        <div class="row">
+            <div class="col-xs-6"><h1>Agenda</h1></div>
+            <div class="col-xs-6">
+                <div class="tz-display">
+                    <div><small>
+                        <label for="timezone_select">Time zone:</label>
+                        <a id="meeting-timezone" onclick="use_timezone(0)">Meeting</a> |
+                        <a id="local-timezone" onclick="use_timezone(1)">Local</a> |
+                        <a id="utc-timezone" onclick="use_timezone(2)">UTC</a>
+                    </small></div>
+                    <select id="timezone_select">
+                        {# Avoid blank while loading. JavaScript replaces the option list after init. #}
+                        <option selected>{{ timezone }}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
       {% if is_current_meeting %}
 	<p class="alert alert-info">
 	  <b>Note:</b> IETF agendas are subject to change, up to and during a meeting.
@@ -319,15 +355,13 @@
           {% endifchanged %}
         {% endfor %}
         <li><hr/></li>
-
-        <li class="tzselect">Select timezone:</li>
-        <li><a id="meeting-timezone" onclick="use_timezone(0)">Meeting Timezone</a></li>
-        <li><a id="local-timezone" onclick="use_timezone(1)">Local Timezone</a></li>
-        <li><a id="utc-timezone" onclick="use_timezone(2)">UTC</a></li>
-        <li id="timezone">
-          <select style="width: 12em;" id="timezone_select"></select>
+        <li class="tz-display">Showing <span class="current-tz">{{ timezone }}</span> time</li>
+        <li class="tz-display"><span> {# span avoids applying nav link styling to these shortcuts #}
+            <a onclick="use_timezone(0)">Meeting time</a> | 
+            <a onclick="use_timezone(1)">Local time</a> |
+            <a onclick="use_timezone(2)">UTC</a></span>
         </li>
-        {% if settings.DEBUG and settings.DEBUG_AGENDA %}
+      {% if settings.DEBUG and settings.DEBUG_AGENDA %}
         <li><hr/></li>
         <li><span id="current-time"></span></li>
         {% endif %}

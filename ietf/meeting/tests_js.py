@@ -41,7 +41,7 @@ try:
     from selenium import webdriver
     from selenium.webdriver.common.action_chains import ActionChains
     from selenium.webdriver.common.by import By
-    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support.ui import Select, WebDriverWait
     from selenium.webdriver.support import expected_conditions
     from selenium.common.exceptions import NoSuchElementException
 except ImportError as e:
@@ -903,6 +903,107 @@ class AgendaTests(MeetingTestCase):
         for slide in deleted_slides:
             with self.assertRaises(NoSuchElementException):
                 self.driver.find_element_by_xpath('//a[text()="%s"]' % slide.title)
+
+    def _wait_for_tz_change_from(self, old_tz):
+        """Helper to wait for tz displays to change from their old value"""
+        match = 'text()!="%s"' % old_tz
+        WebDriverWait(self.driver, 2).until(
+            expected_conditions.presence_of_element_located((By.XPATH, '//*[@class="current-tz"][%s]' % match))
+        )
+
+    def test_agenda_time_zone_selection(self):
+        self.assertNotEqual(self.meeting.time_zone, 'UTC', 'Meeting time zone must not be UTC')
+
+        self.driver.get(self.absreverse('ietf.meeting.views.agenda'))
+
+        # wait for the select box to be updated - look for an arbitrary time zone to be in
+        # its options list to detect this
+        WebDriverWait(self.driver, 2).until(
+            expected_conditions.presence_of_element_located((By.XPATH, '//option[@value="America/Halifax"]'))
+        )
+
+        tz_select_input = Select(self.driver.find_element_by_id('timezone_select'))
+        meeting_tz_link = self.driver.find_element_by_id('meeting-timezone')
+        local_tz_link = self.driver.find_element_by_id('local-timezone')
+        utc_tz_link = self.driver.find_element_by_id('utc-timezone')
+        tz_displays = self.driver.find_elements_by_css_selector('.current-tz')
+        self.assertGreaterEqual(len(tz_displays), 1)
+        # we'll check that all current-tz elements are updated, but first check that at least one is in the nav sidebar
+        self.assertIsNotNone(self.driver.find_element_by_css_selector('.nav .current-tz'))
+
+        # Moment.js guesses local time zone based on the behavior of Selenium's web client. This seems
+        # to inherit Django's settings.TIME_ZONE but I don't know whether that's guaranteed to be consistent.
+        # To avoid test fragility, ask Moment what it considers local and expect that.
+        local_tz = self.driver.execute_script('return moment.tz.guess();')
+        self.assertNotEqual(self.meeting.time_zone, local_tz, 'Meeting time zone must not be local time zone')
+        self.assertNotEqual(local_tz, 'UTC', 'Local time zone must not be UTC')
+
+        # Should start off in meeting time zone
+        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), self.meeting.time_zone)
+        for disp in tz_displays:
+            self.assertEqual(disp.text.strip(), self.meeting.time_zone)
+
+        # Click 'local' button
+        local_tz_link.click()
+        self._wait_for_tz_change_from(self.meeting.time_zone)
+        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), local_tz)
+        for disp in tz_displays:
+            self.assertEqual(disp.text.strip(), local_tz)
+
+        # click 'utc' button
+        utc_tz_link.click()
+        self._wait_for_tz_change_from(local_tz)
+        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), 'UTC')
+        for disp in tz_displays:
+            self.assertEqual(disp.text.strip(), 'UTC')
+
+        # click back to meeting
+        meeting_tz_link.click()
+        self._wait_for_tz_change_from('UTC')
+        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), self.meeting.time_zone)
+        for disp in tz_displays:
+            self.assertEqual(disp.text.strip(), self.meeting.time_zone)
+
+        # and then back to UTC...
+        utc_tz_link.click()
+        self._wait_for_tz_change_from(self.meeting.time_zone)
+        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), 'UTC')
+        for disp in tz_displays:
+            self.assertEqual(disp.text.strip(), 'UTC')
+
+        # ... and test the switch from UTC to local
+        local_tz_link.click()
+        self._wait_for_tz_change_from('UTC')
+        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), local_tz)
+        for disp in tz_displays:
+            self.assertEqual(disp.text.strip(), local_tz)
+
+        # Now select a different item from the select input
+        tz_select_input.select_by_value('America/Halifax')
+        self._wait_for_tz_change_from(self.meeting.time_zone)
+        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), 'America/Halifax')
+        for disp in tz_displays:
+            self.assertEqual(disp.text.strip(), 'America/Halifax')
+
+    def test_agenda_time_zone_selection_updates_weekview(self):
+        """Changing the time zone should update the weekview to match"""
+        # enable a filter so the weekview iframe is visible
+        self.driver.get(self.absreverse('ietf.meeting.views.agenda') + '?show=mars')
+        # wait for the select box to be updated - look for an arbitrary time zone to be in
+        # its options list to detect this
+        WebDriverWait(self.driver, 2).until(
+            expected_conditions.presence_of_element_located((By.XPATH, '//option[@value="America/Halifax"]'))
+        )
+
+        tz_select_input = Select(self.driver.find_element_by_id('timezone_select'))
+
+        # Now select a different item from the select input
+        tz_select_input.select_by_value('America/Halifax')
+        self._wait_for_tz_change_from(self.meeting.time_zone)
+        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), 'America/Halifax')
+        self.driver.switch_to.frame('weekview')
+        wv_url = self.driver.execute_script('return document.location.href')
+        self.assertIn('tz=america/halifax', wv_url)
 
 
 @skipIf(skip_selenium, skip_message)
