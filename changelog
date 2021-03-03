@@ -1,3 +1,44 @@
+ietfdb (7.27.0) ietf; urgency=medium
+  
+  ** 110 Codesprint **
+
+  * Adjust several searchable fields to match a changed interface in
+    select2-field.js
+
+  * Merged in [18856] from rjsparks@nostrum.com:
+    Patch around multiple newrevisiondocevents.
+
+  * Merged in [18857] from housley@vigilsec.com:
+    Properly handle bibxml3 for drafts with filenames that end in a hypen
+    and digits. Fixes #3188.
+
+  * Merged in [18862] from peter@akayla.com:
+    Modifies stream name descriptions and changes document page to use the
+    description instead of the stream name. Fixes issue 3169.
+
+  * Merged in [18869] from rjsparks@nostrum.com:
+    Display htmlized pages much more like tools.ietf.org.
+
+  * Merged in [18860] from rcross@amsl.com:
+    Add special handling for ReviewerSettings to merge person feature.
+    Fixes #3183.
+
+  * Merged in [18858] and [18875] from kivinen@iki.fi:
+    Remove the automatic redirect from latest version to page without
+    version number (also from tests), and made sure when viewing old snapshot
+    which also happens to be last revision for draft where we have rfc, we show
+    information from the draft, not from the rfc. Fixes issue #3162.
+
+  * Merged in [18884] from jennifer@painless-security.com:
+    Move agenda TZ selector out of sidebar so it is always available. Fixes
+    #3172.
+
+  * Merged in [18886] from rjsparks@nostrum.com:
+    Change ipr pages to say General rather than Generic, and to change the
+    text to note email submissions are not accepted. Fixes #3209.
+
+ -- Robert Sparks <rjsparks@nostrum.com>  03 Mar 2021 20:57:51 +0000
+
 ietfdb (7.26.0) ietf; urgency=medium
 
   **IESG 'Who has the action', bugfixes**
