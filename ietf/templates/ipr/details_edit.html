@@ -59,7 +59,7 @@
     <a href="https://www.ietf.org/rfc/rfc8179.txt">RFC 8179</a>,
     "Intellectual Property Rights in IETF Technology",
     may be 
-    {% if form.instance|to_class_name != "GenericIprDisclosure" %}
+    {% if form|to_class_name != "GenericDisclosureForm" %}
       rejected or may be published as general disclosures.
     {% else %}
       rejected.
