@@ -17,13 +17,16 @@ import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList
 from ietf.group.factories import RoleFactory
+from ietf.group.models import Group
 from ietf.nomcom.models import NomCom
 from ietf.nomcom.test_data import nomcom_test_data
 from ietf.nomcom.factories import NomComFactory, NomineeFactory, NominationFactory, FeedbackFactory, PositionFactory
 from ietf.person.factories import EmailFactory, PersonFactory, UserFactory
 from ietf.person.models import Person, Alias
 from ietf.person.utils import (merge_persons, determine_merge_order, send_merge_notification,
-    handle_users, get_extra_primary, dedupe_aliases, move_related_objects, merge_nominees, merge_users)
+    handle_users, get_extra_primary, dedupe_aliases, move_related_objects, merge_nominees,
+    handle_reviewer_settings, merge_users)
+from ietf.review.models import ReviewerSettings
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox
 
@@ -187,6 +190,40 @@ class PersonUtilsTests(TestCase):
         self.assertEqual(len(outbox),len_before+1)
         self.assertTrue('IETF Datatracker records merged' in outbox[-1]['Subject'])
 
+    def test_handle_reviewer_settings(self):
+        groups = Group.objects.all()
+        # no ReviewerSettings
+        source = PersonFactory()
+        target = PersonFactory()
+        result = handle_reviewer_settings(source, target)
+        self.assertEqual(result, [])
+
+        # source ReviewerSettings only
+        source = PersonFactory()
+        target = PersonFactory()
+        ReviewerSettings.objects.create(team=groups[0],person=source,min_interval=14)
+        result = handle_reviewer_settings(source, target)
+        self.assertEqual(result, [])
+
+        # source and target ReviewerSettings, non-conflicting
+        source = PersonFactory()
+        target = PersonFactory()
+        rs1 = ReviewerSettings.objects.create(team=groups[0],person=source,min_interval=14)
+        ReviewerSettings.objects.create(team=groups[1],person=target,min_interval=14)
+        result = handle_reviewer_settings(source, target)
+        self.assertEqual(result, [])
+
+        # source and target ReviewerSettings, conflicting
+        source = PersonFactory()
+        target = PersonFactory()
+        rs1 = ReviewerSettings.objects.create(team=groups[0],person=source,min_interval=14)
+        ReviewerSettings.objects.create(team=groups[0],person=target,min_interval=7)
+        self.assertEqual(source.reviewersettings_set.count(), 1)
+        result = handle_reviewer_settings(source, target)
+        self.assertEqual(result, ['REVIEWER SETTINGS ACTION: dropping duplicate ReviewSettings for team: {}'.format(rs1.team)])
+        self.assertEqual(source.reviewersettings_set.count(), 0)
+        self.assertEqual(target.reviewersettings_set.count(), 1)
+
     def test_handle_users(self):
         source1 = get_person_no_user()
         target1 = get_person_no_user()
@@ -199,7 +236,7 @@ class PersonUtilsTests(TestCase):
 
         # no Users
         result = handle_users(source1, target1)
-        self.assertTrue('DATATRACKER LOGIN ACTION: none' in result)
+        self.assertTrue("DATATRACKER LOGIN ACTION: none" in result)
 
         # target user
         result = handle_users(source2, target2)
@@ -267,6 +304,22 @@ class PersonUtilsTests(TestCase):
         self.assertTrue(source_alias in target.alias_set.all())
         self.assertFalse(Person.objects.filter(id=source_id))
         self.assertFalse(source_user.is_active)
+
+    def test_merge_persons_reviewer_settings(self):
+        secretariat_role = RoleFactory(group__acronym='secretariat', name_id='secr')
+        user = secretariat_role.person.user
+        request = HttpRequest()
+        request.user = user
+        source = PersonFactory()
+        target = PersonFactory()
+        groups = Group.objects.all()
+        ReviewerSettings.objects.create(team=groups[0],person=source,min_interval=14)
+        ReviewerSettings.objects.create(team=groups[0],person=target,min_interval=7)
+        merge_persons(request, source, target, file=StringIO())
+        self.assertFalse(Person.objects.filter(pk=source.pk))
+        self.assertEqual(target.reviewersettings_set.count(), 1)
+        rs = target.reviewersettings_set.first()
+        self.assertEqual(rs.min_interval, 7)
 
     def test_merge_users(self):
         person = PersonFactory()
