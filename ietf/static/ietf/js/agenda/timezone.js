@@ -28,8 +28,9 @@ function timezone_init(current) {
     var tz_names = moment.tz.names();
     var select = $('#timezone_select');
     
+    select.empty();
     $.each(tz_names, function(i, item) {
-	if (current == item) {
+	if (current === item) {
             select.append($('<option/>', {
 		selected: "selected", html: item, value: item }));
 	} else {
@@ -178,7 +179,7 @@ function add_tooltips() {
 // Update times on the agenda based on the selected timezone
 function update_times(newtz) {
     current_timezone = newtz;
-    $('#title-timezone').html(newtz);
+    $('span.current-tz').html(newtz);
     $('span.time').each(function () {
 	if (this.format == 4) {
 	    var tz = this.start_ts.tz(newtz).format(" z");
