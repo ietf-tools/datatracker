@@ -1,8 +1,6 @@
 # -*- conf-mode -*-
 
-/personal/rcross/7.26.1.dev0@18860 # Tests fail
 /personal/markd/7.22.1.dev0@18859 # Will need to address differently - too much lag during migration for production
-/personal/kivinen/7.26.1.dev0@18858 # Needs additional work - broken version links
 
 # Everyting below this line is OBE
 
