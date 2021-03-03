@@ -935,7 +935,7 @@ def join_justified(left, right, width=72):
     return lines
 
 def build_file_urls(doc):
-    if doc.get_state_slug() == "rfc":
+    if isinstance(doc,Document) and doc.get_state_slug() == "rfc":
         name = doc.canonical_name()
         base_path = os.path.join(settings.RFC_PATH, name + ".")
         possible_types = settings.RFC_FILE_TYPES
@@ -952,7 +952,8 @@ def build_file_urls(doc):
             file_urls.append(("pdf", base + "pdfrfc/" + name + ".txt.pdf"))
 
         if "txt" in found_types:
-            file_urls.append(("htmlized", settings.TOOLS_ID_HTML_URL + name))
+            file_urls.append(("htmlized (tools)", settings.TOOLS_ID_HTML_URL + name))
+            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=name))))
             if doc.tags.filter(slug="verified-errata").exists():
                 file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=name))+"bibtex"))

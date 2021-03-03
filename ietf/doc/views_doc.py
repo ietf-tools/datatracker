@@ -139,9 +139,6 @@ def document_main(request, name, rev=None):
 
     gh = None
     if rev != None:
-        if rev == doc.rev:
-            return redirect('ietf.doc.views_doc.document_main', name=name)
-
         # find the entry in the history
         for h in doc.history_set.order_by("-time"):
             if rev == h.rev:
@@ -210,12 +207,24 @@ def document_main(request, name, rev=None):
 
         latest_revision = None
 
+        # Workaround to allow displaying last rev of draft that became rfc as a draft
+        # This should be unwound when RFCs become their own documents.
+        if snapshot:
+            doc.name = doc.doc.name
+            name = doc.doc.name
+        else:
+            name = doc.name
+
         file_urls, found_types = build_file_urls(doc)
+        if not snapshot and doc.get_state_slug() == "rfc":
+            # content
+            content = doc.text_or_error() # pyflakes:ignore
+            content = markup_txt.markup(maybe_split(content, split=split_content))
 
         content = doc.text_or_error() # pyflakes:ignore
         content = markup_txt.markup(maybe_split(content, split=split_content))
 
-        if doc.get_state_slug() == "rfc":
+        if not snapshot and doc.get_state_slug() == "rfc":
             if not found_types:
                 content = "This RFC is not currently available online."
                 split_content = False
