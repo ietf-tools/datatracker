@@ -1,0 +1,161 @@
+<!DOCTYPE html> {% load ietf_filters static %}
+{# Copyright The IETF Trust 2021, All Rights Reserved #}
+{% load origin %}{% origin %}
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{% block title %}No title{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+
+  @media only screen 
+    and (min-width: 992px)
+    and (max-width: 1199px) {
+      body { font-size: 14pt; }
+            div.content { width: 96ex; margin: 0 auto; }
+        }
+  @media only screen 
+    and (min-width: 768px)
+    and (max-width: 991px) {
+            body { font-size: 14pt; }
+            div.content { width: 96ex; margin: 0 auto; }
+        }
+  @media only screen 
+    and (min-width: 480px)
+    and (max-width: 767px) {
+            body { font-size: 11pt; }
+            div.content { width: 96ex; margin: 0 auto; }
+        }
+  @media only screen 
+    and (max-width: 479px) {
+            body { font-size: 8pt; }
+            div.content { width: 96ex; margin: 0 auto; }
+        }
+  @media only screen 
+    and (min-device-width : 375px) 
+    and (max-device-width : 667px) {
+            body { font-size: 9.5pt; }
+            div.content { width: 96ex; margin: 0; }
+        }
+  @media only screen 
+    and (min-device-width: 1200px) {
+            body { font-size: 10pt; margin: 0 4em; }
+            div.content { width: 96ex; margin: 0; }
+        }
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+      font-weight: bold;
+            /* line-height: 0pt; */
+            display: inline;
+            white-space: pre;
+            font-family: monospace;
+            font-size: 1em;
+      font-weight: bold;
+        }
+        pre {
+            font-size: 1em;
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+  .pre {
+      white-space: pre;
+      font-family: monospace;
+  }
+  .header{
+      font-weight: bold;
+  }
+        .newpage {
+            page-break-before: always;
+        }
+        .invisible {
+            text-decoration: none;
+            color: white;
+        }
+        @media print {
+            body {
+                margin-top: 5em;
+                font-family: monospace;
+                font-size: 10.5pt;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                font-size: 1em;
+            }
+        
+            a:link, a:visited {
+                color: inherit;
+                text-decoration: none;
+            }
+            .noprint {
+                display: none;
+            }
+        }
+  @media screen {
+      .grey, .grey a:link, .grey a:visited {
+    color: #777;
+      }
+            .meta-info {
+                background-color: #EEE;
+            }
+            .top {
+                border-top: 7px solid #EEE;
+            }
+            .pad {
+                padding-top: 7px;
+                line-height: 24px;
+                padding-bottom: 4px;
+            }
+            .bgwhite  { background-color: white; }
+            .bgred    { background-color: #F44; }
+            .bggrey   { background-color: #666; }
+            .bgbrown  { background-color: #840; }            
+            .bgorange { background-color: #FA0; }
+            .bgyellow { background-color: #EE0; }
+            .bgmagenta{ background-color: #F4F; }
+            .bgblue   { background-color: #66F; }
+            .bgcyan   { background-color: #4DD; }
+            .bggreen  { background-color: #4F4; }
+
+            .legend   { font-size: 90%; }
+            .cplate   { font-size: 70%; border: solid grey 1px; }
+  }
+    
+     {% block morecss %}{% endblock %}
+    </style>
+
+    <!--[if lt IE 9]>
+        <script src="{% static 'html5shiv/html5shiv.min.js' %}"></script>
+        <script src="{% static 'respond/dest/respond.min.js' %}"></script>
+    <![endif]-->
+    {% block pagehead %}{% endblock %}
+
+    {% if server_mode and server_mode == "production" %}
+    <link rel="shortcut icon" href="{% static 'ietf/images/ietf-icon-blue3.png' %}">
+    {% else %}
+    <link rel="shortcut icon" href="{% static 'ietf/images/ietf-icon-red3.png' %}">
+    {% endif %}
+    <link rel="apple-touch-icon" href="{% static 'ietf/images/apple-touch-icon.png' %}">
+  </head>
+
+  <body {% block bodyAttrs %}{%endblock%}>
+
+	  <div class="content" id="content">
+        {% block content %}{{ content|safe }}{% endblock %}
+        {% block content_end %}{% endblock %}
+	  </div>
+
+	{% block footer %}
+
+	{% endblock %}
+
+    </div>
+
+      {% comment %}
+      <!-- Remove the *-nojs attributes if we are running js.  This depends on jQuery's removeClass(): -->
+      <!-- Do this as early as possible (after loading the page and jQuery) to avoid rendering changes -->
+      {% endcomment %}
+      <script>$(".visible-nojs").removeClass("visible-nojs");</script>
+      <script>$(".hidden-nojs").removeClass("hidden-nojs");</script>
+      {% block js %}{% endblock %}
+  </body>
+</html>
+
