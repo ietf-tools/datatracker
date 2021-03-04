@@ -37,7 +37,7 @@ ietfdb (7.27.0) ietf; urgency=medium
     Change ipr pages to say General rather than Generic, and to change the
     text to note email submissions are not accepted. Fixes #3209.
 
- -- Robert Sparks <rjsparks@nostrum.com>  03 Mar 2021 20:57:51 +0000
+ -- Robert Sparks <rjsparks@nostrum.com>  04 Mar 2021 15:24:12 +0000
 
 ietfdb (7.26.0) ietf; urgency=medium
 
