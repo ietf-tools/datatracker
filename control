@@ -2,7 +2,7 @@ Version: 2.32
 Section: text
 Ietf: critical
 Priority: optional
-Maintainer: Henrik Levkowetz <henrik@levkowetz.com>
+Maintainer: Robert Sparks <rjsparks@nostrum.com>
 Package: ietfdb
 Architecture: any
 Depends: django python
