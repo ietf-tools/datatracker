@@ -371,7 +371,8 @@ class DocumentInfo(models.Model):
                 if n.startswith("rfc"):
                     self._cached_rfc_number = n[3:]
                 else:
-                    logger.error("Document self.is_rfc() is True but self.canonical_name() is %s" % n)
+                    if isinstance(self,Document):
+                        logger.error("Document self.is_rfc() is True but self.canonical_name() is %s" % n)
         return self._cached_rfc_number
 
     @property
