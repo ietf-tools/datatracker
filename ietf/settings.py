@@ -72,7 +72,7 @@ TOOLS_ID_PDF_URL = TOOLS_SERVER_URL + '/pdf/'
 TOOLS_ID_HTML_URL = TOOLS_SERVER_URL + '/html/'
 
 # Override this in the settings_local.py file:
-SERVER_EMAIL = 'Django Server <django-project@' + TOOLS_SERVER + '>'
+SERVER_EMAIL = 'Django Server <django-project@' + IETF_DOMAIN + '>'
 
 DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@' + IETF_DOMAIN + '>'
 UTILS_ON_BEHALF_EMAIL = 'noreply@' + IETF_DOMAIN
