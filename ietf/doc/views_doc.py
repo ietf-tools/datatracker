@@ -832,10 +832,15 @@ def document_history(request, name):
 
 
 def document_bibtex(request, name, rev=None):
-    # If URL_REGEXPS put trailing digits in rev, they must be two digits
+    # Make sure URL_REGEXPS did not grab too much for the rev number
     if rev != None and len(rev) != 2:
-        name = name+"-"+rev
-        rev = None
+        mo = re.search(r"^(?P<m>[0-9]{1,2})-(?P<n>[0-9]{2})$", rev)
+        if mo:
+            name = name+"-"+mo.group(1)
+            rev = mo.group(2)
+        else:
+            name = name+"-"+rev
+            rev = None
 
     doc = get_object_or_404(Document, docalias__name=name)
 
@@ -875,9 +880,6 @@ def document_bibxml_ref(request, name, rev=None):
         raise Http404()
     if not name.startswith('draft-'):
         name = 'draft-'+name
-    if rev != None and len(rev) != 2:
-        name = name+"-"+rev
-        rev = None
     return document_bibxml(request, name, rev=rev)
     
 def document_bibxml(request, name, rev=None):
@@ -886,16 +888,21 @@ def document_bibxml(request, name, rev=None):
     if re.search(r'^rfc\d+$', name):
         raise Http404()
 
-    # If URL_REGEXPS put trailing digits in rev, they must be two digits
+    # Make sure URL_REGEXPS did not grab too much for the rev number
     if rev != None and len(rev) != 2:
-        name = name+"-"+rev
-        rev = None
+        mo = re.search(r"^(?P<m>[0-9]{1,2})-(?P<n>[0-9]{2})$", rev)
+        if mo:
+            name = name+"-"+mo.group(1)
+            rev = mo.group(2)
+        else:
+            name = name+"-"+rev
+            rev = None
 
     doc = get_object_or_404(Document, name=name, type_id='draft')
 
     latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
     latest_rev = latest_revision.rev if latest_revision else None
-        
+
     if rev != None:
         # find the entry in the history
         for h in doc.history_set.order_by("-time"):
