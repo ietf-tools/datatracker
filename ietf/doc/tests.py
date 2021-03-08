@@ -1231,9 +1231,7 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertNotContains(r, "Request publication")
 
-
     def test_document_bibtex(self):
-
         rfc = WgRfcFactory.create(
                   #other_aliases = ['rfc6020',],
                   states = [('draft','rfc'),('draft-iesg','pub')],
@@ -1303,6 +1301,17 @@ class DocTestCase(TestCase):
             self.assertEqual(normalize_text(entry.find('./front/abstract/t').text), normalize_text(draft.abstract))
             self.assertEqual(entry.find('./seriesInfo').get('value'), docname)
             self.assertEqual(entry.find('./seriesInfo[@name="DOI"]'), None)
+
+    def test_trailing_hypen_digit_name_bibxml(self):
+        draft = WgDraftFactory(name='draft-ietf-mars-test-2')
+        docname = '%s-%s' % (draft.name, draft.rev)
+        for viewname in [ 'ietf.doc.views_doc.document_bibxml', 'ietf.doc.views_doc.document_bibxml_ref' ]:
+            # This will need to be adjusted if settings.URL_REGEXPS is changed
+            url = urlreverse(viewname, kwargs=dict(name=draft.name[:-2], rev=draft.name[-1:]+'-'+draft.rev))
+            r = self.client.get(url)
+            entry = lxml.etree.fromstring(r.content)
+            self.assertEqual(entry.find('./front/title').text, draft.title)
+            self.assertEqual(entry.find('./seriesInfo').get('value'), docname)
 
 class AddCommentTestCase(TestCase):
     def test_add_comment(self):
