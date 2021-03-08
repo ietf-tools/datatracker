@@ -51,16 +51,12 @@ path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 syslog.openlog(str("datatracker"), syslog.LOG_PID, syslog.LOG_USER)
 
-# Virtualenv support
-virtualenv_activation = os.path.join(path, "env", "bin", "activate_this.py")
-if os.path.exists(virtualenv_activation):
-    syslog.syslog("Starting datatracker wsgi with virtualenv %s" % os.path.dirname(os.path.dirname(virtualenv_activation)))
-    exec(compile(io.open(virtualenv_activation, "rb").read(), virtualenv_activation, 'exec'), dict(__file__=virtualenv_activation))
-
 if not path in sys.path:
     sys.path.insert(0, path)
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
+
+syslog.syslog("Starting datatracker wsgi instance")
 
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
