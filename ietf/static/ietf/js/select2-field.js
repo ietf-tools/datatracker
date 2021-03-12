@@ -38,7 +38,7 @@ function setupSelect2Field(e) {
             element = $(element);  // jquerify
 
             // The original data set will contain any values looked up via ajax
-            var data = element.select2('data');
+            var data = element.select2('data') | [] ;
             var data_map = {};
             
             // map id to its data representation
