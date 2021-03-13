@@ -10,12 +10,12 @@ import lxml
 import bibtexparser
 import mock
 
-
 from http.cookies import SimpleCookie
 from pyquery import PyQuery
 from urllib.parse import urlparse, parse_qs
 from tempfile import NamedTemporaryFile
 
+from django.core.management import call_command
 from django.urls import reverse as urlreverse
 from django.conf import settings
 
@@ -1371,7 +1371,123 @@ class ReferencesTest(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, doc1.name)
-       
+
+class GenerateDraftAliasesTests(TestCase):
+   def setUp(self):
+       self.doc_aliases_file = NamedTemporaryFile(delete=False, mode='w+')
+       self.doc_aliases_file.close()
+       self.doc_virtual_file = NamedTemporaryFile(delete=False, mode='w+')
+       self.doc_virtual_file.close()
+       self.saved_draft_aliases_path = settings.DRAFT_ALIASES_PATH
+       self.saved_draft_virtual_path = settings.DRAFT_VIRTUAL_PATH
+       settings.DRAFT_ALIASES_PATH = self.doc_aliases_file.name
+       settings.DRAFT_VIRTUAL_PATH = self.doc_virtual_file.name
+
+   def tearDown(self):
+       settings.DRAFT_ALIASES_PATH = self.saved_draft_aliases_path
+       settings.DRAFT_VIRTUAL_PATH = self.saved_draft_virtual_path
+       os.unlink(self.doc_aliases_file.name)
+       os.unlink(self.doc_virtual_file.name)
+
+   def testManagementCommand(self):
+       a_month_ago = datetime.datetime.now() - datetime.timedelta(30)
+       ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
+       shepherd = PersonFactory()
+       author1 = PersonFactory()
+       author2 = PersonFactory()
+       author3 = PersonFactory()
+       author4 = PersonFactory()
+       author5 = PersonFactory()
+       author6 = PersonFactory()
+       mars = GroupFactory(type_id='wg', acronym='mars')
+       marschairman = PersonFactory(user__username='marschairman')
+       mars.role_set.create(name_id='chair', person=marschairman, email=marschairman.email())
+       doc1 = IndividualDraftFactory(authors=[author1], shepherd=shepherd.email(), ad=ad)
+       doc2 = WgDraftFactory(name='draft-ietf-mars-test', group__acronym='mars', authors=[author2], ad=ad)
+       doc3 = WgRfcFactory.create(name='draft-ietf-mars-finished', group__acronym='mars', authors=[author3], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=a_month_ago)
+       DocEventFactory.create(doc=doc3, type='published_rfc', time=a_month_ago.strftime("%Y-%m-%d"))
+       doc4 = WgRfcFactory.create(authors=[author4,author5], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=datetime.datetime(2010,10,10))
+       DocEventFactory.create(doc=doc4, type='published_rfc', time = '2010-10-10')
+       doc5 = IndividualDraftFactory(authors=[author6])
+
+       args = [ ]
+       kwargs = { }
+       out = io.StringIO()
+       call_command("generate_draft_aliases", *args, **kwargs, stdout=out, stderr=out)
+       self.assertFalse(out.getvalue())
+
+       with open(settings.DRAFT_ALIASES_PATH) as afile:
+           acontent = afile.read()
+           self.assertTrue(all([x in acontent for x in [
+               'xfilter-' + doc1.name,
+               'xfilter-' + doc1.name + '.ad',
+               'xfilter-' + doc1.name + '.authors',
+               'xfilter-' + doc1.name + '.shepherd',
+               'xfilter-' + doc1.name + '.all',
+               'xfilter-' + doc2.name,
+               'xfilter-' + doc2.name + '.ad',
+               'xfilter-' + doc2.name + '.authors',
+               'xfilter-' + doc2.name + '.chairs',
+               'xfilter-' + doc2.name + '.all',
+               'xfilter-' + doc3.name,
+               'xfilter-' + doc3.name + '.ad',
+               'xfilter-' + doc3.name + '.authors',
+               'xfilter-' + doc3.name + '.chairs',
+               'xfilter-' + doc5.name,
+               'xfilter-' + doc5.name + '.authors',
+               'xfilter-' + doc5.name + '.all',
+           ]]))
+           self.assertFalse(all([x in acontent for x in [
+               'xfilter-' + doc1.name + '.chairs',
+               'xfilter-' + doc2.name + '.shepherd',
+               'xfilter-' + doc3.name + '.shepherd',
+               'xfilter-' + doc4.name,
+               'xfilter-' + doc5.name + '.shepherd',
+               'xfilter-' + doc5.name + '.ad',
+           ]]))
+
+       with open(settings.DRAFT_VIRTUAL_PATH) as vfile:
+           vcontent = vfile.read()
+           self.assertTrue(all([x in vcontent for x in [
+               ad.email_address(),
+               shepherd.email_address(),
+               marschairman.email_address(),
+               author1.email_address(),
+               author2.email_address(),
+               author3.email_address(),
+               author6.email_address(),
+           ]]))
+           self.assertFalse(all([x in vcontent for x in [
+               author4.email_address(),
+               author5.email_address(),
+           ]]))
+           self.assertTrue(all([x in vcontent for x in [
+               'xfilter-' + doc1.name,
+               'xfilter-' + doc1.name + '.ad',
+               'xfilter-' + doc1.name + '.authors',
+               'xfilter-' + doc1.name + '.shepherd',
+               'xfilter-' + doc1.name + '.all',
+               'xfilter-' + doc2.name,
+               'xfilter-' + doc2.name + '.ad',
+               'xfilter-' + doc2.name + '.authors',
+               'xfilter-' + doc2.name + '.chairs',
+               'xfilter-' + doc2.name + '.all',
+               'xfilter-' + doc3.name,
+               'xfilter-' + doc3.name + '.ad',
+               'xfilter-' + doc3.name + '.authors',
+               'xfilter-' + doc3.name + '.chairs',
+               'xfilter-' + doc5.name,
+               'xfilter-' + doc5.name + '.authors',
+               'xfilter-' + doc5.name + '.all',
+           ]]))
+           self.assertFalse(all([x in vcontent for x in [
+               'xfilter-' + doc1.name + '.chairs',
+               'xfilter-' + doc2.name + '.shepherd',
+               'xfilter-' + doc3.name + '.shepherd',
+               'xfilter-' + doc4.name,
+               'xfilter-' + doc5.name + '.shepherd',
+               'xfilter-' + doc5.name + '.ad',
+           ]]))
 
 class EmailAliasesTests(TestCase):
 
