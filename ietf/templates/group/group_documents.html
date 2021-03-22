@@ -6,7 +6,11 @@
 
 {% block group_content %}
   {% origin %}
-  {% include "doc/search/search_results.html" %}
+  {% if docs_related %}
+    {% include "doc/search/search_results.html" with skip_no_matches_warning=True %}
+  {% else %}
+    {% include "doc/search/search_results.html" %}
+  {% endif %}
   {% include "doc/search/search_results.html" with docs=docs_related meta=meta_related skip_no_matches_warning=True %}
   {% include "community/list_menu.html" %}
 
