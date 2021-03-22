@@ -16,5 +16,5 @@
    </front>
    <seriesInfo name="Internet-Draft" value="{{name}}-{{doc.rev}}" />
    {% if doi %}<seriesInfo name="DOI" value="{{doi}}" />
-   {% endif %}<format type="TXT" target="https://www.ietf.org/internet-drafts/{{name}}-{{doc.rev}}.txt" />
+   {% endif %}<format type="TXT" target="https://www.ietf.org/archive/id/{{name}}-{{doc.rev}}.txt" />
 </reference>
