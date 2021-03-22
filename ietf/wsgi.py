@@ -42,7 +42,6 @@ WSGIPythonEggs /var/www/.python-eggs/
 """
 
 
-import io
 import os
 import sys
 import syslog
