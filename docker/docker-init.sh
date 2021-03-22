@@ -112,6 +112,7 @@ echo "Activating the virtual python environment ..."
 
 if ! $VIRTDIR/bin/python -c "import django"; then
     echo "Installing requirements ..."
+    pip install --upgrade pip
     reqs=/home/$USER/$CWD/requirements.txt
     if [ ! -f $reqs ]; then
         echo "   Using $reqs"
@@ -187,5 +188,7 @@ if ! echo "$LANG" | grep "UTF-8"; then
 else
     echo "LANG=$LANG"
 fi
+
+HOME=/opt/home/$USER
 
 su -p $USER
