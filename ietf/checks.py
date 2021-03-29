@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2015-2020, All Rights Reserved
+# Copyright The IETF Trust 2015-2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -62,14 +62,14 @@ def check_group_email_aliases_exists(app_configs, **kwargs):
         if not ok:
             errors.append(checks.Error(
                 "Found no aliases in the group email aliases file\n'%s'."%settings.GROUP_ALIASES_PATH,
-                hint="Please run ietf/bin/generate-wg-aliases to generate them.",
+                hint="Please run the generate_group_aliases management command to generate them.",
                 obj=None,
                 id="datatracker.E0002",
             ))
     except IOError as e:
         errors.append(checks.Error(
             "Could not read group email aliases:\n   %s" % e,
-            hint="Please run ietf/bin/generate-wg-aliases to generate them.",
+            hint="Please run the generate_group_aliases management command to generate them.",
             obj=None,
             id="datatracker.E0003",
         ))
@@ -89,14 +89,14 @@ def check_doc_email_aliases_exists(app_configs, **kwargs):
         if not ok:
             errors.append(checks.Error(
                 "Found no aliases in the document email aliases file\n'%s'."%settings.DRAFT_VIRTUAL_PATH,
-                hint="Please run ietf/bin/generate-draft-aliases to generate them.",
+                hint="Please run the generate_draft_aliases management command to generate them.",
                 obj=None,
                 id="datatracker.E0004",
             ))
     except IOError as e:
         errors.append(checks.Error(
             "Could not read document email aliases:\n   %s" % e,
-            hint="Please run ietf/bin/generate-draft-aliases to generate them.",
+            hint="Please run the generate_draft_aliases management command to generate them.",
             obj=None,
             id="datatracker.E0005",
         ))
