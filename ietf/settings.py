@@ -550,6 +550,7 @@ INTERNAL_IPS = (
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
 IDNITS_BASE_URL = "https://www.ietf.org/tools/idnits"
+XML2RFC_BASE_URL = "https://xml2rfc.tools.ietf.org/experimental.html"
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
@@ -754,6 +755,7 @@ AUDIO_IMPORT_EMAIL = ['ietf@meetecho.com']
 IANA_EVAL_EMAIL = "drafts-eval@icann.org"
 SESSION_REQUEST_FROM_EMAIL = 'IETF Meeting Session Request Tool <session-request@ietf.org>' 
 
+SECRETARIAT_SUPPORT_EMAIL = "support@ietf.org"
 SECRETARIAT_ACTION_EMAIL = "ietf-action@ietf.org"
 SECRETARIAT_INFO_EMAIL = "ietf-info@ietf.org"
 

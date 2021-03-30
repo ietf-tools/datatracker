@@ -21,22 +21,15 @@
   {% endif %}
 
   {% if not form.shutdown or user|has_role:"Secretariat" %}
-    <p>If you run into problems when submitting an Internet-Draft
-      using this and the following pages, you may alternatively submit
-      your draft by email to
-      <a href="mailto:internet-drafts@ietf.org">internet-drafts@ietf.org</a>.
-      However, be advised that manual processing always takes additional time.
-    </p>
-
     <p>
       By submitting your I-D, you are granting some rights to the IETF Trust.  Before you submit your I-D,
-      review the information on the NOTE WELL tab and <a href="https://tools.ietf.org/html/bcp78">BCP 78</a>,
+      review the information on the NOTE WELL tab and <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc5378' %}">BCP 78</a>,
       "Rights Contributors Provide to the IETF Trust".
     </p>
 
     <p>
       Before you submit your I-D, it is recommended that you check it for nits
-      using the <b><a href="https://tools.ietf.org/tools/idnits/">idnits tool</a></b>.
+      using the <b><a href="{{settings.IDNITS_BASE_URL}}">idnits tool</a></b>.
     </p>
     
     {% include "submit/problem-reports-footer.html" %}
@@ -45,14 +38,19 @@
 
       <p>
 	 <i>
-            Either a plain-text document or a valid .xml file which can be processed by the xml2rfc
-            processor <b>must</b> be provided.
+            The best way to submit an Internet-Draft is to provide a single v3 .xml source file.
+            The datatracker will generate the .txt and other formats from that file.
             <br/>
-            For v3 .xml sources which include external files, this requires them to be run through xml2rfc with
-            the <tt>--expand</tt> option, to produce a completely expanded (standalone) .xml source file for
-            upload.
+            Source v3 .xml which include external files must be preprocessed through xml2rfc with
+            the <tt>--expand</tt> option, to produce a completely expanded (standalone) .xml source 
+            file for upload. 
             <br/>
-            If no .txt file is provided, one will be generated from the .xml file.
+            The <a href="{{settings.XML2RFC_BASE_URL}}">online conversion tool</a> can be used to
+            convert v2 .xml documents to v3. 
+            <br/>
+            A single v3 .xml source is preferred. A single v2 .xml source will be accepted. If
+            neither of those are available, a plain-text document may be provided. One of these
+            three options <b>must</b> be provided.
             <br/>
             Other file types are optional.
          </i>
