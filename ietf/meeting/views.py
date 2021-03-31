@@ -64,7 +64,7 @@ from ietf.meeting.helpers import get_all_assignments_from_schedule
 from ietf.meeting.helpers import get_modified_from_assignments
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
 from ietf.meeting.helpers import get_meeting, get_ietf_meeting, get_current_ietf_meeting_num
-from ietf.meeting.helpers import get_schedule, schedule_permissions
+from ietf.meeting.helpers import get_schedule, schedule_permissions, is_regular_agenda_filter_group
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
 from ietf.meeting.helpers import filter_keywords_for_session, tag_assignments_with_filter_keywords
 from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
@@ -1375,7 +1375,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     groups = [a.session.historic_group for a in filtered_assignments
               if a.session
               and a.session.historic_group
-              and a.session.historic_group.type_id in ('wg', 'rg', 'ag', 'rag', 'iab', 'program')
+              and is_regular_agenda_filter_group(a.session.historic_group)
               and a.session.historic_group.historic_parent]
     group_parents = []
     for g in groups:
@@ -1467,7 +1467,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
                          if len(category) > 0]
 
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
-    
+
     rendered_page = render(request, "meeting/"+base+ext, {
         "schedule": schedule,
         "filtered_assignments": filtered_assignments,
@@ -3377,7 +3377,7 @@ def upcoming(request):
     # using group / parent instead of historic_group / historic_parent
     groups = [s.group for s in interim_sessions
               if s.group
-              and s.group.type_id in ('wg', 'rg', 'ag', 'rag', 'iab', 'program')
+              and is_regular_agenda_filter_group(s.group)
               and s.group.parent]
     group_parents = {g.parent for g in groups if g.parent}
     seen = set()
