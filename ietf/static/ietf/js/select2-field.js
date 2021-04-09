@@ -1,5 +1,5 @@
-// currently we only include select2 CSS/JS on those pages where forms
-// need it, so the generic setup code here is also kept separate
+// Copyright The IETF Trust 2015-2021, All Rights Reserved
+// JS for ietf.utils.fields.SearchableField subclasses
 function setupSelect2Field(e) {
     var url = e.data("ajax-url");
     if (!url)
@@ -8,6 +8,18 @@ function setupSelect2Field(e) {
     var maxEntries = e.data("max-entries");
     var multiple = maxEntries !== 1;
     var prefetched = e.data("pre");
+    
+    // Validate prefetched
+    for (var id in prefetched) {
+        if (prefetched.hasOwnProperty(id)) {
+            if (String(prefetched[id].id) !== id) {
+                throw 'data-pre attribute for a select2-field input ' +
+                'must be a JSON object mapping id to object, but ' +
+                id + ' does not map to an object with that id.';
+            }
+        }
+    }
+    
     e.select2({
         multiple: multiple,
         minimumInputLength: 2,
@@ -37,8 +49,9 @@ function setupSelect2Field(e) {
         initSelection: function (element, cb) {
             element = $(element);  // jquerify
 
-            // The original data set will contain any values looked up via ajax
-            var data = element.select2('data');
+            // The original data set will contain any values looked up via ajax.
+            // When !multiple, select2('data') will be null - turn that into []
+            var data = element.select2('data') || [];
             var data_map = {};
             
             // map id to its data representation

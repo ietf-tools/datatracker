@@ -101,7 +101,7 @@ $(document).ready(function () {
         new_edit_milestone.show();
 
         new_edit_milestone.find(".select2-field").each(function () {
-            window.setupSelect2Field($(this)); // from ietf.js
+            window.setupSelect2Field($(this)); // from select2-field.js
         });
 
         if ( ! group_uses_milestone_dates ) {

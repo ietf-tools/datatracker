@@ -30,72 +30,21 @@ from ietf.meeting.models import (Schedule, SchedTimeSessAssignment, Session,
                                  Room, TimeSlot, Constraint, ConstraintName,
                                  Meeting, SchedulingEvent, SessionStatusName)
 from ietf.meeting.utils import add_event_info_to_session_qs
-from ietf.utils.pipe import pipe
 from ietf.utils.test_runner import IetfLiveServerTestCase
 from ietf.utils.test_utils import assert_ical_response_is_valid
+from ietf.utils.jstest import IetfSeleniumTestCase, ifSeleniumEnabled, selenium_enabled
 from ietf import settings
 
-skip_selenium = False
-skip_message  = ""
-try:
-    from selenium import webdriver
+if selenium_enabled():
     from selenium.webdriver.common.action_chains import ActionChains
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import Select, WebDriverWait
     from selenium.webdriver.support import expected_conditions
     from selenium.common.exceptions import NoSuchElementException
-except ImportError as e:
-    skip_selenium = True
-    skip_message = "Skipping selenium tests: %s" % e
-
-executable_name = 'chromedriver'
-code, out, err = pipe('{} --version'.format(executable_name))
-if code != 0:
-    skip_selenium = True
-    skip_message = "Skipping selenium tests: '{}' executable not found.".format(executable_name)
-if skip_selenium:
-    print("     "+skip_message)
-
-def start_web_driver():
-    options = webdriver.ChromeOptions()
-    options.add_argument("headless")
-    options.add_argument("disable-extensions")
-    options.add_argument("disable-gpu") # headless needs this
-    options.add_argument("no-sandbox") # docker needs this
-    return webdriver.Chrome(options=options, service_log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
-
-# This class is subclassed later, and does not contain any tests, so doesn't need @skipIf()
-class MeetingTestCase(IetfLiveServerTestCase):
-    def __init__(self, *args, **kwargs):
-        super(MeetingTestCase, self).__init__(*args, **kwargs)
-        self.login_view = 'ietf.ietfauth.views.login'
-
-    def setUp(self):
-        super(MeetingTestCase, self).setUp()
-        self.driver = start_web_driver()
-        self.driver.set_window_size(1024,768)
-
-    def tearDown(self):
-        self.driver.close()
-
-    def absreverse(self,*args,**kwargs):
-        return '%s%s'%(self.live_server_url,urlreverse(*args,**kwargs))
-
-    def login(self, username='plain'):
-        url = self.absreverse(self.login_view)
-        password = '%s+password' % username
-        self.driver.get(url)
-        self.driver.find_element_by_name('username').send_keys(username)
-        self.driver.find_element_by_name('password').send_keys(password)
-        self.driver.find_element_by_xpath('//button[@type="submit"]').click()
-
-    def debug_snapshot(self,filename='debug_this.png'):
-        self.driver.execute_script("document.body.bgColor = 'white';")
-        self.driver.save_screenshot(filename)
 
 
-@skipIf(skip_selenium, skip_message)
-class EditMeetingScheduleTests(MeetingTestCase):
+@ifSeleniumEnabled
+class EditMeetingScheduleTests(IetfSeleniumTestCase):
     def test_edit_meeting_schedule(self):
         meeting = make_meeting_test_data()
 
@@ -278,9 +227,9 @@ class EditMeetingScheduleTests(MeetingTestCase):
         self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{} #session{}'.format(slot4.pk, s1.pk)))
 
 
-@skipIf(skip_selenium, skip_message)
+@ifSeleniumEnabled
 @skipIf(django.VERSION[0]==2, "Skipping test with race conditions under Django 2")
-class ScheduleEditTests(MeetingTestCase):
+class ScheduleEditTests(IetfSeleniumTestCase):
     def testUnschedule(self):
 
         meeting = make_meeting_test_data()
@@ -317,8 +266,8 @@ class ScheduleEditTests(MeetingTestCase):
 
         self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting__number=72,session__group__acronym='mars',schedule__name='test-schedule').count(),0)
 
-@skipIf(skip_selenium, skip_message)
-class SlideReorderTests(MeetingTestCase):
+@ifSeleniumEnabled
+class SlideReorderTests(IetfSeleniumTestCase):
     def setUp(self):
         super(SlideReorderTests, self).setUp()
         self.session = SessionFactory(meeting__type_id='ietf', status_id='sched')
@@ -348,8 +297,8 @@ class SlideReorderTests(MeetingTestCase):
         self.assertEqual(list(names),['one','three','two'])
 
 
-@skipIf(skip_selenium, skip_message)
-class AgendaTests(MeetingTestCase):
+@ifSeleniumEnabled
+class AgendaTests(IetfSeleniumTestCase):
     def setUp(self):
         super(AgendaTests, self).setUp()
         self.meeting = make_meeting_test_data()
@@ -1057,8 +1006,8 @@ class AgendaTests(MeetingTestCase):
         self.assertIn('tz=america/halifax', wv_url)
 
 
-@skipIf(skip_selenium, skip_message)
-class WeekviewTests(MeetingTestCase):
+@ifSeleniumEnabled
+class WeekviewTests(IetfSeleniumTestCase):
     def setUp(self):
         super(WeekviewTests, self).setUp()
         self.meeting = make_meeting_test_data()
@@ -1254,8 +1203,8 @@ class WeekviewTests(MeetingTestCase):
         )
         _assert_not_wrapped(displayed, time_string)
 
-@skipIf(skip_selenium, skip_message)
-class InterimTests(MeetingTestCase):
+@ifSeleniumEnabled
+class InterimTests(IetfSeleniumTestCase):
     def setUp(self):
         super(InterimTests, self).setUp()
         self.materials_dir = self.tempdir('materials')

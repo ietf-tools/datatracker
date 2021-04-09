@@ -379,6 +379,8 @@ def submission_status(request, submission_id, access_token=None):
     for author in submission.authors:
         author["cleaned_country"] = clean_country_name(author.get("country"))
 
+    all_forms = [submitter_form, replaces_form]
+
     return render(request, 'submit/submission_status.html', {
         'selected': 'status',
         'submission': submission,
@@ -395,6 +397,7 @@ def submission_status(request, submission_id, access_token=None):
         'requires_group_approval': accept_submission_requires_group_approval(submission),
         'requires_prev_authors_approval': accept_submission_requires_prev_auth_approval(submission),
         'confirmation_list': confirmation_list,
+        'all_forms': all_forms,
     })
 
 
@@ -476,6 +479,8 @@ def edit_submission(request, submission_id, access_token=None):
         author_forms = [ AuthorForm(initial=author, prefix="authors-%s" % i)
                          for i, author in enumerate(submission.authors) ]
 
+    all_forms = [edit_form, submitter_form, replaces_form, *author_forms, empty_author_form]
+
     return render(request, 'submit/edit_submission.html',
                               {'selected': 'status',
                                'submission': submission,
@@ -486,6 +491,7 @@ def edit_submission(request, submission_id, access_token=None):
                                'empty_author_form': empty_author_form,
                                'errors': errors,
                                'form_errors': form_errors,
+                               'all_forms': all_forms,
                               })
 
 
