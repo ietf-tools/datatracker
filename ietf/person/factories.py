@@ -3,6 +3,7 @@
 
 
 import factory
+from factory.fuzzy import FuzzyChoice
 import faker 
 import faker.config
 import os
@@ -18,7 +19,7 @@ from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.models import Person, Alias, Email
+from ietf.person.models import Person, Alias, Email, PersonalApiKey, PersonApiKeyEvent, PERSON_API_KEY_ENDPOINTS
 from ietf.person.name import normalize_name, unidecode_name
 
 
@@ -144,3 +145,20 @@ class EmailFactory(factory.DjangoModelFactory):
     active = True
     primary = False
     origin = factory.LazyAttribute(lambda obj: obj.person.user.username if obj.person.user else '')
+
+
+class PersonalApiKeyFactory(factory.DjangoModelFactory):
+    person = factory.SubFactory(PersonFactory)
+    endpoint = FuzzyChoice(PERSON_API_KEY_ENDPOINTS)
+
+    class Meta:
+        model = PersonalApiKey
+
+class PersonApiKeyEventFactory(factory.DjangoModelFactory):
+    key = factory.SubFactory(PersonalApiKeyFactory)
+    person = factory.LazyAttribute(lambda o: o.key.person)
+    type = 'apikey_login'
+    desc = factory.Faker('sentence', nb_words=6)
+
+    class Meta:
+        model = PersonApiKeyEvent
