@@ -11,87 +11,36 @@ from django.urls import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.ipr.models import IprDisclosureBase
+from ietf.utils.fields import SearchableField
+
 
 def select2_id_ipr_title(objs):
     return [{
-        "id": o.pk, 
+        "id": o.pk,
         "text": escape("%s <%s>" % (o.title, o.time.date().isoformat())),
     } for o in objs]
-    
+
 def select2_id_ipr_title_json(value):
     return json.dumps(select2_id_ipr_title(value))
 
-class SearchableIprDisclosuresField(forms.CharField):
-    """Server-based multi-select field for choosing documents using
-    select2.js.
+class SearchableIprDisclosuresField(SearchableField):
+    """Server-based multi-select field for choosing documents using select2.js"""
+    model = IprDisclosureBase
+    default_hint_text = "Type in terms to search disclosure title"
 
-    The field uses a comma-separated list of primary keys in a
-    CharField element as its API with some extra attributes used by
-    the Javascript part."""
-
-    def __init__(self,
-                 max_entries=None, # max number of selected objs
-                 model=IprDisclosureBase,
-                 hint_text="Type in terms to search disclosure title",
-                 *args, **kwargs):
-        kwargs["max_length"] = 1000
-        self.max_entries = max_entries
-        self.model = model
-
-        super(SearchableIprDisclosuresField, self).__init__(*args, **kwargs)
-
-        self.widget.attrs["class"] = "select2-field form-control"
-        self.widget.attrs["data-placeholder"] = hint_text
-        if self.max_entries != None:
-            self.widget.attrs["data-max-entries"] = self.max_entries
-
-    def parse_select2_value(self, value):
-        return [x.strip() for x in value.split(",") if x.strip()]
-
-    def check_pks(self, pks):
+    def validate_pks(self, pks):
         for pk in pks:
             if not pk.isdigit():
-                raise forms.ValidationError("Unexpected value: %s" % pk)
-        return pks
+                raise forms.ValidationError("You must enter IPR ID(s) as integers (Unexpected value: %s)" % pk)
 
-    def prepare_value(self, value):
-        if not value:
-            value = ""
-        if isinstance(value, str):
-            pks = self.parse_select2_value(value)
-            # if the user posted a non integer value we need to remove it
-            for key in pks:
-                if not key.isdigit():
-                    pks.remove(key)
-            value = self.model.objects.filter(pk__in=pks)
-        if isinstance(value, self.model):
-            value = [value]
+    def get_model_instances(self, item_ids):
+        for key in item_ids:
+            if not key.isdigit():
+                item_ids.remove(key)
+        return super(SearchableIprDisclosuresField, self).get_model_instances(item_ids)
 
-        self.widget.attrs["data-pre"] = json.dumps({
-            d['id']: d for d in select2_id_ipr_title(value)
-        })
+    def make_select2_data(self, model_instances):
+        return select2_id_ipr_title(model_instances)
 
-        # doing this in the constructor is difficult because the URL
-        # patterns may not have been fully constructed there yet
-        self.widget.attrs["data-ajax-url"] = urlreverse('ietf.ipr.views.ajax_search')
-
-        return ",".join(str(e.pk) for e in value)
-
-    def clean(self, value):
-        value = super(SearchableIprDisclosuresField, self).clean(value)
-        pks = self.check_pks(self.parse_select2_value(value))
-
-        if not all([ key.isdigit() for key in pks ]):
-            raise forms.ValidationError('You must enter IPR ID(s) as integers')
-
-        objs = self.model.objects.filter(pk__in=pks)
-
-        found_pks = [str(o.pk) for o in objs]
-        failed_pks = [x for x in pks if x not in found_pks]
-        if failed_pks:
-            raise forms.ValidationError("Could not recognize the following {model_name}s: {pks}. You can only input {model_name}s already registered in the Datatracker.".format(pks=", ".join(failed_pks), model_name=self.model.__name__.lower()))
-
-        if self.max_entries != None and len(objs) > self.max_entries:
-            raise forms.ValidationError("You can select at most %s entries only." % self.max_entries)
-
-        return objs
+    def ajax_url(self):
+        return urlreverse('ietf.ipr.views.ajax_search')

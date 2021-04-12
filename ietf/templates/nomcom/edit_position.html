@@ -3,8 +3,7 @@
 {% load origin %}
 {% load static %}
 {% block pagehead %}
-  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
-  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+  {{ form.media.css }}
 {% endblock %}
 
 {% load bootstrap3 %}
@@ -27,6 +26,5 @@
 {% endblock %}
 
 {% block content_end %}
-  <script src="{% static 'select2/select2.min.js' %}"></script>
-  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+  {{ form.media.js }}
 {% endblock %}

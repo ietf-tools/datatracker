@@ -72,6 +72,7 @@ def manage_list(request, username=None, acronym=None, group_type=None):
 
             return HttpResponseRedirect("")
 
+    rule_form = None
     if request.method == 'POST' and action == 'add_rule':
         rule_type_form = SearchRuleTypeForm(request.POST)
         if rule_type_form.is_valid():
@@ -93,7 +94,6 @@ def manage_list(request, username=None, acronym=None, group_type=None):
                 return HttpResponseRedirect("")
     else:
         rule_type_form = SearchRuleTypeForm()
-        rule_form = None
 
     if request.method == 'POST' and action == 'remove_rule':
         rule_pk = request.POST.get('rule')
@@ -111,6 +111,8 @@ def manage_list(request, username=None, acronym=None, group_type=None):
 
     total_count = docs_tracked_by_community_list(clist).count()
 
+    all_forms = [f for f in [rule_type_form, rule_form, add_doc_form, *empty_rule_forms.values()]
+                 if f is not None]
     return render(request, 'community/manage_list.html', {
         'clist': clist,
         'rules': rules,
@@ -120,6 +122,7 @@ def manage_list(request, username=None, acronym=None, group_type=None):
         'empty_rule_forms': empty_rule_forms,
         'total_count': total_count,
         'add_doc_form': add_doc_form,
+        'all_forms': all_forms,
     })
 
 

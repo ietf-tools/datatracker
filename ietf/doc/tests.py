@@ -9,6 +9,7 @@ import io
 import lxml
 import bibtexparser
 import mock
+import json
 
 from http.cookies import SimpleCookie
 from pyquery import PyQuery
@@ -18,6 +19,8 @@ from tempfile import NamedTemporaryFile
 from django.core.management import call_command
 from django.urls import reverse as urlreverse
 from django.conf import settings
+from django.forms import Form
+from django.utils.html import escape
 
 from tastypie.test import ResourceTestCaseMixin
 
@@ -29,7 +32,8 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
     BallotDocEventFactory )
-from ietf.doc.utils import create_ballot_if_not_open
+from ietf.doc.fields import SearchableDocumentsField
+from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -1818,3 +1822,27 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         r = self.client.get(page_url)
         self.assertEqual(r.status_code, 200)
         
+
+class FieldTests(TestCase):
+    def test_searchabledocumentsfield_pre(self):
+        # so far, just tests that the format expected by select2-field.js is set up
+        docs = IndividualDraftFactory.create_batch(3)
+        
+        class _TestForm(Form):
+            test_field = SearchableDocumentsField()
+        
+        form = _TestForm(initial=dict(test_field=docs))
+        html = str(form)
+        q = PyQuery(html)
+        json_data = q('input.select2-field').attr('data-pre')
+        try:
+            decoded = json.loads(json_data)
+        except json.JSONDecodeError as e:
+            self.fail('data-pre contained invalid JSON data: %s' % str(e))
+        decoded_ids = list(decoded.keys())
+        self.assertCountEqual(decoded_ids, [str(doc.id) for doc in docs])
+        for doc in docs:
+            self.assertEqual(
+                dict(id=doc.pk, text=escape(uppercase_std_abbreviated_name(doc.name))),
+                decoded[str(doc.pk)],
+            )

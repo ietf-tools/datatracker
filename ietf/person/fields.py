@@ -7,14 +7,19 @@ import json
 from collections import Counter
 from urllib.parse import urlencode
 
+from typing import Type # pyflakes:ignore
+
 from django import forms
 from django.core.validators import validate_email
+from django.db import models # pyflakes:ignore
 from django.urls import reverse as urlreverse
 from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 
 from ietf.person.models import Email, Person
+from ietf.utils.fields import SearchableField
+
 
 def select2_id_name(objs):
     def format_email(e):
@@ -41,7 +46,7 @@ def select2_id_name_json(objs):
     return json.dumps(select2_id_name(objs))
 
 
-class SearchablePersonsField(forms.CharField):
+class SearchablePersonsField(SearchableField):
     """Server-based multi-select field for choosing
     persons/emails or just persons using select2.js.
 
@@ -58,126 +63,67 @@ class SearchablePersonsField(forms.CharField):
     list. These can then be added by updating val() and triggering the 'change'
     event on the select2 field in JavaScript.
     """
-
+    model = Person # type: Type[models.Model]
+    default_hint_text = "Type name to search for person."
     def __init__(self,
-                 max_entries=None, # max number of selected objs
                  only_users=False, # only select persons who also have a user
                  all_emails=False, # select only active email addresses
                  extra_prefetch=None, # extra data records to include in prefetch
-                 model=Person, # or Email
-                 hint_text="Type in name to search for person.",
                  *args, **kwargs):
-        kwargs["max_length"] = 10000
-        self.max_entries = max_entries
+        super(SearchablePersonsField, self).__init__(*args, **kwargs)
         self.only_users = only_users
         self.all_emails = all_emails
-        assert model in [ Email, Person ]
-        self.model = model
-
-        super(SearchablePersonsField, self).__init__(*args, **kwargs)
-
-        self.widget.attrs["class"] = "select2-field"
-        self.widget.attrs["data-placeholder"] = hint_text
-        if self.max_entries != None:
-            self.widget.attrs["data-max-entries"] = self.max_entries
-        
         self.extra_prefetch = extra_prefetch or []
         assert all([isinstance(obj, self.model) for obj in self.extra_prefetch])
 
-    def parse_select2_value(self, value):
-        return [x.strip() for x in value.split(",") if x.strip()]
+    def validate_pks(self, pks):
+        """Validate format of PKs"""
+        for pk in pks:
+            if not pk.isdigit():
+                raise forms.ValidationError("Unexpected value: %s" % pk)
 
-    def check_pks(self, pks):
-        if self.model == Person:
-            for pk in pks:
-                if not pk.isdigit():
-                    raise forms.ValidationError("Unexpected value: %s" % pk)
-        elif self.model == Email:
-            for pk in pks:
-                validate_email(pk)
-        return pks
+    def make_select2_data(self, model_instances):
+        # Include records needed by the initial value of the field plus any added 
+        # via the extra_prefetch property.
+        prefetch_set = set(model_instances).union(set(self.extra_prefetch))  # eliminate duplicates 
+        return select2_id_name(list(prefetch_set))
 
-    def prepare_value(self, value):
-        if not value:
-            value = ""
-        if isinstance(value, str):
-            pks = self.parse_select2_value(value)
-            if self.model == Person:
-                value = self.model.objects.filter(pk__in=pks)
-            if self.model == Email:
-                value = self.model.objects.filter(pk__in=pks).select_related("person")
-        if isinstance(value, self.model):
-            value = [value]
-
-        # data-pre is a map from ID to full data. It includes records needed by the
-        # initial value of the field plus any added via extra_prefetch.
-        prefetch_set = set(value).union(set(self.extra_prefetch))  # eliminate duplicates 
-        self.widget.attrs["data-pre"] = json.dumps({
-            d['id']: d for d in select2_id_name(list(prefetch_set))
-        })
-
-        # doing this in the constructor is difficult because the URL
-        # patterns may not have been fully constructed there yet
-        self.widget.attrs["data-ajax-url"] = urlreverse("ietf.person.views.ajax_select2_search", kwargs={ "model_name": self.model.__name__.lower() })
+    def ajax_url(self):
+        url = urlreverse(
+            "ietf.person.views.ajax_select2_search",
+            kwargs={ "model_name": self.model.__name__.lower() }
+        )
         query_args = {}
         if self.only_users:
             query_args["user"] = "1"
         if self.all_emails:
             query_args["a"] = "1"
-        if query_args:    
-            self.widget.attrs["data-ajax-url"] += "?%s" % urlencode(query_args)
+        if len(query_args) > 0:
+            url += '?%s' % urlencode(query_args)
+        return url
 
-        return ",".join(str(p.pk) for p in value)
-
-    def clean(self, value):
-        value = super(SearchablePersonsField, self).clean(value)
-        pks = self.check_pks(self.parse_select2_value(value))
-
-        objs = self.model.objects.filter(pk__in=pks)
-        if self.model == Email:
-            objs = objs.exclude(person=None).select_related("person")
-
-            # there are still a couple of active roles without accounts so don't disallow those yet
-            #if self.only_users:
-            #    objs = objs.exclude(person__user=None)
-
-        found_pks = [ str(o.pk) for o in objs]
-        failed_pks = [x for x in pks if x not in found_pks]
-        if failed_pks:
-            raise forms.ValidationError("Could not recognize the following {model_name}s: {pks}. You can only input {model_name}s already registered in the Datatracker.".format(pks=", ".join(failed_pks), model_name=self.model.__name__.lower()))
-
-        if self.max_entries != None and len(objs) > self.max_entries:
-            raise forms.ValidationError("You can select at most %s entries only." % self.max_entries)
-
-        return objs
 
 class SearchablePersonField(SearchablePersonsField):
     """Version of SearchablePersonsField specialized to a single object."""
-
-    def __init__(self, *args, **kwargs):
-        kwargs["max_entries"] = 1
-        super(SearchablePersonField, self).__init__(*args, **kwargs)
-
-    def clean(self, value):
-        return super(SearchablePersonField, self).clean(value).first()
+    max_entries = 1
 
 
 class SearchableEmailsField(SearchablePersonsField):
     """Version of SearchablePersonsField with the defaults right for Emails."""
+    model = Email # type: Type[models.Model]
+    default_hint_text = "Type name or email to search for person and email address."
 
-    def __init__(self, model=Email, hint_text="Type in name or email to search for person and email address.",
-                 *args, **kwargs):
-        super(SearchableEmailsField, self).__init__(model=model, hint_text=hint_text, *args, **kwargs)
+    def validate_pks(self, pks):
+        for pk in pks:
+            validate_email(pk)
+
+    def get_model_instances(self, item_ids):
+        return self.model.objects.filter(pk__in=item_ids).select_related("person")
+
 
 class SearchableEmailField(SearchableEmailsField):
     """Version of SearchableEmailsField specialized to a single object."""
-
-    def __init__(self, *args, **kwargs):
-        kwargs["max_entries"] = 1
-        super(SearchableEmailField, self).__init__(*args, **kwargs)
-
-    def clean(self, value):
-        return super(SearchableEmailField, self).clean(value).first()
+    max_entries = 1
 
 
 class PersonEmailChoiceField(forms.ModelChoiceField):

@@ -6,11 +6,7 @@
 {% block extrahead %}{{ block.super }}
   <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
   <script type="text/javascript" src="{% static 'secr/js/sessions.js' %}"></script>
-
-  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
-  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
-  <script src="{% static 'select2/select2.min.js' %}"></script>
-  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+  {{ form.media }}
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 

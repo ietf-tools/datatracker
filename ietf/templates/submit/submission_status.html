@@ -2,14 +2,13 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static %}
-{% load ietf_filters submit_tags %}
+{% load ietf_filters submit_tags misc_filters %}
 
 {% block title %}Submission status of {{ submission.name }}-{{ submission.rev }}{% endblock %}
 
 {% block pagehead %}
   {{ block.super }}
-  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
-  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+  {{ all_forms|merge_media:'css' }}
 {% endblock %}
 
 {% block submit_content %}
@@ -410,6 +409,5 @@
 {% endblock %}
 
 {% block js %}
-  <script src="{% static 'select2/select2.min.js' %}"></script>
-  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+  {{ all_forms|merge_media:'js' }}
 {% endblock %}

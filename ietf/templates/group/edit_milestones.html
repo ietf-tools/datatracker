@@ -3,10 +3,10 @@
 {% load origin %}
 {% load static %}
 {% load bootstrap3 %}
+{% load misc_filters %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
-  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+  {{ all_forms|merge_media:'css' }}
   <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
 {% endblock %}
 
@@ -119,11 +119,11 @@
 {% endblock %}
 
 {% block js %}
-  <script src="{% static 'select2/select2.min.js' %}"></script>
-  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+  {{ all_forms|merge_media:'js' }}
   <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
   {% if not group.uses_milestone_dates %}
   <script src="{% static 'Sortable/Sortable.min.js' %}"></script>
   {% endif %}
   <script src="{% static 'ietf/js/edit-milestones.js' %}"></script>
 {% endblock %}
+

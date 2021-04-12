@@ -391,6 +391,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                        forms=forms,
                        form_errors=form_errors,
                        empty_form=empty_form,
+                       all_forms=forms + [empty_form],
                        milestone_set=milestone_set,
                        needs_review=needs_review,
                        reviewer=reviewer,
