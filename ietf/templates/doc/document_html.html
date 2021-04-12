@@ -36,7 +36,7 @@
   {% endif %}
 {% endblock %}
 
-{% block bodyAttrs %}onload="addHeaderTags()" style="padding-top: 0;"{% endblock %}
+{% block bodyAttrs %}style="padding-top: 0;"{% endblock %}
 
 {% block content %}
   {% origin %}
@@ -44,16 +44,16 @@
   <div class="rfcmarkup">
     <div class="noprint" style="height: 6px;">
       <div onmouseover="this.style.cursor='pointer';"
-         onclick="showElem('legend');"
-         onmouseout="hideElem('legend')"
+         onclick="showLegend();"
+         onmouseout="hideLegend()"
          style="height: 6px; min-height: 6px; width: 96ex; position: absolute; margin-top:0; "
          class="meta-info {{doccolor}}"
          title="Click for colour legend." >&nbsp;</div>
       <div id="legend"
            class="meta-info noprint pre legend"
            style="position:absolute; top: 4px; left: 4ex; visibility:hidden; background-color: white; padding: 4px 9px 5px 7px; border: solid #345 1px; "
-           onmouseover="showElem('legend');"
-           onmouseout="hideElem('legend');">
+           onmouseover="showLegend();"
+           onmouseout="hideLegend();">
       </div>
     </div>
 
@@ -75,18 +75,6 @@
 
 {% block js %}
     <script type="text/javascript"><!--
-    function addHeaderTags() {
-        var spans = document.getElementsByTagName("span");
-        for (var i=0; i < spans.length; i++) {
-            var elem = spans[i];
-            if (elem) {
-                var level = elem.getAttribute("class");
-                if (level == "h1" || level == "h2" || level == "h3" || level == "h4" || level == "h5" || level == "h6") {
-                    elem.innerHTML = "<"+level+">"+elem.innerHTML+"</"+level+">";
-                }
-            }
-        }
-    }
     var legend_html = "Colour legend:<br /> \
      <table> \
         <tr><td>Unknown:</td>                   <td><span class='cplate bgwhite'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
@@ -100,13 +88,13 @@
         <tr><td>Historic:</td>                  <td><span class='cplate bggrey'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
         <tr><td>Obsolete:</td>                  <td><span class='cplate bgbrown'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr> \
     </table>";
-    function showElem(id) {
-        var elem = document.getElementById(id);
-        elem.innerHTML = eval(id+"_html");
+    function showLegend() {
+        var elem = document.getElementById('legend');
+        elem.innerHTML = legend_html
         elem.style.visibility='visible';
     }
-    function hideElem(id) {
-        var elem = document.getElementById(id);
+    function hideLegend() {
+        var elem = document.getElementById('legend');
         elem.style.visibility='hidden';
         elem.innerHTML = "";
     }
