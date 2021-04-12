@@ -243,6 +243,10 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
 
     return assignments
 
+def is_regular_agenda_filter_group(group):
+    """Should this group appear in the 'regular' agenda filter button lists?"""
+    return group.type_id in ('wg', 'rg', 'ag', 'rag', 'iab', 'program')
+
 def tag_assignments_with_filter_keywords(assignments):
     """Add keywords for agenda filtering
     
@@ -261,7 +265,12 @@ def filter_keywords_for_session(session):
             keywords.add('bof')
         keywords.add(group.acronym.lower())
         area = getattr(group, 'historic_parent', group.parent)
-        if area is not None:
+
+        # Only sessions belonging to "regular" groups should respond to the
+        # parent group filter keyword (often the 'area'). This must match
+        # the test used by the agenda() view to decide whether a group
+        # gets an area or non-area filter button.
+        if is_regular_agenda_filter_group(group) and area is not None:
             keywords.add(area.acronym.lower())
     office_hours_match = re.match(r'^ *\w+(?: +\w+)* +office hours *$', session.name, re.IGNORECASE)
     if office_hours_match is not None:

@@ -649,43 +649,94 @@ class AgendaTests(MeetingTestCase):
             else:
                 self.assertIsNone(item_div, 'Unexpected weekview entry for "%s" (%s)' % (label, item.slug()))
 
+    @staticmethod
+    def open_agenda_filter_ui(wait):
+        """Click the 'customize' anchor to reveal the group buttons"""
+        customize_anchor = wait.until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '#accordion a[data-toggle="collapse"]')
+            )
+        )
+        customize_anchor.click()
+        return customize_anchor
+
+    @staticmethod
+    def get_agenda_filter_group_button(wait, group_acronym):
+        return wait.until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, 'button.pickview.%s' % group_acronym)
+            )
+        )
+
     def test_agenda_view_group_filter_toggle(self):
         """Clicking a group toggle enables/disables agenda filtering"""
+        wait = WebDriverWait(self.driver, 2)
         group_acronym = 'mars'
 
         self.login()
         url = self.absreverse('ietf.meeting.views.agenda')
         self.driver.get(url)
         
-        # Click the 'customize' anchor to reveal the group buttons
-        customize_anchor = WebDriverWait(self.driver, 2).until(
-            expected_conditions.element_to_be_clickable(
-                (By.CSS_SELECTOR, '#accordion a[data-toggle="collapse"]')
-            )
-        )
-        customize_anchor.click()
+        self.open_agenda_filter_ui(wait)
         
         # Click the group button
-        group_button = WebDriverWait(self.driver, 2).until(
-            expected_conditions.element_to_be_clickable(
-                (By.CSS_SELECTOR, 'button.pickview.%s' % group_acronym)
-            )
-        )
+        group_button = self.get_agenda_filter_group_button(wait, group_acronym)
         group_button.click()
 
         # Check visibility
         self.assert_agenda_item_visibility([group_acronym])
         
         # Click the group button again
-        group_button = WebDriverWait(self.driver, 2).until(
-            expected_conditions.element_to_be_clickable(
-                (By.CSS_SELECTOR, 'button.pickview.%s' % group_acronym)
-            )
-        )
         group_button.click()
 
         # Check visibility
         self.assert_agenda_item_visibility()
+
+    def test_agenda_view_team_group_filter_toggle(self):
+        """'Team' group sessions should not respond to area filter button
+
+        Sessions belonging to 'team' groups should not respond to their parent buttons. This prevents,
+        e.g., 'hackathon', or 'tools' group sessions from being shown/hidden when their parent group
+        filter button is clicked. 
+        """
+        wait = WebDriverWait(self.driver, 10)
+        meeting = Meeting.objects.get(type_id='ietf')
+        parent_group = GroupFactory(type_id='area')
+        other_group = GroupFactory(parent=parent_group, type_id='wg')
+        hackathon_group = GroupFactory(acronym='hackathon', type_id='team', parent=parent_group)
+
+        # hackathon session
+        SessionFactory(
+            meeting=meeting,
+            type_id='other',
+            group=hackathon_group,
+            name='Hackathon',
+        )
+
+        # session to cause the parent_group to appear in the filter UI tables
+        SessionFactory(meeting=meeting, type_id='regular', group=other_group)
+
+        self.login()
+        url = self.absreverse('ietf.meeting.views.agenda')
+        self.driver.get(url)
+
+        self.open_agenda_filter_ui(wait)
+
+        self.get_agenda_filter_group_button(wait, 'mars').click()
+        self.assert_agenda_item_visibility(['mars'])
+
+        # enable hackathon group
+        group_button = self.get_agenda_filter_group_button(wait, 'hackathon')
+        group_button.click()
+        self.assert_agenda_item_visibility(['mars', 'hackathon'])
+
+        # disable hackathon group
+        group_button.click()
+        self.assert_agenda_item_visibility(['mars'])
+
+        # clicking area should not show the hackathon
+        self.get_agenda_filter_group_button(wait, parent_group.acronym).click()
+        self.assert_agenda_item_visibility(['mars', other_group.acronym])
 
     def test_agenda_view_group_filter_toggle_without_replace_state(self):
         """Toggle should function for browsers without window.history.replaceState"""
