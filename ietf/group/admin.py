@@ -5,6 +5,8 @@ import re
 
 from functools import update_wrapper
 
+import debug # pyflakes:ignore
+
 from django import forms
 
 from django.contrib import admin
@@ -40,8 +42,14 @@ class GroupForm(forms.ModelForm):
             See ietf.group.forms.GroupForm.clean_acronym()
         '''
         acronym = self.cleaned_data['acronym'].strip().lower()
-        if not re.match(r'^[a-z][a-z0-9]+$', acronym):
-            raise forms.ValidationError("Acronym is invalid, must be at least two characters and only contain lowercase letters and numbers starting with a letter.")
+        if not self.instance.pk:
+            type = self.cleaned_data['type']
+            if GroupFeatures.objects.get(type=type).has_documents:
+                if not re.match(r'^[a-z][a-z0-9]+$', acronym):
+                    raise forms.ValidationError("Acronym is invalid, for groups that create documents, the acronym must be at least two characters and only contain lowercase letters and numbers starting with a letter.")
+            else:
+                if not re.match(r'^[a-z][a-z0-9-]*[a-z0-9]$', acronym):
+                    raise forms.ValidationError("Acronym is invalid, must be at least two characters and only contain lowercase letters and numbers starting with a letter. It may contain hyphens, but that is discouraged.")
         return acronym
 
     def clean_used_roles(self):

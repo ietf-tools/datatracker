@@ -3,6 +3,8 @@ import datetime
 import debug # pyflakes:ignore
 import factory
 
+from typing import List    # pyflakes:ignore
+
 from ietf.group.models import Group, Role, GroupEvent, GroupMilestone
 from ietf.review.factories import ReviewTeamSettingsFactory
 
@@ -17,6 +19,7 @@ class GroupFactory(factory.DjangoModelFactory):
     type_id = 'wg'
     list_email = factory.LazyAttribute(lambda a: '%s@ietf.org'% a.acronym)
     uses_milestone_dates = True
+    used_roles = [] # type: List[str]
 
     @factory.lazy_attribute
     def parent(self):

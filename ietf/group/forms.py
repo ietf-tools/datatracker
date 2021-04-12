@@ -148,8 +148,12 @@ class GroupForm(forms.Form):
 
         acronym = self.cleaned_data['acronym'].strip().lower()
 
-        if not re.match(r'^[a-z][a-z0-9]+$', acronym):
-            raise forms.ValidationError("Acronym is invalid, must be at least two characters and only contain lowercase letters and numbers starting with a letter.")
+        if self.group_type and GroupFeatures.objects.get(type=self.group_type).has_documents:
+            if not re.match(r'^[a-z][a-z0-9]+$', acronym):
+                raise forms.ValidationError("Acronym is invalid, for groups that create documents, the acronym must be at least two characters and only contain lowercase letters and numbers starting with a letter.")
+        else:
+            if not re.match(r'^[a-z][a-z0-9-]*[a-z0-9]$', acronym):
+                raise forms.ValidationError("Acronym is invalid, must be at least two characters and only contain lowercase letters and numbers starting with a letter. It may contain hyphens, but that is discouraged.")
 
         # be careful with acronyms, requiring confirmation to take existing or override historic
         existing = Group.objects.filter(acronym__iexact=acronym)

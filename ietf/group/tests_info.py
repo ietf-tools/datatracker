@@ -17,6 +17,7 @@ import debug                            # pyflakes:ignore
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.urls import NoReverseMatch
+from django.utils import timezone
 from django.contrib.auth.models import User
 
 from django.utils.html import escape
@@ -26,8 +27,10 @@ from ietf.community.utils import reset_name_contains_index_for_rule
 from ietf.doc.factories import WgDraftFactory, CharterFactory, BallotDocEventFactory
 from ietf.doc.models import Document, DocAlias, DocEvent, State
 from ietf.doc.utils_charter import charter_name_for_group
+from ietf.group.admin import GroupForm as AdminGroupForm
 from ietf.group.factories import (GroupFactory, RoleFactory, GroupEventFactory, 
     DatedGroupMilestoneFactory, DatelessGroupMilestoneFactory)
+from ietf.group.forms import GroupForm
 from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions, Role
 from ietf.group.utils import save_group_in_history, setup_default_community_list_for_group
 from ietf.meeting.factories import SessionFactory
@@ -1638,3 +1641,44 @@ class GroupParentLoopTests(TestCase):
 
         # If we get here, then there is not an infinite loop
         return
+
+class AcronymValidationTests(TestCase):
+
+    def test_admin_acronym_validation(self):
+        now = timezone.now()
+        form = AdminGroupForm({'acronym':'shouldpass','name':'should pass','type':'wg','state':'active','used_roles':'[]','time':now})
+        self.assertTrue(form.is_valid())
+        form = AdminGroupForm({'acronym':'should-fail','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
+        self.assertIn('acronym',form.errors)
+        form = AdminGroupForm({'acronym':'f','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
+        self.assertIn('acronym',form.errors)
+        # For the ITU we have a heirarchy of group names that use hyphens as delimeters
+        form = AdminGroupForm({'acronym':'should-pass','name':'should pass','type':'sdo','state':'active','used_roles':'[]','time':now})
+        self.assertTrue(form.is_valid())
+        form = AdminGroupForm({'acronym':'shouldfail-','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
+        self.assertIn('acronym',form.errors)
+        form = AdminGroupForm({'acronym':'-shouldfail','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
+        self.assertIn('acronym',form.errors)
+
+        wg = GroupFactory(acronym='bad-idea', type_id='wg') # There are some existing wg and programs with hyphens in their acronyms.
+        form = AdminGroupForm({'acronym':wg.acronym,'name':wg.name,'type':wg.type_id,'state':wg.state_id,'used_roles':str(wg.used_roles),'time':now},instance=wg)
+        self.assertTrue(form.is_valid())
+
+    def test_groupform_acronym_validation(self):
+        form = GroupForm({'acronym':'shouldpass','name':'should pass','state':'active'},group_type='wg')
+        self.assertTrue(form.is_valid())
+        form = GroupForm({'acronym':'should-fail','name':'should fail','state':'active'},group_type='wg')
+        self.assertIn('acronym',form.errors)
+        form = GroupForm({'acronym':'f','name':'should fail','state':'active'},group_type='wg')
+        self.assertIn('acronym',form.errors)
+        form = GroupForm({'acronym':'should-pass','name':'should pass','state':'active'},group_type='sdo')
+        self.assertTrue(form.is_valid())
+        form = GroupForm({'acronym':'shouldfail-','name':'should fail','state':'active'},group_type='sdo')
+        self.assertIn('acronym',form.errors)
+        form = GroupForm({'acronym':'-shouldfail','name':'should fail','state':'active'},group_type='sdo')
+        self.assertIn('acronym',form.errors)
+
+        wg = GroupFactory(acronym='bad-idea', type_id='wg') 
+        form = GroupForm({'acronym':wg.acronym,'name':wg.name,'state':wg.state_id},group=wg, group_type=wg.type_id)
+        self.assertTrue(form.is_valid())
+
