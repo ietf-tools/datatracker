@@ -775,6 +775,7 @@ RFC_EDITOR_INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
 RFC_EDITOR_ERRATA_JSON_URL = "https://www.rfc-editor.org/errata.json"
 RFC_EDITOR_ERRATA_URL = "https://www.rfc-editor.org/errata_search.php?rfc={rfc_number}&amp;rec_status=0"
 RFC_EDITOR_INLINE_ERRATA_URL = "https://www.rfc-editor.org/rfc/inline-errata/rfc{rfc_number}.html"
+RFC_EDITOR_INFO_BASE_URL = "https://www.rfc-editor.org/info/"
 
 # NomCom Tool settings
 ROLODEX_URL = ""
