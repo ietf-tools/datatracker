@@ -551,8 +551,9 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
-        self.assertContains(r, "Show full document text")
-        self.assertNotContains(r, "Deimos street")
+        if settings.USER_PREFERENCE_DEFAULTS['full_draft'] == 'off':
+            self.assertContains(r, "Show full document text")
+            self.assertNotContains(r, "Deimos street")
         self.assertContains(r, replaced.canonical_name())
         self.assertContains(r, replaced.title)
         # obs/updates not included until draft is RFC
@@ -568,8 +569,8 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=0")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
-        self.assertNotContains(r, "Show full document text")
-        self.assertContains(r, "Deimos street")
+        self.assertContains(r, "Show full document text")
+        self.assertNotContains(r, "Deimos street")
         self.assertContains(r, replaced.canonical_name())
         self.assertContains(r, replaced.title)
         # obs/updates not included until draft is RFC
@@ -656,8 +657,9 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
-        self.assertContains(r, "Show full document text")
-        self.assertNotContains(r, "Deimos street")
+        if settings.USER_PREFERENCE_DEFAULTS['full_draft'] == 'off':
+            self.assertContains(r, "Show full document text")
+            self.assertNotContains(r, "Deimos street")
         self.assertContains(r, replaced.canonical_name())
         self.assertContains(r, replaced.title)
         # obs/updates not included until draft is RFC

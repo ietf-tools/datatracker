@@ -1053,7 +1053,7 @@ POSTCONFIRM_PATH   = "/a/postconfirm/wrapper"
 USER_PREFERENCE_DEFAULTS = {
     "expires_soon"  : "14",
     "new_enough"    : "14",
-    "full_draft"    : "off",
+    "full_draft"    : "on",
     "left_menu"     : "off",
 }
 

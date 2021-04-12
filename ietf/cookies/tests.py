@@ -6,6 +6,7 @@ from pyquery import PyQuery
 from http.cookies import SimpleCookie
 
 from django.urls import reverse as urlreverse
+from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
@@ -18,7 +19,10 @@ class CookieTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertListEqual([], list(r.cookies.keys()))
         q = PyQuery(r.content)
-        self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/off"]').contents(),  ['Off'])
+        if settings.USER_PREFERENCE_DEFAULTS['full_draft'] == 'off':
+            self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/off"]').contents(),  ['Off'])
+        else:
+            self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/on"]').contents(),  ['On'])
         self.assertEqual(q('div a.active[href="/accounts/settings/new_enough/14"]').contents(),   ['14 days'])
         self.assertEqual(q('div a.active[href="/accounts/settings/expires_soon/14"]').contents(), ['14 days'])
         self.assertEqual(q('div a.active[href="/accounts/settings/left_menu/off"]').contents(),   ['Off'])
@@ -40,7 +44,10 @@ class CookieTests(TestCase):
         r = self.client.get(urlreverse("ietf.cookies.views.preferences"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/off"]').contents(),  ['Off'])
+        if settings.USER_PREFERENCE_DEFAULTS['full_draft'] == 'off':
+            self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/off"]').contents(),  ['Off'])
+        else:
+            self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/on"]').contents(),  ['On'])
         self.assertEqual(q('div a.active[href="/accounts/settings/new_enough/14"]').contents(),   ['14 days'])
         self.assertEqual(q('div a.active[href="/accounts/settings/expires_soon/14"]').contents(), ['14 days'])
         self.assertEqual(q('div a.active[href="/accounts/settings/left_menu/off"]').contents(),   ['Off'])
@@ -50,7 +57,10 @@ class CookieTests(TestCase):
         r = self.client.get(urlreverse("ietf.cookies.views.preferences"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/off"]').contents(),  ['Off'])
+        if settings.USER_PREFERENCE_DEFAULTS['full_draft'] == 'off':
+            self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/off"]').contents(),  ['Off'])
+        else:
+            self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/on"]').contents(),  ['On'])
         self.assertEqual(q('div a.active[href^="/accounts/settings/new_enough/"]').contents(),    [])
         self.assertEqual(q('div a.active[href^="/accounts/settings/expires_soon/"]').contents(),  [])
         self.assertEqual(q('div a.active[href="/accounts/settings/left_menu/off"]').contents(),   ['Off'])
@@ -151,7 +161,10 @@ class CookieTests(TestCase):
         self.assertEqual(r.cookies[str('full_draft')].value, '')
         self.assertListEqual([str('full_draft')], list(r.cookies.keys()))
         q = PyQuery(r.content)
-        self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/off"]').contents(),  ['Off'])
+        if settings.USER_PREFERENCE_DEFAULTS['full_draft'] == 'off':
+            self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/off"]').contents(),  ['Off'])
+        else:
+            self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/on"]').contents(),  ['On'])
         self.assertEqual(q('div a.active[href="/accounts/settings/new_enough/14"]').contents(),   ['14 days'])
         self.assertEqual(q('div a.active[href="/accounts/settings/expires_soon/14"]').contents(), ['14 days'])
 #         self.assertRegexpMatches(r.content, r'ietf-highlight-y.*full_draft.*off')
