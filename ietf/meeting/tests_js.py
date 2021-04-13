@@ -616,6 +616,60 @@ class AgendaTests(IetfSeleniumTestCase):
             )
         )
 
+    def test_agenda_timeslot_label_visibility(self):
+        """The timeslot label for regular sessions should only be shown when a session is visible"""
+        wait = WebDriverWait(self.driver, 2)
+        url = self.absreverse('ietf.meeting.views.agenda')
+        mars_assignments = self.meeting.schedule.assignments.filter(session__group__acronym='mars')
+        ames_assignments = self.meeting.schedule.assignments.filter(session__group__acronym='ames')
+        assert(mars_assignments.count() == 1)  # if not, need to update test
+        assert(ames_assignments.count() == 1)  # if not, need to update test
+        assignments = dict(
+            mars=mars_assignments.first(),
+            ames=ames_assignments.first(),
+        )
+        # test relies on these timeslots being different so they will have separate label rows
+        assert(assignments['mars'].timeslot.time != assignments['ames'].timeslot.time)
+        label_row_selectors = {
+            grp: (By.CSS_SELECTOR, 'tr.session-label-row[data-slot-start-ts="{}"][data-slot-end-ts="{}"]'.format(
+                int(assignment.timeslot.utc_start_time().timestamp()),
+                int(assignment.timeslot.utc_end_time().timestamp()),
+            ))
+            for grp, assignment in assignments.items()
+        }
+
+        self.login()
+
+        # get page with all items visible
+        self.driver.get(url)
+        wait.until(expected_conditions.visibility_of_element_located(label_row_selectors['ames']))
+        wait.until(expected_conditions.visibility_of_element_located(label_row_selectors['mars']))
+
+        # get page with ames hidden
+        self.driver.get(url + '?show=mars&hide=ames')
+        wait.until(expected_conditions.invisibility_of_element_located(label_row_selectors['ames']))
+        wait.until(expected_conditions.visibility_of_element_located(label_row_selectors['mars']))
+
+        # get page with mars hidden
+        self.driver.get(url + '?show=ames&hide=mars')
+        wait.until(expected_conditions.visibility_of_element_located(label_row_selectors['ames']))
+        wait.until(expected_conditions.invisibility_of_element_located(label_row_selectors['mars']))
+
+        # create an ames session in the mars timeslot, should cause the mars timeslot label to reappear
+        sess = SessionFactory(group=Group.objects.get(acronym='ames'),
+                              meeting=self.meeting,
+                              add_to_schedule=False)
+        sess.timeslotassignments.create(timeslot=assignments['mars'].timeslot,
+                                        schedule=self.meeting.schedule)
+        self.driver.get(url + '?show=ames&hide=mars')
+        wait.until(expected_conditions.visibility_of_element_located(label_row_selectors['ames']))
+        wait.until(expected_conditions.visibility_of_element_located(label_row_selectors['mars']))
+
+        # get page with ames and mars hidden
+        self.driver.get(url + '?hide=ames,mars')
+        wait.until(expected_conditions.invisibility_of_element_located(label_row_selectors['ames']))
+        wait.until(expected_conditions.invisibility_of_element_located(label_row_selectors['mars']))
+
     def test_agenda_view_group_filter_toggle(self):
         """Clicking a group toggle enables/disables agenda filtering"""
         wait = WebDriverWait(self.driver, 2)

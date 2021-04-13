@@ -145,7 +145,7 @@
 
             {% if item.timeslot.type_id == 'regular' %}
               {% ifchanged %}
-                <tr class="info"
+                <tr class="info session-label-row"
                     data-slot-start-ts="{{item.start_timestamp}}"
                     data-slot-end-ts="{{item.end_timestamp}}">
                   <td class="leftmarker"></td>
@@ -402,6 +402,23 @@
            // this is a "negative" item by wg: when present, hide these rows
            agenda_filter.rows_matching_filter_keyword(agenda_rows, v).hide();
        });
+       
+       // Now hide any session label rows with no visible sessions. Identify
+       // by matching on start/end timestamps.
+       $('tr.session-label-row').each(function(i, e) {
+           var start_ts = $(e).attr('data-slot-start-ts');
+           var end_ts = $(e).attr('data-slot-end-ts');
+           var visible_rows = agenda_rows.filter(
+             '[data-slot-start-ts="' + start_ts + '"]' +
+             '[data-slot-end-ts="' + end_ts + '"]' +
+             ':visible'
+           );
+           if (visible_rows.length > 0) {
+               $(e).show();
+           } else {
+               $(e).hide();
+           }
+       })
    }
 
    function update_ical_links(filter_params) {
