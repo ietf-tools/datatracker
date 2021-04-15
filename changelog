@@ -76,7 +76,7 @@ ietfdb (7.28.0) ietf; urgency=medium
   * Merged in [18941] from jennifer@painless-security.com:
     Add purge_old_personal_api_key_events management command. Fixes #3144.
 
- -- Robert Sparks <rjsparks@nostrum.com>  15 Apr 2021 14:15:04 +0000
+ -- Robert Sparks <rjsparks@nostrum.com>  15 Apr 2021 14:53:12 +0000
 
 ietfdb (7.27.0) ietf; urgency=medium
   
