@@ -1,3 +1,83 @@
+ietfdb (7.28.0) ietf; urgency=medium
+
+  ** Show full document by default, email aliases for programs and review teams, bugfixes and enhancements **
+
+  * Remove the check for activate_this from wsgi.py since modern venv
+    doesn't provide that script. Change the logging to always log when starting
+    a wsgi instance.
+
+  * Merged in [18900] from rjsparks@nostrum.com:
+    Tweaks to dockerfile to avoid rust compiler issues.
+
+  * Merged in [18901] from housley@vigilsec.com:
+    Make mail aliases for review teams and IAB programs. Fixes #3210
+
+  * Merged in [18904] from fenton@bluepopcorn.net:
+    Corrected template to remove spurious No Documents Match warning. Fixes
+    #3148.
+
+  * Merged in [18905] from housley@vigilsec.com:
+    Point bibxml3 to I-D archive so that all version numbers are handled
+    properly, and perform more robust revision suffix cleanup. Fixes #3188.
+
+  * Merged in [18906] from housley@vigilsec.com:
+    Provide bibxml test for drafts that end in a hyphen and a digit.
+
+  * Merged in [18909] from housley@vigilsec.com:
+    Log Unicode exception instead of printing them to the console when they
+    occur building the email alias files.
+
+  * Merged in [18911] from rjsparks@nostrum.com:
+    Adjusted ballot email text. Fixes #3208.
+
+  * Merged in [18913] from housley@vigilsec.com:
+    Convert generate-draft-aliaes and generate-wg-aliases into management
+    commands: generate_draft_aliases and generate_group_aliases.  Also provide
+    tests for the new management commands.
+
+  * Merged in [18914] from rjsparks@nostrum.com:
+    Update the submission instructions to encourage submission of v3 xml.
+    Fixes #3232.
+
+  * Merged in [18927] from jennifer@painless-security.com:
+    Drop parent group filter keyword from special group agenda items. Fixes
+    #3115.
+
+  * Merged in [18928] from rjsparks@nostrum.com:
+    Simplify javascript on the htmlized document pages.
+
+  * Merged in [18936] from rjsparks@nostrum.com:
+    Retain strict acronym validation, specifically disallowing hyphens, for
+    new groups of types that create documents, while allowing existing groups
+    and new non-document-creating groups to validate when they contain hyphens.
+    Fixes #3236.
+
+  * Merged in [18937] from rjsparks@nostrum.com:
+    Change the default behavior of a document's main page to show the
+    full document content. Users can still control whether the full
+    page is shown on a particular document by adding either
+    ?include_text=0 or ?include_text=1 to the url. Users can also use
+    the settings page at /account/settings to override the default
+    behavior for all documents. Fixes #3252.
+
+  * Merged in [18938] from rjsparks@nostrum.com:
+    Redirect requests for htmlized bcp or std subseries elements to the
+    relevant rfc-editor info page. Fixes #3233.
+
+  * Merged in [18939] from jennifer@painless-security.com:
+    Consolidate repeated searchable field code into SearchableField class.
+    Fix single-valued searchable fields. Make javascript test config reusable.
+    Use Django Form.media for JS/CSS inclusion. Fixes #3196, #3204.
+
+  * Merged in [18940] from jennifer@painless-security.com:
+    Hide agenda timeslot label rows when all their sessions are hidden.
+    Fixes #3249.
+
+  * Merged in [18941] from jennifer@painless-security.com:
+    Add purge_old_personal_api_key_events management command. Fixes #3144.
+
+ -- Robert Sparks <rjsparks@nostrum.com>  15 Apr 2021 14:15:04 +0000
+
 ietfdb (7.27.0) ietf; urgency=medium
   
   ** 110 Codesprint **
