@@ -9,7 +9,7 @@ import os
 import re
 import shutil
 import sys
-
+import mock
 
 from io import StringIO
 from pyquery import PyQuery
@@ -24,7 +24,7 @@ from ietf.submit.utils import expirable_submissions, expire_submission
 from ietf.doc.factories import DocumentFactory, WgDraftFactory, IndividualDraftFactory
 from ietf.doc.models import ( Document, DocAlias, DocEvent, State,
     BallotPositionDocEvent, DocumentAuthor, SubmissionDocEvent )
-from ietf.doc.utils import create_ballot_if_not_open
+from ietf.doc.utils import create_ballot_if_not_open, can_edit_docextresources
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group
 from ietf.group.utils import setup_default_community_list_for_group
@@ -34,13 +34,14 @@ from ietf.message.models import Message
 from ietf.name.models import FormalLanguageName
 from ietf.person.models import Person
 from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
-from ietf.submit.models import Submission, Preapproval
+from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactory
+from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
 from ietf.submit.mail import add_submission_email, process_response_email
+from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.models import VersionInfo
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.draft import Draft
-
 
 def submission_file(name, rev, group, format, templatename, author=None, email=None, title=None, year=None, ascii=True):
     # construct appropriate text draft
@@ -217,7 +218,7 @@ class SubmitTests(TestCase):
 
         return status_url, author
 
-    def supply_extra_metadata(self, name, status_url, submitter_name, submitter_email, replaces):
+    def supply_extra_metadata(self, name, status_url, submitter_name, submitter_email, replaces, extresources=None):
         # check the page
         r = self.client.get(status_url)
         q = PyQuery(r.content)
@@ -225,19 +226,30 @@ class SubmitTests(TestCase):
         self.assertEqual(len(post_button), 1)
         action = post_button.parents("form").find('input[type=hidden][name="action"]').val()
 
-        # post submitter info
-        r = self.client.post(status_url, {
+        post_data = {
             "action": action,
             "submitter-name": submitter_name,
             "submitter-email": submitter_email,
             "replaces": replaces,
-        })
+            'resources': '\n'.join(r.to_form_entry_str() for r in extresources) if extresources else '',
+        }
+
+        # post submitter info
+        r = self.client.post(status_url, post_data)
 
         if r.status_code == 302:
             submission = Submission.objects.get(name=name)
             self.assertEqual(submission.submitter, email.utils.formataddr((submitter_name, submitter_email)))
-            self.assertEqual(submission.replaces, ",".join(d.name for d in DocAlias.objects.filter(pk__in=replaces.split(",") if replaces else [])))
-
+            self.assertEqual(submission.replaces, 
+                             ",".join(
+                                 d.name for d in DocAlias.objects.filter(
+                                     pk__in=replaces.split(",") if replaces else []
+                                 )
+                             ))
+            self.assertCountEqual(
+                [str(r) for r in submission.external_resources.all()],
+                [str(r) for r in extresources] if extresources else [],
+            )
         return r
 
     def extract_confirmation_url(self, confirmation_email):
@@ -457,6 +469,9 @@ class SubmitTests(TestCase):
     def test_submit_new_replaced_wg_as_author(self):
         self.submit_new_concluded_wg_as_author('replaced')
 
+    def test_submit_new_wg_with_extresources(self):
+        self.submit_new_draft_with_extresources(group=GroupFactory())
+
     def submit_existing(self, formats, change_authors=True, group_type='wg', stream_type='ietf'):
         # submit new revision of existing -> supply submitter info -> prev authors confirm
         if stream_type == 'ietf':
@@ -655,17 +670,32 @@ class SubmitTests(TestCase):
     def test_submit_existing_txt_preserve_authors(self):
         self.submit_existing(["txt"], change_authors=False)
 
+    def test_submit_existing_wg_with_extresources(self):
+        self.submit_existing_with_extresources(group_type='wg')
+
     def test_submit_existing_rg(self):
         self.submit_existing(["txt"],group_type='rg', stream_type='irtf')
+
+    def test_submit_existing_rg_with_extresources(self):
+        self.submit_existing_with_extresources(group_type='rg', stream_type='irtf')
 
     def test_submit_existing_ag(self):
         self.submit_existing(["txt"],group_type='ag')
 
+    def test_submit_existing_ag_with_extresources(self):
+        self.submit_existing_with_extresources(group_type='ag')
+
     def test_submit_existing_area(self):
         self.submit_existing(["txt"],group_type='area')
 
+    def test_submit_existing_area_with_extresources(self):
+        self.submit_existing_with_extresources(group_type='area')
+
     def test_submit_existing_ise(self):
         self.submit_existing(["txt"],stream_type='ise', group_type='individ')
+
+    def test_submit_existing_ise_with_extresources(self):
+        self.submit_existing_with_extresources(stream_type='ise', group_type='individ')
 
     def test_submit_existing_iab(self):
         self.submit_existing(["txt"],stream_type='iab', group_type='individ')
@@ -731,6 +761,9 @@ class SubmitTests(TestCase):
     def test_submit_existing_replaced_wg_as_author(self):
         self.do_submit_existing_concluded_wg_test(group_state_id='replaced', submit_as_author=True)
 
+    def test_submit_existing_iab_with_extresources(self):
+        self.submit_existing_with_extresources(stream_type='iab', group_type='individ')
+
     def submit_new_individual(self, formats):
         # submit new -> supply submitter info -> confirm
 
@@ -749,6 +782,8 @@ class SubmitTests(TestCase):
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "The submission is pending email authentication")
+        self._assert_extresources_in_table(r, [])
+        self._assert_extresources_form_not_present(r)
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         confirm_email = outbox[-1]
@@ -786,6 +821,87 @@ class SubmitTests(TestCase):
     def test_submit_new_individual_txt_xml(self):
         self.submit_new_individual(["txt", "xml"])
 
+    def _assert_extresources_in_table(self, response, extresources, th_label=None):
+        """Assert that external resources are properly shown on the submission_status table"""
+        q = PyQuery(response.content)
+        
+        # Find the <th> that labels the resource list
+        th = q('th:contains("%s")' % (th_label or 'Submission additional resources'))
+        self.assertEqual(len(th), 1)
+        
+        # Find the <td> element that holds the resource list
+        td_siblings = th.siblings('td')
+        self.assertEqual(len(td_siblings), 1)
+        td = td_siblings.eq(0)
+        td_html = td.html()
+        
+        if extresources:
+            for res in extresources:
+                # If the value is present, that's good enough. Don't test the detailed format.
+                self.assertIn(res.value, td_html, 'Value of resource %s not found' % (res))
+        else:
+            self.assertIn('None', td_html)
+
+    def _assert_extresources_form(self, response, expected_extresources):
+        """Assert that the form for editing external resources is present and has expected contents"""
+        q = PyQuery(response.content)
+        
+        # The external resources form is currently just a text area. Find it by its ID and check
+        # that it has the expected contents.
+        elems = q('form textarea#id_resources')
+        self.assertEqual(len(elems), 1)
+        
+        text_area = elems.eq(0)
+        contents = text_area.text()
+        if len(expected_extresources) == 0:
+            self.assertEqual(contents.strip(), '')
+        else:
+            res_strings = [rs for rs in contents.split('\n') if len(rs.strip()) > 0]  # ignore empty lines
+            self.assertCountEqual(
+                res_strings,
+                [r.to_form_entry_str() for r in expected_extresources],
+            )
+
+    def _assert_extresources_form_not_present(self, response):
+        q=PyQuery(response.content)
+        self.assertEqual(len(q('form textarea#id_resources')), 0)
+        
+    def _assert_extresource_change_event(self, doc, is_present=True):
+        """Assert that an external resource change event is (or is not) present for the doc"""
+        event = doc.latest_event(type='changed_document', desc__contains='Changed document external resources')
+        if is_present:
+            self.assertIsNotNone(event, 'External resource change event was not created properly')
+        else:
+            self.assertIsNone(event, 'External resource change event was unexpectedly created')
+
+    def submit_new_draft_with_extresources(self, group):
+        name = 'draft-testing-with-extresources'
+
+        status_url, author = self.do_submission(name, rev='00', group=group)
+
+        # Check that the submission starts with no external resources
+        r = self.client.get(status_url)
+        self.assertEqual(r.status_code, 200)
+        self._assert_extresources_in_table(r, [])
+        self._assert_extresources_form(r, [])
+
+        resources = [
+            SubmissionExtResource(name_id='faq', value='https://faq.example.com/'),
+            SubmissionExtResource(name_id='wiki', value='https://wiki.example.com', display_name='Test Wiki'),
+        ]
+        r = self.supply_extra_metadata(name, status_url, 'Submitter name', 'submitter@example.com', replaces='',
+                                       extresources=resources)
+        self.assertEqual(r.status_code, 302)
+        status_url = r['Location']
+        
+        r = self.client.get(status_url)
+        self.assertEqual(r.status_code, 200)
+        self._assert_extresources_in_table(r, resources)
+        self._assert_extresources_form_not_present(r)
+
+    def test_submit_new_individual_with_extresources(self):
+        self.submit_new_draft_with_extresources(group=None)
+
     def submit_new_individual_logged_in(self, formats):
         # submit new -> supply submitter info -> done
 
@@ -808,6 +924,8 @@ class SubmitTests(TestCase):
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "New version accepted")
+        self._assert_extresources_in_table(r, [])
+        self._assert_extresources_form_not_present(r)
 
         self.assertEqual(len(outbox), mailbox_before+2)
         announcement_email = outbox[-2]
@@ -821,9 +939,11 @@ class SubmitTests(TestCase):
 
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
+        self.assertEqual(draft.docextresource_set.count(), 0)
         new_revision = draft.latest_event()
         self.assertEqual(new_revision.type, "new_revision")
         self.assertEqual(new_revision.by.name, author.name)
+        self._assert_extresource_change_event(draft, is_present=False)
 
         # Check submission settings
         self.assertEqual(draft.submission().xml_version, "3" if 'xml' in formats else None)
@@ -833,6 +953,43 @@ class SubmitTests(TestCase):
 
     def test_submit_new_logged_in_xml(self):
         self.submit_new_individual_logged_in(["xml"])
+
+    def test_submit_new_logged_in_with_extresources(self):
+        """Logged-in author of individual draft can set external resources"""
+        name = 'draft-individual-testing-with-extresources'
+        author = PersonFactory()
+        username = author.user.email
+        
+        self.client.login(username=username, password=username+'+password')
+        status_url, author = self.do_submission(name, rev='00', author=author)
+
+        # Check that the submission starts with no external resources
+        r = self.client.get(status_url)
+        self.assertEqual(r.status_code, 200)
+        self._assert_extresources_in_table(r, [])
+        self._assert_extresources_form(r, [])
+
+        resources = [
+            SubmissionExtResource(name_id='faq', value='https://faq.example.com/'),
+            SubmissionExtResource(name_id='wiki', value='https://wiki.example.com', display_name='Test Wiki'),
+        ]
+        r = self.supply_extra_metadata(name, status_url, author.name, username, replaces='',
+                                       extresources=resources)
+        self.assertEqual(r.status_code, 302)
+        status_url = r['Location']
+
+        r = self.client.get(status_url)
+        self.assertEqual(r.status_code, 200)
+        self._assert_extresources_in_table(r, resources)
+        self._assert_extresources_form_not_present(r)
+
+        # Check that the draft itself got the resources        
+        draft = Document.objects.get(docalias__name=name)
+        self.assertCountEqual(
+            [str(r) for r in draft.docextresource_set.all()],
+            [str(r) for r in resources],
+        )
+        self._assert_extresource_change_event(draft, is_present=True)
 
     def test_submit_update_individual(self):
         IndividualDraftFactory(name='draft-ietf-random-thing', states=[('draft','rfc')], other_aliases=['rfc9999',], pages=5)
@@ -844,23 +1001,36 @@ class SubmitTests(TestCase):
         rev = '%02d'%(int(draft.rev)+1)
         status_url, author = self.do_submission(name,rev)
         mailbox_before = len(outbox)
+
         replaced_alias = draft.docalias.first()
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'cannot replace itself')
+        self._assert_extresources_in_table(r, [])
+        self._assert_extresources_form(r, [])
+
         replaced_alias = DocAlias.objects.get(name='draft-ietf-random-thing')
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'cannot replace an RFC')
+        self._assert_extresources_in_table(r, [])
+        self._assert_extresources_form(r, [])
+
         replaced_alias.document.set_state(State.objects.get(type='draft-iesg',slug='approved'))
         replaced_alias.document.set_state(State.objects.get(type='draft',slug='active'))
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=str(replaced_alias.pk))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'approved by the IESG and cannot')
+        self._assert_extresources_in_table(r, [])
+        self._assert_extresources_form(r, [])
+
         r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces='')
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
+        self._assert_extresources_in_table(r, [])
+        self._assert_extresources_form_not_present(r)
+
         self.assertEqual(len(outbox), mailbox_before + 1)
         confirmation_url = self.extract_confirmation_url(outbox[-1])
         self.assertFalse("chairs have been copied" in str(outbox[-1]))
@@ -871,10 +1041,55 @@ class SubmitTests(TestCase):
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
         self.assertEqual(draft.relateddocument_set.filter(relationship_id='replaces').count(), replaces_count)
+        self.assertEqual(draft.docextresource_set.count(), 0)
         #
         r = self.client.get(urlreverse('ietf.doc.views_search.recent_drafts'))
         self.assertContains(r, draft.name)
         self.assertContains(r, draft.title)
+        self._assert_extresource_change_event(draft, is_present=False)
+
+    def submit_existing_with_extresources(self, group_type, stream_type='ietf'):
+        """Submit a draft with external resources
+        
+        Unlike some other tests in this module, does not confirm draft if this would be required.
+        """
+        orig_draft = DocumentFactory(
+            type_id='draft',
+            group=GroupFactory(type_id=group_type) if group_type else None,
+            stream_id=stream_type,
+        )  # type: Document
+        name = orig_draft.name
+        group = orig_draft.group
+        new_rev = '%02d' % (int(orig_draft.rev) + 1)
+        author = PersonFactory()  # type: Person
+        DocumentAuthor.objects.create(person=author, document=orig_draft)
+        orig_draft.docextresource_set.create(name_id='faq', value='https://faq.example.com/')
+        orig_draft.docextresource_set.create(name_id='wiki', value='https://wiki.example.com', display_name='Test Wiki')
+        orig_extresources = list(orig_draft.docextresource_set.all())
+
+        status_url, _ = self.do_submission(name=name, rev=new_rev, author=author, group=group)
+
+        # Make sure the submission status inherits the original draft's external resources
+        r = self.client.get(status_url)
+        self.assertEqual(r.status_code, 200)
+        self._assert_extresources_in_table(r, orig_extresources)
+        self._assert_extresources_form(r, orig_extresources)
+
+        # Update with an empty set of resources
+        r = self.supply_extra_metadata(orig_draft.name, status_url, author.name, author.user.email,
+                                       replaces='', extresources=[])
+        self.assertEqual(r.status_code, 302)
+        status_url = r['Location']
+
+        # Should now see the submission's resources and the set currently assigned to the document        
+        r = self.client.get(status_url)
+        self.assertEqual(r.status_code, 200)
+        self._assert_extresources_in_table(r, [])
+        self._assert_extresources_in_table(r, orig_extresources, 'Current document additional resources')
+        self._assert_extresources_form_not_present(r)
+
+    def test_submit_update_individual_with_extresources(self):
+        self.submit_existing_with_extresources(group_type=None, stream_type='ietf')
 
     def submit_new_individual_replacing_wg(self, logged_in=False, group_state_id='active', notify_ad=False):
         """Chair of an active WG should be notified if individual draft is proposed to replace a WG draft"""
@@ -1085,6 +1300,7 @@ class SubmitTests(TestCase):
 
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
+        self.assertEqual(draft.docextresource_set.count(), 0)
 
     def test_search_for_submission_and_edit_as_secretariat(self):
         # submit -> edit
@@ -1609,7 +1825,186 @@ class SubmitTests(TestCase):
     def test_submit_wg_ad_approval_auth(self):
         """Area directors should be able to approve submissions in ad-appr state"""
         self.do_wg_approval_auth_test('ad-appr', chair_can_approve=False)
+    def do_approval_with_extresources_test(self, submission, url, action, permitted):
+        """Helper for submission approval external resource testing
+        
+        Only intended to test the permissions handling for external resources. Assumes
+        the permissions defined by can_edit_docextresources() are tested separately.
+        
+        Checks that the submission's external_resources are added / not added based on
+        permitted. Also checks that a suggestion email is not sent / sent.
+        """
+        mailbox_before = len(outbox)
+        with mock.patch('ietf.submit.utils.can_edit_docextresources', return_value=permitted,) as mocked_permission_check:
+            r = self.client.post(url, dict(action=action))
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(mocked_permission_check.called, 'Permissions were not checked')
 
+        draft = Document.objects.get(name=submission.name)
+        self.assertCountEqual(
+            [str(r) for r in draft.docextresource_set.all()],
+            [str(r) for r in submission.external_resources.all()] if permitted else [],
+        )
+
+        expected_other_emails = 1  # confirmation / approval email
+        if permitted:
+            self._assert_extresource_change_event(draft, is_present=True)
+            self.assertEqual(len(outbox), mailbox_before + expected_other_emails)
+        else:
+            self._assert_extresource_change_event(draft, is_present=False)
+            self.assertEqual(len(outbox), mailbox_before + 1 + expected_other_emails)
+            new_mail = outbox[mailbox_before:]
+            subject = 'External resource change requested for %s' % submission.name
+            suggestion_email = [m for m in new_mail 
+                                if m['Subject'] == subject]
+            self.assertEqual(len(suggestion_email), 1)
+            body = str(suggestion_email[0])
+            for res in submission.external_resources.all():
+                self.assertIn(res.to_form_entry_str(), body)
+
+    def group_approve_with_extresources(self, permitted):
+        group = GroupFactory()
+        # someone to be notified of resource suggestion when permission not granted
+        RoleFactory(group=group, person=PersonFactory(), name_id='chair')
+        submission = SubmissionFactory(state_id='grp-appr', group=group)  # type: Submission
+        SubmissionExtResourceFactory(submission=submission)
+
+        # use secretary user to ensure we have permission to approve
+        self.client.login(username='secretary', password='secretary+password')
+        url = urlreverse('ietf.submit.views.submission_status',
+                         kwargs=dict(submission_id=submission.pk))
+        self.do_approval_with_extresources_test(submission, url, 'approve', permitted)        
+    
+    def test_group_approve_with_extresources(self):
+        """Doc external resources should be updated when approved by group"""
+        self.group_approve_with_extresources(permitted=True)
+        self.group_approve_with_extresources(permitted=False)
+
+    def confirm_with_extresources(self, state, permitted):
+        group = GroupFactory()
+        # someone to be notified of resource suggestion when permission not granted
+        RoleFactory(group=group, person=PersonFactory(), name_id='chair')
+        submission = SubmissionFactory(state_id=state, group=group)  # type: Submission
+        SubmissionExtResourceFactory(submission=submission)
+
+        url = urlreverse(
+            'ietf.submit.views.confirm_submission',
+            kwargs=dict(submission_id=submission.pk,
+                        auth_token=generate_access_token(submission.auth_key))
+        )
+
+        self.do_approval_with_extresources_test(submission, url, 'confirm', permitted)
+
+    def test_confirm_with_extresources(self):
+        """Doc external resources should be updated when confirmed by author"""
+        self.confirm_with_extresources('aut-appr', permitted=True)
+        self.confirm_with_extresources('aut-appr', permitted=False)
+        self.confirm_with_extresources('auth', permitted=True)
+        self.confirm_with_extresources('auth', permitted=False)
+
+    def test_can_edit_docextresources(self):
+        """The can_edit_docextresources method should authorize correctly
+        
+        Tests that is_authorized_in_doc_stream() being True grants access, but does not
+        do detailed testing of that method.
+        """
+        author = PersonFactory()
+        plain = PersonFactory()
+        secretary = Person.objects.get(user__username='secretary')
+        ad = Person.objects.get(user__username='ad')
+        wg_chair = PersonFactory()
+        wg = GroupFactory()
+        RoleFactory(person=wg_chair, group=wg, name_id='chair')
+
+        wg_doc = WgDraftFactory(authors=[author], group=wg)
+        self.assertFalse(can_edit_docextresources(author.user, wg_doc))
+        self.assertTrue(can_edit_docextresources(secretary.user, wg_doc))
+        self.assertTrue(can_edit_docextresources(ad.user, wg_doc))
+        self.assertTrue(can_edit_docextresources(wg_chair.user, wg_doc))
+        self.assertFalse(can_edit_docextresources(plain.user, wg_doc))
+        with mock.patch('ietf.doc.utils.is_authorized_in_doc_stream', return_value=True):
+            self.assertTrue(can_edit_docextresources(plain.user, wg_doc))
+
+        individ_doc = IndividualDraftFactory(authors=[author])
+        self.assertTrue(can_edit_docextresources(author.user, individ_doc))
+        self.assertTrue(can_edit_docextresources(secretary.user, individ_doc))
+        self.assertTrue(can_edit_docextresources(ad.user, individ_doc))
+        self.assertFalse(can_edit_docextresources(wg_chair.user, individ_doc))
+        self.assertFalse(can_edit_docextresources(plain.user, individ_doc))
+        with mock.patch('ietf.doc.utils.is_authorized_in_doc_stream', return_value=True):
+            self.assertTrue(can_edit_docextresources(plain.user, individ_doc))
+
+    def test_forcepost_with_extresources(self):
+        # state needs to be one that has 'posted' as a next state
+        submission = SubmissionFactory(state_id='grp-appr')  # type: Submission
+        SubmissionExtResourceFactory(submission=submission)
+
+        url = urlreverse(
+            'ietf.submit.views.submission_status',
+            kwargs=dict(submission_id=submission.pk),
+        )
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.post(url, dict(action='forcepost'))
+        self.assertEqual(r.status_code, 302)
+        draft = Document.objects.get(name=submission.name)
+        self._assert_extresource_change_event(draft, is_present=True)
+        self.assertCountEqual(
+            [str(r) for r in draft.docextresource_set.all()],
+            [str(r) for r in submission.external_resources.all()],
+        )
+
+    def test_submission_status_labels_extresource_changes(self):
+        """Added or removed labels should be present for changed external resources"""
+        draft = WgDraftFactory(rev='00')
+        draft.docextresource_set.create(
+            name_id='faq',
+            value='https://example.com/faq-removed',
+            display_name='Resource to be removed',
+        )
+        draft.docextresource_set.create(
+            name_id='faq',
+            value='https://example.com/faq-kept',
+            display_name='Resource to be kept',
+        )
+        
+        submission = SubmissionFactory(name=draft.name, rev='01')
+        submission.external_resources.create(
+            name_id='faq',
+            value='https://example.com/faq-kept',
+            display_name='Resource to be kept',
+        )
+        submission.external_resources.create(
+            name_id='faq',
+            value='https://example.com/faq-added',
+            display_name='Resource to be added',
+        )
+        
+        url = urlreverse('ietf.submit.views.submission_status',
+                         kwargs=dict(submission_id=submission.pk))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        
+        q = PyQuery(r.content)
+        
+        # The removed resource should appear once (for the doc current value), tagged as removed
+        removed_div = q('td>div:contains("Resource to be removed")')
+        self.assertEqual(len(removed_div), 1)
+        self.assertEqual(len(removed_div('span.label:contains("Removed")')), 1)
+        self.assertEqual(len(removed_div('span.label:contains("New")')), 0)
+
+        # The added resource should appear once (for the submission), tagged as new
+        added_div = q('td>div:contains("Resource to be added")')
+        self.assertEqual(len(added_div), 1)
+        self.assertEqual(len(added_div('span.label:contains("Removed")')), 0)
+        self.assertEqual(len(added_div('span.label:contains("New")')), 1)
+
+        # The kept resource should appear twice (once for the doc, once for the submission), with no tag
+        kept_div = q('td>div:contains("Resource to be kept")')
+        self.assertEqual(len(kept_div), 2)
+        self.assertEqual(len(kept_div('span.label:contains("Removed")')), 0)
+        self.assertEqual(len(kept_div('span.label:contains("New")')), 0)
+        
 class ApprovalsTestCase(TestCase):
     def test_approvals(self):
         RoleFactory(name_id='chair',
@@ -2380,6 +2775,33 @@ class ApiSubmitTests(TestCase):
         expected = "Document date must be within 3 days of submission date"
         self.assertContains(r, expected, status_code=400)
 
+    def test_api_submit_keeps_extresources(self):
+        """API submit should not disturb doc external resources
+        
+        Tests that the submission inherits the existing doc's docextresource_set.
+        Relies on separate testing that Submission external_resources will be
+        handled appropriately.
+        """
+        draft = WgDraftFactory()
+
+        # add an external resource
+        self.assertEqual(draft.docextresource_set.count(), 0)
+        extres = draft.docextresource_set.create(
+            name_id='faq',
+            display_name='this is a display name',
+            value='https://example.com/faq-for-test.html',
+        )
+        
+        r, _, __ = self.do_post_submission('01', name=draft.name)
+        self.assertEqual(r.status_code, 200)
+        # draft = Document.objects.get(pk=draft.pk)  # update the draft
+        sub = Submission.objects.get(name=draft.name)
+        self.assertEqual(
+            [str(r) for r in sub.external_resources.all()],
+            [str(extres)],
+        )
+
+        
 class RefsTests(TestCase):
 
     def test_draft_refs_identification(self):

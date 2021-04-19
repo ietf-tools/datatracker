@@ -10,7 +10,7 @@ from django.db import models
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document
+from ietf.doc.models import Document, ExtResource
 from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.message.models import Message
@@ -167,3 +167,6 @@ class SubmissionEmailEvent(SubmissionEvent):
     class Meta:
         ordering = ['-time', '-id']
 
+
+class SubmissionExtResource(ExtResource):
+    submission = ForeignKey(Submission, related_name='external_resources')

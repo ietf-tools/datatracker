@@ -5,13 +5,16 @@
 import datetime
 import debug #pyflakes:ignore
 from django import forms
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 from ietf.doc.fields import SearchableDocAliasesField, SearchableDocAliasField
-from ietf.doc.models import RelatedDocument
+from ietf.doc.models import RelatedDocument, DocExtResource
 from ietf.iesg.models import TelechatDate
 from ietf.iesg.utils import telechat_page_count
 from ietf.person.fields import SearchablePersonsField
 
+from ietf.name.models import ExtResourceName
+from ietf.utils.validators import validate_external_resource_value
 
 class TelechatForm(forms.Form):
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, help_text="Page counts are the current page counts for the telechat, before this telechat date edit is made.")
@@ -57,7 +60,7 @@ class NotifyForm(forms.Form):
         return ', '.join(addrspecs)
 
 class ActionHoldersForm(forms.Form):
-    action_holders = SearchablePersonsField(required=False)    
+    action_holders = SearchablePersonsField(required=False)
     reason = forms.CharField(
         label='Reason for change',
         required=False,
@@ -125,3 +128,77 @@ class AddDownrefForm(forms.Form):
             if v_err_refnorm:
                 v_err_refnorm_prefix = "There does not seem to be a normative reference to RFC " + rfc.document.rfc_number() + " by "
                 raise forms.ValidationError(v_err_refnorm_prefix  + v_err_refnorm)
+
+
+class ExtResourceForm(forms.Form):
+    resources = forms.CharField(widget=forms.Textarea, label="Additional Resources", required=False,
+                                help_text=("Format: 'tag value (Optional description)'."
+                                           " Separate multiple entries with newline. When the value is a URL, use https:// where possible.") )
+
+    def __init__(self, *args, initial=None, extresource_model=None, **kwargs):
+        self.extresource_model = extresource_model
+        if initial:
+            kwargs = kwargs.copy()
+            resources = initial.get('resources')
+            if resources is not None and not isinstance(resources, str):
+                initial = initial.copy()
+                # Convert objects to string representation
+                initial['resources'] = self.format_resources(resources)
+            kwargs['initial'] = initial
+        super(ExtResourceForm, self).__init__(*args, **kwargs)
+
+    @staticmethod
+    def format_resources(resources, fs="\n"):
+        # Might be better to shift to a formset instead of parsing these lines.
+        return fs.join([r.to_form_entry_str() for r in resources])
+
+    def clean_resources(self):
+        """Clean the resources field
+
+        The resources field is a newline-separated set of resource entries. Each entry
+        should be "<tag> <value>" or "<tag> <value> (<display name>)" with any whitespace
+        delimiting the components. This clean only validates that the tag and value are
+        present and valid - tag must be a recognized ExtResourceName and value is
+        validated using validate_external_resource_value(). Further interpretation of
+        the resource is performed int he clean() method.
+        """
+        lines = [x.strip() for x in self.cleaned_data["resources"].splitlines() if x.strip()]
+        errors = []
+        for l in lines:
+            parts = l.split()
+            if len(parts) == 1:
+                errors.append("Too few fields: Expected at least tag and value: '%s'" % l)
+            elif len(parts) >= 2:
+                name_slug = parts[0]
+                try:
+                    name = ExtResourceName.objects.get(slug=name_slug)
+                except ObjectDoesNotExist:
+                    errors.append("Bad tag in '%s': Expected one of %s" % (l, ', '.join([ o.slug for o in ExtResourceName.objects.all() ])))
+                    continue
+                value = parts[1]
+                try:
+                    validate_external_resource_value(name, value)
+                except ValidationError as e:
+                    e.message += " : " + value
+                    errors.append(e)
+        if errors:
+            raise ValidationError(errors)
+        return lines
+
+    def clean(self):
+        """Clean operations after all other fields are cleaned by clean_<field> methods
+
+        Converts resource strings into ExtResource model instances.
+        """
+        cleaned_data = super(ExtResourceForm, self).clean()
+        cleaned_resources = []
+        cls = self.extresource_model or DocExtResource
+        for crs in cleaned_data.get('resources', []):
+            cleaned_resources.append(
+                cls.from_form_entry_str(crs)
+            )
+        cleaned_data['resources'] = cleaned_resources
+
+    @staticmethod
+    def valid_resource_tags():
+        return ExtResourceName.objects.all().order_by('slug').values_list('slug', flat=True)

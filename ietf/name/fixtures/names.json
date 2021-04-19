@@ -3510,6 +3510,21 @@
   {
     "fields": {
       "cc": [],
+      "desc": "Recipients when a change to the external resources for a document is requested.",
+      "to": [
+        "doc_ad",
+        "doc_group_chairs",
+        "doc_group_delegates",
+        "doc_shepherd",
+        "doc_stream_manager"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "doc_external_resource_change_requested"
+  },
+  {
+    "fields": {
+      "cc": [],
       "desc": "Recipients when IANA state information for a document changes ",
       "to": [
         "doc_ad",

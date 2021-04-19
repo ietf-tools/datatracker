@@ -2,9 +2,12 @@
 from django.urls import reverse as urlreverse
 from django.contrib import admin
 from django.conf import settings
+from django import forms
 
+from ietf.submit.models import (Preapproval, Submission, SubmissionEvent, 
+    SubmissionCheck, SubmissionEmailEvent, SubmissionExtResource)
+from ietf.utils.validators import validate_external_resource_value
 
-from ietf.submit.models import Preapproval, Submission, SubmissionEvent, SubmissionCheck, SubmissionEmailEvent
 
 class SubmissionAdmin(admin.ModelAdmin):
     list_display = ['id', 'rev', 'draft_link', 'status_link', 'submission_date',]
@@ -48,4 +51,15 @@ admin.site.register(Preapproval, PreapprovalAdmin)
 
 class SubmissionEmailEventAdmin(admin.ModelAdmin):
     list_display = ['id', 'submission', 'time', 'by', 'message', 'desc', ]
-admin.site.register(SubmissionEmailEvent, SubmissionEmailEventAdmin)    
+admin.site.register(SubmissionEmailEvent, SubmissionEmailEventAdmin)
+
+class SubmissionExtResourceAdminForm(forms.ModelForm):
+    def clean(self):
+        validate_external_resource_value(self.cleaned_data['name'],self.cleaned_data['value'])
+
+class SubmissionExtResourceAdmin(admin.ModelAdmin):
+    form = SubmissionExtResourceAdminForm
+    list_display = ['id', 'submission', 'name', 'display_name', 'value',]
+    search_fields = ['submission__name', 'value', 'display_name', 'name__slug',]
+    raw_id_fields = ['submission', ]
+admin.site.register(SubmissionExtResource, SubmissionExtResourceAdmin)

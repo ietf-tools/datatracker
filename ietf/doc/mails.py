@@ -672,3 +672,20 @@ def email_iana_expert_review_state_changed(request, events):
               dict(event=events[0], url=settings.IDTRACKER_BASE_URL + events[0].doc.get_absolute_url() ),
               cc = addrs.cc,
              )
+
+def send_external_resource_change_request(request, doc, submitter_info, requested_resources):
+    """Send an email to requesting changes to a draft's external resources"""
+    addrs = gather_address_lists('doc_external_resource_change_requested', doc=doc)
+    to = set(addrs.to)
+    cc = set(addrs.cc)
+
+    send_mail(request, list(to), settings.DEFAULT_FROM_EMAIL,
+              'External resource change requested for %s' % doc.name,
+              'doc/mail/external_resource_change_request.txt',
+              dict(
+                  doc=doc,
+                  submitter_info=submitter_info,
+                  requested_resources=requested_resources,
+                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+              ),
+              cc=list(cc),)

@@ -13,7 +13,6 @@ from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db.models import Q
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import render, get_object_or_404, redirect
@@ -35,21 +34,22 @@ from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_reques
 from ietf.doc.utils import ( add_state_change_event, can_adopt_draft, can_unadopt_draft,
     get_tags_for_stream_id, nice_consensus, update_action_holders,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify,
-    set_replaces_for_document, default_consensus, tags_suffix, )
+    set_replaces_for_document, default_consensus, tags_suffix, can_edit_docextresources,
+    update_doc_extresources )
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.fields import SearchableDocAliasesField
+from ietf.doc.forms import ExtResourceForm
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.iesg.models import TelechatDate
-from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person, is_individual_draft_author
+from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person
 from ietf.ietfauth.utils import role_required
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message
-from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName, ExtResourceName
+from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
 from ietf.person.fields import SearchableEmailField
 from ietf.person.models import Person, Email
 from ietf.utils.mail import send_mail, send_mail_message, on_behalf_of
 from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.utils.validators import validate_external_resource_value
 from ietf.utils import log
 from ietf.utils.response import permission_denied
 
@@ -1205,81 +1205,23 @@ def edit_consensus(request, name):
 
 
 def edit_doc_extresources(request, name):
-    class DocExtResourceForm(forms.Form):
-        resources = forms.CharField(widget=forms.Textarea, label="Additional Resources", required=False,
-            help_text=("Format: 'tag value (Optional description)'."
-                " Separate multiple entries with newline. When the value is a URL, use https:// where possible.") )
-
-        def clean_resources(self):
-            lines = [x.strip() for x in self.cleaned_data["resources"].splitlines() if x.strip()]
-            errors = []
-            for l in lines:
-                parts = l.split()
-                if len(parts) == 1:
-                    errors.append("Too few fields: Expected at least tag and value: '%s'" % l)
-                elif len(parts) >= 2:
-                    name_slug = parts[0]
-                    try:
-                        name = ExtResourceName.objects.get(slug=name_slug)
-                    except ObjectDoesNotExist:
-                        errors.append("Bad tag in '%s': Expected one of %s" % (l, ', '.join([ o.slug for o in ExtResourceName.objects.all() ])))
-                        continue
-                    value = parts[1]
-                    try:
-                        validate_external_resource_value(name, value)
-                    except ValidationError as e:
-                        e.message += " : " + value
-                        errors.append(e)
-            if errors:
-                raise ValidationError(errors)
-            return lines
-
-    def format_resources(resources, fs="\n"):
-        res = []
-        for r in resources:
-            if r.display_name:
-                res.append("%s %s (%s)" % (r.name.slug, r.value, r.display_name.strip('()')))
-            else:
-                res.append("%s %s" % (r.name.slug, r.value)) 
-                # TODO: This is likely problematic if value has spaces. How then to delineate value and display_name? Perhaps in the short term move to comma or pipe separation.
-                # Might be better to shift to a formset instead of parsing these lines.
-        return fs.join(res)
-
     doc = get_object_or_404(Document, name=name)
 
-    if not (has_role(request.user, ("Secretariat", "Area Director"))
-            or is_authorized_in_doc_stream(request.user, doc)
-            or is_individual_draft_author(request.user, doc)):
+    if not can_edit_docextresources(request.user, doc):
         permission_denied(request, "You do not have the necessary permissions to view this page.")
 
-    old_resources = format_resources(doc.docextresource_set.all())
-
     if request.method == 'POST':
-        form = DocExtResourceForm(request.POST)
+        form = ExtResourceForm(request.POST)
         if form.is_valid():
-            old_resources = sorted(old_resources.splitlines())
-            new_resources = sorted(form.cleaned_data['resources'])
-            if old_resources != new_resources:
-                doc.docextresource_set.all().delete()
-                for u in new_resources:
-                    parts = u.split(None, 2)
-                    name = parts[0]
-                    value = parts[1]
-                    display_name = ' '.join(parts[2:]).strip('()')
-                    doc.docextresource_set.create(value=value, name_id=name, display_name=display_name)
-                new_resources = format_resources(doc.docextresource_set.all())
-                e = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type='changed_document')
-                e.desc = "Changed document external resources from:\n\n%s\n\nto:\n\n%s" % (old_resources, new_resources)
-                e.save()
-                doc.save_with_history([e])
+            if update_doc_extresources(doc, form.cleaned_data['resources'], by=request.user.person):
                 messages.success(request,"Document resources updated.")
             else:
                 messages.info(request,"No change in Document resources.")
             return redirect('ietf.doc.views_doc.document_main', name=doc.name)
     else:
-        form = DocExtResourceForm(initial={'resources': old_resources, })
+        form = ExtResourceForm(initial={'resources': doc.docextresource_set.all()})
 
-    info = "Valid tags:<br><br> %s" % ', '.join([ o.slug for o in ExtResourceName.objects.all().order_by('slug') ])
+    info = "Valid tags:<br><br> %s" % ', '.join(form.valid_resource_tags())
     # May need to explain the tags more - probably more reason to move to a formset.
     title = "Additional document resources"
     return render(request, 'doc/edit_field.html',dict(doc=doc, form=form, title=title, info=info) )
