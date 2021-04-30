@@ -232,6 +232,7 @@ var agenda_filter_for_testing; // methods to be accessed for automated testing
      * button UI. Do not call if you only want to use the parameter parsing routines.
      */
     function enable () {
+        // ready handler fires immediately if document is already "ready"
         $(document).ready(function () {
             register_handlers();
             update_view();

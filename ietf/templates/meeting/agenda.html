@@ -40,14 +40,14 @@
     font-weight: normal;
   }
   .tz-display select {
-  min-width: 15em;
+    min-width: 15em;
   }
   #affix .nav li.tz-display {
-  padding: 4px 20px;
+    padding: 4px 20px;
   }
   #affix .nav li.tz-display a {
-  display: inline;
-  padding: 0;
+    display: inline;
+    padding: 0;
   }
 {% endblock %}
 
@@ -76,12 +76,12 @@
             <div class="col-xs-6">
                 <div class="tz-display">
                     <div><small>
-                        <label for="timezone_select">Time zone:</label>
-                        <a id="meeting-timezone" onclick="use_timezone(0)">Meeting</a> |
-                        <a id="local-timezone" onclick="use_timezone(1)">Local</a> |
-                        <a id="utc-timezone" onclick="use_timezone(2)">UTC</a>
+                        <label for="timezone-select">Time zone:</label>
+                        <a id="meeting-timezone" onclick="ietf_timezone.use('{{ timezone }}')">Meeting</a> |
+                        <a id="local-timezone" onclick="ietf_timezone.use('local')">Local</a> |
+                        <a id="utc-timezone" onclick="ietf_timezone.use('UTC')">UTC</a>
                     </small></div>
-                    <select id="timezone_select">
+                    <select id="timezone-select" class="tz-select">
                         {# Avoid blank while loading. JavaScript replaces the option list after init. #}
                         <option selected>{{ timezone }}</option>
                     </select>
@@ -348,23 +348,23 @@
     </div>
     <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
       <ul class="nav nav-pills nav-stacked small" data-spy="affix">
-        <li><a href="#now">Now</a></li>
-        {% for item in filtered_assignments %}
-          {% ifchanged item.timeslot.time|date:"Y-m-d" %}
-            <li><a href="#{{item.timeslot.time|slugify}}">{{ item.timeslot.time|date:"l, F j, Y" }}</a></li>
-          {% endifchanged %}
-        {% endfor %}
-        <li><hr/></li>
-        <li class="tz-display">Showing <span class="current-tz">{{ timezone }}</span> time</li>
-        <li class="tz-display"><span> {# span avoids applying nav link styling to these shortcuts #}
-            <a onclick="use_timezone(0)">Meeting time</a> | 
-            <a onclick="use_timezone(1)">Local time</a> |
-            <a onclick="use_timezone(2)">UTC</a></span>
-        </li>
-      {% if settings.DEBUG and settings.DEBUG_AGENDA %}
-        <li><hr/></li>
-        <li><span id="current-time"></span></li>
-        {% endif %}
+          <li><a href="#now">Now</a></li>
+          {% for item in filtered_assignments %}
+              {% ifchanged item.timeslot.time|date:"Y-m-d" %}
+                  <li><a href="#{{item.timeslot.time|slugify}}">{{ item.timeslot.time|date:"l, F j, Y" }}</a></li>
+              {% endifchanged %}
+          {% endfor %}
+          <li><hr/></li>
+          <li class="tz-display">Showing <span class="current-tz">{{ timezone }}</span> time</li>
+          <li class="tz-display"><span> {# span avoids applying nav link styling to these shortcuts #}
+              <a onclick="ietf_timezone.use('{{ timezone }}')">Meeting time</a> |
+              <a onclick="ietf_timezone.use('local')">Local time</a> |
+              <a onclick="ietf_timezone.use('UTC')">UTC</a></span>
+          </li>
+          {% if settings.DEBUG and settings.DEBUG_AGENDA %}
+              <li><hr/></li>
+              <li><span id="current-time"></span></li>
+          {% endif %}
       </ul>
     </div>
   </div>
@@ -376,8 +376,6 @@
 
   <script src="{% static 'ietf/js/agenda/agenda_filter.js' %}"></script>
   <script>
-  var current_timezone = 'UTC';
-
   // Update the agenda display with specified filters
    function update_agenda_display(filter_params) {
        var agenda_rows=$('[id^="row-"]')
@@ -402,7 +400,7 @@
            // this is a "negative" item by wg: when present, hide these rows
            agenda_filter.rows_matching_filter_keyword(agenda_rows, v).hide();
        });
-       
+
        // Now hide any session label rows with no visible sessions. Identify
        // by matching on start/end timestamps.
        $('tr.session-label-row').each(function(i, e) {
@@ -442,15 +440,15 @@
        }
        update_weekview_display();
    }
-   
+
    function update_weekview_display() {
        var weekview = $("#weekview");
        if (!weekview.hasClass('hidden')) {
            var queryparams = window.location.search;
            if (queryparams) {
-               queryparams += '&tz=' + current_timezone.toLowerCase();
+               queryparams += '&tz=' + ietf_timezone.get_current_tz().toLowerCase();
            } else {
-               queryparams = '?tz=' + current_timezone.toLowerCase();
+               queryparams = '?tz=' + ietf_timezone.get_current_tz().toLowerCase();
            }
            var new_url = 'week-view.html' + queryparams;
            var wv_iframe = document.getElementById('weekview');
@@ -545,6 +543,7 @@
   <script src="{% static 'moment/min/moment.min.js' %}"></script>
   <script src="{% static 'moment-timezone/builds/moment-timezone-with-data-10-year-range.min.js' %}"></script>
   <script src="{% static 'ietf/js/agenda/timezone.js' %}"></script>
+  <script src="{% static 'ietf/js/agenda/agenda_timezone.js' %}"></script>
   <script>
 
   {% if settings.DEBUG and settings.DEBUG_AGENDA %}
@@ -567,20 +566,40 @@
   speedup = 1;
   {% endif %}
 
-  // Get meeting and local times, initialize timezone system
-  meeting_timezone = "{{timezone}}";
-  local_timezone = moment.tz.guess();
-  {% if "-utc" in request.path %}
-  timezone_init('UTC');
-  {% else %}
-  timezone_init(meeting_timezone);
-  {% endif %}
 
-  init_timers();
+  $(document).ready(function() {
+      // Methods/variables here that are not in ietf_timezone or agenda_filter are from agenda_timezone.js
+      meeting_timezone = '{{ timezone }}';
 
-  set_tz_change_callback(update_weekview_display);
-  agenda_filter.set_update_callback(update_view);
-  agenda_filter.enable();
+      // First, initialize_moments(). This must be done before calling any of the update methods.
+      // It does not need timezone info, so safe to call before initializing ietf_timezone.
+      initialize_moments();  // fills in moments in the agenda data
 
+      // Now set up callbacks related to ietf_timezone. This must happen before calling initialize().
+      // In particular, set_current_tz_cb() must be called before the update methods are called.
+      set_current_tz_cb(ietf_timezone.get_current_tz);  // give agenda_timezone access to this method
+      ietf_timezone.set_tz_change_callback(function(newtz) {
+          update_times(newtz);
+          update_weekview_display();
+        }
+      );
+
+      // With callbacks in place, call ietf_timezone.initialize(). This will call the tz_change callback
+      // after setting things up.
+      {% if "-utc" in request.path %}
+        ietf_timezone.initialize('UTC');
+      {% else %}
+        ietf_timezone.initialize(meeting_timezone);
+      {% endif %}
+
+      // Now make other setup calls from agenda_timezone.js
+      add_tooltips();
+      init_timers();
+
+      // Finally, set up the agenda filter UI. This does not depend on the timezone.
+      agenda_filter.set_update_callback(update_view);
+      agenda_filter.enable();
+    }
+  );
   </script>
 {% endblock %}
