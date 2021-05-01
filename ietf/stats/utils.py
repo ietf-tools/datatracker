@@ -6,6 +6,7 @@ import re
 import requests
 from collections import defaultdict
 
+from django.db.models import F, Q
 from django.conf import settings
 from django.contrib.auth.models import User
 
@@ -344,3 +345,48 @@ def get_meeting_registration_data(meeting):
         meeting.attendees = num_total
         meeting.save()
     return num_created, num_processed, num_total
+
+# Might abandon this as too ambitious - if fixed things for 128 people in ietf 100 - 110 though, and that's probably worth doing.
+# Yeah - experiments say it _must_ be done. Probably need this as a management command.
+def repair_meetingregistration_person(meetings=None):
+    maybe_address = set()
+    different_person = set()
+    no_person = set()
+    maybe_person = set()
+    no_email = set()
+    ok_records = 0
+    skipped = 0
+    repaired_records = 0
+
+
+#    for mr in MeetingRegistration.objects.exclude(person__email__address=F('email')):
+    for mr in MeetingRegistration.objects.all():
+        if meetings and mr.meeting.number not in meetings:
+            skipped += 1
+            continue
+        if mr.person and mr.email and mr.email in mr.person.email_set.values_list('address',flat=True):
+            ok_records += 1
+            continue
+        if mr.email:
+            email_person = Person.objects.filter(email__address=mr.email).first()
+            if mr.person:
+                if not email_person:
+                    maybe_address.add(f'{mr.email} is not present in any Email object. The MeetingRegistration object implies this is an address for {mr.person} ({mr.person.pk})')
+                elif email_person != mr.person:
+                    different_person.add(f'{mr} ({mr.pk}) has person {mr.person} ({mr.person.pk}) but an email {mr.email} attached to a different person {email_person} ({email_person.pk}).')
+            elif email_person:
+                mr.person = email_person
+                mr.save()
+                repaired_records += 1
+            else:
+                maybe_person_qs = Person.objects.filter(name__icontains=mr.last_name).filter(name__icontains=mr.first_name)
+#                if not maybe_person_qs.exists():
+#                    maybe_person_qs = Person.objects.filter(name__icontains=mr.last_name)
+                if maybe_person_qs:
+                    maybe_person.add(f'{mr} ({mr.pk}) has email address {mr.email} which cannot be associated with any Person. Consider these possible people {[(p,p.pk) for p in maybe_person_qs]}')
+                else:
+                    no_person.add(f'{mr} ({mr.pk}) has email address {mr.email} which cannot be associated with any Person')
+        else:
+            no_email.add(f'{mr} ({mr.pk}) provides no email address')
+
+    return ok_records, repaired_records, skipped, maybe_address, different_person, maybe_person, no_person, no_email

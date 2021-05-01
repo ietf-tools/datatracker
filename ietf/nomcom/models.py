@@ -59,6 +59,7 @@ class NomCom(models.Model):
                                                 help_text='Display pictures of each nominee (if available) on the feedback pages')
     show_accepted_nominees = models.BooleanField(verbose_name='Show accepted nominees', default=True, 
                                                  help_text='Show accepted nominees on the public nomination page')
+    first_call_for_volunteers = models.DateField(verbose_name='Date of the first call for volunteers', blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'NomComs'

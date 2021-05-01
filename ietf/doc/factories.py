@@ -13,7 +13,7 @@ from django.conf import settings
 
 from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor,
     StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent,
-    DocumentActionHolder)
+    DocumentActionHolder, DocumentAuthor)
 from ietf.group.models import Group
 
 def draft_name_generator(type_id,group,n):
@@ -365,3 +365,14 @@ class DocumentActionHolderFactory(factory.DjangoModelFactory):
         
     document = factory.SubFactory(WgDraftFactory)
     person = factory.SubFactory('ietf.person.factories.PersonFactory')
+
+class DocumentAuthorFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = DocumentAuthor
+
+    document = factory.SubFactory(DocumentFactory)
+    person = factory.SubFactory('ietf.person.factories.PersonFactory')
+    email = factory.LazyAttribute(lambda obj: obj.person.email())
+
+class WgDocumentAuthorFactory(DocumentAuthorFactory):
+    document = factory.SubFactory(WgDraftFactory)
