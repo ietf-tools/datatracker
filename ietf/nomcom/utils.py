@@ -521,9 +521,11 @@ def list_eligible_8989(date, base_qs=None):
         Q(role__name_id__in=('chair','secr'),
           role__group__state_id='active',
           role__group__type_id='wg',
+          role__group__time__lte=date,
         ) 
         # was an officer since the given date (I think this is wrong - it looks at when roles _start_, not when roles end)
       | Q(rolehistory__group__time__gte=three_years_ago,
+          rolehistory__group__time__lte=date,
           rolehistory__name_id__in=('chair','secr'),
           rolehistory__group__state_id='active',
           rolehistory__group__type_id='wg',

@@ -24,7 +24,7 @@ import debug                            # pyflakes:ignore
 from ietf.dbtemplate.factories import DBTemplateFactory
 from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.factories import DocEventFactory, WgDocumentAuthorFactory
-from ietf.group.factories import RoleFactory, RoleHistoryFactory
+from ietf.group.factories import GroupFactory, GroupHistoryFactory, RoleFactory, RoleHistoryFactory
 from ietf.group.models import Group, Role
 from ietf.meeting.factories import MeetingFactory
 from ietf.message.models import Message
@@ -2302,8 +2302,19 @@ class rfc8989EligibilityTests(TestCase):
 
         self.assertEqual(set([chair,secr]), set(list_eligible(nomcom=self.nomcom)))
 
-    # Current implementation of 8989 rule 2 has an edge case bug
-    # If someone was made a wg officer after the elgibility date proscribed by rfc8989, they will still be counted as eligible.
+
+    def test_elig_by_office_edge(self):
+
+        elig_date=get_eligibility_date(self.nomcom)
+        day_after = elig_date + datetime.timedelta(days=1)
+        two_days_after = elig_date + datetime.timedelta(days=2)
+
+        group = GroupFactory(time=two_days_after)
+        GroupHistoryFactory(group=group,time=day_after)
+
+        after_chair = RoleFactory(name_id='chair',group=group).person
+
+        self.assertFalse(is_eligible(person=after_chair,nomcom=self.nomcom))
 
 
     def test_elig_by_office_closed_groups(self):
