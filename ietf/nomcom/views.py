@@ -24,7 +24,6 @@ from ietf.dbtemplate.views import group_template_edit, group_template_show
 from ietf.name.models import NomineePositionStateName, FeedbackTypeName
 from ietf.group.models import Group, GroupEvent, Role 
 from ietf.message.models import Message
-from ietf.meeting.models import Meeting
 
 from ietf.nomcom.decorators import nomcom_private_key_required
 from ietf.nomcom.forms import (NominateForm, NominateNewPersonForm, FeedbackForm, QuestionnaireForm,
@@ -36,12 +35,11 @@ from ietf.nomcom.forms import (NominateForm, NominateNewPersonForm, FeedbackForm
 from ietf.nomcom.models import (Position, NomineePosition, Nominee, Feedback, NomCom, ReminderDates,
                                 FeedbackLastSeen, Topic, TopicFeedbackLastSeen, )
 from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key,
-                               get_hash_nominee_position, send_reminder_to_nominees,
-                               HOME_TEMPLATE, NOMINEE_ACCEPT_REMINDER_TEMPLATE,NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE,
-                               DISQUALIFYING_ROLE_QUERY_EXPRESSION)
+                               get_hash_nominee_position, send_reminder_to_nominees, list_eligible,
+                               HOME_TEMPLATE, NOMINEE_ACCEPT_REMINDER_TEMPLATE,NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE, )
+
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person
-from ietf.utils import log
 from ietf.utils.response import permission_denied
 
 import debug                  # pyflakes:ignore
@@ -1275,31 +1273,7 @@ def extract_email_lists(request, year):
 def eligible(request, year):
     nomcom = get_nomcom_by_year(year)
 
-    # This should probably be refined.  If the nomcom year is this year, then
-    # today's date makes sense; for previous nomcoms, we should probably get
-    # the date of the announcement of the Call for Volunteers, instead
-    date = datetime.date.today()
-    previous_five = ( Meeting.objects.filter(type='ietf',date__lte=date)
-                        .exclude(city='').exclude(city='Virtual')
-                        .order_by('-date')[:5] )
-    log.assertion("len(previous_five) == 5")
-    attendees = {}
-    potentials = set()
-    for m in previous_five:
-        registration_emails = m.meetingregistration_set.filter(attended=True).values_list('email',flat=True)
-        attendees[m] = Person.objects.filter(email__address__in=registration_emails).distinct()
-        # See RFC8713 section 4.15
-        disqualified_roles = Role.objects.filter(DISQUALIFYING_ROLE_QUERY_EXPRESSION)
-        potentials.update(attendees[m].exclude(role__in=disqualified_roles))
-    eligible_persons = []
-    for p in potentials:
-        count = 0
-        for m in previous_five:
-            if p in attendees[m]:
-                count += 1
-        if count >= 3:
-            eligible_persons.append(p)
-
+    eligible_persons = list(list_eligible(nomcom=nomcom))
     eligible_persons.sort(key=lambda p: p.last_name() )
 
     return render(request, 'nomcom/eligible.html',

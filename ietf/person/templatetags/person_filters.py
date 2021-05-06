@@ -6,14 +6,14 @@ from django import template
 
 import debug                            # pyflakes:ignore
 
-from ietf.meeting.utils import is_nomcom_eligible as util_is_nomcom_eligible
+from ietf.nomcom.utils import is_eligible 
 from ietf.person.models import Alias
 
 register = template.Library()
 
 @register.filter
 def is_nomcom_eligible(person, date=datetime.date.today()):
-    return util_is_nomcom_eligible(person,date)
+    return is_eligible(person=person,date=date)
 
 @register.filter
 def person_by_name(name):

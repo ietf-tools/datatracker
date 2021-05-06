@@ -9,6 +9,7 @@ import shutil
 
 from pyquery import PyQuery
 from urllib.parse import urlparse
+from itertools import combinations
 
 from django.db import IntegrityError
 from django.db.models import Max
@@ -22,7 +23,9 @@ import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.factories import DBTemplateFactory
 from ietf.dbtemplate.models import DBTemplate
-from ietf.group.models import Group
+from ietf.doc.factories import DocEventFactory, WgDocumentAuthorFactory
+from ietf.group.factories import GroupFactory, GroupHistoryFactory, RoleFactory, RoleHistoryFactory
+from ietf.group.models import Group, Role
 from ietf.meeting.factories import MeetingFactory
 from ietf.message.models import Message
 from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comments, \
@@ -35,10 +38,13 @@ from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_s
 from ietf.nomcom.factories import NomComFactory, FeedbackFactory, TopicFactory, \
                                   nomcom_kwargs_for_year, provide_private_key_to_test_client, \
                                   key
-from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, get_hash_nominee_position
+from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, \
+                              get_hash_nominee_position, is_eligible, list_eligible, \
+                              get_eligibility_date
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Email, Person
 from ietf.stats.models import MeetingRegistration
+from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 
@@ -2117,3 +2123,302 @@ class TopicTests(TestCase):
             self.assertEqual(r.status_code,200)
             self.assertEqual(topic.feedback_set.count(),1)
             self.client.logout()
+
+class EligibilityUnitTests(TestCase):
+
+    def test_get_eligibility_date(self):
+
+        # No Nomcoms exist:
+        self.assertEqual(get_eligibility_date(), datetime.date(datetime.date.today().year,5,1))
+
+        # a provided date trumps anything in the database
+        self.assertEqual(get_eligibility_date(date=datetime.date(2001,2,3)), datetime.date(2001,2,3))
+        n = NomComFactory(group__acronym='nomcom2015',populate_personnel=False)
+        self.assertEqual(get_eligibility_date(date=datetime.date(2001,2,3)), datetime.date(2001,2,3))
+        self.assertEqual(get_eligibility_date(nomcom=n, date=datetime.date(2001,2,3)), datetime.date(2001,2,3))
+
+        # Now there's a nomcom in the database
+        self.assertEqual(get_eligibility_date(nomcom=n), datetime.date(2015,5,1))
+        n.first_call_for_volunteers = datetime.date(2015,5,17)
+        n.save()
+        self.assertEqual(get_eligibility_date(nomcom=n), datetime.date(2015,5,17))
+        # No nomcoms in the database with seated members
+        self.assertEqual(get_eligibility_date(), datetime.date(datetime.date.today().year,5,1))
+
+        RoleFactory(group=n.group,name_id='member')
+        self.assertEqual(get_eligibility_date(),datetime.date(2016,5,1))
+
+        NomComFactory(group__acronym='nomcom2016', populate_personnel=False, first_call_for_volunteers=datetime.date(2016,5,4))
+        self.assertEqual(get_eligibility_date(),datetime.date(2016,5,4))
+
+        this_year = datetime.date.today().year
+        NomComFactory(group__acronym=f'nomcom{this_year}', first_call_for_volunteers=datetime.date(this_year,5,6))
+        self.assertEqual(get_eligibility_date(),datetime.date(this_year,5,6))
+
+
+class rfc8713EligibilityTests(TestCase):
+
+    def setUp(self):
+        self.nomcom = NomComFactory(group__acronym='nomcom2019', populate_personnel=False, first_call_for_volunteers=datetime.date(2019,5,1))
+
+        meetings = [ MeetingFactory(date=date,type_id='ietf') for date in (
+            datetime.date(2019,3,1),
+            datetime.date(2018,11,1),
+            datetime.date(2018,7,1),
+            datetime.date(2018,3,1),
+            datetime.date(2017,11,1),
+        )]
+
+        self.eligible_people = list()
+        self.ineligible_people = list()
+
+        for combo_len in range(0,6):
+            for combo in combinations(meetings,combo_len):
+                p = PersonFactory()
+                for m in combo:
+                    MeetingRegistrationFactory(person=p, meeting=m)
+                if combo_len<3:
+                    self.ineligible_people.append(p)
+                else:
+                    self.eligible_people.append(p)
+
+        # No-one is eligible for the other_nomcom
+        self.other_nomcom = NomComFactory(group__acronym='nomcom2018',first_call_for_volunteers=datetime.date(2018,5,1))
+
+        # Someone is eligible at this other_date
+        self.other_date = datetime.date(2009,5,1)
+        self.other_people = PersonFactory.create_batch(1)
+        for date in (datetime.date(2009,3,1), datetime.date(2008,11,1), datetime.date(2008,7,1)):
+            MeetingRegistrationFactory(person=self.other_people[0],meeting__date=date, meeting__type_id='ietf')
+
+
+    def test_is_person_eligible(self):
+        for person in self.eligible_people:
+            self.assertTrue(is_eligible(person,self.nomcom))
+            self.assertTrue(is_eligible(person))
+            self.assertFalse(is_eligible(person,nomcom=self.other_nomcom))
+            self.assertFalse(is_eligible(person,date=self.other_date))
+
+        for person in self.ineligible_people:
+            self.assertFalse(is_eligible(person,self.nomcom))
+
+        for person in self.other_people:
+            self.assertTrue(is_eligible(person,date=self.other_date))
+
+
+    def test_list_eligible(self):
+        self.assertEqual(set(list_eligible()), set(self.eligible_people))
+        self.assertEqual(set(list_eligible(self.nomcom)), set(self.eligible_people))
+        self.assertEqual(set(list_eligible(self.other_nomcom)),set(self.other_people))
+        self.assertEqual(set(list_eligible(date=self.other_date)),set(self.other_people))
+
+
+class rfc8788EligibilityTests(TestCase):
+
+    def setUp(self):
+        self.nomcom = NomComFactory(group__acronym='nomcom2020', populate_personnel=False, first_call_for_volunteers=datetime.date(2020,5,1))
+
+        meetings = [MeetingFactory(number=number, date=date, type_id='ietf') for number,date in [
+            ('106', datetime.date(2019, 11, 16)),
+            ('105', datetime.date(2019, 7, 20)),
+            ('104', datetime.date(2019, 3, 23)),
+            ('103', datetime.date(2018, 11, 3)),
+            ('102', datetime.date(2018, 7, 14)),
+        ]]
+
+        self.eligible_people = list()
+        self.ineligible_people = list()
+
+        for combo_len in range(0,6):
+            for combo in combinations(meetings,combo_len):
+                p = PersonFactory()
+                for m in combo:
+                    MeetingRegistrationFactory(person=p, meeting=m)
+                if combo_len<3:
+                    self.ineligible_people.append(p)
+                else:
+                    self.eligible_people.append(p)
+
+    def test_is_person_eligible(self):
+        for person in self.eligible_people:
+            self.assertTrue(is_eligible(person,self.nomcom))
+
+        for person in self.ineligible_people:
+            self.assertFalse(is_eligible(person,self.nomcom))
+
+
+    def test_list_eligible(self):
+        self.assertEqual(set(list_eligible(self.nomcom)), set(self.eligible_people))
+
+class rfc8989EligibilityTests(TestCase):
+
+    def setUp(self):
+        self.nomcom = NomComFactory(group__acronym='nomcom2021', populate_personnel=False, first_call_for_volunteers=datetime.date(2021,5,15))
+        # make_immutable_test_data makes things this test does not want
+        Role.objects.filter(name_id__in=('chair','secr')).delete()
+
+    def test_elig_by_meetings(self):
+
+        meetings = [MeetingFactory(number=number, date=date, type_id='ietf') for number,date in [
+            ('110', datetime.date(2021, 3, 6)),
+            ('109', datetime.date(2020, 11, 14)),
+            ('108', datetime.date(2020, 7, 25)),
+            ('107', datetime.date(2020, 3, 21)),
+            ('106', datetime.date(2019, 11, 16)),
+        ]]
+
+        eligible_people = list()
+        ineligible_people = list()
+
+        for combo_len in range(0,6):
+            for combo in combinations(meetings,combo_len):
+                p = PersonFactory()
+                for m in combo:
+                    MeetingRegistrationFactory(person=p, meeting=m)
+                if combo_len<3:
+                    ineligible_people.append(p)
+                else:
+                    eligible_people.append(p)
+
+        self.assertEqual(set(eligible_people),set(list_eligible(self.nomcom)))
+
+        for person in eligible_people:
+            self.assertTrue(is_eligible(person,self.nomcom))
+
+        for person in ineligible_people:
+            self.assertFalse(is_eligible(person,self.nomcom))
+
+    def test_elig_by_office_active_groups(self):
+
+        chair = RoleFactory(name_id='chair').person
+
+        secr = RoleFactory(name_id='secr').person
+
+        nobody=PersonFactory()
+
+        self.assertTrue(is_eligible(person=chair,nomcom=self.nomcom))
+        self.assertTrue(is_eligible(person=secr,nomcom=self.nomcom))
+        self.assertFalse(is_eligible(person=nobody,nomcom=self.nomcom))
+
+        self.assertEqual(set([chair,secr]), set(list_eligible(nomcom=self.nomcom)))
+
+
+    def test_elig_by_office_edge(self):
+
+        elig_date=get_eligibility_date(self.nomcom)
+        day_after = elig_date + datetime.timedelta(days=1)
+        two_days_after = elig_date + datetime.timedelta(days=2)
+
+        group = GroupFactory(time=two_days_after)
+        GroupHistoryFactory(group=group,time=day_after)
+
+        after_chair = RoleFactory(name_id='chair',group=group).person
+
+        self.assertFalse(is_eligible(person=after_chair,nomcom=self.nomcom))
+
+
+    def test_elig_by_office_closed_groups(self):
+
+        elig_date=get_eligibility_date(self.nomcom)
+        day_before = elig_date-datetime.timedelta(days=1)
+        year_before = datetime.date(elig_date.year-1,elig_date.month,elig_date.day)
+        three_years_before = datetime.date(elig_date.year-3,elig_date.month,elig_date.day)
+        just_after_three_years_before = three_years_before + datetime.timedelta(days=1)
+        just_before_three_years_before = three_years_before - datetime.timedelta(days=1)
+
+        eligible = list()
+        ineligible = list()
+
+        p1 = RoleHistoryFactory(
+            name_id='chair',
+            group__time=day_before,
+            group__group__state_id='conclude',
+        ).person
+        eligible.append(p1)
+
+        p2 = RoleHistoryFactory(
+            name_id='secr',
+            group__time=year_before,
+            group__group__state_id='conclude',
+        ).person
+        eligible.append(p2)
+
+        p3 = RoleHistoryFactory(
+            name_id='secr',
+            group__time=just_after_three_years_before,
+            group__group__state_id='conclude',
+        ).person
+        eligible.append(p3)
+
+        p4 = RoleHistoryFactory(
+            name_id='chair',
+            group__time=three_years_before,
+            group__group__state_id='conclude',
+        ).person
+        eligible.append(p4)
+
+        p5 = RoleHistoryFactory(
+            name_id='chair',
+            group__time=just_before_three_years_before,
+            group__group__state_id='conclude',
+        ).person
+        ineligible.append(p5)
+
+        for person in eligible:
+            self.assertTrue(is_eligible(person,self.nomcom))
+
+        for person in ineligible:
+            self.assertFalse(is_eligible(person,self.nomcom))
+
+        self.assertEqual(set(list_eligible(nomcom=self.nomcom)),set(eligible))
+
+
+    def test_elig_by_author(self):
+
+        elig_date = get_eligibility_date(self.nomcom)
+
+        last_date = elig_date
+        first_date = datetime.date(last_date.year-5,last_date.month,last_date.day)
+        day_after_last_date = last_date+datetime.timedelta(days=1)
+        day_before_first_date = first_date-datetime.timedelta(days=1)
+        middle_date = datetime.date(last_date.year-3,last_date.month,last_date.day)
+
+        eligible = set()
+        ineligible = set()
+
+        p = PersonFactory()
+        ineligible.add(p)
+
+        p = PersonFactory()
+        da = WgDocumentAuthorFactory(person=p)
+        DocEventFactory(type='published_rfc',doc=da.document,time=middle_date)
+        ineligible.add(p)
+
+        p = PersonFactory()
+        da = WgDocumentAuthorFactory(person=p)
+        DocEventFactory(type='iesg_approved',doc=da.document,time=last_date)
+        da = WgDocumentAuthorFactory(person=p)
+        DocEventFactory(type='published_rfc',doc=da.document,time=first_date)
+        eligible.add(p)
+
+        p = PersonFactory()
+        da = WgDocumentAuthorFactory(person=p)
+        DocEventFactory(type='iesg_approved',doc=da.document,time=middle_date)
+        da = WgDocumentAuthorFactory(person=p)
+        DocEventFactory(type='published_rfc',doc=da.document,time=day_before_first_date)
+        ineligible.add(p)
+
+        p = PersonFactory()
+        da = WgDocumentAuthorFactory(person=p)
+        DocEventFactory(type='iesg_approved',doc=da.document,time=day_after_last_date)
+        da = WgDocumentAuthorFactory(person=p)
+        DocEventFactory(type='published_rfc',doc=da.document,time=middle_date)
+        ineligible.add(p)
+
+        for person in eligible:
+            self.assertTrue(is_eligible(person,self.nomcom))
+
+        for person in ineligible:
+            self.assertFalse(is_eligible(person,self.nomcom))
+
+        self.assertEqual(set(list_eligible(nomcom=self.nomcom)),set(eligible))
