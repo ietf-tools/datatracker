@@ -2,7 +2,7 @@
 
 import debug # pyflakes:ignore
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 from ietf.stats.utils import find_meetingregistration_person_issues
 

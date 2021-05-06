@@ -480,6 +480,10 @@ def create_feedback_email(nomcom, msg):
 class EncryptedException(Exception):
     pass
 
+def remove_disqualified(queryset):
+        disqualified_roles = Role.objects.filter(DISQUALIFYING_ROLE_QUERY_EXPRESSION)
+        return queryset.exclude(role__in=disqualified_roles)
+
 def is_eligible(person, nomcom=None, date=None):
     return list_eligible(nomcom=nomcom, date=date, base_qs=Person.objects.filter(pk=person.pk)).exists()
 
@@ -500,13 +504,13 @@ def list_eligible_8713(date, base_qs=None):
     if not base_qs:
         base_qs = Person.objects.all()
     previous_five = previous_five_meetings(date)
-    return three_of_five_eligible(previous_five=previous_five, queryset=base_qs)
+    return remove_disqualified(three_of_five_eligible(previous_five=previous_five, queryset=base_qs))
 
 def list_eligible_8788(date, base_qs=None):
     if not base_qs:
         base_qs = Person.objects.all()
     previous_five = Meeting.objects.filter(number__in=['102','103','104','105','106'])
-    return three_of_five_eligible(previous_five=previous_five, queryset=base_qs)
+    return remove_disqualified(three_of_five_eligible(previous_five=previous_five, queryset=base_qs))
 
 def list_eligible_8989(date, base_qs=None):
     if not base_qs:
@@ -542,12 +546,12 @@ def list_eligible_8989(date, base_qs=None):
             document_author_count = Count('documentauthor')
         ).filter(document_author_count__gte=2)
 
-#    return three_of_five_qs.union(officer_qs, author_qs)
-    return Person.objects.filter(pk__in=
+    # Would be nice to use queryset union here, but the annotations make that difficult
+    return remove_disqualified(Person.objects.filter(pk__in=
         set(three_of_five_qs.values_list('pk',flat=True)).union(
         set(officer_qs.values_list('pk',flat=True))).union(
         set(author_qs.values_list('pk',flat=True)))
-    )
+    ))
 
 def get_eligibility_date(nomcom=None, date=None):
     if date:

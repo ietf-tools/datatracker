@@ -6,7 +6,6 @@ import re
 import requests
 from collections import defaultdict
 
-from django.db.models import F, Q
 from django.conf import settings
 from django.contrib.auth.models import User
 

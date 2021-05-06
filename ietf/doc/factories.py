@@ -13,7 +13,7 @@ from django.conf import settings
 
 from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor,
     StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent,
-    DocumentActionHolder, DocumentAuthor)
+    DocumentActionHolder)
 from ietf.group.models import Group
 
 def draft_name_generator(type_id,group,n):

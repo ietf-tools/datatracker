@@ -18,12 +18,11 @@ from django.utils.safestring import mark_safe
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.meeting.models import Session, Meeting, SchedulingEvent, TimeSlot, Constraint, SchedTimeSessAssignment
-from ietf.group.models import Group, Role
+from ietf.meeting.models import Session, SchedulingEvent, TimeSlot, Constraint, SchedTimeSessAssignment
+from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName, ConstraintName
-from ietf.nomcom.utils import DISQUALIFYING_ROLE_QUERY_EXPRESSION
-from ietf.person.models import Person, Email
+from ietf.person.models import Person
 from ietf.secr.proceedings.proc_utils import import_audio_files
 
 def session_time_for_sorting(session, use_meeting_date):
@@ -170,25 +169,6 @@ def finalize(meeting):
     meeting.proceedings_final = True
     meeting.save()
     return
-
-def attended_ietf_meetings(person):
-    email_addresses = Email.objects.filter(person=person).values_list('address',flat=True)
-    return Meeting.objects.filter(
-                type='ietf',
-                meetingregistration__email__in=email_addresses,
-                meetingregistration__attended=True,
-            )
-
-def attended_in_last_five_ietf_meetings(person, date=datetime.datetime.today()):
-    previous_five = Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]
-    attended = attended_ietf_meetings(person)
-    return set(previous_five).intersection(attended)
-
-def is_nomcom_eligible(person, date=datetime.date.today()):
-    attended = attended_in_last_five_ietf_meetings(person, date)
-    disqualifying_roles = Role.objects.filter(person=person).filter(DISQUALIFYING_ROLE_QUERY_EXPRESSION)
-    return len(attended)>=3 and not disqualifying_roles.exists()
-
 
 def sort_accept_tuple(accept):
     tup = []
