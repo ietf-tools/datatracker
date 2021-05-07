@@ -49,7 +49,7 @@
       </tr>
     </thead>
 
-    <tbody>
+    <tbody id="doclist">
       {% for doc in docs %}
         <tr class="{% if doc.by_me %}byme{% endif %} {% if doc.for_me %}forme{% endif %}">
           <td>
@@ -83,10 +83,10 @@
     $(".discuss").click(function () {
         var x = $(this).find("input").val();
         if (x === "all") {
-            $("tbody tr").removeClass("hidden");
+            $("#doclist>tr").removeClass("hidden");
         } else {
-            $("tbody tr." + x).removeClass("hidden");
-            $("tbody tr:not(." + x + ")").addClass("hidden");
+            $("#doclist>tr." + x).removeClass("hidden");
+            $("#doclist>tr:not(." + x + ")").addClass("hidden");
         }
     });
   </script>
