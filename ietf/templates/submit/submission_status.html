@@ -31,7 +31,7 @@
     </p>
   {% endif %}
 
-  {% if submitter_form.errors or replaces_form.errors %}
+  {% if submitter_form.errors or replaces_form.errors or extresources_form.errors %}
     <p class="alert alert-danger">Please fix errors in the form below.</p>
   {% endif %}
 
@@ -269,6 +269,42 @@
         {% if errors.formal_languages %}<p class="text-danger bg-danger"><b>{{ errors.formal_languages }}</b></p>{% endif %}
       </td>
     </tr>
+  
+  <tr>
+      <th>Submission additional resources</th>
+      <td>
+          {% for r in external_resources.current %}{% with res=r.res added=r.added %}
+          <div>
+              {{ res.name.name }}: {{ res.value }}
+              {% if res.display_name %} (as &quot;{{ res.display_name }}&quot;) {% endif %}
+              {% if external_resources.show_changes and added %}
+                  <span class="label label-success">New</span>
+              {% endif %}
+          </div>
+          {% endwith %}
+          {% empty %}
+              None 
+          {% endfor %}
+      </td>
+  </tr>
+
+  {% if external_resources.show_changes %}<tr>
+      <th>Current document additional resources</th>
+      <td>
+          {% for r in external_resources.previous %}{% with res=r.res removed=r.removed %}
+          <div>
+              {{ res.name.name }}: {{ res.value }}
+              {% if res.display_name %} (as &quot;{{ res.display_name }}&quot;) {% endif %}
+              {% if removed %}
+                  <span class="label label-warning">Removed</span>
+              {% endif %}
+          </div>
+          {% endwith %}
+          {% empty %}
+              None
+          {% endfor %}
+      </td>
+  </tr>{% endif %}
   </table>
 
   {% if can_edit %}
@@ -287,6 +323,7 @@
         {% csrf_token %}
         {% include "submit/submitter_form.html" %}
         {% include "submit/replaces_form.html" %}
+        {% include "submit/extresources_form.html" %}
         <input type="hidden" name="action" value="autopost">
 	<h3>Post submission</h3>
         <button class="btn btn-primary" type="submit">Post submission</button>

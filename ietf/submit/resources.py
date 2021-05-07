@@ -10,7 +10,7 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 from ietf.submit.models import ( Preapproval, SubmissionCheck, Submission,
-    SubmissionEmailEvent, SubmissionEvent )
+    SubmissionEmailEvent, SubmissionEvent, SubmissionExtResource )
 from ietf.person.resources import PersonResource
 
 
@@ -139,3 +139,23 @@ class SubmissionEmailEventResource(ModelResource):
         }
 api.submit.register(SubmissionEmailEventResource())
 
+
+
+from ietf.name.resources import ExtResourceNameResource
+class SubmissionExtResourceResource(ModelResource):
+    name             = ToOneField(ExtResourceNameResource, 'name')
+    submission       = ToOneField(SubmissionResource, 'submission')
+    class Meta:
+        queryset = SubmissionExtResource.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        resource_name = 'submissionextresource'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "display_name": ALL,
+            "value": ALL,
+            "name": ALL_WITH_RELATIONS,
+            "submission": ALL_WITH_RELATIONS,
+        }
+api.submit.register(SubmissionExtResourceResource())

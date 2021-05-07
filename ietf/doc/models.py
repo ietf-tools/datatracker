@@ -922,14 +922,56 @@ class DocumentURL(models.Model):
     desc = models.CharField(max_length=255, default='', blank=True)
     url  = models.URLField(max_length=2083) # 2083 is the legal max for URLs
 
-class DocExtResource(models.Model):
-    doc = ForeignKey(Document) # Should this really be to DocumentInfo rather than Document?
+class ExtResource(models.Model):
     name = models.ForeignKey(ExtResourceName, on_delete=models.CASCADE)
     display_name = models.CharField(max_length=255, default='', blank=True)
     value = models.CharField(max_length=2083) # 2083 is the maximum legal URL length
     def __str__(self):
         priority = self.display_name or self.name.name
         return u"%s (%s) %s" % (priority, self.name.slug, self.value)
+
+    class Meta:
+        abstract = True
+        
+    # The to_form_entry_str() and matching from_form_entry_str() class method are
+    # defined here to ensure that change request emails suggest resources in the
+    # correct format to cut-and-paste into the current textarea on the external
+    # resource form. If that is changed to a formset or other non-text entry field,
+    # these methods really should not be needed.
+    def to_form_entry_str(self):
+        """Serialize as a string suitable for entry in a form"""
+        if self.display_name:
+            return "%s %s (%s)" % (self.name.slug, self.value, self.display_name.strip('()'))
+        else:
+            return "%s %s" % (self.name.slug, self.value)
+
+    @classmethod
+    def from_form_entry_str(cls, s):
+        """Create an instance from the form_entry_str format
+
+        Expected format is "<tag> <value>[ (<display name>)]"
+        Any text after the value is treated as the display name, with whitespace replaced by
+        spaces and leading/trailing parentheses stripped.
+        """
+        parts = s.split(None, 2)
+        display_name = ' '.join(parts[2:]).strip('()')
+        kwargs = dict(name_id=parts[0], value=parts[1])
+        if display_name:
+            kwargs['display_name'] = display_name
+        return cls(**kwargs)
+
+    @classmethod
+    def from_sibling_class(cls, sib):
+        """Create an instance with same base attributes as another subclass instance"""
+        kwargs = dict()
+        for field in ExtResource._meta.get_fields():
+            value = getattr(sib, field.name, None)
+            if value:
+                kwargs[field.name] = value
+        return cls(**kwargs)
+
+class DocExtResource(ExtResource):
+    doc = ForeignKey(Document) # Should this really be to DocumentInfo rather than Document?
 
 class RelatedDocHistory(models.Model):
     source = ForeignKey('DocHistory')

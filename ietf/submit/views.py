@@ -6,7 +6,7 @@ import re
 import base64
 import datetime
 
-from typing import Optional         # pyflakes:ignore
+from typing import Optional, cast         # pyflakes:ignore
 
 from django.conf import settings
 from django.contrib import messages
@@ -22,6 +22,7 @@ from django.views.decorators.csrf import csrf_exempt
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, DocAlias, AddedMessageEvent
+from ietf.doc.forms import ExtResourceForm
 from ietf.group.models import Group
 from ietf.group.utils import group_features_group_filter
 from ietf.ietfauth.utils import has_role, role_required
@@ -31,14 +32,14 @@ from ietf.person.models import Email
 from ietf.submit.forms import ( SubmissionManualUploadForm, SubmissionAutoUploadForm, AuthorForm,
     SubmitterForm, EditSubmissionForm, PreapprovalForm, ReplacesForm, SubmissionEmailForm, MessageModelForm )
 from ietf.submit.mail import send_full_url, send_manual_post_request, add_submission_email, get_reply_to
-from ietf.submit.models import (Submission, Preapproval,
+from ietf.submit.models import (Submission, Preapproval, SubmissionExtResource,
     DraftSubmissionStateName, SubmissionEmailEvent )
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
     recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
     post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
     get_submission, fill_in_submission, apply_checkers, save_files, 
     check_submission_revision_consistency, accept_submission, accept_submission_requires_group_approval,
-    accept_submission_requires_prev_auth_approval)
+    accept_submission_requires_prev_auth_approval, update_submission_external_resources )
 from ietf.stats.utils import clean_country_name
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.log import log
@@ -267,6 +268,7 @@ def submission_status(request, submission_id, access_token=None):
     confirmation_list = [ "%s <%s>" % parseaddr(a) for a in addresses ]
 
     message = None
+
     if submission.state_id == "cancel":
         message = ('error', 'This submission has been cancelled, modification is no longer possible.')
     elif submission.state_id == "auth":
@@ -278,8 +280,58 @@ def submission_status(request, submission_id, access_token=None):
     elif submission.state_id == "aut-appr":
         message = ('success', 'The submission is pending approval by the authors of the previous version. An email has been sent to: %s' % ", ".join(confirmation_list))
 
+    existing_doc = submission.existing_document()
+
+    # Sort out external resources
+    external_resources = [
+        dict(res=r, added=False)
+        for r in submission.external_resources.order_by('name__slug', 'value', 'display_name')
+    ]
+
+    # Show comparison of resources with current doc resources. If not posted or canceled,
+    # determine which resources were added / removed. In the output, submission resources
+    # will be marked as "new" if they were not present on the existing document. Document
+    # resources will be marked as "removed" if they are not present in the submission.
+    #
+    # To classify the resources, start by assuming that every submission resource already
+    # existed (the "added=False" above) and that every existing document resource was
+    # removed (the "removed=True" below). Then check every submission resource for a
+    # matching resource on the existing document that is still marked as "removed". If one
+    # exists, change the existing resource to "not removed" and leave the submission resource
+    # as "not added." If there is no matching removed resource, then mark the submission
+    # resource as "added."
+    #
+    show_resource_changes = submission.state_id not in ['posted', 'cancel']
+    doc_external_resources = [dict(res=r, removed=True)
+                              for r in existing_doc.docextresource_set.all()] if existing_doc else []
+    if show_resource_changes:
+        for item in external_resources:
+            er = cast(SubmissionExtResource, item['res'])  # cast to help type checker with the dict typing
+            # get first matching resource still marked as 'removed' from previous rev resources
+            existing_item = next(
+                filter(
+                    lambda r: (r['removed']
+                               and er.name == r['res'].name
+                               and er.value == r['res'].value
+                               and er.display_name == r['res'].display_name),
+                    doc_external_resources
+                ),
+                None
+            )  # type: ignore
+            if existing_item is None:
+                item['added'] = True
+            else:
+                existing_item['removed'] = False
+        doc_external_resources.sort(
+            key=lambda d: (d['res'].name.slug, d['res'].value, d['res'].display_name)
+        )
+
     submitter_form = SubmitterForm(initial=submission.submitter_parsed(), prefix="submitter")
     replaces_form = ReplacesForm(name=submission.name,initial=DocAlias.objects.filter(name__in=submission.replaces.split(",")))
+    extresources_form = ExtResourceForm(
+        initial=dict(resources=[er['res'] for er in external_resources]),
+        extresource_model=SubmissionExtResource,
+    )
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -289,12 +341,22 @@ def submission_status(request, submission_id, access_token=None):
 
             submitter_form = SubmitterForm(request.POST, prefix="submitter")
             replaces_form = ReplacesForm(request.POST, name=submission.name)
-            validations = [submitter_form.is_valid(), replaces_form.is_valid()]
+            extresources_form = ExtResourceForm(
+                request.POST, extresource_model=SubmissionExtResource
+            )
+            validations = [
+                submitter_form.is_valid(),
+                replaces_form.is_valid(),
+                extresources_form.is_valid(),
+            ]
 
             if all(validations):
                 submission.submitter = submitter_form.cleaned_line()
                 replaces = replaces_form.cleaned_data.get("replaces", [])
                 submission.replaces = ",".join(o.name for o in replaces)
+
+                extresources = extresources_form.cleaned_data.get('resources', [])
+                update_submission_external_resources(submission, extresources)
 
                 approvals_received = submitter_form.cleaned_data['approvals_received']
                 
@@ -388,6 +450,12 @@ def submission_status(request, submission_id, access_token=None):
         'passes_checks': passes_checks,
         'submitter_form': submitter_form,
         'replaces_form': replaces_form,
+        'extresources_form': extresources_form,
+        'external_resources': {
+            'current': external_resources, # dict with 'res' and 'added' as keys
+            'previous': doc_external_resources, # dict with 'res' and 'removed' as keys
+            'show_changes': show_resource_changes,
+        },
         'message': message,
         'can_edit': can_edit,
         'can_force_post': can_force_post,

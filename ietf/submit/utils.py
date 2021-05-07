@@ -23,18 +23,19 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, State, DocAlias, DocEvent, SubmissionDocEvent,
     DocumentAuthor, AddedMessageEvent )
 from ietf.doc.models import NewRevisionDocEvent
-from ietf.doc.models import RelatedDocument, DocRelationshipName
+from ietf.doc.models import RelatedDocument, DocRelationshipName, DocExtResource
 from ietf.doc.utils import add_state_change_event, rebuild_reference_relations
-from ietf.doc.utils import set_replaces_for_document, prettify_std_name
-from ietf.doc.mails import send_review_possibly_replaces_request
+from ietf.doc.utils import set_replaces_for_document, prettify_std_name, update_doc_extresources, can_edit_docextresources
+from ietf.doc.mails import send_review_possibly_replaces_request, send_external_resource_change_request
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import StreamName, FormalLanguageName
 from ietf.person.models import Person, Email
 from ietf.community.utils import update_name_contains_indexes_with_new_doc
 from ietf.submit.mail import ( announce_to_lists, announce_new_version, announce_to_authors,
-    announce_new_wg_00, send_approval_request, send_submission_confirmation )
-from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName, SubmissionCheck
+    send_approval_request, send_submission_confirmation, announce_new_wg_00 )
+from ietf.submit.models import ( Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName,
+    SubmissionCheck, SubmissionExtResource )
 from ietf.utils import log
 from ietf.utils.accesstoken import generate_random_key
 from ietf.utils.draft import Draft
@@ -408,9 +409,23 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     log.log(f"{submission.name}: moved files")
 
     new_replaces, new_possibly_replaces = update_replaces_from_submission(request, submission, draft)
-
     update_name_contains_indexes_with_new_doc(draft)
     log.log(f"{submission.name}: updated replaces and indexes")
+
+    # See whether a change to external resources is requested. Test for equality of sets is ugly,
+    # but works.
+    draft_resources = '\n'.join(sorted(str(r) for r in draft.docextresource_set.all()))
+    submission_resources = '\n'.join(sorted(str(r) for r in submission.external_resources.all()))
+    if draft_resources != submission_resources:
+        if can_edit_docextresources(request.user, draft):
+            update_docextresources_from_submission(request, submission, draft)
+            log.log(f"{submission.name}: updated external resources")
+        else:
+            send_external_resource_change_request(request,
+                                                  draft,
+                                                  submitter_info,
+                                                  submission.external_resources.all())
+            log.log(f"{submission.name}: sent email suggesting external resources")
 
     announce_to_lists(request, submission)
     if submission.group and submission.group.type_id == 'wg' and draft.rev == '00':
@@ -481,6 +496,12 @@ def update_replaces_from_submission(request, submission, draft):
                                 desc="Added suggested replacement relationships: %s" % ", ".join(d.name for d in suggested))
 
     return approved, suggested
+
+def update_docextresources_from_submission(request, submission, draft):
+    doc_resources = [DocExtResource.from_sibling_class(res)
+                     for res in submission.external_resources.all()]
+    by = request.user.person if request.user.is_authenticated else Person.objects.get(name='(System)')
+    update_doc_extresources(draft, doc_resources, by)
 
 def get_person_from_name_email(name, email):
     # try email
@@ -781,6 +802,7 @@ def fill_in_submission(form, submission, authors, abstract, file_size):
     submission.save()
 
     submission.formal_languages.set(FormalLanguageName.objects.filter(slug__in=form.parsed_draft.get_formal_languages()))
+    set_extresources_from_existing_draft(submission)
 
 def apply_checkers(submission, file_name):
     # run submission checkers
@@ -814,7 +836,7 @@ def accept_submission_requires_prev_auth_approval(submission):
 
 def accept_submission_requires_group_approval(submission):
     """Does acceptance process require group approval?
-    
+
     Depending on the state of the group, this approval may come from group chair or area director.
     """
     return (
@@ -825,7 +847,7 @@ def accept_submission_requires_group_approval(submission):
 
 def accept_submission(request, submission, autopost=False):
     """Accept a submission and post or put in correct state to await approvals
-    
+
     If autopost is True, will post draft if submitter is authorized to do so.
     """
     doc = submission.existing_document()
@@ -940,5 +962,24 @@ def accept_submission(request, submission, autopost=False):
         create_submission_event(request, submission, sub_event_desc)
     if docevent_desc:
         docevent_from_submission(request, submission, docevent_desc, who=Person.objects.get(name="(System)"))
-        
+
     return address_list
+
+def set_extresources_from_existing_draft(submission):
+    """Replace a submission's external resources with values from previous revision
+
+    If there is no previous revision, clears the external resource list for the submission.
+    """
+    doc = submission.existing_document()
+    if doc:
+        update_submission_external_resources(
+            submission,
+            [SubmissionExtResource.from_sibling_class(res)
+             for res in doc.docextresource_set.all()]
+        )
+
+def update_submission_external_resources(submission, new_resources):
+    submission.external_resources.all().delete()
+    for new_res in new_resources:
+        new_res.submission = submission
+        new_res.save()

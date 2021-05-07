@@ -1,0 +1,4 @@
+{% load bootstrap3 %}
+<h3>Additional resource information</h3>
+{% bootstrap_form extresources_form %}
+<p><b>Valid tags:</b> {{ extresources_form.valid_resource_tags|join:", " }}</p>
