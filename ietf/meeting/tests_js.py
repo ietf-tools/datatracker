@@ -12,7 +12,8 @@ from unittest import skipIf
 import django
 from django.utils.text import slugify
 from django.db.models import F
-from pytz import timezone
+import pytz
+
 #from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore
@@ -36,7 +37,7 @@ from ietf import settings
 if selenium_enabled():
     from selenium.webdriver.common.action_chains import ActionChains
     from selenium.webdriver.common.by import By
-    from selenium.webdriver.support.ui import Select, WebDriverWait
+    from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions
     from selenium.common.exceptions import NoSuchElementException
 
@@ -975,25 +976,22 @@ class AgendaTests(IetfSeleniumTestCase):
             with self.assertRaises(NoSuchElementException):
                 self.driver.find_element_by_xpath('//a[text()="%s"]' % slide.title)
 
-    def _wait_for_tz_change_from(self, old_tz):
-        """Helper to wait for tz displays to change from their old value"""
-        match = 'text()!="%s"' % old_tz
-        WebDriverWait(self.driver, 2).until(
-            expected_conditions.presence_of_element_located((By.XPATH, '//*[@class="current-tz"][%s]' % match))
-        )
-
     def test_agenda_time_zone_selection(self):
         self.assertNotEqual(self.meeting.time_zone, 'UTC', 'Meeting time zone must not be UTC')
 
+        wait = WebDriverWait(self.driver, 2)
         self.driver.get(self.absreverse('ietf.meeting.views.agenda'))
 
         # wait for the select box to be updated - look for an arbitrary time zone to be in
         # its options list to detect this
-        WebDriverWait(self.driver, 2).until(
-            expected_conditions.presence_of_element_located((By.XPATH, '//option[@value="America/Halifax"]'))
+        arbitrary_tz = 'America/Halifax'
+        arbitrary_tz_opt = WebDriverWait(self.driver, 2).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '#timezone-select > option[value="%s"]' % arbitrary_tz)
+            )
         )
 
-        tz_select_input = Select(self.driver.find_element_by_id('timezone_select'))
+        tz_select_input = self.driver.find_element_by_id('timezone-select')
         meeting_tz_link = self.driver.find_element_by_id('meeting-timezone')
         local_tz_link = self.driver.find_element_by_id('local-timezone')
         utc_tz_link = self.driver.find_element_by_id('utc-timezone')
@@ -1009,73 +1007,110 @@ class AgendaTests(IetfSeleniumTestCase):
         self.assertNotEqual(self.meeting.time_zone, local_tz, 'Meeting time zone must not be local time zone')
         self.assertNotEqual(local_tz, 'UTC', 'Local time zone must not be UTC')
 
+        meeting_tz_opt = tz_select_input.find_element_by_css_selector('option[value="%s"]' % self.meeting.time_zone)
+        local_tz_opt = tz_select_input.find_element_by_css_selector('option[value="%s"]' % local_tz)
+        utc_tz_opt = tz_select_input.find_element_by_css_selector('option[value="UTC"]')
+
         # Should start off in meeting time zone
-        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), self.meeting.time_zone)
+        self.assertTrue(meeting_tz_opt.is_selected())
+        # don't yet know local_tz, so can't check that it's deselected here
+        self.assertFalse(arbitrary_tz_opt.is_selected())
+        self.assertFalse(utc_tz_opt.is_selected())
         for disp in tz_displays:
             self.assertEqual(disp.text.strip(), self.meeting.time_zone)
 
         # Click 'local' button
         local_tz_link.click()
-        self._wait_for_tz_change_from(self.meeting.time_zone)
-        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), local_tz)
+        wait.until(expected_conditions.element_selection_state_to_be(meeting_tz_opt, False))
+        self.assertFalse(meeting_tz_opt.is_selected())
+        # just identified the local_tz_opt as being selected, so no check here, either
+        self.assertFalse(arbitrary_tz_opt.is_selected())
+        self.assertFalse(utc_tz_opt.is_selected())
         for disp in tz_displays:
             self.assertEqual(disp.text.strip(), local_tz)
 
         # click 'utc' button
         utc_tz_link.click()
-        self._wait_for_tz_change_from(local_tz)
-        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), 'UTC')
+        wait.until(expected_conditions.element_to_be_selected(utc_tz_opt))
+        self.assertFalse(meeting_tz_opt.is_selected())
+        self.assertFalse(local_tz_opt.is_selected())  # finally!
+        self.assertFalse(arbitrary_tz_opt.is_selected())
+        self.assertTrue(utc_tz_opt.is_selected())
         for disp in tz_displays:
             self.assertEqual(disp.text.strip(), 'UTC')
 
         # click back to meeting
         meeting_tz_link.click()
-        self._wait_for_tz_change_from('UTC')
-        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), self.meeting.time_zone)
+        wait.until(expected_conditions.element_to_be_selected(meeting_tz_opt))
+        self.assertTrue(meeting_tz_opt.is_selected())
+        self.assertFalse(local_tz_opt.is_selected())
+        self.assertFalse(arbitrary_tz_opt.is_selected())
+        self.assertFalse(utc_tz_opt.is_selected())
         for disp in tz_displays:
             self.assertEqual(disp.text.strip(), self.meeting.time_zone)
 
         # and then back to UTC...
         utc_tz_link.click()
-        self._wait_for_tz_change_from(self.meeting.time_zone)
-        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), 'UTC')
+        wait.until(expected_conditions.element_to_be_selected(utc_tz_opt))
+        self.assertFalse(meeting_tz_opt.is_selected())
+        self.assertFalse(local_tz_opt.is_selected())
+        self.assertFalse(arbitrary_tz_opt.is_selected())
+        self.assertTrue(utc_tz_opt.is_selected())
         for disp in tz_displays:
             self.assertEqual(disp.text.strip(), 'UTC')
 
         # ... and test the switch from UTC to local
         local_tz_link.click()
-        self._wait_for_tz_change_from('UTC')
-        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), local_tz)
+        wait.until(expected_conditions.element_to_be_selected(local_tz_opt))
+        self.assertFalse(meeting_tz_opt.is_selected())
+        self.assertTrue(local_tz_opt.is_selected())
+        self.assertFalse(arbitrary_tz_opt.is_selected())
+        self.assertFalse(utc_tz_opt.is_selected())
         for disp in tz_displays:
             self.assertEqual(disp.text.strip(), local_tz)
 
         # Now select a different item from the select input
-        tz_select_input.select_by_value('America/Halifax')
-        self._wait_for_tz_change_from(self.meeting.time_zone)
-        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), 'America/Halifax')
+        arbitrary_tz_opt.click()
+        wait.until(expected_conditions.element_to_be_selected(arbitrary_tz_opt))
+        self.assertFalse(meeting_tz_opt.is_selected())
+        self.assertFalse(local_tz_opt.is_selected())
+        self.assertTrue(arbitrary_tz_opt.is_selected())
+        self.assertFalse(utc_tz_opt.is_selected())
         for disp in tz_displays:
-            self.assertEqual(disp.text.strip(), 'America/Halifax')
-
+            self.assertEqual(disp.text.strip(), arbitrary_tz)
+    
     def test_agenda_time_zone_selection_updates_weekview(self):
         """Changing the time zone should update the weekview to match"""
+        class in_iframe_href:
+            """Condition class for use with WebDriverWait"""
+            def __init__(self, fragment, iframe):
+                self.fragment = fragment
+                self.iframe = iframe
+
+            def __call__(self, driver):
+                driver.switch_to.frame(self.iframe)
+                current_href= driver.execute_script(
+                    'return document.location.href'
+                )
+                driver.switch_to.default_content()
+                return self.fragment in current_href
+            
         # enable a filter so the weekview iframe is visible
         self.driver.get(self.absreverse('ietf.meeting.views.agenda') + '?show=mars')
         # wait for the select box to be updated - look for an arbitrary time zone to be in
         # its options list to detect this
-        WebDriverWait(self.driver, 2).until(
-            expected_conditions.presence_of_element_located((By.XPATH, '//option[@value="America/Halifax"]'))
+        wait = WebDriverWait(self.driver, 2)
+        option = wait.until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '#timezone-select > option[value="America/Halifax"]'))
         )
-
-        tz_select_input = Select(self.driver.find_element_by_id('timezone_select'))
-
         # Now select a different item from the select input
-        tz_select_input.select_by_value('America/Halifax')
-        self._wait_for_tz_change_from(self.meeting.time_zone)
-        self.assertEqual(tz_select_input.first_selected_option.get_attribute('value'), 'America/Halifax')
-        self.driver.switch_to.frame('weekview')
-        wv_url = self.driver.execute_script('return document.location.href')
-        self.assertIn('tz=america/halifax', wv_url)
-
+        option.click()
+        try:
+            wait.until(in_iframe_href('tz=america/halifax', 'weekview'))
+        except:
+            self.fail('iframe href not updated to contain selected time zone')
+        
 
 @ifSeleniumEnabled
 class WeekviewTests(IetfSeleniumTestCase):
@@ -1117,7 +1152,7 @@ class WeekviewTests(IetfSeleniumTestCase):
         zones_to_test = ['utc', 'America/Halifax', 'Asia/Bangkok', 'Africa/Dakar', 'Europe/Dublin']
         self.login()
         for zone_name in zones_to_test:
-            zone = timezone(zone_name)
+            zone = pytz.timezone(zone_name)
             self.driver.get(self.absreverse('ietf.meeting.views.week_view') + '?tz=' + zone_name)
             for item in self.get_expected_items():
                 if item.session.name:
@@ -1173,10 +1208,10 @@ class WeekviewTests(IetfSeleniumTestCase):
 
         # Session during a single day in meeting local time but multi-day UTC
         # Compute a time that overlaps midnight, UTC, but won't when shifted to a local time zone
-        start_time_utc = timezone('UTC').localize(
+        start_time_utc = pytz.timezone('UTC').localize(
             datetime.datetime.combine(self.meeting.date, datetime.time(23,0))
         )
-        start_time_local = start_time_utc.astimezone(timezone(self.meeting.time_zone))
+        start_time_local = start_time_utc.astimezone(pytz.timezone(self.meeting.time_zone))
 
         daytime_session = SessionFactory(
             meeting=self.meeting,
@@ -1568,6 +1603,152 @@ class InterimTests(IetfSeleniumTestCase):
         meetings = set(self.all_ietf_meetings())
         meetings.update(self.displayed_interims(groups=['mars']))
         self.do_upcoming_view_filter_test('?show=mars , ames &hide=   ames', meetings)
+
+    def test_upcoming_view_time_zone_selection(self):
+        wait = WebDriverWait(self.driver, 2)
+
+        def _assert_interim_tz_correct(sessions, tz):
+            zone = pytz.timezone(tz)
+            for session in sessions:
+                ts = session.official_timeslotassignment().timeslot
+                start = ts.utc_start_time().astimezone(zone).strftime('%Y-%m-%d %H:%M')
+                end = ts.utc_end_time().astimezone(zone).strftime('%H:%M')
+                meeting_link = self.driver.find_element_by_link_text(session.meeting.number)
+                time_td = meeting_link.find_element_by_xpath('../../td[@class="session-time"]')
+                self.assertIn('%s - %s' % (start, end), time_td.text)
+
+        def _assert_ietf_tz_correct(meetings, tz):
+            zone = pytz.timezone(tz)
+            for meeting in meetings:
+                meeting_zone = pytz.timezone(meeting.time_zone)
+                start_dt = meeting_zone.localize(datetime.datetime.combine(
+                    meeting.date, 
+                    datetime.time.min
+                ))
+                end_dt = meeting_zone.localize(datetime.datetime.combine(
+                    start_dt + datetime.timedelta(days=meeting.days - 1),
+                    datetime.time.max
+                ))
+                
+                start = start_dt.astimezone(zone).strftime('%Y-%m-%d')
+                end = end_dt.astimezone(zone).strftime('%Y-%m-%d')
+                meeting_link = self.driver.find_element_by_link_text("IETF " + meeting.number)
+                time_td = meeting_link.find_element_by_xpath('../../td[@class="meeting-time"]')
+                self.assertIn('%s - %s' % (start, end), time_td.text)
+
+        sessions = [m.session_set.first() for m in self.displayed_interims()]
+        self.assertGreater(len(sessions), 0)
+        ietf_meetings = self.all_ietf_meetings()
+        self.assertGreater(len(ietf_meetings), 0)
+
+        self.driver.get(self.absreverse('ietf.meeting.views.upcoming'))
+        tz_select_input = self.driver.find_element_by_id('timezone-select')
+        tz_select_bottom_input = self.driver.find_element_by_id('timezone-select-bottom')
+        local_tz_link = self.driver.find_element_by_id('local-timezone')
+        utc_tz_link = self.driver.find_element_by_id('utc-timezone')
+        local_tz_bottom_link = self.driver.find_element_by_id('local-timezone-bottom')
+        utc_tz_bottom_link = self.driver.find_element_by_id('utc-timezone-bottom')
+        
+        # wait for the select box to be updated - look for an arbitrary time zone to be in
+        # its options list to detect this
+        arbitrary_tz = 'America/Halifax'
+        arbitrary_tz_opt = wait.until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '#timezone-select > option[value="%s"]' % arbitrary_tz)
+            )
+        )
+        arbitrary_tz_bottom_opt = tz_select_bottom_input.find_element_by_css_selector(
+            'option[value="%s"]' % arbitrary_tz)
+
+        utc_tz_opt = tz_select_input.find_element_by_css_selector('option[value="UTC"]')
+        utc_tz_bottom_opt= tz_select_bottom_input.find_element_by_css_selector('option[value="UTC"]')
+
+        # Moment.js guesses local time zone based on the behavior of Selenium's web client. This seems
+        # to inherit Django's settings.TIME_ZONE but I don't know whether that's guaranteed to be consistent.
+        # To avoid test fragility, ask Moment what it considers local and expect that.
+        local_tz = self.driver.execute_script('return moment.tz.guess();')
+        local_tz_opt = tz_select_input.find_element_by_css_selector('option[value=%s]' % local_tz)
+        local_tz_bottom_opt = tz_select_bottom_input.find_element_by_css_selector('option[value="%s"]' % local_tz)
+
+        # Should start off in local time zone
+        self.assertTrue(local_tz_opt.is_selected())
+        self.assertTrue(local_tz_bottom_opt.is_selected())
+        _assert_interim_tz_correct(sessions, local_tz)
+        _assert_ietf_tz_correct(ietf_meetings, local_tz)
+
+        # click 'utc' button
+        utc_tz_link.click()
+        wait.until(expected_conditions.element_to_be_selected(utc_tz_opt))
+        self.assertFalse(local_tz_opt.is_selected())
+        self.assertFalse(local_tz_bottom_opt.is_selected())
+        self.assertFalse(arbitrary_tz_opt.is_selected())
+        self.assertFalse(arbitrary_tz_bottom_opt.is_selected())
+        self.assertTrue(utc_tz_opt.is_selected())
+        self.assertTrue(utc_tz_bottom_opt.is_selected())
+        _assert_interim_tz_correct(sessions, 'UTC')
+        _assert_ietf_tz_correct(ietf_meetings, 'UTC')
+
+        # click back to 'local'
+        local_tz_link.click()
+        wait.until(expected_conditions.element_to_be_selected(local_tz_opt))
+        self.assertTrue(local_tz_opt.is_selected())
+        self.assertTrue(local_tz_bottom_opt.is_selected())
+        self.assertFalse(arbitrary_tz_opt.is_selected())
+        self.assertFalse(arbitrary_tz_bottom_opt.is_selected())
+        self.assertFalse(utc_tz_opt.is_selected())
+        self.assertFalse(utc_tz_bottom_opt.is_selected())
+        _assert_interim_tz_correct(sessions, local_tz)
+        _assert_ietf_tz_correct(ietf_meetings, local_tz)
+
+        # Now select a different item from the select input
+        arbitrary_tz_opt.click()
+        wait.until(expected_conditions.element_to_be_selected(arbitrary_tz_opt))
+        self.assertFalse(local_tz_opt.is_selected())
+        self.assertFalse(local_tz_bottom_opt.is_selected())
+        self.assertTrue(arbitrary_tz_opt.is_selected())
+        self.assertTrue(arbitrary_tz_bottom_opt.is_selected())
+        self.assertFalse(utc_tz_opt.is_selected())
+        self.assertFalse(utc_tz_bottom_opt.is_selected())
+        _assert_interim_tz_correct(sessions, arbitrary_tz)
+        _assert_ietf_tz_correct(ietf_meetings, arbitrary_tz)
+
+        # Now repeat those tests using the widgets at the bottom of the page
+        # click 'utc' button
+        utc_tz_bottom_link.click()
+        wait.until(expected_conditions.element_to_be_selected(utc_tz_opt))
+        self.assertFalse(local_tz_opt.is_selected())
+        self.assertFalse(local_tz_bottom_opt.is_selected())
+        self.assertFalse(arbitrary_tz_opt.is_selected())
+        self.assertFalse(arbitrary_tz_bottom_opt.is_selected())
+        self.assertTrue(utc_tz_opt.is_selected())
+        self.assertTrue(utc_tz_bottom_opt.is_selected())
+        _assert_interim_tz_correct(sessions, 'UTC')
+        _assert_ietf_tz_correct(ietf_meetings, 'UTC')
+
+        # click back to 'local'
+        local_tz_bottom_link.click()
+        wait.until(expected_conditions.element_to_be_selected(local_tz_opt))
+        self.assertTrue(local_tz_opt.is_selected())
+        self.assertTrue(local_tz_bottom_opt.is_selected())
+        self.assertFalse(arbitrary_tz_opt.is_selected())
+        self.assertFalse(arbitrary_tz_bottom_opt.is_selected())
+        self.assertFalse(utc_tz_opt.is_selected())
+        self.assertFalse(utc_tz_bottom_opt.is_selected())
+        _assert_interim_tz_correct(sessions, local_tz)
+        _assert_ietf_tz_correct(ietf_meetings, local_tz)
+
+        # Now select a different item from the select input
+        arbitrary_tz_bottom_opt.click()
+        wait.until(expected_conditions.element_to_be_selected(arbitrary_tz_opt))
+        self.assertFalse(local_tz_opt.is_selected())
+        self.assertFalse(local_tz_bottom_opt.is_selected())
+        self.assertTrue(arbitrary_tz_opt.is_selected())
+        self.assertTrue(arbitrary_tz_bottom_opt.is_selected())
+        self.assertFalse(utc_tz_opt.is_selected())
+        self.assertFalse(utc_tz_bottom_opt.is_selected())
+        _assert_interim_tz_correct(sessions, arbitrary_tz)
+        _assert_ietf_tz_correct(ietf_meetings, arbitrary_tz)
+
 
 # The following are useful debugging tools
 

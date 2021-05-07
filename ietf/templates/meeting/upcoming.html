@@ -15,20 +15,56 @@
 
 {% block title %}Upcoming Meetings{% endblock %}
 
+{% block morecss %}
+    div.title-buttons {
+        margin-bottom: 0.5em;
+        margin-top: 1em;
+        text-align: right;
+    }
+    .tz-display {
+        margin-top: 0.5em;
+    }
+    .tz-display label {
+        font-weight: normal;
+    }
+    .tz-display a {
+        cursor: pointer;
+    }
+    select.tz-select {
+        min-width: 15em;
+        margin-bottom: 0.3em;
+    }
+{% endblock %}
 {% block content %}
   {% origin %}
   <div class="row">
     <div class="col-md-10">
+        <div class="row">
+            <div class="col-xs-6">
+                <h1>Upcoming Meetings</h1>
+            </div>
+            <div class="title-buttons col-xs-6">
+                <div>
+                    <a title="iCalendar subscription for upcoming meetings" href="webcal://{{request.get_host}}{% url 'ietf.meeting.views.upcoming_ical' %}">
+                        <span class="fa fa-stack-1"><i class="fa fa-fw fa-calendar-o fa-stack-1x"></i><i class="fa fa-fw fa-repeat fa-stack-xs"></i></span>
+                    </a>
+                    <a title="iCalendar entry for upcoming meetings" href="{% url 'ietf.meeting.views.upcoming_ical' %}"><span class="fa fa-calendar"></span></a>
+                </div>
+                <div class="tz-display">
+                    <label for="timezone-select">Time zone:</label>
+                    <small>
+                        <a id="local-timezone" onclick="ietf_timezone.use('local')">Local</a> |
+                        <a id="utc-timezone" onclick="ietf_timezone.use('UTC')">UTC</a>
+                    </small>
+                    <select class="tz-select" id="timezone-select" autocomplete="off">
+                        <!-- Avoid blank while loading. Needs to agree with native times in the table
+                             so the display is correct if JS is not enabled -->
+                        <option selected>UTC</option>
+                    </select>
 
-      <h1>Upcoming Meetings
-         <span class="regular pull-right">
-         <a title="iCalendar subscription for upcoming meetings" href="webcal://{{request.get_host}}{% url 'ietf.meeting.views.upcoming_ical' %}">
-            <span class="fa fa-stack-1"><i class="fa fa-fw fa-calendar-o fa-stack-1x"></i><i class="fa fa-fw fa-repeat fa-stack-xs"></i></span>
-         </a>
-         <a title="iCalendar entry for upcoming meetings" href="{% url 'ietf.meeting.views.upcoming_ical' %}"><span class="fa fa-calendar"></span></a>
-         </span>
-      </h1>
-
+                </div>
+            </div>
+        </div>
       <p>For more on regular IETF meetings see <a href="https://www.ietf.org/meeting/upcoming.html">here</a></p>
       <p>Meeting important dates are not included in upcoming meeting calendars. They have <a href="{% url 'ietf.meeting.views.important_dates' %}">their own calendar</a></p>
 
@@ -67,18 +103,27 @@
             </thead>
             <tbody>
               {% for entry in entries %}
-                <tr class="entry" 
+                <tr class="entry"
                     {% if entry|classname == 'Session' %}data-filter-keywords="{{ entry.filter_keywords|join:',' }}"{% endif %}>
                   {% if entry|classname == 'Meeting' %}
                     {% with meeting=entry %}
-                      <td>{{ meeting.date }} - {{ meeting.end }}</td>
+                      <td class="meeting-time"
+                          data-start-date="{{ meeting.date }}" {# dates local to meeting #}
+                          data-end-date="{{ meeting.end }}"
+                          data-time-zone="{{ meeting.time_zone }}">
+                          {{ meeting.date }} - {{ meeting.end }}
+                      </td>
                       <td>ietf</td>
                       <td><a class="ietf-meeting-link" href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">IETF {{ meeting.number }}</a></td>
                       <td></td>
                     {% endwith %}
                   {% elif entry|classname == 'Session' %}
                     {% with session=entry group=entry.group meeting=entry.meeting%}
-                      <td>{{ session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}} - {{ session.official_timeslotassignment.timeslot.utc_end_time | date:"H:i e" }}</td>
+                      <td class="session-time"
+                          data-start-utc="{{ session.official_timeslotassignment.timeslot.utc_start_time | date:'Y-m-d H:i' }}Z"
+                          data-end-utc="{{ session.official_timeslotassignment.timeslot.utc_end_time | date:'Y-m-d H:i' }}Z">
+                          {{ session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}} - {{ session.official_timeslotassignment.timeslot.utc_end_time | date:"H:i" }}
+                      </td>
                       <td><a href="{% url 'ietf.group.views.group_home' acronym=group.acronym %}">{{ group.acronym }}</a></td>
                       <td>
                         <a class="interim-meeting-link" href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=group.acronym %}"> {{ meeting.number }}</a>
@@ -109,34 +154,52 @@
       {% endcache %}
     </div>
   </div>
-  <div id="calendar" class="col-md-10" ></div>
+    <div class="row">
+        <div class="col-md-10">
+            <div class="tz-display text-right">
+                <label for="timezone-select-bottom">Time zone: </label>
+                <small>
+                    <a id="local-timezone-bottom" onclick="ietf_timezone.use('local')">Local</a> |
+                    <a id="utc-timezone-bottom" onclick="ietf_timezone.use('UTC')">UTC</a>
+                </small>
+                <select class="tz-select" id="timezone-select-bottom"></select>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-10">
+            <div id="calendar"></div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block js %}
 <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 <script src="{% static 'fullcalendar/core/main.js' %}"></script>
 <script src="{% static 'fullcalendar/daygrid/main.js' %}"></script>
+    <script src="{% static 'moment/min/moment.min.js' %}"></script>
+    <script src="{% static 'moment-timezone/builds/moment-timezone-with-data-10-year-range.min.js' %}"></script>
     <script src="{% static 'ietf/js/agenda/agenda_filter.js' %}"></script>
+    <script src="{% static 'ietf/js/agenda/timezone.js' %}"></script>
     <script>
       // List of all events with meta-info needed for filtering
       var all_event_list = [{% for entry in entries %}
           {% if entry|classname == 'Meeting' %}
               {% with meeting=entry %}
                   {
-                      title: 'IETF {{ meeting.number }}',
-                      start: '{{meeting.date}}',
-                      end: '{{meeting.end}}',
+                      ietf_meeting_number: '{{ meeting.number }}',
+                      start_moment: moment.tz('{{meeting.date}}', '{{ meeting.time_zone }}').startOf('day'),
+                      end_moment: moment.tz('{{meeting.end}}', '{{ meeting.time_zone }}').endOf('day'),
                       url: '{% url 'ietf.meeting.views.agenda' num=meeting.number %}'
                   }{% if not forloop.last %}, {% endif %}
               {% endwith %}
           {% else %} {# if it's not a Meeting, it's a Session #}
               {% with session=entry %}
                   {
-                      title: '{{session.official_timeslotassignment.timeslot.utc_start_time|date:"H:i"}}-{{session.official_timeslotassignment.timeslot.utc_end_time|date:"H:i"}}',
                       group: '{% if session.group %}{{session.group.acronym}}{% endif %}',
                       filter_keywords: ["{{ session.filter_keywords|join:'","' }}"],
-                      start: '{{session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}}',
-                      end: '{{session.official_timeslotassignment.timeslot.utc_end_time | date:"Y-m-d H:i"}}',
+                      start_moment: moment.utc('{{session.official_timeslotassignment.timeslot.utc_start_time | date:"Y-m-d H:i"}}'),
+                      end_moment: moment.utc('{{session.official_timeslotassignment.timeslot.utc_end_time | date:"Y-m-d H:i"}}'),
                       url: '{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}'
                   }
               {% endwith %}
@@ -144,7 +207,9 @@
           {% endif %}
       {% endfor %}];
       var filtered_event_list = []; // currently visible list
+      var display_events = []; // filtered events, processed for calendar display
       var event_calendar; // handle on the calendar object
+      var current_tz = 'UTC';
 
       // Test whether an event should be visible given a set of filter parameters
       function calendar_event_visible(filter_params, event) {
@@ -158,28 +223,55 @@
                   && agenda_filter.keyword_match(filter_params.show, event.filter_keywords));
       }
 
-      // Apply filter_params to the event list and format data for the calendar
+      /* Apply filter_params to the event list */
       function filter_calendar_events(filter_params, event_list) {
-          var calendarEl = document.getElementById('calendar');
-          var glue = calendarEl.clientWidth > 720 ? ' ' : '\n';
           var filtered_output = [];
           for (var ii = 0; ii < event_list.length; ii++) {
               var this_event = event_list[ii];
               if (calendar_event_visible(filter_params, this_event)) {
-                  filtered_output.push({
-                      title: this_event.title + (this_event.group ? (glue + this_event.group) : ''),
-                      start: this_event.start,
-                      end: this_event.end,
-                      url: this_event.url
-                  })
+                  filtered_output.push(this_event);
               }
           }
           return filtered_output;
       }
 
-      // Initialize or update the calendar, updating the filtered event list
-      function update_calendar(filter_params) {
-          filtered_event_list = filter_calendar_events(filter_params, all_event_list);
+      // format a moment in a tz
+      var moment_formats = {time: 'HH:mm', date: 'YYYY-MM-DD', datetime: 'YYYY-MM-DD HH:mm'};
+      function format_moment(t_moment, tz, fmt_type) {
+        return t_moment.tz(tz).format(moment_formats[fmt_type]);
+      }
+
+      function make_display_events(event_data, tz) {
+          var output = [];
+          var calendarEl = document.getElementById('calendar');
+          var glue = calendarEl.clientWidth > 720 ? ' ' : '\n';
+          return $.map(event_data, function(src_event) {
+              var title;
+              // Render IETF meetings with meeting dates, sessions with actual times
+              if (src_event.ietf_meeting_number) {
+                  title = 'IETF ' + src_event.ietf_meeting_number;
+              } else {
+                  title = (format_moment(src_event.start_moment, tz, 'time') + '-'
+                    + format_moment(src_event.end_moment, tz, 'time')
+                    + glue + (src_event.group || 'Invalid event'));
+              }
+              return {
+                  title: title,
+                  start: format_moment(src_event.start_moment, tz, 'datetime'),
+                  end: format_moment(src_event.end_moment, tz, 'datetime'),
+                  url: src_event.url
+              }; // all events have the URL
+          });
+      }
+
+      // Initialize or update the calendar, updating the filtered event list and/or timezone
+      function update_calendar(tz, filter_params) {
+          if (filter_params) {
+              // Update event list if we were called with filter params
+              filtered_event_list = filter_calendar_events(filter_params, all_event_list);
+          }
+          display_events = make_display_events(filtered_event_list, tz);
+
           if (event_calendar) {
               event_calendar.refetchEvents()
           } else {
@@ -191,7 +283,7 @@
               event_calendar = new FullCalendar.Calendar(calendarEl, {
                   plugins: ['dayGrid'],
                   displayEventTime: false,
-                  events: function (fInfo, success) {success(filtered_event_list)},
+                  events: function (fInfo, success) {success(display_events)},
                   eventRender: function (info) {
                       $(info.el).tooltip({ title: info.event.title })
                   },
@@ -239,7 +331,7 @@
       function update_view(filter_params) {
           update_meeting_display(filter_params);
           update_links(filter_params);
-          update_calendar(filter_params);
+          update_calendar(current_tz, filter_params);
       }
 
       // Set up the filtering - the callback will be called when the page loads and on any filter changes
@@ -276,5 +368,38 @@
 	      });
 	  }
       });
+
+      function format_session_time(session_elt, tz) {
+          var start = moment.utc($(session_elt).attr('data-start-utc'));
+          var end = moment.utc($(session_elt).attr('data-end-utc'));
+          return format_moment(start, tz, 'datetime') + ' - ' + format_moment(end, tz, 'time');
+      }
+
+      function format_meeting_time(meeting_elt, tz) {
+          var meeting_tz = $(meeting_elt).attr('data-time-zone');
+          var start = moment.tz($(meeting_elt).attr('data-start-date'), meeting_tz).startOf('day');
+          var end = moment.tz($(meeting_elt).attr('data-end-date'), meeting_tz).endOf('day');
+          return format_moment(start, tz, 'date') + ' - ' + format_moment(end, tz, 'date');
+      }
+
+      function timezone_changed(newtz) {
+          // update times for events in the table
+          if (current_tz !== newtz) {
+              current_tz = newtz;
+              $('.session-time').each(function () {
+                  $(this).html(format_session_time(this, newtz));
+              });
+              $('.meeting-time').each(function () {
+                  $(this).html(format_meeting_time(this, newtz));
+              });
+          }
+
+          update_calendar(newtz);
+      }
+
+
+    // Init with best guess at local timezone.
+    ietf_timezone.set_tz_change_callback(timezone_changed);
+    ietf_timezone.initialize('local');
     </script>
 {% endblock %}
