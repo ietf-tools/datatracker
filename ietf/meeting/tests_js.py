@@ -10,7 +10,6 @@ import re
 from unittest import skipIf
 
 import django
-#from django.urls import reverse as urlreverse
 from django.utils.text import slugify
 from django.db.models import F
 from pytz import timezone
@@ -701,6 +700,14 @@ class AgendaTests(IetfSeleniumTestCase):
         e.g., 'hackathon', or 'tools' group sessions from being shown/hidden when their parent group
         filter button is clicked. 
         """
+        def _schedule_session(meeting, session):
+            """Schedule a session, guaranteeing that it is not in a private timeslot"""
+            SchedTimeSessAssignment.objects.create(
+                schedule=meeting.schedule,
+                timeslot=TimeSlotFactory(meeting=meeting),
+                session=session,
+            )
+
         wait = WebDriverWait(self.driver, 10)
         meeting = Meeting.objects.get(type_id='ietf')
         parent_group = GroupFactory(type_id='area')
@@ -708,15 +715,26 @@ class AgendaTests(IetfSeleniumTestCase):
         hackathon_group = GroupFactory(acronym='hackathon', type_id='team', parent=parent_group)
 
         # hackathon session
-        SessionFactory(
-            meeting=meeting,
-            type_id='other',
-            group=hackathon_group,
-            name='Hackathon',
+        #
+        # Add to schedule ourselves because the default scheduling sometimes puts the session
+        # in a private timeslot, preventing the session from appearing on the agenda and breaking
+        # the test.
+        _schedule_session(
+            meeting,
+            SessionFactory(
+                meeting=meeting,
+                type_id='other',
+                group=hackathon_group,
+                name='Hackathon',
+                add_to_schedule=False
+            )
         )
 
-        # session to cause the parent_group to appear in the filter UI tables
-        SessionFactory(meeting=meeting, type_id='regular', group=other_group)
+        # Session to cause the parent_group to appear in the filter UI tables.
+        _schedule_session(
+            meeting,
+            SessionFactory(meeting=meeting, type_id='regular', group=other_group, add_to_schedule=False)
+        )
 
         self.login()
         url = self.absreverse('ietf.meeting.views.agenda')
