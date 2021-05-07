@@ -365,3 +365,14 @@ class DocumentActionHolderFactory(factory.DjangoModelFactory):
         
     document = factory.SubFactory(WgDraftFactory)
     person = factory.SubFactory('ietf.person.factories.PersonFactory')
+
+class DocumentAuthorFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = DocumentAuthor
+
+    document = factory.SubFactory(DocumentFactory)
+    person = factory.SubFactory('ietf.person.factories.PersonFactory')
+    email = factory.LazyAttribute(lambda obj: obj.person.email())
+
+class WgDocumentAuthorFactory(DocumentAuthorFactory):
+    document = factory.SubFactory(WgDraftFactory)

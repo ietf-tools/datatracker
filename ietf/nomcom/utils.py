@@ -13,7 +13,7 @@ from email.header import decode_header
 from email.iterators import typed_subpart_iterator
 from email.utils import parseaddr
 
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist
@@ -22,8 +22,11 @@ from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 
 from ietf.dbtemplate.models import DBTemplate
+from ietf.doc.models import DocEvent
+from ietf.group.models import Group, Role
 from ietf.person.models import Email, Person
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.meeting.models import Meeting
 from ietf.utils.pipe import pipe
 from ietf.utils.mail import send_mail_text, send_mail, get_payload_text
 from ietf.utils.log import log
@@ -477,4 +480,113 @@ def create_feedback_email(nomcom, msg):
 class EncryptedException(Exception):
     pass
 
-    
+def remove_disqualified(queryset):
+        disqualified_roles = Role.objects.filter(DISQUALIFYING_ROLE_QUERY_EXPRESSION)
+        return queryset.exclude(role__in=disqualified_roles)
+
+def is_eligible(person, nomcom=None, date=None):
+    return list_eligible(nomcom=nomcom, date=date, base_qs=Person.objects.filter(pk=person.pk)).exists()
+
+def list_eligible(nomcom=None, date=None, base_qs=None):
+    if not base_qs:
+        base_qs = Person.objects.all()
+    eligibility_date = get_eligibility_date(nomcom, date)
+    if eligibility_date.year in range(2008,2020):
+        return list_eligible_8713(date=eligibility_date, base_qs=base_qs)
+    elif eligibility_date.year == 2020:
+        return list_eligible_8788(date=eligibility_date, base_qs=base_qs)
+    elif eligibility_date.year == 2021:
+        return list_eligible_8989(date=eligibility_date, base_qs=base_qs)
+    else:
+        return Person.objects.none()
+
+def list_eligible_8713(date, base_qs=None):
+    if not base_qs:
+        base_qs = Person.objects.all()
+    previous_five = previous_five_meetings(date)
+    return remove_disqualified(three_of_five_eligible(previous_five=previous_five, queryset=base_qs))
+
+def list_eligible_8788(date, base_qs=None):
+    if not base_qs:
+        base_qs = Person.objects.all()
+    previous_five = Meeting.objects.filter(number__in=['102','103','104','105','106'])
+    return remove_disqualified(three_of_five_eligible(previous_five=previous_five, queryset=base_qs))
+
+def list_eligible_8989(date, base_qs=None):
+    if not base_qs:
+        base_qs = Person.objects.all()
+
+    previous_five = previous_five_meetings(date)
+    three_of_five_qs = three_of_five_eligible(previous_five=previous_five, queryset=base_qs)
+
+    three_years_ago = datetime.date(date.year-3,date.month,date.day)
+    officer_qs = base_qs.filter(
+        # is currently an officer
+        Q(role__name_id__in=('chair','secr'),
+          role__group__state_id='active',
+          role__group__type_id='wg',
+          role__group__time__lte=date,
+        ) 
+        # was an officer since the given date (I think this is wrong - it looks at when roles _start_, not when roles end)
+      | Q(rolehistory__group__time__gte=three_years_ago,
+          rolehistory__group__time__lte=date,
+          rolehistory__name_id__in=('chair','secr'),
+          rolehistory__group__state_id='active',
+          rolehistory__group__type_id='wg',
+         )
+    ).distinct()
+
+    five_years_ago = datetime.date(date.year-5,date.month,date.day)
+    rfc_pks = set(DocEvent.objects.filter(type='published_rfc',time__gte=five_years_ago,time__lte=date).values_list('doc__pk',flat=True))
+    iesgappr_pks = set(DocEvent.objects.filter(type='iesg_approved',time__gte=five_years_ago,time__lte=date).values_list('doc__pk',flat=True))
+    qualifying_pks = rfc_pks.union(iesgappr_pks.difference(rfc_pks))
+    author_qs = base_qs.filter(
+            documentauthor__document__pk__in=qualifying_pks
+        ).annotate(
+            document_author_count = Count('documentauthor')
+        ).filter(document_author_count__gte=2)
+
+    # Would be nice to use queryset union here, but the annotations make that difficult
+    return remove_disqualified(Person.objects.filter(pk__in=
+        set(three_of_five_qs.values_list('pk',flat=True)).union(
+        set(officer_qs.values_list('pk',flat=True))).union(
+        set(author_qs.values_list('pk',flat=True)))
+    ))
+
+def get_eligibility_date(nomcom=None, date=None):
+    if date:
+        return date
+    elif nomcom:
+        if nomcom.first_call_for_volunteers:
+            return nomcom.first_call_for_volunteers
+        else:
+            return datetime.date(int(nomcom.group.acronym[6:]),5,1)
+    else:
+        last_seated=Role.objects.filter(group__type_id='nomcom',name_id='member').order_by('-group__acronym').first()
+        if last_seated:
+            last_nomcom_year = int(last_seated.group.acronym[6:])
+            if last_nomcom_year == datetime.date.today().year:
+                next_nomcom_year = last_nomcom_year
+            else:
+                next_nomcom_year = int(last_seated.group.acronym[6:])+1
+            next_nomcom_group = Group.objects.filter(acronym=f'nomcom{next_nomcom_year}').first()
+            if next_nomcom_group and next_nomcom_group.nomcom_set.first().first_call_for_volunteers:
+                return next_nomcom_group.nomcom_set.first().first_call_for_volunteers
+            else:
+                return datetime.date(next_nomcom_year,5,1)
+        else:
+            return datetime.date(datetime.date.today().year,5,1)
+
+def previous_five_meetings(date = datetime.date.today()):
+    return Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]
+
+def three_of_five_eligible(previous_five, queryset=None):
+    """ Return a list of Person records who attended at least 
+        3 of the 5 type_id='ietf' meetings before the given
+        date. Does not disqualify anyone based on held roles.
+    """
+    if not queryset:
+        queryset = Person.objects.all()
+    return queryset.filter(meetingregistration__meeting__in=list(previous_five),meetingregistration__attended=True).annotate(mtg_count=Count('meetingregistration')).filter(mtg_count__gte=3)
+
+

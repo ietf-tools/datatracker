@@ -5,7 +5,8 @@ import factory
 
 from typing import List    # pyflakes:ignore
 
-from ietf.group.models import Group, Role, GroupEvent, GroupMilestone
+from ietf.group.models import Group, Role, GroupEvent, GroupMilestone, \
+                              GroupHistory, RoleHistory
 from ietf.review.factories import ReviewTeamSettingsFactory
 
 class GroupFactory(factory.DjangoModelFactory):
@@ -70,4 +71,26 @@ class DatedGroupMilestoneFactory(BaseGroupMilestoneFactory):
 class DatelessGroupMilestoneFactory(BaseGroupMilestoneFactory):
     group = factory.SubFactory(GroupFactory, uses_milestone_dates=False)
     order = factory.Sequence(lambda n: n)
+
+class GroupHistoryFactory(factory.DjangoModelFactory):
+    class Meta:
+        model=GroupHistory
+
+    name = factory.LazyAttribute(lambda obj: obj.group.name)
+    state_id = 'active'
+    type_id = factory.LazyAttribute(lambda obj: obj.group.type_id)
+    list_email = factory.LazyAttribute(lambda obj: '%s@ietf.org'% obj.group.acronym)
+    uses_milestone_dates = True
+    used_roles = [] # type: List[str]
+
+    group = factory.SubFactory(GroupFactory)
+    acronym = factory.LazyAttribute(lambda obj: obj.group.acronym)
+
+class RoleHistoryFactory(factory.DjangoModelFactory):
+    class Meta:
+        model=RoleHistory
+
+    group = factory.SubFactory(GroupHistoryFactory)
+    person = factory.SubFactory('ietf.person.factories.PersonFactory')
+    email = factory.LazyAttribute(lambda obj: obj.person.email())
 
