@@ -75,7 +75,11 @@
       <tr>
         <th></th>
         <th>Author{{doc.authors|pluralize}}</th>
-        <td class="edit"></td>
+        <td class="edit">
+            {% if can_edit_authors %}
+            <a class="btn btn-default btn-xs" href="{%  url 'ietf.doc.views_doc.edit_authors' name=doc.name %}">Edit</a>
+            {% endif %}
+        </td>
         <td>
           {# Implementation that uses the current primary email for each author #}
           {% for author in doc.authors %}

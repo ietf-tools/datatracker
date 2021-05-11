@@ -54,20 +54,21 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent, BallotType,
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
-    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder )
+    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor )
 from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content, build_doc_meta_block,
-    augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event, build_doc_supermeta_block, build_file_urls )
+    augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event,
+    build_doc_supermeta_block, build_file_urls, update_documentauthors )
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_group_type, can_manage_materials, group_features_role_filter
 from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is_person,
     role_required, is_individual_draft_author)
 from ietf.name.models import StreamName, BallotPositionName
 from ietf.utils.history import find_history_active_at
-from ietf.doc.forms import TelechatForm, NotifyForm, ActionHoldersForm
+from ietf.doc.forms import TelechatForm, NotifyForm, ActionHoldersForm, DocAuthorForm, DocAuthorChangeBasisForm
 from ietf.doc.mails import email_comment, email_remind_action_holders
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session
@@ -185,6 +186,8 @@ def document_main(request, name, rev=None):
         irsg_state = doc.get_state("draft-stream-irtf")
 
         can_edit = has_role(request.user, ("Area Director", "Secretariat"))
+        can_edit_authors = has_role(request.user, ("Secretariat"))
+
         stream_slugs = StreamName.objects.values_list("slug", flat=True)
         # For some reason, AnonymousUser has __iter__, but is not iterable,
         # which causes problems in the filter() below.  Work around this:  
@@ -424,6 +427,7 @@ def document_main(request, name, rev=None):
                                        latest_revision=latest_revision,
                                        latest_rev=latest_rev,
                                        can_edit=can_edit,
+                                       can_edit_authors=can_edit_authors,
                                        can_change_stream=can_change_stream,
                                        can_edit_stream_info=can_edit_stream_info,
                                        can_edit_individual=can_edit_individual,
@@ -1347,6 +1351,76 @@ def edit_notify(request, name):
                                'titletext': doc_titletext(doc),
                               },
                           )
+
+
+@role_required('Secretariat')
+def edit_authors(request, name):
+    """Edit the authors of a doc"""
+    class _AuthorsBaseFormSet(forms.BaseFormSet):
+        HIDE_FIELDS = ['ORDER']
+
+        def __init__(self, *args, **kwargs):
+            kwargs['prefix'] = 'author'
+            super(_AuthorsBaseFormSet, self).__init__(*args, **kwargs)
+
+        def add_fields(self, form, index):
+            super(_AuthorsBaseFormSet, self).add_fields(form, index)
+            for fh in self.HIDE_FIELDS:
+                if fh in form.fields:
+                    form.fields[fh].widget = forms.HiddenInput()
+
+    AuthorFormSet = forms.formset_factory(DocAuthorForm,
+                                          formset=_AuthorsBaseFormSet,
+                                          can_delete=True,
+                                          can_order=True,
+                                          extra=0)
+    doc = get_object_or_404(Document, name=name)
+    
+    if request.method == 'POST':
+        change_basis_form = DocAuthorChangeBasisForm(request.POST)
+        author_formset = AuthorFormSet(request.POST)
+        if change_basis_form.is_valid() and author_formset.is_valid():
+            docauthors = []
+            for form in author_formset.ordered_forms:
+                if not form.cleaned_data['DELETE']:
+                    docauthors.append(
+                        DocumentAuthor(
+                            # update_documentauthors() will fill in document and order for us
+                            person=form.cleaned_data['person'],
+                            email=form.cleaned_data['email'],
+                            affiliation=form.cleaned_data['affiliation'],
+                            country=form.cleaned_data['country']
+                        )
+                    )
+            change_events = update_documentauthors(
+                doc,
+                docauthors,
+                request.user.person,
+                change_basis_form.cleaned_data['basis']
+            )
+            for event in change_events:
+                event.save()
+            return redirect('ietf.doc.views_doc.document_main', name=doc.name)
+    else:
+        change_basis_form = DocAuthorChangeBasisForm() 
+        author_formset = AuthorFormSet(
+            initial=[{
+                'person': author.person,
+                'email': author.email,
+                'affiliation': author.affiliation,
+                'country': author.country,
+                'order': author.order,
+            } for author in doc.documentauthor_set.all()]
+        )
+    return render(
+        request, 
+        'doc/edit_authors.html',
+        {
+            'doc': doc,
+            'change_basis_form': change_basis_form,
+            'formset': author_formset,
+            'titletext': doc_titletext(doc),
+        })
 
 
 @role_required('Area Director', 'Secretariat')

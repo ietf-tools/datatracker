@@ -11,7 +11,8 @@ from ietf.doc.fields import SearchableDocAliasesField, SearchableDocAliasField
 from ietf.doc.models import RelatedDocument, DocExtResource
 from ietf.iesg.models import TelechatDate
 from ietf.iesg.utils import telechat_page_count
-from ietf.person.fields import SearchablePersonsField
+from ietf.person.fields import SearchablePersonField, SearchablePersonsField
+from ietf.person.models import Email, Person
 
 from ietf.name.models import ExtResourceName
 from ietf.utils.validators import validate_external_resource_value
@@ -37,8 +38,28 @@ class TelechatForm(forms.Form):
               choice_display[d] += ' : WARNING - this may not leave enough time for directorate reviews!'
         self.fields['telechat_date'].choices = [("", "(not on agenda)")] + [(d, choice_display[d]) for d in dates]
 
-from ietf.person.models import Person
 
+class DocAuthorForm(forms.Form):
+    person = SearchablePersonField()
+    email = forms.ModelChoiceField(queryset=Email.objects.none(), required=False)
+    affiliation = forms.CharField(max_length=100, required=False)
+    country = forms.CharField(max_length=255, required=False)
+    
+    def __init__(self, *args, **kwargs):
+        super(DocAuthorForm, self).__init__(*args, **kwargs)
+
+        person = self.data.get(
+            self.add_prefix('person'),
+            self.get_initial_for_field(self.fields['person'], 'person')
+        )
+        if person:
+            self.fields['email'].queryset = Email.objects.filter(person=person)
+
+class DocAuthorChangeBasisForm(forms.Form):
+    basis = forms.CharField(max_length=255, 
+                            label='Reason for change', 
+                            help_text='What is the source or reasoning for the changes to the author list?')
+    
 class AdForm(forms.Form):
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type='area').order_by('name'),
                                 label="Shepherding AD", empty_label="(None)", required=True)
