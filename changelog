@@ -1,3 +1,29 @@
+ietfdb (7.29.0) ietf; urgency=medium
+
+  ** RFC8989 eligibility rules, improved timezone support for upcoming meetings
+
+  * Merged in [18958] from jennifer@painless-security.com:
+    Fix occasional failure in test_agenda_view_team_group_filter_toggle.  
+
+  * Merged in [18960] from jennifer@painless-security.com:
+    Allow external resources to be set/suggested during submission process. 
+    Fixes #3068.  
+
+  * Merged in [18969] from rjsparks@nostrum.com:
+    Correct javascript that toggles visibility of byme/forme discusses. 
+    Fixes #3263.  
+
+  * Merged in [18970] from jennifer@painless-security.com:
+    Add timezone selector to upcoming meetings page. Separate general 
+    timezone handling from parts only relevant to main agenda page. Speed up 
+    agenda timezone javascript tests. Fixes #3184.  
+
+  * Merged in [18975] from rjsparks@nostrum.com:
+    Add RFC 8989 nomcom eligibility calculations.  
+
+ -- Robert Sparks <rjsparks@nostrum.com>  11 May 2021 16:27:43 +0000
+
+
 ietfdb (7.28.0) ietf; urgency=medium
 
   ** Show full document by default, email aliases for programs and review teams, bugfixes and enhancements **
