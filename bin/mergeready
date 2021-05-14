@@ -345,6 +345,12 @@ for rev, repo, branch in hold:
 
 unmerged_branch_commits = {}
 for branch in branches:
+    try:
+        cmd = 'svn ls %s/%s --depth empty' % (repo, branch)
+        _ = pipe(cmd)
+    except OSError:
+        note("Skipping nonexistent branch %s" % branch)
+        continue
     note("Fetching commit information for branch %s" % branch)
     commits = []
     cmd = 'svn log -v -r 0:HEAD --stop-on-copy %s/%s/' % (repo, branch)
