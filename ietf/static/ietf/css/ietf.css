@@ -1258,6 +1258,7 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
+  min-height: 5em; /* do not disappear when empty */
 }
 
 .edit-meeting-schedule .scheduling-panel .preferences {
