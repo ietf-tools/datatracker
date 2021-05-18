@@ -2290,9 +2290,11 @@ class rfc8989EligibilityTests(TestCase):
 
     def test_elig_by_office_active_groups(self):
 
-        chair = RoleFactory(name_id='chair').person
+        before_elig_date = self.nomcom.first_call_for_volunteers - datetime.timedelta(days=5)
 
-        secr = RoleFactory(name_id='secr').person
+        chair = RoleFactory(name_id='chair',group__time=before_elig_date).person
+
+        secr = RoleFactory(name_id='secr',group__time=before_elig_date).person
 
         nobody=PersonFactory()
 
