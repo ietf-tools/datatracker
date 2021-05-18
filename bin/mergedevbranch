@@ -223,7 +223,9 @@ time { ietf/manage.py test --settings=settings_sqlitetest	\
 echo ""
 
 note "Sending email to changeset author: <$who>"
-mail -s "Merged datatracker branch personal/$branch@$rev to trunk" $who -c rjsparks@nostrum.com <<-EOF
+SEND_ARGS=""
+[ "${RELEASER_EMAIL}" ] && SEND_ARGS="-r ${RELEASER_EMAIL}"
+mail "${SEND_ARGS}" -s "Merged datatracker branch personal/$branch@$rev to trunk" $who -c rjsparks@nostrum.com <<-EOF
 Hi,
 
 This is an automatic merge info message.  Your code in personal/$branch@$rev
