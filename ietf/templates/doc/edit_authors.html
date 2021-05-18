@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2021, All Rights Reserved #}
+{% load origin %}
+{% load static %}
+{% load bootstrap3 %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+<link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+{% endblock %}
+
+{% block morecss %}
+
+    #empty-author-form {
+        display: none;
+    }
+{% endblock %}
+
+{% block title %}
+    Edit authors for {{ titletext }}
+{% endblock %}
+
+{% block content %}
+    {% origin %}
+    <h1>Edit authors<br><small>{{ titletext }}</small></h1>
+
+    <form enctype="multipart/form-data" method="post" id="authors-form">
+        {% csrf_token %}
+        {% bootstrap_form change_basis_form %}
+
+        {% buttons %}
+            <button id="add-author-button" type="button" class="btn btn-default" onclick="local_js.add_author()">Add new author</button>
+        {% endbuttons %}
+
+        {% bootstrap_form formset.management_form %}
+        <div id="authors-list" class="well">
+            {% for form in formset %}
+                        <div class="panel panel-default author-panel">
+                            <div class="panel-body draggable">
+                                <span class="handle fa fa-reorder"></span>
+                                <div class="form-horizontal">
+                                    {% bootstrap_form form layout='horizontal' %}
+                                </div>
+                            </div>
+                        </div>
+            {% endfor %}
+        </div>
+        <div id="empty-author-form" class="template">
+            <div class="panel panel-default author-panel">
+                <div class="panel-body draggable">
+                    <span class="handle fa fa-reorder"></span>
+                    <div class="form-horizontal">
+                        {% bootstrap_form formset.empty_form layout='horizontal' %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        {% buttons %}
+            <button type="submit" class="btn btn-primary">Submit</button>
+            <a class="btn btn-default pull-right"
+               href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Back</a>
+        {% endbuttons %}
+    </form>
+
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'Sortable/Sortable.min.js' %}"></script>
+    <script src="{% static 'select2/select2.min.js' %}"></script>
+    <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+
+    <script type="text/javascript">
+        const local_js = (
+          function () {
+              const sortable_list_id = 'authors-list';{# id of the container element for Sortable #}
+              const prefix = 'author'; {# formset prefix - must match the prefix in the edit_authors() view #}
+              var list_container;
+              var form_counter;
+              var author_template;
+              var ajax_url = '{% url "ietf.person.ajax.person_email_json" personid="0000placeholder0000" %}';
+              var person_select2_input_selector = 'input.select2-field[name^="author-"][name$="-person"]'; 
+
+              function handle_drag_end() {
+                  // after dragging, set order inputs to match new positions in list
+                  $(list_container).find('.draggable input[name^="' + prefix + '"][name$="ORDER"]').each(
+                    function (index, elt) {
+                        $(elt).val(index + 1);
+                    })
+              }
+
+              function add_author() {
+                  // __prefix__ is the unique prefix for each list item, indexed from 0
+                  var new_html = $(author_template).html().replaceAll('__prefix__', form_counter.value);
+                  var new_elt = $(new_html)
+                  $(list_container).append(new_elt);
+                  var new_person_select = new_elt.find(person_select2_input_selector);
+                  setupSelect2Field(new_person_select);
+                  new_person_select.on('change', person_changed);
+                  
+                  var form_count = Number(form_counter.value);
+                  form_counter.value = String(form_count + 1);
+                  
+                  new_elt[0].scrollIntoView(true);
+              }
+              
+              function update_email_options_cb_factory(email_select) {
+                  // factory method creates a closure for the callback
+                  return function(ajax_data) {
+                      // keep the first item - it's the 'blank' option
+                      $(email_select).children().not(':first').remove();
+                      $.each(ajax_data, function(index, email) {
+                          $(email_select).append(
+                            $('<option></option>')
+                            .attr('value', email.address)
+                            .text(email.address)
+                          );
+                      });
+                      if (ajax_data.length > 0) {
+                          $(email_select).val(ajax_data[0].address);
+                      }
+                  }
+              }
+
+              function person_changed(event) {
+                  var person_elt = $(this);
+                  var email_select = $('#' + person_elt.attr('id').replace(/-person$/, '-email'));
+                  $.get(
+                    ajax_url.replace('0000placeholder0000', $(this).val()),
+                    null,
+                    update_email_options_cb_factory(email_select)
+                  );
+              }
+              
+              function initialize() {
+                  list_container = document.getElementById(sortable_list_id)
+                  form_counter = document.getElementsByName(prefix + '-TOTAL_FORMS')[0];
+                  author_template = document.getElementById('empty-author-form');
+
+                  Sortable.create(
+                    list_container,
+                    {
+                        handle: '.handle',
+                        onEnd: handle_drag_end
+                    });
+                  
+                  // register handler
+                  $(person_select2_input_selector).on('change', person_changed);
+              }
+
+              return {
+                  add_author: add_author,
+                  initialize: initialize
+              }
+          }
+        )()
+        
+        $(document).ready(local_js.initialize);
+    </script>
+{% endblock %}

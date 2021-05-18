@@ -3,6 +3,7 @@
 
 
 import datetime
+import json
 
 from io import StringIO, BytesIO
 from PIL import Image
@@ -46,6 +47,29 @@ class PersonTests(TestCase):
         self.assertEqual(r.status_code, 200)
         data = r.json()
         self.assertEqual(data[0]["id"], person.email_address())
+
+    def test_ajax_person_email_json(self):
+        person = PersonFactory()
+        EmailFactory.create_batch(5, person=person)
+        primary_email = person.email()
+        primary_email.primary = True
+        primary_email.save()
+        
+        bad_url = urlreverse('ietf.person.ajax.person_email_json', kwargs=dict(personid=12345))
+        url = urlreverse('ietf.person.ajax.person_email_json', kwargs=dict(personid=person.pk))
+        
+        login_testing_unauthorized(self, 'secretary', bad_url)
+        r = self.client.get(bad_url)
+        self.assertEqual(r.status_code, 404)
+        self.client.logout()
+
+        login_testing_unauthorized(self, 'secretary', url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertCountEqual(
+            json.loads(r.content),
+            [dict(address=email.address, primary=email.primary) for email in person.email_set.all()],
+        )
 
     def test_default_email(self):
         person = PersonFactory()

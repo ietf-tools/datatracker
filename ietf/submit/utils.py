@@ -25,7 +25,8 @@ from ietf.doc.models import ( Document, State, DocAlias, DocEvent, SubmissionDoc
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.models import RelatedDocument, DocRelationshipName, DocExtResource
 from ietf.doc.utils import add_state_change_event, rebuild_reference_relations
-from ietf.doc.utils import set_replaces_for_document, prettify_std_name, update_doc_extresources, can_edit_docextresources
+from ietf.doc.utils import ( set_replaces_for_document, prettify_std_name,
+    update_doc_extresources, can_edit_docextresources, update_documentauthors )
 from ietf.doc.mails import send_review_possibly_replaces_request, send_external_resource_change_request
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
@@ -572,24 +573,21 @@ def ensure_person_email_info_exists(name, email, docname):
     return person, email
 
 def update_authors(draft, submission):
-    persons = []
-    for order, author in enumerate(submission.authors):
+    docauthors = []
+    for author in submission.authors:
         person, email = ensure_person_email_info_exists(author["name"], author.get("email"), submission.name)
-
-        a = DocumentAuthor.objects.filter(document=draft, person=person).first()
-        if not a:
-            a = DocumentAuthor(document=draft, person=person)
-
-        a.email = email
-        a.affiliation = author.get("affiliation") or ""
-        a.country = author.get("country") or ""
-        a.order = order
-        a.save()
-        log.assertion('a.email_id != "none"')
-
-        persons.append(person)
-
-    draft.documentauthor_set.exclude(person__in=persons).delete()
+        docauthors.append(
+            DocumentAuthor(
+                # update_documentauthors() will fill in document and order for us
+                person=person,
+                email=email,
+                affiliation=author.get("affiliation", ""),
+                country=author.get("country", "")
+            )
+        )
+    # The update_documentauthors() method returns a list of unsaved author edit events for the draft.
+    # Discard these because the existing logging is already adequate.
+    update_documentauthors(draft, docauthors)
 
 def cancel_submission(submission):
     submission.state = DraftSubmissionStateName.objects.get(slug="cancel")

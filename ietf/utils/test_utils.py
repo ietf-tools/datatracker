@@ -63,8 +63,16 @@ def split_url(url):
         args = {}
     return url, args
 
-def login_testing_unauthorized(test_case, username, url, password=None):
-    r = test_case.client.get(url)
+def login_testing_unauthorized(test_case, username, url, password=None, method='get', request_kwargs=None):
+    """Test that a request is refused or redirected for login, then log in as the named user
+
+    Defaults to making a 'get'. Set method to one of the other django.test.Client request method names
+    (e.g., 'post') to change that. If that request needs arguments, pass these in request_kwargs.
+    """
+    request_method = getattr(test_case.client, method)
+    if request_kwargs is None:
+        request_kwargs = dict()
+    r = request_method(url, **request_kwargs)
     test_case.assertIn(r.status_code, (302, 403))
     if r.status_code == 302:
         test_case.assertTrue("/accounts/login" in r['Location'])

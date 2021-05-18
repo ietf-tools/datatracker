@@ -8,6 +8,7 @@ skip_selenium = False
 skip_message  = ""
 try:
     from selenium import webdriver
+    from selenium.webdriver.common.action_chains import ActionChains
 except ImportError as e:
     skip_selenium = True
     skip_message = "Skipping selenium tests: %s" % e
@@ -71,4 +72,9 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
         self.driver.find_element_by_name('username').send_keys(username)
         self.driver.find_element_by_name('password').send_keys(password)
         self.driver.find_element_by_xpath('//button[@type="submit"]').click()
+
+    def scroll_to_element(self, element):
+        """Scroll an element into view"""
+        actions = ActionChains(self.driver)
+        actions.move_to_element(element).perform()
 

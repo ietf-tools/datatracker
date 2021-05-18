@@ -10,6 +10,7 @@ import lxml
 import bibtexparser
 import mock
 import json
+import copy
 
 from http.cookies import SimpleCookie
 from pyquery import PyQuery
@@ -27,11 +28,12 @@ from tastypie.test import ResourceTestCaseMixin
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
-    DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType )
+    DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
+    EditedAuthorsDocEvent )
 from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactory, 
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
-    BallotDocEventFactory )
+    BallotDocEventFactory, DocumentAuthorFactory )
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
 from ietf.group.models import Group
@@ -41,7 +43,7 @@ from ietf.meeting.models import Meeting, Session, SessionPresentation, Schedulin
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.name.models import SessionStatusName, BallotPositionName
 from ietf.person.models import Person
-from ietf.person.factories import PersonFactory
+from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.mail import outbox
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
@@ -785,6 +787,447 @@ Man                    Expires September 22, 2015               [Page 3]
             },
             msg_prefix='Non-WG-like group %s (%s) should not include group type in link' % (group.acronym, group.type),
         )
+
+    def login(self, username):
+        self.client.login(username=username, password=username + '+password')
+
+    def test_edit_authors_permissions(self):
+        """Only the secretariat may edit authors"""
+        draft = WgDraftFactory(authors=PersonFactory.create_batch(3))
+        RoleFactory(group=draft.group, name_id='chair')
+        RoleFactory(group=draft.group, name_id='ad', person=Person.objects.get(user__username='ad'))
+        url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=draft.name))
+
+        # Relevant users not authorized to edit authors
+        unauthorized_usernames = [
+            'plain',
+            *[author.user.username for author in draft.authors()],
+            draft.group.get_chair().person.user.username,
+            'ad'
+        ]
+
+        # First, check that only the secretary can even see the edit page.
+        # Each call checks that currently-logged in user is refused, then logs in as the named user.
+        for username in unauthorized_usernames:
+            login_testing_unauthorized(self, username, url)
+        login_testing_unauthorized(self, 'secretary', url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.client.logout()
+
+        # Try to add an author via POST - still only the secretary should be able to do this.
+        orig_authors = draft.authors()
+        post_data = self.make_edit_authors_post_data(
+            basis='permission test',
+            authors=draft.documentauthor_set.all(),
+        )
+        new_auth_person = PersonFactory()
+        self.add_author_to_edit_authors_post_data(
+            post_data,
+            dict(
+                person=str(new_auth_person.pk),
+                email=str(new_auth_person.email()),
+                affiliation='affil',
+                country='USA',
+            ),
+        )
+        for username in unauthorized_usernames:
+            login_testing_unauthorized(self, username, url, method='post', request_kwargs=dict(data=post_data))
+            draft = Document.objects.get(pk=draft.pk)
+            self.assertEqual(draft.authors(), orig_authors)  # ensure draft author list was not modified
+        login_testing_unauthorized(self, 'secretary', url, method='post', request_kwargs=dict(data=post_data))
+        r = self.client.post(url, post_data)
+        self.assertEqual(r.status_code, 302)
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEqual(draft.authors(), orig_authors + [new_auth_person])
+
+    def make_edit_authors_post_data(self, basis, authors):
+        """Helper to generate edit_authors POST data for a set of authors"""
+        def _add_prefix(s):
+            # The prefix here needs to match the formset prefix in the edit_authors() view
+            return 'author-{}'.format(s)
+
+        data = {
+            'basis': basis,
+            # management form
+            _add_prefix('TOTAL_FORMS'): '1',  # just the empty form so far
+            _add_prefix('INITIAL_FORMS'): str(len(authors)),
+            _add_prefix('MIN_NUM_FORMS'): '0',
+            _add_prefix('MAX_NUM_FORMS'): '1000',
+            # empty form
+            _add_prefix('__prefix__-person'): '',
+            _add_prefix('__prefix__-email'): '',
+            _add_prefix('__prefix__-affiliation'): '',
+            _add_prefix('__prefix__-country'): '',
+            _add_prefix('__prefix__-ORDER'): '',
+        }
+        
+        for index, auth in enumerate(authors):
+            self.add_author_to_edit_authors_post_data(
+                data,
+                dict(
+                    person=str(auth.person.pk),
+                    email=auth.email,
+                    affiliation=auth.affiliation,
+                    country=auth.country
+                )
+            )
+        
+        return data
+    
+    def add_author_to_edit_authors_post_data(self, post_data, new_author, insert_order=-1, prefix='author'):
+        """Helper to insert an author in the POST data for the edit_authors view
+        
+        The insert_order parameter is 0-indexed (i.e., it's the Django formset ORDER field, not the
+        DocumentAuthor order property, which is 1-indexed)
+        """
+        def _add_prefix(s):
+            return '{}-{}'.format(prefix, s)
+
+        total_forms = int(post_data[_add_prefix('TOTAL_FORMS')]) - 1  # subtract 1 for empty form 
+        if insert_order < 0:
+            insert_order = total_forms
+        else:
+            # Make a map from order to the data key that has that order value
+            order_key = dict()
+            for order in range(insert_order, total_forms):
+                key = _add_prefix(str(order) + '-ORDER')
+                order_key[int(post_data[key])] = key
+            # now increment all orders at or above where new element will be inserted
+            for order in range(insert_order, total_forms):
+                post_data[order_key[order]] = str(order + 1)
+        
+        form_index = total_forms  # regardless of insert order, new data has next unused form index
+        total_forms += 1  # new form
+
+        post_data[_add_prefix('TOTAL_FORMS')] = total_forms + 1  # add 1 for empty form
+        for prop in ['person', 'email', 'affiliation', 'country']:
+            post_data[_add_prefix(str(form_index) + '-' + prop)] = str(new_author[prop])
+        post_data[_add_prefix(str(form_index) + '-ORDER')] = str(insert_order)
+
+    def test_edit_authors_missing_basis(self):
+        draft = WgDraftFactory()
+        DocumentAuthorFactory.create_batch(3, document=draft)
+        url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=draft.name))
+
+        self.login('secretary')
+        post_data = self.make_edit_authors_post_data(
+            authors = draft.documentauthor_set.all(),
+            basis='delete me'
+        )
+        post_data.pop('basis')
+
+        r = self.client.post(url, post_data)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'This field is required.')
+
+    def test_edit_authors_no_change(self):
+        draft = WgDraftFactory()
+        DocumentAuthorFactory.create_batch(3, document=draft)
+        url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=draft.name))
+        change_reason = 'no change'
+
+        before = list(draft.documentauthor_set.values('person', 'email', 'affiliation', 'country', 'order'))
+
+        post_data = self.make_edit_authors_post_data(
+            authors = draft.documentauthor_set.all(),
+            basis=change_reason
+        )
+
+        self.login('secretary')
+        r = self.client.post(url, post_data)
+
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(pk=draft.pk)
+        after = list(draft.documentauthor_set.values('person', 'email', 'affiliation', 'country', 'order'))
+        self.assertCountEqual(after, before, 'Unexpected change to an author')
+        self.assertEqual(EditedAuthorsDocEvent.objects.filter(basis=change_reason).count(), 0)
+
+    def do_edit_authors_append_authors_test(self, new_author_count):
+        """Can add author at the end of the list"""
+        draft = WgDraftFactory()
+        starting_author_count = 3
+        DocumentAuthorFactory.create_batch(starting_author_count, document=draft)
+        url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=draft.name))
+        change_reason = 'add a new author'
+
+        compare_props = 'person', 'email', 'affiliation', 'country', 'order'
+        before = list(draft.documentauthor_set.values(*compare_props))
+        events_before = EditedAuthorsDocEvent.objects.count()
+
+        post_data = self.make_edit_authors_post_data(
+            authors=draft.documentauthor_set.all(),
+            basis=change_reason
+        )
+
+        new_authors = PersonFactory.create_batch(new_author_count, default_emails=True)
+        new_author_data = [
+            dict(
+                person=new_author.pk,
+                email=str(new_author.email()),
+                affiliation='University of Somewhere',
+                country='Botswana',
+            )
+            for new_author in new_authors
+        ]
+        for index, auth_dict in enumerate(new_author_data):
+            self.add_author_to_edit_authors_post_data(post_data, auth_dict)
+            auth_dict['order'] = starting_author_count + index + 1 # for comparison later
+
+        self.login('secretary')
+        r = self.client.post(url, post_data)
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(pk=draft.pk)
+        after = list(draft.documentauthor_set.values(*compare_props))
+
+        self.assertEqual(len(after), len(before) + new_author_count)
+        for b, a in zip(before + new_author_data, after):
+            for prop in compare_props:
+                self.assertEqual(a[prop], b[prop],
+                                 'Unexpected change: "{}" was "{}", changed to "{}"'.format(
+                                     prop, b[prop], a[prop]
+                                 ))
+
+        self.assertEqual(EditedAuthorsDocEvent.objects.count(), events_before + new_author_count)
+        change_events = EditedAuthorsDocEvent.objects.filter(basis=change_reason)
+        self.assertEqual(change_events.count(), new_author_count)
+        # The events are most-recent first, so first author added is last event in the list.
+        # Reverse the author list with [::-1]
+        for evt, auth in zip(change_events, new_authors[::-1]):
+            self.assertIn('added', evt.desc.lower())
+            self.assertIn(auth.name, evt.desc)
+
+    def test_edit_authors_append_author(self):
+        self.do_edit_authors_append_authors_test(1)
+
+    def test_edit_authors_append_authors(self):
+        self.do_edit_authors_append_authors_test(3)
+
+    def test_edit_authors_insert_author(self):
+        """Can add author in the middle of the list"""
+        draft = WgDraftFactory()
+        DocumentAuthorFactory.create_batch(3, document=draft)
+        url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=draft.name))
+        change_reason = 'add a new author'
+
+        compare_props = 'person', 'email', 'affiliation', 'country', 'order'
+        before = list(draft.documentauthor_set.values(*compare_props))
+        events_before = EditedAuthorsDocEvent.objects.count()
+
+        post_data = self.make_edit_authors_post_data(
+            authors = draft.documentauthor_set.all(),
+            basis=change_reason
+        )
+
+        new_author = PersonFactory(default_emails=True)
+        new_author_data = dict(
+            person=new_author.pk,
+            email=str(new_author.email()),
+            affiliation='University of Somewhere',
+            country='Botswana',
+        )
+        self.add_author_to_edit_authors_post_data(post_data, new_author_data, insert_order=1)
+
+        self.login('secretary')
+        r = self.client.post(url, post_data)
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(pk=draft.pk)
+        after = list(draft.documentauthor_set.values(*compare_props))
+
+        new_author_data['order'] = 2  # corresponds to insert_order == 1
+        expected = copy.deepcopy(before)
+        expected.insert(1, new_author_data)
+        expected[2]['order'] = 3
+        expected[3]['order'] = 4
+        self.assertEqual(len(after), len(expected))
+        for b, a in zip(expected, after):
+            for prop in compare_props:
+                self.assertEqual(a[prop], b[prop],
+                                 'Unexpected change: "{}" was "{}", changed to "{}"'.format(
+                                     prop, b[prop], a[prop]
+                                 ))
+
+        # 3 changes: new author, plus two order changes
+        self.assertEqual(EditedAuthorsDocEvent.objects.count(), events_before + 3)
+        change_events = EditedAuthorsDocEvent.objects.filter(basis=change_reason)
+        self.assertEqual(change_events.count(), 3)
+        
+        add_event = change_events.filter(desc__icontains='added').first()
+        reorder_events = change_events.filter(desc__icontains='changed order')
+        
+        self.assertIsNotNone(add_event)
+        self.assertEqual(reorder_events.count(), 2)
+
+    def test_edit_authors_remove_author(self):
+        draft = WgDraftFactory()
+        DocumentAuthorFactory.create_batch(3, document=draft)
+        url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=draft.name))
+        change_reason = 'remove an author'
+
+        compare_props = 'person', 'email', 'affiliation', 'country', 'order'
+        before = list(draft.documentauthor_set.values(*compare_props))
+        events_before = EditedAuthorsDocEvent.objects.count()
+
+        post_data = self.make_edit_authors_post_data(
+            authors = draft.documentauthor_set.all(),
+            basis=change_reason
+        )
+
+        # delete the second author (index == 1)
+        deleted_author_data = before.pop(1)
+        post_data['author-1-DELETE'] = 'on'  # delete box checked
+
+        self.login('secretary')
+        r = self.client.post(url, post_data)
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(pk=draft.pk)
+        after = list(draft.documentauthor_set.values(*compare_props))
+
+        before[1]['order'] = 2  # was 3, but should have been decremented
+        self.assertEqual(len(after), len(before))
+        for b, a in zip(before, after):
+            for prop in compare_props:
+                self.assertEqual(a[prop], b[prop],
+                                 'Unexpected change: "{}" was "{}", changed to "{}"'.format(
+                                     prop, b[prop], a[prop]
+                                 ))
+
+        # expect 2 events: one for removing author, another for reordering the later author
+        self.assertEqual(EditedAuthorsDocEvent.objects.count(), events_before + 2)
+        change_events = EditedAuthorsDocEvent.objects.filter(basis=change_reason)
+        self.assertEqual(change_events.count(), 2)
+
+        removed_event = change_events.filter(desc__icontains='removed').first()
+        self.assertIsNotNone(removed_event)
+        deleted_person = Person.objects.get(pk=deleted_author_data['person'])
+        self.assertIn(deleted_person.name, removed_event.desc)
+
+        reordered_event = change_events.filter(desc__icontains='changed order').first()
+        reordered_person = Person.objects.get(pk=after[1]['person'])
+        self.assertIsNotNone(reordered_event)
+        self.assertIn(reordered_person.name, reordered_event.desc)
+
+    def test_edit_authors_reorder_authors(self):
+        draft = WgDraftFactory()
+        DocumentAuthorFactory.create_batch(3, document=draft)
+        url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=draft.name))
+        change_reason = 'reorder the authors'
+
+        compare_props = 'person', 'email', 'affiliation', 'country', 'order'
+        before = list(draft.documentauthor_set.values(*compare_props))
+        events_before = EditedAuthorsDocEvent.objects.count()
+
+        post_data = self.make_edit_authors_post_data(
+            authors = draft.documentauthor_set.all(),
+            basis=change_reason
+        )
+        
+        # swap first two authors
+        post_data['author-0-ORDER'] = 1
+        post_data['author-1-ORDER'] = 0
+
+        self.login('secretary')
+        r = self.client.post(url, post_data)
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(pk=draft.pk)
+        after = list(draft.documentauthor_set.values(*compare_props))
+
+        # swap the 'before' record order
+        tmp = before[0]
+        before[0] = before[1]
+        before[0]['order'] = 1
+        before[1] = tmp
+        before[1]['order'] = 2
+        for b, a in zip(before, after):
+            for prop in compare_props:
+                self.assertEqual(a[prop], b[prop],
+                                 'Unexpected change: "{}" was "{}", changed to "{}"'.format(
+                                     prop, b[prop], a[prop]
+                                 ))
+
+        # expect 2 events: one for each changed author
+        self.assertEqual(EditedAuthorsDocEvent.objects.count(), events_before + 2)
+        change_events = EditedAuthorsDocEvent.objects.filter(basis=change_reason)
+        self.assertEqual(change_events.count(), 2)
+        self.assertEqual(change_events.filter(desc__icontains='changed order').count(), 2)
+
+        self.assertIsNotNone(
+            change_events.filter(
+                desc__contains=Person.objects.get(pk=before[0]['person']).name
+            ).first()
+        )
+        self.assertIsNotNone(
+            change_events.filter(
+                desc__contains=Person.objects.get(pk=before[1]['person']).name
+            ).first()
+        )
+
+    def test_edit_authors_edit_fields(self):
+        draft = WgDraftFactory()
+        DocumentAuthorFactory.create_batch(3, document=draft)
+        url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=draft.name))
+        change_reason = 'reorder the authors'
+
+        compare_props = 'person', 'email', 'affiliation', 'country', 'order'
+        before = list(draft.documentauthor_set.values(*compare_props))
+        events_before = EditedAuthorsDocEvent.objects.count()
+
+        post_data = self.make_edit_authors_post_data(
+            authors = draft.documentauthor_set.all(),
+            basis=change_reason
+        )
+        
+        new_email = EmailFactory(person=draft.authors()[0])
+        post_data['author-0-email'] = new_email.address
+        post_data['author-1-affiliation'] = 'University of Nowhere'
+        post_data['author-2-country'] = 'Chile'
+
+        self.login('secretary')
+        r = self.client.post(url, post_data)
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(pk=draft.pk)
+        after = list(draft.documentauthor_set.values(*compare_props))
+
+        expected = copy.deepcopy(before)
+        expected[0]['email'] = new_email.address
+        expected[1]['affiliation'] = 'University of Nowhere'
+        expected[2]['country'] = 'Chile'
+        for b, a in zip(expected, after):
+            for prop in compare_props:
+                self.assertEqual(a[prop], b[prop],
+                                 'Unexpected change: "{}" was "{}", changed to "{}"'.format(
+                                     prop, b[prop], a[prop]
+                                 ))
+
+        # expect 3 events: one for each changed author
+        self.assertEqual(EditedAuthorsDocEvent.objects.count(), events_before + 3)
+        change_events = EditedAuthorsDocEvent.objects.filter(basis=change_reason)
+        self.assertEqual(change_events.count(), 3)
+
+        email_event = change_events.filter(desc__icontains='changed email').first()
+        affiliation_event = change_events.filter(desc__icontains='changed affiliation').first()
+        country_event = change_events.filter(desc__icontains='changed country').first()
+
+        self.assertIsNotNone(email_event)
+        self.assertIn(draft.authors()[0].name, email_event.desc)
+        self.assertIn(before[0]['email'], email_event.desc)
+        self.assertIn(after[0]['email'], email_event.desc)
+
+        self.assertIsNotNone(affiliation_event)
+        self.assertIn(draft.authors()[1].name, affiliation_event.desc)
+        self.assertIn(before[1]['affiliation'], affiliation_event.desc)
+        self.assertIn(after[1]['affiliation'], affiliation_event.desc)
+
+        self.assertIsNotNone(country_event)
+        self.assertIn(draft.authors()[2].name, country_event.desc)
+        self.assertIn(before[2]['country'], country_event.desc)
+        self.assertIn(after[2]['country'], country_event.desc)
 
     @staticmethod
     def _pyquery_select_action_holder_string(q, s):
