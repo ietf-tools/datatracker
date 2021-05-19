@@ -225,6 +225,54 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
 
         self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{} #session{}'.format(slot4.pk, s1.pk)))
 
+    def test_unassigned_sessions_drop_target_visible_when_empty(self):
+        """The drop target for unassigned sessions should not collapse to 0 size
+
+        This test checks that issue #3174 has not regressed. A test that exercises
+        moving items from the schedule into the unassigned-sessions area is needed,
+        but as of 2021-05-04, Selenium does not support the HTML5 drag-and-drop
+        event interface. See:
+
+        https://github.com/seleniumhq/selenium-google-code-issue-archive/issues/3604
+        https://gist.github.com/rcorreia/2362544
+
+        Note, however, that the workarounds are inadequate - they do not handle
+        all of the events needed by the editor.
+        """
+        # Set up a meeting and a schedule a plain user can edit
+        meeting = make_meeting_test_data()
+        schedule = Schedule.objects.filter(meeting=meeting, owner__user__username="plain").first()
+        sessions = meeting.session_set.filter(type_id='regular')
+        timeslots = meeting.timeslot_set.filter(type_id='regular')
+        self.assertGreaterEqual(timeslots.count(), sessions.count(),
+                                'Need a timeslot for each session')
+        for index, session in enumerate(sessions):
+            SchedTimeSessAssignment.objects.create(
+                schedule=schedule,
+                timeslot=timeslots[index],
+                session=session,
+            )
+
+        # Open the editor
+        self.login()
+        url = self.absreverse(
+            'ietf.meeting.views.edit_meeting_schedule',
+            kwargs=dict(num=meeting.number, name=schedule.name, owner=schedule.owner_email())
+        )
+        self.driver.get(url)
+
+        # Check that the drop target for unassigned sessions is actually empty
+        drop_target = self.driver.find_element_by_css_selector(
+            '.unassigned-sessions .drop-target'
+        )
+        self.assertEqual(len(drop_target.find_elements_by_class_name('session')), 0,
+                         'Unassigned sessions box is not empty, test is broken')
+
+        # Check that the drop target has non-zero size
+        self.assertGreater(drop_target.size['height'], 0,
+                           'Drop target for unassigned sessions collapsed to 0 height')
+        self.assertGreater(drop_target.size['width'], 0,
+                           'Drop target for unassigned sessions collapsed to 0 width')
 
 @ifSeleniumEnabled
 @skipIf(django.VERSION[0]==2, "Skipping test with race conditions under Django 2")
