@@ -351,7 +351,7 @@ def add_links_in_new_revision_events(doc, events, diff_revisions):
         full_url = diff_url = diff_urls[(e.doc.name, e.rev)]
 
         if doc.type_id in "draft": # work around special diff url for drafts
-            full_url = "https://tools.ietf.org/id/" + diff_url + ".txt"
+            full_url = "https://www.ietf.org/archive/id/" + diff_url + ".txt"
 
         # build links
         links = r'<a href="%s">\1</a>' % full_url

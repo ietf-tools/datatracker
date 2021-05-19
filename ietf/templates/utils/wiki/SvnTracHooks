@@ -71,7 +71,3 @@ can take any of the following forms:
   Resolve #140: rephrase note so that it becomes clear that the described ...
 }}}
 
-=== Script ===
-
-The default script installed as trac-post-commit-hook is:
-http://tools.ietf.org/tools/wg-pages/svn-hook-files/trac-post-commit-hook

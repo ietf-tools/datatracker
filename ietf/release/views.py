@@ -28,9 +28,9 @@ time.strptime('1984', '%Y')             # we do this to force lib loading, inste
 
 def trac_links(text):
     # changeset links
-    text = re.sub(r'\[(\d+)\]', r'<a href="https://wiki.tools.ietf.org/tools/ietfdb/changeset/\1">[\1]</a>', text)
+    text = re.sub(r'\[(\d+)\]', r'<a href="https://trac.ietf.org/trac/ietfdb/changeset/\1">[\1]</a>', text)
     # issue links
-    text = re.sub(r'([^&])#(\d+)', r'\1<a href="https://wiki.tools.ietf.org/tools/ietfdb/ticket/\2">#\2</a>', text)
+    text = re.sub(r'([^&])#(\d+)', r'\1<a href="https://trac.ietf.org/trac/ietfdb/ticket/\2">#\2</a>', text)
     return text
 
 
