@@ -1,3 +1,30 @@
+ietfdb (7.30.0) ietf; urgency=medium
+
+  ** Bugfixes, adjustments to moving datatracker repository
+
+  * Merged in [18999] from rjsparks@nostrum.com:
+    Correct invalid date assumption in rfc8989 eligibility tests.
+
+  * Merged in [18991] from jennifer@painless-security.com:
+    Missing migration needed by [18960] / [18977]
+
+  * Merged in [18989] from jennifer@painless-security.com:
+    Allow secretariat to edit document author list. Fixes #3185.
+
+  * Merged in [18995] from rjsparks@nostrum.com:
+    Link only to datatracker htmlization. Adjust mail-to-authors and
+    mail-to-list. Fixes #3261.
+
+  * Merged in [18997] from rjsparks@nostrum.com:
+    Changes to reflect repository moves.
+
+  * Merged in [18998] from jennifer@painless-security.com:
+    Prevent unscheduled session drop target from collapsing to zero size in
+    agenda editor. Fixes #3174.
+
+ -- Robert Sparks <rjsparks@nostrum.com>  19 May 2021 18:07:42 +0000
+
+
 ietfdb (7.29.0) ietf; urgency=medium
 
   ** RFC8989 eligibility rules, improved timezone support for upcoming meetings

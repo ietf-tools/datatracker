@@ -30,4 +30,4 @@ svn log $PWD -r $((rev+2)):${2:-HEAD} \
 	| sed -r 's/^([^ ].*)$/    &/'  \
 	| sed -r 's/^  \* /\n  * /'
 echo ""
-TZ=UTC date +" -- Henrik Levkowetz <henrik@levkowetz.com>  %d %b %Y %H:%M:%S %z"
+TZ=UTC date +" -- Robert Sparks <rjsparks@nostrum.com>  %d %b %Y %H:%M:%S %z"
