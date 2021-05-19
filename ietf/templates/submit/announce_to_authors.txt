@@ -11,18 +11,14 @@ Group:		{{ group }}
 Pages:		{{ submission.pages }}
 URL:            {{ settings.IETF_ID_ARCHIVE_URL }}{{ submission.name }}-{{ submission.rev }}.txt
 Status:         https://datatracker.ietf.org/doc/{{ submission.name }}/{% if submission.xml_version == "3" %}
-Html:           {{ settings.IETF_ID_ARCHIVE_URL }}{{ submission.name }}-{{ submission.rev }}.html{% else %}
-Htmlized:       https://datatracker.ietf.org/doc/html/{{ submission.name }}{% endif %}
-Htmlized:       https://tools.ietf.org/html/{{ submission.name }}-{{ submission.rev }}
+Html:           {{ settings.IETF_ID_ARCHIVE_URL }}{{ submission.name }}-{{ submission.rev }}.html{% endif %}
+Htmlized:       https://datatracker.ietf.org/doc/html/{{ submission.name }}
 {% if submission.rev != "00" %}Diff:           {{rfcdiff_base_url}}?url2={{ submission.name }}-{{ submission.rev }}{% endif %}
 
 Abstract:
 {{ submission.abstract }}
                                                                                   
 {{ submission.note|default:"" }}
-
-Please note that it may take a couple of minutes from the time of submission
-until the htmlized version and diff are available at tools.ietf.org.
 
 The IETF Secretariat
 {% endautoescape %}

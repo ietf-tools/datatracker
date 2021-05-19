@@ -44,7 +44,7 @@ trac-dev http://thread.gmane.org/gmane.comp.version-control.subversion.trac.deve
 
 Mercurial http://www.selenic.com/mercurial/wiki/index.cgi/ # the wiki for the Mercurial distributed SCM
 
-RFC		http://tools.ietf.org/html/rfc$1.html # IETF's RFC $1
+RFC		http://datatracker.ietf.org/doc/html/rfc$1.html # IETF's RFC $1
 DataTracker	https://datatracker.ietf.org/doc/
 dt		https://datatracker.ietf.org/doc/
 

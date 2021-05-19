@@ -1033,7 +1033,6 @@ def build_file_urls(doc):
             file_urls.append(("pdf", base + "pdfrfc/" + name + ".txt.pdf"))
 
         if "txt" in found_types:
-            file_urls.append(("htmlized (tools)", settings.TOOLS_ID_HTML_URL + name))
             file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=name))))
             if doc.tags.filter(slug="verified-errata").exists():
                 file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
@@ -1050,7 +1049,6 @@ def build_file_urls(doc):
 
         if "pdf" not in found_types:
             file_urls.append(("pdf", settings.TOOLS_ID_PDF_URL + doc.name + "-" + doc.rev + ".pdf"))
-        file_urls.append(("htmlized (tools)", settings.TOOLS_ID_HTML_URL + doc.name + "-" + doc.rev))
         file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=doc.name,rev=doc.rev))+"bibtex"))
 

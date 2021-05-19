@@ -17,16 +17,12 @@ https://datatracker.ietf.org/doc/{{ submission.name }}/
 {% if submission.xml_version == "3" %}
 There is also an HTML version available at:
 {{ settings.IETF_ID_ARCHIVE_URL }}{{ submission.name }}-{{ submission.rev }}.html{% else %}
-There are also htmlized versions available at:
-https://tools.ietf.org/html/{{ submission.name }}-{{ submission.rev }}
+There is also an htmlized version available at:
 https://datatracker.ietf.org/doc/html/{{ submission.name }}-{{ submission.rev }}{% endif %}
 {% if submission.rev != "00" %}
 A diff from the previous version is available at:
 {{settings.RFCDIFF_BASE_URL}}?url2={{ submission.name }}-{{ submission.rev }}
 {% endif %}
-
-Please note that it may take a couple of minutes from the time of submission
-until the htmlized version and diff are available at tools.ietf.org.
 
 Internet-Drafts are also available by anonymous FTP at:
 ftp://ftp.ietf.org/internet-drafts/
