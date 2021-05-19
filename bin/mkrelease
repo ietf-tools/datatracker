@@ -138,7 +138,8 @@ if [ $# -lt $ARGMIN ]; then
     die "$# arguments found, $ARGMIN required"
 fi
 
-by=$(getent passwd $(whoami) | cut -d ':' -f 5 | tr -d ',')
+[ -z "$by" ] && by=${RELEASER_REAL_NAME}
+[ -z "$by" ] && by=$(getent passwd $(whoami) | cut -d ':' -f 5 | tr -d ',')
 [ -z "$by" ] && die "Can't determine the real name of the user running this script"
 
 VER=$1
@@ -333,9 +334,12 @@ Regards,
 	(via the mkrelease script)
 " > ~/src/db/mail/release-mail-v$VER.txt
 
-cat ~/src/db/mail/release-mail-v$VER.txt | $do mail -s "New datatracker release: v$VER" housley@vigilsec.com rjsparks@nostrum.com jay@ietf.org -c glen@amsl.com -c maddy@amsl.com -c cmorgan@amsl.com -c avezza@amsl.com -c amorris@amsl.com -c smccammon@amsl.com -c kmoreland@amsl.com $contributors
+SEND_ARGS=""
+[ "${RELEASER_EMAIL}" ] && SEND_ARGS="-r ${RELEASER_EMAIL}"
 
-cat ~/src/db/mail/release-mail-v$VER.txt | $do mail -s "New datatracker release: v$VER" iesg@ietf.org wgchairs@ietf.org codesprints@ietf.org -b rjsparks@nostrum.com
+cat ~/src/db/mail/release-mail-v$VER.txt | $do mail "${SEND_ARGS}" -s "New datatracker release: v$VER" housley@vigilsec.com rjsparks@nostrum.com jay@ietf.org -c glen@amsl.com -c maddy@amsl.com -c cmorgan@amsl.com -c avezza@amsl.com -c amorris@amsl.com -c smccammon@amsl.com -c kmoreland@amsl.com $contributors
+
+cat ~/src/db/mail/release-mail-v$VER.txt | $do mail "${SEND_ARGS}" -s "New datatracker release: v$VER" iesg@ietf.org wgchairs@ietf.org codesprints@ietf.org -b rjsparks@nostrum.com
 
 
 # Removed at Henrik's suggestion
