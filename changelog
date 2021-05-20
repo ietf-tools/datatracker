@@ -22,7 +22,7 @@ ietfdb (7.30.0) ietf; urgency=medium
     Prevent unscheduled session drop target from collapsing to zero size in
     agenda editor. Fixes #3174.
 
- -- Robert Sparks <rjsparks@nostrum.com>  19 May 2021 18:07:42 +0000
+ -- Robert Sparks <rjsparks@nostrum.com>  20 May 2021 17:48:15 +0000
 
 
 ietfdb (7.29.0) ietf; urgency=medium
