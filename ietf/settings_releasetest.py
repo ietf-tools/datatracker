@@ -35,5 +35,9 @@ DATABASES = {
 if TEST_CODE_COVERAGE_CHECKER and not TEST_CODE_COVERAGE_CHECKER._started: # pyflakes:ignore
     TEST_CODE_COVERAGE_CHECKER.start()                          # pyflakes:ignore
 
+MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'test/media/') # pyflakes:ignore
+MEDIA_URL = '/test/media/'
+PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME                            # pyflakes:ignore
+
 REQUEST_PROFILE_STORE_ANONYMOUS_SESSIONS = False
     

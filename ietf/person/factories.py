@@ -96,6 +96,8 @@ class PersonFactory(factory.DjangoModelFactory):
             obj.photo_thumb = media_name
             photosrc = os.path.join(settings.TEST_DATA_DIR, "profile-default.jpg")
             photodst = os.path.join(settings.PHOTOS_DIR,  photo_name + '.jpg')
+            debug.show('photosrc')
+            debug.show('photodst')
             if not os.path.exists(photodst):
                 shutil.copy(photosrc, photodst)
             def delete_file(file):
