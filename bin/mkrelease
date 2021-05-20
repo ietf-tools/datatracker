@@ -323,10 +323,10 @@ Release notes:
 $changes
 
 The new version is available for installation through SVN checkout, with
-  'svn checkout https://svn.tools.ietf.org/svn/tools/$PROJ/tags/$VER'
+  'svn checkout https://svn.ietf.org/svn/tools/$PROJ/tags/$VER'
 
 For development, copy the new development version instead:
-  'svn copy https://svn.tools.ietf.org/svn/tools/$PROJ/tags/dev/$DEV' <YOURBRANCH>
+  'svn copy https://svn.ietf.org/svn/tools/$PROJ/tags/dev/$DEV' <YOURBRANCH>
 
 Regards,
 
