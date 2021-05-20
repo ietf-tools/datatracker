@@ -161,6 +161,10 @@ class GenerateGroupAliasesTests(TestCase):
         role2 = RoleFactory(name_id='ad', group__type_id='area', group__acronym='done', group__state_id='conclude')
         done = role2.group
         done_ad = role2.person
+        irtf = Group.objects.get(acronym='irtf')
+        testrg = GroupFactory(type_id='rg', acronym='testrg', parent=irtf)
+        testrgchair = PersonFactory(user__username='testrgchair')
+        testrg.role_set.create(name_id='chair', person=testrgchair, email=testrgchair.email())
         individual = PersonFactory()
 
         args = [ ]
@@ -202,6 +206,7 @@ class GenerateGroupAliasesTests(TestCase):
                 marssecr.email_address(),
                 ameschair.email_address(),
                 recentchair.email_address(),
+                testrgchair.email_address(),
             ]]))
             self.assertFalse(all([x in vcontent for x in [
                 done_ad.email_address(),
@@ -217,6 +222,9 @@ class GenerateGroupAliasesTests(TestCase):
                 'xfilter-' + ames.acronym + '-chairs',
                 'xfilter-' + recent.acronym + '-ads',
                 'xfilter-' + recent.acronym + '-chairs',
+                'xfilter-' + testrg.acronym + '-chairs',
+                testrg.acronym + '-chairs@ietf.org',
+                testrg.acronym + '-chairs@irtf.org',
             ]]))
             self.assertFalse(all([x in vcontent for x in [
                 'xfilter-' + done.acronym + '-ads',
