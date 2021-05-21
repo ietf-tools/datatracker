@@ -1221,7 +1221,55 @@ class EditTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(urlreverse("ietf.meeting.views.edit_schedule", kwargs=dict(num=meeting.number)))
         self.assertContains(r, "load_assignments")
- 
+
+    def test_official_record_schedule_is_read_only(self):
+        def _set_date_offset_and_retrieve_page(meeting, days_offset, client):
+            meeting.date = datetime.date.today() + datetime.timedelta(days=days_offset)
+            meeting.save()
+            client.login(username="secretary", password="secretary+password")
+            url = urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs=dict(num=meeting.number)) 
+            r = client.get(url)
+            q = PyQuery(r.content)
+            return(r, q)
+
+        # Setup
+        ####################################################################################
+
+        # Basic test data
+        meeting = make_meeting_test_data()
+
+        # Set the secretary as the owner of the schedule
+        schedule = meeting.schedule
+        schedule.owner = Person.objects.get(user__username="secretary")
+        schedule.save()
+
+        # Tests
+        ####################################################################################
+
+        # 1) Check that we get told the page is not editable
+        #######################################################
+        r, q = _set_date_offset_and_retrieve_page(meeting,
+                                                  0 - 2 - meeting.days, # Meeting ended 2 days ago
+                                                  self.client)
+        self.assertTrue(q("""eem:contains("You can't edit this schedule")"""))
+        self.assertTrue(q("""em:contains("This is the official schedule for a meeting in the past")"""))
+
+        # 2) An ongoing meeting
+        #######################################################
+        r, q = _set_date_offset_and_retrieve_page(meeting,
+                                                  0, # Meeting starts today
+                                                  self.client)
+        self.assertFalse(q("""em:contains("You can't edit this schedule")"""))
+        self.assertFalse(q("""em:contains("This is the official schedule for a meeting in the past")"""))
+
+        # 3) A meeting in the future
+        #######################################################
+        r, q = _set_date_offset_and_retrieve_page(meeting,
+                                                  7, # Meeting starts next week
+                                                  self.client)
+        self.assertFalse(q("""em:contains("You can't edit this schedule")"""))
+        self.assertFalse(q("""em:contains("This is the official schedule for a meeting in the past")"""))
+
     def test_edit_meeting_schedule(self):
         meeting = make_meeting_test_data()
 
