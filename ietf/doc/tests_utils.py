@@ -1,14 +1,16 @@
 # Copyright The IETF Trust 2020, All Rights Reserved
 import datetime
 
+from django.db import IntegrityError
+
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.name.models import DocTagName
 from ietf.person.factories import PersonFactory
 from ietf.utils.test_utils import TestCase
 from ietf.person.models import Person
 from ietf.doc.factories import DocumentFactory
-from ietf.doc.models import State, DocumentActionHolder
-from ietf.doc.utils import update_action_holders, add_state_change_event
+from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor
+from ietf.doc.utils import update_action_holders, add_state_change_event, update_documentauthors
 
 
 class ActionHoldersTests(TestCase):
@@ -205,3 +207,35 @@ class ActionHoldersTests(TestCase):
         for state in State.objects.filter(type='draft-iesg').exclude(slug='idexists'):
             doc.set_state(state)
             self.assertTrue(doc.action_holders_enabled())
+
+
+class MiscTests(TestCase):
+    def test_update_documentauthors_with_nulls(self):
+        """A 'None' value in the affiliation/country should be handled correctly"""
+        author_person = PersonFactory()
+        doc = DocumentFactory(authors=[author_person])
+        doc.documentauthor_set.update(
+            affiliation='Some Affiliation', country='USA'
+        )
+        try:
+            events = update_documentauthors(
+                doc,
+                [
+                    DocumentAuthor(
+                        person=author_person,
+                        email=author_person.email(),
+                        affiliation=None,
+                        country=None,
+                    )
+                ],
+            )
+        except IntegrityError as err:
+            self.fail('IntegrityError was raised: {}'.format(err))
+
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].type, 'edited_authors')
+        self.assertIn('cleared affiliation (was "Some Affiliation")', events[0].desc)
+        self.assertIn('cleared country (was "USA")', events[0].desc)
+        docauth = doc.documentauthor_set.first()
+        self.assertEqual(docauth.affiliation, '')
+        self.assertEqual(docauth.country, '')

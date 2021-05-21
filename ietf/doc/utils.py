@@ -535,7 +535,7 @@ def update_documentauthors(doc, new_docauthors, by=None, basis=None):
         setattr(auth, field, newval)
         
         was_empty = oldval is None or len(str(oldval)) == 0
-        now_empty = newval is None or len(str(oldval)) == 0
+        now_empty = newval is None or len(str(newval)) == 0
         
         # describe the change
         if oldval == newval:
@@ -566,8 +566,8 @@ def update_documentauthors(doc, new_docauthors, by=None, basis=None):
         author_changes = []
         # Now fill in other author details
         author_changes.append(_change_field_and_describe(auth, 'email', docauthor.email))
-        author_changes.append(_change_field_and_describe(auth, 'affiliation', docauthor.affiliation))
-        author_changes.append(_change_field_and_describe(auth, 'country', docauthor.country))
+        author_changes.append(_change_field_and_describe(auth, 'affiliation', docauthor.affiliation or ''))
+        author_changes.append(_change_field_and_describe(auth, 'country', docauthor.country or ''))
         author_changes.append(_change_field_and_describe(auth, 'order', order + 1))
         auth.save()
         log.assertion('auth.email_id != "none"')
