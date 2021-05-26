@@ -118,7 +118,7 @@ done
 # The program itself
 
 who=""
-tag=$(svn log -v https://svn.tools.ietf.org/svn/tools/ietfdb/tags/dev/ --limit 1 | grep '/tags/' | awk '{print $2}')
+tag=$(svn log -v https://svn.ietf.org/svn/tools/ietfdb/tags/dev/ --limit 1 | grep '/tags/' | awk '{print $2}')
 
 source="${tag:1}"
 target="${tag##*/}"
@@ -130,9 +130,9 @@ rev="dev tag $target"
 function mksvndir() {
     who=$1
     if [ "$2" ]; then dir=$2; else dir=$who; fi
-    if ! svn info https://svn.tools.ietf.org/svn/tools/ietfdb/personal/$dir >/dev/null 2>&1 ; then
+    if ! svn info https://svn.ietf.org/svn/tools/ietfdb/personal/$dir >/dev/null 2>&1 ; then
 	$do echo "Creating personal directory area for IETF datatracker coding: /personal/$dir"
-	$do svn mkdir https://svn.tools.ietf.org/svn/tools/ietfdb/personal/$dir -m "Personal SVN dir for $who, for IETF datatracker code"
+	$do svn mkdir https://svn.ietf.org/svn/tools/ietfdb/personal/$dir -m "Personal SVN dir for $who, for IETF datatracker code"
     else
 	echo "Repository area personal/$dir is already in place."
     fi
@@ -148,7 +148,7 @@ cd $progdir
 
 if [ "$who" ]; then
     mksvndir $who
-    $do svn cp https://svn.tools.ietf.org/svn/tools/ietfdb/$source https://svn.tools.ietf.org/svn/tools/ietfdb/personal/$who/$target/ -m "New branch for $target"
+    $do svn cp https://svn.ietf.org/svn/tools/ietfdb/$source https://svn.ietf.org/svn/tools/ietfdb/personal/$who/$target/ -m "New branch for $target"
     echo "New branch: ^/personal/$who/$target"
 fi
 if [ "$SPRINT" ]; then
