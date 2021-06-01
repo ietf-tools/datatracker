@@ -82,6 +82,8 @@ class SessionRequestTestCase(TestCase):
         group2 = GroupFactory()
         group3 = GroupFactory()
         group4 = GroupFactory()
+        iabprog = GroupFactory(type_id='program')
+
         SessionFactory(meeting=meeting,group=mars,status_id='sched')
 
         url = reverse('ietf.secr.sreq.views.edit', kwargs={'acronym':'mars'})
@@ -92,7 +94,7 @@ class SessionRequestTestCase(TestCase):
                      'length_session1':'3600',
                      'length_session2':'3600',
                      'attendees':'10',
-                     'conflict1':'',
+                     'conflict1':iabprog.acronym,
                      'comments':'need lights',
                      'session_time_relation': 'subsequent-days',
                      'adjacent_with_wg': group2.acronym,
@@ -108,6 +110,8 @@ class SessionRequestTestCase(TestCase):
         sessions = Session.objects.filter(meeting=meeting, group=mars)
         self.assertEqual(len(sessions), 2)
         session = sessions[0]
+
+        self.assertEqual(session.constraints().get(name='conflict').target.acronym, iabprog.acronym)
         self.assertEqual(session.constraints().get(name='time_relation').time_relation, 'subsequent-days')
         self.assertEqual(session.constraints().get(name='wg_adjacent').target.acronym, group2.acronym)
         self.assertEqual(
