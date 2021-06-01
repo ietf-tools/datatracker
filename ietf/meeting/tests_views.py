@@ -553,6 +553,15 @@ class MeetingTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
+    def test_proceedings_no_agenda(self):
+        meeting = MeetingFactory(type_id='ietf',populate_schedule=False,date=datetime.date.today())
+        url = urlreverse('ietf.meeting.views.proceedings')
+        r = self.client.get(url)
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.materials'))
+        url = urlreverse('ietf.meeting.views.proceedings', kwargs=dict(num=meeting.number))
+        r = self.client.get(url)
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.materials', kwargs=dict(num=meeting.number)))
+
     def test_proceedings_acknowledgements(self):
         make_meeting_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")

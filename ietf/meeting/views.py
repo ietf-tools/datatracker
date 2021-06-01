@@ -3544,8 +3544,14 @@ def proceedings(request, num=None):
 
     meeting = get_meeting(num)
 
-    if (meeting.number.isdigit() and int(meeting.number) <= 64) or not meeting.schedule or not meeting.schedule.assignments.exists():
-            return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
+    if (meeting.number.isdigit() and int(meeting.number) <= 64):
+        return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
+
+    if not meeting.schedule or not meeting.schedule.assignments.exists():
+        kwargs = dict()
+        if num:
+            kwargs['num'] = num
+        return redirect('ietf.meeting.views.materials', **kwargs)
 
     begin_date = meeting.get_submission_start_date()
     cut_off_date = meeting.get_submission_cut_off_date()
