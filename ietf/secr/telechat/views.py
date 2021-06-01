@@ -217,7 +217,7 @@ def doc_detail(request, date, name):
     if doc.active_ballot():
         ballot_type = doc.active_ballot().ballot_type
     else:
-        ballot_type = BallotType.objects.get(doc_type='draft')
+        ballot_type = BallotType.objects.get(doc_type=doc.type)
     BallotFormset = formset_factory(BallotForm, extra=0)
     BallotFormset.form.__init__ = curry(BallotForm.__init__, ballot_type=ballot_type)
     
