@@ -164,12 +164,17 @@ class SubmitTests(TestCase):
         settings.SUBMIT_YANG_CATALOG_MODEL_DIR = self.saved_yang_catalog_model_dir
 
 
-    def create_and_post_submission(self, name, rev, author, group=None, formats=("txt",)):
-        """Helper to create and post a submission"""
+    def create_and_post_submission(self, name, rev, author, group=None, formats=("txt",), base_filename=None):
+        """Helper to create and post a submission
+
+        If base_filename is None, defaults to 'test_submission'
+        """
         url = urlreverse('ietf.submit.views.upload_submission')
         files = dict()
+
         for format in formats:
-            files[format], __ = submission_file(name, rev, group, format, "test_submission.%s" % format, author=author)
+            fn = '.'.join((base_filename or 'test_submission', format))
+            files[format], __ = submission_file(name, rev, group, format, fn, author=author)
 
         r = self.client.post(url, files)
         if r.status_code != 302:
@@ -820,6 +825,42 @@ class SubmitTests(TestCase):
 
     def test_submit_new_individual_txt_xml(self):
         self.submit_new_individual(["txt", "xml"])
+
+    def submit_new_draft_no_org_or_address(self, formats):
+        name = 'draft-testing-no-org-or-address'
+
+        author = PersonFactory()
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.create_and_post_submission(
+            name, '00', author, formats=formats, base_filename='test_submission_no_org_or_address'
+        )
+        status_url = r['Location']
+        r = self.supply_extra_metadata(name, status_url, 'Submitter name', 'submitter@example.com', replaces='')
+        self.assertEqual(r.status_code, 302)
+
+        # force post of submission
+        r = self.client.get(status_url)
+        q = PyQuery(r.content)
+        force_post_button = q('[type=submit]:contains("Force post")')
+        self.assertEqual(len(force_post_button), 1)
+        action = force_post_button.parents("form").find('input[type=hidden][name="action"]').val()
+        r = self.client.post(status_url, dict(action=action))
+
+        doc = Document.objects.get(docalias__name=name)
+        self.assertEqual(doc.documentauthor_set.count(), 1)
+        docauth = doc.documentauthor_set.first()
+        self.assertEqual(docauth.person, author)
+        self.assertEqual(docauth.affiliation, '')
+        self.assertEqual(docauth.country, '')
+
+    def test_submit_new_draft_no_org_or_address_txt(self):
+        self.submit_new_draft_no_org_or_address(['txt'])
+
+    def test_submit_new_draft_no_org_or_address_xml(self):
+        self.submit_new_draft_no_org_or_address(['xml'])
+
+    def test_submit_new_draft_no_org_or_address_txt_xml(self):
+        self.submit_new_draft_no_org_or_address(['txt', 'xml'])
 
     def _assert_extresources_in_table(self, response, extresources, th_label=None):
         """Assert that external resources are properly shown on the submission_status table"""

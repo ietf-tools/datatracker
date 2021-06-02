@@ -535,7 +535,7 @@ def update_documentauthors(doc, new_docauthors, by=None, basis=None):
         setattr(auth, field, newval)
         
         was_empty = oldval is None or len(str(oldval)) == 0
-        now_empty = newval is None or len(str(oldval)) == 0
+        now_empty = newval is None or len(str(newval)) == 0
         
         # describe the change
         if oldval == newval:
