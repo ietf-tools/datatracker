@@ -9,7 +9,8 @@ import debug    # pyflakes:ignore
 
 from django.urls import reverse
 
-from ietf.doc.factories import WgDraftFactory, IndividualRfcFactory, CharterFactory
+from ietf.doc.factories import (WgDraftFactory, IndividualRfcFactory, CharterFactory,
+    IndividualDraftFactory, ConflictReviewFactory)
 from ietf.doc.models import BallotDocEvent, BallotType, BallotPositionDocEvent, State, Document
 from ietf.doc.utils import update_telechat, create_ballot_if_not_open
 from ietf.utils.test_utils import TestCase
@@ -91,6 +92,18 @@ class SecrTelechatTestCase(TestCase):
         response = self.client.get(url, follow=True)
         self.assertRedirects(response, reverse('ietf.secr.telechat.views.doc', kwargs={'date':date}))
         self.assertContains(response, 'not on the Telechat agenda')
+
+    def test_doc_detail_conflict_review_no_ballot(self):
+        IndividualDraftFactory(name='draft-imaginary-independent-submission')
+        review = ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission',review_of=IndividualDraftFactory(name='draft-imaginary-irtf-submission',stream_id='irtf'),notify='notifyme@example.net')
+        by=Person.objects.get(name="(System)")
+        d = get_next_telechat_date()
+        date = d.strftime('%Y-%m-%d')
+        update_telechat(None, review, by, d)
+        url = reverse('ietf.secr.telechat.views.doc_detail', kwargs={'date':date, 'name':review.name})
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
 
     def test_doc_detail_charter(self):
         by=Person.objects.get(name="(System)")
