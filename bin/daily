@@ -62,3 +62,6 @@ $DTDIR/ietf/manage.py fetch_meeting_attendance --latest 2
 
 # Send reminders originating from the review app
 $DTDIR/ietf/bin/send-review-reminders
+
+# Purge older PersonApiKeyEvents
+$DTDIR/ietf/manage.py purge_old_personal_api_key_events 14
