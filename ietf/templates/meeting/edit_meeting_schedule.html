@@ -46,7 +46,13 @@
       {% if not can_edit %}
         &middot;
 
-        <strong><em>You can't edit this schedule. Make a <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">new agenda from this</a>.</em></strong>
+      <strong>
+        <em>
+          You can't edit this schedule.
+          {% if schedule.is_official_record %}This is the official schedule for a meeting in the past.{% endif %}
+          Make a <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">new agenda from this</a>.
+        </em>
+      </strong>
       {% endif %}
     </p>
 

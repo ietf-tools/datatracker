@@ -107,6 +107,9 @@ promiselist.push(ss_promise);
   {% origin %}
 <div id="read_only">
   <p>You do not have write permission to agenda: {{schedule.name}}</p>
+  {% if schedule.is_official_record %}
+  <p>This is the official schedule for a meeting in the past.</p>
+  {% endif %}
   <p>Please save this agenda to your account first.</p>
 </div>
 

@@ -358,7 +358,7 @@ def schedule_permissions(meeting, schedule, user):
 
     if user_is_person(user, schedule.owner):
         cansee = True
-        canedit = True
+        canedit = not schedule.is_official_record
 
     return cansee, canedit, secretariat
 
