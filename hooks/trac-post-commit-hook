@@ -79,7 +79,7 @@ from datetime import datetime
 from optparse import OptionParser, OptionGroup
 import syslog
 
-syslog.openlog("post-commit-trac", syslog.LOG_PID, syslog.LOG_LOCAL0)
+syslog.openlog("post-commit-trac", syslog.LOG_PID, syslog.LOG_USER)
 log = syslog.syslog
 
 parser = OptionParser()
@@ -94,6 +94,7 @@ parser.add_option('-p', '--project', dest='project',
 parser.add_option('-r', '--revision', dest='rev',
                   help='Repository revision number.')
 parser.add_option('-a', '--action', dest='action', default=None, help='The action to take on a ticket (default: none)')
+parser.add_option('-R', '--repository-name', dest='repo_name', default=None, help='Which repository to look in, if the trac instance has multiple repositories')
 
 group = OptionGroup(parser, "DEPRECATED OPTIONS")
 group.add_option('-u', '--user', dest='user',
@@ -123,8 +124,8 @@ from trac.versioncontrol.api import NoSuchChangeset
 
 ticket_prefix = '(?:#|(?:ticket|issue|bug)s?[: ]?#?)'
 ticket_reference = ticket_prefix + '[0-9]+'
-action_pattern = "(?:(?i)(?:fix(?: for)?|fixes|close|closes|addresses|references|refs|re|relates to|related to|see|described in))"
-ticket_command =  (r'(?P<action>%s).?(?P<ticket>%s(?:(?:[, &]*|[ ]?and[ ]?)%s)*)' % (action_pattern, ticket_reference, ticket_reference))
+action_pattern = "(?:(?i)(?:fix(?: for| to)?|fixes|fixed|close|closes|completes|addresses|references|refs|re|relates to|related to|see|described in))"
+ticket_command =  (r'(?P<action>%s).?(?P<ticket>%s(?:(?:[, &]*|[, ]+and[ ]?)%s)*)' % (action_pattern, ticket_reference, ticket_reference))
 
 if options.envelope:
     ticket_command = r'\%s%s\%s' % (options.envelope[0], ticket_command,
@@ -148,9 +149,12 @@ class CommitHook:
 
     _supported_cmds = {'fix':               '_cmdClose',
                        'fix for':           '_cmdClose',
+                       'fix to':            '_cmdClose',
                        'fixes':             '_cmdClose',
+                       'fixed':             '_cmdClose',
                        'close':             '_cmdClose',
                        'closes':            '_cmdClose',
+                       'completes':         '_cmdClose',
 
                        'addresses':         '_cmdRefs',
                        'described in':      '_cmdRefs',
@@ -165,7 +169,7 @@ class CommitHook:
     def __init__(self, project=options.project, author=options.user,
                  rev=options.rev, url=options.url):
         self.env = open_environment(project)
-        repos = self.env.get_repository()
+        repos = self.env.get_repository(options.repo_name)
         repos.sync()
         
         # Instead of bothering with the encoding, we'll use unicode data

@@ -44,9 +44,9 @@
 # http://svn.collab.net/repos/svn/trunk/contrib/hook-scripts/
 
 # Log everything for debug, otherwise use explicit logging (further down)
-#[ "$LOGGING" ] || LOGGING=1 { exec $0 "$@" 2>&1 | logger -p local0.info -t "commit"; }
+#[ "$LOGGING" ] || LOGGING=1 { exec $0 "$@" 2>&1 | logger -p user.info -t "commit"; }
 
-logger -p local0.info -t "hook" "${0##*/} $*"
+logger -p user.info -t "hook" "${0##*/} $*"
 
 repo="$1"
 rev="$2"
@@ -56,16 +56,16 @@ program=${0##*/}
 progdir=${0%/*}
 thishost="$(/bin/hostname)"
 thishost="${thishost%%.*}"
-svnpath="/home/svn"
-trac="/www/tools.ietf.org/tools/ietfdb/"
-svn_url="https://svn.tools.ietf.org/svn/tools/ietfdb"
-trac_url="https://trac.tools.ietf.org/tools/ietfdb"
+svnpath="/a/svn/tools/ietfdb"
+trac="/a/www/www6s/trac/ietfdb/"
+svn_url="https://svn.ietf.org/svn/tools/ietfdb"
+trac_url="https://trac.ietf.org/trac/ietfdb"
 
 # Do a local backup
-relpath=${repo#$svnpath/}
-bckpath="$svnpath/.backup/$thishost/$relpath"
-[ -d $bckpath ] || mkdir -p $bckpath
-/usr/bin/svn-fast-backup -q $repo $bckpath
+#relpath=${repo#$svnpath/}
+#bckpath="$svnpath/.backup/$thishost/$relpath"
+#[ -d $bckpath ] || mkdir -p $bckpath
+#/usr/bin/svn-fast-backup -q $repo $bckpath
 
 # Inform trac about a new changeset
 trac-admin $trac changeset added ietfdb $rev 
@@ -75,7 +75,7 @@ comments=$(/usr/bin/svnlook log $repo -r $rev)
 files=$(/usr/bin/svnlook changed $repo -r $rev)
 
 dirs=$(/usr/bin/svnlook dirs-changed -r$rev $repo)
-logger -p local0.info -t "commit" "dirs '$dirs'"
+logger -p user.info -t "commit" "dirs '$dirs'"
 
 # Look for 'requirements.txt' above the committed change.  Looking only for
 # filechanges, not for dirchanges, filters out commits which are just tree
@@ -84,28 +84,36 @@ branch=$($progdir/svnfind --filechange --dirpath $repo $rev "requirements.txt")
 
 if [ -n "$branch" ]; then
     # Update trac tickets
-    /usr/bin/python $progdir/trac-post-commit-hook -p "$trac" -r "$rev" 2>&1 | logger -t "svn post-commit" -p "user.error" -i 
+    /usr/bin/python2.7 $progdir/trac-post-commit-hook -p "$trac" -r "$rev" 2>&1 | logger -t "svn post-commit" -p "user.error" -i 
 
     # Notify buildbot
-    filenames=$(/usr/bin/svnlook changed $repo -r $rev | sed -r -e 's/^ *[^ ]+ +//' -e "s|$branch/||")
+#    filenames=$(/usr/bin/svnlook changed $repo -r $rev | sed -r -e 's/^ *[^ ]+ +//' -e "s|$branch/||")
+#    # Notify local build master
     /usr/local/bin/buildbot sendchange							\
-	--master="zinfandel.tools.ietf.org:9989" --auth="ietfdb:BRiR6XcT7x3$"		\
-	--who="$committer" --repository="https://svn.tools.ietf.org/svn/tools/ietfdb/"	\
-	--vc=svn --branch="$branch" --revision=$rev --property=xproperty:xvalue		\
-	--revlink="https://trac.tools.ietf.org/tools/ietfdb/changeset/$rev"		\
-	--comments="$comments" $filenames > /dev/null
+#	--master="zinfandel.tools.ietf.org:9989" --auth="ietfdb:BRiR6XcT7x3$"		\
+#	--who="$committer" --repository="https://svn.tools.ietf.org/svn/tools/ietfdb/"	\
+#	--vc=svn --branch="$branch" --revision=$rev					\
+#	--revlink="https://trac.tools.ietf.org/tools/ietfdb/changeset/$rev"		\
+#	--comments="$comments" $filenames > /dev/null
+    # Notify remote build master (must use the remote buildbot binary to match version)
+#    ssh henrik@dunkelfelder.tools.ietf.org /usr/local/bin/buildbot sendchange		\
+#	--master="dunkelfelder.tools.ietf.org:9989" --auth="ietfdb:BRiR6XcT7x3$"	\
+#	--who="$committer" --repository="https://svn.tools.ietf.org/svn/tools/ietfdb/"	\
+#	--vc=svn --branch="$branch" --revision=$rev					\
+#	--revlink="https://trac.tools.ietf.org/tools/ietfdb/changeset/$rev"		\
+#	--comments="$comments" $filenames > /dev/null
 
 fi
 
 
 # Log the commit
-logger -p local0.info -t "commit" "$relpath r$rev $committer"
-logger -p local0.info -t "commit" "branch: $branch"
+logger -p user.info -t "commit" "$relpath r$rev $committer"
+logger -p user.info -t "commit" "branch: $branch"
 
 # Notify committers
 
 if [[ $comments =~ ready.(for|to).merge ]]; then
-	mail $(< $progdir/notify-email.txt) -s "[svnhook] Svn commit ready for merge: $relpath | $committer: ${comments:0:42}..." <<-EOF | logger -p local0.info -t "ready for merge email"
+	mail $(< $progdir/notify-email.txt) -s "[svnhook] Svn commit ready for merge: $relpath | $committer: ${comments:0:42}..." <<-EOF | logger -p user.info -t "ready for merge email"
 
 	$committer has a commit ready for merge:
 	$relpath/$branch [$rev]:
@@ -123,7 +131,7 @@ if [[ $comments =~ ready.(for|to).merge ]]; then
 
 else
 
-	mail $(< $progdir/notify-email.txt) -s "[svnhook] Svn commit to $relpath | $committer: ${comments:0:42}..." <<-EOF | logger -p local0.info -t "commit email"
+	mail $(< $progdir/notify-email.txt) -s "[svnhook] Svn commit to $relpath | $committer: ${comments:0:42}..." <<-EOF | logger -p user.info -t "commit email"
 
 	$committer has made a new SVN commit in
 	$relpath/$branch [$rev]:
