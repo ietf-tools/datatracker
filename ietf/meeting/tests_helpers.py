@@ -81,6 +81,9 @@ class HelpersTests(TestCase):
                 ])
                 if bof:
                     expected_filter_keywords.add('bof')
+                token = assignment.session.docname_token_only_for_multiple()
+                if token is not None:
+                    expected_filter_keywords.update([expected_group.acronym + "-" + token])
 
             self.assertCountEqual(
                 assignment.filter_keywords,
