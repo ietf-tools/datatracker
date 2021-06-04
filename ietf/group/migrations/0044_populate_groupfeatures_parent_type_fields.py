@@ -82,6 +82,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('group', '0043_add_groupfeatures_parent_type_fields'),
+        ('person', '0019_auto_20210604_1443'),
     ]
 
     operations = [
