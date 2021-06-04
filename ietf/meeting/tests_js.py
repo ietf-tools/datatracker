@@ -24,7 +24,7 @@ from ietf.group import colors
 from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
-from ietf.meeting.factories import SessionFactory, TimeSlotFactory
+from ietf.meeting.factories import MeetingFactory, SessionFactory, TimeSlotFactory
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.models import (Schedule, SchedTimeSessAssignment, Session,
                                  Room, TimeSlot, Constraint, ConstraintName,
@@ -39,7 +39,7 @@ if selenium_enabled():
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions
-    from selenium.common.exceptions import NoSuchElementException
+    from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 
 @ifSeleniumEnabled
@@ -224,6 +224,137 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.driver.find_element_by_css_selector("#swap-days-modal button[type=\"submit\"]").click()
 
         self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{} #session{}'.format(slot4.pk, s1.pk)))
+
+    def test_unassigned_sessions_sort(self):
+        """Unassigned session sorting should behave correctly
+
+        Sorting options and list of sort criteria
+          name (name, duration, id)
+          parent (parent, name, duration, id)
+          duration (duration, parent, name, id)
+          comments (presence of comments, parent, name, duration, id)
+        """
+        # Define helpers
+        def sort_by_position(driver, sessions):
+            """Helper to sort sessions by the position of their session element in the unscheduled box"""
+            def _sort_key(sess):
+                elt = driver.find_element_by_id('session{}'.format(sess.pk))
+                return (elt.location['y'], elt.location['x'])
+            return sorted(sessions, key=_sort_key)
+
+        wait = WebDriverWait(self.driver, 2)
+
+        def wait_for_order(sessions, expected_order, fail_message):
+            """Helper to wait for sorting to complete"""
+            try:
+                wait.until(
+                    lambda driver: sort_by_position(driver, sessions) == expected_order,
+                )
+            except TimeoutException:
+                pass  # Fall through to the assertion which will fail, don't throw a confusing timeout exception
+            self.assertEqual(sort_by_position(self.driver, sessions), expected_order, fail_message)
+
+        # Start the test here
+        # set up several WGs in various areas, including no area.
+        area_acronyms = ['A', 'B', 'C', 'D']
+        areas = [GroupFactory(type_id='area', acronym=acro) for acro in area_acronyms]
+
+        # now create WGs with acronyms that sort differently than by area (g00, g01, g02...)
+        num = 0
+        wgs = []
+        group_acro = lambda n: 'g{:02d}'.format(n)
+        for _ in range(2):
+            wgs.append(GroupFactory(acronym=group_acro(num), type_id='wg', parent=None))
+            num += 1
+            for area in areas:
+                wgs.append(GroupFactory(acronym=group_acro(num), type_id='wg', parent=area))
+                num += 1
+
+        # Create an IETF meeting...
+        meeting = MeetingFactory(type_id='ietf')
+
+        # ...and sessions for the groups. Use durations that are in a different order than
+        # area or name. The wgs list is in ascending acronym order, so use descending durations.
+        sessions = []
+        for n, wg in enumerate(wgs[::-1]):
+            sessions.append(
+                SessionFactory(
+                    meeting=meeting,
+                    group=wg,
+                    requested_duration=datetime.timedelta(minutes=30 + 5 * n),
+                    status_id='schedw',
+                    add_to_schedule=False,
+                )
+            )
+
+        # Finally, assign comments to some sessions. Assign every 3rd until we reach the end.
+        # This should be a different sort than any of the other axes.
+        for sess in sessions[::3]:
+            sess.comments = 'special request'
+            sess.save()
+
+        url = self.absreverse('ietf.meeting.views.edit_meeting_schedule', kwargs=dict(num=meeting.number))
+        self.login('secretary')
+        self.driver.get(url)
+
+
+        select = self.driver.find_element_by_name('sort_unassigned')
+        options = {
+            opt.get_attribute('value'): opt
+            for opt in select.find_elements_by_tag_name('option')
+        }
+
+        # check sorting by name
+        options['name'].click()
+        self.assertEqual(select.get_attribute('value'), 'name')
+        expected_order = sorted(
+            sessions,
+            key=lambda s: (
+                s.group.acronym,
+                s.requested_duration,
+            )
+        )
+        wait_for_order(sessions, expected_order, 'Failed to sort by name')
+
+        # check sorting by parent
+        options['parent'].click()
+        self.assertEqual(select.get_attribute('value'), 'parent')
+        expected_order = sorted(
+            sessions,
+            key=lambda s: (
+                s.group.parent.acronym if s.group.parent else '',
+                s.group.acronym,
+                s.requested_duration,
+            )
+        )
+        wait_for_order(sessions, expected_order, 'Failed to sort by parent')
+
+        # check sorting by duration
+        options['duration'].click()
+        self.assertEqual(select.get_attribute('value'), 'duration')
+        expected_order = sorted(
+            sessions,
+            key=lambda s: (
+                s.requested_duration,
+                s.group.parent.acronym if s.group.parent else '',
+                s.group.acronym,
+            )
+        )
+        wait_for_order(sessions, expected_order, 'Failed to sort by duration')
+
+        # check sorting by comments
+        options['comments'].click()
+        self.assertEqual(select.get_attribute('value'), 'comments')
+        expected_order = sorted(
+            sessions,
+            key=lambda s: (
+                0 if len(s.comments) > 0 else 1,
+                s.group.parent.acronym if s.group.parent else '',
+                s.group.acronym,
+                s.requested_duration,
+            )
+        )
+        wait_for_order(sessions, expected_order, 'Failed to sort by comments')
 
     def test_unassigned_sessions_drop_target_visible_when_empty(self):
         """The drop target for unassigned sessions should not collapse to 0 size

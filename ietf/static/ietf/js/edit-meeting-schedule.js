@@ -385,11 +385,13 @@ jQuery(document).ready(function () {
         }
 
         function extractName(e) {
-            return e.querySelector(".session-label").innerHTML;
+            let labelElement = e.querySelector(".session-label");
+            return labelElement ? labelElement.innerHTML : '';
         }
 
         function extractParent(e) {
-            return e.querySelector(".session-parent").innerHTML;
+            let parentElement = e.querySelector(".session-parent");
+            return parentElement ? parentElement.innerHTML : '';
         }
 
         function extractDuration(e) {
@@ -400,15 +402,13 @@ jQuery(document).ready(function () {
             return e.querySelector(".session-info .comments") ? 0 : 1;
         }
 
-        let keyFunctions = [];
-        if (sortBy == "name")
-            keyFunctions = [extractName, extractDuration, extractId];
-        else if (sortBy == "parent")
-            keyFunctions = [extractParent, extractName, extractDuration, extractId];
-        else if (sortBy == "duration")
-            keyFunctions = [extractDuration, extractParent, extractName, extractId];
-        else if (sortBy == "comments")
-            keyFunctions = [extractComments, extractParent, extractName, extractDuration, extractId];
+        const keyFunctionMap = {
+            name: [extractName, extractDuration, extractId],
+            parent: [extractParent, extractName, extractDuration, extractId],
+            duration: [extractDuration, extractParent, extractName, extractId],
+            comments: [extractComments, extractParent, extractName, extractDuration, extractId]
+        };
+        let keyFunctions = keyFunctionMap[sortBy];
 
         let unassignedSessionsContainer = content.find(".unassigned-sessions .drop-target");
 
