@@ -241,6 +241,8 @@ def review_request(request, name, request_id):
     if review_req.doc.group:
         wg_chairs = [role.person for role in review_req.doc.group.role_set.filter(name__slug='chair')]
 
+    iesg_state_summary = review_req.doc.friendly_state()
+
     history = list(review_req.history.all()) 
     history += itertools.chain(*[list(r.history.all()) for r in review_req.reviewassignment_set.all()])
     history.sort(key=lambda h: h.history_date, reverse=True)
@@ -254,6 +256,7 @@ def review_request(request, name, request_id):
         'can_edit_deadline': can_edit_deadline,
         'assignments': assignments,
         'wg_chairs': wg_chairs,
+        'iesg_state_summary': iesg_state_summary,
         'history': history,
     })
 

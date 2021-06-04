@@ -93,6 +93,14 @@
       </tr>
       {% endif %}
 
+      {% if iesg_state_summary %}
+      <tr>
+        <th></th>
+        <th>IESG document state</th>
+        <td>{{ iesg_state_summary }}</td>
+      </tr>
+      {% endif %}
+
       <tr>
         <th></th>
         <th>Completed reviews</th>
