@@ -95,6 +95,9 @@ class GroupInfo(models.Model):
             return self.parent
         return None
 
+    def get_used_roles(self):
+        return self.used_roles if len(self.used_roles) > 0 else self.features.default_used_roles
+
     class Meta:
         abstract = True
 
@@ -250,6 +253,14 @@ validate_comma_separated_roles = RegexValidator(
 class GroupFeatures(models.Model):
     type = OneToOneField(GroupTypeName, primary_key=True, null=False, related_name='features')
     #history = HistoricalRecords()
+
+    #
+    need_parent = models.BooleanField("Need Parent", default=False, help_text="Does this group type require a parent group?")
+    parent_types = models.ManyToManyField(GroupTypeName, blank=True, related_name='child_features',
+                                          help_text="Group types allowed as parent of this group type")
+    default_parent = models.CharField("Default Parent", max_length=40, blank=True, default="",
+                                       help_text="Default parent group acronym for this group type")
+
     #
     has_milestones          = models.BooleanField("Milestones", default=False)
     has_chartering_process  = models.BooleanField("Chartering", default=False)

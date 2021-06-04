@@ -18,10 +18,11 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from ietf.group.models import Group, GroupHistory, GroupStateName, GroupFeatures 
 from ietf.name.models import ReviewTypeName, RoleName, ExtResourceName
 from ietf.person.fields import SearchableEmailsField, PersonEmailChoiceField
-from ietf.person.models import Person, Email
+from ietf.person.models import Email
 from ietf.review.models import ReviewerSettings, UnavailablePeriod, ReviewSecretarySettings
 from ietf.review.policies import get_reviewer_queue_policy
 from ietf.review.utils import close_review_request_states
+from ietf.utils import log
 from ietf.utils.textupload import get_cleaned_text_file_content
 #from ietf.utils.ordereddict import insert_after_in_ordered_dict
 from ietf.utils.fields import DatepickerDateField, MultiEmailField
@@ -60,7 +61,6 @@ class GroupForm(forms.Form):
     acronym = forms.CharField(max_length=40, label="Acronym", required=True)
     state = forms.ModelChoiceField(GroupStateName.objects.all(), label="State", required=True)
     # Note that __init__ will add role fields here
-    ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type='area').order_by('name'), label="Shepherding AD", empty_label="(None)", required=False)
 
     parent = forms.ModelChoiceField(Group.objects.filter(state="active").order_by('name'), empty_label="(None)", required=False)
     list_email = forms.CharField(max_length=64, required=False)
@@ -74,9 +74,25 @@ class GroupForm(forms.Form):
         self.group = kwargs.pop('group', None)
         self.group_type = kwargs.pop('group_type', False)
         if self.group:
-            self.used_roles = self.group.used_roles or self.group.features.default_used_roles
+            group_features = self.group.features
+            self.used_roles = self.group.used_roles or group_features.default_used_roles
         else:
-            self.used_roles = GroupFeatures.objects.get(type=self.group_type).default_used_roles
+            group_features = GroupFeatures.objects.filter(type_id=self.group_type).first()
+
+        log.assertion('group_features is not None')
+        if group_features is not None:
+            self.used_roles = group_features.default_used_roles
+            parent_types = group_features.parent_types.all()
+            need_parent = group_features.need_parent
+            default_parent = group_features.default_parent
+        else:
+            # This should not happen, but in the absence of constraints that ensure it
+            # cannot, prevent the form from breaking if it does.
+            self.used_roles = []
+            parent_types = GroupFeatures.objects.none()
+            need_parent = False
+            default_parent = None
+
         if "field" in kwargs:
             field = kwargs["field"]
             del kwargs["field"]
@@ -109,22 +125,21 @@ class GroupForm(forms.Form):
         if self.group_type == "rg":
             self.fields["state"].queryset = self.fields["state"].queryset.exclude(slug__in=("bof", "bof-conc"))
 
-        # if previous AD is now ex-AD, append that person to the list
-        ad_pk = self.initial.get('ad')
-        choices = self.fields['ad'].choices
-        if ad_pk and ad_pk not in [pk for pk, name in choices]:
-            self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).plain_name())]
-
         if self.group:
             self.fields['acronym'].widget.attrs['readonly'] = ""
 
-        if self.group_type == "rg":
-            self.fields['ad'].widget = forms.HiddenInput()
-            self.fields['parent'].queryset = self.fields['parent'].queryset.filter(acronym="irtf")
-            self.fields['parent'].initial = self.fields['parent'].queryset.first()
-            self.fields['parent'].widget = forms.HiddenInput()
-        else:
-            self.fields['parent'].queryset = self.fields['parent'].queryset.filter(type="area")
+        # Sort out parent options
+        self.fields['parent'].queryset = self.fields['parent'].queryset.filter(type__in=parent_types)
+        if need_parent:
+            self.fields['parent'].required = True
+            self.fields['parent'].empty_label = None
+        # if this is a new group, fill in the default parent, if any
+        if self.group is None or (not hasattr(self.group, 'pk')):
+            self.fields['parent'].initial = self.fields['parent'].queryset.filter(
+                acronym=default_parent
+            ).first()
+        # label the parent field as 'IETF Area' if appropriate, for consistency with past behavior
+        if parent_types.count() == 1 and parent_types.first().pk == 'area':
             self.fields['parent'].label = "IETF Area"
 
         if field:

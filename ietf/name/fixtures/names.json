@@ -2482,6 +2482,7 @@
       "create_wiki": true,
       "custom_group_roles": false,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"matman\",\n    \"ad\",\n    \"chair\",\n    \"lead\"\n]",
       "docman_roles": "[\n    \"chair\"\n]",
@@ -2498,6 +2499,10 @@
       "is_schedulable": true,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"lead\",\n    \"delegate\",\n    \"matman\"\n]",
+      "parent_types": [
+        "ietf"
+      ],
+      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"lead\",\n    \"delegate\",\n    \"matman\"\n]",
       "show_on_agenda": true
@@ -2514,6 +2519,7 @@
       "create_wiki": false,
       "custom_group_roles": false,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"member\",\n    \"chair\"\n]",
       "docman_roles": "[\n    \"chair\"\n]",
@@ -2530,6 +2536,8 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\"\n]",
+      "parent_types": [],
+      "need_parent": false,
       "req_subm_approval": false,
       "role_order": "[\n    \"chair\"\n]",
       "show_on_agenda": false
@@ -2546,6 +2554,7 @@
       "create_wiki": true,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"ad\",\n    \"chair\",\n    \"secr\"\n]",
       "docman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
@@ -2562,6 +2571,11 @@
       "is_schedulable": true,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "parent_types": [
+        "area",
+        "ietf"
+      ],
+      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": true
@@ -2578,6 +2592,7 @@
       "create_wiki": true,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"ad\",\n    \"liaison_contact\",\n    \"liaison_cc_contact\"\n]",
       "docman_roles": "[\n    \"ad\",\n    \"delegate\",\n    \"secr\"\n]",
@@ -2594,6 +2609,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "parent_types": [
+        "ietf"
+      ],
+      "need_parent": true,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -2610,6 +2629,7 @@
       "create_wiki": true,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"ad\",\n    \"chair\",\n    \"reviewer\",\n    \"secr\"\n]",
       "docman_roles": "[]",
@@ -2626,6 +2646,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "parent_types": [
+        "area"
+      ],
+      "need_parent": true,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -2642,6 +2666,7 @@
       "create_wiki": false,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"chair\"\n]",
       "docman_roles": "[\n    \"chair\"\n]",
@@ -2658,6 +2683,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "parent_types": [
+        "ietf"
+      ],
+      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": true
@@ -2674,6 +2703,7 @@
       "create_wiki": false,
       "custom_group_roles": false,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"auth\"\n]",
       "docman_roles": "[\n    \"chair\"\n]",
@@ -2690,6 +2720,8 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\"\n]",
+      "parent_types": [],
+      "need_parent": false,
       "req_subm_approval": false,
       "role_order": "[\n    \"chair\"\n]",
       "show_on_agenda": false
@@ -2706,6 +2738,7 @@
       "create_wiki": false,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[]",
       "docman_roles": "[\n    \"chair\"\n]",
@@ -2722,6 +2755,8 @@
       "is_schedulable": false,
       "material_types": "\"[]\"",
       "matman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"member\"\n]",
+      "parent_types": [],
+      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"delegate\",\n    \"member\"\n]",
       "show_on_agenda": false
@@ -2738,6 +2773,7 @@
       "create_wiki": false,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"ad\",\n    \"member\",\n    \"comdir\",\n    \"delegate\",\n    \"execdir\",\n    \"recman\",\n    \"secr\",\n    \"trac-editor\",\n    \"trac-admin\",\n    \"chair\"\n]",
       "docman_roles": "[\n    \"chair\"\n]",
@@ -2754,6 +2790,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "parent_types": [
+        "ietf"
+      ],
+      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -2770,6 +2810,7 @@
       "create_wiki": false,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"ad\"\n]",
       "docman_roles": "[\n    \"auth\"\n]",
@@ -2786,6 +2827,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[]",
+      "parent_types": [
+        "area"
+      ],
+      "need_parent": true,
       "req_subm_approval": false,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -2802,6 +2847,7 @@
       "create_wiki": false,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"member\",\n    \"atlarge\",\n    \"chair\"\n]",
       "docman_roles": "[]",
@@ -2818,6 +2864,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "parent_types": [
+        "irtf"
+      ],
+      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -2834,6 +2884,7 @@
       "create_wiki": false,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"chair\"\n]",
       "docman_roles": "[\n    \"chair\"\n]",
@@ -2850,6 +2901,8 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "parent_types": [],
+      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"delegate\"\n]",
       "show_on_agenda": false
@@ -2866,6 +2919,7 @@
       "create_wiki": false,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"chair\",\n    \"ceo\"\n]",
       "docman_roles": "[]",
@@ -2882,6 +2936,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"secr\"\n]",
+      "parent_types": [
+        "isoc"
+      ],
+      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -2898,6 +2956,7 @@
       "create_wiki": true,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"member\",\n    \"advisor\",\n    \"liaison\",\n    \"chair\",\n    \"techadv\"\n]",
       "docman_roles": "[\n    \"chair\"\n]",
@@ -2914,6 +2973,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\"\n]",
+      "parent_types": [
+        "area"
+      ],
+      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"member\",\n    \"advisor\"\n]",
       "show_on_agenda": false
@@ -2930,6 +2993,7 @@
       "create_wiki": false,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"member\",\n    \"chair\",\n    \"lead\"\n]",
       "docman_roles": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
@@ -2946,6 +3010,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
+      "parent_types": [
+        "ietf"
+      ],
+      "need_parent": false,
       "req_subm_approval": false,
       "role_order": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -2962,6 +3030,7 @@
       "create_wiki": true,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"chair\",\n    \"secr\"\n]",
       "docman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
@@ -2978,6 +3047,10 @@
       "is_schedulable": true,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "parent_types": [
+        "irtf"
+      ],
+      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": true
@@ -2994,6 +3067,7 @@
       "create_wiki": true,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.review_requests",
       "default_used_roles": "[\n    \"ad\",\n    \"chair\",\n    \"reviewer\",\n    \"secr\"\n]",
       "docman_roles": "[\n    \"secr\"\n]",
@@ -3010,6 +3084,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"ad\",\n    \"secr\"\n]",
+      "parent_types": [
+        "area"
+      ],
+      "need_parent": true,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -3026,6 +3104,7 @@
       "create_wiki": false,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"auth\",\n    \"chair\"\n]",
       "docman_roles": "[]",
@@ -3042,6 +3121,8 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[]",
+      "parent_types": [],
+      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -3058,6 +3139,7 @@
       "create_wiki": true,
       "custom_group_roles": false,
       "customize_workflow": true,
+      "default_parent": "irtf",
       "default_tab": "ietf.group.views.group_documents",
       "default_used_roles": "[\n    \"chair\",\n    \"techadv\",\n    \"secr\",\n    \"delegate\"\n]",
       "docman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
@@ -3074,6 +3156,10 @@
       "is_schedulable": true,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "parent_types": [
+        "irtf"
+      ],
+      "need_parent": true,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
       "show_on_agenda": true
@@ -3090,6 +3176,7 @@
       "create_wiki": false,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"liaiman\",\n    \"ceo\",\n    \"coord\",\n    \"auth\",\n    \"chair\",\n    \"liaison_contact\",\n    \"liaison_cc_contact\"\n]",
       "docman_roles": "[\n    \"liaiman\",\n    \"matman\"\n]",
@@ -3106,6 +3193,11 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[]",
+      "parent_types": [
+        "area",
+        "sdo"
+      ],
+      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"liaiman\"\n]",
       "show_on_agenda": false
@@ -3122,6 +3214,7 @@
       "create_wiki": true,
       "custom_group_roles": true,
       "customize_workflow": false,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"ad\",\n    \"member\",\n    \"delegate\",\n    \"secr\",\n    \"liaison\",\n    \"atlarge\",\n    \"chair\",\n    \"matman\",\n    \"techadv\"\n]",
       "docman_roles": "[\n    \"chair\"\n]",
@@ -3138,6 +3231,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"matman\"\n]",
+      "parent_types": [
+        "area"
+      ],
+      "need_parent": false,
       "req_subm_approval": false,
       "role_order": "[\n    \"chair\",\n    \"member\",\n    \"matman\"\n]",
       "show_on_agenda": false
@@ -3154,6 +3251,7 @@
       "create_wiki": true,
       "custom_group_roles": false,
       "customize_workflow": true,
+      "default_parent": "",
       "default_tab": "ietf.group.views.group_documents",
       "default_used_roles": "[\n    \"ad\",\n    \"editor\",\n    \"delegate\",\n    \"secr\",\n    \"chair\",\n    \"matman\",\n    \"techadv\",\n    \"liaison_contact\",\n    \"liaison_cc_contact\"\n]",
       "docman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
@@ -3170,6 +3268,10 @@
       "is_schedulable": true,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "parent_types": [
+        "area"
+      ],
+      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\",\n    \"delegate\"\n]",
       "show_on_agenda": true
