@@ -21,6 +21,7 @@ from django.utils.translation import ugettext as _
 from ietf.group.models import (Group, GroupFeatures, GroupHistory, GroupEvent, GroupURL, GroupMilestone,
     GroupMilestoneHistory, GroupStateTransitions, Role, RoleHistory, ChangeStateGroupEvent,
     MilestoneGroupEvent, GroupExtResource, )
+from ietf.name.models import GroupTypeName
 
 from ietf.utils.validators import validate_external_resource_value
 from ietf.utils.response import permission_denied
@@ -139,10 +140,40 @@ class GroupAdmin(admin.ModelAdmin):
 
 admin.site.register(Group, GroupAdmin)
 
-class GroupFeaturesAdmin(admin.ModelAdmin):
-    list_display = [
 
+class GroupFeaturesAdminForm(forms.ModelForm):
+    def clean_default_parent(self):
+        # called before form clean() method -- cannot access other fields
+        parent_acro = self.cleaned_data['default_parent'].strip().lower()
+        if len(parent_acro) > 0:
+            if Group.objects.filter(acronym=parent_acro).count() == 0:
+                raise forms.ValidationError(
+                    'No group exists with acronym "%(acro)s"',
+                    params=dict(acro=parent_acro),
+                )
+        return parent_acro
+
+    def clean(self):
+        # cleaning/validation that requires multiple fields
+        parent_acro = self.cleaned_data['default_parent']
+        if len(parent_acro) > 0:
+            parent_type = GroupTypeName.objects.filter(group__acronym=parent_acro).first()
+            if parent_type not in self.cleaned_data['parent_types']:
+                self.add_error(
+                    'default_parent',
+                    forms.ValidationError(
+                        'Default parent group "%(acro)s" is type "%(gtype)s", which is not an allowed parent type.',
+                        params=dict(acro=parent_acro, gtype=parent_type),
+                    )
+                )
+
+class GroupFeaturesAdmin(admin.ModelAdmin):
+    form = GroupFeaturesAdminForm
+    list_display = [
         'type',
+        'need_parent',
+        'default_parent',
+        'gf_parent_types',
         'has_milestones',
         'has_chartering_process',
         'has_documents',
@@ -165,8 +196,13 @@ class GroupFeaturesAdmin(admin.ModelAdmin):
         'groupman_roles',
         'matman_roles',
         'role_order',
-
     ]
+
+    def gf_parent_types(self, groupfeatures):
+        """Generate list of parent types; needed because many-to-many is not handled automatically"""
+        return ', '.join([gtn.slug for gtn in groupfeatures.parent_types.all()])
+    gf_parent_types.short_description = 'Parent Types'   # type: ignore # https://github.com/python/mypy/issues/2087
+
 admin.site.register(GroupFeatures, GroupFeaturesAdmin)
 
 class GroupHistoryAdmin(admin.ModelAdmin):

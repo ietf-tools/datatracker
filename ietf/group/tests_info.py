@@ -541,7 +541,7 @@ class GroupEditTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form input[name=acronym]')), 1)
-        self.assertEqual(q('form input[name=parent]').attr('value'),'%s'%irtf.pk)
+        self.assertEqual(q('form select[name=parent]')[0].value,'%s'%irtf.pk)
 
         r = self.client.post(url, dict(acronym="testrg", name="Testing RG", state=proposed_state.pk, parent=irtf.pk))
         self.assertEqual(r.status_code, 302)
@@ -632,6 +632,7 @@ class GroupEditTests(TestCase):
                                   parent=area.pk,
                                   ad=ad.pk,
                                   state=state.pk,
+                                  ad_roles=ad.email().address,
                                   chair_roles="aread@example.org, ad1@example.org",
                                   secr_roles="aread@example.org, ad1@example.org, ad2@example.org",
                                   liaison_contact_roles="ad1@example.org",
@@ -885,6 +886,132 @@ class GroupEditTests(TestCase):
         r=self.client.get(url)
         self.assertEqual(r.status_code,403)
         self.assertEqual(len(outbox),5)
+
+class GroupFormTests(TestCase):
+    """Tests of the GroupForm form"""
+    @staticmethod
+    def _format_resource(r):
+        if r.display_name:
+            return '{} {} ({})'.format(r.name.slug, r.value, r.display_name.strip('()'))
+        else:
+            return '{} {}'.format(r.name.slug, r.value)
+
+    def _group_post_data(self, group):
+        data=dict(
+            name=group.name,
+            acronym=group.acronym,
+            state=group.state_id,
+            parent=group.parent_id or '',
+            list_email=group.list_email if group.list_email else None,
+            list_subscribe=group.list_subscribe if group.list_subscribe else '',
+            list_archive=group.list_archive if group.list_archive else '',
+            resources='\n'.join(self._format_resource(r) for r in group.groupextresource_set.all()),
+            closing_note='',  # not a group attribute, handled specially by the view; ignore in this test
+        )
+        # fill in original values
+        for rslug in group.get_used_roles():
+            data['{}_roles'.format(rslug)] = ','.join(
+                group.role_set.filter(name_id=rslug).values_list('email__address', flat=True),
+            )
+        return data
+
+    def _assert_cleaned_data_equal(self, cleaned_data, post_data):
+        for attr, expected in post_data.items():
+            value = cleaned_data[attr]
+            if attr.endswith('_roles'):
+                actual = ','.join(value.values_list('address', flat=True))
+            elif attr == 'resources':
+                # must handle resources specially
+                actual = '\n'.join(self._format_resource(r) for r in value)
+            elif hasattr(value, 'pk'):
+                actual = value.pk
+            else:
+                actual = '' if value is None else value
+            self.assertEqual(actual, expected, 'unexpected value for {}'.format(attr))
+
+    def do_edit_roles_test(self, group):
+        # get post_data for the group
+        orig_data = self._group_post_data(group)
+
+        # create a user to be assigned roles
+        new_email = EmailFactory()
+
+        # Now check that we can replace each used_role without disturbing the others.
+        # This does not actually update group, so start with orig_data each time.
+        for rslug in group.get_used_roles():
+            data = orig_data.copy()
+            edit_field = '{}_roles'.format(rslug)
+            data[edit_field] = new_email.address  # comma-separated list of addresses with only one
+
+            form = GroupForm(data, group=group, group_type=group.type_id, field=None)
+
+            self.assertTrue(form.is_valid())
+            # Check that all cleaned values match what we passed to the form.
+            self._assert_cleaned_data_equal(form.cleaned_data, data)
+
+    def test_edit_roles(self):
+        """Test that roles can be edited for all group types
+
+        N.B., the combinations of group type and parent group and the used_roles are
+        obtained from the GroupFeatures in the database. The handling of these combinations
+        is validated, but this test cannot check that the rules themselves are correct.
+        As long as names.json is up to date, this will test what we want.
+        """
+        # Test every parent type that is allowed for at least one group type
+        for parent_type in GroupTypeName.objects.filter(child_features__isnull=False).distinct():
+            parent = GroupFactory(type_id=parent_type.pk)
+            for child_features in parent_type.child_features.all():
+                # create a group of each child type for this parent and populate its roles
+                group_type = child_features.type
+                group = GroupFactory(type_id=group_type.pk, parent=parent)
+                for rslug in group.get_used_roles():
+                    RoleFactory(name_id=rslug, group=group, person=PersonFactory())
+                self.do_edit_roles_test(group)
+
+    def test_need_parent(self):
+        """GroupForm should enforce non-null parent when required"""
+        group = GroupFactory()
+        parent = group.parent
+        other_parent = GroupFactory(type_id=parent.type_id)
+
+        for rslug in group.get_used_roles():
+            RoleFactory(name_id=rslug, group=group, person=PersonFactory())
+
+        data = self._group_post_data(group)
+
+        # First, test with parent required
+        group.type.features.need_parent = True
+        group.type.features.save()
+        group = Group.objects.get(pk=group.pk)  # renew object to clear features cache
+
+        # should fail with empty parent
+        data['parent'] = ''
+        form = GroupForm(data, group=group, group_type=group.type_id, field=None)
+        self.assertFalse(form.is_valid())  # cannot update to empty parent
+
+        # should succeed with non-empty parent
+        data['parent'] = other_parent.pk
+        form = GroupForm(data, group=group, group_type=group.type_id, field=None)
+        self.assertTrue(form.is_valid())
+        self._assert_cleaned_data_equal(form.cleaned_data, data)
+
+        # Second, test with parent not required
+        group.type.features.need_parent = False
+        group.type.features.save()
+        group = Group.objects.get(pk=group.pk)  # renew object to clear features cache
+
+        # should succeed with empty parent
+        data['parent'] = ''
+        form = GroupForm(data, group=group, group_type=group.type_id, field=None)
+        self.assertTrue(form.is_valid())
+        self._assert_cleaned_data_equal(form.cleaned_data, data)
+
+        # should succeed with non-empty parent
+        data['parent'] = other_parent.pk
+        form = GroupForm(data, group=group, group_type=group.type_id, field=None)
+        self.assertTrue(form.is_valid())
+        self._assert_cleaned_data_equal(form.cleaned_data, data)
+
 
 class MilestoneTests(TestCase):
     def create_test_milestones(self):
