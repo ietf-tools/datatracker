@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='groupfeatures',
-            name='req_parent',
+            name='need_parent',
             field=models.BooleanField(default=False, help_text='Does this group type require a parent group?', verbose_name='Need Parent'),
         ),
         migrations.AddField(
