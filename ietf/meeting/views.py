@@ -2167,8 +2167,6 @@ def session_details(request, num, acronym):
             qs = [p for p in qs if p.document.get_state_slug(p.document.type_id)!='deleted']
             session.type_counter.update([p.document.type.slug for p in qs])
 
-        session.order_number = session.order_in_meeting()
-
     # we somewhat arbitrarily use the group of the last session we get from
     # get_sessions() above when checking can_manage_session_materials()
     can_manage = can_manage_session_materials(request.user, session.group, session)

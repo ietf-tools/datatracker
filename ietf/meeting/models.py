@@ -1193,6 +1193,13 @@ class Session(models.Model):
         sess_mtg = Session.objects.filter(meeting=self.meeting, group=self.group).order_by('pk')
         index = list(sess_mtg).index(self)
         return 'sess%s' % (string.ascii_lowercase[index])
+
+    def docname_token_only_for_multiple(self):
+        sess_mtg = Session.objects.filter(meeting=self.meeting, group=self.group).order_by('pk')
+        if len(list(sess_mtg)) > 1:
+            index = list(sess_mtg).index(self)
+            return 'sess%s' % (string.ascii_lowercase[index])
+        return None
         
     def constraints(self):
         return Constraint.objects.filter(source=self.group, meeting=self.meeting).order_by('name__name', 'target__acronym', 'person__name').prefetch_related("source","target","person")
