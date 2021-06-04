@@ -728,7 +728,7 @@ def apikey_index(request):
 @login_required
 @person_required
 def apikey_create(request):
-    endpoints = [('', '----------')] + [ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES if r==None or has_role(request.user, r) ]
+    endpoints = [('', '----------')] + list(set([ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES if r==None or has_role(request.user, r) ]))
     class ApiKeyForm(forms.ModelForm):
         endpoint = forms.ChoiceField(choices=endpoints)
 
