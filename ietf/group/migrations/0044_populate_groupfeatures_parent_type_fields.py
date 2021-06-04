@@ -47,8 +47,8 @@ def populate_parent_types(apps, schema_editor):
         assert(slugs_in_db == set(type_map[gtn.slug]))
 
 
-def set_req_parent_values(apps, schema_editor):
-    """Set req_parent values
+def set_need_parent_values(apps, schema_editor):
+    """Set need_parent values
 
     Data determined from existing groups using:
 
@@ -61,7 +61,7 @@ def set_req_parent_values(apps, schema_editor):
 
     GroupFeatures.objects.filter(
         type_id__in=('area', 'dir', 'individ', 'review', 'rg',)
-    ).update(req_parent=True)
+    ).update(need_parent=True)
 
 
 def set_default_parents(apps, schema_editor):
@@ -86,6 +86,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(populate_parent_types, empty_reverse),
-        migrations.RunPython(set_req_parent_values, empty_reverse),
+        migrations.RunPython(set_need_parent_values, empty_reverse),
         migrations.RunPython(set_default_parents, empty_reverse),
     ]
