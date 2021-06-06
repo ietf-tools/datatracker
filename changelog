@@ -1,3 +1,91 @@
+ietfdb (7.31.0) ietf; urgency=medium
+
+  ** Codesprint 110.1, bugfixes
+
+  * Merged in [18993] from housley@vigilsec.com:
+    Add aliases for RGs in irtf.org and IAB programs in iab.org. Fixes 
+    #3271 
+
+  * Merged in [19022] from housley@vigilsec.com:
+    Add test for creation of RG Chairs in the irtg.org domain.  
+
+  * Many adjustments to point to the new svn/trac repository locations.
+
+  * Merged in [19035] from rcross@amsl.com:
+    Change PERSON_API_KEY_VALUE for mail archive lookups. 
+    Change /api/v2/person/person to ROBOT to prepare for switching from 
+    personal api key to robot, mail-archive api key. Once in place, 
+    generate new key for this endpoint and install.
+
+  * Tweaked results of r19035/r19059 to allow for a better transition 
+    post release.
+
+  * Merged in [19028] from jennifer@painless-security.com:
+    Accept 'None' when updating DocumentAuthor affiliation / country.  
+
+  * Merged in [19030] from mark@painless-security.com:
+    First swipe at making past sessions unchangable for official schedules
+    This change locks down the schedule of any meeting that is fully in the 
+    past.  It leaves open sessions that have finished for meetings that have 
+    not yet finished.
+    Addresses (partially) issue #3166.
+
+  * Merged in [19033] from rjsparks@nostrum.com:
+    Add PersonalApiKeyEvent purge to bin/daily.  
+
+  * Merged in [19048] from housley@vigilsec.com:
+    Remove generate-wg-aliases and generate-draft-aliases scripts.  They 
+    were replaced with management commands.   
+
+  * Merged in [19052] from housley@vigilsec.com:
+    Allow IAB Programs to be listed in meeting request conflicts.  Fixes 
+    #3270. 
+
+  * Merged in [19054] from rcross@amsl.com:
+    Fix error on Telechat doc detail page when conflict review doc has no 
+    ballot. Fixes #3245.  
+
+  * Merged in [19055] from rjsparks@nostrum.com:
+    Redirect to materials page for attempts to see proceedings for meetings 
+    that do not yet have schedules. Fixes #3294.  
+
+  * Merged in [19056], [19057], and [19058] from rjsparks@nostrum.com:\n    
+    Captured the svn hooks used after moving the repository. Fixes #3297.
+
+  * Merged in [19071] from mark@painless-security.com:
+    Update the mkdevbranch script for new Trac location, don't clobber 
+    existing paths
+    The script has been cleaned up, adjusted to avoid clobbering an SVN path 
+    that already exists when running it for a single sprinter login, and run 
+    with the new locations for the Trac system.
+    This is a decently huge rewrite of the script.  It's pulled a lot of logic 
+    into functions, excised the python code into its own file, etc. 
+
+  * Merged in [19073] from jennifer@painless-security.com:
+    Handle groups without area when sorting unscheduled sessions in 
+    schedule editor. Fixes #3173.  
+
+  * Merged in [19075] from jennifer@painless-security.com:
+    Clean up handling of non-WG groups on the group edit page; restrict 
+    parent/child group relationships by type. Fixes #3253.  
+
+  * Merged in [19074] from kivinen@iki.fi:
+    Adds new filtering tags for sessions which have multiple sessions. 
+    I.e., in addition to wg,area,type there is wg-sessa, wg-sessb or wg-sessc 
+    etc on the tags, so now you can filter either all wg sessions or only 
+    specific sessions. Also removes the unused session.order_number, but not 
+    yet the session.order_in_meeting() function (which I think is unused too). 
+
+  * Merged in [19081] from fenton@bluepopcorn.net:
+    Added IESG document state to review request information. Fixes #3235.  
+
+  * Merged in [19083] from jennifer@painless-security.com:
+    Fix renamed field in group migrations 0043 and 0044. Fixes error in 
+    r19075.  
+
+ -- Robert Sparks <rjsparks@nostrum.com>  06 Jun 2021 14:56:59 +0000
+
+
 ietfdb (7.30.0) ietf; urgency=medium
 
   ** Bugfixes, adjustments to moving datatracker repository
