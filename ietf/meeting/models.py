@@ -1198,7 +1198,11 @@ class Session(models.Model):
         sess_mtg = Session.objects.filter(meeting=self.meeting, group=self.group).order_by('pk')
         if len(list(sess_mtg)) > 1:
             index = list(sess_mtg).index(self)
-            return 'sess%s' % (string.ascii_lowercase[index])
+            if index < 26:
+                token = 'sess%s' % (string.ascii_lowercase[index])
+            else:
+                token = 'sess%s%s' % (string.ascii_lowercase[index//26],string.ascii_lowercase[index%26])
+            return token
         return None
         
     def constraints(self):
