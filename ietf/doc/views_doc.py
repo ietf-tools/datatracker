@@ -670,6 +670,10 @@ def document_html(request, name, rev=None):
     if rev and not name.startswith('charter-') and re.search('[0-9]{1,2}-[0-9]{2}', rev):
         name = "%s-%s" % (name, rev[:-3])
         rev = rev[-2:]
+    if re.match("^[0-9]+$", name):
+        return redirect('ietf.doc.views_doc.document_html',name=f'rfc{name}')
+    if re.match("^[Rr][Ff][Cc] [0-9]+$",name):
+        return redirect('ietf.doc.views_doc.document_html',name=f'rfc{name[4:]}')
     docs = Document.objects.filter(docalias__name=name)
     if rev and not docs.exists():
         # handle some special cases, like draft-ietf-tsvwg-ieee-802-11

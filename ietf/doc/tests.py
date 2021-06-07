@@ -690,6 +690,14 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name, rev=draft.rev)))
         self.assertEqual(r.status_code, 200)
 
+        rfc = WgRfcFactory()
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
+        self.assertEqual(r.status_code, 200)
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.rfc_number())))
+        self.assertRedirects(r, urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=f'RFC {rfc.rfc_number()}')))
+        self.assertRedirects(r, urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
+
         # expired draft
         draft.set_state(State.objects.get(type="draft", slug="expired"))
 
