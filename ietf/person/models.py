@@ -348,7 +348,6 @@ def salt():
 # Manual maintenance: List all endpoints that use @require_api_key here
 PERSON_API_KEY_VALUES = [
     ("/api/iesg/position", "/api/iesg/position", "Area Director"),
-    ("/api/v2/person/person", "/api/v2/person/person", "Secretariat"),
     ("/api/v2/person/person", "/api/v2/person/person", "Robot"),
     ("/api/meeting/session/video/url", "/api/meeting/session/video/url", "Recording Manager"),
     ("/api/notify/meeting/registration", "/api/notify/meeting/registration", "Robot"), 

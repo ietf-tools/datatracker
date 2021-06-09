@@ -257,9 +257,9 @@ class CustomApiTests(TestCase):
 
     def test_api_v2_person_export_view(self):
         url = urlreverse('ietf.api.views.ApiV2PersonExportView')
-        secretariat_role = RoleFactory(group__acronym='secretariat', name_id='secr')
-        secretariat = secretariat_role.person
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=secretariat)
+        robot = PersonFactory(user__is_staff=True)
+        RoleFactory(name_id='robot', person=robot, email=robot.email(), group__acronym='secretariat')
+        apikey = PersonalApiKey.objects.create(endpoint=url, person=robot)
 
         # error cases
         r = self.client.post(url, {})
@@ -270,25 +270,19 @@ class CustomApiTests(TestCase):
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
         r = self.client.post(url, {'apikey': badapikey.hash()})
-        self.assertContains(r, "Restricted to role: Secretariat", status_code=403)
-
-        r = self.client.post(url, {'apikey': apikey.hash()})
-        self.assertContains(r, "Too long since last regular login", status_code=400)
-        secretariat.user.last_login = timezone.now()
-        secretariat.user.save()
+        self.assertContains(r, "Restricted to role: Robot", status_code=403)
 
         r = self.client.post(url, {'apikey': apikey.hash()})
         self.assertContains(r, "No filters provided", status_code=400)
 
         # working case
-        r = self.client.post(url, {'apikey': apikey.hash(), 'email': secretariat.email().address, '_expand': 'user'})
+        r = self.client.post(url, {'apikey': apikey.hash(), 'email': robot.email().address, '_expand': 'user'})
         self.assertEqual(r.status_code, 200)
         jsondata = r.json()
-        data = jsondata['person.person'][str(secretariat.id)]
-        self.assertEqual(data['name'], secretariat.name)
-        self.assertEqual(data['ascii'], secretariat.ascii)
-        self.assertEqual(data['user']['email'], secretariat.user.email)
-
+        data = jsondata['person.person'][str(robot.id)]
+        self.assertEqual(data['name'], robot.name)
+        self.assertEqual(data['ascii'], robot.ascii)
+        self.assertEqual(data['user']['email'], robot.user.email)
 
     def test_api_new_meeting_registration(self):
         meeting = MeetingFactory(type_id='ietf')
