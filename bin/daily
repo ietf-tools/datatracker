@@ -30,7 +30,8 @@ $DTDIR/ietf/manage.py update_external_command_info
 # Get IANA-registered yang models
 #YANG_IANA_DIR=$(python -c 'import ietf.settings; print ietf.settings.SUBMIT_YANG_IANA_MODEL_DIR')
 # Hardcode the rsync target to avoid any unwanted deletes:
-rsync -avzq --delete rsync.ietf.org::iana/yang-parameters/ /a/www/ietf-ftp/yang/ianamod/
+# rsync -avzq --delete rsync.ietf.org::iana/yang-parameters/ /a/www/ietf-ftp/yang/ianamod/
+rsync -avzq --delete /a/www/ietf-ftp/iana/yang-parameters/ /a/www/ietf-ftp/yang/ianamod/
 
 # Get Yang models from Yangcatalog.
 rsync -avzq rsync://yangcatalog.org:10873/yangdeps /a/www/ietf-ftp/yang/catalogmod/
