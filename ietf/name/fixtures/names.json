@@ -5990,6 +5990,7 @@
     "fields": {
       "desc": "",
       "editor_label": "<i class=\"fa fa-user-o\"></i>{count}",
+      "is_group_conflict": false,
       "name": "Person must be present",
       "order": 4,
       "penalty": 10000,
@@ -6000,8 +6001,22 @@
   },
   {
     "fields": {
+      "desc": "Indicates other WGs the chairs also lead or will be active participants in",
+      "editor_label": "<i class=\"fa fa-gavel\"></i>",
+      "is_group_conflict": true,
+      "name": "Chair conflict",
+      "order": 8,
+      "penalty": 100000,
+      "used": true
+    },
+    "model": "name.constraintname",
+    "pk": "chair_conflict"
+  },
+  {
+    "fields": {
       "desc": "",
       "editor_label": "<span class=\"encircled\">2</span>",
+      "is_group_conflict": true,
       "name": "Conflicts with (secondary)",
       "order": 2,
       "penalty": 10000,
@@ -6014,6 +6029,7 @@
     "fields": {
       "desc": "",
       "editor_label": "<span class=\"encircled\">3</span>",
+      "is_group_conflict": true,
       "name": "Conflicts with (tertiary)",
       "order": 3,
       "penalty": 100000,
@@ -6026,6 +6042,7 @@
     "fields": {
       "desc": "",
       "editor_label": "<span class=\"encircled\">1</span>",
+      "is_group_conflict": true,
       "name": "Conflicts with",
       "order": 1,
       "penalty": 100000,
@@ -6036,8 +6053,35 @@
   },
   {
     "fields": {
+      "desc": "Indicates WGs with which key participants (presenter, secretary, etc.)  may overlap",
+      "editor_label": "<i class=\"fa fa-key\"></i>",
+      "is_group_conflict": true,
+      "name": "Key participant conflict",
+      "order": 10,
+      "penalty": 100000,
+      "used": true
+    },
+    "model": "name.constraintname",
+    "pk": "key_participant"
+  },
+  {
+    "fields": {
+      "desc": "Indicates WGs with a related technology or a closely related charter",
+      "editor_label": "<i class=\"fa fa-rocket\"></i>",
+      "is_group_conflict": true,
+      "name": "Technology overlap",
+      "order": 9,
+      "penalty": 10000,
+      "used": true
+    },
+    "model": "name.constraintname",
+    "pk": "tech_overlap"
+  },
+  {
+    "fields": {
       "desc": "",
       "editor_label": "&Delta;",
+      "is_group_conflict": false,
       "name": "Preference for time between sessions",
       "order": 6,
       "penalty": 1000,
@@ -6050,6 +6094,7 @@
     "fields": {
       "desc": "",
       "editor_label": "<i class=\"fa fa-calendar-o\"></i>",
+      "is_group_conflict": false,
       "name": "Can't meet within timerange",
       "order": 5,
       "penalty": 1000000,
@@ -6062,6 +6107,7 @@
     "fields": {
       "desc": "",
       "editor_label": "<i class=\"fa fa-step-forward\"></i>",
+      "is_group_conflict": false,
       "name": "Request for adjacent scheduling with another WG",
       "order": 7,
       "penalty": 1000,

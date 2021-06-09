@@ -31,6 +31,19 @@ function AgendaGlobals() {
     this.assignment_promise = undefined;
     this.timeslot_promise = undefined;
     this.__debug_session_move = false;
+    /* Group_conflict_labels defines constraint names that are group conflicts and
+     * the symbols used to represent them. Shadow the old 1-2-3 labels to maintain
+     * behavior from before the new conflict types were introduced. This may need
+     * to be changed if the old editor is not phased out. */
+    this.group_conflict_labels = {
+        'conflict':'1' ,
+        'conflic2':'2' ,
+        'conflic3':'3',
+        'chair_conflict': '1',
+        'tech_overlap': '2',
+        'key_participant': '3'
+    };
+
 }
 
 function createLine(x1,y1, x2,y2){
@@ -160,52 +173,28 @@ function find_and_populate_conflicts(session_obj) {
     var room_tag = null;
     session_obj.reset_conflicts();
 
-    for(ccn in session_obj.column_class_list) {
-        var vertical_location = session_obj.column_class_list[ccn].column_tag;
-        var room_tag          = session_obj.column_class_list[ccn].room_tag;
+    for(let ccn in session_obj.column_class_list) {
+        if (session_obj.column_class_list.hasOwnProperty(ccn)) {
+            var vertical_location = session_obj.column_class_list[ccn].column_tag;
+            var room_tag          = session_obj.column_class_list[ccn].room_tag;
+            $.each(Object.keys(agenda_globals.group_conflict_labels), (i, conflict_name) => {
+                if (session_obj.constraints[conflict_name]) {
+                    $.each(session_obj.constraints[conflict_name], (j, conflict) => {
+                        calculate_real_conflict(conflict, vertical_location, room_tag, session_obj);
+                    });
+                }
+                if(session_obj.theirconstraints.conflict){
+                    $.each(session_obj.theirconstraints.conflict, (i, conflict) => {
+                        calculate_real_conflict(conflict, vertical_location, room_tag, session_obj);
+                    });
+                }
+              }
+            );
 
-        if(session_obj.constraints.conflict != null){
-            $.each(session_obj.constraints.conflict, function(i){
-                var conflict = session_obj.constraints.conflict[i];
-                calculate_real_conflict(conflict, vertical_location, room_tag, session_obj);
-            });
+            /* bethere constraints are processed in another loop */
         }
-        if(session_obj.constraints.conflic2 != null){
-            $.each(session_obj.constraints.conflic2, function(i){
-                var conflict = session_obj.constraints.conflic2[i];
-                calculate_real_conflict(conflict, vertical_location, room_tag, session_obj);
-            });
-        }
-        if(session_obj.constraints.conflic3 != null){
-            $.each(session_obj.constraints.conflic3, function(i){
-                var conflict = session_obj.constraints.conflic3[i];
-                calculate_real_conflict(conflict, vertical_location, room_tag, session_obj);
-            });
-        }
-
-        if(session_obj.theirconstraints.conflict != null){
-            $.each(session_obj.theirconstraints.conflict, function(i){
-                var conflict = session_obj.theirconstraints.conflict[i];
-                calculate_real_conflict(conflict, vertical_location, room_tag, session_obj);
-            });
-        }
-        if(session_obj.theirconstraints.conflic2 != null){
-            $.each(session_obj.theirconstraints.conflic2, function(i){
-                var conflict = session_obj.theirconstraints.conflic2[i];
-                calculate_real_conflict(conflict, vertical_location, room_tag, session_obj);
-            });
-        }
-        if(session_obj.theirconstraints.conflic3 != null){
-            $.each(session_obj.theirconstraints.conflic3, function(i){
-                var conflict = session_obj.theirconstraints.conflic3[i];
-                calculate_real_conflict(conflict, vertical_location, room_tag, session_obj);
-            });
-        }
-
-        /* bethere constraints are processed in another loop */
     }
 }
-
 
 function show_non_conflicting_spots(ss_id){
     var conflict_spots = []
@@ -961,7 +950,7 @@ Session.prototype.show_conflict = function() {
     if(_conflict_debug) {
         console.log("showing conflict for", this.title, this.conflict_level['ours'],this.conflict_level['theirs']);
     }
-    var display = { 'conflict':'1' , 'conflic2':'2' , 'conflic3':'3' };
+    var display = agenda_globals.group_conflict_labels;
     if (this.conflicted) {
         if ('ours' in this.conflict_level) {
             this.element().find('.ourconflicts').text('->'+display[this.conflict_level.ours]);
@@ -1329,36 +1318,18 @@ Session.prototype.fill_in_constraints = function(constraint_list) {
     // here we can sort the constraints by group name.
     // make a single list. this.constraints is not an array, can not use concat.
     this.conflicts = [];
-    if("conflict" in this.constraints) {
-        $.each(this.constraints["conflict"], function(index) {
-            session_obj.conflicts.push(session_obj.constraints["conflict"][index]);
-        });
-    }
-    if("conflic2" in this.constraints) {
-        $.each(this.constraints["conflic2"], function(index) {
-            session_obj.conflicts.push(session_obj.constraints["conflic2"][index]);
-        });
-    }
-    if("conflic3" in this.constraints) {
-        $.each(this.constraints["conflic3"], function(index) {
-            session_obj.conflicts.push(session_obj.constraints["conflic3"][index]);
-        });
-    }
-    if("conflict" in this.theirconstraints) {
-        $.each(this.theirconstraints["conflict"], function(index) {
-            session_obj.conflicts.push(session_obj.theirconstraints["conflict"][index]);
-        });
-    }
-    if("conflic2" in this.theirconstraints) {
-        $.each(this.theirconstraints["conflic2"], function(index) {
-            session_obj.conflicts.push(session_obj.theirconstraints["conflic2"][index]);
-        });
-    }
-    if("conflic3" in this.theirconstraints) {
-        $.each(this.theirconstraints["conflic3"], function(index) {
-            session_obj.conflicts.push(session_obj.theirconstraints["conflic3"][index]);
-        });
-    }
+    $.each(Object.keys(agenda_globals.group_conflict_labels), (i, conflict_name) => {
+        if (conflict_name in this.constraints) {
+            $.each(this.constraints[conflict_name], (j, conflict) => {
+                session_obj.conflicts.push(conflict);
+            });
+        }
+        if (conflict_name in this.theirconstraints) {
+            $.each(this.theirconstraints[conflict_name], (j, conflict) => {
+                session_obj.conflicts.push(conflict);
+            });
+        }
+    });
     this.calculate_bethere();
     this.conflicts = sort_conflict_list(this.conflicts)
 };
@@ -1532,9 +1503,9 @@ var conflict_classes = {};
 
 function clear_conflict_classes() {
     // remove all conflict boxes from before
-    $(".show_conflict_specific_box").removeClass("show_conflict_specific_box");
-    $(".show_conflic2_specific_box").removeClass("show_conflic2_specific_box");
-    $(".show_conflic3_specific_box").removeClass("show_conflic3_specific_box");
+    $.each(Object.keys(agenda_globals.group_conflict_labels), (i, conflict_name) => {
+        $(".show_" + conflict_name + "_specific_box").removeClass("show_" + conflict_name + "_specific_box");
+    });
 
     // reset all column headings
     $(".show_conflict_view_highlight").removeClass("show_conflict_view_highlight");
@@ -1547,26 +1518,28 @@ Constraint.prototype.column_class_list = function() {
     return this.othergroup.column_class_list;
 };
 
+/* N.B., handling new conflict types as equivalent to the originals for prioritization.
+ * If this editor is not replaced by the new one, it might be worth sorting out how to
+ * properly prioritize. Otherwise, this maintains the behavior seen prior to the introduction
+ * of the new conflicts. */
 Constraint.prototype.conflict1P = function() {
-    return (this.conflict_type == "conflict")
+    return ((this.conflict_type === "conflict") || (this.conflict_type === "chair_conflict"));
 };
 
 Constraint.prototype.conflict2P = function() {
-    return (this.conflict_type == "conflic2")
+    return ((this.conflict_type === "conflic2") || (this.conflict_type === "tech_overlap"));
 };
 
 Constraint.prototype.conflict3P = function() {
-    return (this.conflict_type == "conflic3")
+    return ((this.conflict_type === "conflic3") || (this.conflict_type === "key_participant"));
 };
 
 Constraint.prototype.conflict_groupP = function() {
-    return (this.conflict_type == "conflict" ||
-            this.conflict_type == "conflic2" ||
-            this.conflict_type == "conflic3");
+    return this.conflict_type in agenda_globals.group_conflict_labels;
 };
 
 Constraint.prototype.conflict_peopleP = function() {
-    return (this.conflict_type == "bethere")
+    return (this.conflict_type === "bethere")
 };
 
 Constraint.prototype.conflict_compare = function(oflict) {

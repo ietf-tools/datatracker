@@ -207,6 +207,26 @@ class Meeting(models.Model):
         else:
             return None
 
+    @property
+    def session_constraintnames(self):
+        """Gets a list of the constraint names that should be used for this meeting
+
+        Anticipated that this will soon become a many-to-many relationship with ConstraintName
+        (see issue #2770). Making this a @property allows use of the .all(), .filter(), etc,
+        so that other code should not need changes when this is replaced.
+        """
+        try:
+            mtg_num = int(self.number)
+        except ValueError:
+            mtg_num = None  # should not come up, but this method should not fail
+        if mtg_num is None or mtg_num >= 106:
+            # These meetings used the old 'conflic?' constraint types labeled as though
+            # they were the new types.
+            slugs = ('chair_conflict', 'tech_overlap', 'key_participant')
+        else:
+            slugs = ('conflict', 'conflic2', 'conflic3')
+        return ConstraintName.objects.filter(slug__in=slugs)
+
     def json_url(self):
         return "/meeting/%s/json" % (self.number, )
 

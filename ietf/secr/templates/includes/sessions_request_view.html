@@ -18,16 +18,18 @@
         <tr class="row2">
           <td>Conflicts to Avoid:</td>
           <td>
-            <table>
-              {% if session.conflict1 %}<tr><td>Chair Conflict: </td><td>{{ session.conflict1 }}</td></tr>{% endif %}
-              {% if session.conflict2 %}<tr><td>Technology Overlap: </td><td>{{ session.conflict2 }}</td></tr>{% endif %}
-              {% if session.conflict3 %}<tr><td>Key Participant Conflict: </td><td>{{ session.conflict3 }}</td></tr>{% endif %}
-            </table>
+            {% if session_conflicts.outbound %}
+              <table>
+                {% for conflict in session_conflicts.outbound %}
+                  <tr><td>{{ conflict.name|title }}: </td><td>{{ conflict.groups }}</td></tr>
+                {% endfor %}
+              </table>
+            {% else %}<i>None</i>{% endif %}
           </td>
         </tr>
         <tr class="row1">
           <td>Other WGs that included {{ group }} in their conflict list:</td>
-          <td>{% if session_conflicts %}{{ session_conflicts }}{% else %}<i>None so far</i>{% endif %}</td>
+          <td>{% if session_conflicts.inbound %}{{ session_conflicts.inbound }}{% else %}<i>None so far</i>{% endif %}</td>
         </tr>
         {% if not is_virtual %}
           <tr class="row2">
