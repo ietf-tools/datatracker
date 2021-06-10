@@ -1,7 +1,5 @@
 # -*- conf-mode -*-
 
-^/personal/jennifer/7.31.1.dev0@19103 # Hold for next release
-
 # Everyting below this line is OBE
 
 /personal/rjs/7.29.1.dev0@18992 # commit testing
