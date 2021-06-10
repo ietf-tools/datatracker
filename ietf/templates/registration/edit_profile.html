@@ -66,7 +66,14 @@
 
     <div class="form-group">
       <label class="col-sm-2 control-label">Nomcom Eligible</label>
-      <div class="col-sm-1 form-control-static">{{person|is_nomcom_eligible|yesno:'Yes,No,No'}}</div>
+      <div class="col-sm-1 form-control-static">
+        {{person|is_nomcom_eligible|yesno:'Yes,No,No'}}
+        {% if volunteer_status == 'allow' %}
+          <br>
+          <a id="volunteer-button" class="btn btn-primary" href="{% url "ietf.nomcom.views.volunteer"  %}">Volunteer</a>
+        {% endif %}
+      </div>
+
       <div class="col-sm-9">
 	   <p class="alert alert-info form-control-static">
 	     If you believe this calculation is incorrect, make sure you've added all the
@@ -80,6 +87,9 @@
 	     for eligibility requirements. 
        For the 2021 nomcom, see also <a href="{% url 'ietf.doc.views_doc.document_main' name='rfc8989' %}">RFC 8989</a>.
 
+       {% if volunteer_status == 'volunteered' %}
+       <br/><strong id='volunteered'>You have volunteered for the {{nomcom.group.name}}.</strong> To modify your volunteer status, contact the NomCom chair.
+       {% endif %}
 	   </p>
       </div>
     </div>
@@ -89,7 +99,9 @@
       <div class="col-sm-10 form-control-static">
         {% for extres in person.personextresource_set.all %}
           <div class="row">
-            <div class="col-sm-1"><span title="{{ extres.name.name}}">{% firstof extres.display_name extres.name.name %}</span></div>
+            <div class="col-sm-1">
+              <span title="{{ extres.name.name}}">{% firstof extres.display_name extres.name.name %}</span>
+            </div>
             <div class="col-sm-11">{{extres.value}}
               {% if forloop.first %}&nbsp;<a href="{% url 'ietf.ietfauth.views.edit_person_externalresources' %}"><span class="fa fa-pencil"></span></a>{% endif %}
             </div>

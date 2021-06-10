@@ -13,7 +13,7 @@ from django.forms.widgets import FileInput
 from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.name.models import FeedbackTypeName, NomineePositionStateName
 from ietf.nomcom.models import ( NomCom, Nomination, Nominee, NomineePosition,
-                                 Position, Feedback, ReminderDates, Topic )
+                                 Position, Feedback, ReminderDates, Topic, Volunteer )
 from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE,
                                get_user_email, validate_private_key, validate_public_key,
                                make_nomineeposition, make_nomineeposition_for_newperson,
@@ -833,3 +833,22 @@ class EditNomineeForm(forms.ModelForm):
 class NominationResponseCommentForm(forms.Form):
     comments = forms.CharField(widget=forms.Textarea,required=False,help_text="Any comments provided will be encrypted and will only be visible to the NomCom.", strip=False)
 
+class NomcomVolunteerMultipleChoiceField(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, obj):
+        year = obj.year()
+        return f'Volunteer for the {year}/{year+1} Nominating Committee'
+
+class VolunteerForm(forms.ModelForm):
+    class Meta:
+        model = Volunteer
+        fields = ('affiliation',)
+
+    nomcoms = NomcomVolunteerMultipleChoiceField(queryset=NomCom.objects.none(),widget=forms.CheckboxSelectMultiple)
+    field_order = ('nomcoms','affiliation')
+
+    def __init__(self, person, *args, **kargs):
+         super().__init__(*args, **kargs)
+         self.fields['nomcoms'].queryset = NomCom.objects.filter(is_accepting_volunteers=True).exclude(volunteer__person=person)
+         self.fields['nomcoms'].help_text = 'You may volunteer even if the datatracker does not currently calculate that you are eligible. Eligibility will be assessed when the selection process is performed.'
+         self.fields['affiliation'].help_text = 'Affiliation to show in the volunteer list'
+         self.fields['affiliation'].required = True

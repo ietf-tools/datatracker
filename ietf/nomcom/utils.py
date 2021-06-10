@@ -22,7 +22,7 @@ from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.models import DocEvent
+from ietf.doc.models import DocEvent, NewRevisionDocEvent
 from ietf.group.models import Group, Role
 from ietf.person.models import Email, Person
 from ietf.mailtrigger.utils import gather_address_lists
@@ -589,4 +589,16 @@ def three_of_five_eligible(previous_five, queryset=None):
         queryset = Person.objects.all()
     return queryset.filter(meetingregistration__meeting__in=list(previous_five),meetingregistration__attended=True).annotate(mtg_count=Count('meetingregistration')).filter(mtg_count__gte=3)
 
+def suggest_affiliation(person):
+    recent_meeting = person.meetingregistration_set.order_by('-meeting__date').first()
+    affiliation = recent_meeting.affiliation if recent_meeting else ''
+    if not affiliation:
+        recent_volunteer = person.volunteer_set.order_by('-nomcom__group__acronym').first()
+        if recent_volunteer:
+            affiliation = recent_volunteer.affiliation 
+    if not affiliation:
+        recent_draft_revision =  NewRevisionDocEvent.objects.filter(doc__type_id='draft',doc__documentauthor__person=person).order_by('-time').first()
+        if recent_draft_revision:
+            affiliation = recent_draft_revision.doc.documentauthor_set.filter(person=person).first().affiliation
+    return affiliation
 

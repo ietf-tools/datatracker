@@ -1,4 +1,4 @@
-{% extends "nomcom/nomcom_private_base.html" %}
+{% extends public|yesno:"nomcom/nomcom_public_base.html,nomcom/nomcom_private_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load bootstrap3 %}

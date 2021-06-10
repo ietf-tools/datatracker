@@ -1,0 +1,40 @@
+{% extends public|yesno:"nomcom/nomcom_public_base.html,nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2021, All Rights Reserved #}
+{% load origin %}
+{% load bootstrap3 %}
+{% load static %}
+
+{% block subtitle %} - Volunteers{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block nomcom_content %}
+  {% origin %}
+  <h2>Volunteers for {{ nomcom.group }}</h2>
+
+  <table class="table table-condensed table-striped tablesorter">
+    <thead>
+      <th>Eligible</th>
+      <th>Last Name</th>
+      <th>First Name</th>
+      <th>Affiliation</th>
+      <th>Email Addresses</th>
+    </thead>
+     
+    {% for v in volunteers %}
+      <tr>
+        <td>{{v.eligible|yesno}}
+        <td><a href="{% url 'ietf.person.views.profile' v.person.name %}">{{v.person.last_name}}</a></td>
+        <td>{{v.person.first_name}}</td>
+        <td>{{v.affiliation}}</td>
+        <td>{% for e in v.person.email_set.all %}{{e.address}}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+      </tr>
+  {% endfor %}
+  </table> 
+{% endblock nomcom_content %}
+
+{% block js %}
+  <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

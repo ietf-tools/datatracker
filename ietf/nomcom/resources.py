@@ -12,7 +12,7 @@ from tastypie.cache import SimpleCache
 from ietf import api
 
 from ietf.nomcom.models import (NomCom, Position, Nominee, ReminderDates, NomineePosition,
-    Feedback, Nomination, FeedbackLastSeen, Topic, TopicFeedbackLastSeen, )
+    Feedback, Nomination, FeedbackLastSeen, Topic, TopicFeedbackLastSeen, Volunteer, )
 
 from ietf.group.resources import GroupResource
 class NomComResource(ModelResource):
@@ -226,3 +226,22 @@ class TopicFeedbackLastSeenResource(ModelResource):
             "topic": ALL_WITH_RELATIONS,
         }
 api.nomcom.register(TopicFeedbackLastSeenResource())
+
+
+from ietf.person.resources import PersonResource
+class VolunteerResource(ModelResource):
+    nomcom           = ToOneField(NomComResource, 'nomcom')
+    person           = ToOneField(PersonResource, 'person')
+    class Meta:
+        queryset = Volunteer.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'volunteer'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "affiliation": ALL,
+            "nomcom": ALL_WITH_RELATIONS,
+            "person": ALL_WITH_RELATIONS,
+        }
+api.nomcom.register(VolunteerResource())

@@ -67,6 +67,7 @@ from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.mailinglists.models import Subscribed, Whitelisted
 from ietf.name.models import ExtResourceName
+from ietf.nomcom.models import NomCom
 from ietf.person.models import Person, Email, Alias, PersonalApiKey, PERSON_API_KEY_VALUES
 from ietf.review.models import ReviewerSettings, ReviewWish, ReviewAssignment
 from ietf.review.utils import unavailable_periods_to_list, get_default_filter_re
@@ -210,6 +211,14 @@ def profile(request):
     emails = Email.objects.filter(person=person).exclude(address__startswith='unknown-email-').order_by('-active','-time')
     new_email_forms = []
 
+    nc = NomCom.objects.filter(group__acronym__icontains=Date.today().year).first()
+    if nc and nc.volunteer_set.filter(person=person).exists():
+        volunteer_status = 'volunteered'
+    elif nc and nc.is_accepting_volunteers:
+        volunteer_status = 'allow'
+    else:
+        volunteer_status = 'deny'
+
     if request.method == 'POST':
         person_form = get_person_form(request.POST, instance=person)
         for r in roles:
@@ -287,6 +296,8 @@ def profile(request):
         'roles': roles,
         'emails': emails,
         'new_email_forms': new_email_forms,
+        'nomcom': nc,
+        'volunteer_status': volunteer_status,
         'settings':settings,
     })
 

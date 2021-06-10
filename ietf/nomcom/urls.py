@@ -7,6 +7,7 @@ urlpatterns = [
     url(r'^$', views.index),
     url(r'^ann/$', views.announcements),
     url(r'^history/$', views.history),
+    url(r'^volunteer/$', views.volunteer),
     url(r'^(?P<year>\d{4})/private/$', views.private_index),
     url(r'^(?P<year>\d{4})/private/key/$', views.private_key),
     url(r'^(?P<year>\d{4})/private/help/$', views.configuration_help),
@@ -37,7 +38,8 @@ urlpatterns = [
     url(r'^(?P<year>\d{4})/private/chair/topic/add/$', views.edit_topic),
     url(r'^(?P<year>\d{4})/private/chair/topic/(?P<topic_id>\d+)/$', views.edit_topic),
     url(r'^(?P<year>\d{4})/private/chair/topic/(?P<topic_id>\d+)/remove/$', views.remove_topic),
-    url(r'^(?P<year>\d{4})/private/chair/eligible/$', views.eligible ),
+    url(r'^(?P<year>\d{4})/private/chair/eligible/$', views.private_eligible),
+    url(r'^(?P<year>\d{4})/private/chair/volunteers/$', views.private_volunteers),
 
     url(r'^(?P<year>\d{4})/$', views.year_index),
     url(r'^(?P<year>\d{4})/requirements/$', views.requirements),
@@ -47,6 +49,8 @@ urlpatterns = [
     url(r'^(?P<year>\d{4})/nominate/$', views.public_nominate),
     url(r'^(?P<year>\d{4})/nominate/newperson$', views.public_nominate_newperson),
     url(r'^(?P<year>\d{4})/process-nomination-status/(?P<nominee_position_id>\d+)/(?P<state>[\w]+)/(?P<date>[\d]+)/(?P<hash>[a-f0-9]+)/$', views.process_nomination_status),
+    url(r'^(?P<year>\d{4})/eligible/$', views.public_eligible),
+    url(r'^(?P<year>\d{4})/volunteers/$', views.public_volunteers),
 # use the generic view from message
     url(r'^ann/(?P<message_id>\d+)/$', message_views.message, {'group_type': "nomcom" }),
 ]

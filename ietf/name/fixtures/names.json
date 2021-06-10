@@ -2499,10 +2499,10 @@
       "is_schedulable": true,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"lead\",\n    \"delegate\",\n    \"matman\"\n]",
+      "need_parent": false,
       "parent_types": [
         "ietf"
       ],
-      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"lead\",\n    \"delegate\",\n    \"matman\"\n]",
       "show_on_agenda": true
@@ -2536,8 +2536,8 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\"\n]",
-      "parent_types": [],
       "need_parent": false,
+      "parent_types": [],
       "req_subm_approval": false,
       "role_order": "[\n    \"chair\"\n]",
       "show_on_agenda": false
@@ -2571,11 +2571,11 @@
       "is_schedulable": true,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "need_parent": false,
       "parent_types": [
         "area",
         "ietf"
       ],
-      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": true
@@ -2609,10 +2609,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "need_parent": true,
       "parent_types": [
         "ietf"
       ],
-      "need_parent": true,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -2646,10 +2646,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "need_parent": true,
       "parent_types": [
         "area"
       ],
-      "need_parent": true,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -2683,10 +2683,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "need_parent": false,
       "parent_types": [
         "ietf"
       ],
-      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": true
@@ -2720,8 +2720,8 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\"\n]",
-      "parent_types": [],
       "need_parent": false,
+      "parent_types": [],
       "req_subm_approval": false,
       "role_order": "[\n    \"chair\"\n]",
       "show_on_agenda": false
@@ -2755,8 +2755,8 @@
       "is_schedulable": false,
       "material_types": "\"[]\"",
       "matman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"member\"\n]",
-      "parent_types": [],
       "need_parent": false,
+      "parent_types": [],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"delegate\",\n    \"member\"\n]",
       "show_on_agenda": false
@@ -2790,10 +2790,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "need_parent": false,
       "parent_types": [
         "ietf"
       ],
-      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -2827,10 +2827,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[]",
+      "need_parent": true,
       "parent_types": [
         "area"
       ],
-      "need_parent": true,
       "req_subm_approval": false,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -2864,10 +2864,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "need_parent": false,
       "parent_types": [
         "irtf"
       ],
-      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -2901,8 +2901,8 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
-      "parent_types": [],
       "need_parent": false,
+      "parent_types": [],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"delegate\"\n]",
       "show_on_agenda": false
@@ -2936,10 +2936,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"secr\"\n]",
+      "need_parent": false,
       "parent_types": [
         "isoc"
       ],
-      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -2973,10 +2973,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\"\n]",
+      "need_parent": false,
       "parent_types": [
         "area"
       ],
-      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"member\",\n    \"advisor\"\n]",
       "show_on_agenda": false
@@ -3010,10 +3010,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
+      "need_parent": false,
       "parent_types": [
         "ietf"
       ],
-      "need_parent": false,
       "req_subm_approval": false,
       "role_order": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -3047,10 +3047,10 @@
       "is_schedulable": true,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "need_parent": false,
       "parent_types": [
         "irtf"
       ],
-      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": true
@@ -3063,7 +3063,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\",\n    \"secr\"\n]",
-      "agenda_type": null,
+      "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": true,
       "customize_workflow": false,
@@ -3076,7 +3076,7 @@
       "has_chartering_process": false,
       "has_default_jabber": false,
       "has_documents": false,
-      "has_meetings": false,
+      "has_meetings": true,
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": true,
@@ -3084,10 +3084,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"ad\",\n    \"secr\"\n]",
+      "need_parent": true,
       "parent_types": [
         "area"
       ],
-      "need_parent": true,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -3121,8 +3121,8 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[]",
-      "parent_types": [],
       "need_parent": false,
+      "parent_types": [],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
       "show_on_agenda": false
@@ -3156,10 +3156,10 @@
       "is_schedulable": true,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "need_parent": true,
       "parent_types": [
         "irtf"
       ],
-      "need_parent": true,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
       "show_on_agenda": true
@@ -3193,11 +3193,11 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[]",
+      "need_parent": false,
       "parent_types": [
         "area",
         "sdo"
       ],
-      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"liaiman\"\n]",
       "show_on_agenda": false
@@ -3231,10 +3231,10 @@
       "is_schedulable": false,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"matman\"\n]",
+      "need_parent": false,
       "parent_types": [
         "area"
       ],
-      "need_parent": false,
       "req_subm_approval": false,
       "role_order": "[\n    \"chair\",\n    \"member\",\n    \"matman\"\n]",
       "show_on_agenda": false
@@ -3268,10 +3268,10 @@
       "is_schedulable": true,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "need_parent": false,
       "parent_types": [
         "area"
       ],
-      "need_parent": false,
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\",\n    \"delegate\"\n]",
       "show_on_agenda": true
@@ -4165,6 +4165,7 @@
     "fields": {
       "cc": [
         "liaison_cc",
+        "liaison_coordinators",
         "liaison_response_contacts",
         "liaison_technical_contacts"
       ],
@@ -5502,6 +5503,14 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "liaison_cc"
+  },
+  {
+    "fields": {
+      "desc": "The IAB liaison coordination team members",
+      "template": "<liaison-coordination@iab.org>"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "liaison_coordinators"
   },
   {
     "fields": {
@@ -10003,6 +10012,7 @@
         "auth",
         "aut-appr",
         "grp-appr",
+        "ad-appr",
         "manual",
         "cancel"
       ],
@@ -12050,7 +12060,7 @@
     "fields": {
       "desc": "",
       "name": "Liaison CC Contact",
-      "order": 0,
+      "order": 9,
       "used": true
     },
     "model": "name.rolename",
@@ -12060,7 +12070,7 @@
     "fields": {
       "desc": "",
       "name": "Liaison Contact",
-      "order": 0,
+      "order": 8,
       "used": true
     },
     "model": "name.rolename",
@@ -12488,7 +12498,7 @@
   },
   {
     "fields": {
-      "desc": "IAB stream",
+      "desc": "Internet Architecture Board (IAB)",
       "name": "IAB",
       "order": 4,
       "used": true
@@ -12498,7 +12508,7 @@
   },
   {
     "fields": {
-      "desc": "IETF stream",
+      "desc": "Internet Engineering Task Force (IETF)",
       "name": "IETF",
       "order": 1,
       "used": true
@@ -12508,7 +12518,7 @@
   },
   {
     "fields": {
-      "desc": "IRTF Stream",
+      "desc": "Internet Research Task Force (IRTF)",
       "name": "IRTF",
       "order": 3,
       "used": true
@@ -12518,7 +12528,7 @@
   },
   {
     "fields": {
-      "desc": "Independent Submission Editor stream",
+      "desc": "Independent Submission",
       "name": "ISE",
       "order": 2,
       "used": true
@@ -15243,9 +15253,9 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2020-11-14T00:10:15.888",
+      "time": "2021-06-08T00:12:46.324",
       "used": true,
-      "version": "xym 0.4.8"
+      "version": "xym 0.5"
     },
     "model": "utils.versioninfo",
     "pk": 1
@@ -15254,7 +15264,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2020-11-14T00:10:17.069",
+      "time": "2021-06-08T00:12:48.137",
       "used": true,
       "version": "pyang 2.4.0"
     },
@@ -15265,7 +15275,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2020-11-14T00:10:17.405",
+      "time": "2021-06-08T00:12:48.465",
       "used": true,
       "version": "yanglint SO 1.6.7"
     },
@@ -15276,9 +15286,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2020-11-14T00:10:19.405",
+      "time": "2021-06-08T00:12:51.318",
       "used": true,
-      "version": "xml2rfc 3.4.0"
+      "version": "xml2rfc 3.8.0"
     },
     "model": "utils.versioninfo",
     "pk": 4
