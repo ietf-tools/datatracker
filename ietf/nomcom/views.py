@@ -11,7 +11,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.forms.models import modelformset_factory, inlineformset_factory
+from django.forms.models import modelformset_factory, inlineformset_factory 
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -31,10 +31,10 @@ from ietf.nomcom.forms import (NominateForm, NominateNewPersonForm, FeedbackForm
                                PrivateKeyForm, EditNomcomForm, EditNomineeForm,
                                PendingFeedbackForm, ReminderDatesForm, FullFeedbackFormSet,
                                FeedbackEmailForm, NominationResponseCommentForm, TopicForm,
-                               NewEditMembersForm,)
+                               NewEditMembersForm, VolunteerForm, )
 from ietf.nomcom.models import (Position, NomineePosition, Nominee, Feedback, NomCom, ReminderDates,
                                 FeedbackLastSeen, Topic, TopicFeedbackLastSeen, )
-from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key,
+from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key, suggest_affiliation,
                                get_hash_nominee_position, send_reminder_to_nominees, list_eligible,
                                HOME_TEMPLATE, NOMINEE_ACCEPT_REMINDER_TEMPLATE,NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE, )
 
@@ -1269,8 +1269,33 @@ def extract_email_lists(request, year):
                               'bypos': bypos,
                              })
 
+@login_required
+def volunteer(request):
+    nomcoms = NomCom.objects.filter(is_accepting_volunteers=True)
+    if not nomcoms.exists():
+        return render(request, 'nomcom/volunteers_not_accepted.html')
+    person = request.user.person
+    already_volunteered = nomcoms.filter(volunteer__person=person)
+    can_volunteer = nomcoms.exclude(volunteer__person=person)
+
+    if request.method=='POST':
+        form = VolunteerForm(person=person, data=request.POST)
+        if form.is_valid():
+            for nc in form.cleaned_data['nomcoms']:
+                nc.volunteer_set.create(person=person, affiliation=form.cleaned_data['affiliation'])
+            return redirect('ietf.ietfauth.views.profile')
+    else:
+        form = VolunteerForm(person=person,initial=dict(nomcoms=can_volunteer, affiliation=suggest_affiliation(person)))
+    return render(request, 'nomcom/volunteer.html', {'form':form, 'can_volunteer': can_volunteer, 'already_volunteered': already_volunteered})
+
+def public_eligible(request, year):
+    return eligible(request=request, year=year, public=True)
+
+def private_eligible(request, year):
+    return eligible(request=request, year=year, public=False)
+
 @role_required("Nomcom Chair", "Nomcom Advisor", "Secretariat")
-def eligible(request, year):
+def eligible(request, year, public=False):
     nomcom = get_nomcom_by_year(year)
 
     eligible_persons = list(list_eligible(nomcom=nomcom))
@@ -1281,3 +1306,23 @@ def eligible(request, year):
                               'year':year,
                               'eligible_persons':eligible_persons,
                              })
+
+def public_volunteers(request, year):
+    return volunteers(request=request, year=year, public=True)
+
+def private_volunteers(request, year):
+    return volunteers(request=request, year=year, public=False)
+
+@role_required("Nomcom Chair", "Nomcom Advisor", "Secretariat")
+def volunteers(request, year, public=False):
+    nomcom = get_nomcom_by_year(year)
+    # pull list of volunteers
+    # get queryset of all eligible (from utils)
+    # decorate members of the list with eligibility
+    volunteers = nomcom.volunteer_set.all()
+    eligible = list_eligible(nomcom)
+    for v in volunteers:
+        v.eligible = v.person in eligible
+    volunteers = sorted(volunteers,key=lambda v:(not v.eligible,v.person.last_name()))
+    return render(request, 'nomcom/volunteers.html', dict(year=year, nomcom=nomcom, volunteers=volunteers, public=public))
+

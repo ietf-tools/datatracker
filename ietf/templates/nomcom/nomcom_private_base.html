@@ -3,6 +3,7 @@
 {% load origin %}
 
 {% load nomcom_tags %}
+{% load ietf_filters %}
 
 {% block title %}NomCom {{ year }} Private{% block subtitle %}{% endblock %}{% endblock %}
 
@@ -46,12 +47,20 @@
             {% if nomcom.group.state_id == 'active' %}
             <li {% if selected == "edit_members" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.edit_members' year %}">Edit Members</a></li>
             {% endif %}
-            <li {% if selected == "view_eligible" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.eligible' year %}">View Eligible</a></li>
             <li {% if selected == "help" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.configuration_help' year %}">Configuration Help</a></li>
           <li role="presentation" class="dropdown-header">Other Tools</li>
             <li {% if selected == "announce" %}class="active"{% endif %}><a href="{% url 'ietf.secr.announcement.views.main'%}">Announcement Tool</a></li>
             <li {% if selected == "secr_verify" %}class="active"{% endif %}><a href="https://www.ietf.org/registration/nomcom_chair/nomcomstaff.py">Secretariat Private Eligibility Checker</a></li>
             <li {% if selected == "secr_pub_verify" %}class="active"{% endif %}><a href="https://www.ietf.org/registration/nomcom.py">Secretariat Public Eligibility Checker</a></li>
+        </ul>
+      </li>
+    {% endif %}
+    {% if user|is_chair_or_advisor:year or user|has_role:"Secretariat" %}
+      <li class="dropdown">
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Volunteers<span class="caret"></span></a>
+        <ul class="dropdown-menu" role="menu">
+            <li {% if selected == "view_eligible" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.private_eligible' year %}">View Eligible</a></li>
+            <li {% if selected == "view_volunteers" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.private_volunteers' year %}">View Volunteers</a></li>
         </ul>
       </li>
     {% endif %}

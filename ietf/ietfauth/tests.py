@@ -35,6 +35,7 @@ from ietf.group.models import Group, Role, RoleName
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.mailinglists.models import Subscribed
 from ietf.meeting.factories import MeetingFactory
+from ietf.nomcom.factories import NomComFactory
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Person, Email, PersonalApiKey
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
@@ -331,6 +332,33 @@ class IetfAuthTests(TestCase):
         updated_roles = Role.objects.filter(person=role.person, name=role.name, group=role.group)
         self.assertEqual(len(updated_roles), 1)
         self.assertEqual(updated_roles[0].email_id, new_email_address)
+
+
+    def test_nomcom_dressing_on_profile(self):
+        url = urlreverse('ietf.ietfauth.views.profile')
+
+        nobody = PersonFactory()
+        login_testing_unauthorized(self, nobody.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertFalse(q('#volunteer-button'))
+        self.assertFalse(q('#volunteered'))
+
+        year = datetime.date.today().year
+        nomcom = NomComFactory(group__acronym=f'nomcom{year}',is_accepting_volunteers=True)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('#volunteer-button'))
+        self.assertFalse(q('#volunteered'))
+
+        nomcom.volunteer_set.create(person=nobody)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertFalse(q('#volunteer-button'))
+        self.assertTrue(q('#volunteered'))
 
 
     def test_reset_password(self):

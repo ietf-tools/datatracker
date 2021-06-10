@@ -1,11 +1,12 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 from django.contrib import admin
 
 from ietf.nomcom.models import ( ReminderDates, NomCom, Nomination, Nominee, NomineePosition, 
-                               Position, Feedback, FeedbackLastSeen, TopicFeedbackLastSeen)
+                               Position, Feedback, FeedbackLastSeen, TopicFeedbackLastSeen,
+                               Volunteer, )
 
 
 class ReminderDatesAdmin(admin.ModelAdmin):
@@ -67,5 +68,11 @@ class TopicFeedbackLastSeenAdmin(admin.ModelAdmin):
     list_filter = ['topic', 'time']
     raw_id_fields = ['reviewer']
 admin.site.register(TopicFeedbackLastSeen, TopicFeedbackLastSeenAdmin)
+
+class VolunteerAdmin(admin.ModelAdmin):
+    list_display = ['nomcom','person','affiliation']
+    list_filter = ['nomcom']
+    raw_id_fields = ['person']
+admin.site.register(Volunteer, VolunteerAdmin)
 
 

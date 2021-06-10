@@ -39,7 +39,7 @@ def permission_names_to_objects(names):
             result.append(Permission.objects.get(content_type__app_label=app_label,
                                                  codename=codename))
         except Permission.DoesNotExist:
-            print "NO SUCH PERMISSION: %s, %s" % (app_label, codename)
+            print ("NO SUCH PERMISSION: %s, %s" % (app_label, codename))
             raise
 
     return result
@@ -61,6 +61,7 @@ def main():
              'group.add_groupevent','group.change_groupevent','group.delete_groupevent',
              'iesg.add_telechatagendaitem','iesg.change_telechatagendaitem','iesg.delete_telechatagendaitem',
              'iesg.add_telechatdate','iesg.change_telechatdate','iesg.delete_telechatdate',
+             'liaisons.add_liaisonstatementgroupcontacts', 'liaisons.change_liaisonstatementgroupcontacts', 'liaisons.delete_liaisonstatementgroupcontacts',
              'mailinglists.add_list','mailinglists.change_list','mailinglists.delete_list',
              'mailtrigger.add_mailtrigger','mailtrigger.change_mailtrigger','mailtrigger.delete_mailtrigger',
              'mailtrigger.add_recipient','mailtrigger.change_recipient','mailtrigger.delete_recipient',
@@ -71,6 +72,7 @@ def main():
              'meeting.add_urlresource','meeting.change_urlresource','meeting.delete_urlresource',
              'message.add_announcementfrom','message.change_announcementfrom','message.delete_announcementfrom',
              'nomcom.add_nomcom','nomcom.change_nomcom','nomcom.delete_nomcom',
+             'nomcom.add_volunteer','nomcom.change_volunteer','nomcom.delete_volunteer',
              'person.add_person','person.change_person','person.delete_person',
              'person.add_alias','person.change_alias','person.delete_alias',
              'person.add_email','person.change_email','person.delete_email',

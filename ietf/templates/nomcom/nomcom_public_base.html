@@ -3,6 +3,7 @@
 {% load origin %}
 
 {% load nomcom_tags %}
+{% load ietf_filters %}
 
 {% block title %}NomCom {{ year }}{% block subtitle %}{% endblock %}{% endblock %}
 
@@ -19,6 +20,15 @@
     {% endif %}
     <li {% if selected == "requirements" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.requirements' year %}">Desired expertise</a></li>
     <li {% if selected == "questionnaires" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.questionnaires' year %}">Questionnaires</a></li>
+    {% if user|is_chair_or_advisor:year or user|has_role:"Secretariat" %}
+      <li class="dropdown">
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Volunteers<span class="caret"></span></a>
+        <ul class="dropdown-menu" role="menu">
+            <li {% if selected == "view_eligible" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.public_eligible' year %}">View Eligible</a></li>
+            <li {% if selected == "view_volunteers" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.public_volunteers' year %}">View Volunteers</a></li>
+        </ul>
+      </li>
+    {% endif %}
   </ul>
 
   {% block nomcom_content %}

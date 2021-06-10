@@ -59,6 +59,8 @@ class NomCom(models.Model):
                                                 help_text='Display pictures of each nominee (if available) on the feedback pages')
     show_accepted_nominees = models.BooleanField(verbose_name='Show accepted nominees', default=True, 
                                                  help_text='Show accepted nominees on the public nomination page')
+    is_accepting_volunteers = models.BooleanField(verbose_name="Accepting volunteers", default=False,
+                                                  help_text='Is this nomcom is currently accepting volunteers?')
     first_call_for_volunteers = models.DateField(verbose_name='Date of the first call for volunteers', blank=True, null=True)
 
     class Meta:
@@ -310,4 +312,12 @@ class TopicFeedbackLastSeen(models.Model):
     reviewer = ForeignKey(Person)
     topic = ForeignKey(Topic)
     time = models.DateTimeField(auto_now=True)
+
+class Volunteer(models.Model):
+    nomcom = ForeignKey('NomCom')
+    person = ForeignKey(Person)
+    affiliation = models.CharField(blank=True, max_length=255)
+
+    def __str__(self):
+        return f'{self.person} for {self.nomcom}'
     

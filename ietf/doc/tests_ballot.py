@@ -1097,7 +1097,7 @@ class RegenerateLastCallTestCase(TestCase):
         lc_text = draft.latest_event(WriteupDocEvent, type="changed_last_call_text").text
         self.assertTrue("contains these normative down" in lc_text)
         self.assertTrue("rfc6666" in lc_text)
-        self.assertTrue("Independent Submission Editor stream" in lc_text)
+        self.assertTrue("Independent Submission" in lc_text)
 
         draft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'),relationship_id='downref-approval')
 

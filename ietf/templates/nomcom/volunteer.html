@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2021, All Rights Reserved #}
+{% load origin %}
+{% load bootstrap3 %}
+
+{% block title %}Volunteer for NomCom{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Volunteer for NomCom</h1>
+
+    {% if can_volunteer.exists %}
+      <form method="post" >
+        {% csrf_token %}
+
+        {% bootstrap_form form %}
+
+        {% buttons %}
+          <button type="submit" class="btn btn-primary">Submit</button>
+        {% endbuttons %}
+      </form>
+    {% endif %}
+
+    {% if already_volunteered.exists %}
+    <div class="alert alert-info" id="already-volunteered">
+      You have already volunteered for the {% for nc in already_volunteered %}{{nc.year}}/{{nc.year|add:1}}{% if not forloop.last %}, {% endif %}{% endfor %} Nominating Committee{{already_volunteered|pluralize}}.
+      To modify your volunteer status, contact the NomCom chair.
+    </div>
+
+    {% endif %}
+
+{% endblock %}
