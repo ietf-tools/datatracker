@@ -531,7 +531,7 @@ class IetfAuthTests(TestCase):
 
     def test_apikey_management(self):
         # Create a person with a role that will give at least one valid apikey
-        person =  RoleFactory(name_id='secr', group__acronym='secretariat').person
+        person =  RoleFactory(name_id='robot', group__acronym='secretariat').person
 
         url = urlreverse('ietf.ietfauth.views.apikey_index')
 

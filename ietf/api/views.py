@@ -91,7 +91,7 @@ class PersonalInformationExportView(DetailView, JsonExportMixin):
         return self.json_view(request, filter={'id':person.id}, expand=expand)
 
 
-@method_decorator((csrf_exempt, require_api_key, role_required('Secretariat')), name='dispatch')
+@method_decorator((csrf_exempt, require_api_key, role_required('Robot')), name='dispatch')
 class ApiV2PersonExportView(DetailView, JsonExportMixin):
     model = Person
 
