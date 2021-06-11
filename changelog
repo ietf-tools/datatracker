@@ -1,6 +1,6 @@
 ietfdb (7.32.0) ietf; urgency=high
 
-  ** Allow volunteering for NomCom within the datatracker
+  ** Allow volunteering for NomCom within the datatracker **
 
   * Merged in [19095] from rjsparks@nostrum.com:
     Handle bare numbers and rfc names with a space for the /doc/html view. 
@@ -20,7 +20,7 @@ ietfdb (7.32.0) ietf; urgency=high
 
 ietfdb (7.31.0) ietf; urgency=medium
 
-  ** Codesprint 110.1, bugfixes
+  ** Codesprint 110.1, bugfixes **
 
   * Merged in [18993] from housley@vigilsec.com:
     Add aliases for RGs in irtf.org and IAB programs in iab.org. Fixes 
@@ -108,7 +108,7 @@ ietfdb (7.31.0) ietf; urgency=medium
 
 ietfdb (7.30.0) ietf; urgency=medium
 
-  ** Bugfixes, adjustments to moving datatracker repository
+  ** Bugfixes, adjustments to moving datatracker repository **
 
   * Merged in [18999] from rjsparks@nostrum.com:
     Correct invalid date assumption in rfc8989 eligibility tests.
@@ -135,7 +135,7 @@ ietfdb (7.30.0) ietf; urgency=medium
 
 ietfdb (7.29.0) ietf; urgency=medium
 
-  ** RFC8989 eligibility rules, improved timezone support for upcoming meetings
+  ** RFC8989 eligibility rules, improved timezone support for upcoming meetings **
 
   * Merged in [18958] from jennifer@painless-security.com:
     Fix occasional failure in test_agenda_view_team_group_filter_toggle.  
