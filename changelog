@@ -1,3 +1,23 @@
+ietfdb (7.32.0) ietf; urgency=high
+
+  ** Allow volunteering for NomCom within the datatracker
+
+  * Merged in [19095] from rjsparks@nostrum.com:
+    Handle bare numbers and rfc names with a space for the /doc/html view. 
+    Fixes #1999.  
+
+  * Merged in [19100] from rjsparks@nostrum.com:
+    Update bin/daily to adjust for the change in exposing the iana mirror.  
+
+  * Merged in [19101] from rcross@amsl.com:
+    Fix /api/v2/person/person to work with Robot apikey.  
+
+  * Merged in [19104] from rjsparks@nostrum.com:
+    Allow people to volunteer for NomCom via the datatracker.  
+
+ -- Robert Sparks <rjsparks@nostrum.com>  11 Jun 2021 13:12:26 +0000
+
+
 ietfdb (7.31.0) ietf; urgency=medium
 
   ** Codesprint 110.1, bugfixes
