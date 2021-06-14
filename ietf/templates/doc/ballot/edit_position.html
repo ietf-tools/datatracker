@@ -17,7 +17,7 @@
     </p>
   {% endif %}
 
-  <form method="post">
+  <form method="post" id="ballot-form">
     {% csrf_token %}
 
     {% for field in form %}

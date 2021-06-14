@@ -358,6 +358,10 @@ pre {
   font-family: "PT Mono", monospace, "Courier";
 }
 
+#ballot-form textarea {
+  font-family: "PT Mono", monospace, "Courier";
+}
+
 #templateform textarea {
   font-family: "PT Mono", monospace, "Courier";
 }
@@ -1520,4 +1524,3 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 #current-time {
     display: inline-block;
 }
-
