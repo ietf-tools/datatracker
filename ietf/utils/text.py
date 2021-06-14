@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+import email
 import re
 import textwrap
 import unicodedata
@@ -193,3 +194,16 @@ def unwrap(s):
     
 def normalize_text(s):
     return re.sub(r'[\s\n\r\u2028\u2029]+', ' ', s, flags=re.U).strip()
+
+def parse_unicode(text):
+    "Decodes unicode string from string encoded according to RFC2047"
+
+    decoded_string, charset = email.header.decode_header(text)[0]
+    if charset is not None:
+        try:
+            text = decoded_string.decode(charset)
+        except UnicodeDecodeError:
+            pass
+    else:
+        text = decoded_string
+    return text

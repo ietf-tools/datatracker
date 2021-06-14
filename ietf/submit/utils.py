@@ -41,6 +41,7 @@ from ietf.utils import log
 from ietf.utils.accesstoken import generate_random_key
 from ietf.utils.draft import Draft
 from ietf.utils.mail import is_valid_email
+from ietf.utils.text import parse_unicode
 from ietf.person.name import unidecode_name
 
 
@@ -886,7 +887,7 @@ def accept_submission(request, submission, autopost=False):
         requires_prev_ad_approval = False
 
     # Partial message for submission event
-    sub_event_desc = 'Set submitter to \"%s\", replaces to %s' % (submission.submitter, pretty_replaces)
+    sub_event_desc = 'Set submitter to \"%s\", replaces to %s' % (parse_unicode(submission.submitter), pretty_replaces)
     docevent_desc = None
     address_list = []
     if requires_ad_approval or requires_prev_ad_approval:
