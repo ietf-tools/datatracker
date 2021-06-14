@@ -60,19 +60,24 @@
 
       {# using the same markup in both room labels and the actual days ensures they are aligned #}
       <div class="room-label-column">
-        {% for labels in room_labels %}
+        {% for day_data in days.values %}
           <div class="day">
             <div class="day-label">
               <strong>&nbsp;</strong><br>
               &nbsp;
             </div>
 
-            {% for room in labels %}
-              <div class="timeslots">
-                <div class="room-name">
-                  <strong>{{ room.name }}</strong><br>
-                  {% if room.capacity %}{{ room.capacity }} <i class="fa fa-user-o"></i>{% endif %}
-                </div>
+            {% for rgroup in day_data %}
+              <div class="room-group">
+                <div class="time-header"><div class="time-label"></div></div>
+                {% for room_data in rgroup %}{% with room_data.room as room %}
+                  <div class="timeslots">
+                    <div class="room-name">
+                      <strong>{{ room.name }}</strong><br>
+                      {% if room.capacity %}{{ room.capacity }} <i class="fa fa-user-o"></i>{% endif %}
+                    </div>
+                  </div>
+                {% endwith %}{% endfor %}
               </div>
             {% endfor %}
           </div>
@@ -80,29 +85,38 @@
       </div>
 
       <div class="day-flow">
-        {% for day in days %}
+        {% for day, day_data in days.items %}
           <div class="day">
             <div class="day-label">
-              <strong>{{ day.day|date:"l" }}</strong> <i class="fa fa-exchange swap-days" data-dayid="{{ day.day.isoformat }}" data-toggle="modal" data-target="#swap-days-modal"></i><br>
-              {{ day.day|date:"N j, Y" }}
+              <strong>{{ day|date:"l" }}</strong> <i class="fa fa-exchange swap-days" data-dayid="{{ day.isoformat }}" data-toggle="modal" data-target="#swap-days-modal"></i><br>
+              {{ day|date:"N j, Y" }}
             </div>
 
-            {% for room, timeslots in day.room_timeslots %}
-              <div class="timeslots" data-roomcapacity="{{ room.capacity }}">
+            {% for rgroup in day_data %}
+              <div class="room-group">
+                <div class="time-header">
+                  {# All rooms in a group have same timeslots; grab the first for the labels #}
+                  {% for t in rgroup.0.timeslots %}
+                    <div class="time-label" style="width: {{ t.layout_width }}rem"><span>{{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}</span></div>
+                  {% endfor %}
+                </div>
+                {% for room_data in rgroup %}{% with room_data.room as room %}
+                  <div class="timeslots" data-roomcapacity="{{ room.capacity }}">
+                    {% for t in room_data.timeslots %}
+                      <div id="timeslot{{ t.pk }}" class="timeslot {{ t.start_end_group }}" data-start="{{ t.time.isoformat }}" data-end="{{ t.end_time.isoformat }}" data-duration="{{ t.duration.total_seconds }}" data-scheduledatlabel="{{ t.time|date:"l G:i" }}-{{ t.end_time|date:"G:i" }}" style="width: {{ t.layout_width }}rem;">
+                        <div class="time-label">
+                          {{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}
+                        </div>
 
-                {% for t in timeslots %}
-                  <div id="timeslot{{ t.pk }}" class="timeslot {{ t.start_end_group }}" data-start="{{ t.time.isoformat }}" data-end="{{ t.end_time.isoformat }}" data-duration="{{ t.duration.total_seconds }}" data-scheduledatlabel="{{ t.time|date:"l G:i" }}-{{ t.end_time|date:"G:i" }}" style="width: {{ t.layout_width }}rem;">
-                    <div class="time-label">
-                      {{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}
-                    </div>
-
-                    <div class="drop-target">
-                      {% for assignment, session in t.session_assignments %}
-                        {% include "meeting/edit_meeting_schedule_session.html" %}
-                      {% endfor %}
-                    </div>
+                        <div class="drop-target">
+                          {% for assignment, session in t.session_assignments %}
+                            {% include "meeting/edit_meeting_schedule_session.html" %}
+                          {% endfor %}
+                        </div>
+                      </div>
+                    {% endfor %}
                   </div>
-                {% endfor %}
+                {% endwith %}{% endfor %}
               </div>
             {% endfor %}
           </div>
@@ -192,7 +206,7 @@
           <div class="modal-body">
             {% for day in days %}
               <label>
-                <input type="radio" name="target_day" value="{{ day.day.isoformat }}"> {{ day.day|date:"l, N j, Y" }}
+                <input type="radio" name="target_day" value="{{ day.isoformat }}"> {{ day|date:"l, N j, Y" }}
               </label>
             {% endfor %}
           </div>
