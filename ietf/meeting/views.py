@@ -16,7 +16,6 @@ import tarfile
 import tempfile
 import markdown2
 
-
 from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict
 from urllib.parse import unquote
@@ -495,8 +494,6 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
     for a in assignments:
         assignments_by_session[a.session_id].append(a)
 
-    rooms = meeting.room_set.filter(session_types__slug='regular').distinct().order_by("capacity")
-
     tombstone_states = ['canceled', 'canceledpa', 'resched']
 
     sessions = add_event_info_to_session_qs(
@@ -581,6 +578,145 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
             s.readonly = s.current_status in tombstone_states or any(a.schedule_id != schedule.pk for a in assignments_by_session.get(s.pk, []))
 
+    def prepare_timeslots_for_display(timeslots, rooms):
+        """Prepare timeslot data for template
+
+        Prepares timeslots for display by sorting into groups in a structure
+        that can be rendered by the template and by adding some data to the timeslot
+        instances. Currently adds a 'layout_width' property to each timeslot instance.
+        The layout_width is the width, in em, that should be used to style the timeslot's
+        width.
+
+        Rooms are partitioned into groups that have identical sets of timeslots
+        for the entire meeting.
+
+        The result of this method is an OrderedDict, days, keyed by the Date
+        of each day that has at least one timeslot. The value of days[day] is a
+        list with one entry for each group of rooms. Each entry is a list of
+        dicts with keys 'room' and 'timeslots'. The 'room' value is the room
+        instance and 'timeslots' is a list of timeslot instances for that room.
+
+        The format is more easily illustrated than explained:
+
+        days = OrderedDict(
+          Date(2021, 5, 27): [
+            [  # room group 1
+              {'room': <room1>, 'timeslots': [<room1 timeslot1>, <room1 timeslot2>]},
+              {'room': <room2>, 'timeslots': [<room2 timeslot1>, <room2 timeslot2>]},
+              {'room': <room3>, 'timeslots': [<room3 timeslot1>, <room3 timeslot2>]},
+            ],
+            [  # room group 2
+              {'room': <room4>, 'timeslots': [<room4 timeslot1>]},
+            ],
+          ],
+          Date(2021, 5, 28): [
+            [ # room group 1
+              {'room': <room1>, 'timeslots': [<room1 timeslot3>]},
+              {'room': <room2>, 'timeslots': [<room2 timeslot3>]},
+              {'room': <room3>, 'timeslots': [<room3 timeslot3>]},
+            ],
+            [ # room group 2
+              {'room': <room4>, 'timeslots': []},
+            ],
+          ],
+        )
+        """
+
+        # Populate room_data. This collects the timeslots for each room binned by
+        # day, plus data needed for sorting the rooms for display.
+        room_data = dict()
+        all_days = set()
+        # timeslots_qs is already sorted by location, name, and time
+        for t in timeslots:
+            if t.location not in rooms:
+                continue
+
+            t.layout_width = timedelta_to_css_ems(t.duration)
+            if t.location_id not in room_data:
+                room_data[t.location_id] = dict(
+                    timeslots_by_day=dict(),
+                    timeslot_count=0,
+                    start_and_duration=[],
+                    first_timeslot = t,
+                )
+            rd = room_data[t.location_id]
+            rd['timeslot_count'] += 1
+            rd['start_and_duration'].append((t.time, t.duration))
+            ttd = t.time.date()
+            all_days.add(ttd)
+            if ttd not in rd['timeslots_by_day']:
+                rd['timeslots_by_day'][ttd] = []
+            rd['timeslots_by_day'][ttd].append(t)
+
+        all_days = sorted(all_days)  # changes set to a list
+        # Note the maximum timeslot count for any room
+        max_timeslots = max(rd['timeslot_count'] for rd in room_data.values())
+
+        # Partition rooms into groups with identical timeslot arrangements.
+        # Start by discarding any roos that have no timeslots.
+        rooms_with_timeslots = [r for r in rooms if r.pk in room_data]
+        # Then sort the remaining rooms.
+        sorted_rooms = sorted(
+            rooms_with_timeslots,
+            key=lambda room: (
+                # First, sort regular session rooms ahead of others - these will usually
+                # have more timeslots than other room types.
+                0 if room_data[room.pk]['timeslot_count'] == max_timeslots else 1,
+                # Sort rooms with earlier timeslots ahead of later
+                room_data[room.pk]['first_timeslot'].time,
+                # Sort rooms with more sessions ahead of rooms with fewer
+                0 - room_data[room.pk]['timeslot_count'],
+                # Sort by list of starting time and duration so that groups with identical
+                # timeslot structure will be neighbors. The grouping algorithm relies on this!
+                room_data[room.pk]['start_and_duration'],
+                # Within each group, sort higher capacity rooms first.
+                room.capacity,
+                # Finally, sort alphabetically by name
+                room.name
+            )
+        )
+
+        # Rooms are now ordered so rooms with identical timeslot arrangements are neighbors.
+        # Walk the list, splitting these into groups.
+        room_groups = []
+        last_start_and_duration = None  # Used to watch for changes in start_and_duration
+        for room in sorted_rooms:
+            if last_start_and_duration != room_data[room.pk]['start_and_duration']:
+                room_groups.append([])  # start a new room_group
+                last_start_and_duration = room_data[room.pk]['start_and_duration']
+            room_groups[-1].append(room)
+
+        # Next, build the structure that will hold the data for the view. This makes it
+        # easier to arrange that every room has an entry for every day, even if there is
+        # no timeslot for that day. This makes the HTML template much easier to write.
+        # Use OrderedDicts instead of lists so that we can easily put timeslot data in the
+        # right place.
+        days = OrderedDict(
+            (
+                day,  # key in the Ordered Dict
+                [
+                    # each value is an OrderedDict of room group data
+                    OrderedDict(
+                        (room.pk, dict(room=room, timeslots=[]))
+                        for room in rg
+                    ) for rg in room_groups
+                ]
+            ) for day in all_days
+        )
+
+        # With the structure's skeleton built, now fill in the data. The loops must
+        # preserve the order of room groups and rooms within each group.
+        for rg_num, rgroup in enumerate(room_groups):
+            for room in rgroup:
+                for day, ts_for_day in room_data[room.pk]['timeslots_by_day'].items():
+                    days[day][rg_num][room.pk]['timeslots'] = ts_for_day
+
+        # Now convert the OrderedDict entries into lists since we don't need to
+        # do lookup by pk any more.
+        for day in days.keys():
+            days[day] = [list(rg.values()) for rg in days[day]]
+
+        return days
 
     if request.method == 'POST':
         if not can_edit:
@@ -660,34 +796,11 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
         return HttpResponse("Invalid parameters", status=400)
 
-    # prepare timeslot layout
+    # Show only rooms that have regular sessions
+    rooms = meeting.room_set.filter(session_types__slug='regular')
 
-    timeslots_by_room_and_day = defaultdict(list)
-    room_has_timeslots = set()
-    for t in timeslots_qs:
-        room_has_timeslots.add(t.location_id)
-        timeslots_by_room_and_day[(t.location_id, t.time.date())].append(t)
-
-    days = []
-    for day in sorted(set(t.time.date() for t in timeslots_qs)):
-        room_timeslots = []
-        for r in rooms:
-            if r.pk not in room_has_timeslots:
-                continue
-
-            timeslots = []
-            for t in timeslots_by_room_and_day.get((r.pk, day), []):
-                t.layout_width = timedelta_to_css_ems(t.end_time() - t.time)
-                timeslots.append(t)
-
-            room_timeslots.append((r, timeslots))
-
-        days.append({
-            'day': day,
-            'room_timeslots': room_timeslots,
-        })
-
-    room_labels = [[r for r in rooms if r.pk in room_has_timeslots] for i in range(len(days))]
+    # Construct timeslot data for the template to render
+    days = prepare_timeslots_for_display(timeslots_qs, rooms)
 
     # possible timeslot start/ends
     timeslot_groups = defaultdict(set)
@@ -761,7 +874,6 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'can_edit_properties': can_edit or secretariat,
         'secretariat': secretariat,
         'days': days,
-        'room_labels': room_labels,
         'timeslot_groups': sorted((d, list(sorted(t_groups))) for d, t_groups in timeslot_groups.items()),
         'unassigned_sessions': unassigned_sessions,
         'session_parents': session_parents,

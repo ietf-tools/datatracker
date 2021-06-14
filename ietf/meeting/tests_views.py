@@ -49,7 +49,7 @@ from ietf.utils.text import xslugify
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import GroupFactory, GroupEventFactory, RoleFactory
 from ietf.meeting.factories import ( SessionFactory, SessionPresentationFactory, ScheduleFactory,
-    MeetingFactory, FloorPlanFactory, TimeSlotFactory, SlideSubmissionFactory )
+    MeetingFactory, FloorPlanFactory, TimeSlotFactory, SlideSubmissionFactory, RoomFactory )
 from ietf.doc.factories import DocumentFactory, WgDraftFactory
 from ietf.submit.tests import submission_file
 from ietf.utils.test_utils import assert_ical_response_is_valid
@@ -889,6 +889,86 @@ class MeetingTests(TestCase):
         # deleted slides should not be found
         for slide in deleted_slides:
             self.assertFalse(q('ul li a:contains("%s")' % slide.title))
+
+
+class EditMeetingScheduleTests(TestCase):
+    """Tests of the meeting editor view
+
+    This has tests in tests_js.py as well.
+    """
+    def test_room_grouping(self):
+        """Blocks of rooms in the editor should have identical timeslots"""
+        # set up a meeting, but we'll construct our own timeslots/rooms
+        meeting = MeetingFactory(type_id='ietf', populate_schedule=False)
+        sched = ScheduleFactory(meeting=meeting)
+
+        # Make groups of rooms with timeslots identical within a group, distinct between groups
+        times = [
+            [datetime.time(11,0), datetime.time(12,0), datetime.time(13,0)],
+            [datetime.time(11,0), datetime.time(12,0), datetime.time(13,0)],  # same times, but durations will differ
+            [datetime.time(11,30), datetime.time(12, 0), datetime.time(13,0)],  # different time
+            [datetime.time(12,0)],  # different number of timeslots
+        ]
+        durations = [
+            [30, 60, 90],
+            [60, 60, 90],
+            [30, 60, 90],
+            [60],
+        ]
+        # check that times and durations are same-sized arrays
+        self.assertEqual(len(times), len(durations))
+        for time_row, duration_row in zip(times, durations):
+            self.assertEqual(len(time_row), len(duration_row))
+
+        # Create an array of room groups, each with rooms_per_group Rooms in it.
+        # Assign TimeSlots according to the times/durations above to each Room.
+        room_groups = []
+        rooms_in_group = 1  # will be incremented with each group
+        for time_row, duration_row in zip(times, durations):
+            room_groups.append(RoomFactory.create_batch(rooms_in_group, meeting=meeting))
+            rooms_in_group += 1  # put a different number of rooms in each group to help identify errors in grouping
+            for time, duration in zip(time_row, duration_row):
+                for room in room_groups[-1]:
+                    TimeSlotFactory(
+                        meeting=meeting,
+                        location=room,
+                        time=datetime.datetime.combine(meeting.date, time),
+                        duration=datetime.timedelta(minutes=duration),
+                    )
+
+        # Now retrieve the edit meeting schedule page
+        url = urlreverse('ietf.meeting.views.edit_meeting_schedule',
+                         kwargs=dict(num=meeting.number, owner=sched.owner.email(), name=sched.name))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        q = PyQuery(r.content)
+        day_divs = q('div.day')
+        # There's only one day with TimeSlots. This means there will be two divs with class 'day':
+        # the first is the room label column, the second is the TimeSlot grid.
+        # Using eq() instead of [] gives us PyQuery objects instead of Elements
+        label_divs = day_divs.eq(0).find('div.room-group')
+        self.assertEqual(len(label_divs), len(room_groups))
+        room_group_divs = day_divs.eq(1).find('div.room-group')
+        self.assertEqual(len(room_group_divs), len(room_groups))
+        for rg, l_div, rg_div in zip(
+                room_groups,
+                label_divs.items(),  # items() gives us PyQuery objects
+                room_group_divs.items(),  # items() gives us PyQuery objects
+        ):
+            # Check that room labels are correctly grouped
+            self.assertCountEqual(
+                [div.text() for div in l_div.find('div.room-name').items()],
+                [room.name for room in rg],
+            )
+
+            # And that the time labels are correct. Just check that the individual timeslot labels agree with
+            # the time-header above each room group.
+            time_header_labels = rg_div.find('div.time-header div.time-label').text()
+            timeslot_rows = rg_div.find('div.timeslots')
+            for row in timeslot_rows.items():
+                time_labels = row.find('div.time-label').text()
+                self.assertEqual(time_labels, time_header_labels)
 
 
 class ReorderSlidesTests(TestCase):

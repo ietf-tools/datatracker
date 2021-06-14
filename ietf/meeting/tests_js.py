@@ -24,7 +24,7 @@ from ietf.group import colors
 from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
-from ietf.meeting.factories import MeetingFactory, SessionFactory, TimeSlotFactory
+from ietf.meeting.factories import MeetingFactory, RoomFactory, SessionFactory, TimeSlotFactory
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.models import (Schedule, SchedTimeSessAssignment, Session,
                                  Room, TimeSlot, Constraint, ConstraintName,
@@ -273,6 +273,9 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         # Create an IETF meeting...
         meeting = MeetingFactory(type_id='ietf')
 
+        # ...add a room that has no timeslots to be sure it's handled...
+        RoomFactory(meeting=meeting)
+
         # ...and sessions for the groups. Use durations that are in a different order than
         # area or name. The wgs list is in ascending acronym order, so use descending durations.
         sessions = []
@@ -296,7 +299,6 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         url = self.absreverse('ietf.meeting.views.edit_meeting_schedule', kwargs=dict(num=meeting.number))
         self.login('secretary')
         self.driver.get(url)
-
 
         select = self.driver.find_element_by_name('sort_unassigned')
         options = {

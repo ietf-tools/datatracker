@@ -131,6 +131,14 @@ class RoomFactory(factory.DjangoModelFactory):
     meeting = factory.SubFactory(MeetingFactory)
     name = factory.Faker('name')
 
+    @factory.post_generation
+    def session_types(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
+        """Prep session types m2m relationship for room, defaulting to 'regular'"""
+        if create:
+            session_types = extracted if extracted is not None else ['regular']
+            for st in session_types:
+                obj.session_types.add(st)
+
 
 class TimeSlotFactory(factory.DjangoModelFactory):
     class Meta:

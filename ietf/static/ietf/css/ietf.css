@@ -1067,6 +1067,30 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   justify-content: flex-start;
 }
 
+.edit-meeting-schedule .edit-grid .room-group:not(:last-child) {
+    margin-bottom: 1em;
+}
+
+.edit-meeting-schedule .edit-grid .time-header {
+    position: relative;
+    height: 1.5em;
+    padding-bottom: 0.15em;
+}
+
+.edit-meeting-schedule .edit-grid .time-header .time-label {
+    display: inline-block;
+    position: relative;
+    width: 100%;
+    align-items: center;
+}
+
+.edit-meeting-schedule .edit-grid .time-header .time-label span {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    color: #444444;
+}
+
 .edit-meeting-schedule .edit-grid .timeslots {
   position: relative;
   height: 4.5em;
