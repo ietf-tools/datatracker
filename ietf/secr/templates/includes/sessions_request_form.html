@@ -23,33 +23,18 @@
              <table>
                <tr>
                  <td colspan="2">Other WGs that included {{ group.name }} in their conflict lists:</td>
-                 <td>{{ session_conflicts }}</td>
+                 <td>{{ session_conflicts.inbound }}</td>
                </tr>
-               <tr class="bg1">
-                 <td rowspan="3" valign="top" width="220">WG Sessions:<br>You may select multiple WGs within each priority</td>
-                 <td width="320">Chair Conflict:</td>
-                 <td>{{ form.wg_selector1 }}
-                     {% comment %}<input type="button" value="Delete the last entry" onClick="delete_last1(); return handleconflictfield(1);"><br>{% endcomment %}
-                     <input type="button" value="Delete the last entry" onClick="delete_last1(); return 1;"><br>
-                     {{ form.conflict1.errors }}{{ form.conflict1 }}
-                 </td>
-               </tr>
-               <tr class="bg1">
-                 <td>Technology Overlap:</td>
-                 <td>{{ form.wg_selector2 }}
-                     {% comment %}<input type="button" value="Delete the last entry" onClick="delete_last2(); return handleconflictfield(2);"><br>{% endcomment %}
-                     <input type="button" value="Delete the last entry" onClick="delete_last2(); return 1;"><br>
-                     {{ form.conflict2.errors }}{{ form.conflict2 }}
-                 </td>
-               </tr>
-               <tr class="bg1">
-                 <td>Key Participant Conflict:</td>
-                 <td>{{ form.wg_selector3 }}
-                     {% comment %}<input type="button" value="Delete the last entry" onClick="delete_last3(); return handleconflictfield(3);"><br>{% endcomment %}
-                     <input type="button" value="Delete the last entry" onClick="delete_last3(); return 1;"><br>
-                     {{ form.conflict3.errors }}{{ form.conflict3 }}
-                 </td>
-               </tr>
+               {% for cname, cfield, cselector  in form.wg_constraint_fields %}
+                 <tr class="bg1">
+                   {% if forloop.first %}<td rowspan="3" valign="top" width="220">WG Sessions:<br>You may select multiple WGs within each category</td>{% endif %}
+                   <td width="320">{{ cname|title }}</td>
+                   <td>{{ cselector }}
+                     <input type="button" id="wg_delete_{{ cname.slug }}" value="Delete the last entry" onClick="ietf_sessions.delete_wg_constraint_clicked('{{ cname.slug }}')"><br>
+                     {{ cfield.errors }}{{ cfield }}
+                   </td>
+                 </tr>
+               {% endfor %}
                <tr>
                  <td colspan="2">BOF Sessions:</td>
                  <td>If the sessions can not be found in the fields above, please enter free form requests in the Special Requests field below.</td>
@@ -81,8 +66,8 @@
                  Joint session with:<br />
                  (To request one session for multiple WGs together.)
              </td>
-             <td>{{ form.wg_selector4 }}
-                 <input type="button" value="Delete the last entry" onClick="delete_last_joint_with_groups(); return 1;"><br>
+             <td>{{ form.joint_with_groups_selector }}
+                 <input type="button" value="Delete the last entry" onClick="ietf_sessions.delete_last_joint_with_groups(); return 1;"><br>
                  {{ form.joint_with_groups.errors }}{{ form.joint_with_groups }}
              </td>
            </tr>
@@ -96,7 +81,7 @@
            {% endif %}
 
            <tr class="bg2">
-             <td valign="top">Special Requests:<br />&nbsp;<br />i.e. restrictions on meeting times / days, etc.</td>  (limit 200 characters)</td>
+             <td valign="top">Special Requests:<br />&nbsp;<br />i.e. restrictions on meeting times / days, etc.<br />  (limit 200 characters)</td>
              <td>{{ form.comments.errors }}{{ form.comments }}</td>
            </tr>
          </table>

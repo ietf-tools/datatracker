@@ -3,7 +3,7 @@
 
 
 import datetime
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 from django.conf import settings
 from django.contrib import messages
@@ -56,7 +56,9 @@ def get_initial_session(sessions, prune_conflicts=False):
 
     meeting = sessions[0].meeting
     group = sessions[0].group
-    conflicts = group.constraint_source_set.filter(meeting=meeting)
+
+    constraints = group.constraint_source_set.filter(meeting=meeting)  # all constraints with this group as source
+    conflicts = constraints.filter(name__is_group_conflict=True)  # only the group conflict constraints
 
     # even if there are three sessions requested, the old form has 2 in this field
     initial['num_session'] = min(sessions.count(), 2)
@@ -73,19 +75,23 @@ def get_initial_session(sessions, prune_conflicts=False):
 
     def valid_conflict(conflict):
         return conflict.target != sessions[0].group and allowed_conflicting_groups().filter(pk=conflict.target_id).exists()
+    if prune_conflicts:
+        conflicts = [c for c in conflicts if valid_conflict(c)]
 
-    initial['conflict1'] = ' '.join(c.target.acronym for c in conflicts.filter(name__slug='conflict') if not prune_conflicts or valid_conflict(c))
-    initial['conflict2'] = ' '.join(c.target.acronym for c in conflicts.filter(name__slug='conflic2') if not prune_conflicts or valid_conflict(c))
-    initial['conflict3'] = ' '.join(c.target.acronym for c in conflicts.filter(name__slug='conflic3') if not prune_conflicts or valid_conflict(c))
+    conflict_name_ids = set(c.name_id for c in conflicts)
+    for name_id in conflict_name_ids:
+        target_acros = [c.target.acronym for c in conflicts if c.name_id == name_id]
+        initial['constraint_{}'.format(name_id)] = ' '.join(target_acros)
+
     initial['comments'] = sessions[0].comments
     initial['resources'] = sessions[0].resources.all()
     initial['bethere'] = [x.person for x in sessions[0].constraints().filter(name='bethere').select_related("person")]
-    wg_adjacent = conflicts.filter(name__slug='wg_adjacent')
+    wg_adjacent = constraints.filter(name__slug='wg_adjacent')
     initial['adjacent_with_wg'] = wg_adjacent[0].target.acronym if wg_adjacent else None
-    time_relation = conflicts.filter(name__slug='time_relation')
+    time_relation = constraints.filter(name__slug='time_relation')
     initial['session_time_relation'] = time_relation[0].time_relation if time_relation else None
     initial['session_time_relation_display'] = time_relation[0].get_time_relation_display if time_relation else None
-    timeranges = conflicts.filter(name__slug='timerange')
+    timeranges = constraints.filter(name__slug='timerange')
     initial['timeranges'] = timeranges[0].timeranges.all() if timeranges else []
     initial['timeranges_display'] = [t.desc for t in initial['timeranges']]
     for idx, session in enumerate(sessions):
@@ -180,13 +186,14 @@ def send_notification(group,meeting,login,session,action):
               context,
               cc=cc_list)
 
-def session_conflicts_as_string(group, meeting):
+def inbound_session_conflicts_as_string(group, meeting):
     '''
     Takes a Group object and Meeting object and returns a string of other groups which have
     a conflict with this one
     '''
-    groups = group.constraint_target_set.filter(meeting=meeting, name__in=['conflict', 'conflic2', 'conflic3'])
-    group_list = [g.source.acronym for g in groups]
+    constraints = group.constraint_target_set.filter(meeting=meeting, name__is_group_conflict=True)
+    group_set = set(constraints.values_list('source__acronym', flat=True))  # set to de-dupe
+    group_list = sorted(group_set)  # give a consistent order
     return ', '.join(group_list)
 
 # -------------------------------------------------
@@ -272,7 +279,7 @@ def confirm(request, acronym):
     meeting = get_meeting(days=14)
     FormClass = get_session_form_class()
 
-    form = FormClass(group, request.POST, hidden=True)
+    form = FormClass(group, meeting, request.POST, hidden=True)
     form.is_valid()
     
     login = request.user.person
@@ -293,11 +300,13 @@ def confirm(request, acronym):
     if form.cleaned_data.get('timeranges'):
         session_data['timeranges_display'] = [t.desc for t in form.cleaned_data['timeranges']]
     session_data['resources'] = [ ResourceAssociation.objects.get(pk=pk) for pk in request.POST.getlist('resources') ]
-    
-    button_text = request.POST.get('submit', '')
-    if button_text == 'Cancel':
-        messages.success(request, 'Session Request has been cancelled')
-        return redirect('ietf.secr.sreq.views.main')
+
+    # extract wg conflict constraint data for the view
+    outbound_conflicts = []
+    for conflictname, cfield_id in form.wg_constraint_field_ids():
+        conflict_groups = form.cleaned_data[cfield_id]
+        if len(conflict_groups) > 0:
+            outbound_conflicts.append(dict(name=conflictname, groups=conflict_groups))
 
     button_text = request.POST.get('submit', '')
     if button_text == 'Cancel':
@@ -341,9 +350,8 @@ def confirm(request, acronym):
                 session_changed(new_session)
 
         # write constraint records
-        save_conflicts(group,meeting,form.data.get('conflict1',''),'conflict')
-        save_conflicts(group,meeting,form.data.get('conflict2',''),'conflic2')
-        save_conflicts(group,meeting,form.data.get('conflict3',''),'conflic3')
+        for conflictname, cfield_id in form.wg_constraint_field_ids():
+            save_conflicts(group, meeting, form.data.get(cfield_id, ''), conflictname.slug)
         save_conflicts(group, meeting, form.data.get('adjacent_with_wg', ''), 'wg_adjacent')
 
         if form.cleaned_data.get('session_time_relation'):
@@ -372,7 +380,10 @@ def confirm(request, acronym):
         return redirect('ietf.secr.sreq.views.main')
 
     # POST from request submission
-    session_conflicts = session_conflicts_as_string(group, meeting)
+    session_conflicts = dict(
+        outbound=outbound_conflicts,  # each is a dict with name and groups as keys
+        inbound=inbound_session_conflicts_as_string(group, meeting),
+    )
 
     return render(request, 'sreq/confirm.html', {
         'form': form,
@@ -418,8 +429,11 @@ def edit(request, acronym, num=None):
     is_locked = check_app_locked(meeting=meeting)
     if is_locked:
         messages.warning(request, "The Session Request Tool is closed")
-        
-    session_conflicts = session_conflicts_as_string(group, meeting)
+
+    # Only need the inbound conflicts here, the form itself renders the outbound
+    session_conflicts = dict(
+        inbound=inbound_session_conflicts_as_string(group, meeting),
+    )
     login = request.user.person
 
     session = Session()
@@ -431,7 +445,7 @@ def edit(request, acronym, num=None):
         if button_text == 'Cancel':
             return redirect('ietf.secr.sreq.views.view', acronym=acronym)
 
-        form = FormClass(group, request.POST, initial=initial)
+        form = FormClass(group, meeting, request.POST, initial=initial)
         if form.is_valid():
             if form.has_changed():
                 # might be cleaner to simply delete and rewrite all records (but maintain submitter?)
@@ -524,15 +538,13 @@ def edit(request, acronym, num=None):
                     sessions.update(attendees=form.cleaned_data['attendees'])
                 if 'comments' in form.changed_data:
                     sessions.update(comments=form.cleaned_data['comments'])
-                if 'conflict1' in form.changed_data:
-                    Constraint.objects.filter(meeting=meeting,source=group,name='conflict').delete()
-                    save_conflicts(group,meeting,form.cleaned_data['conflict1'],'conflict')
-                if 'conflict2' in form.changed_data:
-                    Constraint.objects.filter(meeting=meeting,source=group,name='conflic2').delete()
-                    save_conflicts(group,meeting,form.cleaned_data['conflict2'],'conflic2')
-                if 'conflict3' in form.changed_data:
-                    Constraint.objects.filter(meeting=meeting,source=group,name='conflic3').delete()
-                    save_conflicts(group,meeting,form.cleaned_data['conflict3'],'conflic3')
+
+                # Handle constraints
+                for cname, cfield_id in form.wg_constraint_field_ids():
+                    if cfield_id in form.changed_data:
+                        Constraint.objects.filter(meeting=meeting, source=group, name=cname.slug).delete()
+                        save_conflicts(group, meeting, form.cleaned_data[cfield_id], cname.slug)
+
                 if 'adjacent_with_wg' in form.changed_data:
                     Constraint.objects.filter(meeting=meeting, source=group, name='wg_adjacent').delete()
                     save_conflicts(group, meeting, form.cleaned_data['adjacent_with_wg'], 'wg_adjacent')
@@ -577,10 +589,17 @@ def edit(request, acronym, num=None):
             messages.success(request, 'Session Request updated')
             return redirect('ietf.secr.sreq.views.view', acronym=acronym)
 
-    else:
+    else:  # method is not POST
+        # gather outbound conflicts for initial value
+        outbound_constraints = defaultdict(list)
+        for obc in group.constraint_source_set.filter(meeting=meeting, name__is_group_conflict=True):
+            outbound_constraints[obc.name.slug].append(obc.target.acronym)
+        for slug, groups in outbound_constraints.items():
+            initial['constraint_{}'.format(slug)] = ' '.join(groups)
+
         if not sessions:
             return redirect('ietf.secr.sreq.views.new', acronym=acronym)
-        form = FormClass(group, initial=initial)
+        form = FormClass(group, meeting, initial=initial)
 
     return render(request, 'sreq/edit.html', {
         'is_locked': is_locked,
@@ -666,7 +685,7 @@ def new(request, acronym):
     '''
     group = get_object_or_404(Group, acronym=acronym)
     meeting = get_meeting(days=14)
-    session_conflicts = session_conflicts_as_string(group, meeting)
+    session_conflicts = dict(inbound=inbound_session_conflicts_as_string(group, meeting))
     is_virtual = meeting.number in settings.SECR_VIRTUAL_MEETINGS,
     FormClass = get_session_form_class()
 
@@ -681,7 +700,7 @@ def new(request, acronym):
         if button_text == 'Cancel':
             return redirect('ietf.secr.sreq.views.main')
 
-        form = FormClass(group, request.POST)
+        form = FormClass(group, meeting, request.POST)
         if form.is_valid():
             return confirm(request, acronym)
 
@@ -705,12 +724,12 @@ def new(request, acronym):
         add_essential_people(group,initial)
         if 'resources' in initial:
             initial['resources'] = [x.pk for x in initial['resources']]
-        form = FormClass(group, initial=initial)
+        form = FormClass(group, meeting, initial=initial)
 
     else:
         initial={}
         add_essential_people(group,initial)
-        form = FormClass(group, initial=initial)
+        form = FormClass(group, meeting, initial=initial)
 
     return render(request, 'sreq/new.html', {
         'meeting': meeting,
@@ -840,8 +859,19 @@ def view(request, acronym, num = None):
         'act_by': e.by,
     } for e in sessions[0].schedulingevent_set.select_related('status', 'by')]
 
-    # other groups that list this group in their conflicts
-    session_conflicts = session_conflicts_as_string(group, meeting)
+    # gather outbound conflicts
+    outbound_dict = OrderedDict()
+    for obc in group.constraint_source_set.filter(meeting=meeting, name__is_group_conflict=True):
+        if obc.name.slug not in outbound_dict:
+            outbound_dict[obc.name.slug] = []
+        outbound_dict[obc.name.slug].append(obc.target.acronym)
+
+    session_conflicts = dict(
+        inbound=inbound_session_conflicts_as_string(group, meeting),
+        outbound=[dict(name=ConstraintName.objects.get(slug=slug), groups=' '.join(groups))
+                  for slug, groups in outbound_dict.items()],
+    )
+
     show_approve_button = False
 
     # if sessions include a 3rd session waiting approval and the user is a secretariat or AD of the group

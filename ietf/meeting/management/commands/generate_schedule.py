@@ -583,7 +583,7 @@ class Session(object):
         self.last_cost = None
 
         for constraint_db in constraints_db:
-            if constraint_db.name.slug in ['conflict', 'conflic2', 'conflic3']:
+            if constraint_db.name.is_group_conflict:
                 self.conflict_groups[constraint_db.target.acronym] += constraint_db.name.penalty
             elif constraint_db.name.slug == 'bethere':
                 self.conflict_people.add(constraint_db.person.pk)

@@ -655,9 +655,7 @@ table#sessions-new-table td {
     width: 3em;
 }
 
-#id_conflict1 { width: 37em; }
-#id_conflict2 { width: 37em; }
-#id_conflict3 { width: 37em; }
+input.wg_constraint { width: 37em; }
 
 ul.session-buttons {
     padding-left: 2px;

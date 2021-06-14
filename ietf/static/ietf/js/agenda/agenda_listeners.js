@@ -839,7 +839,7 @@ function group_name_or_empty(constraint) {
 function draw_constraints(session) {
 
     if("conflicts" in session) {
-        var display = { 'conflict':'1' , 'conflic2':'2' , 'conflic3':'3' };
+        var display = agenda_globals.group_conflict_labels;
         var group_icons = "";
         var group_set = {};
         $.each(session.conflicts, function(index) {
