@@ -16,6 +16,7 @@ from ietf.group.models import Group
 from ietf.message.models import Message
 from ietf.name.models import DraftSubmissionStateName, FormalLanguageName
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
+from ietf.utils.text import parse_unicode
 from ietf.utils.models import ForeignKey
 
 
@@ -25,7 +26,7 @@ def parse_email_line(line):
     email.utils.parseaddr() but return a dictionary
     """
     name, addr = email.utils.parseaddr(line) if '@' in line else (line, '')
-    return dict(name=name, email=addr)
+    return dict(name=parse_unicode(name), email=addr)
 
 class Submission(models.Model):
     state = ForeignKey(DraftSubmissionStateName)
