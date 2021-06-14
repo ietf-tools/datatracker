@@ -24,7 +24,7 @@ from ietf.submit.utils import expirable_submissions, expire_submission
 from ietf.doc.factories import DocumentFactory, WgDraftFactory, IndividualDraftFactory
 from ietf.doc.models import ( Document, DocAlias, DocEvent, State,
     BallotPositionDocEvent, DocumentAuthor, SubmissionDocEvent )
-from ietf.doc.utils import create_ballot_if_not_open, can_edit_docextresources
+from ietf.doc.utils import create_ballot_if_not_open, can_edit_docextresources, update_action_holders
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group
 from ietf.group.utils import setup_default_community_list_for_group
@@ -479,6 +479,14 @@ class SubmitTests(TestCase):
 
     def submit_existing(self, formats, change_authors=True, group_type='wg', stream_type='ietf'):
         # submit new revision of existing -> supply submitter info -> prev authors confirm
+
+        def _assert_authors_are_action_holders(draft, expect=True):
+            for author in draft.authors():
+                if expect:
+                    self.assertIn(author, draft.action_holders.all())
+                else:
+                    self.assertNotIn(author, draft.action_holders.all())
+
         if stream_type == 'ietf':
             ad = Person.objects.get(user__username='ad')
             if group_type == 'area':
@@ -489,10 +497,18 @@ class SubmitTests(TestCase):
                 RoleFactory(name_id='ad',group=area,person=ad)
                 group = GroupFactory(type_id=group_type, parent=area, acronym='mars')
             draft = DocumentFactory(type_id='draft', group=group, stream_id=stream_type, ad=ad, authors=PersonFactory.create_batch(1))
-            draft.set_state(State.objects.get(type_id='draft-stream-ietf',slug='wg-doc'))
+            wg_doc_state = State.objects.get(type_id='draft-stream-ietf',slug='wg-doc')
+            draft.set_state(wg_doc_state)
+            update_action_holders(draft, new_state=wg_doc_state)
 
             # pretend IANA reviewed it
-            draft.set_state(State.objects.get(used=True, type="draft-iana-review", slug="not-ok"))
+            not_ok_state = State.objects.get(used=True, type="draft-iana-review", slug="not-ok")
+            draft.set_state(not_ok_state)
+            update_action_holders(
+                draft,
+                prev_state=State.objects.get(used=True, type="draft-iana-review", slug="changed"),
+                new_state=not_ok_state,
+            )
 
             # pretend it was approved to check that we notify the RFC Editor
             e = DocEvent(type="iesg_approved", doc=draft, rev=draft.rev)
@@ -531,6 +547,7 @@ class SubmitTests(TestCase):
 
         # Set the revision needed tag
         draft.tags.add("need-rev")
+        update_action_holders(draft, new_tags=draft.tags.all())
 
         name = draft.name
         rev = "%02d" % (int(draft.rev) + 1)
@@ -542,8 +559,11 @@ class SubmitTests(TestCase):
             f.write("a" * 2000)
 
         old_docevents = list(draft.docevent_set.all())
+        _assert_authors_are_action_holders(draft, True)  # authors should be action holders prior to the test
 
         status_url, author = self.do_submission(name, rev, group, formats, author=prev_author.person)
+
+        _assert_authors_are_action_holders(draft, True)  # still waiting for author confirmation
 
         # supply submitter info, then previous authors get a confirmation email
         mailbox_before = len(outbox)
@@ -553,6 +573,7 @@ class SubmitTests(TestCase):
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "The submission is pending approval by the authors")
+        _assert_authors_are_action_holders(draft, True)  # still waiting for author confirmation
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         confirm_email = outbox[-1]
@@ -592,6 +613,7 @@ class SubmitTests(TestCase):
         self.assertEqual(r.status_code, 302)
 
         new_docevents = draft.docevent_set.exclude(pk__in=[event.pk for event in old_docevents])
+        _assert_authors_are_action_holders(draft, False)  # confirmed and posted, authors no longer hold action
 
         # check we have document events 
         doc_events = new_docevents.filter(type__in=["new_submission", "added_comment"])
@@ -605,30 +627,44 @@ class SubmitTests(TestCase):
         #
         docevents = list(new_docevents.order_by("-time", "-id"))
         # Latest events are first (this is the default, but we make it explicit)
-        # Assert event content in chronological order:
 
-        def inspect_docevents(docevents, event_delta, type, be_in_desc, by_name):
-            self.assertEqual(docevents[event_delta].type, type)
-            self.assertIn(be_in_desc, docevents[event_delta].desc)
-            self.assertEqual(docevents[event_delta].by.name, by_name)
+        def inspect_docevents(docevents, event_delta, event_type, be_in_desc, by_name):
+            self.assertEqual(docevents[event_delta].type, event_type,
+                             'Unexpected event type for event_delta={}'.format(event_delta))
+            self.assertIn(be_in_desc, docevents[event_delta].desc,
+                          'Expected text not found for event_delta={}'.format(event_delta))
+            self.assertEqual(docevents[event_delta].by.name, by_name,
+                             'Unexpected name for event_delta={}'.format(event_delta))
             if len(docevents) > event_delta + 1:
-                self.assertGreater(docevents[event_delta].id, docevents[event_delta+1].id)
+                self.assertGreater(docevents[event_delta].id, docevents[event_delta+1].id,
+                                   'Event out of order for event_delta={}'.format(event_delta))
 
+        # Assert event content in chronological order:
         if draft.stream_id == 'ietf':
-            inspect_docevents(docevents, 5, "new_submission", "Uploaded new revision", "Submitter Name")
-            inspect_docevents(docevents, 4, "new_submission", "Request for posting confirmation", "(System)")
-            inspect_docevents(docevents, 3, "new_submission", "New version approved", "(System)")
-            inspect_docevents(docevents, 2, "new_revision", "New version available", "Submitter Name")
-            inspect_docevents(docevents, 1, "changed_state", "IANA Review", "(System)")
-            inspect_docevents(docevents, 0, "changed_document", "AD Followup", "(System)")
+            expected_docevents = [
+                ("new_submission", "Uploaded new revision", "Submitter Name"),
+                ("new_submission", "Request for posting confirmation", "(System)"),
+                ("new_submission", "New version approved", "(System)"),
+                ("new_revision", "New version available", "Submitter Name"),
+                ("changed_state", "IANA Review", "(System)"),
+                ("changed_document", "AD Followup", "(System)"),
+                ("changed_action_holders", "IESG state changed", "(System)"),
+            ]
         elif draft.stream_id in ('ise', 'irtf', 'iab'):
-            inspect_docevents(docevents, 4, "new_submission", "Uploaded new revision", "Submitter Name")
-            inspect_docevents(docevents, 3, "new_submission", "Request for posting confirmation", "(System)")
-            inspect_docevents(docevents, 2, "new_submission", "New version approved", "(System)")
-            inspect_docevents(docevents, 1, "new_revision", "New version available", "Submitter Name")
-            inspect_docevents(docevents, 0, "changed_document", "tag cleared", "(System)")
+            expected_docevents = [
+                ("new_submission", "Uploaded new revision", "Submitter Name"),
+                ("new_submission", "Request for posting confirmation", "(System)"),
+                ("new_submission", "New version approved", "(System)"),
+                ("new_revision", "New version available", "Submitter Name"),
+                ("changed_document", "tag cleared", "(System)"),
+                ("changed_action_holders", "IESG state changed", "(System)"),
+            ]
         else:
-            pass
+            expected_docevents = []  # empty list will skip the docevent test entirely
+
+        # go through event list in reverse so newest gets index 0
+        for event_delta, (event_type, be_in_desc, by_name) in enumerate(expected_docevents[::-1]):
+            inspect_docevents(docevents, event_delta, event_type, be_in_desc, by_name)
 
         self.assertTrue(not os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, old_rev))))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "%s-%s.txt" % (name, old_rev))))
