@@ -1165,10 +1165,12 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 .edit-meeting-schedule .session.selected {
   cursor: grabbing;
   outline: #0000ff solid 0.2em; /* blue, width matches margin on .session */
+  z-index: 2; /* render above timeslot outlines */
 }
 
 .edit-meeting-schedule .session.other-session-selected {
   outline: #00008b solid 0.2em; /* darkblue, width matches margin on .session */
+  z-index: 2; /* render above timeslot outlines */
 }
 
 .edit-meeting-schedule .read-only .session.selected {
@@ -1224,8 +1226,13 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   margin-left: 0.1em;
 }
 
-.edit-meeting-schedule .session .session-label.bof-session {
-  font-style: italic;
+.edit-meeting-schedule .session .session-label .bof-tag {
+    font-style: normal;
+    font-size: smaller;
+    color: #8b0000;
+    font-weight: bold;
+    float: right;
+    margin-right: 0.2em;
 }
 
 .edit-meeting-schedule .session.too-many-attendees .attendees {
