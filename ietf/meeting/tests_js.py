@@ -171,10 +171,31 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         s1_element = self.driver.find_element_by_css_selector('#session{}'.format(s1.pk))
         s1_element.click()
 
-        # violated due to constraints
+        # violated due to constraints - both the timeslot and its timeslot label
         self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{}.would-violate-hint'.format(slot1.pk)))
+        # Find the timeslot label for slot1 - it's the first timeslot in the first room group
+        slot1_roomgroup_elt = self.driver.find_element_by_css_selector(
+            '.day-flow .day:first-child .room-group:nth-child(2)'  # count from 2 - first-child is the day label
+        )
+        self.assertTrue(
+            slot1_roomgroup_elt.find_elements_by_css_selector(
+                '.time-header > .time-label.would-violate-hint:first-child'
+            ),
+            'Timeslot header label should show a would-violate hint for a constraint violation'
+        )
+
         # violated due to missing capacity
         self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{}.would-violate-hint'.format(slot3.pk)))
+        # Find the timeslot label for slot3 - it's the second timeslot in the second room group
+        slot3_roomgroup_elt = self.driver.find_element_by_css_selector(
+            '.day-flow .day:first-child .room-group:nth-child(3)'  # count from 2 - first-child is the day label
+        )
+        self.assertFalse(
+            slot3_roomgroup_elt.find_elements_by_css_selector(
+                '.time-header > .time-label.would-violate-hint:nth-child(2)'
+            ),
+            'Timeslot header label should not show a would-violate hint for room capacity violation'
+        )
 
         # reschedule
         self.driver.execute_script("jQuery('#session{}').simulateDragDrop({{dropTarget: '#timeslot{} .drop-target'}});".format(s2.pk, slot2.pk))
@@ -192,6 +213,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
 
         # constraint hints
         s1_element.click()
+        self.assertIn('would-violate-hint', s2_element.get_attribute('class'))
         constraint_element = s2_element.find_element_by_css_selector(".constraints span[data-sessions=\"{}\"].would-violate-hint".format(s1.pk))
         self.assertTrue(constraint_element.is_displayed())
 
