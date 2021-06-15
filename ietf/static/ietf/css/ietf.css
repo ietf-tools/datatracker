@@ -1175,6 +1175,12 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   background-color: #ddd;
 }
 
+.edit-meeting-schedule .session.hidden-parent * {
+  /* This makes .session.hidden-parent's children transparent but keeps the
+   * .session itself opaque so the timeslot label does not show through. */
+  opacity: 0.7;
+}
+
 .edit-meeting-schedule .session.selected .session-label {
   font-weight: bold;
 }
@@ -1198,7 +1204,7 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 }
 
 .edit-meeting-schedule .timeslot.overfull .session {
-  border-radius: 0.4em 0 0 0.4em; /* remove bottom rounding to illude to being cut off */
+  border-radius: 0.4em 0 0 0.4em; /* remove right-side rounding to allude to being cut off */
   margin-right: 0;
 }
 

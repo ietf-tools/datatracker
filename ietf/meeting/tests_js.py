@@ -228,9 +228,21 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         # hide sessions in area
         self.assertTrue(s1_element.is_displayed())
         self.driver.find_element_by_css_selector(".session-parent-toggles [value=\"{}\"]".format(s1.group.parent.acronym)).click()
-        self.assertTrue(not s1_element.is_displayed())
+        self.assertTrue(s1_element.is_displayed())  # should still be displayed
+        self.assertIn('hidden-parent', s1_element.get_attribute('class'),
+                      'Session should be hidden when parent disabled')
+        s1_element.click()  # try to select
+        self.assertNotIn('selected', s1_element.get_attribute('class'),
+                         'Session should not be selectable when parent disabled')
+
         self.driver.find_element_by_css_selector(".session-parent-toggles [value=\"{}\"]".format(s1.group.parent.acronym)).click()
         self.assertTrue(s1_element.is_displayed())
+        self.assertNotIn('hidden-parent', s1_element.get_attribute('class'),
+                         'Session should not be hidden when parent enabled')
+        s1_element.click()  # try to select
+        self.assertIn('selected', s1_element.get_attribute('class'),
+                         'Session should be selectable when parent enabled')
+
 
         # hide timeslots
         self.driver.find_element_by_css_selector(".timeslot-group-toggles button").click()
