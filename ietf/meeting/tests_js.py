@@ -108,8 +108,15 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
 
         # select - show session info
         s2_element = self.driver.find_element_by_css_selector('#session{}'.format(s2.pk))
+        s2b_element = self.driver.find_element_by_css_selector('#session{}'.format(s2b.pk))
+        self.assertNotIn('other-session-selected', s2b_element.get_attribute('class'))
         s2_element.click()
 
+        # other session for group should be flagged for highlighting
+        s2b_element = self.driver.find_element_by_css_selector('#session{}'.format(s2b.pk))
+        self.assertIn('other-session-selected', s2b_element.get_attribute('class'))
+
+        # other session for group should appear in the info panel
         session_info_container = self.driver.find_element_by_css_selector('.session-info-container')
         self.assertIn(s2.group.acronym, session_info_container.find_element_by_css_selector(".title").text)
         self.assertEqual(session_info_container.find_element_by_css_selector(".other-session .time").text, "not yet scheduled")
@@ -118,6 +125,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.driver.find_element_by_css_selector('.scheduling-panel').click()
 
         self.assertEqual(session_info_container.find_elements_by_css_selector(".title"), [])
+        self.assertNotIn('other-session-selected', s2b_element.get_attribute('class'))
 
         # unschedule
 

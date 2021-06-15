@@ -10,6 +10,7 @@
     .parent-{{ parent.acronym }} { background-image: linear-gradient(to right, {{ parent.scheduling_color }} 0.4em, transparent 0.5em); }
     .parent-{{ parent.acronym }}.hidden-parent { filter: blur(3px); }{# blur masks contents but keeps the parent color visible #}
     .parent-{{ parent.acronym }}.selected { background-color: {{ parent.light_scheduling_color }}; }
+    .parent-{{ parent.acronym }}.other-session-selected { background-color: {{ parent.light_scheduling_color }}; }
   {% endfor %}
 {% endblock morecss %}
 
