@@ -79,7 +79,7 @@ class Command(BaseCommand):
         print("Installing from %s\n" % bower_json_path)
 
         # bower args
-        args = ['bower', 'install', bower_json_path,
+        args = ['bower', 'install', bower_json_path, '--allow-root',
                 '--verbose', '--config.cwd={}'.format(dest_dir), '-p']
 
         # run bower command
