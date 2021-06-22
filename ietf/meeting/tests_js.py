@@ -50,7 +50,9 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         schedule = Schedule.objects.filter(meeting=meeting, owner__user__username="plain").first()
 
         room1 = Room.objects.get(name="Test Room")
-        slot1 = TimeSlot.objects.filter(meeting=meeting, location=room1).order_by('time').first()
+        slot1 = TimeSlot.objects.filter(meeting=meeting, location=room1, type='regular').order_by('time').first()
+        slot1b = TimeSlot.objects.filter(meeting=meeting, location=room1, type='regular').order_by('time').last()
+        self.assertNotEqual(slot1.pk, slot1b.pk)
 
         room2 = Room.objects.create(meeting=meeting, name="Test Room2", capacity=1)
         room2.session_types.add('regular')
@@ -251,7 +253,6 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertIn('selected', s1_element.get_attribute('class'),
                          'Session should be selectable when parent enabled')
 
-
         # hide timeslots
         self.driver.find_element_by_css_selector(".timeslot-group-toggles button").click()
         self.assertTrue(self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal").is_displayed())
@@ -260,12 +261,26 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertTrue(not self.driver.find_element_by_css_selector("#timeslot-group-toggles-modal").is_displayed())
 
         # swap days
-        self.driver.find_element_by_css_selector(".day [data-target=\"#swap-days-modal\"][data-dayid=\"{}\"]".format(slot4.time.date().isoformat())).click()
+        self.driver.find_element_by_css_selector(".day .swap-days[data-dayid=\"{}\"]".format(slot4.time.date().isoformat())).click()
         self.assertTrue(self.driver.find_element_by_css_selector("#swap-days-modal").is_displayed())
         self.driver.find_element_by_css_selector("#swap-days-modal input[name=\"target_day\"][value=\"{}\"]".format(slot1.time.date().isoformat())).click()
         self.driver.find_element_by_css_selector("#swap-days-modal button[type=\"submit\"]").click()
 
-        self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{} #session{}'.format(slot4.pk, s1.pk)))
+        self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{} #session{}'.format(slot4.pk, s1.pk)),
+                        'Session s1 should have moved to second meeting day')
+
+        # swap timeslot column - put session in a differently-timed timeslot
+        self.driver.find_element_by_css_selector(
+            '.day .swap-timeslot-col[data-timeslot-pk="{}"]'.format(slot1b.pk)
+        ).click()  # open modal on the second timeslot for room1
+        self.assertTrue(self.driver.find_element_by_css_selector("#swap-timeslot-col-modal").is_displayed())
+        self.driver.find_element_by_css_selector(
+            '#swap-timeslot-col-modal input[name="target_timeslot"][value="{}"]'.format(slot4.pk)
+        ).click()  # select room1 timeslot that has a session in it
+        self.driver.find_element_by_css_selector('#swap-timeslot-col-modal button[type="submit"]').click()
+
+        self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{} #session{}'.format(slot1b.pk, s1.pk)),
+                        'Session s1 should have moved to second timeslot on first meeting day')
 
     def test_unassigned_sessions_sort(self):
         """Unassigned session sorting should behave correctly
