@@ -41,7 +41,8 @@ from ietf.nomcom.factories import NomComFactory, FeedbackFactory, TopicFactory, 
                                   key
 from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, \
                               get_hash_nominee_position, is_eligible, list_eligible, \
-                              get_eligibility_date, suggest_affiliation
+                              get_eligibility_date, suggest_affiliation, \
+                              decorate_volunteers_with_qualifications
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Email, Person
 from ietf.stats.models import MeetingRegistration
@@ -2529,3 +2530,49 @@ class VolunteerTests(TestCase):
         self.assertEqual(suggest_affiliation(person), 'volunteer_affil')
         MeetingRegistrationFactory(person=person, affiliation='meeting_affil')
         self.assertEqual(suggest_affiliation(person), 'meeting_affil')
+
+class VolunteerDecoratorUnitTests(TestCase):
+    def test_decorate_volunteers_with_qualifications(self):
+        nomcom = NomComFactory(group__acronym='nomcom2021', populate_personnel=False, first_call_for_volunteers=datetime.date(2021,5,15))
+        elig_date = get_eligibility_date(nomcom)
+        Role.objects.filter(name_id__in=('chair','secr')).delete()        
+
+        meeting_person = PersonFactory()
+        meetings = [MeetingFactory(number=number, date=date, type_id='ietf') for number,date in [
+            ('110', datetime.date(2021, 3, 6)),
+            ('109', datetime.date(2020, 11, 14)),
+            ('108', datetime.date(2020, 7, 25)),
+            ('107', datetime.date(2020, 3, 21)),
+            ('106', datetime.date(2019, 11, 16)),
+        ]]
+        for m in meetings:
+            MeetingRegistrationFactory(meeting=m,person=meeting_person)
+        nomcom.volunteer_set.create(person=meeting_person)
+
+        office_person = PersonFactory()
+        RoleHistoryFactory(
+            name_id='chair',
+            group__time= elig_date - datetime.timedelta(days=365),
+            group__group__state_id='conclude',
+            person=office_person,
+        )
+        nomcom.volunteer_set.create(person=office_person)
+
+        author_person = PersonFactory()
+        for i in range(2):
+            da = WgDocumentAuthorFactory(person=author_person)
+            DocEventFactory(type='published_rfc',doc=da.document,time=datetime.date(elig_date.year-3,elig_date.month,elig_date.day))
+        nomcom.volunteer_set.create(person=author_person)
+
+        volunteers = nomcom.volunteer_set.all()
+        decorate_volunteers_with_qualifications(volunteers,nomcom=nomcom)
+
+        self.assertEqual(len(volunteers), 3)
+        for v in volunteers:
+            if v.person == meeting_person:
+                self.assertEqual(v.qualifications,'path_1')
+            if v.person == office_person:
+                self.assertEqual(v.qualifications,'path_2')
+            if v.person == author_person:
+                self.assertEqual(v.qualifications,'path_3')
+
