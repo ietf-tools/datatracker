@@ -5,7 +5,9 @@ from django.db import migrations
 
 def forward(apps, schema_editor):
     NomCom = apps.get_model('nomcom','NomCom')
-    nc = NomCom.objects.get(group__acronym='nomcom2021')
+    nc = NomCom.objects.filter(group__acronym='nomcom2021').first()
+    if nc is None:
+        return  # nothing to do if the NomCom in question does not exist
 
     nc.is_accepting_volunteers = True
     nc.save()
