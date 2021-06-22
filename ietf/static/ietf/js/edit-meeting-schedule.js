@@ -10,6 +10,7 @@ jQuery(document).ready(function () {
 
     let sessions = content.find(".session").not(".readonly");
     let timeslots = content.find(".timeslot");
+    let timeslotLabels = content.find(".time-label");
     let days = content.find(".day-flow .day");
 
     // hack to work around lack of position sticky support in old browsers, see https://caniuse.com/#feat=css-sticky
@@ -68,25 +69,74 @@ jQuery(document).ready(function () {
         }
     }
 
+    /**
+     * Mark or unmark a session that conflicts with the selected session
+     *
+     * @param constraintElt The element corresponding to the specific constraint
+     * @param wouldViolate True to mark or false to unmark
+     */
+    function setSessionWouldViolate(constraintElt, wouldViolate) {
+        constraintElt = jQuery(constraintElt);
+        let constraintDiv = constraintElt.closest('div.session');  // find enclosing session div
+        constraintDiv.toggleClass('would-violate-hint', wouldViolate);  // mark the session container
+        constraintElt.toggleClass('would-violate-hint', wouldViolate);  // and the specific constraint
+    }
+
+    /**
+     * Mark or unmark a timeslot that conflicts with the selected session
+     *
+     * If wholeInterval is true, marks the entire column in addition to the timeslot.
+     * This currently works by setting the class for the timeslot and the time-label
+     * in its column. Because this is called for every timeslot in the interval, the
+     * overall effect is to highlight the entire column.
+     *
+     * @param timeslotElt Timeslot element to be marked/unmarked
+     * @param wouldViolate True to mark or false to unmark
+     * @param wholeInterval Should the entire time interval be flagged or just the timeslot?
+     */
+    function setTimeslotWouldViolate(timeslotElt, wouldViolate, wholeInterval) {
+        timeslotElt = jQuery(timeslotElt);
+        timeslotElt.toggleClass('would-violate-hint', wouldViolate);
+        if (wholeInterval) {
+            let index = timeslotElt.index(); // position of this timeslot relative to its container
+            let label = timeslotElt
+                          .closest('div.room-group')
+                          .find('div.time-header .time-label')
+                          .get(index); // get time-label corresponding to this timeslot
+            jQuery(label).toggleClass('would-violate-hint', wouldViolate);
+        }
+    }
+
+    /**
+     * Remove all would-violate-hint classes on timeslots
+     */
+    function resetTimeslotsWouldViolate() {
+        timeslots.removeClass("would-violate-hint");
+        timeslotLabels.removeClass("would-violate-hint");
+    }
+
     function showConstraintHints(selectedSession) {
         let sessionId = selectedSession ? selectedSession.id.slice("session".length) : null;
         // hints on the sessions
         sessions.find(".constraints > span").each(function () {
-            if (!sessionId) {
-                jQuery(this).removeClass("would-violate-hint");
-                return;
+            let wouldViolate = false;
+            let applyChange = true;
+            if (sessionId) {
+                let sessionIds = this.dataset.sessions;
+                if (!sessionIds) {
+                    applyChange = False;
+                } else {
+                    wouldViolate = sessionIds.split(",").indexOf(sessionId) !== -1;
+                }
             }
 
-            let sessionIds = this.dataset.sessions;
-            if (!sessionIds)
-                return;
-
-            let wouldViolate = sessionIds.split(",").indexOf(sessionId) != -1;
-            jQuery(this).toggleClass("would-violate-hint", wouldViolate);
+            if (applyChange) {
+                setSessionWouldViolate(this, wouldViolate);
+            }
         });
 
         // hints on timeslots
-        timeslots.removeClass("would-violate-hint");
+        resetTimeslotsWouldViolate();
         if (selectedSession) {
             let intervals = [];
             timeslots.filter(":has(.session .constraints > span.would-violate-hint)").each(function () {
@@ -94,15 +144,17 @@ jQuery(document).ready(function () {
             });
 
             let overlappingTimeslots = findTimeslotsOverlapping(intervals);
-            for (let i = 0; i < overlappingTimeslots.length; ++i)
-                overlappingTimeslots[i].addClass("would-violate-hint");
+            for (let i = 0; i < overlappingTimeslots.length; ++i) {
+                setTimeslotWouldViolate(overlappingTimeslots[i], true, true);
+            }
 
             // check room sizes
             let attendees = +selectedSession.dataset.attendees;
             if (attendees) {
                 timeslots.not(".would-violate-hint").each(function () {
-                    if (attendees > +jQuery(this).closest(".timeslots").data("roomcapacity"))
-                        jQuery(this).addClass("would-violate-hint");
+                    if (attendees > +jQuery(this).closest(".timeslots").data("roomcapacity")) {
+                        setTimeslotWouldViolate(this, true, false);
+                    }
                 });
             }
         }
