@@ -168,7 +168,10 @@ jQuery(document).ready(function () {
 
     sessions.on("click", function (event) {
         event.stopPropagation();
-        selectSessionElement(this);
+        // do not allow hidden sessions to be selected
+        if (!jQuery(this).hasClass('hidden-parent')) {
+            selectSessionElement(this);
+        }
     });
 
 
@@ -478,14 +481,19 @@ jQuery(document).ready(function () {
     // toggling visible sessions by session parents
     let sessionParentInputs = content.find(".session-parent-toggles input");
 
+    function setSessionHidden(sess, hide) {
+        sess.toggleClass('hidden-parent', hide);
+        sess.prop('draggable', !hide);
+    }
+
     function updateSessionParentToggling() {
         let checked = [];
         sessionParentInputs.filter(":checked").each(function () {
             checked.push(".parent-" + this.value);
         });
 
-        sessions.not(".untoggleable").filter(checked.join(",")).show();
-        sessions.not(".untoggleable").not(checked.join(",")).hide();
+        setSessionHidden(sessions.not(".untoggleable").filter(checked.join(",")), false);
+        setSessionHidden(sessions.not(".untoggleable").not(checked.join(",")), true);
     }
 
     sessionParentInputs.on("click", updateSessionParentToggling);
