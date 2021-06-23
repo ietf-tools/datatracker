@@ -970,6 +970,30 @@ class EditMeetingScheduleTests(TestCase):
                 time_labels = row.find('div.time-label').text()
                 self.assertEqual(time_labels, time_header_labels)
 
+    def test_bof_session_tag(self):
+        """Sessions for BoF groups should be marked as such"""
+        meeting = MeetingFactory(type_id='ietf')
+
+        non_bof_session = SessionFactory(meeting=meeting)
+        bof_session = SessionFactory(meeting=meeting, group__state_id='bof')
+
+        url = urlreverse('ietf.meeting.views.edit_meeting_schedule',
+                         kwargs=dict(num=meeting.number))
+
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('#session{} .bof-tag'.format(non_bof_session.pk))), 0,
+                         'Non-BoF session should not be tagged as a BoF session')
+
+        bof_tags = q('#session{} .bof-tag'.format(bof_session.pk))
+        self.assertEqual(len(bof_tags), 1,
+                         'BoF session should have one BoF session tag')
+        self.assertIn('BoF', bof_tags.eq(0).text(),
+                      'BoF tag should contain text "BoF"')
+
 
 class ReorderSlidesTests(TestCase):
 
