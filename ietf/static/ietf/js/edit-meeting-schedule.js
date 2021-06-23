@@ -290,31 +290,80 @@ jQuery(document).ready(function () {
             }
         });
 
+
+        // Helpers for swap days / timeslots
+        // Enable or disable a swap modal's submit button
+        let updateSwapSubmitButton = function (modal, inputName) {
+            modal.find("button[type=submit]").prop(
+              "disabled",
+              modal.find("input[name='" + inputName + "']:checked").length === 0
+            );
+        };
+
+        // Disable a particular swap modal radio input
+        let updateSwapRadios = function (labels, radios, disableValue) {
+          labels.removeClass('text-muted');
+          radios.prop('disabled', false);
+          radios.prop('checked', false);
+          let disableInput = radios.filter('[value="' + disableValue + '"]');
+          if (disableInput) {
+              disableInput.parent().addClass('text-muted');
+              disableInput.prop('disabled', true);
+          }
+          return disableInput; // return the input that was disabled, if any
+        };
+
         // swap days
+        let swapDaysModal = content.find("#swap-days-modal");
+        let swapDaysLabels = swapDaysModal.find(".modal-body label");
+        let swapDaysRadios = swapDaysLabels.find('input[name=target_day]');
+        let updateSwapDaysSubmitButton = function () {
+            updateSwapSubmitButton(swapDaysModal, 'target_day')
+        };
+        // handler to prep and open the modal
         content.find(".swap-days").on("click", function () {
             let originDay = this.dataset.dayid;
-            let modal = content.find("#swap-days-modal");
-            let radios = modal.find(".modal-body label");
-            radios.removeClass("text-muted");
-            radios.find("input[name=target_day]").prop("disabled", false).prop("checked", false);
+            let originRadio = updateSwapRadios(swapDaysLabels, swapDaysRadios, originDay);
 
-            let originRadio = radios.find("input[name=target_day][value=" + originDay + "]");
-            originRadio.parent().addClass("text-muted");
-            originRadio.prop("disabled", true);
+            // Fill in label in the modal title
+            swapDaysModal.find(".modal-title .day").text(jQuery.trim(originRadio.parent().text()));
 
-            modal.find(".modal-title .day").text(jQuery.trim(originRadio.parent().text()));
-            modal.find("input[name=source_day]").val(originDay);
+            // Fill in the hidden form fields
+            swapDaysModal.find("input[name=source_day]").val(originDay);
 
             updateSwapDaysSubmitButton();
+            swapDaysModal.modal('show'); // show via JS so it won't open until it is initialized
         });
+        swapDaysRadios.on("change", function () {updateSwapDaysSubmitButton()});
 
-        function updateSwapDaysSubmitButton() {
-            content.find("#swap-days-modal button[type=submit]").prop("disabled", content.find("#swap-days-modal input[name=target_day]:checked").length == 0);
-        }
+        // swap timeslot columns
+        let swapTimeslotsModal = content.find('#swap-timeslot-col-modal');
+        let swapTimeslotsLabels = swapTimeslotsModal.find(".modal-body label");
+        let swapTimeslotsRadios = swapTimeslotsLabels.find('input[name=target_timeslot]');
+        let updateSwapTimeslotsSubmitButton = function () {
+            updateSwapSubmitButton(swapTimeslotsModal, 'target_timeslot');
+        };
+        // handler to prep and open the modal
+        content.find('.swap-timeslot-col').on('click', function() {
+            let roomGroup = this.closest('.room-group').dataset;
+            updateSwapRadios(swapTimeslotsLabels, swapTimeslotsRadios, this.dataset.timeslotPk)
 
-        content.find("#swap-days-modal input[name=target_day]").on("change", function () {
-            updateSwapDaysSubmitButton();
+            // show only options for this room group
+            swapTimeslotsModal.find('.room-group').hide();
+            swapTimeslotsModal.find('.room-group-' + roomGroup.index).show();
+
+            // Fill in label in the modal title
+            swapTimeslotsModal.find('.modal-title .origin-label').text(this.dataset.originLabel);
+
+            // Fill in the hidden form fields
+            swapTimeslotsModal.find('input[name="origin_timeslot"]').val(this.dataset.timeslotPk);
+            swapTimeslotsModal.find('input[name="rooms"]').val(roomGroup.rooms);
+
+            // Open the modal via JS so it won't open until it is initialized
+            updateSwapTimeslotsSubmitButton();
+            swapTimeslotsModal.modal('show');
         });
+        swapTimeslotsRadios.on("change", function () {updateSwapTimeslotsSubmitButton()});
     }
 
     // hints for the current schedule

@@ -1360,6 +1360,21 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   cursor: pointer;
 }
 
+.edit-meeting-schedule .modal .day-options {
+    display: flex;
+    flex-flow: row wrap;
+}
+
+.edit-meeting-schedule .modal .timeslot-options {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: flex-start;
+}
+
+.edit-meeting-schedule .modal .room-group {
+    margin: 2em;
+}
+
 .edit-meeting-schedule .scheduling-panel .session-info-container {
   padding-left: 0.5em;
   flex: 0 0 25em;

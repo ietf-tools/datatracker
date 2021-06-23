@@ -17,7 +17,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
 from ietf.group.models import Group, GroupFeatures
 from ietf.ietfauth.utils import has_role
-from ietf.meeting.models import Session, Meeting, Schedule, countries, timezones
+from ietf.meeting.models import Session, Meeting, Schedule, countries, timezones, TimeSlot, Room
 from ietf.meeting.helpers import get_next_interim_number, make_materials_directories
 from ietf.meeting.helpers import is_interim_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
@@ -362,3 +362,58 @@ class RequestMinutesForm(forms.Form):
     cc = MultiEmailField(required=False)
     subject = forms.CharField()
     body = forms.CharField(widget=forms.Textarea,strip=False)
+
+
+class SwapDaysForm(forms.Form):
+    source_day = forms.DateField(required=True)
+    target_day = forms.DateField(required=True)
+
+
+class CsvModelPkInput(forms.TextInput):
+    """Text input that expects a CSV list of PKs of a model instances"""
+    def format_value(self, value):
+        """Convert value to contents of input text widget
+
+        Value is a list of pks, or None
+        """
+        return '' if value is None else ','.join(str(v) for v in value)
+
+    def value_from_datadict(self, data, files, name):
+        """Convert data back to list of PKs"""
+        value = super(CsvModelPkInput, self).value_from_datadict(data, files, name)
+        return value.split(',')
+
+
+class SwapTimeslotsForm(forms.Form):
+    """Timeslot swap form
+
+    Interface uses timeslot instances rather than time/duration to simplify handling in
+    the JavaScript. This might make more sense with a DateTimeField and DurationField for
+    origin/target. Instead, grabs time and duration from a TimeSlot.
+
+    This is not likely to be practical as a rendered form. Current use is to validate
+    data from an ad hoc form. In an ideal world, this would be refactored to use a complex
+    custom widget, but unless it proves to be reused that would be a poor investment of time.
+    """
+    origin_timeslot = forms.ModelChoiceField(
+        required=True,
+        queryset=TimeSlot.objects.none(),  # default to none, fill in when we have a meeting
+        widget=forms.TextInput,
+    )
+    target_timeslot = forms.ModelChoiceField(
+        required=True,
+        queryset=TimeSlot.objects.none(),  # default to none, fill in when we have a meeting
+        widget=forms.TextInput,
+    )
+    rooms = forms.ModelMultipleChoiceField(
+        required=True,
+        queryset=Room.objects.none(),  # default to none, fill in when we have a meeting
+        widget=CsvModelPkInput,
+    )
+
+    def __init__(self, meeting, *args, **kwargs):
+        super(SwapTimeslotsForm, self).__init__(*args, **kwargs)
+        self.meeting = meeting
+        self.fields['origin_timeslot'].queryset = meeting.timeslot_set.all()
+        self.fields['target_timeslot'].queryset = meeting.timeslot_set.all()
+        self.fields['rooms'].queryset = meeting.room_set.all()

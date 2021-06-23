@@ -56,7 +56,7 @@ from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
 from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
-from ietf.meeting.forms import CustomDurationField
+from ietf.meeting.forms import CustomDurationField, SwapDaysForm, SwapTimeslotsForm
 from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
@@ -455,11 +455,6 @@ def new_meeting_schedule(request, num, owner=None, name=None):
         'form': form,
     })
 
-
-class SwapDaysForm(forms.Form):
-    source_day = forms.DateField(required=True)
-    target_day = forms.DateField(required=True)
-
 @ensure_csrf_cookie
 def edit_meeting_schedule(request, num=None, owner=None, name=None):
     meeting = get_meeting(num)
@@ -792,6 +787,37 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             target_timeslots = [ts for ts in timeslots_qs if ts.time.date() == target_day]
             swap_meeting_schedule_timeslot_assignments(schedule, source_timeslots, target_timeslots, target_day - source_day)
 
+            return HttpResponseRedirect(request.get_full_path())
+
+        elif action == 'swaptimeslots':
+            # Swap sets of timeslots with equal start/end time for a given set of rooms.
+            # Gets start and end times from TimeSlot instances for the origin and target,
+            # then swaps all timeslots for the requested rooms whose start/end match those.
+            # The origin/target timeslots do not need to be the same duration.
+            swap_timeslots_form = SwapTimeslotsForm(meeting, request.POST)
+            if not swap_timeslots_form.is_valid():
+                return HttpResponse("Invalid swap: {}".format(swap_timeslots_form.errors), status=400)
+
+            affected_rooms = swap_timeslots_form.cleaned_data['rooms']
+            origin_timeslot = swap_timeslots_form.cleaned_data['origin_timeslot']
+            target_timeslot = swap_timeslots_form.cleaned_data['target_timeslot']
+
+            origin_timeslots = meeting.timeslot_set.filter(
+                location__in=affected_rooms,
+                time=origin_timeslot.time,
+                duration=origin_timeslot.duration,
+            )
+            target_timeslots = meeting.timeslot_set.filter(
+                location__in=affected_rooms,
+                time=target_timeslot.time,
+                duration=target_timeslot.duration,
+            )
+            swap_meeting_schedule_timeslot_assignments(
+                schedule,
+                list(origin_timeslots),
+                list(target_timeslots),
+                target_timeslot.time - origin_timeslot.time,
+            )
             return HttpResponseRedirect(request.get_full_path())
 
         return HttpResponse("Invalid parameters", status=400)
