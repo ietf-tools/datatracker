@@ -1821,7 +1821,7 @@ Junk body for testing
     def test_eligible(self):
         def first_meeting_of_year(year):
             assert isinstance(year, int)
-            assert year >= 1991
+            assert year >= 1990
             return (year-1985)*3+2
         # Create meetings to ensure we have the 'last 5'
         meeting_start = first_meeting_of_year(datetime.date.today().year-2)
@@ -1850,7 +1850,7 @@ Junk body for testing
         year = self.nc.year()
         def first_meeting_of_year(year):
             assert isinstance(year, int)
-            assert year >= 1991
+            assert year >= 1990
             return (year-1985)*3+2       
         people = PersonFactory.create_batch(10)
         meeting_start = first_meeting_of_year(year-2)
