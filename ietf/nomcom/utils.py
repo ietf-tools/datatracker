@@ -500,6 +500,25 @@ def list_eligible(nomcom=None, date=None, base_qs=None):
     else:
         return Person.objects.none()
 
+def decorate_volunteers_with_qualifications(volunteers, nomcom=None, date=None, base_qs=None):
+    if not base_qs:
+        base_qs = Person.objects.all()
+    eligibility_date = get_eligibility_date(nomcom, date)
+    if eligibility_date.year == 2021:
+        three_of_five_qs, officer_qs, author_qs = get_8989_eligibility_querysets(eligibility_date, base_qs)
+        for v in volunteers:
+            qualifications = []
+            if v.person in three_of_five_qs:
+                qualifications.append('path_1')
+            if v.person in officer_qs:
+                qualifications.append('path_2')
+            if v.person in author_qs:
+                qualifications.append('path_3')
+            v.qualifications = ", ".join(qualifications)
+    else:
+        for v in volunteers:
+            v.qualifications = ''
+
 def list_eligible_8713(date, base_qs=None):
     if not base_qs:
         base_qs = Person.objects.all()
@@ -512,7 +531,7 @@ def list_eligible_8788(date, base_qs=None):
     previous_five = Meeting.objects.filter(number__in=['102','103','104','105','106'])
     return remove_disqualified(three_of_five_eligible(previous_five=previous_five, queryset=base_qs))
 
-def list_eligible_8989(date, base_qs=None):
+def get_8989_eligibility_querysets(date, base_qs):
     if not base_qs:
         base_qs = Person.objects.all()
 
@@ -545,13 +564,17 @@ def list_eligible_8989(date, base_qs=None):
         ).annotate(
             document_author_count = Count('documentauthor')
         ).filter(document_author_count__gte=2)
+    return three_of_five_qs, officer_qs, author_qs
 
-    # Would be nice to use queryset union here, but the annotations make that difficult
-    return remove_disqualified(Person.objects.filter(pk__in=
-        set(three_of_five_qs.values_list('pk',flat=True)).union(
-        set(officer_qs.values_list('pk',flat=True))).union(
-        set(author_qs.values_list('pk',flat=True)))
-    ))
+def list_eligible_8989(date, base_qs=None):
+    if not base_qs:
+        base_qs = Person.objects.all()
+    three_of_five_qs, officer_qs, author_qs = get_8989_eligibility_querysets(date, base_qs)
+    # Would be nice to use queryset union here, but the annotations in the three existing querysets make that difficult
+    three_of_five_pks = three_of_five_qs.values_list('pk',flat=True)
+    officer_pks = officer_qs.values_list('pk',flat=True)
+    author_pks = author_qs.values_list('pk',flat=True)
+    return remove_disqualified(Person.objects.filter(pk__in=set(three_of_five_pks).union(set(officer_pks)).union(set(author_pks))))
 
 def get_eligibility_date(nomcom=None, date=None):
     if date:

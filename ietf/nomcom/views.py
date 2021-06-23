@@ -36,6 +36,7 @@ from ietf.nomcom.models import (Position, NomineePosition, Nominee, Feedback, No
                                 FeedbackLastSeen, Topic, TopicFeedbackLastSeen, )
 from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key, suggest_affiliation,
                                get_hash_nominee_position, send_reminder_to_nominees, list_eligible,
+                               decorate_volunteers_with_qualifications,
                                HOME_TEMPLATE, NOMINEE_ACCEPT_REMINDER_TEMPLATE,NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE, )
 
 from ietf.ietfauth.utils import role_required
@@ -1323,6 +1324,7 @@ def volunteers(request, year, public=False):
     eligible = list_eligible(nomcom)
     for v in volunteers:
         v.eligible = v.person in eligible
+    decorate_volunteers_with_qualifications(volunteers,nomcom=nomcom)
     volunteers = sorted(volunteers,key=lambda v:(not v.eligible,v.person.last_name()))
     return render(request, 'nomcom/volunteers.html', dict(year=year, nomcom=nomcom, volunteers=volunteers, public=public))
 
