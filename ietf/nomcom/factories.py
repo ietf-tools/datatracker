@@ -69,7 +69,7 @@ def provide_private_key_to_test_client(testcase):
 
 def nomcom_kwargs_for_year(year=None, *args, **kwargs):
     if not year:
-        year = random.randint(1980,2100)
+        year = random.randint(1990,2100)
     if 'group__state_id' not in kwargs:
         kwargs['group__state_id']='active'
     if 'group__acronym' not in kwargs:
