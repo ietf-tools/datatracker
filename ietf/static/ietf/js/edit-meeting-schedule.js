@@ -40,6 +40,7 @@ jQuery(document).ready(function () {
 
     // selecting
     function selectSessionElement(element) {
+        sessions.removeClass("other-session-selected");
         if (element) {
             sessions.not(element).removeClass("selected");
             jQuery(element).addClass("selected");
@@ -54,8 +55,11 @@ jQuery(document).ready(function () {
             sessionInfoContainer.find(".time").text(jQuery(element).closest(".timeslot").data('scheduledatlabel'));
 
             sessionInfoContainer.find(".other-session").each(function () {
-                let scheduledAt = sessions.filter("#session" + this.dataset.othersessionid).closest(".timeslot").data('scheduledatlabel');
+                let otherSessionElement = sessions.filter("#session" + this.dataset.othersessionid).first();
+                let scheduledAt = otherSessionElement.closest(".timeslot").data('scheduledatlabel');
                 let timeElement = jQuery(this).find(".time");
+
+                otherSessionElement.addClass("other-session-selected");
                 if (scheduledAt)
                     timeElement.text(timeElement.data("scheduled").replace("{time}", scheduledAt));
                 else
