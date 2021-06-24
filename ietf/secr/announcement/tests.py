@@ -96,6 +96,7 @@ class SubmitAnnouncementCase(TestCase):
                      'to':'Other...',
                      'to_custom':'rcross@amsl.com',
                      'frm':'IETF Secretariat &lt;ietf-secretariat@ietf.org&gt;',
+                     'reply_to':'secretariat@ietf.org',
                      'subject':'Test Subject',
                      'body':'This is a test.'}
         self.client.login(username="secretary", password="secretary+password")
