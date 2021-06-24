@@ -921,6 +921,7 @@ class AgendaTests(IetfSeleniumTestCase):
         
         # Click the group button
         group_button = self.get_agenda_filter_group_button(wait, group_acronym)
+        self.scroll_to_element(group_button)
         group_button.click()
 
         # Check visibility
@@ -986,6 +987,7 @@ class AgendaTests(IetfSeleniumTestCase):
 
         # enable hackathon group
         group_button = self.get_agenda_filter_group_button(wait, 'hackathon')
+        self.scroll_to_element(group_button)
         group_button.click()
         self.assert_agenda_item_visibility(['mars', 'hackathon'])
 
@@ -1027,6 +1029,7 @@ class AgendaTests(IetfSeleniumTestCase):
 
         # Be sure we're at the URL we think we're at before we click
         self.assertEqual(self.driver.current_url, url)
+        self.scroll_to_element(group_button)
         group_button.click()  # click!
 
         expected_url = '%s?show=%s' % (url, group_acronym)
@@ -1136,6 +1139,7 @@ class AgendaTests(IetfSeleniumTestCase):
             ),
             'Modal open button not found or not clickable',
         )
+        self.scroll_to_element(open_modal_button)
         open_modal_button.click()
         WebDriverWait(self.driver, 2).until(
             expected_conditions.visibility_of(modal_div),
@@ -1168,6 +1172,7 @@ class AgendaTests(IetfSeleniumTestCase):
             ),
             'Modal close button not found or not clickable',
         )
+        self.scroll_to_element(close_modal_button)
         close_modal_button.click()
         WebDriverWait(self.driver, 2).until(
             expected_conditions.invisibility_of_element(modal_div),
@@ -1187,6 +1192,7 @@ class AgendaTests(IetfSeleniumTestCase):
             ),
             'Modal open button not found or not clickable for refresh test',
         )
+        self.scroll_to_element(open_modal_button)
         open_modal_button.click()
         WebDriverWait(self.driver, 2).until(
             expected_conditions.visibility_of(modal_div),
@@ -1644,6 +1650,7 @@ class InterimTests(IetfSeleniumTestCase):
             button = WebDriverWait(self.driver, 2).until(
                 expected_conditions.element_to_be_clickable(
                     (By.CSS_SELECTOR, 'div#calendar button.fc-next-button')))
+            self.scroll_to_element(button)
             button.click()
 
         seen = set()
