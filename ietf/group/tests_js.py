@@ -45,6 +45,7 @@ class MilestoneTests(IetfSeleniumTestCase):
             expected_conditions.element_to_be_clickable((By.CSS_SELECTOR, submit_button_selector))
         )
         self.assertIn(label, submit_button.text)
+        self.scroll_to_element(submit_button)
         submit_button.click()
 
     def _assert_milestone_changed(self):
@@ -80,6 +81,7 @@ class MilestoneTests(IetfSeleniumTestCase):
             expected_conditions.element_to_be_clickable(
                 (By.CSS_SELECTOR, 'button.add-milestone')
             ))
+        self.scroll_to_element(add_milestone_button)
         add_milestone_button.click()
 
         edit_div = self.wait.until(
