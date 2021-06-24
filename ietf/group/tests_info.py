@@ -762,11 +762,20 @@ class GroupEditTests(TestCase):
 
     def test_edit_reviewers(self):
         group=GroupFactory(type_id='review',parent=GroupFactory(type_id='area'))
+        other_group=GroupFactory(type_id='review',parent=GroupFactory(type_id='area'))
         review_req = ReviewRequestFactory(team=group)
-        ad_email = Email.objects.get(address='ad2@example.org')
+        other_review_req = ReviewRequestFactory(team=other_group)
 
-        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit"))
-        login_testing_unauthorized(self, "secretary", url)
+        # Set up a reviewer that has two email addresses
+        reviewer = PersonFactory()
+        EmailFactory(person=reviewer)
+        first_email = reviewer.email_set.first()
+        last_email = reviewer.email_set.last()
+
+        RoleFactory(group=other_group, name_id='reviewer', person=reviewer, email=first_email)
+
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action='edit'))
+        login_testing_unauthorized(self, 'secretary', url)
 
         # normal get
         r = self.client.get(url)
@@ -780,33 +789,36 @@ class GroupEditTests(TestCase):
             name=group.name,
             acronym=group.acronym,
             parent=group.parent_id,
-            ad=Person.objects.get(name="Areað Irector").pk,
+            ad=Person.objects.get(name='Areað Irector').pk,
             state=group.state_id,
             list_email=group.list_email,
             list_subscribe=group.list_subscribe,
             list_archive=group.list_archive,
-            urls=""
+            urls=''
         )
-        r = self.client.post(url, dict(post_data, reviewer_roles=ad_email.address))
+        r = self.client.post(url, dict(post_data, reviewer_roles=first_email.address))
         self.assertEqual(r.status_code, 302)
 
-        group = reload_db_objects(group)
-        self.assertEqual(list(group.role_set.filter(name="reviewer").values_list("email", flat=True)), [ad_email.address])
+        self.assertEqual(group.role_set.get(name='reviewer').email.address, first_email.address)
         self.assertTrue('Personnel change' in outbox[0]['Subject'])
         
-        # Assign a review to the reviewer, then remove the reviewer from the group
-        # As the request deadline has not passed, the assignment should be set to rejected
-        review_assignment = ReviewAssignmentFactory(review_request=review_req, state_id='assigned', reviewer=ad_email)
+        # Assign reviews to the reviewer, then remove the reviewer from the group
+        # As the request deadline has not passed, the assignment should be set to withdrawn
+        # Reviews assigned to other groups must not be affected
+        review_assignment = ReviewAssignmentFactory(review_request=review_req, state_id='assigned', reviewer=first_email)
+        other_review_assignment = ReviewAssignmentFactory(review_request=other_review_req, state_id='assigned', reviewer=first_email)
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 302)
 
-        group = reload_db_objects(group)
-        self.assertFalse(group.role_set.filter(name="reviewer"))
-        review_assignment = reload_db_objects(review_assignment)
-        self.assertEqual(review_assignment.state_id, 'rejected')
+        self.assertFalse(group.role_set.filter(name='reviewer').exists())
+        self.assertEqual(other_group.role_set.get(name='reviewer').email.address, first_email.address)
+
+        review_assignment, other_review_assignment = reload_db_objects(review_assignment, other_review_assignment)
+        self.assertEqual(review_assignment.state_id, 'withdrawn')
+        self.assertEqual(other_review_assignment.state_id, 'assigned')
 
         # Repeat after adding reviewer again, but now beyond request deadline
-        r = self.client.post(url, dict(post_data, reviewer_roles=ad_email.address))
+        r = self.client.post(url, dict(post_data, reviewer_roles=first_email.address))
         self.assertEqual(r.status_code, 302)
         review_assignment.state_id = 'accepted'
         review_assignment.save()
@@ -816,8 +828,23 @@ class GroupEditTests(TestCase):
         r = self.client.post(url, post_data)
         self.assertEqual(r.status_code, 302)
 
-        review_assignment = reload_db_objects(review_assignment)
+        review_assignment, other_review_assignment = reload_db_objects(review_assignment, other_review_assignment)
         self.assertEqual(review_assignment.state_id, 'no-response')
+        self.assertEqual(other_review_assignment.state_id, 'assigned')
+
+        # Configure group with two reviewer Roles for the same person with different email addresses
+        # then remove one of the roles. The result should be no change to the review assignments
+        group.role_set.filter(name_id='reviewer').delete()
+        for email in reviewer.email_set.all():
+            group.role_set.create(name_id='reviewer', person=reviewer, email=email)
+        review_assignment.state_id = 'accepted'
+        review_assignment.save()
+        r = self.client.post(url, dict(post_data, reviewer_roles=last_email.address))
+        self.assertEqual(group.role_set.get(name='reviewer').email.address, last_email.address)        
+        review_assignment, other_review_assignment = reload_db_objects(review_assignment, other_review_assignment)
+        self.assertEqual(review_assignment.state_id, 'accepted')
+        self.assertEqual(other_review_assignment.state_id, 'assigned')
+
 
     def test_conclude(self):
         group = GroupFactory(acronym="mars")
