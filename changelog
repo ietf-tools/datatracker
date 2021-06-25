@@ -1,3 +1,71 @@
+ietfdb (7.33.0) ietf; urgency=medium
+
+  ** Improvements to the schedule editor, bugfixes **
+
+  * Merged in [19103] from jennifer@painless-security.com:
+    Add ConstraintNames for chair, tech, and key participant conflicts.
+    Replace temporary UI workaround with proper conflict type handling. Fixes
+    #3083.
+
+  * Merged in [19118] from lars@eggert.org:
+    Use monospace font for ballot form textareas.
+
+  * Merged in [19120] from krathnayake@ietf.org:
+    Parse RFC2047 formatted text properly in submission form. Fixes #2465.
+
+  * Merged in [19121] from jennifer@painless-security.com:
+    Display rooms in blocks with identical timeslots. Add a timeslot label
+    row above each. Fixes #3220.
+
+  * Merged in [19122] from jennifer@painless-security.com:
+    Update action holders when a new draft is submitted. Fixes #3281.
+
+  * Merged in [19130] from lars@eggert.org:
+    Allow executing bower as root; for running within docker.
+
+  * Merged in [19132] from jennifer@painless-security.com:
+    Skip populate_volunteers forward migration if nomcom2021 is not in the
+    database. Fixes #3306.
+
+  * Merged in [19133] from jennifer@painless-security.com:
+    Indicate session and timeslot conflicts more prominently in schedule
+    editor. Fixes #3221.
+
+  * Merged in [19134] from jennifer@painless-security.com:
+    Blur sessions for hidden areas instead of hiding entirely. Fixes #3218.
+
+  * Merged in [19135] from jennifer@painless-security.com:
+    Improve visibility of other sessions for group of selected session in
+    schedule editor. Fixes #3219.
+
+  * Merged in [19136] from jennifer@painless-security.com:
+    More prominently identify BoF sessions in schedule editor. Fixes #3217.
+
+  * Merged in [19138] from jennifer@painless-security.com:
+    Swap timeslot columns in addition to full days in schedule editor.
+    Fixes #3216.
+
+  * Merged in [19139] from rjsparks@nostrum.com:
+    Refine volunteer list view. Show rfc8989 paths.
+
+  * Merged in [19148] from rjsparks@nostrum.com:
+    Bring the nomcom factories and tests into agreement around what a valid
+    year for a nomcom can be. Fixes #3315.
+
+  * Merged in [19151] from rjsparks@nostrum.com:
+    When removing reviewers from a review team, change the state of only
+    that team's assignments. Check to make sure the person being removed
+    doesn't have another reviewer Role (with a different Email) in the same
+    team. Change the disposition of any assignments from that team for the
+    removed reviewer to 'withdrawn' rather than 'rejected'. Fixes #3320.
+
+  * Merged in [19153] from rjsparks@nostrum.com:
+    Scroll to buttons before clicking on them in Selenium tests. Fixes
+    #3314.
+
+ -- Robert Sparks <rjsparks@nostrum.com>  25 Jun 2021 15:56:58 +0000
+
+
 ietfdb (7.32.0) ietf; urgency=high
 
   ** Allow volunteering for NomCom within the datatracker **
