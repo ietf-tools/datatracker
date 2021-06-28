@@ -78,3 +78,16 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
         actions = ActionChains(self.driver)
         actions.move_to_element(element).perform()
 
+
+class presence_of_element_child_by_css_selector:
+    """Wait for presence of a child of a WebElement matching a CSS selector
+
+    This is a condition class for use with WebDriverWait.
+    """
+    def __init__(self, element, child_selector):
+        self.element = element
+        self.child_selector = child_selector
+
+    def __call__(self, driver):
+        child = self.element.find_element_by_css_selector(self.child_selector)
+        return child if child is not None else False

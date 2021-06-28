@@ -5,7 +5,8 @@
 {% origin %}
 {% with item=session.official_timeslotassignment acronym=session.historic_group.acronym %}
     {% if session.agenda and show_agenda %}
-      {% include "meeting/session_agenda_include.html" %}
+      {# Note: if called with show_agenda=True, calling template must load agenda_materials.js, needed by session_agenda_include.html #}
+      {% include "meeting/session_agenda_include.html" with slug=item.slug session=session timeslot=item.timeslot only %}
       <!-- agenda pop-up button -->
       <a class="" data-toggle="modal" data-target="#modal-{{item.slug}}" title="Show meeting materials"><span class="fa fa-fw fa-arrows-alt"></span></a>
       <!-- materials tar file -->
