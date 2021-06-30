@@ -1038,7 +1038,7 @@ def build_file_urls(doc):
                 file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=name))+"bibtex"))
     else:
-        base_path = os.path.join(settings.INTERNET_DRAFT_PATH, doc.name + "-" + doc.rev + ".")
+        base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
         possible_types = settings.IDSUBMIT_FILE_TYPES
         found_types = [t for t in possible_types if os.path.exists(base_path + t)]
         base = settings.IETF_ID_ARCHIVE_URL
