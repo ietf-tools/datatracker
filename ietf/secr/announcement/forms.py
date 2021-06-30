@@ -92,6 +92,7 @@ class AnnounceForm(forms.ModelForm):
         self.fields['cc'].help_text = 'Use comma separated lists for emails (Cc, Bcc, Reply To)'
         self.fields['frm'].widget = forms.Select(choices=get_from_choices(user))
         self.fields['frm'].label = 'From'
+        self.fields['reply_to'].required = True
         self.fields['nomcom'].label = 'NomCom message:'
         nomcom_roles = person.role_set.filter(group__in=self.fields['nomcom'].queryset,name='chair')
         secr_roles = person.role_set.filter(group__acronym='secretariat',name='secr')
@@ -99,7 +100,6 @@ class AnnounceForm(forms.ModelForm):
             self.initial['nomcom'] = nomcom_roles[0].group.pk
         if not nomcom_roles and not secr_roles:
             self.fields['nomcom'].widget = forms.HiddenInput()
-        self.initial['reply_to'] = 'ietf@ietf.org'
         
         if self.hidden:
             for key in list(self.fields.keys()):
