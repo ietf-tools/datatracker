@@ -8,11 +8,12 @@
          {% if session.name %} : {{ session.name }}{% endif %}
          {% if not session.cancelled %}
            <span class="regular pull-right">
+             {# see note in the included templates re: show_agenda parameter and required JS import #}
              {% if meeting.type.slug == 'interim' %}
                {% include "meeting/interim_session_buttons.html" with show_agenda=False show_empty=False %}
              {% else %}
                {% with schedule=meeting.schedule %}
-                 {% include "meeting/session_buttons_include.html" %}
+                 {% include "meeting/session_buttons_include.html" with show_agenda=False %}
                {% endwith %}
              {% endif %}
            </span>

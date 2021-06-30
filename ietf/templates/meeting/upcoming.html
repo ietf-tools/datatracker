@@ -180,6 +180,7 @@
     <script src="{% static 'moment/min/moment.min.js' %}"></script>
     <script src="{% static 'moment-timezone/builds/moment-timezone-with-data-10-year-range.min.js' %}"></script>
     <script src="{% static 'ietf/js/agenda/agenda_filter.js' %}"></script>
+    <script src="{% static 'ietf/js/agenda/agenda_materials.js' %}"></script>
     <script src="{% static 'ietf/js/agenda/timezone.js' %}"></script>
     <script>
       // List of all events with meta-info needed for filtering
@@ -337,37 +338,6 @@
       // Set up the filtering - the callback will be called when the page loads and on any filter changes
       agenda_filter.set_update_callback(update_view);
       agenda_filter.enable();
-
-      $(".modal").on("show.bs.modal", function () {
-	  var i = $(this).find(".frame");
-	  if ($(i).data("src")) {
-	      $.get($(i).data("src"), function (data, status, xhr) {
-		  var t = xhr.getResponseHeader("content-type");
-		  if (t.indexOf("text/plain") > -1) {
-		      data = "<pre class='agenda'>" + data + "</pre>";
-		  } else if(t.indexOf("text/html") > -1) {
-		      // nothing to do here
-		  } else {
-		      data = "<p>Unknown type: " + xhr.getResponseHeader("content-type") + "</p>";
-		  }
-		  $(i).html(data);
-	      });
-	  }
-	  var j = $(this).find(".frame2");
-	  if ($(j).data("src")) {
-	      $.get($(j).data("src"), function (data, status, xhr) {
-		  var t = xhr.getResponseHeader("content-type");
-		  if (t.indexOf("text/plain") > -1) {
-		      data = "<pre class='agenda'>" + data + "</pre>";
-		  } else if(t.indexOf("text/html") > -1) {
-		      // nothing to do here
-		  } else {
-		      data = "<p>Unknown type: " + xhr.getResponseHeader("content-type") + "</p>";
-		  }
-		  $(j).html(data);
-	      });
-	  }
-      });
 
       function format_session_time(session_elt, tz) {
           var start = moment.utc($(session_elt).attr('data-start-utc'));

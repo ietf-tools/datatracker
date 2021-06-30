@@ -31,7 +31,8 @@ from ietf.meeting.models import (Schedule, SchedTimeSessAssignment, Session,
                                  Meeting, SchedulingEvent, SessionStatusName)
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.utils.test_utils import assert_ical_response_is_valid
-from ietf.utils.jstest import IetfSeleniumTestCase, ifSeleniumEnabled, selenium_enabled
+from ietf.utils.jstest import ( IetfSeleniumTestCase, ifSeleniumEnabled, selenium_enabled,
+                                presence_of_element_child_by_css_selector )
 from ietf import settings
 
 if selenium_enabled():
@@ -1572,6 +1573,7 @@ class InterimTests(IetfSeleniumTestCase):
         sg_sess.save()
         sg_slot.save()
 
+        self.wait = WebDriverWait(self.driver, 2)
 
     def tearDown(self):
         settings.AGENDA_PATH = self.saved_agenda_path
@@ -1647,7 +1649,7 @@ class InterimTests(IetfSeleniumTestCase):
     def assert_upcoming_meeting_calendar(self, visible_meetings=None):
         """Assert that correct items are sent to the calendar"""
         def advance_month():
-            button = WebDriverWait(self.driver, 2).until(
+            button = self.wait.until(
                 expected_conditions.element_to_be_clickable(
                     (By.CSS_SELECTOR, 'div#calendar button.fc-next-button')))
             self.scroll_to_element(button)
@@ -1850,8 +1852,6 @@ class InterimTests(IetfSeleniumTestCase):
         self.do_upcoming_view_filter_test('?show=mars , ames &hide=   ames', meetings)
 
     def test_upcoming_view_time_zone_selection(self):
-        wait = WebDriverWait(self.driver, 2)
-
         def _assert_interim_tz_correct(sessions, tz):
             zone = pytz.timezone(tz)
             for session in sessions:
@@ -1897,7 +1897,7 @@ class InterimTests(IetfSeleniumTestCase):
         # wait for the select box to be updated - look for an arbitrary time zone to be in
         # its options list to detect this
         arbitrary_tz = 'America/Halifax'
-        arbitrary_tz_opt = wait.until(
+        arbitrary_tz_opt = self.wait.until(
             expected_conditions.presence_of_element_located(
                 (By.CSS_SELECTOR, '#timezone-select > option[value="%s"]' % arbitrary_tz)
             )
@@ -1923,7 +1923,7 @@ class InterimTests(IetfSeleniumTestCase):
 
         # click 'utc' button
         utc_tz_link.click()
-        wait.until(expected_conditions.element_to_be_selected(utc_tz_opt))
+        self.wait.until(expected_conditions.element_to_be_selected(utc_tz_opt))
         self.assertFalse(local_tz_opt.is_selected())
         self.assertFalse(local_tz_bottom_opt.is_selected())
         self.assertFalse(arbitrary_tz_opt.is_selected())
@@ -1935,7 +1935,7 @@ class InterimTests(IetfSeleniumTestCase):
 
         # click back to 'local'
         local_tz_link.click()
-        wait.until(expected_conditions.element_to_be_selected(local_tz_opt))
+        self.wait.until(expected_conditions.element_to_be_selected(local_tz_opt))
         self.assertTrue(local_tz_opt.is_selected())
         self.assertTrue(local_tz_bottom_opt.is_selected())
         self.assertFalse(arbitrary_tz_opt.is_selected())
@@ -1947,7 +1947,7 @@ class InterimTests(IetfSeleniumTestCase):
 
         # Now select a different item from the select input
         arbitrary_tz_opt.click()
-        wait.until(expected_conditions.element_to_be_selected(arbitrary_tz_opt))
+        self.wait.until(expected_conditions.element_to_be_selected(arbitrary_tz_opt))
         self.assertFalse(local_tz_opt.is_selected())
         self.assertFalse(local_tz_bottom_opt.is_selected())
         self.assertTrue(arbitrary_tz_opt.is_selected())
@@ -1960,7 +1960,7 @@ class InterimTests(IetfSeleniumTestCase):
         # Now repeat those tests using the widgets at the bottom of the page
         # click 'utc' button
         utc_tz_bottom_link.click()
-        wait.until(expected_conditions.element_to_be_selected(utc_tz_opt))
+        self.wait.until(expected_conditions.element_to_be_selected(utc_tz_opt))
         self.assertFalse(local_tz_opt.is_selected())
         self.assertFalse(local_tz_bottom_opt.is_selected())
         self.assertFalse(arbitrary_tz_opt.is_selected())
@@ -1972,7 +1972,7 @@ class InterimTests(IetfSeleniumTestCase):
 
         # click back to 'local'
         local_tz_bottom_link.click()
-        wait.until(expected_conditions.element_to_be_selected(local_tz_opt))
+        self.wait.until(expected_conditions.element_to_be_selected(local_tz_opt))
         self.assertTrue(local_tz_opt.is_selected())
         self.assertTrue(local_tz_bottom_opt.is_selected())
         self.assertFalse(arbitrary_tz_opt.is_selected())
@@ -1984,7 +1984,7 @@ class InterimTests(IetfSeleniumTestCase):
 
         # Now select a different item from the select input
         arbitrary_tz_bottom_opt.click()
-        wait.until(expected_conditions.element_to_be_selected(arbitrary_tz_opt))
+        self.wait.until(expected_conditions.element_to_be_selected(arbitrary_tz_opt))
         self.assertFalse(local_tz_opt.is_selected())
         self.assertFalse(local_tz_bottom_opt.is_selected())
         self.assertTrue(arbitrary_tz_opt.is_selected())
@@ -1993,6 +1993,52 @@ class InterimTests(IetfSeleniumTestCase):
         self.assertFalse(utc_tz_bottom_opt.is_selected())
         _assert_interim_tz_correct(sessions, arbitrary_tz)
         _assert_ietf_tz_correct(ietf_meetings, arbitrary_tz)
+
+    def test_upcoming_materials_modal(self):
+        """Test opening and closing a materals modal
+
+        This does not test dynamic reloading of the meeting materials - it relies on the main
+        agenda page testing that. If the materials modal handling diverges between here and
+        there, this should be updated to include that test.
+        """
+        url = self.absreverse('ietf.meeting.views.upcoming')
+        self.driver.get(url)
+
+        interim = self.displayed_interims(['mars'])[0]
+        session = interim.session_set.first()
+        assignment = session.official_timeslotassignment()
+        slug = assignment.slug()
+
+        # modal should start hidden
+        modal_div = self.driver.find_element_by_css_selector('div#modal-%s' % slug)
+        self.assertFalse(modal_div.is_displayed())
+
+        # Click the 'materials' button
+        open_modal_button = self.wait.until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '[data-target="#modal-%s"]' % slug)
+            ),
+            'Modal open button not found or not clickable',
+        )
+        open_modal_button.click()
+        self.wait.until(
+            expected_conditions.visibility_of(modal_div),
+            'Modal did not become visible after clicking open button',
+        )
+
+        # Now close the modal
+        close_modal_button = self.wait.until(
+            presence_of_element_child_by_css_selector(
+                modal_div,
+                '.modal-footer button[data-dismiss="modal"]',
+            ),
+            'Modal close button not found or not clickable',
+        )
+        close_modal_button.click()
+        self.wait.until(
+            expected_conditions.invisibility_of_element(modal_div),
+            'Modal was not hidden after clicking close button',
+        )
 
 
 # The following are useful debugging tools

@@ -8,6 +8,7 @@
 <span id="session-buttons-{{session.pk}}" class="text-nowrap">
   {% with acronym=session.historic_group.acronym %}
   {% if session.agenda and show_agenda %}
+    {# Note: if called with show_agenda=True, calling template must load agenda_materials.js, needed by session_agenda_include.html #}
     {% include "meeting/session_agenda_include.html" with slug=slug session=session timeslot=timeslot only %}
     <!-- agenda pop-up button -->
     <a class="" data-toggle="modal" data-target="#modal-{{slug}}" title="Show meeting materials"><span class="fa fa-fw fa-arrows-alt"></span></a>

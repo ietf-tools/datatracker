@@ -6,26 +6,14 @@ import debug                            # pyflakes:ignore
 from ietf.doc.factories import WgDraftFactory, DocumentAuthorFactory
 from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
-from ietf.utils.jstest import IetfSeleniumTestCase, ifSeleniumEnabled, selenium_enabled
+from ietf.utils.jstest import ( IetfSeleniumTestCase, ifSeleniumEnabled, selenium_enabled,
+                                presence_of_element_child_by_css_selector )
 
 if selenium_enabled():
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions
 
-
-class presence_of_element_child_by_css_selector:
-    """Wait for presence of a child of a WebElement matching a CSS selector
-
-    This is a condition class for use with WebDriverWait.
-    """
-    def __init__(self, element, child_selector):
-        self.element = element
-        self.child_selector = child_selector
-
-    def __call__(self, driver):
-        child = self.element.find_element_by_css_selector(self.child_selector)
-        return child if child is not None else False
 
 @ifSeleniumEnabled
 class EditAuthorsTests(IetfSeleniumTestCase):
