@@ -216,6 +216,8 @@ def doc_detail(request, date, name):
     # need to use curry here to pass custom variable to form init
     if doc.active_ballot():
         ballot_type = doc.active_ballot().ballot_type
+    elif doc.type.slug == 'draft':
+        ballot_type = BallotType.objects.get(doc_type__slug='draft', slug='approve')
     else:
         ballot_type = BallotType.objects.get(doc_type=doc.type)
     BallotFormset = formset_factory(BallotForm, extra=0)
