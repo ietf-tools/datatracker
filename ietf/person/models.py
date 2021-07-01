@@ -250,7 +250,9 @@ class Person(models.Model):
                 source_url = self.photo.url
                 if source_url.startswith(settings.IETF_HOST_URL):
                     source_url = source_url[len(settings.IETF_HOST_URL):]
-                return f'{settings.IETF_HOST_URL}cdn-cgi/image/fit=scale-down,width={size},height={size}{source_url}'
+                elif source_url.startswith('/'):
+                    source_url = source_url[1:]
+                return f'{settings.IETF_HOST_URL}cdn-cgi/image/fit=scale-down,width={size},height={size}/{source_url}'
             else:
                 datatracker_photo_path = urlreverse('ietf.person.views.photo', kwargs={'email_or_name': self.email()})
                 datatracker_photo_url = settings.IDTRACKER_BASE_URL + datatracker_photo_path
