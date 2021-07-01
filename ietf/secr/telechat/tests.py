@@ -105,6 +105,17 @@ class SecrTelechatTestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
+    def test_doc_detail_draft_no_ballot(self):
+        draft = IndividualDraftFactory(name='draft-imaginary-independent-submission')
+        by=Person.objects.get(name="(System)")
+        d = get_next_telechat_date()
+        date = d.strftime('%Y-%m-%d')
+        update_telechat(None, draft, by, d)
+        url = reverse('ietf.secr.telechat.views.doc_detail', kwargs={'date':date, 'name':draft.name})
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
     def test_doc_detail_charter(self):
         by=Person.objects.get(name="(System)")
         charter = CharterFactory(states=[('charter','intrev')])
