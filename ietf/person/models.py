@@ -244,6 +244,20 @@ class Person(models.Model):
         from ietf.ietfauth.utils import has_role
         return list(set([ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES if r==None or has_role(self.user, r) ]))
 
+    def cdn_photo_url(self, size=80):
+        if self.photo:
+            if settings.SERVE_CDN_PHOTOS:
+                source_url = self.photo.url
+                if source_url.startswith(settings.IETF_HOST_URL):
+                    source_url = source_url[len(settings.IETF_HOST_URL):]
+                return f'{settings.IETF_HOST_URL}cdn-cgi/image/fit=scale-down,width={size},height={size}{source_url}'
+            else:
+                datatracker_photo_path = urlreverse('ietf.person.views.photo', kwargs={'email_or_name': self.email()})
+                datatracker_photo_url = settings.IDTRACKER_BASE_URL + datatracker_photo_path
+            return datatracker_photo_url
+        else:
+            return ''
+
 
 class PersonExtResource(models.Model):
     person = ForeignKey(Person) 

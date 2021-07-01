@@ -18,7 +18,6 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from django.urls import reverse as urlreverse
 from django.utils.decorators import available_attrs
 from django.utils.http import urlquote
 
@@ -211,8 +210,7 @@ def openid_userinfo(claims, user):
     person = get_object_or_404(Person, user=user)
     email = person.email()
     if person.photo:
-        photo_path = urlreverse('ietf.person.views.photo', kwargs={'email_or_name': person.email()})
-        photo_url = settings.IDTRACKER_BASE_URL + photo_path
+        photo_url = person.cdn_photo_url()
     else:
         photo_url = ''
     claims.update( {
