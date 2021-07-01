@@ -3682,7 +3682,7 @@ def proceedings(request, num=None):
 
     meeting = get_meeting(num)
 
-    if (meeting.number.isdigit() and int(meeting.number) <= 64):
+    if (meeting.number.isdigit() and int(meeting.number) <= 96):
         return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
 
     if not meeting.schedule or not meeting.schedule.assignments.exists():
