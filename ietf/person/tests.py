@@ -11,6 +11,7 @@ from pyquery import PyQuery
 
 
 from django.http import HttpRequest
+from django.test import override_settings
 from django.urls import reverse as urlreverse
 from django.utils.encoding import iri_to_uri
 
@@ -178,6 +179,16 @@ class PersonTests(TestCase):
     def test_absolute_url(self):
         p = PersonFactory()
         self.assertEqual(p.get_absolute_url(), iri_to_uri('/person/%s' % p.name))
+
+    @override_settings(SERVE_CDN_PHOTOS=True)
+    def test_cdn_photo_url_cdn_on(self):
+        p = PersonFactory(with_bio=True)
+        self.assertIn('cdn-cgi/image',p.cdn_photo_url())
+
+    @override_settings(SERVE_CDN_PHOTOS=False)
+    def test_cdn_photo_url_cdn_off(self):
+        p = PersonFactory(with_bio=True)
+        self.assertNotIn('cdn-cgi/photo',p.cdn_photo_url())
 
 class PersonUtilsTests(TestCase):
     def test_determine_merge_order(self):

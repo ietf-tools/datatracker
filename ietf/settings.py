@@ -152,6 +152,7 @@ IETF_AUDIO_URL = IETF_HOST_URL + 'audio/'
 # Example: "/var/www/example.com/static/"
 
 
+SERVE_CDN_PHOTOS = True
 
 SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE = True
 
