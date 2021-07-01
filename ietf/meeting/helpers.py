@@ -166,6 +166,16 @@ def get_schedule_by_name(meeting, owner, name):
         return meeting.schedule_set.filter(name = name).first()
 
 def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefetches=()):
+    """Add computed properties to assignments
+
+    For each assignment a, adds
+      a.start_timestamp
+      a.end_timestamp
+      a.session.historic_group
+      a.session.historic_parent
+      a.session.rescheduled_to (if rescheduled)
+      a.session.prefetched_active_materials
+    """
     assignments_queryset = assignments_queryset.prefetch_related(
             'timeslot', 'timeslot__type', 'timeslot__meeting',
             'timeslot__location', 'timeslot__location__floorplan', 'timeslot__location__urlresource_set',
@@ -260,9 +270,9 @@ def filter_keywords_for_session(session):
         if group.state_id == 'bof':
             keywords.add('bof')
         keywords.add(group.acronym.lower())
-        token = session.docname_token_only_for_multiple()
-        if token is not None:
-            keywords.add(group.acronym.lower() + "-" + token)
+        specific_kw = filter_keyword_for_specific_session(session)
+        if specific_kw is not None:
+            keywords.add(specific_kw)
         area = getattr(group, 'historic_parent', group.parent)
 
         # Only sessions belonging to "regular" groups should respond to the
@@ -275,6 +285,18 @@ def filter_keywords_for_session(session):
     if office_hours_match is not None:
         keywords.update(['officehours', session.name.lower().replace(' ', '')])
     return sorted(list(keywords))
+
+def filter_keyword_for_specific_session(session):
+    """Get keyword that identifies a specific session
+
+    Returns None if the session cannot be selected individually.
+    """
+    group = getattr(session, 'historic_group', session.group)
+    if group is None:
+        return None
+    kw = group.acronym.lower()  # start with this
+    token = session.docname_token_only_for_multiple()
+    return kw if token is None else '{}-{}'.format(kw, token)
 
 def read_session_file(type, num, doc):
     # XXXX FIXME: the path fragment in the code below should be moved to

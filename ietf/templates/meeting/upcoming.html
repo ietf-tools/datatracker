@@ -83,8 +83,7 @@
       {% if menu_actions %}
         <div id="menu-actions" class="buttonlist">
           {% for action in menu_actions %}
-            <a class="btn btn-default"
-               data-append-filter="{{ action.append_filter }}"
+            <a class="btn btn-default {% if action.append_filter %}agenda-link filterable{% endif %}"
                href="{{ action.url }}">{{ action.label }}</a>
           {% endfor %}
         </div>
@@ -314,24 +313,8 @@
           });
       }
 
-      function update_links(filter_params) {
-          var filtered_links = $("#menu-actions [data-append-filter='True']");
-          var filtering_enabled = agenda_filter.filtering_is_enabled(filter_params);
-          filtered_links.each(function(index, elt) {
-              var orig_link_href = $(elt).attr("href").split("?")[0];
-              if (filtering_enabled) {
-                  // append new querystring
-                  $(elt).attr("href", orig_link_href+window.location.search);
-              } else {
-                  // remove querystring
-                  $(elt).attr("href", orig_link_href);
-              }
-          });
-      }
-
       function update_view(filter_params) {
           update_meeting_display(filter_params);
-          update_links(filter_params);
           update_calendar(current_tz, filter_params);
       }
 

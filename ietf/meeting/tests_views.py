@@ -35,6 +35,7 @@ from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_r
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_meeting_cancellation_notice, send_interim_session_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates, update_important_dates
+from ietf.meeting.helpers import filter_keyword_for_specific_session
 from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission, SchedulingEvent, Room, Constraint, ConstraintName
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
 from ietf.meeting.utils import finalize, condition_slide_order
@@ -374,6 +375,63 @@ class MeetingTests(TestCase):
         r_with_tz = self.client.get(url)
         self.assertEqual(r_with_tz.status_code,200)
         self.assertEqual(r.content, r_with_tz.content)
+
+    def test_agenda_personalize(self):
+        """Session selection page should have a checkbox for each session with appropriate keywords"""
+        meeting = make_meeting_test_data()
+        url = urlreverse("ietf.meeting.views.agenda_personalize",kwargs=dict(num=meeting.number))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        for assignment in SchedTimeSessAssignment.objects.filter(
+                schedule__in=[meeting.schedule, meeting.schedule.base],
+                timeslot__type__private=False,
+        ):
+            row = q('#row-{}'.format(assignment.slug()))
+            self.assertIsNotNone(row, 'No row for assignment {}'.format(assignment))
+            checkboxes = row('input[type="checkbox"][name="selected-sessions"]')
+            self.assertEqual(len(checkboxes), 1,
+                             'Row for assignment {} does not have a checkbox input'.format(assignment))
+            checkbox = checkboxes.eq(0)
+            self.assertEqual(
+                checkbox.attr('data-filter-item'),
+                filter_keyword_for_specific_session(assignment.session),
+            )
+
+    def test_agenda_personalize_updates_urls(self):
+        """The correct URLs should be updated when filter settings change on the personalize agenda view
+
+        Tests that the expected elements have the necessary classes. The actual update of these fields
+        is tested in the JS tests
+        """
+        meeting = make_meeting_test_data()
+        url = urlreverse("ietf.meeting.views.agenda_personalize",kwargs=dict(num=meeting.number))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+
+        # Find all the elements expected to be updated
+        expected_elements = []
+        nav_tab_anchors = q('ul.nav.nav-tabs > li > a')
+        for anchor in nav_tab_anchors.items():
+            text = anchor.text().strip()
+            if text in ['Agenda', 'UTC Agenda', 'Select Sessions']:
+                expected_elements.append(anchor)
+        for btn in q('.buttonlist a.btn').items():
+            text = btn.text().strip()
+            if text in ['View customized agenda', 'Download as .ics', 'Subscribe with webcal']:
+                expected_elements.append(btn)
+
+        # Check that all the expected elements have the correct classes
+        for elt in expected_elements:
+            self.assertTrue(elt.has_class('agenda-link'))
+            self.assertTrue(elt.has_class('filterable'))
+
+        # Finally, check that there are no unexpected elements marked to be updated.
+        # If there are, they should be added to the test above.
+        self.assertEqual(len(expected_elements),
+                         len(q('.agenda-link.filterable')),
+                         'Unexpected elements updated')
 
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=False, MEETING_DOC_HREFS = settings.MEETING_DOC_CDN_HREFS)
     def test_materials_through_cdn(self):

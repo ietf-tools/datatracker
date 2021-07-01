@@ -116,7 +116,7 @@
             {% endfor %}
             <div style="display:inline-block">
                 <a class="btn btn-default" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{ non_area_keywords|join:',' }}">Non-area events</a>
-                <a id="ical-link" class="hidden btn btn-primary" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}">Customized schedule</a>
+                <a id="ical-link" class="hidden btn btn-primary agenda-link filterable" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}">Customized schedule</a>
             </div>
         </p>
 
@@ -421,14 +421,7 @@
 
    function update_ical_links(filter_params) {
        var ical_link = $("#ical-link");
-       if (agenda_filter.filtering_is_enabled(filter_params)) {
-           // Replace the query string in the ical link
-           var orig_link_href = ical_link.attr("href").split("?")[0];
-           ical_link.attr("href", orig_link_href+window.location.search);
-           ical_link.removeClass("hidden");
-       } else {
-           ical_link.addClass("hidden");
-       }
+       ical_link.toggleClass("hidden", !agenda_filter.filtering_is_enabled(filter_params));
    }
 
    function update_weekview(filter_params) {

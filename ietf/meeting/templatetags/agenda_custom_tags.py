@@ -3,6 +3,7 @@
 
 
 from django import template
+from django.urls import reverse
 
 register = template.Library()
 
@@ -60,3 +61,10 @@ def args(obj, arg):
     obj.__callArg += [arg]
     return obj
 
+@register.simple_tag(name='webcal_url', takes_context=True)
+def webcal_url(context, viewname, *args, **kwargs):
+    """webcal URL for a view"""
+    return 'webcal://{}{}'.format(
+        context.request.get_host(),
+        reverse(viewname, args=args, kwargs=kwargs)
+    )

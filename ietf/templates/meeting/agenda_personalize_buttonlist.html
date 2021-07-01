@@ -1,0 +1,20 @@
+{% comment %}
+Buttons for the agenda_personalize.html template
+
+Required parameter: meeting - meeting being displayed
+{% endcomment %}
+{% load agenda_custom_tags %}
+<div class="buttonlist">
+  <a class="btn btn-default agenda-link filterable"
+     href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">
+    View customized agenda
+  </a>
+  <a class="btn btn-default agenda-link filterable"
+     href="{% url 'ietf.meeting.views.agenda_ical' num=meeting.number %}">
+    Download as .ics
+  </a>
+  <a class="btn btn-default agenda-link filterable"
+     href="{% webcal_url 'ietf.meeting.views.agenda_ical' num=meeting.number %}">
+    Subscribe with webcal
+  </a>
+</div>

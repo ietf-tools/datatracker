@@ -65,7 +65,7 @@ from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
 from ietf.meeting.helpers import get_meeting, get_ietf_meeting, get_current_ietf_meeting_num
 from ietf.meeting.helpers import get_schedule, schedule_permissions, is_regular_agenda_filter_group
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
-from ietf.meeting.helpers import filter_keywords_for_session, tag_assignments_with_filter_keywords
+from ietf.meeting.helpers import filter_keywords_for_session, tag_assignments_with_filter_keywords, filter_keyword_for_specific_session
 from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
 from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
 from ietf.meeting.helpers import can_edit_interim_request
@@ -1464,6 +1464,119 @@ def session_materials(request, session_id):
     assignment = assignments[0]
     return render(request, 'meeting/session_materials.html', dict(item=assignment))
 
+
+def get_assignments_for_agenda(schedule):
+    """Get queryset containing assignments to show on the agenda"""
+    return SchedTimeSessAssignment.objects.filter(
+        schedule__in=[schedule, schedule.base],
+        timeslot__type__private=False,
+    )
+
+
+def extract_groups_hierarchy(prepped_assignments):
+    """Extract groups hierarchy for agenda display
+
+    It's a little bit complicated because we can be dealing with historic groups.
+    """
+    seen = set()
+    groups = [a.session.historic_group for a in prepped_assignments
+              if a.session
+              and a.session.historic_group
+              and is_regular_agenda_filter_group(a.session.historic_group)
+              and a.session.historic_group.historic_parent]
+    group_parents = []
+    for g in groups:
+        if g.historic_parent.acronym not in seen:
+            group_parents.append(g.historic_parent)
+            seen.add(g.historic_parent.acronym)
+
+    seen = set()
+    for p in group_parents:
+        p.group_list = []
+        for g in groups:
+            if g.acronym not in seen and g.historic_parent.acronym == p.acronym:
+                p.group_list.append(g)
+                seen.add(g.acronym)
+
+        p.group_list.sort(key=lambda g: g.acronym)
+    return group_parents
+
+
+def prepare_filter_keywords(tagged_assignments, group_parents):
+    #
+    # The agenda_filter template expects a list of categorized header buttons, each
+    # with a list of children. Make two categories: the IETF areas and the other parent groups.
+    # We also pass a list of 'extra' buttons - currently Office Hours and miscellaneous filters.
+    # All but the last of these are additionally used by the agenda.html template to make
+    # a list of filtered ical buttons. The last group is ignored for this.
+    area_group_filters = []
+    other_group_filters = []
+    extra_filters = []
+
+    for p in group_parents:
+        new_filter = dict(
+            label=p.acronym.upper(),
+            keyword=p.acronym.lower(),
+            children=[
+                dict(
+                    label=g.acronym,
+                    keyword=g.acronym.lower(),
+                    is_bof=g.is_bof(),
+                ) for g in p.group_list
+            ]
+        )
+        if p.type.slug == 'area':
+            area_group_filters.append(new_filter)
+        else:
+            other_group_filters.append(new_filter)
+
+    office_hours_labels = set()
+    for a in tagged_assignments:
+        suffix = ' office hours'
+        if a.session.name.lower().endswith(suffix):
+            office_hours_labels.add(a.session.name[:-len(suffix)].strip())
+
+    if len(office_hours_labels) > 0:
+        # keyword needs to match what's tagged in filter_keywords_for_session()
+        extra_filters.append(dict(
+            label='Office Hours',
+            keyword='officehours',
+            children=[
+                dict(
+                    label=label,
+                    keyword=label.lower().replace(' ', '')+'officehours',
+                    is_bof=False,
+                ) for label in office_hours_labels
+            ]
+        ))
+
+    # Keywords that should appear in 'non-area' column
+    non_area_labels = [
+        'BoF', 'EDU', 'Hackathon', 'IEPG', 'IESG', 'IETF', 'Plenary', 'Secretariat', 'Tools',
+    ]
+    # Remove any unused non-area keywords
+    non_area_filters = [
+        dict(label=label, keyword=label.lower(), is_bof=False)
+        for label in non_area_labels if any([
+            label.lower() in assignment.filter_keywords
+            for assignment in tagged_assignments
+        ])
+    ]
+    if len(non_area_filters) > 0:
+        extra_filters.append(dict(
+            label=None,
+            keyword=None,
+            children=non_area_filters,
+        ))
+
+    area_group_filters.sort(key=lambda p:p['label'])
+    other_group_filters.sort(key=lambda p:p['label'])
+    filter_categories = [category
+                         for category in [area_group_filters, other_group_filters, extra_filters]
+                         if len(category) > 0]
+    return filter_categories, non_area_labels
+
+
 @ensure_csrf_cookie
 def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
     base = base if base else 'agenda'
@@ -1486,6 +1599,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         else:
             raise Http404("No such meeting")
 
+    # Select the schedule to show
     if name is None:
         schedule = get_schedule(meeting, name)
     else:
@@ -1497,112 +1611,23 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         return render(request, "meeting/no-"+base+ext, {'meeting':meeting }, content_type=mimetype[ext])
 
     updated = meeting.updated()
-    filtered_assignments = SchedTimeSessAssignment.objects.filter(
-        schedule__in=[schedule, schedule.base],
-        timeslot__type__private=False,
+
+    # Select and prepare sessions that should be included
+    filtered_assignments = preprocess_assignments_for_agenda(
+        get_assignments_for_agenda(schedule),
+        meeting
     )
-    filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
     tag_assignments_with_filter_keywords(filtered_assignments)
 
+    # Done processing for CSV output
     if ext == ".csv":
         return agenda_csv(schedule, filtered_assignments)
 
-    # extract groups hierarchy, it's a little bit complicated because
-    # we can be dealing with historic groups
-    seen = set()
-    groups = [a.session.historic_group for a in filtered_assignments
-              if a.session
-              and a.session.historic_group
-              and is_regular_agenda_filter_group(a.session.historic_group)
-              and a.session.historic_group.historic_parent]
-    group_parents = []
-    for g in groups:
-        if g.historic_parent.acronym not in seen:
-            group_parents.append(g.historic_parent)
-            seen.add(g.historic_parent.acronym)
-
-    seen = set()
-    for p in group_parents:
-        p.group_list = []
-        for g in groups:
-            if g.acronym not in seen and g.historic_parent.acronym == p.acronym:
-                p.group_list.append(g)
-                seen.add(g.acronym)
-
-        p.group_list.sort(key=lambda g: g.acronym)
-
-    # Groups gathered and processed. Now arrange for the filter UI.
-    #
-    # The agenda_filter template expects a list of categorized header buttons, each
-    # with a list of children. Make two categories: the IETF areas and the other parent groups.
-    # We also pass a list of 'extra' buttons - currently Office Hours and miscellaneous filters.
-    # All but the last of these are additionally used by the agenda.html template to make
-    # a list of filtered ical buttons. The last group is ignored for this. 
-    area_group_filters = []
-    other_group_filters = []
-    extra_filters = []
-    
-    for p in group_parents:
-        new_filter = dict(
-            label=p.acronym.upper(),
-            keyword=p.acronym.lower(),
-            children=[
-                dict(
-                    label=g.acronym,
-                    keyword=g.acronym.lower(),
-                    is_bof=g.is_bof(),
-                ) for g in p.group_list
-            ]
-        )
-        if p.type.slug == 'area':
-            area_group_filters.append(new_filter)
-        else:
-            other_group_filters.append(new_filter)
-
-    office_hours_labels = set()
-    for a in filtered_assignments:
-        suffix = ' office hours'
-        if a.session.name.lower().endswith(suffix):
-            office_hours_labels.add(a.session.name[:-len(suffix)].strip())
-
-    if len(office_hours_labels) > 0:
-        # keyword needs to match what's tagged in filter_keywords_for_session() 
-        extra_filters.append(dict(
-            label='Office Hours',
-            keyword='officehours',
-            children=[
-                dict(
-                    label=label,
-                    keyword=label.lower().replace(' ', '')+'officehours',
-                    is_bof=False,
-                ) for label in office_hours_labels
-            ]
-        ))
-
-    # Keywords that should appear in 'non-area' column
-    non_area_labels = [
-        'BoF', 'EDU', 'Hackathon', 'IEPG', 'IESG', 'IETF', 'Plenary', 'Secretariat', 'Tools',
-    ]
-    # Remove any unused non-area keywords
-    non_area_filters = [
-        dict(label=label, keyword=label.lower(), is_bof=False) 
-        for label in non_area_labels if any([
-            label.lower() in assignment.filter_keywords 
-            for assignment in filtered_assignments
-        ])
-    ]
-    if len(non_area_filters) > 0:
-        extra_filters.append(dict(
-            label=None,
-            keyword=None,
-            children=non_area_filters,
-        ))
-
-    area_group_filters.sort(key=lambda p:p['label'])
-    other_group_filters.sort(key=lambda p:p['label'])
-    filter_categories = [category 
-                         for category in [area_group_filters, other_group_filters, extra_filters]
-                         if len(category) > 0]
+    # Now prep the filter UI
+    filter_categories, non_area_labels = prepare_filter_keywords(
+        filtered_assignments,
+        extract_groups_hierarchy(filtered_assignments),
+    )
 
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
@@ -1755,6 +1780,45 @@ def agenda_by_type_ics(request,num=None,type=None):
         assignments = assignments.filter(session__type__slug=type)
     updated = meeting.updated()
     return render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":assignments},content_type="text/calendar")
+
+
+def agenda_personalize(request, num):
+    meeting = get_ietf_meeting(num)  # num may be None, which requests the current meeting
+    if meeting is None or meeting.schedule is None:
+        raise Http404('No such meeting')
+
+    # Select and prepare sessions that should be included
+    filtered_assignments = preprocess_assignments_for_agenda(
+        get_assignments_for_agenda(meeting.schedule),
+        meeting
+    )
+    tag_assignments_with_filter_keywords(filtered_assignments)
+    for assignment in filtered_assignments:
+        # may be None for some sessions
+        assignment.session_keyword = filter_keyword_for_specific_session(assignment.session)
+
+    # Now prep the filter UI
+    filter_categories, non_area_labels = prepare_filter_keywords(
+        filtered_assignments,
+        extract_groups_hierarchy(filtered_assignments),
+    )
+
+    is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
+
+    return render(
+        request,
+        "meeting/agenda_personalize.html",
+        {
+            'schedule': meeting.schedule,
+            'updated': meeting.updated(),
+            'filtered_assignments': filtered_assignments,
+            'filter_categories': filter_categories,
+            'non_area_labels': non_area_labels,
+            'timezone': meeting.time_zone,
+            'is_current_meeting': is_current_meeting,
+            'cache_time': 150 if is_current_meeting else 3600,
+        }
+    )
 
 def session_draft_list(num, acronym):
     try:
