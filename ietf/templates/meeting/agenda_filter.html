@@ -1,14 +1,28 @@
+{% comment %}
+Required parameters:
+  filter_categories - filter description structure (see agenda view for example)
+
+Optional parameters:
+  always_show - if False or absent, menu closes when not in use and "Customize" button is shown
+  customize_button_text - text to show on the "Customize" button (defaults to "Customize...")
+{% endcomment %}
 {% load agenda_filter_tags %}
 <div class="panel-group" id="accordion">
     <div class="panel panel-default">
-        <div class="panel-heading">
+      {% if not always_show %}
+      <div class="panel-heading">
             <h4 class="panel-title">
                 <a data-toggle="collapse" data-parent="#accordion" href="#customize">
                     <span class="fa fa-caret-down"></span> {% firstof customize_button_text "Customize..."%} 
                 </a>
             </h4>
         </div>
-        <div id="customize" class="panel-collapse collapse">
+      {% endif %}
+        <div id="customize" class="{% if not always_show %}panel-collapse collapse{% endif %}">
+            <span hidden {# options to pass to the JS - correspond to keys in opts object #}
+                  id="agenda-filter-options"
+                  data-always-show="{% firstof always_show False %}">
+            </span>
             <div class="panel-body">
 
                 <p>
