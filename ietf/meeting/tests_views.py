@@ -541,7 +541,7 @@ class MeetingTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_proceedings(self):
-        meeting = make_meeting_test_data()
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         GroupEventFactory(group=session.group,type='status_update')
         SessionPresentationFactory(document__type_id='recording',session=session)
