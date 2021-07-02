@@ -1,3 +1,40 @@
+ietfdb (7.34.0) ietf; urgency=medium
+
+  ** Calendar by session, bugfixes **
+
+  * Merged in [19155] from rcross@amsl.com:
+    In announcement tool, remove Reply-To default of
+    'ietf@ietf.org' and make field required.
+
+  * Merged in [19164] from jennifer@painless-security.com:
+    Fix broken meeting materials button on upcoming meetings page. 
+    Fixes #3278.  
+
+  * Merged in [19166] from krathnayake@ietf.org:
+    Use INTERNET_ALL_DRAFTS_ARCHIVE_DIR serve all IDs. 
+    Fixes #3308 and #3309.  
+
+  * Merged in [19168] from rjsparks@nostrum.com:
+    Revert the removal of the decoration of session with order_number made 
+    in r19074. The attribute is used in the templated URLs associated with 
+    Rooms (such as for the Meetecho session URL).  
+
+  * Merged in [19176] and [19177] from rjsparks@nostrum.com:
+    Use a cdn for the oidc profile photo url.  
+
+  * Merged in [19180] from rcross@amsl.com:
+    Fix Telechat app bug, draft with no ballot.  
+
+  * Merged in [19182] from rjsparks@nostrum.com:
+    Stop showing generated proceedings for older meetings that already had 
+    official proceedings. Fixes #3322.  
+
+  * Merged in [19183] from jennifer@painless-security.com:
+    Add 'Select Sessions' tab to agenda pages.  
+
+ -- Robert Sparks <rjsparks@nostrum.com>  02 Jul 2021 14:28:34 +0000
+
+
 ietfdb (7.33.0) ietf; urgency=medium
 
   ** Improvements to the schedule editor, bugfixes **
