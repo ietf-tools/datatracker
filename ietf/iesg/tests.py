@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2020, All Rights Reserved
+# Copyright The IETF Trust 2009-2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -27,6 +27,8 @@ from ietf.iesg.models import TelechatDate
 from ietf.name.models import StreamName
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
+from ietf.iesg.factories import IESGMgmtItemFactory
+
 
 class IESGTests(TestCase):
     def test_feed(self):
@@ -131,6 +133,9 @@ class IESGAgendaTests(TestCase):
                                             telechat_date=date,
                                             returning_item=True)
 
+        self.mgmt_items = [ ]
+        for i in range(0, 10):
+            self.mgmt_items.append(IESGMgmtItemFactory())
 
     def tearDown(self):
         settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
@@ -141,6 +146,7 @@ class IESGAgendaTests(TestCase):
         statchg = self.telechat_docs["statchg"]
         conflrev = self.telechat_docs["conflrev"]
         charter = self.telechat_docs["charter"]
+        mgmtitem = self.mgmt_items
 
         # put on agenda
         date = datetime.date.today() + datetime.timedelta(days=50)
@@ -275,7 +281,6 @@ class IESGAgendaTests(TestCase):
         conflrev.set_state(State.objects.get(type="conflrev", slug="needshep"))
         self.assertTrue(conflrev in agenda_data(date_str)["sections"]["3.4.3"]["docs"])
 
-
         # 4 WGs
         telechat_event.doc = charter
         telechat_event.save()
@@ -303,6 +308,11 @@ class IESGAgendaTests(TestCase):
 
         #for n, s in agenda_data(date_str)["sections"].iteritems():
         #    print n, s.get("docs") if "docs" in s else s["title"]
+
+        # 10 Management Items
+        for i, mi in enumerate(mgmtitem, start=1):
+            s = "6." + str(i)
+            self.assertEqual(mi.title, agenda_data(date_str)["sections"][s]['title'])
 
     def test_feed(self):
         r = self.client.get("/feed/iesg-agenda/")
@@ -338,6 +348,14 @@ class IESGAgendaTests(TestCase):
                 self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
                 self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))
 
+        for i, mi in enumerate(self.mgmt_items, start=1):
+            s = "6." + str(i)
+            self.assertContains(r, s, msg_prefix="Section '%s' not in response" % s)
+            self.assertContains(r, mi.title, msg_prefix="Management item title '%s' not in response" % mi.title)
+
+        # Make sure the sort places 6.9 before 6.10
+        self.assertLess(r.content.find(b"6.9"), r.content.find(b"6.10"))
+
     def test_agenda_txt(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_txt"))
         self.assertEqual(r.status_code, 200)
@@ -349,6 +367,14 @@ class IESGAgendaTests(TestCase):
             else:
                 self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
                 self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))
+
+        for i, mi in enumerate(self.mgmt_items, start=1):
+            s = "6." + str(i)
+            self.assertContains(r, s, msg_prefix="Section '%s' not in response" % s)
+            self.assertContains(r, mi.title, msg_prefix="Management item title '%s' not in response" % mi.title)
+
+        # Make sure the sort places 6.9 before 6.10
+        self.assertLess(r.content.find(b"6.9"), r.content.find(b"6.10"))
 
     def test_agenda_scribe_template(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_scribe_template"))

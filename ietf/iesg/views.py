@@ -200,7 +200,7 @@ def agenda(request, date=None):
     request.session['ballot_edit_return_point'] = request.path_info
     return render(request, "iesg/agenda.html", {
             "date": data["date"],
-            "sections": sorted(data["sections"].items()),
+            "sections": sorted(data["sections"].items(), key=lambda x:[int(p) for p in x[0].split('.')]),
             "settings": settings,
             } )
 
@@ -208,7 +208,7 @@ def agenda_txt(request, date=None):
     data = agenda_data(date)
     return render(request, "iesg/agenda.txt", {
             "date": data["date"],
-            "sections": sorted(data["sections"].items()),
+            "sections": sorted(data["sections"].items(), key=lambda x:[int(p) for p in x[0].split('.')]),
             "domain": Site.objects.get_current().domain,
             }, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
