@@ -13,8 +13,11 @@ from django.conf import settings
 
 from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor,
     StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent,
-    DocumentActionHolder)
+    DocumentActionHolder, BofreqEditorDocEvent )
 from ietf.group.models import Group
+from ietf.person.factories import PersonFactory
+from ietf.utils.text import xslugify
+
 
 def draft_name_generator(type_id,group,n):
         return '%s-%s-%s-%s%d'%( 
@@ -379,3 +382,39 @@ class DocumentAuthorFactory(factory.DjangoModelFactory):
 
 class WgDocumentAuthorFactory(DocumentAuthorFactory):
     document = factory.SubFactory(WgDraftFactory)
+
+class BofreqEditorDocEventFactory(DocEventFactory):
+    class Meta:
+        model = BofreqEditorDocEvent
+
+    type = "changed_editors"
+    doc = factory.SubFactory('ietf.doc.factories.BofreqFactory')
+
+
+    @factory.post_generation
+    def editors(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            obj.editors.set(extracted)
+        else:
+            obj.editors.set(PersonFactory.create_batch(3))
+        obj.desc = f'Changed editors to {", ".join(obj.editors.values_list("name",flat=True)) or "(None)"}'
+
+class BofreqFactory(BaseDocumentFactory):
+    type_id = 'bofreq'
+    title = factory.Faker('sentence')
+    name = factory.LazyAttribute(lambda o: 'bofreq-%s'%(xslugify(o.title)))
+
+    bofreqeditordocevent = factory.RelatedFactory('ietf.doc.factories.BofreqEditorDocEventFactory','doc')
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+        else:
+            obj.set_state(State.objects.get(type_id='bofreq',slug='proposed'))
+

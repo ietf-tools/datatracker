@@ -40,6 +40,7 @@ import io
 import json
 import os
 import re
+import markdown
 
 from urllib.parse import quote
 
@@ -54,7 +55,8 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent, BallotType,
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
-    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor )
+    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
+    BofreqEditorDocEvent )
 from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
@@ -524,6 +526,25 @@ def document_main(request, name, rev=None):
                                        group=group,
                                        milestones=milestones,
                                        can_manage=can_manage,
+                                       ))
+
+    if doc.type_id == "bofreq":
+#        content = markdown2.markdown(doc.text_or_error(),extras=['tables'])
+        content = markdown.markdown(doc.text_or_error(),extensions=['extra'])
+        editors = doc.latest_event(BofreqEditorDocEvent).editors.all()
+        can_manage = has_role(request.user,['Secretariat', 'Area Director', 'IAB'])
+        is_editor =  request.user.is_authenticated and request.user.person in editors
+
+        return render(request, "doc/document_bofreq.html",
+                                  dict(doc=doc,
+                                       top=top,
+                                       revisions=revisions,
+                                       latest_rev=latest_rev,
+                                       content=content,
+                                       snapshot=snapshot,
+                                       can_manage=can_manage,
+                                       editors=editors,
+                                       is_editor=is_editor,
                                        ))
 
     if doc.type_id == "conflrev":

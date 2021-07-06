@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2020, All Rights Reserved
+# Copyright The IETF Trust 2010-2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -11,7 +11,8 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     StateDocEvent, ConsensusDocEvent, BallotType, BallotDocEvent, WriteupDocEvent, LastCallDocEvent,
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
-    ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder )
+    ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
+    BofreqEditorDocEvent )
 
 from ietf.utils.validators import validate_external_resource_value
 
@@ -192,6 +193,10 @@ admin.site.register(BallotPositionDocEvent, BallotPositionDocEventAdmin)
 class IRSGBallotDocEventAdmin(DocEventAdmin):
     raw_id_fields = ["doc", "by"]
 admin.site.register(IRSGBallotDocEvent, IRSGBallotDocEventAdmin)
+
+class BofreqEditorDocEventAdmin(DocEventAdmin):
+    raw_id_fields = ["doc", "by", "editors" ]
+admin.site.register(BofreqEditorDocEvent, BofreqEditorDocEventAdmin)
     
 class DocumentUrlAdmin(admin.ModelAdmin):
     list_display = ['id', 'doc', 'tag', 'url', 'desc', ]
