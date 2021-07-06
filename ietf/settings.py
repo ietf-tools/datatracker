@@ -644,6 +644,7 @@ DATETIME_FORMAT = "Y-m-d H:i T"
 # regex can reasonably be expected to be a unique one-off.
 URL_REGEXPS = {
     "acronym": r"(?P<acronym>[-a-z0-9]+)",
+    "bofreq": r"(?P<name>bofreq-[-a-z0-9]+)",
     "charter": r"(?P<name>charter-[-a-z0-9]+)",
     "date": r"(?P<date>\d{4}-\d{2}-\d{2})",
     "name": r"(?P<name>[A-Za-z0-9._+-]+?)",
@@ -662,6 +663,7 @@ INTERNET_DRAFT_PATH = '/a/ietfdata/doc/draft/repository'
 INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
 CHARTER_PATH = '/a/ietfdata/doc/charter/'
+BOFREQ_PATH = '/a/ietfdata/doc/bofreq/'
 CONFLICT_REVIEW_PATH = '/a/ietfdata/doc/conflict-review'
 STATUS_CHANGE_PATH = '/a/ietfdata/doc/status-change'
 AGENDA_PATH = '/a/www/www6s/proceedings/'

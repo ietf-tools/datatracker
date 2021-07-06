@@ -2307,6 +2307,76 @@
   },
   {
     "fields": {
+      "desc": "The bof request is proposed",
+      "name": "Proposed",
+      "next_states": [
+        159,
+        160,
+        161,
+        162
+      ],
+      "order": 0,
+      "slug": "proposed",
+      "type": "bofreq",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 158
+  },
+  {
+    "fields": {
+      "desc": "The bof request is approved",
+      "name": "Approved",
+      "next_states": [],
+      "order": 1,
+      "slug": "approved",
+      "type": "bofreq",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 159
+  },
+  {
+    "fields": {
+      "desc": "The bof request is declined",
+      "name": "Declined",
+      "next_states": [],
+      "order": 2,
+      "slug": "declined",
+      "type": "bofreq",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 160
+  },
+  {
+    "fields": {
+      "desc": "The bof request is proposed",
+      "name": "Replaced",
+      "next_states": [],
+      "order": 3,
+      "slug": "replaced",
+      "type": "bofreq",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 161
+  },
+  {
+    "fields": {
+      "desc": "The bof request is abandoned",
+      "name": "Abandoned",
+      "next_states": [],
+      "order": 4,
+      "slug": "abandoned",
+      "type": "bofreq",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 162
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -2318,6 +2388,13 @@
     },
     "model": "doc.statetype",
     "pk": "bluesheets"
+  },
+  {
+    "fields": {
+      "label": "Bof Request State"
+    },
+    "model": "doc.statetype",
+    "pk": "bofreq"
   },
   {
     "fields": {
@@ -2990,7 +3067,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\",\n    \"secr\"\n]",
-      "agenda_type": null,
+      "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": true,
       "customize_workflow": false,
@@ -3002,7 +3079,7 @@
       "has_chartering_process": false,
       "has_default_jabber": false,
       "has_documents": false,
-      "has_meetings": false,
+      "has_meetings": true,
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": true,
@@ -3348,6 +3425,46 @@
     },
     "model": "mailtrigger.mailtrigger",
     "pk": "ballot_saved"
+  },
+  {
+    "fields": {
+      "cc": [],
+      "desc": "Recipients when the editors of a BOF proposal are changed.",
+      "to": [
+        "bofreq_editors",
+        "bofreq_previous_editors",
+        "doc_ad",
+        "doc_notify"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "bofreq_editors_changed"
+  },
+  {
+    "fields": {
+      "cc": [],
+      "desc": "Recipients when a new revision of a BOF request is uploaded.",
+      "to": [
+        "bofreq_editors",
+        "doc_ad",
+        "doc_notify"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "bofreq_new_revision"
+  },
+  {
+    "fields": {
+      "cc": [],
+      "desc": "Recipients when the title of a BOF proposal is changed.",
+      "to": [
+        "bofreq_editors",
+        "doc_ad",
+        "doc_notify"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "bofreq_title_changed"
   },
   {
     "fields": {
@@ -4063,6 +4180,7 @@
     "fields": {
       "cc": [
         "liaison_cc",
+        "liaison_coordinators",
         "liaison_response_contacts",
         "liaison_technical_contacts"
       ],
@@ -5003,6 +5121,22 @@
   },
   {
     "fields": {
+      "desc": "BOF request editors",
+      "template": ""
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "bofreq_editors"
+  },
+  {
+    "fields": {
+      "desc": "Editors of the prior version of a BOF request",
+      "template": "{% for editor in previous_editors %}{{editor.email_address}}{% if not forloop.last %},{% endif %}{% endfor %}"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "bofreq_previous_editors"
+  },
+  {
+    "fields": {
       "desc": "The person providing a comment to nomcom",
       "template": "{{commenter}}"
     },
@@ -5400,6 +5534,14 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "liaison_cc"
+  },
+  {
+    "fields": {
+      "desc": "The IAB liaison coordination team members",
+      "template": "<liaison-coordination@iab.org>"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "liaison_coordinators"
   },
   {
     "fields": {
@@ -9597,6 +9739,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "Bof Request",
+      "order": 0,
+      "prefix": "bofreq",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "bofreq"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Charter",
       "order": 0,
       "prefix": "charter",
@@ -9901,6 +10054,7 @@
         "auth",
         "aut-appr",
         "grp-appr",
+        "ad-appr",
         "manual",
         "cancel"
       ],
@@ -11948,7 +12102,7 @@
     "fields": {
       "desc": "",
       "name": "Liaison CC Contact",
-      "order": 0,
+      "order": 9,
       "used": true
     },
     "model": "name.rolename",
@@ -11958,7 +12112,7 @@
     "fields": {
       "desc": "",
       "name": "Liaison Contact",
-      "order": 0,
+      "order": 8,
       "used": true
     },
     "model": "name.rolename",
@@ -12386,7 +12540,7 @@
   },
   {
     "fields": {
-      "desc": "IAB stream",
+      "desc": "Internet Architecture Board (IAB)",
       "name": "IAB",
       "order": 4,
       "used": true
@@ -12396,7 +12550,7 @@
   },
   {
     "fields": {
-      "desc": "IETF stream",
+      "desc": "Internet Engineering Task Force (IETF)",
       "name": "IETF",
       "order": 1,
       "used": true
@@ -12406,7 +12560,7 @@
   },
   {
     "fields": {
-      "desc": "IRTF Stream",
+      "desc": "Internet Research Task Force (IRTF)",
       "name": "IRTF",
       "order": 3,
       "used": true
@@ -12416,7 +12570,7 @@
   },
   {
     "fields": {
-      "desc": "Independent Submission Editor stream",
+      "desc": "Independent Submission",
       "name": "ISE",
       "order": 2,
       "used": true
@@ -15141,9 +15295,9 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2020-11-14T00:10:15.888",
+      "time": "2021-05-20T00:12:38.672",
       "used": true,
-      "version": "xym 0.4.8"
+      "version": "xym 0.5"
     },
     "model": "utils.versioninfo",
     "pk": 1
@@ -15152,7 +15306,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2020-11-14T00:10:17.069",
+      "time": "2021-05-20T00:12:40.445",
       "used": true,
       "version": "pyang 2.4.0"
     },
@@ -15163,7 +15317,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2020-11-14T00:10:17.405",
+      "time": "2021-05-20T00:12:40.647",
       "used": true,
       "version": "yanglint SO 1.6.7"
     },
@@ -15174,9 +15328,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2020-11-14T00:10:19.405",
+      "time": "2021-05-20T00:12:43.645",
       "used": true,
-      "version": "xml2rfc 3.4.0"
+      "version": "xml2rfc 3.7.0"
     },
     "model": "utils.versioninfo",
     "pk": 4

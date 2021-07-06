@@ -1,0 +1,3 @@
+{% autoescape off %}{{request.user.person.name}} has uploaded {{bofreq.name}}-{{bofreq.rev}} 
+See {{settings.IDTRACKER_BASE_URL}}{{bofreq.get_absolute_url}}
+{% endautoescape %}

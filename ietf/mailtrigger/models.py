@@ -6,6 +6,7 @@ from django.db import models
 from django.template import Template, Context
 
 from email.utils import parseaddr
+from ietf.doc.models import BofreqEditorDocEvent
 from ietf.utils.mail import formataddr, get_email_addresses_from_text
 from ietf.group.models import Group
 from ietf.person.models import Email, Alias
@@ -392,3 +393,13 @@ class Recipient(models.Model):
 
     def gather_yang_doctors_secretaries(self, **kwargs):
         return self.gather_group_secretaries(group=Group.objects.get(acronym='yangdoctors'))
+
+    def gather_bofreq_editors(self, **kwargs):
+        addrs = []
+        if 'doc' in kwargs:
+            bofreq = kwargs['doc']
+            editor_event = bofreq.latest_event(BofreqEditorDocEvent)
+            if editor_event:
+                addrs.extend([editor.email_address() for editor in editor_event.editors.all()])
+        return addrs
+
