@@ -32,10 +32,6 @@ def bof_requests(request):
     return render(request, 'doc/bofreq/bof_requests.html',dict(reqs=reqs))
 
 
-def edit_relations(request, name):
-    raise NotImplementedError
-
-
 class BofreqUploadForm(forms.Form):
     ACTIONS = [
         ("enter", "Enter content directly"),
@@ -47,6 +43,9 @@ class BofreqUploadForm(forms.Form):
 
     def clean_bofreq_content(self):
         content = self.cleaned_data["bofreq_content"].replace("\r", "")
+        default_content = render_to_string('doc/bofreq/bofreq_template.md',{})
+        if content==default_content:
+            raise forms.ValidationError('The example content may not be saved. Edit it as instructed to document this BoF request.')
         try:
             _ = markdown.markdown(content, extensions=['extra'])
         except Exception as e:

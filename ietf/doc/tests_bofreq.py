@@ -10,6 +10,7 @@ from tempfile import NamedTemporaryFile
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
+from django.template.loader import render_to_string
 
 from ietf.group.factories import RoleFactory
 from ietf.doc.factories import BofreqFactory, NewRevisionDocEventFactory
@@ -326,6 +327,10 @@ This test section has some text.
         login_testing_unauthorized(self,nobody.user.username,url)
         r = self.client.get(url)
         self.assertContains(r,'Fill in the details below. Keep items in the order they appear here.',status_code=200)
+        r = self.client.post(url, dict(title='default', 
+                                       bofreq_submission='enter',
+                                       bofreq_content=render_to_string('doc/bofreq/bofreq_template.md',{})))
+        self.assertContains(r, 'The example content may not be saved.', status_code=200)
         file = NamedTemporaryFile(delete=False,mode="w+",encoding='utf-8')
         file.write('some stuff')
         file.close()
@@ -360,3 +365,21 @@ This test section has some text.
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertTrue(q('form div.has-error'))
+
+    def test_change_notify(self):
+        doc = BofreqFactory()
+        url = urlreverse('ietf.doc.views_doc.edit_notify;bofreq', kwargs=dict(name=doc.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form input[name=notify]')),1)
+
+        # Provide a list
+        r = self.client.post(url,dict(notify="TJ2APh2P@ietf.org",save_addresses="1"))
+        self.assertEqual(r.status_code,302)
+        doc = reload_db_objects(doc)
+        self.assertEqual(doc.notify,'TJ2APh2P@ietf.org')
+        
