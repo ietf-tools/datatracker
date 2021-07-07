@@ -3535,7 +3535,7 @@
       "to": [
         "bofreq_editors",
         "bofreq_previous_editors",
-        "doc_ad",
+        "bofreq_responsible",
         "doc_notify"
       ]
     },
@@ -3548,7 +3548,7 @@
       "desc": "Recipients when a new revision of a BOF request is uploaded.",
       "to": [
         "bofreq_editors",
-        "doc_ad",
+        "bofreq_responsible",
         "doc_notify"
       ]
     },
@@ -3558,10 +3558,24 @@
   {
     "fields": {
       "cc": [],
+      "desc": "Recipients when the responsible leadership of a BOF proposal are changed.",
+      "to": [
+        "bofreq_editors",
+        "bofreq_previous_responsible",
+        "bofreq_responsible",
+        "doc_notify"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "bofreq_responsible_changed"
+  },
+  {
+    "fields": {
+      "cc": [],
       "desc": "Recipients when the title of a BOF proposal is changed.",
       "to": [
         "bofreq_editors",
-        "doc_ad",
+        "bofreq_responsible",
         "doc_notify"
       ]
     },
@@ -5236,6 +5250,22 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "bofreq_previous_editors"
+  },
+  {
+    "fields": {
+      "desc": "BOF request responsible leadership before change",
+      "template": ""
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "bofreq_previous_responsible"
+  },
+  {
+    "fields": {
+      "desc": "BOF request responsible leadership",
+      "template": ""
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "bofreq_responsible"
   },
   {
     "fields": {

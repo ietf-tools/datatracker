@@ -11,12 +11,13 @@ from tempfile import NamedTemporaryFile
 from django.conf import settings
 from django.urls import reverse as urlreverse
 
+from ietf.group.factories import RoleFactory
 from ietf.doc.factories import BofreqFactory, NewRevisionDocEventFactory
-from ietf.doc.models import State, BofreqEditorDocEvent, Document, DocAlias, NewRevisionDocEvent
+from ietf.doc.models import State, Document, DocAlias, NewRevisionDocEvent
+from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.person.factories import PersonFactory
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import TestCase, reload_db_objects, unicontent, login_testing_unauthorized
-
 
 
 class BofreqTests(TestCase):
@@ -42,10 +43,12 @@ This test section has some text.
 """)
 
     def test_show_bof_requests(self):
+        url = urlreverse('ietf.doc.views_bofreq.bof_requests')
+        r = self.client.get(url)
+        self.assertContains(r, 'There are currently no BoF Requests', status_code=200)
         states = State.objects.filter(type_id='bofreq')
         self.assertTrue(states.count()>0)
         reqs = BofreqFactory.create_batch(states.count())
-        url = urlreverse('ietf.doc.views_bofreq.bof_requests')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -57,6 +60,13 @@ This test section has some text.
         q = PyQuery(r.content)
         for state in states:
             self.assertEqual(len(q(f'#bofreqs-{state.slug} tbody tr')), 1)
+        self.assertFalse(q('#start_button'))
+        PersonFactory(user__username='nobody')
+        self.client.login(username='nobody', password='nobody+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('#start_button'))
 
 
     def test_bofreq_main_page(self):
@@ -67,7 +77,8 @@ This test section has some text.
         doc.rev='01'
         doc.save_with_history([nr_event])
         self.write_bofreq_file(doc)
-        editors = doc.latest_event(BofreqEditorDocEvent).editors.all()
+        editors = bofreq_editors(doc)
+        responsible = bofreq_responsible(doc)
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=doc))
         r = self.client.get(url)
         self.assertContains(r,'Version: 01',status_code=200)
@@ -77,12 +88,15 @@ This test section has some text.
         editor_row = q('#editors').html()
         for editor in editors:
             self.assertInHTML(editor.plain_name(),editor_row)
+        responsible_row = q('#responsible').html()
+        for leader in responsible:
+            self.assertInHTML(leader.plain_name(),responsible_row)
         for user in ('secretary','ad','iab-member'): 
             self.client.login(username=user,password=user+"+password")
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertEqual(4, len(q('td.edit>a.btn')))
+            self.assertEqual(5, len(q('td.edit>a.btn')))
             self.client.logout()
             self.assertNotEqual([],q('#change-request'))
         editor = editors.first().user.username
@@ -98,9 +112,10 @@ This test section has some text.
         self.assertContains(r,'Version: 00',status_code=200)
         self.assertContains(r,'is for an older version')
 
+
     def test_edit_title(self):
         doc = BofreqFactory()
-        editor = doc.latest_event(BofreqEditorDocEvent).editors.first()
+        editor = bofreq_editors(doc).first()
         url = urlreverse('ietf.doc.views_bofreq.edit_title', kwargs=dict(name=doc.name))
         title = doc.title
         r = self.client.post(url,dict(title='New title'))
@@ -133,7 +148,7 @@ This test section has some text.
 
     def test_edit_state(self):
         doc = BofreqFactory()
-        editor = doc.latest_event(BofreqEditorDocEvent).editors.first()
+        editor = bofreq_editors(doc).first()
         url = urlreverse('ietf.doc.views_bofreq.change_state', kwargs=dict(name=doc.name))
         state = doc.get_state('bofreq')
         r = self.client.post(url, dict(new_state=self.state_pk_as_str('bofreq','approved')))
@@ -162,7 +177,7 @@ This test section has some text.
 
     def test_change_editors(self):
         doc = BofreqFactory()
-        previous_editors = list(doc.latest_event(BofreqEditorDocEvent).editors.all())
+        previous_editors = list(bofreq_editors(doc))
         acting_editor = previous_editors[0]
         new_editors = set(previous_editors)
         new_editors.discard(acting_editor)
@@ -171,13 +186,13 @@ This test section has some text.
         postdict = dict(editors=','.join([str(p.pk) for p in new_editors]))
         r = self.client.post(url, postdict)
         self.assertEqual(r.status_code,302)
-        editors = doc.latest_event(BofreqEditorDocEvent).editors.all()
+        editors = bofreq_editors(doc)
         self.assertEqual(set(previous_editors),set(editors))
         nobody = PersonFactory()
         self.client.login(username=nobody.user.username,password=nobody.user.username+'+password')
         r = self.client.post(url, postdict)
         self.assertEqual(r.status_code,403)
-        editors = doc.latest_event(BofreqEditorDocEvent).editors.all()
+        editors = bofreq_editors(doc)
         self.assertEqual(set(previous_editors),set(editors))
         self.client.logout()
         for username in (previous_editors[0].user.username, 'secretary', 'ad', 'iab-member'):
@@ -185,8 +200,8 @@ This test section has some text.
             self.client.login(username=username,password=username+'+password')
             r = self.client.get(url)
             self.assertEqual(r.status_code,200)
+            unescaped = unicontent(r).encode('utf-8').decode('unicode-escape')
             for editor in previous_editors:
-                unescaped = unicontent(r).encode('utf-8').decode('unicode-escape')
                 self.assertIn(editor.name,unescaped)
             new_editors = set(previous_editors)
             new_editors.discard(acting_editor)
@@ -194,12 +209,73 @@ This test section has some text.
             postdict = dict(editors=','.join([str(p.pk) for p in new_editors]))
             r = self.client.post(url,postdict)
             self.assertEqual(r.status_code, 302)
-            updated_editors = doc.latest_event(BofreqEditorDocEvent).editors.all()
+            updated_editors = bofreq_editors(doc)
             self.assertEqual(new_editors,set(updated_editors))
             previous_editors = new_editors
             self.client.logout()
             self.assertEqual(len(outbox),1)
             self.assertIn('BOF Request editors changed',outbox[0]['Subject'])
+
+
+    def test_change_responsible(self):
+        doc = BofreqFactory()
+        previous_responsible = list(bofreq_responsible(doc))
+        new_responsible = set(previous_responsible[1:])
+        new_responsible.add(RoleFactory(group__type_id='area',name_id='ad').person)
+        url = urlreverse('ietf.doc.views_bofreq.change_responsible', kwargs=dict(name=doc.name))
+        postdict = dict(responsible=','.join([str(p.pk) for p in new_responsible]))
+        r = self.client.post(url, postdict)
+        self.assertEqual(r.status_code,302)
+        responsible = bofreq_responsible(doc)
+        self.assertEqual(set(previous_responsible), set(responsible))
+        PersonFactory(user__username='nobody')
+        self.client.login(username='nobody',password='nobody+password')
+        r = self.client.post(url, postdict)
+        self.assertEqual(r.status_code,403)
+        responsible = bofreq_responsible(doc)
+        self.assertEqual(set(previous_responsible), set(responsible))
+        self.client.logout()
+        for username in ('secretary', 'ad', 'iab-member'):
+            empty_outbox()
+            self.client.login(username=username,password=username+'+password')
+            r = self.client.get(url)
+            self.assertEqual(r.status_code,200)
+            unescaped = unicontent(r).encode('utf-8').decode('unicode-escape')
+            for responsible in previous_responsible: 
+                self.assertIn(responsible.name,unescaped)
+            new_responsible = set(previous_responsible)
+            new_responsible.add(RoleFactory(group__type_id='area',name_id='ad').person)
+            postdict = dict(responsible=','.join([str(p.pk) for p in new_responsible]))
+            r = self.client.post(url,postdict)
+            self.assertEqual(r.status_code, 302)
+            updated_responsible = bofreq_responsible(doc)
+            self.assertEqual(new_responsible,set(updated_responsible))
+            previous_responsible = new_responsible
+            self.client.logout()
+            self.assertEqual(len(outbox),1)
+            self.assertIn('BOF Request responsible leadership changed',outbox[0]['Subject'])
+
+    def test_change_responsible_validation(self):
+        doc = BofreqFactory()
+        url = urlreverse('ietf.doc.views_bofreq.change_responsible', kwargs=dict(name=doc.name))
+        login_testing_unauthorized(self,'secretary',url)
+        bad_batch = PersonFactory.create_batch(3)
+        good_batch = list()
+        good_batch.append(RoleFactory(group__type_id='area', name_id='ad').person)
+        good_batch.append(RoleFactory(group__acronym='iab', name_id='member').person)
+        pks = set()
+        pks.update([p.pk for p in good_batch])
+        pks.update([p.pk for p in bad_batch])
+        postdict = dict(responsible=','.join([str(pk) for pk in pks]))
+        r = self.client.post(url,postdict)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        error_text = q('.has-error .alert').text()
+        for p in good_batch:
+            self.assertNotIn(p.plain_name(), error_text)
+        for p in bad_batch:
+            self.assertIn(p.plain_name(), error_text)
+
 
     def test_submit(self):
         doc = BofreqFactory()
@@ -219,7 +295,7 @@ This test section has some text.
         self.assertEqual(rev, doc.rev)
         self.client.logout()
 
-        editor = doc.latest_event(BofreqEditorDocEvent).editors.first()
+        editor = bofreq_editors(doc).first()
         for username in ('secretary', 'ad', 'iab-member', editor.user.username):
             self.client.login(username=username, password=username+'+password')
             r = self.client.get(url)
@@ -267,7 +343,7 @@ This test section has some text.
             self.assertEqual(bofreq.title, postdict['title'])
             self.assertEqual(bofreq.rev, '00')
             self.assertEqual(bofreq.get_state_slug(), 'proposed')
-            self.assertEqual(list(bofreq.latest_event(BofreqEditorDocEvent).editors.all()), [nobody])
+            self.assertEqual(list(bofreq_editors(bofreq)), [nobody])
             self.assertEqual(bofreq.latest_event(NewRevisionDocEvent).rev, '00')
             self.assertEqual(bofreq.text_or_error(), 'some stuff')
             self.assertEqual(len(outbox),1)

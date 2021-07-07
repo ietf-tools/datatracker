@@ -17,7 +17,8 @@ from ietf.doc.models import (BallotType, DeletedEvent, StateType, State, Documen
     InitialReviewDocEvent, DocHistoryAuthor, BallotDocEvent, RelatedDocument,
     RelatedDocHistory, BallotPositionDocEvent, AddedMessageEvent, SubmissionDocEvent,
     ReviewRequestDocEvent, ReviewAssignmentDocEvent, EditedAuthorsDocEvent, DocumentURL,
-    IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder, BofreqEditorDocEvent)
+    IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder, 
+    BofreqEditorDocEvent,BofreqResponsibleDocEvent)
 
 from ietf.name.resources import BallotPositionNameResource, DocTypeNameResource
 class BallotTypeResource(ModelResource):
@@ -832,3 +833,29 @@ class BofreqEditorDocEventResource(ModelResource):
             "editors": ALL_WITH_RELATIONS,
         }
 api.doc.register(BofreqEditorDocEventResource())
+
+
+from ietf.person.resources import PersonResource
+class BofreqResponsibleDocEventResource(ModelResource):
+    by               = ToOneField(PersonResource, 'by')
+    doc              = ToOneField(DocumentResource, 'doc')
+    docevent_ptr     = ToOneField(DocEventResource, 'docevent_ptr')
+    responsible      = ToManyField(PersonResource, 'responsible', null=True)
+    class Meta:
+        queryset = BofreqResponsibleDocEvent.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'bofreqresponsibledocevent'
+        ordering = ['docevent_ptr', ]
+        filtering = { 
+            "id": ALL,
+            "time": ALL,
+            "type": ALL,
+            "rev": ALL,
+            "desc": ALL,
+            "by": ALL_WITH_RELATIONS,
+            "doc": ALL_WITH_RELATIONS,
+            "docevent_ptr": ALL_WITH_RELATIONS,
+            "responsible": ALL_WITH_RELATIONS,
+        }
+api.doc.register(BofreqResponsibleDocEventResource())

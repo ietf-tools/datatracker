@@ -18,8 +18,9 @@ from ietf.doc.templatetags.mail_filters import std_level_prompt
 from ietf.utils import log
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ipr.utils import iprs_from_docs, related_docs
-from ietf.doc.models import WriteupDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent, BofreqEditorDocEvent
+from ietf.doc.models import WriteupDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
 from ietf.doc.utils import needed_ballot_positions
+from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role
 from ietf.doc.models import Document
 from ietf.mailtrigger.utils import gather_address_lists
@@ -699,14 +700,27 @@ def email_bofreq_title_changed(request, bofreq):
               dict(bofreq=bofreq, request=request),
               cc=addrs.cc)
 
+def plain_names(persons):
+    return [p.plain_name() for p in persons]
+
 def email_bofreq_editors_changed(request, bofreq, previous_editors):
-    editors = bofreq.latest_event(BofreqEditorDocEvent).editors.all()
+    editors = bofreq_editors(bofreq)
     addrs = gather_address_lists('bofreq_editors_changed', doc=bofreq, previous_editors=previous_editors)
 
     send_mail(request, addrs.to, settings.DEFAULT_FROM_EMAIL,
               f'BOF Request editors changed : {bofreq.name}',
               'doc/mail/bofreq_editors_changed.txt',
-              dict(bofreq=bofreq, request=request, editors=editors, previous_editors=previous_editors),
+              dict(bofreq=bofreq, request=request, editors=plain_names(editors), previous_editors=plain_names(previous_editors)),
+              cc=addrs.cc)
+
+def email_bofreq_responsible_changed(request, bofreq, previous_responsible):
+    responsible = bofreq_responsible(bofreq)
+    addrs = gather_address_lists('bofreq_responsible_changed', doc=bofreq, previous_responsible=previous_responsible)
+
+    send_mail(request, addrs.to, settings.DEFAULT_FROM_EMAIL,
+              f'BOF Request responsible leadership changed : {bofreq.name}',
+              'doc/mail/bofreq_responsible_changed.txt',
+              dict(bofreq=bofreq, request=request, responsible=plain_names(responsible), previous_responsible=plain_names(previous_responsible)),
               cc=addrs.cc)
 
 def email_bofreq_new_revision(request, bofreq):

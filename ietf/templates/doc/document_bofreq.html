@@ -87,7 +87,7 @@
         <th>Editor{{editors|pluralize}}</th>
         <td class="edit">
           {% if not snapshot %}
-            {% if is_editor or  can_manage %}
+            {% if is_editor or can_manage %}
               {% doc_edit_button 'ietf.doc.views_bofreq.change_editors' name=doc.name %}
             {% endif %}
           {% endif %}
@@ -98,6 +98,22 @@
           {% endfor %}          
         </td>
       </tr>
+
+      <tr id="responsible">
+        <td></td>
+        <th>Responsible Leadership</th>
+        <td class="edit">
+          {% if not snapshot %}
+            {% if can_manage %}
+              {% doc_edit_button 'ietf.doc.views_bofreq.change_responsible' name=doc.name %}
+            {% endif %}
+          {% endif %}
+        </td>
+        <td>
+          {% for leader in responsible %}
+            {% person_link leader %}{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+        </td>
 
     </tbody>
 

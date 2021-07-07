@@ -12,7 +12,7 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
     ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
-    BofreqEditorDocEvent )
+    BofreqEditorDocEvent, BofreqResponsibleDocEvent )
 
 from ietf.utils.validators import validate_external_resource_value
 
@@ -197,6 +197,10 @@ admin.site.register(IRSGBallotDocEvent, IRSGBallotDocEventAdmin)
 class BofreqEditorDocEventAdmin(DocEventAdmin):
     raw_id_fields = ["doc", "by", "editors" ]
 admin.site.register(BofreqEditorDocEvent, BofreqEditorDocEventAdmin)
+    
+class BofreqResponsibleDocEventAdmin(DocEventAdmin):
+    raw_id_fields = ["doc", "by", "responsible" ]
+admin.site.register(BofreqResponsibleDocEvent, BofreqResponsibleDocEventAdmin)
     
 class DocumentUrlAdmin(admin.ModelAdmin):
     list_display = ['id', 'doc', 'tag', 'url', 'desc', ]

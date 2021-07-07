@@ -6,7 +6,8 @@ from django.db import models
 from django.template import Template, Context
 
 from email.utils import parseaddr
-from ietf.doc.models import BofreqEditorDocEvent
+
+from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.utils.mail import formataddr, get_email_addresses_from_text
 from ietf.group.models import Group
 from ietf.person.models import Email, Alias
@@ -398,8 +399,29 @@ class Recipient(models.Model):
         addrs = []
         if 'doc' in kwargs:
             bofreq = kwargs['doc']
-            editor_event = bofreq.latest_event(BofreqEditorDocEvent)
-            if editor_event:
-                addrs.extend([editor.email_address() for editor in editor_event.editors.all()])
+            editors = bofreq_editors(bofreq)
+            addrs.extend([editor.email_address() for editor in editors])
+        return addrs
+
+    def gather_bofreq_responsible(self, **kwargs):
+        addrs = []
+        if 'doc' in kwargs:
+            bofreq = kwargs['doc']
+            responsible = bofreq_responsible(bofreq)
+            if responsible:
+                addrs.extend([leader.email_address() for leader in responsible])
+            else:
+                addrs.extend(Recipient.objects.get(slug='iab').gather(**{}))
+                addrs.extend(Recipient.objects.get(slug='iesg').gather(**{}))
+        return addrs
+
+    def gather_bofreq_previous_responsible(self, **kwargs):
+        addrs = []
+        previous_responsible = kwargs['previous_responsible']
+        if previous_responsible:
+            addrs = [p.email_address() for p in previous_responsible]
+        else:
+            addrs.extend(Recipient.objects.get(slug='iab').gather(**{}))
+            addrs.extend(Recipient.objects.get(slug='iesg').gather(**{}))
         return addrs
 

@@ -12,10 +12,12 @@ from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 
 
-from ietf.doc.mails import ( email_bofreq_title_changed, email_bofreq_editors_changed, 
-    email_bofreq_new_revision, )
-from ietf.doc.models import Document, DocAlias, DocEvent, NewRevisionDocEvent, BofreqEditorDocEvent, State
+from ietf.doc.mails import (email_bofreq_title_changed, email_bofreq_editors_changed, 
+    email_bofreq_new_revision, email_bofreq_responsible_changed)
+from ietf.doc.models import (Document, DocAlias, DocEvent, NewRevisionDocEvent, 
+    BofreqEditorDocEvent, BofreqResponsibleDocEvent, State)
 from ietf.doc.utils import add_state_change_event
+from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.person.fields import SearchablePersonsField
 from ietf.utils.response import permission_denied
@@ -23,12 +25,12 @@ from ietf.utils.text import xslugify
 from ietf.utils.textupload import get_cleaned_text_file_content
 
 
-
 def bof_requests(request):
     reqs = Document.objects.filter(type_id='bofreq')
     for req in reqs:
         req.latest_revision_event = req.latest_event(NewRevisionDocEvent)
     return render(request, 'doc/bofreq/bof_requests.html',dict(reqs=reqs))
+
 
 def edit_relations(request, name):
     raise NotImplementedError
@@ -74,7 +76,7 @@ class BofreqUploadForm(forms.Form):
 @login_required
 def submit(request, name):
     bofreq = get_object_or_404(Document, type="bofreq", name=name)
-    previous_editors = bofreq.latest_event(BofreqEditorDocEvent).editors.all()
+    previous_editors = bofreq_editors(bofreq)
     if not (has_role(request.user,('Secretariat', 'Area Director', 'IAB')) or request.user.person in previous_editors):
         permission_denied(request,"You do not have permission to upload a new revision of this BOF Request")
 
@@ -187,7 +189,7 @@ class ChangeEditorsForm(forms.Form):
 @login_required
 def change_editors(request, name):
     bofreq = get_object_or_404(Document, type="bofreq", name=name)
-    previous_editors = bofreq.latest_event(BofreqEditorDocEvent).editors.all()
+    previous_editors = bofreq_editors(bofreq)
     if not (has_role(request.user,('Secretariat', 'Area Director', 'IAB')) or request.user.person in previous_editors):
         permission_denied(request,"You do not have permission to change this document's editors")
 
@@ -214,13 +216,58 @@ def change_editors(request, name):
                               },
                           )
 
+
+class ChangeResponsibleForm(forms.Form):
+    responsible = SearchablePersonsField(required=False)
+    def clean_responsible(self):
+        responsible = self.cleaned_data['responsible']
+        not_leadership = list()
+        for person in responsible:
+            if not has_role(person.user, ('Area Director', 'IAB')):
+                not_leadership.append(person)
+        if not_leadership:
+            raise forms.ValidationError('Only current IAB and IESG members are allowed. Please remove: '+', '.join([person.plain_name() for person in not_leadership]))
+        return responsible
+
+
+@login_required
+def change_responsible(request,name):
+    if not has_role(request.user,('Secretariat', 'Area Director', 'IAB')):
+        permission_denied(request,"You do not have permission to change this document's responsible leadership")
+    bofreq = get_object_or_404(Document, type="bofreq", name=name)
+    previous_responsible = bofreq_responsible(bofreq)
+
+    if request.method == 'POST':
+        form = ChangeResponsibleForm(request.POST)
+        if form.is_valid():
+            new_responsible = form.cleaned_data['responsible']
+            if set(new_responsible) != set(previous_responsible):
+                e = BofreqResponsibleDocEvent(type="changed_responsible", doc=bofreq, rev=bofreq.rev, by=request.user.person)
+                e.desc = f'Responsible leadership changed to {", ".join([p.name for p in new_responsible])}'
+                e.save()
+                e.responsible.set(new_responsible)
+                bofreq.save_with_history([e])
+                email_bofreq_responsible_changed(request, bofreq, previous_responsible)
+            return redirect("ietf.doc.views_doc.document_main", name=bofreq.name)
+    else:
+        init = { "responsible" : previous_responsible }
+        form = ChangeResponsibleForm(initial=init)
+    titletext = bofreq.get_base_name()
+    return render(request, 'doc/bofreq/change_responsible.html',
+                              {'form': form,
+                               'doc': bofreq,
+                               'titletext' : titletext,
+                              },
+                          )
+
+
 class ChangeTitleForm(forms.Form):
     title = forms.CharField(max_length=255, label="Title", required=True)
 
 @login_required
 def edit_title(request, name):
     bofreq = get_object_or_404(Document, type="bofreq", name=name)
-    editors = bofreq.latest_event(BofreqEditorDocEvent).editors.all()
+    editors = bofreq_editors(bofreq)
     if not (has_role(request.user,('Secretariat', 'Area Director', 'IAB')) or request.user.person in editors):
         permission_denied(request, "You do not have permission to edit this document's title")
 

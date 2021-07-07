@@ -273,8 +273,6 @@ class GroupPagesTests(TestCase):
 
     def test_group_about(self):
 
-        RoleFactory(group=Group.objects.get(acronym='iab'),name_id='member',person=PersonFactory(user__username='iab-member'))
-
         interesting_users = [ 'plain','iana','iab-chair','irtf-chair', 'marschairman', 'teamchairman','ad', 'iab-member', 'secretary', ]
 
         can_edit = {

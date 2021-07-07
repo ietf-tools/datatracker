@@ -1,0 +1,6 @@
+{% autoescape off %}{{request.user.person.name}} has changed the responsible leadership for {{bofreq.name}}-{{bofreq.rev}} 
+
+The previous leaders were : {{previous_responsible|join:", "}}
+
+The new leaders are : {{responsible|join:", "}}
+{% endautoescape %}

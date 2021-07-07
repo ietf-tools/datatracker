@@ -1349,4 +1349,9 @@ class EditedAuthorsDocEvent(DocEvent):
     basis = models.CharField(help_text="What is the source or reasoning for the changes to the author list",max_length=255)
 
 class BofreqEditorDocEvent(DocEvent):
-    editors = models.ManyToManyField('person.Person',blank=True)
+    """ Capture the proponents of a Bof Request."""
+    editors = models.ManyToManyField('person.Person', blank=True)
+
+class BofreqResponsibleDocEvent(DocEvent):
+    """ Capture the responsible leadership (IAB and IESG members) for a BoF Request """
+    responsible = models.ManyToManyField('person.Person', blank=True)
