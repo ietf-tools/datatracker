@@ -97,7 +97,7 @@ This test section has some text.
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
-            self.assertEqual(5, len(q('td.edit>a.btn')))
+            self.assertEqual(6, len(q('td.edit>a.btn')))
             self.client.logout()
             self.assertNotEqual([],q('#change-request'))
         editor = editors.first().user.username
@@ -105,7 +105,7 @@ This test section has some text.
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(2, len(q('td.edit>a.btn')))
+        self.assertEqual(3, len(q('td.edit>a.btn')))
         self.assertNotEqual([],q('#change-request'))
         self.client.logout()
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=doc,rev='00'))
@@ -365,21 +365,4 @@ This test section has some text.
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertTrue(q('form div.has-error'))
-
-    def test_change_notify(self):
-        doc = BofreqFactory()
-        url = urlreverse('ietf.doc.views_doc.edit_notify;bofreq', kwargs=dict(name=doc.name))
-        login_testing_unauthorized(self, "secretary", url)
-
-        # get
-        r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=notify]')),1)
-
-        # Provide a list
-        r = self.client.post(url,dict(notify="TJ2APh2P@ietf.org",save_addresses="1"))
-        self.assertEqual(r.status_code,302)
-        doc = reload_db_objects(doc)
-        self.assertEqual(doc.notify,'TJ2APh2P@ietf.org')
         
