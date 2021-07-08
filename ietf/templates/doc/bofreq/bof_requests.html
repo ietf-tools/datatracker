@@ -19,7 +19,7 @@
       <div class="panel-body">
         <table id="bofreqs-{{req_group.grouper}}" class="table table-condensed table-striped tablesorter">
           <thead>
-              <tr><th class="col-sm-4">Name</th><th class="col-sm-1">Date</th><th>Title</th></tr>
+              <tr><th class="col-sm-4">Name</th><th class="col-sm-1">Date</th><th>Title</th><th>Responsible</th></tr>
           </thead>
           <tbody>
                 {% for req in req_group.list %}
@@ -27,6 +27,7 @@
                     <td><a href={% url 'ietf.doc.views_doc.document_main' name=req.name %}>{{req.name}}-{{req.rev}}</a></td>
                     <td>{{req.latest_revision_event.time|date:"Y-m-d"}}</td>
                     <td>{{req.title}}</td>
+                    <td>{{req.responsible|join:', '}}</td>
                   </tr>
                 {% endfor %}
           </tbody>

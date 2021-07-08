@@ -29,6 +29,7 @@ def bof_requests(request):
     reqs = Document.objects.filter(type_id='bofreq')
     for req in reqs:
         req.latest_revision_event = req.latest_event(NewRevisionDocEvent)
+        req.responsible = bofreq_responsible(req)
     return render(request, 'doc/bofreq/bof_requests.html',dict(reqs=reqs))
 
 
