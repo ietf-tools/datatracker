@@ -76,7 +76,8 @@ class BofreqUploadForm(forms.Form):
 def submit(request, name):
     bofreq = get_object_or_404(Document, type="bofreq", name=name)
     previous_editors = bofreq_editors(bofreq)
-    if not (has_role(request.user,('Secretariat', 'Area Director', 'IAB')) or request.user.person in previous_editors):
+    state_id = bofreq.get_state_slug('bofreq')
+    if not (has_role(request.user,('Secretariat', 'Area Director', 'IAB')) or (state_id=='proposed' and request.user.person in previous_editors)):
         permission_denied(request,"You do not have permission to upload a new revision of this BOF Request")
 
     if request.method == 'POST':
@@ -189,7 +190,8 @@ class ChangeEditorsForm(forms.Form):
 def change_editors(request, name):
     bofreq = get_object_or_404(Document, type="bofreq", name=name)
     previous_editors = bofreq_editors(bofreq)
-    if not (has_role(request.user,('Secretariat', 'Area Director', 'IAB')) or request.user.person in previous_editors):
+    state_id = bofreq.get_state_slug('bofreq')
+    if not (has_role(request.user,('Secretariat', 'Area Director', 'IAB')) or (state_id=='proposed' and request.user.person in previous_editors)):
         permission_denied(request,"You do not have permission to change this document's editors")
 
     if request.method == 'POST':
@@ -267,7 +269,8 @@ class ChangeTitleForm(forms.Form):
 def edit_title(request, name):
     bofreq = get_object_or_404(Document, type="bofreq", name=name)
     editors = bofreq_editors(bofreq)
-    if not (has_role(request.user,('Secretariat', 'Area Director', 'IAB')) or request.user.person in editors):
+    state_id = bofreq.get_state_slug('bofreq')
+    if not (has_role(request.user,('Secretariat', 'Area Director', 'IAB')) or (state_id=='proposed' and request.user.person in editors)):
         permission_denied(request, "You do not have permission to edit this document's title")
 
     if request.method == 'POST':

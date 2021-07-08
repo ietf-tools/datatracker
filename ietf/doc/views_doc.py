@@ -533,7 +533,7 @@ def document_main(request, name, rev=None):
         editors = bofreq_editors(doc)
         responsible = bofreq_responsible(doc)
         can_manage = has_role(request.user,['Secretariat', 'Area Director', 'IAB'])
-        is_editor =  request.user.is_authenticated and request.user.person in editors
+        editor_can_manage =  doc.get_state_slug('bofreq')=='proposed' and request.user.is_authenticated and request.user.person in editors
 
         return render(request, "doc/document_bofreq.html",
                                   dict(doc=doc,
@@ -545,7 +545,7 @@ def document_main(request, name, rev=None):
                                        can_manage=can_manage,
                                        editors=editors,
                                        responsible=responsible,
-                                       is_editor=is_editor,
+                                       editor_can_manage=editor_can_manage,
                                        ))
 
     if doc.type_id == "conflrev":

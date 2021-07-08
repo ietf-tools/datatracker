@@ -29,7 +29,7 @@ from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBal
 from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role, Group
-from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author
+from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
 from ietf.person.models import Person
 from ietf.review.models import ReviewWish
 from ietf.utils import draft, text
@@ -152,7 +152,8 @@ def can_unadopt_draft(user, doc):
 def can_edit_docextresources(user, doc):
     return (has_role(user, ("Secretariat", "Area Director"))
             or is_authorized_in_doc_stream(user, doc)
-            or is_individual_draft_author(user, doc))
+            or is_individual_draft_author(user, doc)
+            or is_bofreq_editor(user, doc))
 
 def two_thirds_rule( recused=0 ):
     # For standards-track, need positions from 2/3 of the non-recused current IESG.

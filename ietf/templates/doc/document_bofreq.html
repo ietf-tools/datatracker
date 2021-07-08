@@ -50,7 +50,7 @@
       	<th>Title</th>
       	<td class="edit">
       	  {% if not snapshot %}
-            {% if is_editor or can_manage %}
+            {% if editor_can_manage or can_manage %}
         	    {% doc_edit_button 'ietf.doc.views_bofreq.edit_title' name=doc.name %}
             {% endif %}
       	  {% endif %}
@@ -87,7 +87,7 @@
         <th>Editor{{editors|pluralize}}</th>
         <td class="edit">
           {% if not snapshot %}
-            {% if is_editor or can_manage %}
+            {% if editor_can_manage or can_manage %}
               {% doc_edit_button 'ietf.doc.views_bofreq.change_editors' name=doc.name %}
             {% endif %}
           {% endif %}
@@ -117,12 +117,12 @@
       </tr>  
 
       {% with doc.docextresource_set.all as resources %}
-        {% if resources or is_editor or can_manage %}
+        {% if resources or editor_can_manage or can_manage %}
           <tr>
             <td></td>
             <th>Additional Resources</th>
             <td class="edit">
-              {% if is_editor or can_manage %}
+              {% if editor_can_manage or can_manage %}
                 <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_doc_extresources' name=doc.name %}">Edit</a> 
               {% endif %}
             </td>
@@ -165,7 +165,7 @@
   </table>
 
   {% if not snapshot %}
-    {% if is_editor or can_manage  %}
+    {% if editor_can_manage or can_manage  %}
       <p id="change-request"><a class="btn btn-default" href="{% url 'ietf.doc.views_bofreq.submit' name=doc.name %}">Change BOF request text</a></p>
     {% endif %}
   {% endif %}

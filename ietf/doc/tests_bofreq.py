@@ -80,7 +80,7 @@ This test section has some text.
         self.write_bofreq_file(doc)
         editors = bofreq_editors(doc)
         responsible = bofreq_responsible(doc)
-        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=doc))
+        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=doc.name))
         r = self.client.get(url)
         self.assertContains(r,'Version: 01',status_code=200)
         q = PyQuery(r.content)
@@ -365,4 +365,31 @@ This test section has some text.
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertTrue(q('form div.has-error'))
+
+    def test_post_proposed_restrictions(self):
+        states = State.objects.filter(type_id='bofreq').exclude(slug='proposed')
+        bofreq = BofreqFactory()
+        editor = bofreq_editors(bofreq).first()
+
+        for view in ('submit', 'change_editors', 'edit_title'):
+            url = urlreverse(f'ietf.doc.views_bofreq.{view}', kwargs=dict(name=bofreq.name))
+            for state in states:
+                bofreq.set_state(state)
+                for username in ('secretary', 'ad', 'iab-member'):
+                    self.client.login(username=username, password=username+'+password')
+                    r = self.client.get(url)
+                    self.assertEqual(r.status_code,200)
+                    self.client.logout()
+                self.client.login(username=editor.user.username, password=editor.user.username+'+password')   
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 403, f'editor should not be able to use {view} in state {state.slug}')
+                self.client.logout()
+
+        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=bofreq.name))
+        self.client.login(username=editor.user.username, password=editor.user.username+'+password')   
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEqual(0, len(q('td.edit>a.btn')))
+        self.assertEqual([],q('#change-request'))
         
