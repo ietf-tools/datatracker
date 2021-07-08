@@ -26,9 +26,14 @@ def forward(apps, schema_editor):
     mt = MailTrigger.objects.create(slug='bofreq_new_revision', desc='Recipients when a new revision of a BOF request is uploaded.')
     mt.to.set(Recipient.objects.filter(slug__in=['bofreq_responsible', 'bofreq_editors', 'doc_notify']))
 
+    for recipient in Recipient.objects.filter(slug__in=['bofreq_responsible','bofreq_editors']):
+       MailTrigger.objects.get(slug='doc_state_edited').to.add(recipient)
+
 def reverse(apps, schema_editor):
     MailTrigger = apps.get_model('mailtrigger', 'MailTrigger')
     Recipient = apps.get_model('mailtrigger', 'Recipient')
+    for recipient in Recipient.objects.filter(slug__in=['bofreq_responsible','bofreq_editors']):
+       MailTrigger.objects.get(slug='doc_state_edited').to.remove(recipient)
     MailTrigger.objects.filter(slug__in=('bofreq_title_changed', 'bofreq_editors_changed', 'bofreq_new_revision', 'bofreq_responsible_changed')).delete()
     Recipient.objects.filter(slug__in=('bofreq_editors', 'bofreq_previous_editors')).delete()
     Recipient.objects.filter(slug__in=('bofreq_responsible', 'bofreq_previous_responsible')).delete()

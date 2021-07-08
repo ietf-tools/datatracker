@@ -417,7 +417,9 @@ class Recipient(models.Model):
 
     def gather_bofreq_previous_responsible(self, **kwargs):
         addrs = []
-        previous_responsible = kwargs['previous_responsible']
+        previous_responsible = None
+        if previous_responsible in kwargs:
+            previous_responsible = kwargs['previous_responsible']
         if previous_responsible:
             addrs = [p.email_address() for p in previous_responsible]
         else:
