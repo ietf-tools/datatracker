@@ -275,7 +275,7 @@ class EditCharterTests(TestCase):
         login_testing_unauthorized(self, "secretary", url)
         response=self.client.get(url)
         self.assertEqual(response.status_code,200)
-        response = self.client.post(url,{'comment':'Testing Abandoning a Bof Charter'})
+        response = self.client.post(url,{'comment':'Testing Abandoning a BOF Charter'})
         self.assertEqual(response.status_code,302)
         charter = Document.objects.get(pk=charter.pk)
         self.assertEqual(charter.group.state_id,'abandon')

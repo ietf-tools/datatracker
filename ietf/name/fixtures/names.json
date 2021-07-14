@@ -2307,7 +2307,7 @@
   },
   {
     "fields": {
-      "desc": "The bof request is proposed",
+      "desc": "The BOF request is proposed",
       "name": "Proposed",
       "next_states": [
         159,
@@ -2325,7 +2325,7 @@
   },
   {
     "fields": {
-      "desc": "The bof request is approved",
+      "desc": "The BOF request is approved",
       "name": "Approved",
       "next_states": [],
       "order": 1,
@@ -2338,7 +2338,7 @@
   },
   {
     "fields": {
-      "desc": "The bof request is declined",
+      "desc": "The BOF request is declined",
       "name": "Declined",
       "next_states": [],
       "order": 2,
@@ -2351,7 +2351,7 @@
   },
   {
     "fields": {
-      "desc": "The bof request is proposed",
+      "desc": "The BOF request is proposed",
       "name": "Replaced",
       "next_states": [],
       "order": 3,
@@ -2364,7 +2364,7 @@
   },
   {
     "fields": {
-      "desc": "The bof request is abandoned",
+      "desc": "The BOF request is abandoned",
       "name": "Abandoned",
       "next_states": [],
       "order": 4,
@@ -2391,7 +2391,7 @@
   },
   {
     "fields": {
-      "label": "Bof Request State"
+      "label": "BOF Request State"
     },
     "model": "doc.statetype",
     "pk": "bofreq"
@@ -2702,20 +2702,20 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\",\n    \"secr\"\n]",
-      "agenda_type": null,
+      "agenda_type": "ad",
       "create_wiki": true,
       "custom_group_roles": true,
       "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"ad\",\n    \"chair\",\n    \"reviewer\",\n    \"secr\"\n]",
-      "docman_roles": "[]",
+      "docman_roles": "[\n    \"chair\"\n]",
       "groupman_authroles": "[\n    \"Secretariat\"\n]",
       "groupman_roles": "[\n    \"ad\",\n    \"secr\"\n]",
       "has_chartering_process": false,
       "has_default_jabber": false,
       "has_documents": false,
-      "has_meetings": false,
+      "has_meetings": true,
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": false,
@@ -3862,6 +3862,8 @@
       "cc": [],
       "desc": "Recipients when a document's state is manually edited",
       "to": [
+        "bofreq_editors",
+        "bofreq_responsible",
         "doc_ad",
         "doc_affecteddoc_authors",
         "doc_affecteddoc_group_chairs",
@@ -9917,7 +9919,7 @@
   {
     "fields": {
       "desc": "",
-      "name": "Bof Request",
+      "name": "BOF Request",
       "order": 0,
       "prefix": "bofreq",
       "used": true
@@ -15483,7 +15485,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2021-07-05T00:12:20.968",
+      "time": "2021-07-13T00:12:25.184",
       "used": true,
       "version": "xym 0.5"
     },
@@ -15494,7 +15496,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2021-07-05T00:12:22.309",
+      "time": "2021-07-13T00:12:26.721",
       "used": true,
       "version": "pyang 2.5.0"
     },
@@ -15505,7 +15507,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2021-07-05T00:12:22.603",
+      "time": "2021-07-13T00:12:27.015",
       "used": true,
       "version": "yanglint SO 1.6.7"
     },
@@ -15516,7 +15518,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2021-07-05T00:12:25.333",
+      "time": "2021-07-13T00:12:29.814",
       "used": true,
       "version": "xml2rfc 3.9.1"
     },

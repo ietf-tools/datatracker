@@ -46,7 +46,7 @@ class BofreqUploadForm(forms.Form):
         content = self.cleaned_data["bofreq_content"].replace("\r", "")
         default_content = render_to_string('doc/bofreq/bofreq_template.md',{})
         if content==default_content:
-            raise forms.ValidationError('The example content may not be saved. Edit it as instructed to document this BoF request.')
+            raise forms.ValidationError('The example content may not be saved. Edit it as instructed to document this BOF request.')
         try:
             _ = markdown.markdown(content, extensions=['extra'])
         except Exception as e:
@@ -126,7 +126,7 @@ class NewBofreqForm(BofreqUploadForm):
         if name == 'bofreq-':
             raise forms.ValidationError('The filename derived from this title is empty. Please include a few descriptive words using ascii or numeric characters') 
         if Document.objects.filter(name=name).exists():
-            raise forms.ValidationError('This title produces a filename already used by an existing BoF request')
+            raise forms.ValidationError('This title produces a filename already used by an existing BOF request')
         return title
 
 @login_required

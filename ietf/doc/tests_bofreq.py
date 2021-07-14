@@ -46,7 +46,7 @@ This test section has some text.
     def test_show_bof_requests(self):
         url = urlreverse('ietf.doc.views_bofreq.bof_requests')
         r = self.client.get(url)
-        self.assertContains(r, 'There are currently no BoF Requests', status_code=200)
+        self.assertContains(r, 'There are currently no BOF Requests', status_code=200)
         states = State.objects.filter(type_id='bofreq')
         self.assertTrue(states.count()>0)
         reqs = BofreqFactory.create_batch(states.count())

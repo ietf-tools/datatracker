@@ -752,7 +752,7 @@ class MeetingTests(TestCase):
 
         # Should be a 'non-area events' link showing appropriate types        
         non_area_labels = [
-            'BoF', 'EDU', 'Hackathon', 'IEPG', 'IESG', 'IETF', 'Plenary', 'Secretariat', 'Tools',
+            'BOF', 'EDU', 'Hackathon', 'IEPG', 'IESG', 'IETF', 'Plenary', 'Secretariat', 'Tools',
         ]
         self.assertIn('%s?show=%s' % (ical_url, ','.join(non_area_labels).lower()), content)
 
@@ -1029,7 +1029,7 @@ class EditMeetingScheduleTests(TestCase):
                 self.assertEqual(time_labels, time_header_labels)
 
     def test_bof_session_tag(self):
-        """Sessions for BoF groups should be marked as such"""
+        """Sessions for BOF groups should be marked as such"""
         meeting = MeetingFactory(type_id='ietf')
 
         non_bof_session = SessionFactory(meeting=meeting)
@@ -1044,13 +1044,13 @@ class EditMeetingScheduleTests(TestCase):
 
         q = PyQuery(r.content)
         self.assertEqual(len(q('#session{} .bof-tag'.format(non_bof_session.pk))), 0,
-                         'Non-BoF session should not be tagged as a BoF session')
+                         'Non-BOF session should not be tagged as a BOF session')
 
         bof_tags = q('#session{} .bof-tag'.format(bof_session.pk))
         self.assertEqual(len(bof_tags), 1,
-                         'BoF session should have one BoF session tag')
-        self.assertIn('BoF', bof_tags.eq(0).text(),
-                      'BoF tag should contain text "BoF"')
+                         'BOF session should have one BOF session tag')
+        self.assertIn('BOF', bof_tags.eq(0).text(),
+                      'BOF tag should contain text "BOF"')
 
     def _setup_for_swap_timeslots(self):
         """Create a meeting, rooms, and schedule for swap_timeslots testing

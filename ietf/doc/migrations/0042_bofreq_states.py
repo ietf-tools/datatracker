@@ -8,12 +8,12 @@ def forward(apps, schema_editor):
     StateType = apps.get_model('doc', 'StateType')
     State = apps.get_model('doc', 'State')
 
-    StateType.objects.create(slug='bofreq', label='Bof Request State')
-    proposed = State.objects.create(type_id='bofreq', slug='proposed', name='Proposed', used=True, desc='The bof request is proposed', order=0)
-    approved = State.objects.create(type_id='bofreq', slug='approved', name='Approved', used=True, desc='The bof request is approved', order=1)
-    declined = State.objects.create(type_id='bofreq', slug='declined', name='Declined', used=True, desc='The bof request is declined', order=2)
-    replaced = State.objects.create(type_id='bofreq', slug='replaced', name='Replaced', used=True, desc='The bof request is proposed', order=3)
-    abandoned = State.objects.create(type_id='bofreq', slug='abandoned', name='Abandoned', used=True, desc='The bof request is abandoned', order=4)
+    StateType.objects.create(slug='bofreq', label='BOF Request State')
+    proposed = State.objects.create(type_id='bofreq', slug='proposed', name='Proposed', used=True, desc='The BOF request is proposed', order=0)
+    approved = State.objects.create(type_id='bofreq', slug='approved', name='Approved', used=True, desc='The BOF request is approved', order=1)
+    declined = State.objects.create(type_id='bofreq', slug='declined', name='Declined', used=True, desc='The BOF request is declined', order=2)
+    replaced = State.objects.create(type_id='bofreq', slug='replaced', name='Replaced', used=True, desc='The BOF request is proposed', order=3)
+    abandoned = State.objects.create(type_id='bofreq', slug='abandoned', name='Abandoned', used=True, desc='The BOF request is abandoned', order=4)
 
     proposed.next_states.set([approved,declined,replaced,abandoned])
 

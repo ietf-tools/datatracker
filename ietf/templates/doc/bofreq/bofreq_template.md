@@ -1,14 +1,14 @@
 # Name: Exact MPLS Edges (EXAMPLE) (There's an acronym for anything if you really want one ;-)
 ## Description 
-Replace this with a few paragraphs describing the BoF request.
+Replace this with a few paragraphs describing the BOF request.
 
 Fill in the details below. Keep items in the order they appear here.
 
 ## Required Details
 - Status: (not) WG Forming
 - Responsible AD: name
-- BoF proponents: name <email>, name <email> (1-3 people - who are requesting and coordinating discussion for proposal) 
-- BoF chairs: TBD
+- BOF proponents: name <email>, name <email> (1-3 people - who are requesting and coordinating discussion for proposal) 
+- BOF chairs: TBD
 - Number of people expected to attend: 100
 - Length of session (1 or 2 hours): 2 hours
 - Conflicts (whole Areas and/or WGs)

@@ -6,7 +6,7 @@ from django.db import migrations
 
 def forward(apps,schema_editor):
     DocTypeName = apps.get_model('name','DocTypeName')
-    DocTypeName.objects.create(prefix='bofreq', slug='bofreq', name="Bof Request", desc="", used=True, order=0)
+    DocTypeName.objects.create(prefix='bofreq', slug='bofreq', name="BOF Request", desc="", used=True, order=0)
 
 def reverse(apps,schema_editor):
     DocTypeName = apps.get_model('name','DocTypeName')

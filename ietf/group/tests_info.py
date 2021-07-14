@@ -561,7 +561,7 @@ class GroupEditTests(TestCase):
         q = PyQuery(r.content)
         self.assertTrue(len(q('form .has-error')) > 0)
 
-        # try elevating BoF to WG
+        # try elevating BOF to WG
         group.state_id = "bof"
         group.save()
 

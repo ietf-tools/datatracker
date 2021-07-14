@@ -19,7 +19,7 @@ TO_LIST = ('IETF Announcement List <ietf-announce@ietf.org>',
            'RFP Announcement List <rfp-announce@ietf.org>',
            'The IESG <iesg@ietf.org>',
            'Working Group Chairs <wgchairs@ietf.org>',
-           'BoF Chairs <bofchairs@ietf.org>',
+           'BOF Chairs <bofchairs@ietf.org>',
            'Other...')
 
 # ---------------------------------------------
