@@ -1,11 +1,13 @@
 # Copyright The IETF Trust 2021 All Rights Reserved
 
+import datetime
 import debug    # pyflakes:ignore
 import io
-import shutil
 import os
+import shutil
 
 from pyquery import PyQuery
+from random import randint
 from tempfile import NamedTemporaryFile
 
 from django.conf import settings
@@ -49,18 +51,14 @@ This test section has some text.
         self.assertContains(r, 'There are currently no BOF Requests', status_code=200)
         states = State.objects.filter(type_id='bofreq')
         self.assertTrue(states.count()>0)
-        reqs = BofreqFactory.create_batch(states.count())
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q('#bofreqs-proposed tbody tr')), states.count())
-        for i in range(states.count()):
-            reqs[i].set_state(states[i])
+        for i in range(3*len(states)):
+           BofreqFactory(states=[('bofreq',states[i%len(states)].slug)],newrevisiondocevent__time=datetime.datetime.today()-datetime.timedelta(days=randint(0,20)))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         for state in states:
-            self.assertEqual(len(q(f'#bofreqs-{state.slug} tbody tr')), 1)
+            self.assertEqual(len(q(f'#bofreqs-{state.slug}')), 1)
+            self.assertEqual(len(q(f'#bofreqs-{state.slug} tbody tr')), 3)
         self.assertFalse(q('#start_button'))
         PersonFactory(user__username='nobody')
         self.client.login(username='nobody', password='nobody+password')

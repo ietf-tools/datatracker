@@ -10,7 +10,9 @@
   <h1>BOF Requests</h1>
 
   {% if request.user.is_authenticated %}
-    <a id="start_button" class="btn btn-primary" href="{% url 'ietf.doc.views_bofreq.new_bof_request' %}">Start New BOF Request</a>
+    <div class="buttonlist">
+      <a id="start_button" class="btn btn-primary" href="{% url 'ietf.doc.views_bofreq.new_bof_request' %}">Start New BOF Request</a>
+    </div>
   {% endif %}
   {% if not reqs %}
     <p>There are currently no BOF Requests</p>
