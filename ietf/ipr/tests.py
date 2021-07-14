@@ -179,7 +179,8 @@ class IprTests(TestCase):
         self.assertContains(r, ipr.title)
         
         # find by patent info
-        r = self.client.get(url + "?submit=patent&patent=%s" % ipr.patent_info)
+        debug.show('ipr.patent_info')
+        r = self.client.get(url + "?submit=patent&patent=%s" % quote(ipr.patent_info))
         self.assertContains(r, ipr.title)
 
         r = self.client.get(url + "?submit=patent&patent=US12345")
