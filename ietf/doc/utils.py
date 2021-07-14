@@ -1220,13 +1220,15 @@ def update_doc_extresources(doc, new_resources, by):
     if old_res_strs == new_res_strs:
         return False  # no change
 
+    old_res_strs = f'\n\n{old_res_strs}\n\n' if old_res_strs else ' None '
+    new_res_strs = f'\n\n{new_res_strs}' if new_res_strs else ' None'
+
     doc.docextresource_set.all().delete()
     for new_res in new_resources:
         new_res.doc = doc
         new_res.save()
     e = DocEvent(doc=doc, rev=doc.rev, by=by, type='changed_document')
-    e.desc = "Changed document external resources from:\n\n%s\n\nto:\n\n%s" % (
-        old_res_strs, new_res_strs)
+    e.desc = f"Changed document external resources from:{old_res_strs}to:{new_res_strs}"
     e.save()
     doc.save_with_history([e])
     return True
