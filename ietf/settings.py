@@ -51,6 +51,7 @@ ADMINS = [
     ('Ryan Cross', 'rcross@amsl.com'),
     ('Glen Barney', 'glen@amsl.com'),
     ('Maddy Conner', 'maddy@amsl.com'),
+    ('Kesara Rathnayaka', 'krathnayake@ietf.org'),
 ]                                       # type: List[Tuple[str, str]]
 
 BUG_REPORT_EMAIL = "datatracker-project@ietf.org"
