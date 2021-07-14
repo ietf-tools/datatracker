@@ -30,6 +30,7 @@ def bof_requests(request):
     for req in reqs:
         req.latest_revision_event = req.latest_event(NewRevisionDocEvent)
         req.responsible = bofreq_responsible(req)
+        req.editors = bofreq_editors(req)
     sorted_reqs = sorted(sorted(reqs, key=lambda doc: doc.latest_revision_event.time, reverse=True), key=lambda doc: doc.get_state().order)
     return render(request, 'doc/bofreq/bof_requests.html',dict(reqs=sorted_reqs))
 
