@@ -1079,7 +1079,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
         summary = needed_ballot_positions(doc, [p for p in positions if not p.is_old_pos])
 
     text_positions = [p for p in positions if p.discuss or p.comment]
-    text_positions.sort(key=lambda p: (p.is_old_pos, p.balloter.plain_name()))
+    text_positions.sort(key=lambda p: (p.is_old_pos, p.balloter.last_name()))
 
     ballot_open = not BallotDocEvent.objects.filter(doc=doc,
                                                     type__in=("closed_ballot", "created_ballot"),
