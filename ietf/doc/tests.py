@@ -1529,7 +1529,24 @@ class DocTestCase(TestCase):
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r,  '(%s for -%s)' % (pos.comment_time.strftime('%Y-%m-%d'), oldrev))
-        
+
+        # Now simulate a new ballot against the new revision and make sure the "was" position is included
+        pos2 = BallotPositionDocEvent.objects.create(
+            doc=doc,
+            rev=doc.rev,
+            ballot=ballot,
+            type="changed_ballot_position",
+            pos_id="noobj",
+            comment="Still looks okay to me",
+            comment_time=datetime.datetime.now(),
+            balloter=Person.objects.get(user__username="ad"),
+            by=Person.objects.get(name="(System)"))
+
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, pos2.comment)
+        self.assertContains(r,  '(was %s)' % pos.pos)
+
     def test_document_ballot_needed_positions(self):
         # draft
         doc = IndividualDraftFactory(intended_std_level_id='ps')

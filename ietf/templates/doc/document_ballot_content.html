@@ -74,7 +74,9 @@
       {% for p in positions %}
         {% if not p.is_old_pos %}
           <h4 class="anchor-target" id="{{ p.balloter.plain_name|slugify }}">{{ p.balloter.plain_name }}
-            <span class="pull-right"><span class="label label-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
+            <span class="pull-right">
+            {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
+            <span class="label label-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
             {% if user|has_role:"Secretariat" %}
               <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}" title="Click to edit the position of {{ p.balloter.plain_name }}" class="btn btn-default btn-xs">Edit</a>
             {% endif %}
