@@ -1,5 +1,10 @@
 # -*- conf-mode -*-
 
+/personal/housley/7.30.1.dev0@19195 # These two should probably be solved with
+/personal/housley/7.30.1.dev0@19197 # bringing can_manage_group_type into line
+				    # with can_manage_group, and updates to
+				    # the relevant GroupFeature objects
+
 # Everyting below this line is OBE
 
 /personal/rjs/7.29.1.dev0@18992 # commit testing
