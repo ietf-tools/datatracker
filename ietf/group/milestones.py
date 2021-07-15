@@ -383,7 +383,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
     if group.uses_milestone_dates:
         forms.sort(key=lambda f: f.milestone.due if f.milestone else datetime.date.max)
     else:
-        forms.sort(key=lambda f: (f.milestone is None, f.milestone.order if f.milestone else None) )
+        forms.sort(key=lambda f: (f.milestone is None, f.milestone.order if f.milestone and f.milestone.order is not None else -1) )
 
     return render(request, 'group/edit_milestones.html',
                   dict(group=group,
