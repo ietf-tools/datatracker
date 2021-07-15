@@ -1,99 +1,10 @@
-================
-Datatracker PLAN
-================
+This was extraced from the Datatracker PLAN on 9Jul. Items from the PLAN were moved into tickets.
 
-Updated: $Date$
-
-Planned work in rough order
-===========================
-
-* Transition to PostgreSQL.  This will make it easier to start using
-  timezone-aware timestamps throughout the code, which will make it easy
-  to present localized times on web-pages.  It will also provide additional
-  tools for performance analysis
-
-* Investigate making RFCs first-class document objects to faciliate being
-  able to model BCPs that represent groups of RFCs properly. Then fix the rfc sync
-  script to update BCP aliases when changes occur changes (a BCP points to new
-  RFC numbers)
-
-* Polish the htmlization pages, making the style identical with tools.ietf.org.
-
-* Investigate adding code to trigger test exceptions for template variables
-  that don't successfully resolve.  A small trial run of this has indicated
-  that most instances that trigger such exceptions would benefit from better
-  resulution -- i.e., in the trial, it didn't seem that we to any greater
-  extent have template code that is written to rely on failure to resolve
-  rendering as nothing.
-
-* Add django pagination to selected pages with long lists of results in order
-  return results to the user faster.
-
-* Change our web asset handling from the current bower-based (which has been
-  deprecated and gradually more and more unworkable) to a yarn-based setup.
-  Short-time the effect of not having the web asset updates in mkrelease is
-  negigible, but long-term the lack of this means that we may miss
-  security-updates to web assets.
-
-* (EXTERNAL BID) Reworked UI and refactored backend for the scretariat meeting
-  scheduling tool.
-
-* Add support for internationalised email addresses according to RFC 6531
-  when sending email (this is not supported by smtplib under Python 2.7,
-  so will need python 3.x).
-
-* Test suite improvements.  Reduce and seek to eliminate causes of differences
-  in code coverage between runs in the same and in different environments.
-
-* Rework email subjects for messages relating to documents to consistently
-  start with the document name.
-
-* Revisit RFC author ordering and author information based on rfc-index.xml
-
-* Revisit photo uploads: Add photo upload for people with roles.  Add
-  photos to wg pages and group overview pages.
-
-* Revisit floorplans: Add room coordinate input tool (javascript).
-  Add NOC object annotation possibilities.  Add support for break areas
-  on multiple floors (probably means modelling break areas the same way
-  as other sessions, and removing the break_area char_field on Meeting.
-
-* Add the ability to volunteer for Nomcom when logged in to the datatracker.
-
-* Transition to using timezone-aware timestamps.  Migrate database timestamps
-  to be timezone-aware.  This means converting all timestamps to PST8PDT,
-  except for meeting-related timestamps, which use the meeting.time_zone.
-  Once done, set USE_TZ to True in settings.
-
-* Add support for document shepherding reports, possibly re-using or
-  generalising some of the review plumbing.  Check with IESG for details.
-
-* Performance analysis of database table and index setup
-
-* Refactor Document and types into Document subclasses, with conditional code
-  in views and utilities moved into models and overridden models where
-  handling differs between document types.
-
-* When draft XML source is available, take references from that instead
-  of extracting them from the text version.
-
-* Integrate better author data for RFCs from either the RFC Editor or from
-  running the author extraction script on newly published RFCs.
-
-* Add an FK to person from author, and use that instead of the unknown-email-*
-  addresses to connect documents to authors when no email address is available.
-  (we still need to keep author email addresses in order to know which
-  address to associate with a given authorship, when we have an address).
-
-* Review places where we display persons' names but link to email addresses.
-  Some of those probably should link to the person's profile page, instead.
 
 
 Notes
+Updated: $Date$
 ===========================
-
-* Small nomcom refactoring: associate Feedback records with Person
-  instead of User.
 
 * Consistency fix: in settings.py, name directory settings consistently with
   ..._DIR; reserving ..._PATH for settings with PATH semantics (':'-separated lists
