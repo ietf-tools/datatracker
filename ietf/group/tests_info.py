@@ -1321,6 +1321,18 @@ class MilestoneTests(TestCase):
 
         self.assertEqual(group.charter.docevent_set.count(), events_before + 2) # 1 delete, 1 add
 
+    def test_edit_sort(self):
+        group = GroupFactory(uses_milestone_dates=False)
+        DatelessGroupMilestoneFactory(group=group,order=1)
+        DatelessGroupMilestoneFactory(group=group,order=0)
+        DatelessGroupMilestoneFactory(group=group,order=None)
+        url = urlreverse('ietf.group.milestones.edit_milestones;current', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual([x.value for x in q('input[id^=id_m][id$=order]')], [None, '0', '1'])
+
 class DatelessMilestoneTests(TestCase):
     def test_switch_to_dateless(self):
         ad_role = RoleFactory(group__type_id='area',name_id='ad')
