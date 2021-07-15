@@ -1552,7 +1552,7 @@ def prepare_filter_keywords(tagged_assignments, group_parents):
 
     # Keywords that should appear in 'non-area' column
     non_area_labels = [
-        'BoF', 'EDU', 'Hackathon', 'IEPG', 'IESG', 'IETF', 'Plenary', 'Secretariat', 'Tools',
+        'BOF', 'EDU', 'Hackathon', 'IEPG', 'IESG', 'IETF', 'Plenary', 'Secretariat', 'Tools',
     ]
     # Remove any unused non-area keywords
     non_area_filters = [
@@ -4102,7 +4102,7 @@ def request_minutes(request, num=None):
         body = render_to_string('meeting/request_minutes.txt', body_context)
         initial = {'to': 'wgchairs@ietf.org',
                    'cc': 'irsg@irtf.org',
-                   'subject': 'Request for IETF WG and Bof Session Minutes',
+                   'subject': 'Request for IETF WG and BOF Session Minutes',
                    'body': body,
                   }
         form = RequestMinutesForm(initial=initial)

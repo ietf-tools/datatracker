@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2021, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Change responsible leadership for {{doc.name}}{% endblock %}
+
+{% block pagehead %}
+  {{ form.media.css}}
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Change Responsible Leadership<br><small>{{ titletext }}</small></h1>
+
+  <form method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Back</a>
+    {% endbuttons %}
+  </form>
+{% endblock %}
+
+{% block js %}
+    {{ form.media.js }}
+{% endblock %}

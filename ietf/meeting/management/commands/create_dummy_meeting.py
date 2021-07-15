@@ -366,7 +366,7 @@ class Command(BaseCommand):
                     attendees=100,
                     agenda_note="",
                     requested_duration=datetime.timedelta(seconds=7200),  # 2:00:00
-                    comments="""Must not conflict with Transport Area BoFs. """,  # this is implicit
+                    comments="""Must not conflict with Transport Area BOFs. """,  # this is implicit
                     remote_instructions="",
                 )
                 ## session for tsvwg ##
@@ -377,7 +377,7 @@ class Command(BaseCommand):
                     attendees=100,
                     agenda_note="",
                     requested_duration=datetime.timedelta(seconds=7200),  # 2:00:00
-                    comments="""Must not conflict with Transport Area BoFs. """,  # this is implicit
+                    comments="""Must not conflict with Transport Area BOFs. """,  # this is implicit
                     remote_instructions="",
                 )
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflict', target_id=1665, )  # intarea
@@ -440,7 +440,7 @@ class Command(BaseCommand):
                     attendees=80,
                     agenda_note="Joint with ARTAREA",
                     requested_duration=datetime.timedelta(seconds=7200),  # 2:00:00
-                    comments=""" and avoid the same kind of conflicts with other area meetings and any Bofs and potential new ART WGs.""",  # this is implicit
+                    comments=""" and avoid the same kind of conflicts with other area meetings and any BOFs and potential new ART WGs.""",  # this is implicit
                     remote_instructions="",
                 )
                 s.joint_with_groups.set(Group.objects.filter(acronym='artarea'))
@@ -2598,7 +2598,7 @@ class Command(BaseCommand):
                     attendees=50,
                     agenda_note="",
                     requested_duration=datetime.timedelta(seconds=5400),  # 1:30:00
-                    comments="""Please avoid collision with any Sec and IoT-related BoFs.""",
+                    comments="""Please avoid collision with any Sec and IoT-related BOFs.""",
                     remote_instructions="",
                 )
                 c = Constraint.objects.create(meeting=m, source=s.group, name_id='conflict', target_id=1187, )  # saag

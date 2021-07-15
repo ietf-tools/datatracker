@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2021, All Rights Reserved #}
+{% load origin %}
+{% load static %}
+{% load ietf_filters %}
+{% load person_filters %}
+
+{% block pagehead %}
+  <script src="{% static 'd3/d3.min.js' %}"></script>
+  <script src="{% static 'jquery/jquery.min.js' %}"></script>
+  <script src="{% static 'ietf/js/document_timeline.js' %}"></script>
+{% endblock %}
+
+{% block title %}{{ doc.title }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  {{ top|safe }}
+
+  {% include "doc/revisions_list.html" %}
+  <div id="timeline"></div>
+
+  <table class="table table-condensed">
+    <thead id="message-row">
+       <tr>
+        {% if doc.rev != latest_rev %}
+          <th colspan="4" class="alert-warning">The information below is for an older version of this BOF request</th>
+        {% else %}
+           <th colspan="4"></th>
+        {% endif %}
+       </tr>
+    </thead>
+
+    <tbody class="meta">
+
+      <tr>
+      	<th>Document</th>
+      	<th>Type</th>
+      	<td class="edit"></td>
+      	<td>
+          {{doc.get_state.slug|capfirst}} BOF request
+      	  {% if snapshot %}
+      	    <span class="label label-warning">Snapshot</span>
+      	  {% endif %}
+      	</td>
+      </tr>
+
+      <tr>
+        <td></td>
+      	<th>Title</th>
+      	<td class="edit">
+      	  {% if not snapshot %}
+            {% if editor_can_manage or can_manage %}
+        	    {% doc_edit_button 'ietf.doc.views_bofreq.edit_title' name=doc.name %}
+            {% endif %}
+      	  {% endif %}
+      	</td>
+      	<td>{{ doc.title }}</td>
+      </tr>
+
+      <tr>
+        <td></td>
+      	<th>Last updated</th>
+      	<td class="edit"></td>
+      	<td>{{ doc.time|date:"Y-m-d" }}</td>
+      </tr>
+
+      <tr>
+        <td></td>
+      	<th><a href="{% url 'ietf.doc.views_help.state_help' type='bofreq' %}">State</a></th>
+      	<td class="edit">
+      	  {% if not snapshot and can_manage %}
+      	    {% doc_edit_button 'ietf.doc.views_bofreq.change_state' name=doc.name %}
+      	  {% endif %}
+      	</td>
+      	<td>
+          {% if doc.get_state %}
+            <span title="{{ doc.get_state.desc }}">{{ doc.get_state.name }}</span>
+          {% else %}
+            No document state
+          {% endif %}
+      	</td>
+      </tr>
+
+      <tr id="editors">
+        <td></td>
+        <th>Editor{{editors|pluralize}}</th>
+        <td class="edit">
+          {% if not snapshot %}
+            {% if editor_can_manage or can_manage %}
+              {% doc_edit_button 'ietf.doc.views_bofreq.change_editors' name=doc.name %}
+            {% endif %}
+          {% endif %}
+        </td>
+        <td>
+          {% for editor in editors %}
+             {% person_link editor %}{% if not forloop.last %}, {% endif %}
+          {% endfor %}          
+        </td>
+      </tr>
+
+      <tr id="responsible">
+        <td></td>
+        <th>Responsible Leadership</th>
+        <td class="edit">
+          {% if not snapshot %}
+            {% if can_manage %}
+              {% doc_edit_button 'ietf.doc.views_bofreq.change_responsible' name=doc.name %}
+            {% endif %}
+          {% endif %}
+        </td>
+        <td>
+          {% for leader in responsible %}
+            {% person_link leader %}{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+        </td>
+      </tr>  
+
+      {% with doc.docextresource_set.all as resources %}
+        {% if resources or editor_can_manage or can_manage %}
+          <tr>
+            <td></td>
+            <th>Additional Resources</th>
+            <td class="edit">
+              {% if editor_can_manage or can_manage %}
+                <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_doc_extresources' name=doc.name %}">Edit</a> 
+              {% endif %}
+            </td>
+            <td>
+              {% if resources %}
+              <table class="col-md-12 col-sm-12 col-xs-12">
+                <tbody>
+                  {% for resource in resources|dictsort:"display_name" %}
+                    {% if resource.name.type.slug == 'url' or resource.name.type.slug == 'email' %}
+                      <tr><td> - <a href="{{ resource.value }}" title="{{resource.name.name}}">{% firstof resource.display_name resource.name.name %}</a></td></tr> 
+                      {# Maybe make how a resource displays itself a method on the class so templates aren't doing this switching #}
+                    {% else %}
+                      <tr><td> - <span title="{{resource.name.name}}">{% firstof resource.display_name resource.name.name %}: {{resource.value}}</span></td></tr>
+                    {% endif %}
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% endif %}
+            </td>
+          </tr>
+        {% endif %}
+      {% endwith %}
+
+      <tr>
+      	<td></td>
+      	<th>Send notices to</th>
+      	<td class="edit">
+          {% if not snapshot %}
+        	  {% if can_manage %}
+        	    {% doc_edit_button 'ietf.doc.views_doc.edit_notify' name=doc.name %}
+            {% endif %}
+      	  {% endif %}
+      	</td>
+      	<td>
+      	  {{ doc.notify|default:"(None)" }}
+      	</td>
+      </tr>
+
+    </tbody>
+  </table>
+
+  {% if not snapshot %}
+    {% if editor_can_manage or can_manage  %}
+      <p id="change-request"><a class="btn btn-default" href="{% url 'ietf.doc.views_bofreq.submit' name=doc.name %}">Change BOF request text</a></p>
+    {% endif %}
+  {% endif %}
+
+  <div class="panel panel-default">
+    <div class="panel-heading">{{doc.name}}-{{doc.rev}}</div>
+    <div class="panel-body">
+      {{ content|sanitize|safe }}
+    </div>
+  </div>
+
+{% endblock %}
