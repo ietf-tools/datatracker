@@ -40,6 +40,7 @@ import io
 import json
 import os
 import re
+import markdown
 
 from urllib.parse import quote
 
@@ -54,14 +55,15 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent, BallotType,
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
-    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor )
+    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor)
 from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content, build_doc_meta_block,
     augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event,
-    build_doc_supermeta_block, build_file_urls, update_documentauthors )
+    build_doc_supermeta_block, build_file_urls, update_documentauthors)
+from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_group_type, can_manage_materials, group_features_role_filter
 from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is_person,
@@ -524,6 +526,26 @@ def document_main(request, name, rev=None):
                                        group=group,
                                        milestones=milestones,
                                        can_manage=can_manage,
+                                       ))
+
+    if doc.type_id == "bofreq":
+        content = markdown.markdown(doc.text_or_error(),extensions=['extra'])
+        editors = bofreq_editors(doc)
+        responsible = bofreq_responsible(doc)
+        can_manage = has_role(request.user,['Secretariat', 'Area Director', 'IAB'])
+        editor_can_manage =  doc.get_state_slug('bofreq')=='proposed' and request.user.is_authenticated and request.user.person in editors
+
+        return render(request, "doc/document_bofreq.html",
+                                  dict(doc=doc,
+                                       top=top,
+                                       revisions=revisions,
+                                       latest_rev=latest_rev,
+                                       content=content,
+                                       snapshot=snapshot,
+                                       can_manage=can_manage,
+                                       editors=editors,
+                                       responsible=responsible,
+                                       editor_can_manage=editor_can_manage,
                                        ))
 
     if doc.type_id == "conflrev":

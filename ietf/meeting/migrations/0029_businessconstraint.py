@@ -9,22 +9,22 @@ def forward(apps, schema_editor):
     BusinessConstraint = apps.get_model("meeting", "BusinessConstraint")
     BusinessConstraint.objects.create(
         slug="bof_overlapping_prg",
-        name="BoFs cannot conflict with PRGs",
+        name="BOFs cannot conflict with PRGs",
         penalty=100000,
     )
     BusinessConstraint.objects.create(
         slug="bof_overlapping_bof",
-        name="BoFs cannot conflict with any other BoFs",
+        name="BOFs cannot conflict with any other BOFs",
         penalty=100000,
     )
     BusinessConstraint.objects.create(
         slug="bof_overlapping_area_wg",
-        name="BoFs cannot conflict with any other WGs in their area",
+        name="BOFs cannot conflict with any other WGs in their area",
         penalty=100000,
     )
     BusinessConstraint.objects.create(
         slug="bof_overlapping_area_meeting",
-        name="BoFs cannot conflict with any area-wide meetings (of any area)",
+        name="BOFs cannot conflict with any area-wide meetings (of any area)",
         penalty=10000,
     )
     BusinessConstraint.objects.create(

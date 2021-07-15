@@ -29,7 +29,7 @@ from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBal
 from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role, Group
-from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author
+from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
 from ietf.person.models import Person
 from ietf.review.models import ReviewWish
 from ietf.utils import draft, text
@@ -152,7 +152,8 @@ def can_unadopt_draft(user, doc):
 def can_edit_docextresources(user, doc):
     return (has_role(user, ("Secretariat", "Area Director"))
             or is_authorized_in_doc_stream(user, doc)
-            or is_individual_draft_author(user, doc))
+            or is_individual_draft_author(user, doc)
+            or is_bofreq_editor(user, doc))
 
 def two_thirds_rule( recused=0 ):
     # For standards-track, need positions from 2/3 of the non-recused current IESG.
@@ -1219,13 +1220,15 @@ def update_doc_extresources(doc, new_resources, by):
     if old_res_strs == new_res_strs:
         return False  # no change
 
+    old_res_strs = f'\n\n{old_res_strs}\n\n' if old_res_strs else ' None '
+    new_res_strs = f'\n\n{new_res_strs}' if new_res_strs else ' None'
+
     doc.docextresource_set.all().delete()
     for new_res in new_resources:
         new_res.doc = doc
         new_res.save()
     e = DocEvent(doc=doc, rev=doc.rev, by=by, type='changed_document')
-    e.desc = "Changed document external resources from:\n\n%s\n\nto:\n\n%s" % (
-        old_res_strs, new_res_strs)
+    e.desc = f"Changed document external resources from:{old_res_strs}to:{new_res_strs}"
     e.save()
     doc.save_with_history([e])
     return True

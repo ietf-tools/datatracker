@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2021 All Rights Reserved #}
+{% load origin %}
+{% load person_filters %}
+
+{% block title %}BOF Requests{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>BOF Requests</h1>
+
+  {% if request.user.is_authenticated %}
+    <div class="buttonlist">
+      <a id="start_button" class="btn btn-primary" href="{% url 'ietf.doc.views_bofreq.new_bof_request' %}">Start New BOF Request</a>
+    </div>
+  {% endif %}
+  {% if not reqs %}
+    <p>There are currently no BOF Requests</p>
+  {% else %}
+    {% regroup reqs by get_state_slug as grouped_reqs %}
+    {% for req_group in grouped_reqs %}
+    <div class="panel panel-default">
+      <div class="panel-heading">{{req_group.grouper|capfirst}} BOF Requests</div>
+      <div class="panel-body">
+        <table id="bofreqs-{{req_group.grouper}}" class="table table-condensed table-striped tablesorter">
+          <thead>
+              <tr><th class="col-sm-4">Name</th><th class="col-sm-1">Date</th><th>Title</th><th>Responsible</th><th>Editors</th></tr>
+          </thead>
+          <tbody>
+                {% for req in req_group.list %}
+                  <tr>
+                    <td><a href={% url 'ietf.doc.views_doc.document_main' name=req.name %}>{{req.name}}-{{req.rev}}</a></td>
+                    <td>{{req.latest_revision_event.time|date:"Y-m-d"}}</td>
+                    <td>{{req.title}}</td>
+                    <td>{% for person in req.responsible %}{% person_link person %}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+                    <td>{% for person in req.editors %}{% person_link person %}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+                  </tr>
+                {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+  {% endif %}
+{% endblock %}

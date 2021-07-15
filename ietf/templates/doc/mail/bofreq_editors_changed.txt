@@ -1,0 +1,6 @@
+{% autoescape off %}{{request.user.person.name}} has changed the editors for {{bofreq.name}}-{{bofreq.rev}} 
+
+The previous editors were : {{previous_editors|join:", "}}
+
+The new editors are : {{editors|join:", "}}
+{% endautoescape %}

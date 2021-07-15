@@ -25,6 +25,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.group.models import Role, GroupFeatures
 from ietf.person.models import Person
+from ietf.doc.utils_bofreq import bofreq_editors
 
 def user_is_person(user, person):
     """Test whether user is associated with person."""
@@ -194,6 +195,9 @@ def is_individual_draft_author(user, doc):
     if not user.is_authenticated:
         return False
 
+    if not doc.type_id=='draft':
+        return False
+
     if not doc.group.type_id == "individ" :
         return False
 
@@ -204,6 +208,13 @@ def is_individual_draft_author(user, doc):
         return True
 
     return False
+
+def is_bofreq_editor(user, doc):
+    if not user.is_authenticated:
+        return False
+    if not doc.type_id=='bofreq':
+        return False
+    return user.person in bofreq_editors(doc)
     
 def openid_userinfo(claims, user):
     # Populate claims dict.

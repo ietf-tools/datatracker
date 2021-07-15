@@ -188,11 +188,11 @@ class GroupForm(forms.Form):
 
         if existing and existing.type_id == self.group_type:
             if existing.state_id == "bof":
-                #insert_confirm_field(label="Turn BoF %s into proposed %s and start chartering it" % (existing.acronym, existing.type.name), initial=True)
+                #insert_confirm_field(label="Turn BOF %s into proposed %s and start chartering it" % (existing.acronym, existing.type.name), initial=True)
                 if confirmed:
                     return acronym
                 else:
-                    raise forms.ValidationError("Warning: Acronym used for an existing BoF (%s)." % existing.acronym)
+                    raise forms.ValidationError("Warning: Acronym used for an existing BOF (%s)." % existing.acronym)
             else:
                 #insert_confirm_field(label="Set state of %s %s to proposed and start chartering it" % (existing.acronym, existing.type.name), initial=False)
                 if confirmed:
@@ -265,7 +265,7 @@ class GroupForm(forms.Form):
         state = cleaned_data.get('state', None)
         parent = cleaned_data.get('parent', None)
         if state and (state.slug in ['bof', ] and 'parent' in self.fields and not parent):
-            raise forms.ValidationError("You requested the creation of a BoF, but specified no parent area.  A parent is required when creating a bof.")
+            raise forms.ValidationError("You requested the creation of a BOF, but specified no parent area.  A parent is required when creating a bof.")
         return cleaned_data
 
 

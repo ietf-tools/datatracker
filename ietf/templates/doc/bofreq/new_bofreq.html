@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2021, All Rights Reserved #}
+{% load origin bootstrap3 static %}
+
+{% block title %}Start a new BOF Request{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Start a new BOF Request</h1>
+
+<p>Choose a short descriptive title for your request. Take time to choose a good initial title - it will be used to make the filename for your request's content. The title can be changed later, but the filename will not change.</p>
+<p>For example, a request with a title of "A new important bit" will be saved as "bofreq-a-new-important-bit-00.md".</p> 
+  <form class="upload-content form-horizontal" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    {% bootstrap_form form layout="horizontal" %}
+
+    {% buttons %}
+      <a class="btn btn-default" href="{{ doc.get_absolute_url }}">Cancel</a>
+      <button type="submit" class="btn btn-primary">Submit</button>
+    {% endbuttons %}
+  </form>
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'ietf/js/upload_bofreq.js' %}"></script>
+{% endblock %}
+

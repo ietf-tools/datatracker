@@ -16,6 +16,6 @@ manual posting.
 Groups that are missing minutes:{% for group in needs_minutes %}{% ifchanged group.parent %}
 
 {{group.parent.name}}:{% endifchanged %}
-    {{ group.acronym | upper }}{% if group.state_id == 'bof' %} (BoF){% endif %}{% endfor %}
+    {{ group.acronym | upper }}{% if group.state_id == 'bof' %} (BOF){% endif %}{% endfor %}
 
 {% endautoescape %}

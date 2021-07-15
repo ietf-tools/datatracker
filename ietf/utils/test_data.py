@@ -75,6 +75,7 @@ def make_immutable_base_data():
 
     iab = create_group(name="Internet Architecture Board", acronym="iab", type_id="ietf", parent=ietf)
     create_person(iab, "chair")
+    create_person(iab, "member")
 
     ise = create_group(name="Independent Submission Editor", acronym="ise", type_id="rfcedtyp")
     create_person(ise, "chair")

@@ -68,8 +68,10 @@ def gather_relevant_expansions(**kwargs):
 
         doc = kwargs['doc']
 
-        # PEY: does this need to include irsg_ballot_saved as well?
-        relevant.update(['doc_state_edited','doc_telechat_details_changed','ballot_deferred','iesg_ballot_saved'])
+        relevant.add('doc_state_edited')
+        
+        if not doc.type_id in ['bofreq',]:
+            relevant.update(['doc_telechat_details_changed','ballot_deferred','iesg_ballot_saved'])
 
         if doc.type_id in ['draft','statchg']:
             relevant.update(starts_with('last_call_'))
@@ -90,6 +92,9 @@ def gather_relevant_expansions(**kwargs):
             relevant.update(['conflrev_requested','ballot_approved_conflrev'])
         if  doc.type_id == 'charter':
             relevant.update(['charter_external_review','ballot_approved_charter'])
+
+        if doc.type_id == 'bofreq':
+            relevant.update(starts_with('bofreq'))
 
     if 'group' in kwargs:
 
