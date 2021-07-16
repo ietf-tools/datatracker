@@ -546,7 +546,7 @@ class Session(object):
         self.session_pk = session_db.pk
         self.group = session_db.group.acronym
         self.parent = session_db.group.parent.acronym if session_db.group.parent else None
-        self.ad = session_db.group.ad_role().pk if session_db.group.ad_role() else None
+        self.ad = session_db.group.ad_role().person.pk if session_db.group.ad_role() else None
         self.is_area_meeting = any([
             session_db.group.type_id == 'area',
             session_db.group.type_id == 'ag',
