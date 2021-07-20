@@ -33,14 +33,15 @@ from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDo
 from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactory, 
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
-    BallotDocEventFactory, DocumentAuthorFactory )
+    BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory)
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
 from ietf.meeting.models import Meeting, Session, SessionPresentation, SchedulingEvent
-from ietf.meeting.factories import MeetingFactory, SessionFactory
+from ietf.meeting.factories import MeetingFactory, SessionFactory, SessionPresentationFactory
+
 from ietf.name.models import SessionStatusName, BallotPositionName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory, EmailFactory
@@ -2314,3 +2315,65 @@ class FieldTests(TestCase):
                 dict(id=doc.pk, text=escape(uppercase_std_abbreviated_name(doc.name))),
                 decoded[str(doc.pk)],
             )
+
+class MaterialsTests(TestCase):
+
+    def setUp(self):
+        self.id_dir = self.tempdir('id')
+        self.saved_agenda_path = settings.AGENDA_PATH
+        settings.AGENDA_PATH = self.id_dir
+
+        meeting_number='111'
+        meeting_dir = os.path.join(f'{settings.AGENDA_PATH}',f'{meeting_number}')
+        os.mkdir(meeting_dir)
+        agenda_dir = os.path.join(meeting_dir,'agenda')
+        os.mkdir(agenda_dir)
+
+        group_acronym='bogons'
+
+        # This is too much work - the factory should 
+        # * build the DocumentHistory correctly 
+        # * maybe do something by default with uploaded_filename
+        # and there should be a more usable unit to save bits to disk (handle_file_upload isn't quite right) that tests can leverage
+        try:
+            uploaded_filename_00 = f'agenda-{meeting_number}-{group_acronym}-00.txt'
+            uploaded_filename_01 = f'agenda-{meeting_number}-{group_acronym}-01.md'
+            f = io.open(os.path.join(agenda_dir, uploaded_filename_00), 'w')
+            f.write('This is some unremarkable text')
+            f.close()
+            f = io.open(os.path.join(agenda_dir, uploaded_filename_01), 'w')
+            f.write('This links to [an unusual place](https://unusual.example).')
+            f.close()
+
+            self.doc = DocumentFactory(type_id='agenda',rev='00',group__acronym=group_acronym, newrevisiondocevent=None, name=f'agenda-{meeting_number}-{group_acronym}', uploaded_filename=uploaded_filename_00)
+            e = NewRevisionDocEventFactory(doc=self.doc,rev='00')
+            self.doc.save_with_history([e])
+            self.doc.rev = '01'
+            self.doc.uploaded_filename = uploaded_filename_01
+            e = NewRevisionDocEventFactory(doc=self.doc, rev='01')
+            self.doc.save_with_history([e])
+
+            # This is necessary for the view to be able to find the document
+            # which hints that the view has an issue : if a materials document is taken out of all SessionPresentations, it is no longer accessable by this view
+            SessionPresentationFactory(session__meeting__number=meeting_number, session__group=self.doc.group, document=self.doc)
+
+        except: 
+            shutil.rmtree(self.id_dir)
+            raise
+
+    def tearDown(self):
+        settings.AGENDA_PATH = self.saved_agenda_path
+        shutil.rmtree(self.id_dir)
+
+    def test_markdown_and_text(self):
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=self.doc.name,rev='00'))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('#materials-content > pre'))
+
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=self.doc.name,rev='01'))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEqual(q('#materials-content .panel-body a').attr['href'],'https://unusual.example')

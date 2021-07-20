@@ -123,8 +123,17 @@
 
   <h2>{% if doc.meeting_related %}Meeting{% endif %} {{ doc.type.name }}<br><small>{{ doc.name }}</small></h2>
 
+  <div id='materials-content'>
   {% if doc.rev and content != None %}
-  <pre>{{ content|sanitize|maybewordwrap|safe }}</pre>
+    {% if content_is_html %}
+      <div class="panel panel-default">
+        <div class="panel-body">
+          {{ content|sanitize|safe }}
+        </div>
+      </div>
+    {% else %}
+      <pre>{{ content|sanitize|maybewordwrap|safe }}</pre>
+    {% endif %}
   {% else %}
     <p>Not available as plain text.</p>
 
@@ -132,4 +141,5 @@
       <p class="download-instead"><a href="{{ other_types.0.1 }}">Download as {{ other_types.0.0.upper }}</a></p>
     {% endif %}
   {% endif %}
+  </div>
 {% endblock %}

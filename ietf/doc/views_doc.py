@@ -624,6 +624,7 @@ def document_main(request, name, rev=None):
         pathname = os.path.join(doc.get_file_path(), basename)
 
         content = None
+        content_is_html = False
         other_types = []
         globs = glob.glob(pathname + ".*")
         url = doc.get_href()
@@ -637,7 +638,8 @@ def document_main(request, name, rev=None):
                 content = doc.text_or_error()
                 t = "plain text"
             elif extension == ".md":
-                content = doc.text_or_error()
+                content = markdown.markdown(doc.text_or_error(), extensions=['extra'])
+                content_is_html = True
                 t = "markdown"
             other_types.append((t, url))
 
@@ -645,6 +647,7 @@ def document_main(request, name, rev=None):
                                   dict(doc=doc,
                                        top=top,
                                        content=content,
+                                       content_is_html=content_is_html,
                                        revisions=revisions,
                                        latest_rev=latest_rev,
                                        snapshot=snapshot,
