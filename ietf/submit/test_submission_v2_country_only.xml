@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="rfc2629.xslt" ?>
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd" []>
+<?rfc toc="yes"?>
+<rfc category="info" docName="%(name)s" ipr="trust200902">
+  <front>
+    <title>%(title)s</title>
+    <author fullname="%(author)s" initials="%(initials)s" surname="%(surname)s">
+      <organization>Test Centre Inc.</organization>
+      <address>
+        <postal>
+          <country>UK</country>
+        </postal>
+        <email>%(email)s</email>
+      </address>
+    </author>
+    <date day="%(day)s" month="%(month)s" year="%(year)s"/>
+    <workgroup>%(group)s</workgroup>
+    <abstract>
+      <t>
+         This document describes how to test tests.
+      </t>
+    </abstract>
+  </front>
+  <middle>
+    <section numbered="true" toc="default" title="Introduction">
+      <t>
+         This document describes a protocol for testing tests.
+      </t>
+    </section>
+    <section anchor="JSON" numbered="true" toc="default" title="JSON example">
+      <t>
+   The JSON object should look like this:
+
+   {
+       "test": 1234
+   }
+      </t>
+    </section>
+    <section anchor="Security" numbered="true" toc="default" title="Security Considerations">
+      <t>
+         There are none.
+      </t>
+    </section>
+    <section anchor="IANA" numbered="true" toc="default" title="IANA Considerations">
+      <t>
+         No new registrations for IANA.
+      </t>
+    </section>
+  </middle>
+  <back/>
+</rfc>
