@@ -1244,6 +1244,27 @@ class SubmitTests(TestCase):
 
         self.assertEqual(Submission.objects.get(name=name).group.acronym, group.acronym)
 
+    def test_submit_new_wg_v2_country_only(self):
+        """V2 drafts should accept addresses without street/city"""
+        # break early in case of missing configuration
+        self.assertTrue(os.path.exists(settings.IDSUBMIT_IDNITS_BINARY))
+
+        # submit
+        author = PersonFactory()
+        group = GroupFactory()
+        name = "draft-authorname-testing-tests"
+        r = self.create_and_post_submission(
+            name=name,
+            rev='00',
+            author=author,
+            group=group.acronym,
+            formats=('xml',),
+            base_filename='test_submission_v2_country_only'
+        )
+        self.assertEqual(r.status_code, 302)
+        submission = Submission.objects.get(name=name)
+        self.assertEqual(submission.xml_version, '2')  # should reflect the submitted version
+
     def test_submit_new_irtf(self):
         group = Group.objects.create(acronym="saturnrg", name="Saturn", type_id="rg", state_id="active")
 
