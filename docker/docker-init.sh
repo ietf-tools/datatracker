@@ -140,6 +140,7 @@ done
 for sub in					\
 	nomcom_keys/public_keys			\
 	developers/ietf-ftp			\
+	developers/ietf-ftp/bofreq		\
 	developers/ietf-ftp/charter		\
 	developers/ietf-ftp/conflict-reviews	\
 	developers/ietf-ftp/internet-drafts	\
