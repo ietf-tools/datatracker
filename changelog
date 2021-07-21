@@ -1,3 +1,52 @@
+ietfdb (7.35.0) ietf; urgency=medium
+
+  ** BOF Request handling, process xml submissions with v3, markdown rendering  **
+
+  * Merged in [19193] from rjsparks@nostrum.com:
+    Don't provide links to person pages that we know will 404.  
+
+  * Merged in [19194] from housley@vigilsec.com:
+    Properly sort the management items on the IETG telechat agenda. 
+    Fixes #1374.  
+
+  * Merged in [19200] from housley@vigilsec.com:
+    Better explain ballot positions from former area dirctors. Fixes #3228. 
+
+  * Merged in [19208] from housley@vigilsec.com:
+    Provide previous ballot positions for both current and former ADs; add 
+    test to cover this situation.  
+
+  * Merged in [19210] and [19211] from rjsparks@nostrum.com:
+    Move items from PLAN into Trac or to the notes directory.  
+
+  * Merged in [19214] from rjsparks@nostrum.com:
+    Remove oic patch - 1.3.0 contains the fix.  
+
+  * Merged in [19215] and [19217] from rjsparks@nostrum.com:
+    quote a test parameter that should have been quoted all along.  
+
+  * Merged in [19224] from rjsparks@nostrum.com:
+    Guard a sort that gets a mix of integers and None.  
+
+  * Merged in [19228] from rjsparks@nostrum.com:
+    Add BOF Requests to the datatracker.  
+
+  * Merged in [19238] from jennifer@painless-security.com:
+    Find AD conflicts using AD person pk instead of role pk. Fixes #3354.  
+
+  * Merged in [19240] from rjsparks@nostrum.com:
+    Remove tools-style agenda link.  
+
+  * Merged in [19242] from jennifer@painless-security.com:
+    Run v2v3 converter internally when v2 XML is submitted. Fixes #3305.  
+
+  * Merged in [19243] from rjsparks@nostrum.com:
+    Render markdown on the document main page for document materials. Fixes 
+    #2927.  
+
+ -- Robert Sparks <rjsparks@nostrum.com>  21 Jul 2021 17:45:00 +0000
+
+
 ietfdb (7.34.0) ietf; urgency=medium
 
   ** Calendar by session, bugfixes **
