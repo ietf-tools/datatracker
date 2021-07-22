@@ -53,7 +53,7 @@
       {% elif item.timeslot.location.video_stream_url %}
 	  <a class=""
 	    href="{{item.timeslot.location.video_stream_url|format:session }}"
-	    title="Meetecho video stream"><span class="fa fa-fw fa-video-camera"></span>
+	    title="Meetecho session"><span class="fa fa-fw fa-video-camera"></span>
 	  </a>
       {% else %}
 	<span class="">
@@ -93,10 +93,6 @@
             <a class="" href="{{ href }}" title="{{ r.title }}"><span class="fa fa-fw fa-file-o"></span></a>
           {% endif %}
         {% endwith %}{% endfor %}
-      {% elif item.timeslot.location.video_stream_url %}
-          <a class=""
-             href="http://www.meetecho.com/ietf{{meeting.number}}/recordings#{{acronym.upper}}"
-             title="Meetecho session recording"><span class="fd fa-fw fd-meetecho"></span></a>
       {% elif show_empty  %}
         <span class="fa fa-fw"></span>
       {% endif %}
