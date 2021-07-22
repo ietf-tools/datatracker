@@ -105,27 +105,17 @@ def save_milestone_in_history(milestone):
 
     return h
 
-# TODO: rework this using features.groupman_authroles
 def can_manage_all_groups_of_type(user, type_id):
     if not user.is_authenticated:
         return False
     log.assertion("isinstance(type_id, (type(''), type(u'')))")
-    if type_id == "rg":
-        return has_role(user, ('IRTF Chair', 'Secretariat'))
-    elif type_id == "wg":
-        return has_role(user, ('Area Director', 'Secretariat'))
-    elif type_id == "team":
-        return has_role(user, ('Area Director', 'Secretariat'))
-    elif type_id == "program":
-        return has_role(user, ('IAB', 'Secretariat',))        
-    return has_role(user, ('Secretariat'))
+    return has_role(user, GroupFeatures.objects.get(type_id=type_id).groupman_authroles) 
 
 def can_manage_group(user, group):
     if not user.is_authenticated:
         return False
-    for authrole in group.features.groupman_authroles:
-        if has_role(user, authrole):
-            return True
+    if has_role(user, group.features.groupman_authroles):
+        return True
     return group.has_role(user, group.features.groupman_roles)
 
 def milestone_reviewer_for_group_type(group_type):
