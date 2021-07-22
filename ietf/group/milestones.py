@@ -112,7 +112,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
     needs_review = False
     if can_manage_group(request.user, group):
         can_change_uses_milestone_dates = True
-        if not can_manage_all_groups_of_type(request.user, group):
+        if not can_manage_all_groups_of_type(request.user, group.type_id):
             # The user is chair or similar, not AD:
             can_change_uses_milestone_dates = False
             if milestone_set == "current":

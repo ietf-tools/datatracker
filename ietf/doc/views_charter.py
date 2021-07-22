@@ -70,7 +70,7 @@ def change_state(request, name, option=None):
     charter = get_object_or_404(Document, type="charter", name=name)
     group = charter.group
 
-    if not can_manage_all_groups_of_type(request.user, group):
+    if not can_manage_all_groups_of_type(request.user, group.type_id):
         permission_denied(request, "You don't have permission to access this view.")
 
     chartering_type = get_chartering_type(charter)
@@ -261,7 +261,7 @@ def change_title(request, name, option=None):
     logging the title as a comment."""
     charter = get_object_or_404(Document, type="charter", name=name)
     group = charter.group
-    if not can_manage_all_groups_of_type(request.user, group):
+    if not can_manage_all_groups_of_type(request.user, group.type_id):
         permission_denied(request, "You don't have permission to access this view.")
     by = request.user.person
     if request.method == 'POST':
@@ -374,7 +374,7 @@ def submit(request, name, option=None):
         charter_canonical_name = name
         charter_rev = "00-00"
 
-    if not can_manage_all_groups_of_type(request.user, group) or not group.features.has_chartering_process:
+    if not can_manage_all_groups_of_type(request.user, group.type_id) or not group.features.has_chartering_process:
         permission_denied(request, "You don't have permission to access this view.")
 
 

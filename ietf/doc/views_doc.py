@@ -510,7 +510,7 @@ def document_main(request, name, rev=None):
         if chartering and not snapshot:
             milestones = doc.group.groupmilestone_set.filter(state="charter")
 
-        can_manage = can_manage_all_groups_of_type(request.user, doc.group)
+        can_manage = can_manage_all_groups_of_type(request.user, doc.group.type_id)
 
         return render(request, "doc/document_charter.html",
                                   dict(doc=doc,
