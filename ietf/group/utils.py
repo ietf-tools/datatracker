@@ -106,7 +106,7 @@ def save_milestone_in_history(milestone):
     return h
 
 # TODO: rework this using features.groupman_authroles
-def can_manage_group_type(user, group, type_id=None):
+def can_manage_all_groups_of_type(user, group, type_id=None):
     if not user.is_authenticated:
         return False
     if type_id is None:
@@ -261,7 +261,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     if group.features.customize_workflow and can_manage:
         actions.append(("Customize workflow", urlreverse("ietf.group.views.customize_workflow", kwargs=kwargs)))
 
-    if group.state_id in ("active", "dormant") and group.type_id in ["wg", "rg", ] and can_manage_group_type(request.user, group):
+    if group.state_id in ("active", "dormant") and group.type_id in ["wg", "rg", ] and can_manage_all_groups_of_type(request.user, group):
         actions.append(("Request closing group", urlreverse("ietf.group.views.conclude", kwargs=kwargs)))
 
     d = {

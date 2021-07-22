@@ -75,7 +75,7 @@ from ietf.group.forms import (GroupForm, StatusUpdateForm, ConcludeGroupForm, St
 from ietf.group.mails import email_admin_re_charter, email_personnel_change, email_comment
 from ietf.group.models import ( Group, Role, GroupEvent, GroupStateTransitions,
                               ChangeStateGroupEvent, GroupFeatures )
-from ietf.group.utils import (get_charter_text, can_manage_group_type, 
+from ietf.group.utils import (get_charter_text, can_manage_all_groups_of_type, 
                               milestone_reviewer_for_group_type, can_provide_status_update,
                               can_manage_materials, 
                               construct_group_menu_context, get_group_materials,
@@ -392,7 +392,7 @@ def chartering_groups(request):
 
     for t in group_types:
         t.chartering_groups = Group.objects.filter(type=t, charter__states__in=charter_states,state_id__in=('active','bof','proposed','dormant')).select_related("state", "charter").order_by("acronym")
-        t.can_manage = can_manage_group_type(request.user, None, t.slug)
+        t.can_manage = can_manage_all_groups_of_type(request.user, None, t.slug)
 
         for g in t.chartering_groups:
             g.chartering_type = get_chartering_type(g.charter)
@@ -523,7 +523,7 @@ def group_about(request, acronym, group_type=None):
     if group.state_id == "conclude":
         e = group.latest_event(type='closing_note')
 
-    can_manage = can_manage_group_type(request.user, group)
+    can_manage = can_manage_all_groups_of_type(request.user, group)
     charter_submit_url = "" 
     if group.features.has_chartering_process: 
         charter_submit_url = urlreverse('ietf.doc.views_charter.submit', kwargs={ "name": charter_name_for_group(group) }) 
@@ -1077,7 +1077,7 @@ def conclude(request, acronym, group_type=None):
     """Request the closing of group, prompting for instructions."""
     group = get_group_or_404(acronym, group_type)
 
-    if not can_manage_group_type(request.user, group):
+    if not can_manage_all_groups_of_type(request.user, group):
         permission_denied(request, "You don't have permission to access this view")
 
     if request.method == 'POST':

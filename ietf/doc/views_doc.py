@@ -65,7 +65,7 @@ from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_wit
     build_doc_supermeta_block, build_file_urls, update_documentauthors)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
-from ietf.group.utils import can_manage_group_type, can_manage_materials, group_features_role_filter
+from ietf.group.utils import can_manage_all_groups_of_type, can_manage_materials, group_features_role_filter
 from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is_person,
     role_required, is_individual_draft_author)
 from ietf.name.models import StreamName, BallotPositionName
@@ -510,7 +510,7 @@ def document_main(request, name, rev=None):
         if chartering and not snapshot:
             milestones = doc.group.groupmilestone_set.filter(state="charter")
 
-        can_manage = can_manage_group_type(request.user, doc.group)
+        can_manage = can_manage_all_groups_of_type(request.user, doc.group)
 
         return render(request, "doc/document_charter.html",
                                   dict(doc=doc,
