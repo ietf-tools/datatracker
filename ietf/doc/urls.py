@@ -69,6 +69,7 @@ urlpatterns = [
     url(r'^html/(?P<name>std[0-9]+?)(\.txt|\.html)?/?$', RedirectView.as_view(url=settings.RFC_EDITOR_INFO_BASE_URL+"%(name)s", permanent=False)), 
     url(r'^html/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, views_doc.document_html),
     url(r'^html/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', views_doc.document_html),
+    url(r'^idnits2-rfcs-obsoleted/?$', views_doc.idnits2_rfcs_obsoleted),
 
     url(r'^all/?$', views_search.index_all_drafts),
     url(r'^active/?$', views_search.index_active_drafts),

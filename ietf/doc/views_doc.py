@@ -42,6 +42,7 @@ import os
 import re
 import markdown
 
+from collections import defaultdict
 from urllib.parse import quote
 
 from django.http import HttpResponse, Http404
@@ -50,12 +51,14 @@ from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django import forms
+from django.views.decorators.cache import cache_page
+
 
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent, BallotType,
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
-    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor)
+    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor, RelatedDocument)
 from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
@@ -1714,3 +1717,16 @@ def all_presentations(request, name):
         'in_progress': in_progress,
         'past' : past+recent,
         })
+
+@cache_page ( 60 * 60, cache="slowpages" )
+def idnits2_rfcs_obsoleted(request):
+
+    obsdict = defaultdict(list)
+    for r in RelatedDocument.objects.filter(relationship_id='obs'):
+        obsdict[int(r.target.document.rfc_number())].append(int(r.source.rfc_number()))
+
+    for k in obsdict:
+        obsdict[k] = sorted(obsdict[k])
+
+    return render(request, 'doc/idnits2-rfcs-obsoleted.txt', context={'obsitems':sorted(obsdict.items())},content_type='text/plain;charset=utf-8')
+
