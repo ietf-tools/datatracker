@@ -2381,14 +2381,15 @@ class MaterialsTests(TestCase):
 class Idnits2SupportTests(TestCase):
 
     def test_obsoleted(self):
-        for i in range(2):
-            rfc = WgRfcFactory()
-            WgRfcFactory(relations=[('obs',rfc)])
+        rfc = WgRfcFactory(alias2__name='rfc1001')
+        WgRfcFactory(alias2__name='rfc1003',relations=[('obs',rfc)])
+        rfc = WgRfcFactory(alias2__name='rfc1005')
+        WgRfcFactory(alias2__name='rfc1007',relations=[('obs',rfc)])
 
         url = urlreverse('ietf.doc.views_doc.idnits2_rfcs_obsoleted')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.content,b'1001 1003\n1005 1007\n')
+        self.assertEqual(r.content, b'1001 1003\n1005 1007\n')
 
     def test_rfc_status(self):
         url = urlreverse('ietf.doc.views_doc.idnits2_rfc_status')
