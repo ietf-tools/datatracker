@@ -2389,3 +2389,10 @@ class Idnits2SupportTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content,b'1001 1003\n1005 1007\n')
+
+    def test_rfc_status(self):
+        url = urlreverse('ietf.doc.views_doc.idnits2_rfc_status')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        blob = unicontent(r).replace('\n','')
+        self.assertEqual(blob[6312-1],'O')

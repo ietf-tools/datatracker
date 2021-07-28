@@ -70,6 +70,7 @@ urlpatterns = [
     url(r'^html/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, views_doc.document_html),
     url(r'^html/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', views_doc.document_html),
     url(r'^idnits2-rfcs-obsoleted/?$', views_doc.idnits2_rfcs_obsoleted),
+    url(r'^idnits2-rfc-status/?$', views_doc.idnits2_rfc_status),
 
     url(r'^all/?$', views_search.index_all_drafts),
     url(r'^active/?$', views_search.index_active_drafts),

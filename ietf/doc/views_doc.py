@@ -41,6 +41,7 @@ import json
 import os
 import re
 import markdown
+import textwrap
 
 from collections import defaultdict
 from urllib.parse import quote
@@ -1729,4 +1730,46 @@ def idnits2_rfcs_obsoleted(request):
         obsdict[k] = sorted(obsdict[k])
 
     return render(request, 'doc/idnits2-rfcs-obsoleted.txt', context={'obsitems':sorted(obsdict.items())},content_type='text/plain;charset=utf-8')
+
+@cache_page ( 60 * 60, cache="slowpages" )
+def idnits2_rfc_status(request):
+
+    blob=['N']*10000
+
+    symbols={
+        'ps': 'P',
+        'inf': 'I',
+        'exp': 'E',
+        'ds': 'D',
+        'hist': 'H',
+        'std': 'S',
+        'bcp': 'B',
+        'unkn': 'U',
+    }
+
+    rfcs = Document.objects.filter(type_id='draft',states__slug='rfc',states__type='draft')
+    for rfc in rfcs:
+        offset = int(rfc.rfcnum)-1
+        blob[offset] = symbols[rfc.std_level_id]
+        if rfc.related_that('obs'):
+            blob[offset] = 'O'
+
+    # Workarounds for unusual states in the datatracker
+
+    # Document.get(docalias='rfc6312').rfcnum == 6342 
+    # 6312 was published with the wrong rfc number in it
+    # weird workaround in the datatracker - there are two 
+    # DocAliases starting with rfc - the canonical name code
+    # searches for the lexically highest alias starting with rfc
+    # which is getting lucky.
+    blob[6312 - 1] = 'O'
+
+    # RFC200 is an old RFC List by Number
+    blob[200 -1] = 'O' 
+
+    # End Workarounds
+
+    blob = re.sub('N*$','',''.join(blob))
+
+    return HttpResponse(textwrap.fill(blob, width=64),content_type='text/plain;charset=utf-8')
 
