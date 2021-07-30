@@ -85,6 +85,8 @@ mv $TMPFILE9 $DERIVED/1id-index.txt
 mv $TMPFILEA $DERIVED/1id-abstracts.txt
 mv $TMPFILEB $DERIVED/all_id2.txt
 
+$DTDIR/ietf/manage.py generate_idnits2_rfc_status
+$DTDIR/ietf/manage.py generate_idnits2_rfcs_obsoleted
 
 CHARTER=/a/www/ietf-ftp/charter
 wget -q https://datatracker.ietf.org/wg/1wg-charters-by-acronym.txt -O $CHARTER/1wg-charters-by-acronym.txt

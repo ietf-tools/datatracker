@@ -41,9 +41,7 @@ import json
 import os
 import re
 import markdown
-import textwrap
 
-from collections import defaultdict
 from urllib.parse import quote
 
 from django.http import HttpResponse, Http404
@@ -52,14 +50,13 @@ from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django import forms
-from django.views.decorators.cache import cache_page
 
 
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent, BallotType,
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
-    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor, RelatedDocument)
+    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor)
 from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
@@ -83,6 +80,7 @@ from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
 from ietf.utils import markup_txt, log
+from ietf.utils.draft import Draft
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
 
@@ -1719,57 +1717,53 @@ def all_presentations(request, name):
         'past' : past+recent,
         })
 
-@cache_page ( 60 * 60, cache="slowpages" )
+
 def idnits2_rfcs_obsoleted(request):
+    filename = os.path.join(settings.DERIVED_DIR,'idnits2-rfcs-obsoleted')
+    try:
+        with open(filename,'rb') as f:
+            blob = f.read()
+            return HttpResponse(blob,content_type='text/plain;charset=utf-8')
+    except Exception as e:
+        log.log('Failed to read idnits2-rfcs-obsoleted:'+str(e))
+        raise Http404
 
-    obsdict = defaultdict(list)
-    for r in RelatedDocument.objects.filter(relationship_id='obs'):
-        obsdict[int(r.target.document.rfc_number())].append(int(r.source.rfc_number()))
 
-    for k in obsdict:
-        obsdict[k] = sorted(obsdict[k])
-
-    return render(request, 'doc/idnits2-rfcs-obsoleted.txt', context={'obsitems':sorted(obsdict.items())},content_type='text/plain;charset=utf-8')
-
-@cache_page ( 60 * 60, cache="slowpages" )
 def idnits2_rfc_status(request):
+    filename = os.path.join(settings.DERIVED_DIR,'idnits2-rfc-status')
+    try:
+        with open(filename,'rb') as f:
+            blob = f.read()
+            return HttpResponse(blob,content_type='text/plain;charset=utf-8')
+    except Exception as e:
+        log.log('Failed to read idnits2-rfc-status:'+str(e))
+        raise Http404
 
-    blob=['N']*10000
 
-    symbols={
-        'ps': 'P',
-        'inf': 'I',
-        'exp': 'E',
-        'ds': 'D',
-        'hist': 'H',
-        'std': 'S',
-        'bcp': 'B',
-        'unkn': 'U',
-    }
+def idnits2_state(request, name, rev=None):
+    doc = get_object_or_404(Document, docalias__name=name)
+    if doc.type_id!='draft':
+        raise Http404
+    zero_revision = NewRevisionDocEvent.objects.filter(doc=doc,rev='00').first()
+    if zero_revision:
+        doc.created = zero_revision.time
+    else:
+        doc.created = doc.docevent_set.order_by('-time').first().time
+    if doc.std_level:
+        doc.deststatus = doc.std_level.name
+    elif doc.intended_std_level:
+        doc.deststatus = doc.intended_std_level.name
+    else:
+        text = doc.text()
+        if text:
+            parsed_draft = Draft(text=doc.text(), source=name, name_from_source=False)
+            doc.deststatus = parsed_draft.get_status()
+        else:
+            doc.deststatus="Unknown"
+    return render(request, 'doc/idnits2-state.txt', context={'doc':doc}, content_type='text/plain;charset=utf-8')    
 
-    rfcs = Document.objects.filter(type_id='draft',states__slug='rfc',states__type='draft')
-    for rfc in rfcs:
-        offset = int(rfc.rfcnum)-1
-        blob[offset] = symbols[rfc.std_level_id]
-        if rfc.related_that('obs'):
-            blob[offset] = 'O'
 
-    # Workarounds for unusual states in the datatracker
 
-    # Document.get(docalias='rfc6312').rfcnum == 6342 
-    # 6312 was published with the wrong rfc number in it
-    # weird workaround in the datatracker - there are two 
-    # DocAliases starting with rfc - the canonical name code
-    # searches for the lexically highest alias starting with rfc
-    # which is getting lucky.
-    blob[6312 - 1] = 'O'
 
-    # RFC200 is an old RFC List by Number
-    blob[200 -1] = 'O' 
 
-    # End Workarounds
-
-    blob = re.sub('N*$','',''.join(blob))
-
-    return HttpResponse(textwrap.fill(blob, width=64),content_type='text/plain;charset=utf-8')
 

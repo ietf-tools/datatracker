@@ -2380,6 +2380,15 @@ class MaterialsTests(TestCase):
 
 class Idnits2SupportTests(TestCase):
 
+    def setUp(self):
+        self.derived_dir = self.tempdir('derived')
+        self.saved_derived_dir = settings.DERIVED_DIR
+        settings.DERIVED_DIR = self.derived_dir
+
+    def tearDown(self):
+        settings.DERIVED_DIR = self.saved_derived_dir
+        shutil.rmtree(self.derived_dir)
+
     def test_obsoleted(self):
         rfc = WgRfcFactory(alias2__name='rfc1001')
         WgRfcFactory(alias2__name='rfc1003',relations=[('obs',rfc)])
@@ -2388,12 +2397,41 @@ class Idnits2SupportTests(TestCase):
 
         url = urlreverse('ietf.doc.views_doc.idnits2_rfcs_obsoleted')
         r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+        call_command('generate_idnits2_rfcs_obsoleted')
+        url = urlreverse('ietf.doc.views_doc.idnits2_rfcs_obsoleted')
+        r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content, b'1001 1003\n1005 1007\n')
 
     def test_rfc_status(self):
+        for slug in ('bcp', 'ds', 'exp', 'hist', 'inf', 'std', 'ps', 'unkn'):
+            WgRfcFactory(std_level_id=slug)
         url = urlreverse('ietf.doc.views_doc.idnits2_rfc_status')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,404)
+        call_command('generate_idnits2_rfc_status')
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         blob = unicontent(r).replace('\n','')
         self.assertEqual(blob[6312-1],'O')
+
+    def test_idnits2_state(self):
+        rfc = WgRfcFactory()
+        url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=rfc.canonical_name()))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r,'rfcnum')
+
+        draft = WgDraftFactory()
+        url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=draft.canonical_name()))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r,'rfcnum')
+        self.assertContains(r,'Unknown')
+
+        draft = WgDraftFactory(intended_std_level_id='ps')
+        url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=draft.canonical_name()))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r,'Proposed')
