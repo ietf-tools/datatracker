@@ -545,6 +545,11 @@ def edit(request, acronym, num=None):
                         Constraint.objects.filter(meeting=meeting, source=group, name=cname.slug).delete()
                         save_conflicts(group, meeting, form.cleaned_data[cfield_id], cname.slug)
 
+                # see if any inactive constraints should be deleted
+                for cname, field_id in form.inactive_wg_constraint_field_ids():
+                    if form.cleaned_data[field_id]:
+                        Constraint.objects.filter(meeting=meeting, source=group, name=cname.slug).delete()
+
                 if 'adjacent_with_wg' in form.changed_data:
                     Constraint.objects.filter(meeting=meeting, source=group, name='wg_adjacent').delete()
                     save_conflicts(group, meeting, form.cleaned_data['adjacent_with_wg'], 'wg_adjacent')

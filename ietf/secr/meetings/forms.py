@@ -99,7 +99,9 @@ class MeetingModelForm(forms.ModelForm):
     class Meta:
         model = Meeting
         exclude = ('type', 'schedule', 'session_request_lock_message')
-        
+        widgets = {
+            'group_conflict_types': forms.CheckboxSelectMultiple(),
+        }
 
     def __init__(self,*args,**kwargs):
         super(MeetingModelForm, self).__init__(*args,**kwargs)
@@ -118,6 +120,9 @@ class MeetingModelForm(forms.ModelForm):
         meeting.type_id = 'ietf'
         if commit:
             meeting.save()
+            # must call save_m2m() because we saved with commit=False above, see:
+            # https://docs.djangoproject.com/en/2.2/topics/forms/modelforms/#the-save-method
+            self.save_m2m()
         return meeting
         
 class MeetingRoomForm(forms.ModelForm):

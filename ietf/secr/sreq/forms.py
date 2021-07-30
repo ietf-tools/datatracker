@@ -6,7 +6,7 @@ from django import forms
 
 import debug                            # pyflakes:ignore
 
-from ietf.name.models import TimerangeName
+from ietf.name.models import TimerangeName, ConstraintName
 from ietf.group.models import Group
 from ietf.meeting.models import ResourceAssociation, Constraint
 from ietf.person.fields import SearchablePersonsField
@@ -106,7 +106,7 @@ class SessionForm(forms.Form):
 
         # Set up constraints for the meeting
         self._wg_field_data = []
-        for constraintname in meeting.session_constraintnames.all():
+        for constraintname in meeting.group_conflict_types.all():
             # two fields for each constraint: a CharField for the group list and a selector to add entries
             constraint_field = forms.CharField(max_length=255, required=False)
             constraint_field.widget.attrs['data-slug'] = constraintname.slug
@@ -125,6 +125,27 @@ class SessionForm(forms.Form):
             self.fields[cfield_id] = constraint_field
             self.fields[cselector_id] = selector_field
             self._wg_field_data.append((constraintname, cfield_id, cselector_id))
+
+        # Show constraints that are not actually used by the meeting so these don't get lost
+        self._inactive_wg_field_data = []
+        inactive_cnames = ConstraintName.objects.filter(
+            is_group_conflict=True  # Only collect group conflicts...
+        ).exclude(
+            meeting=meeting  # ...that are not enabled for this meeting...
+        ).filter(
+            constraint__source=group,  # ...but exist for this group...
+            constraint__meeting=meeting,  # ... at this meeting.
+        ).distinct()
+
+        for inactive_constraint_name in inactive_cnames:
+            field_id = 'delete_{}'.format(inactive_constraint_name.slug)
+            self.fields[field_id] = forms.BooleanField(required=False, label='Delete this conflict', help_text='Delete this inactive conflict?')
+            constraints = group.constraint_source_set.filter(meeting=meeting, name=inactive_constraint_name)
+            self._inactive_wg_field_data.append(
+                (inactive_constraint_name,
+                 ' '.join([c.target.acronym for c in constraints]),
+                 field_id)
+            )
 
         self.fields['joint_with_groups_selector'].widget.attrs['onChange'] = "document.form_post.joint_with_groups.value=document.form_post.joint_with_groups.value + ' ' + this.options[this.selectedIndex].value; return 1;"
         self.fields['third_session'].widget.attrs['onClick'] = "if (document.form_post.num_session.selectedIndex < 2) { alert('Cannot use this field - Number of Session is not set to 2'); return false; } else { if (this.checked==true) { document.form_post.length_session3.disabled=false; } else { document.form_post.length_session3.value=0;document.form_post.length_session3.disabled=true; } }"
@@ -150,10 +171,26 @@ class SessionForm(forms.Form):
         for cname, cfield_id, cselector_id in self._wg_field_data:
             yield cname, self[cfield_id], self[cselector_id]
 
+    def wg_constraint_count(self):
+        """How many wg constraints are there?"""
+        return len(self._wg_field_data)
+
     def wg_constraint_field_ids(self):
         """Iterates over wg constraint field IDs"""
         for cname, cfield_id, _ in self._wg_field_data:
             yield cname, cfield_id
+
+    def inactive_wg_constraints(self):
+        for cname, value, field_id in self._inactive_wg_field_data:
+            yield cname, value, self[field_id]
+
+    def inactive_wg_constraint_count(self):
+        return len(self._inactive_wg_field_data)
+
+    def inactive_wg_constraint_field_ids(self):
+        """Iterates over wg constraint field IDs"""
+        for cname, _, field_id in self._inactive_wg_field_data:
+            yield cname, field_id
 
     @staticmethod
     def _add_widget_class(widget, new_class):

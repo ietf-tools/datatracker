@@ -23,18 +23,33 @@
              <table>
                <tr>
                  <td colspan="2">Other WGs that included {{ group.name }} in their conflict lists:</td>
-                 <td>{{ session_conflicts.inbound }}</td>
+                 <td>{{ session_conflicts.inbound|default:"None" }}</td>
                </tr>
                {% for cname, cfield, cselector  in form.wg_constraint_fields %}
                  <tr class="bg1">
-                   {% if forloop.first %}<td rowspan="3" valign="top" width="220">WG Sessions:<br>You may select multiple WGs within each category</td>{% endif %}
+                   {% if forloop.first %}<td rowspan="{{ form.wg_constraint_count }}" valign="top" width="220">WG Sessions:<br>You may select multiple WGs within each category</td>{% endif %}
                    <td width="320">{{ cname|title }}</td>
                    <td>{{ cselector }}
                      <input type="button" id="wg_delete_{{ cname.slug }}" value="Delete the last entry" onClick="ietf_sessions.delete_wg_constraint_clicked('{{ cname.slug }}')"><br>
                      {{ cfield.errors }}{{ cfield }}
                    </td>
                  </tr>
+               {% empty %}{# shown if there are no constraint fields #}
+                 <tr class="bg1"><td width="220"></td><td colspan="2">No constraints are enabled for this meeting.</td></tr>
                {% endfor %}
+               {% if form.inactive_wg_constraints %}
+                 {% for cname, value, field in form.inactive_wg_constraints %}
+                 <tr class="bg1">
+                   {% if forloop.first %}
+                     <td rowspan="{{ form.inactive_wg_constraint_count }}" valign="top" width="220">
+                       Disabled for this meeting
+                     </td>
+                   {% endif %}
+                   <td width="320">{{ cname|title }}</td>
+                   <td><input type="text" value="{{ value }}" maxlength="255" class="wg_constraint" disabled><br>{{ field }} {{ field.label }}</td>
+                 {% endfor %}
+                 </tr>
+               {% endif %}
                <tr>
                  <td colspan="2">BOF Sessions:</td>
                  <td>If the sessions can not be found in the fields above, please enter free form requests in the Special Requests field below.</td>

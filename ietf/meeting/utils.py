@@ -296,7 +296,7 @@ def reverse_editor_label(label):
 def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
     # process constraint names - we synthesize extra names to be able
     # to treat the concepts in the same manner as the modelled ones
-    constraint_names = {n.pk: n for n in ConstraintName.objects.all()}
+    constraint_names = {n.pk: n for n in meeting.enabled_constraint_names()}
 
     joint_with_groups_constraint_name = ConstraintName(
         slug='joint_with_groups',
@@ -327,7 +327,7 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
         n.countless_formatted_editor_label = format_html(n.formatted_editor_label, count="") if "{count}" in n.formatted_editor_label else n.formatted_editor_label
 
     # convert human-readable rules in the database to constraints on actual sessions
-    constraints = list(Constraint.objects.filter(meeting=meeting).prefetch_related('target', 'person', 'timeranges'))
+    constraints = list(meeting.enabled_constraints().prefetch_related('target', 'person', 'timeranges'))
 
     # synthesize AD constraints - we can treat them as a special kind of 'bethere'
     responsible_ad_for_group = {}
