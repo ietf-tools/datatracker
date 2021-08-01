@@ -78,6 +78,8 @@ class SubmissionBaseUploadForm(forms.Form):
     def set_cutoff_warnings(self):
         now = datetime.datetime.now(pytz.utc)
         meeting = Meeting.get_current_meeting()
+        if not meeting:
+            return
         #
         cutoff_00 = meeting.get_00_cutoff()
         cutoff_01 = meeting.get_01_cutoff()
