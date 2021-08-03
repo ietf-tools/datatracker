@@ -32,7 +32,7 @@ def setup():
     # extraction code, and also don't seem to match the way people with arabic
     # names romanize arabic names.  Exlude those locales from name generation
     # in order to avoid test failures.
-    locales = set( [ l for l in faker.config.AVAILABLE_LOCALES if not (l.startswith('ar_') or l.startswith('sg_')) ] )
+    locales = set( [ l for l in faker.config.AVAILABLE_LOCALES if not (l.startswith('ar_') or l.startswith('sg_') or l=='fr_QC') ] )
     acceptable_fakers = [faker.Faker(locale) for locale in locales]
 setup()
 
@@ -40,7 +40,7 @@ def random_faker():
     global acceptable_fakers
     return random.sample(acceptable_fakers, 1)[0]
 
-class UserFactory(factory.DjangoModelFactory):
+class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
         django_get_or_create = ('username',)
@@ -57,7 +57,7 @@ class UserFactory(factory.DjangoModelFactory):
     def set_password(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         obj.set_password( '%s+password' % obj.username ) # pylint: disable=no-value-for-parameter
 
-class PersonFactory(factory.DjangoModelFactory):
+class PersonFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Person
 
@@ -102,7 +102,7 @@ class PersonFactory(factory.DjangoModelFactory):
                 os.unlink(file)
             atexit.register(delete_file, photodst)
 
-class AliasFactory(factory.DjangoModelFactory):
+class AliasFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Alias
 
@@ -134,7 +134,7 @@ def fake_email_address(n):
             raise RuntimeError("Failed generating a fake email address to fit in Email.address(max_length=%s)"%address_field.max_lenth)
     return address
 
-class EmailFactory(factory.DjangoModelFactory):
+class EmailFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Email
         django_get_or_create = ('address',)
@@ -147,14 +147,14 @@ class EmailFactory(factory.DjangoModelFactory):
     origin = factory.LazyAttribute(lambda obj: obj.person.user.username if obj.person.user else '')
 
 
-class PersonalApiKeyFactory(factory.DjangoModelFactory):
+class PersonalApiKeyFactory(factory.django.DjangoModelFactory):
     person = factory.SubFactory(PersonFactory)
     endpoint = FuzzyChoice(PERSON_API_KEY_ENDPOINTS)
 
     class Meta:
         model = PersonalApiKey
 
-class PersonApiKeyEventFactory(factory.DjangoModelFactory):
+class PersonApiKeyEventFactory(factory.django.DjangoModelFactory):
     key = factory.SubFactory(PersonalApiKeyFactory)
     person = factory.LazyAttribute(lambda o: o.key.person)
     type = 'apikey_login'

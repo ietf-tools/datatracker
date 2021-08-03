@@ -11,7 +11,7 @@ from ietf.submit.models import Submission, SubmissionExtResource
 from ietf.utils.accesstoken import generate_random_key
 
 
-class SubmissionExtResourceFactory(factory.DjangoModelFactory):
+class SubmissionExtResourceFactory(factory.django.DjangoModelFactory):
     name = factory.Iterator(ExtResourceName.objects.all())
     value = factory.Faker('url')
     submission = factory.SubFactory('ietf.submit.factories.SubmissionFactory')
@@ -19,7 +19,7 @@ class SubmissionExtResourceFactory(factory.DjangoModelFactory):
     class Meta:
         model = SubmissionExtResource
 
-class SubmissionFactory(factory.DjangoModelFactory):
+class SubmissionFactory(factory.django.DjangoModelFactory):
     state_id = 'uploaded'
 
     @factory.lazy_attribute_sequence

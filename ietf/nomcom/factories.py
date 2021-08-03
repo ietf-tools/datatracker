@@ -5,6 +5,8 @@
 import factory
 import random
 
+from faker import Faker
+
 from ietf.nomcom.models import NomCom, Position, Feedback, Nominee, NomineePosition, Nomination, Topic
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory, UserFactory
@@ -79,7 +81,7 @@ def nomcom_kwargs_for_year(year=None, *args, **kwargs):
     return kwargs
 
 
-class NomComFactory(factory.DjangoModelFactory):
+class NomComFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = NomCom
 
@@ -137,7 +139,7 @@ class NomComFactory(factory.DjangoModelFactory):
             for i in range(3):
                 TopicFactory(nomcom=obj)
 
-class PositionFactory(factory.DjangoModelFactory):
+class PositionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Position
 
@@ -146,7 +148,7 @@ class PositionFactory(factory.DjangoModelFactory):
     accepting_nominations = True
     accepting_feedback = True
 
-class NomineeFactory(factory.DjangoModelFactory):
+class NomineeFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Nominee
 
@@ -154,7 +156,7 @@ class NomineeFactory(factory.DjangoModelFactory):
     person = factory.SubFactory(PersonFactory)
     email = factory.LazyAttribute(lambda obj: obj.person.email())
 
-class NomineePositionFactory(factory.DjangoModelFactory):
+class NomineePositionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = NomineePosition
 
@@ -162,7 +164,7 @@ class NomineePositionFactory(factory.DjangoModelFactory):
     nominee = factory.SubFactory(NomineeFactory)
     state_id = 'accepted'
 
-class FeedbackFactory(factory.DjangoModelFactory):
+class FeedbackFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Feedback
 
@@ -172,10 +174,10 @@ class FeedbackFactory(factory.DjangoModelFactory):
 
     @factory.post_generation
     def comments(obj, create, extracted, **kwargs):
-        comment_text = factory.Faker('paragraph').generate({})
+        comment_text = Faker().paragraph()
         obj.comments = obj.nomcom.encrypt(comment_text)
 
-class TopicFactory(factory.DjangoModelFactory):
+class TopicFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Topic
 
@@ -184,7 +186,7 @@ class TopicFactory(factory.DjangoModelFactory):
     accepting_feedback = True
     audience_id = 'general'
 
-class NominationFactory(factory.DjangoModelFactory):
+class NominationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Nomination
 

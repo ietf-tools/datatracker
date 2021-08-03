@@ -29,7 +29,7 @@ def draft_name_generator(type_id,group,n):
               n,
             )
 
-class BaseDocumentFactory(factory.DjangoModelFactory):
+class BaseDocumentFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Document
 
@@ -259,7 +259,7 @@ class ReviewFactory(BaseDocumentFactory):
     name = factory.LazyAttribute(lambda o: 'review-doesnotexist-00-%s-%s'%(o.group.acronym,datetime.date.today().isoformat()))
     group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='review')
 
-class DocAliasFactory(factory.DjangoModelFactory):
+class DocAliasFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = DocAlias
 
@@ -276,7 +276,7 @@ class DocAliasFactory(factory.DjangoModelFactory):
                     self.docs.add(doc)
 
 
-class DocEventFactory(factory.DjangoModelFactory):
+class DocEventFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = DocEvent
 
@@ -326,7 +326,7 @@ class StateDocEventFactory(DocEventFactory):
         obj.save()
 
 # All of these Ballot* factories are extremely skeletal. Flesh them out as needed by tests.
-class BallotTypeFactory(factory.DjangoModelFactory):
+class BallotTypeFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = BallotType
         django_get_or_create = ('slug','doc_type_id')
@@ -363,14 +363,14 @@ class BallotPositionDocEventFactory(DocEventFactory):
     balloter = factory.SubFactory('ietf.person.factories.PersonFactory')
     pos_id = 'discuss'
 
-class DocumentActionHolderFactory(factory.DjangoModelFactory):
+class DocumentActionHolderFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = DocumentActionHolder
         
     document = factory.SubFactory(WgDraftFactory)
     person = factory.SubFactory('ietf.person.factories.PersonFactory')
 
-class DocumentAuthorFactory(factory.DjangoModelFactory):
+class DocumentAuthorFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = DocumentAuthor
 

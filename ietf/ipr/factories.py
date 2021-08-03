@@ -14,13 +14,13 @@ from ietf.ipr.models import (
 def _fake_patent_info():
     return "Date: %s\nNotes: %s\nTitle: %s\nNumber: %s\nInventor: %s\n" % (
         (datetime.datetime.today()-datetime.timedelta(days=365)).strftime("%Y-%m-%d"),
-        factory.Faker('paragraph').generate({}),
-        factory.Faker('sentence', nb_words=8).generate({}),
+        factory.Faker('paragraph'),
+        factory.Faker('sentence', nb_words=8),
         'US9999999',
-        factory.Faker('name').generate({}),
+        factory.Faker('name'),
     )
 
-class IprDisclosureBaseFactory(factory.DjangoModelFactory):
+class IprDisclosureBaseFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = IprDisclosureBase
 
@@ -83,7 +83,7 @@ class GenericIprDisclosureFactory(IprDisclosureBaseFactory):
     holder_contact_email = factory.Faker('email')
     holder_contact_name = factory.Faker('name')
     
-class IprEventFactory(factory.DjangoModelFactory):
+class IprEventFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = IprEvent
 
