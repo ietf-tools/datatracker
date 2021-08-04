@@ -13,6 +13,7 @@ from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
+from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 
@@ -1320,7 +1321,7 @@ class IndividualInfoFormsTests(TestCase):
         self.assertEqual(len(q('form textarea[id=id_note]')), 1)
         self.assertEqual(len(q('button:contains("Send")')), 1)
         for ah in doc.action_holders.all():
-            self.assertContains(r, ah.plain_name())
+            self.assertContains(r, escape(ah.plain_name()))
 
         empty_outbox()
         r = self.client.post(url, dict(note='this is my note'))  # note should be < 78 chars to avoid wrapping
