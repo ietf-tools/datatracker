@@ -43,7 +43,7 @@
     {% if timeslot.location.video_stream_url %}
       <a class=""
         href="{{timeslot.location.video_stream_url|format:session }}"
-        title="Meetecho video stream"><span class="fa fa-fw fa-video-camera"></span>
+        title="Meetecho session"><span class="fa fa-fw fa-video-camera"></span>
       </a>
     {% endif %}
     <!-- Audio stream -->
@@ -108,11 +108,6 @@
           {% endfor %}
         {% endif %}
       {% endwith %}
-      {% if timeslot.location.video_stream_url %}
-        <a class=""
-          href="http://www.meetecho.com/ietf{{meeting.number}}/recordings#{{acronym.upper}}"
-         title="Meetecho session recording"><span class="fd fa-fw fd-meetecho"></span></a>
-      {% endif %}
     {% endif %}
   {% endif %}
   {% endwith %}
