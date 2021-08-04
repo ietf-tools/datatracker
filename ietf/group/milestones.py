@@ -16,7 +16,7 @@ from ietf.doc.models import DocEvent
 from ietf.doc.utils import get_chartering_type
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.group.models import GroupMilestone, MilestoneGroupEvent
-from ietf.group.utils import (save_milestone_in_history, can_manage_group_type, can_manage_group,
+from ietf.group.utils import (save_milestone_in_history, can_manage_all_groups_of_type, can_manage_group,
                               milestone_reviewer_for_group_type, get_group_or_404, has_role)
 from ietf.name.models import GroupMilestoneStateName
 from ietf.group.mails import email_milestones_changed
@@ -112,7 +112,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
     needs_review = False
     if can_manage_group(request.user, group):
         can_change_uses_milestone_dates = True
-        if not can_manage_group_type(request.user, group):
+        if not can_manage_all_groups_of_type(request.user, group.type_id):
             # The user is chair or similar, not AD:
             can_change_uses_milestone_dates = False
             if milestone_set == "current":

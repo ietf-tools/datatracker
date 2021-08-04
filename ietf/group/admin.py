@@ -194,6 +194,7 @@ class GroupFeaturesAdmin(admin.ModelAdmin):
         'admin_roles',
         'docman_roles',
         'groupman_roles',
+        'groupman_authroles',
         'matman_roles',
         'role_order',
     ]

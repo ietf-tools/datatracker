@@ -105,32 +105,17 @@ def save_milestone_in_history(milestone):
 
     return h
 
-# TODO: rework this using features.groupman_authroles
-def can_manage_group_type(user, group, type_id=None):
+def can_manage_all_groups_of_type(user, type_id):
     if not user.is_authenticated:
         return False
-    if type_id is None:
-        type_id = group.type_id
     log.assertion("isinstance(type_id, (type(''), type(u'')))")
-    if type_id == "rg":
-        return has_role(user, ('IRTF Chair', 'Secretariat'))
-    elif type_id == "wg":
-        return has_role(user, ('Area Director', 'Secretariat'))
-    elif type_id == "team":
-        if group and group.is_decendant_of("ietf"):
-            return has_role(user, ('Area Director', 'Secretariat'))
-        elif group and group.is_decendant_of("irtf"):
-            return has_role(user, ('IRTF Chair', 'Secretariat'))
-    elif type_id == "program":
-        return has_role(user, ('IAB', 'Secretariat',))        
-    return has_role(user, ('Secretariat'))
+    return has_role(user, GroupFeatures.objects.get(type_id=type_id).groupman_authroles) 
 
 def can_manage_group(user, group):
     if not user.is_authenticated:
         return False
-    for authrole in group.features.groupman_authroles:
-        if has_role(user, authrole):
-            return True
+    if has_role(user, group.features.groupman_authroles):
+        return True
     return group.has_role(user, group.features.groupman_roles)
 
 def milestone_reviewer_for_group_type(group_type):
@@ -261,7 +246,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     if group.features.customize_workflow and can_manage:
         actions.append(("Customize workflow", urlreverse("ietf.group.views.customize_workflow", kwargs=kwargs)))
 
-    if group.state_id in ("active", "dormant") and group.type_id in ["wg", "rg", ] and can_manage_group_type(request.user, group):
+    if group.state_id in ("active", "dormant") and group.type_id in ["wg", "rg", ] and can_manage_all_groups_of_type(request.user, group.type_id):
         actions.append(("Request closing group", urlreverse("ietf.group.views.conclude", kwargs=kwargs)))
 
     d = {
