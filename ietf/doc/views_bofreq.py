@@ -44,35 +44,30 @@ class BofreqUploadForm(forms.Form):
     bofreq_file = forms.FileField(label="Markdown source file to upload", required=False)
     bofreq_content = forms.CharField(widget=forms.Textarea(attrs={'rows':30}), required=False, strip=False)
 
-    def clean_bofreq_content(self):
-        content = self.cleaned_data["bofreq_content"].replace("\r", "")
-        default_content = render_to_string('doc/bofreq/bofreq_template.md',{})
-        if content==default_content:
-            raise forms.ValidationError('The example content may not be saved. Edit it as instructed to document this BOF request.')
-        try:
-            _ = markdown.markdown(content, extensions=['extra'])
-        except Exception as e:
-           raise forms.ValidationError(f'Markdown processing failed: {e}') 
-        return content
-
-    def clean_bofreq_file(self):
-        content = get_cleaned_text_file_content(self.cleaned_data["bofreq_file"])
-        try:
-            _ = markdown.markdown(content, extensions=['extra'])
-        except Exception as e:
-           raise forms.ValidationError(f'Markdown processing failed: {e}') 
-        return content
-
     def clean(self):
         def require_field(f):
             if not self.cleaned_data.get(f):
                 self.add_error(f, forms.ValidationError("You must fill in this field."))
+                return False
+            else:
+                return True
 
         submission_method = self.cleaned_data.get("bofreq_submission")
+        content = ''
         if submission_method == "enter":
-            require_field("bofreq_content")
+            if require_field("bofreq_content"):
+                content = self.cleaned_data["bofreq_content"].replace("\r", "")
+                default_content = render_to_string('doc/bofreq/bofreq_template.md',{})
+                if content==default_content:
+                    raise forms.ValidationError('The example content may not be saved. Edit it as instructed to document this BOF request.')
         elif submission_method == "upload":
-            require_field("bofreq_file")
+            if require_field("bofreq_file"):
+                content = get_cleaned_text_file_content(self.cleaned_data["bofreq_file"])
+        try:
+            _ = markdown.markdown(content, extensions=['extra'])
+        except Exception as e:
+           raise forms.ValidationError(f'Markdown processing failed: {e}')
+
 
 
 @login_required
@@ -98,7 +93,7 @@ def submit(request, name):
             bofreq.save_with_history([e])
             bofreq_submission = form.cleaned_data['bofreq_submission']
             if bofreq_submission == "upload":
-                content = form.cleaned_data['bofreq_file']
+                content = get_cleaned_text_file_content(form.cleaned_data["bofreq_file"])
             else:
                 content = form.cleaned_data['bofreq_content']
             with io.open(bofreq.get_file_name(), 'w', encoding='utf-8') as destination:
@@ -168,7 +163,7 @@ def new_bof_request(request):
             alias.docs.set([bofreq])
             bofreq_submission = form.cleaned_data['bofreq_submission']
             if bofreq_submission == "upload":
-                content = form.cleaned_data['bofreq_file']
+                content = get_cleaned_text_file_content(form.cleaned_data["bofreq_file"])
             else:
                 content = form.cleaned_data['bofreq_content']
             with io.open(bofreq.get_file_name(), 'w', encoding='utf-8') as destination:
