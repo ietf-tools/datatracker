@@ -682,6 +682,7 @@ INTERNET_DRAFT_ARCHIVE_DIR = '/a/ietfdata/doc/draft/collection/draft-archive/'
 # write anything to this directory -- its content is maintained by ghostlinkd:
 INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/a/ietfdata/doc/draft/archive'
 MEETING_RECORDINGS_DIR = '/a/www/audio'
+DERIVED_DIR = '/a/ietfdata/derived'
 
 DOCUMENT_FORMAT_WHITELIST = ["txt", "ps", "pdf", "xml", "html", ]
 

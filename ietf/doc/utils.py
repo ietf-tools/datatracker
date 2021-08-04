@@ -9,6 +9,7 @@ import json
 import math
 import os
 import re
+import textwrap
 
 from collections import defaultdict
 from urllib.parse import quote
@@ -16,8 +17,10 @@ from urllib.parse import quote
 from django.conf import settings
 from django.contrib import messages
 from django.forms import ValidationError
+from django.template.loader import render_to_string
 from django.utils.html import escape
 from django.urls import reverse as urlreverse
+
 
 import debug                            # pyflakes:ignore
 from ietf.community.models import CommunityList
@@ -1232,3 +1235,54 @@ def update_doc_extresources(doc, new_resources, by):
     e.save()
     doc.save_with_history([e])
     return True
+
+def generate_idnits2_rfc_status():
+
+    blob=['N']*10000
+
+    symbols={
+        'ps': 'P',
+        'inf': 'I',
+        'exp': 'E',
+        'ds': 'D',
+        'hist': 'H',
+        'std': 'S',
+        'bcp': 'B',
+        'unkn': 'U',
+    }
+
+    rfcs = Document.objects.filter(type_id='draft',states__slug='rfc',states__type='draft')
+    for rfc in rfcs:
+        offset = int(rfc.rfcnum)-1
+        blob[offset] = symbols[rfc.std_level_id]
+        if rfc.related_that('obs'):
+            blob[offset] = 'O'
+
+    # Workarounds for unusual states in the datatracker
+
+    # Document.get(docalias='rfc6312').rfcnum == 6342 
+    # 6312 was published with the wrong rfc number in it
+    # weird workaround in the datatracker - there are two 
+    # DocAliases starting with rfc - the canonical name code
+    # searches for the lexically highest alias starting with rfc
+    # which is getting lucky.
+    blob[6312 - 1] = 'O'
+
+    # RFC200 is an old RFC List by Number
+    blob[200 -1] = 'O' 
+
+    # End Workarounds
+
+    blob = re.sub('N*$','',''.join(blob))
+    blob = textwrap.fill(blob, width=64)
+
+    return blob
+
+def generate_idnits2_rfcs_obsoleted():
+    obsdict = defaultdict(list)
+    for r in RelatedDocument.objects.filter(relationship_id='obs'):
+        obsdict[int(r.target.document.rfc_number())].append(int(r.source.rfc_number()))
+    for k in obsdict:
+        obsdict[k] = sorted(obsdict[k])
+    return render_to_string('doc/idnits2-rfcs-obsoleted.txt', context={'obsitems':sorted(obsdict.items())})
+

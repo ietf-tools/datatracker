@@ -51,6 +51,7 @@ from django.urls import reverse as urlreverse
 from django.conf import settings
 from django import forms
 
+
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent, BallotType,
@@ -79,6 +80,7 @@ from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
 from ietf.utils import markup_txt, log
+from ietf.utils.draft import Draft
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
 
@@ -1714,3 +1716,54 @@ def all_presentations(request, name):
         'in_progress': in_progress,
         'past' : past+recent,
         })
+
+
+def idnits2_rfcs_obsoleted(request):
+    filename = os.path.join(settings.DERIVED_DIR,'idnits2-rfcs-obsoleted')
+    try:
+        with open(filename,'rb') as f:
+            blob = f.read()
+            return HttpResponse(blob,content_type='text/plain;charset=utf-8')
+    except Exception as e:
+        log.log('Failed to read idnits2-rfcs-obsoleted:'+str(e))
+        raise Http404
+
+
+def idnits2_rfc_status(request):
+    filename = os.path.join(settings.DERIVED_DIR,'idnits2-rfc-status')
+    try:
+        with open(filename,'rb') as f:
+            blob = f.read()
+            return HttpResponse(blob,content_type='text/plain;charset=utf-8')
+    except Exception as e:
+        log.log('Failed to read idnits2-rfc-status:'+str(e))
+        raise Http404
+
+
+def idnits2_state(request, name, rev=None):
+    doc = get_object_or_404(Document, docalias__name=name)
+    if doc.type_id!='draft':
+        raise Http404
+    zero_revision = NewRevisionDocEvent.objects.filter(doc=doc,rev='00').first()
+    if zero_revision:
+        doc.created = zero_revision.time
+    else:
+        doc.created = doc.docevent_set.order_by('-time').first().time
+    if doc.std_level:
+        doc.deststatus = doc.std_level.name
+    elif doc.intended_std_level:
+        doc.deststatus = doc.intended_std_level.name
+    else:
+        text = doc.text()
+        if text:
+            parsed_draft = Draft(text=doc.text(), source=name, name_from_source=False)
+            doc.deststatus = parsed_draft.get_status()
+        else:
+            doc.deststatus="Unknown"
+    return render(request, 'doc/idnits2-state.txt', context={'doc':doc}, content_type='text/plain;charset=utf-8')    
+
+
+
+
+
+
