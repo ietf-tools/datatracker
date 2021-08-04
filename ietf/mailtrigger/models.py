@@ -406,13 +406,14 @@ class Recipient(models.Model):
     def gather_bofreq_responsible(self, **kwargs):
         addrs = []
         if 'doc' in kwargs:
-            bofreq = kwargs['doc']
-            responsible = bofreq_responsible(bofreq)
-            if responsible:
-                addrs.extend([leader.email_address() for leader in responsible])
-            else:
-                addrs.extend(Recipient.objects.get(slug='iab').gather(**{}))
-                addrs.extend(Recipient.objects.get(slug='iesg').gather(**{}))
+            doc = kwargs['doc']
+            if doc.type_id=='bofreq':
+                responsible = bofreq_responsible(doc)
+                if responsible:
+                    addrs.extend([leader.email_address() for leader in responsible])
+                else:
+                    addrs.extend(Recipient.objects.get(slug='iab').gather(**{}))
+                    addrs.extend(Recipient.objects.get(slug='iesg').gather(**{}))
         return addrs
 
     def gather_bofreq_previous_responsible(self, **kwargs):
