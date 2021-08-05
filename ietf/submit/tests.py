@@ -859,6 +859,10 @@ class SubmitTests(TestCase):
     def test_submit_new_individual_xml(self):
         self.submit_new_individual(["xml"])
 
+    def test_submit_new_individual_xml_no_next_meeting(self):
+        Meeting.objects.all().delete()
+        self.submit_new_individual(["xml"])
+
     def test_submit_new_individual_txt_xml(self):
         self.submit_new_individual(["txt", "xml"])
 

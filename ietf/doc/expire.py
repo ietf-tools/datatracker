@@ -80,6 +80,9 @@ def in_draft_expire_freeze(when=None):
 
     meeting = Meeting.objects.filter(type='ietf', date__gte=when-datetime.timedelta(days=7)).order_by('date').first()
 
+    if not meeting:
+        return False
+
     d = meeting.get_second_cut_off()
     # for some reason, the old Perl code started at 9 am
     second_cut_off = datetime.datetime.combine(d, datetime.time(9, 0))
