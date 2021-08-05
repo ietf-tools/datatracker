@@ -1,3 +1,59 @@
+ietfdb (7.36.0) ietf; urgency=medium
+
+  ** Bugfixes and minor enhancements  **
+
+  * Merged in [19254] [19256] [19258] [19259] from rjsparks@nostrum.com:
+    Show groupman_authroles in the GroupFeatures admin list.
+    Rename ietf.group.utils.can_manage_group_type to
+    can_manage_all_groups_of_type to improve code readability where it is
+    used. Changed the signature of can_manage_all_groups_of_type to only
+    take a type_id. Changed implementation of can_manage_all_groups_of_type
+    to use GroupFeatures.groupman_authroles.
+
+  * Merged in [19255] from rjsparks@nostrum.com:
+    Correct calculation of bofreq_responsible mailtrigger.Recipient to 
+    return no addresses for documents that are not of type bofreq.  Fixes 
+    #3358. 
+
+  * Merged in [19260] from jennifer@painless-security.com:
+    Remove Meetecho icon from agenda items and change 'Meetecho video 
+    stream' to 'Meetecho session' for remaining link. Fixes #3135, #3223.  
+
+  * Merged in [19262] [19263] [19264] [19265] from rjsparks@nostrum.com:
+    Provide replacements for idnits2's internal use of tools.ietf.org:
+        - representation of obsoleted RFCs    
+        - rfc-status blob
+        - minimal per-document .status files 
+
+  * Merged in [19266] from jennifer@painless-security.com:
+    Allow configuration of group conflict types used for each meeting Fixes 
+    #2770.  
+
+  * Merged in [19267] from rjsparks@nostrum.com:
+    Improve the idnits2 state file.  
+
+  * Merged in [19269] from rjsparks@nostrum.com:
+    Allow submit and expire_drafts to succeed when there is no 'next' IETF 
+    meeting in the database. Fixes #3370.  
+
+  * Merged in [19270] from rjsparks@nostrum.com:
+    Bring the factory-boy and Faker dependencies forward through some minor 
+    breaking changes. Stop using the deprecated fr_QC locale in Faker.  
+
+  * Merged in [19271] from rjsparks@nostrum.com:
+    Improve tests that look person names in responses.  
+
+  * Merged in [19272] from rjsparks@nostrum.com:
+    Improve the BOF request upload form validation.  
+
+  * Merged in [19277] from rjsparks@nostrum.com:
+    Restrict group creation to the secretariat.  
+
+  * Convert IETF111 Constraint objects to use new names
+
+ -- Robert Sparks <rjsparks@nostrum.com>  05 Aug 2021 22:06:18 +0000
+
+
 ietfdb (7.35.0) ietf; urgency=medium
 
   ** BOF Request handling, process xml submissions with v3, markdown rendering  **
