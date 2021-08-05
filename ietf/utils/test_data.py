@@ -15,7 +15,7 @@ from ietf.group.models import Group, GroupHistory, Role, RoleHistory
 from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import HolderIprDisclosure, IprDocRel, IprDisclosureStateName, IprLicenseTypeName
 from ietf.meeting.models import Meeting, ResourceAssociation
-from ietf.name.models import StreamName, DocRelationshipName, RoomResourceName
+from ietf.name.models import StreamName, DocRelationshipName, RoomResourceName, ConstraintName
 from ietf.person.models import Person, Email
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, ReviewTypeName, ReviewTeamSettings )
@@ -361,7 +361,7 @@ def make_test_data():
         )
     
     # meeting
-    Meeting.objects.create(
+    ietf72 = Meeting.objects.create(
         number="72",
         type_id="ietf",
         date=datetime.date.today() + datetime.timedelta(days=180),
@@ -371,6 +371,9 @@ def make_test_data():
         break_area="Lounge",
         reg_area="Lobby",
         )
+    # Use the "old" conflict names to avoid having to update tests
+    for slug in ['conflict', 'conflic2', 'conflic3']:
+        ietf72.group_conflict_types.add(ConstraintName.objects.get(slug=slug))
 
     # interim meeting
     Meeting.objects.create(

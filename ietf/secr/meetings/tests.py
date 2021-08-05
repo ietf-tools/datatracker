@@ -14,9 +14,10 @@ from django.conf import settings
 from django.urls import reverse
 
 from ietf.group.models import Group, GroupEvent
+from ietf.meeting.factories import MeetingFactory
 from ietf.meeting.models import Meeting, Room, TimeSlot, SchedTimeSessAssignment, Session, SchedulingEvent
 from ietf.meeting.test_data import make_meeting_test_data
-from ietf.name.models import SessionStatusName
+from ietf.name.models import ConstraintName, SessionStatusName
 from ietf.person.models import Person
 from ietf.secr.meetings.forms import get_times
 from ietf.utils.mail import outbox
@@ -73,18 +74,21 @@ class SecrMeetingTestCase(TestCase):
         number = int(meeting.number) + 1
         count = Meeting.objects.count()
         url = reverse('ietf.secr.meetings.views.add')
-        post_data = dict(number=number,city='Toronto',date='2014-07-20',country='CA',
-                         time_zone='America/New_York',venue_name='Hilton',
-                         days=6,
-                         venue_addr='100 First Ave',
-                         idsubmit_cutoff_day_offset_00=13,
-                         idsubmit_cutoff_day_offset_01=20,
-                         idsubmit_cutoff_time_utc     =datetime.timedelta(hours=23, minutes=59, seconds=59),
-                         idsubmit_cutoff_warning_days =datetime.timedelta(days=21),
-                         submission_start_day_offset=90,
-                         submission_cutoff_day_offset=26,
-                         submission_correction_day_offset=50,
-                     )
+        post_data = dict(
+            number=number,city='Toronto',date='2014-07-20',country='CA',
+            time_zone='America/New_York',venue_name='Hilton',
+            days=6,
+            venue_addr='100 First Ave',
+            idsubmit_cutoff_day_offset_00=13,
+            idsubmit_cutoff_day_offset_01=20,
+            idsubmit_cutoff_time_utc     =datetime.timedelta(hours=23, minutes=59, seconds=59),
+            idsubmit_cutoff_warning_days =datetime.timedelta(days=21),
+            submission_start_day_offset=90,
+            submission_cutoff_day_offset=26,
+            submission_correction_day_offset=50,
+            group_conflict_types=('conflict', 'conflic2', 'key_participant'),
+        )
+
         self.client.login(username='secretary', password='secretary+password')
         response = self.client.post(url, post_data, follow=True)
         self.assertEqual(response.status_code, 200)
@@ -96,6 +100,38 @@ class SecrMeetingTestCase(TestCase):
         self.assertTrue(new_meeting.schedule.base)
         self.assertEqual(new_meeting.schedule.base.name, 'base')
         self.assertEqual(new_meeting.attendees, None)
+        self.assertCountEqual(
+            [cn.slug for cn in new_meeting.group_conflict_types.all()],
+            post_data['group_conflict_types'],
+        )
+
+    def test_add_meeting_default_conflict_types(self):
+        """Add meeting should default to same conflict types as previous meeting"""
+        def _run_test(mtg):
+            url = reverse('ietf.secr.meetings.views.add')
+            r = self.client.get(url)
+            q = PyQuery(r.content)
+            selected_items = q('#id_group_conflict_types input[checked]')
+            selected_values = [si.value for si in selected_items]
+            expected_values = [cn.slug for cn in mtg.group_conflict_types.all()]
+            self.assertCountEqual(selected_values, expected_values)
+
+        self.client.login(username='secretary', password='secretary+password')
+
+        meeting = MeetingFactory(type_id='ietf', group_conflicts=[])  # start with no conflicts selected
+        _run_test(meeting)
+
+        # enable one
+        meeting.group_conflict_types.add(ConstraintName.objects.filter(is_group_conflict=True).first())
+        self.assertEqual(meeting.group_conflict_types.count(), 1)
+        _run_test(meeting)
+
+        # enable a few ([::2] selects every other)
+        meeting.group_conflict_types.clear()
+        for cn in ConstraintName.objects.filter(is_group_conflict=True)[::2]:
+            meeting.group_conflict_types.add(cn)
+        self.assertGreater(meeting.group_conflict_types.count(), 1)
+        _run_test(meeting)
 
     def test_edit_meeting(self):
         "Edit Meeting"
@@ -111,13 +147,25 @@ class SecrMeetingTestCase(TestCase):
                          submission_cutoff_day_offset=26,
                          submission_correction_day_offset=50,
                          attendees=1234,
+                         group_conflict_types=[
+                             cn.slug for cn in ConstraintName.objects.filter(
+                                 is_group_conflict=True
+                             ).exclude(
+                                 meeting=meeting,  # replace original set with those not assigned to the meeting
+                             )
+                         ]
                     )
+        self.assertGreater(len(post_data['group_conflict_types']), 0)  # test should include at least one
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url, post_data, follow=True)
         self.assertEqual(response.status_code, 200)
         meeting = Meeting.objects.get(number=meeting.number)
         self.assertEqual(meeting.city,'Toronto')
         self.assertEqual(meeting.attendees,1234)
+        self.assertCountEqual(
+            [cn.slug for cn in meeting.group_conflict_types.all()],
+            post_data['group_conflict_types'],
+        )
 
     def test_blue_sheets_upload(self):
         "Test Bluesheets"

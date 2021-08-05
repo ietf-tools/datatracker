@@ -13,6 +13,7 @@ import shutil
 from unittest import skipIf
 from mock import patch
 from pyquery import PyQuery
+from lxml.etree import tostring
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urlsplit
@@ -1984,6 +1985,121 @@ class EditTests(TestCase):
         assignment.session.refresh_from_db()
         self.assertEqual(assignment.session.agenda_note, "New Test Note")
 
+    def test_edit_meeting_schedule_conflict_types(self):
+        """The meeting schedule editor should show the constraint types enabled for the meeting"""
+        meeting = MeetingFactory(
+            type_id='ietf',
+            group_conflicts=[],  # show none to start with
+        )
+        s1 = SessionFactory(
+            meeting=meeting,
+            type_id='regular',
+            attendees=12,
+            comments='chair conflict',
+        )
+
+        s2 = SessionFactory(
+            meeting=meeting,
+            type_id='regular',
+            attendees=34,
+            comments='old-fashioned conflict',
+        )
+
+        Constraint.objects.create(
+            meeting=meeting,
+            source=s1.group,
+            target=s2.group,
+            name=ConstraintName.objects.get(slug="chair_conflict"),
+        )
+
+        Constraint.objects.create(
+            meeting=meeting,
+            source=s2.group,
+            target=s1.group,
+            name=ConstraintName.objects.get(slug="conflict"),
+        )
+
+
+        # log in as secretary so we have access
+        self.client.login(username="secretary", password="secretary+password")
+
+        url = urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs=dict(num=meeting.number))
+
+        # Should have no conflict constraints listed because the meeting has all disabled
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+
+        self.assertEqual(len(q('#session{} span.constraints > span'.format(s1.pk))), 0)
+        self.assertEqual(len(q('#session{} span.constraints > span'.format(s2.pk))), 0)
+
+        # Now enable the 'chair_conflict' constraint only
+        chair_conflict = ConstraintName.objects.get(slug='chair_conflict')
+        chair_conf_label = b'<i class="fa fa-gavel"/>'  # result of etree.tostring(etree.fromstring(editor_label))
+        meeting.group_conflict_types.add(chair_conflict)
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+
+        # verify that there is a constraint pointing from 1 to 2
+        #
+        # The constraint is represented in the HTML as
+        # <div id="session<pk>">
+        #   [...]
+        #   <span class="constraints">
+        #     <span data-sessions="<other pk>">[constraint label]</span>
+        #   </span>
+        # </div>
+        #
+        # Where the constraint label is the editor_label for the ConstraintName.
+        # If this pk is the constraint target, the editor_label includes a
+        # '-' prefix, which may be before the editor_label or inserted inside
+        # it.
+        #
+        # For simplicity, this test is tied to the current values of editor_label.
+        # It also assumes the order of constraints will be constant.
+        # If those change, the test will need to be updated.
+        s1_constraints = q('#session{} span.constraints > span'.format(s1.pk))
+        s2_constraints = q('#session{} span.constraints > span'.format(s2.pk))
+
+        # Check the forward constraint
+        self.assertEqual(len(s1_constraints), 1)
+        self.assertEqual(s1_constraints[0].attrib['data-sessions'], str(s2.pk))
+        self.assertEqual(s1_constraints[0].text, None)  # no '-' prefix on the source
+        self.assertEqual(tostring(s1_constraints[0][0]), chair_conf_label)  # [0][0] is the innermost <span>
+
+        # And the reverse constraint
+        self.assertEqual(len(s2_constraints), 1)
+        self.assertEqual(s2_constraints[0].attrib['data-sessions'], str(s1.pk))
+        self.assertEqual(s2_constraints[0].text, '-')  # '-' prefix on the target
+        self.assertEqual(tostring(s2_constraints[0][0]), chair_conf_label)  # [0][0] is the innermost <span>
+
+        # Now also enable the 'conflict' constraint
+        conflict = ConstraintName.objects.get(slug='conflict')
+        conf_label = b'<span class="encircled">1</span>'
+        conf_label_reversed = b'<span class="encircled">-1</span>'  # the '-' is inside the span!
+        meeting.group_conflict_types.add(conflict)
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+
+        s1_constraints = q('#session{} span.constraints > span'.format(s1.pk))
+        s2_constraints = q('#session{} span.constraints > span'.format(s2.pk))
+
+        # Check the forward constraint
+        self.assertEqual(len(s1_constraints), 2)
+        self.assertEqual(s1_constraints[0].attrib['data-sessions'], str(s2.pk))
+        self.assertEqual(s1_constraints[0].text, None)  # no '-' prefix on the source
+        self.assertEqual(tostring(s1_constraints[0][0]), chair_conf_label)  # [0][0] is the innermost <span>
+
+        self.assertEqual(s1_constraints[1].attrib['data-sessions'], str(s2.pk))
+        self.assertEqual(tostring(s1_constraints[1][0]), conf_label_reversed)  # [0][0] is the innermost <span>
+
+        # And the reverse constraint
+        self.assertEqual(len(s2_constraints), 2)
+        self.assertEqual(s2_constraints[0].attrib['data-sessions'], str(s1.pk))
+        self.assertEqual(s2_constraints[0].text, '-')  # '-' prefix on the target
+        self.assertEqual(tostring(s2_constraints[0][0]), chair_conf_label)  # [0][0] is the innermost <span>
+
+        self.assertEqual(s2_constraints[1].attrib['data-sessions'], str(s1.pk))
+        self.assertEqual(tostring(s2_constraints[1][0]), conf_label)  # [0][0] is the innermost <span>
 
     def test_new_meeting_schedule(self):
         meeting = make_meeting_test_data()

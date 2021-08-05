@@ -657,6 +657,10 @@ table#sessions-new-table td {
 
 input.wg_constraint { width: 37em; }
 
+input.wg_constraint:disabled {
+    background-color: #ffe0e0;
+    cursor: not-allowed;
+}
 ul.session-buttons {
     padding-left: 2px;
     margin-left: 0;

@@ -7,7 +7,8 @@ import time
 
 from django.conf import settings
 from django.contrib import messages
-from django.db.models import Max
+from django.db.models import IntegerField
+from django.db.models.functions import Cast
 from django.forms.models import inlineformset_factory
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.text import slugify
@@ -249,8 +250,17 @@ def add(request):
             return redirect('ietf.secr.meetings.views.main')
     else:
         # display initial forms
-        max_number = Meeting.objects.filter(type='ietf').aggregate(Max('number'))['number__max']
-        form = MeetingModelForm(initial={'number':int(max_number) + 1})
+        last_ietf_meeting = Meeting.objects.filter(
+            type='ietf'
+        ).annotate(
+            number_as_int=Cast('number', output_field=IntegerField())
+        ).order_by('-number_as_int').first()
+        initial = dict()
+        # fill in defaults if we can
+        if last_ietf_meeting is not None:
+            initial['number'] = last_ietf_meeting.number_as_int + 1
+            initial['group_conflict_types'] = [cn.pk for cn in last_ietf_meeting.group_conflict_types.all()]
+        form = MeetingModelForm(initial=initial)
 
     return render(request, 'meetings/add.html', {
         'form': form},

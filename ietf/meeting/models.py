@@ -17,7 +17,7 @@ import debug                            # pyflakes:ignore
 
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-from django.db.models import Max, Subquery, OuterRef, TextField, Value
+from django.db.models import Max, Subquery, OuterRef, TextField, Value, Q
 from django.db.models.functions import Coalesce
 from django.conf import settings
 # mostly used by json_dict()
@@ -111,6 +111,9 @@ class Meeting(models.Model):
     show_important_dates = models.BooleanField(default=False)
     attendees = models.IntegerField(blank=True, null=True, default=None,
                                     help_text="Number of Attendees for backfilled meetings, leave it blank for new meetings, and then it is calculated from the registrations")
+    group_conflict_types = models.ManyToManyField(
+        ConstraintName, blank=True, limit_choices_to=dict(is_group_conflict=True),
+        help_text='Types of scheduling conflict between groups to consider')
 
     def __str__(self):
         if self.type_id == "ietf":
@@ -196,6 +199,15 @@ class Meeting(models.Model):
             return importantdate.date
         else:
             return self.date + datetime.timedelta(days=self.submission_correction_day_offset)
+
+    def enabled_constraint_names(self):
+        return ConstraintName.objects.filter(
+            Q(is_group_conflict=False)  # any non-group-conflict constraints
+            | Q(is_group_conflict=True, meeting=self)  # or specifically enabled for this meeting
+        )
+
+    def enabled_constraints(self):
+        return self.constraint_set.filter(name__in=self.enabled_constraint_names())
 
     def get_schedule_by_name(self, name):
         return self.schedule_set.filter(name=name).first()
