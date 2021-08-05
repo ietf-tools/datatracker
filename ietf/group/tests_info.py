@@ -72,7 +72,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, group.parent.name)
         self.assertContains(r, group.acronym)
         self.assertContains(r, group.name)
-        self.assertContains(r, group.ad_role().person.plain_name())
+        self.assertContains(r, escape(group.ad_role().person.plain_name()))
 
         for t in ('rg','area','ag', 'rag', 'dir','review','team','program'):
             g = GroupFactory.create(type_id=t,state_id='active') 
@@ -143,7 +143,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, group.acronym)
         self.assertContains(r, group.name)
-        self.assertContains(r, group.ad_role().person.plain_name())
+        self.assertContains(r, escape(group.ad_role().person.plain_name()))
         self.assertContains(r, chair.address)
         self.assertContains(r, "This is a charter.")
 
@@ -152,7 +152,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, group.acronym)
         self.assertContains(r, group.name)
-        self.assertContains(r, group.ad_role().person.plain_name())
+        self.assertContains(r, escape(group.ad_role().person.plain_name()))
         self.assertContains(r, chair.address)
         self.assertContains(r, "This is a charter.")
 
@@ -232,7 +232,7 @@ class GroupPagesTests(TestCase):
             self.assertContains(r, draft2.name)
             self.assertContains(r, draft3.name)
             for ah in draft3.action_holders.all():
-                self.assertContains(r, ah.plain_name())
+                self.assertContains(r, escape(ah.plain_name()))
             self.assertContains(r, 'for 173 days', count=1)  # the old_dah should be tagged
 
         # Make sure that a logged in user is presented with an opportunity to add results to their community list
@@ -348,7 +348,7 @@ class GroupPagesTests(TestCase):
             self.assertEqual(r.status_code, 200)
             
             for role in group.role_set.all():
-                self.assertContains(r, role.person.plain_name())
+                self.assertContains(r, escape(role.person.plain_name()))
 
     def test_materials(self):
         group = GroupFactory(type_id="team", acronym="testteam", name="Test Team", state_id="active")

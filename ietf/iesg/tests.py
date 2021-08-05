@@ -13,6 +13,7 @@ from pyquery import PyQuery
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.utils.encoding import force_bytes
+from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 
@@ -49,7 +50,7 @@ class IESGTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         self.assertContains(r, draft.name)
-        self.assertContains(r, pos.balloter.plain_name())
+        self.assertContains(r, escape(pos.balloter.plain_name()))
 
     def test_milestones_needing_review(self):
         draft = WgDraftFactory()

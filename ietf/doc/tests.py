@@ -247,7 +247,7 @@ class SearchTests(TestCase):
         r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad', kwargs=dict(name=ad.full_name_as_key())))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
-        self.assertContains(r, draft.action_holders.first().plain_name())
+        self.assertContains(r, escape(draft.action_holders.first().plain_name()))
         self.assertContains(r, rfc.canonical_name())
         self.assertContains(r, conflrev.name)
         self.assertContains(r, statchg.name)
@@ -275,7 +275,7 @@ class SearchTests(TestCase):
         r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_last_call'))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-        self.assertContains(r, draft.action_holders.first().plain_name())
+        self.assertContains(r, escape(draft.action_holders.first().plain_name()))
 
     def test_in_iesg_process(self):
         doc_in_process = IndividualDraftFactory()
@@ -285,7 +285,7 @@ class SearchTests(TestCase):
         r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_iesg_process'))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, doc_in_process.title)
-        self.assertContains(r, doc_in_process.action_holders.first().plain_name())
+        self.assertContains(r, escape(doc_in_process.action_holders.first().plain_name()))
         self.assertNotContains(r, doc_not_in_process.title)
         
     def test_indexes(self):
@@ -347,7 +347,7 @@ class SearchTests(TestCase):
         self.assertEqual(q('td.status span.label-warning').text(),"for 15 days")
         self.assertEqual(q('td.status span.label-danger').text(),"for 29 days")
         for ah in [draft.action_holders.first() for draft in drafts]:
-            self.assertContains(r, ah.plain_name())
+            self.assertContains(r, escape(ah.plain_name()))
 
 class DocDraftTestCase(TestCase):
     draft_text = """
