@@ -6,7 +6,7 @@ from ietf.review.models import ReviewTeamSettings, ReviewRequest, ReviewAssignme
 from ietf.name.models import ReviewTypeName, ReviewResultName
 
 
-class ReviewTeamSettingsFactory(factory.DjangoModelFactory):
+class ReviewTeamSettingsFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = ReviewTeamSettings
 
@@ -31,7 +31,7 @@ class ReviewTeamSettingsFactory(factory.DjangoModelFactory):
         else:
             obj.review_results.set(ReviewResultName.objects.filter(slug__in=('not-ready','right-track','almost-ready','ready-issues','ready-nits','ready')))
 
-class ReviewRequestFactory(factory.DjangoModelFactory):
+class ReviewRequestFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = ReviewRequest
 
@@ -42,7 +42,7 @@ class ReviewRequestFactory(factory.DjangoModelFactory):
     deadline = datetime.datetime.today()+datetime.timedelta(days=14)
     requested_by = factory.SubFactory('ietf.person.factories.PersonFactory')
 
-class ReviewAssignmentFactory(factory.DjangoModelFactory):
+class ReviewAssignmentFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = ReviewAssignment
 
@@ -51,7 +51,7 @@ class ReviewAssignmentFactory(factory.DjangoModelFactory):
     reviewer = factory.SubFactory('ietf.person.factories.EmailFactory')
     assigned_on = datetime.datetime.now()
 
-class ReviewerSettingsFactory(factory.DjangoModelFactory):
+class ReviewerSettingsFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = ReviewerSettings
 

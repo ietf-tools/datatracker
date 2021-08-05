@@ -25,8 +25,10 @@ django-tastypie>=0.14.3         # Django 2.1 will require 0.14.2; Django 3.0 wil
 django-webtest>=1.9.7
 django-widget-tweaks>=1.4.2
 docutils>=0.12,!=0.15
-factory-boy>=2.9.0,<3
-Faker>=0.8.8,!=0.8.9,!=0.8.10   # from factory-boy # Faker 0.8.9,0.8.10 sometimes return string names instead of unicode.
+#factory-boy>=2.9.0,<3
+#Faker>=0.8.8,!=0.8.9,!=0.8.10   # from factory-boy # Faker 0.8.9,0.8.10 sometimes return string names instead of unicode.
+factory-boy>=3
+Faker>=0.8.11   # from factory-boy # Faker 0.8.9,0.8.10 sometimes return string names instead of unicode.
 github3.py>=1.2
 hashids>=1.1.0
 html2text>=2019.8.11

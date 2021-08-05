@@ -9,7 +9,7 @@ from ietf.group.models import Group, Role, GroupEvent, GroupMilestone, \
                               GroupHistory, RoleHistory
 from ietf.review.factories import ReviewTeamSettingsFactory
 
-class GroupFactory(factory.DjangoModelFactory):
+class GroupFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Group
         django_get_or_create = ('acronym',)
@@ -39,7 +39,7 @@ class ReviewTeamFactory(GroupFactory):
     def settings(obj, create, extracted, **kwargs):
         ReviewTeamSettingsFactory.create(group=obj,**kwargs)
 
-class RoleFactory(factory.DjangoModelFactory):
+class RoleFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Role
 
@@ -47,7 +47,7 @@ class RoleFactory(factory.DjangoModelFactory):
     person = factory.SubFactory('ietf.person.factories.PersonFactory')
     email = factory.LazyAttribute(lambda obj: obj.person.email())
 
-class GroupEventFactory(factory.DjangoModelFactory):
+class GroupEventFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = GroupEvent
 
@@ -56,7 +56,7 @@ class GroupEventFactory(factory.DjangoModelFactory):
     type = 'comment'
     desc = factory.Faker('paragraph')
 
-class BaseGroupMilestoneFactory(factory.DjangoModelFactory):
+class BaseGroupMilestoneFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = GroupMilestone
 
@@ -72,7 +72,7 @@ class DatelessGroupMilestoneFactory(BaseGroupMilestoneFactory):
     group = factory.SubFactory(GroupFactory, uses_milestone_dates=False)
     order = factory.Sequence(lambda n: n)
 
-class GroupHistoryFactory(factory.DjangoModelFactory):
+class GroupHistoryFactory(factory.django.DjangoModelFactory):
     class Meta:
         model=GroupHistory
 
@@ -86,7 +86,7 @@ class GroupHistoryFactory(factory.DjangoModelFactory):
     group = factory.SubFactory(GroupFactory)
     acronym = factory.LazyAttribute(lambda obj: obj.group.acronym)
 
-class RoleHistoryFactory(factory.DjangoModelFactory):
+class RoleHistoryFactory(factory.django.DjangoModelFactory):
     class Meta:
         model=RoleHistory
 

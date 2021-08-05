@@ -6,7 +6,7 @@ from ietf.stats.models import MeetingRegistration
 from ietf.meeting.factories import MeetingFactory
 from ietf.person.factories import PersonFactory
 
-class MeetingRegistrationFactory(factory.DjangoModelFactory):
+class MeetingRegistrationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = MeetingRegistration
 

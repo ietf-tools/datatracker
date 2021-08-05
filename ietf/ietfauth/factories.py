@@ -11,7 +11,7 @@ from oidc_provider.models import Client as OidClientRecord, ResponseType
 
 from ietf.person.factories import UserFactory, PersonFactory
 
-class OidClientRecordFactory(factory.DjangoModelFactory):
+class OidClientRecordFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = OidClientRecord
 

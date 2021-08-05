@@ -7,7 +7,7 @@ import random
 
 from ietf.mailinglists.models import List
 
-class ListFactory(factory.DjangoModelFactory):
+class ListFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = List
 

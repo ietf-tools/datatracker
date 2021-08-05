@@ -3,7 +3,7 @@ import factory
 from ietf.group.factories import GroupFactory
 from ietf.liaisons.models import LiaisonStatement, LiaisonStatementEvent, LiaisonStatementAttachment
 
-class LiaisonStatementFactory(factory.DjangoModelFactory):
+class LiaisonStatementFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = LiaisonStatement
 
@@ -30,7 +30,7 @@ class LiaisonStatementFactory(factory.DjangoModelFactory):
                 obj.to_groups.add(GroupFactory(type_id='wg'))
 
 
-class LiaisonStatementEventFactory(factory.DjangoModelFactory):
+class LiaisonStatementEventFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = LiaisonStatementEvent
 
@@ -40,7 +40,7 @@ class LiaisonStatementEventFactory(factory.DjangoModelFactory):
     desc = factory.Faker('sentence')
 
 
-class LiaisonStatementAttachmentFactory(factory.DjangoModelFactory):
+class LiaisonStatementAttachmentFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = LiaisonStatementAttachment
 

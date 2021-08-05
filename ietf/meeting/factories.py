@@ -13,7 +13,7 @@ from ietf.name.models import ConstraintName, SessionStatusName
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
 
-class MeetingFactory(factory.DjangoModelFactory):
+class MeetingFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Meeting
 
@@ -93,7 +93,7 @@ class MeetingFactory(factory.DjangoModelFactory):
                 )
 
 
-class SessionFactory(factory.DjangoModelFactory):
+class SessionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Session
 
@@ -134,7 +134,7 @@ class SessionFactory(factory.DjangoModelFactory):
             ts = obj.meeting.timeslot_set.all()
             obj.timeslotassignments.create(timeslot=ts[random.randrange(len(ts))],schedule=obj.meeting.schedule)
 
-class ScheduleFactory(factory.DjangoModelFactory):
+class ScheduleFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Schedule
 
@@ -142,7 +142,7 @@ class ScheduleFactory(factory.DjangoModelFactory):
     name = factory.Sequence(lambda n: 'schedule_%d'%n)
     owner = factory.SubFactory(PersonFactory)
 
-class RoomFactory(factory.DjangoModelFactory):
+class RoomFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Room
 
@@ -158,7 +158,7 @@ class RoomFactory(factory.DjangoModelFactory):
                 obj.session_types.add(st)
 
 
-class TimeSlotFactory(factory.DjangoModelFactory):
+class TimeSlotFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = TimeSlot
 
@@ -182,7 +182,7 @@ class TimeSlotFactory(factory.DjangoModelFactory):
     def duration(self):
         return datetime.timedelta(minutes=30+random.randrange(9)*15)
 
-class SessionPresentationFactory(factory.DjangoModelFactory):
+class SessionPresentationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = SessionPresentation
 
@@ -192,7 +192,7 @@ class SessionPresentationFactory(factory.DjangoModelFactory):
     def rev(self):
         return self.document.rev
 
-class FloorPlanFactory(factory.DjangoModelFactory):
+class FloorPlanFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = FloorPlan
 
@@ -208,7 +208,7 @@ class FloorPlanFactory(factory.DjangoModelFactory):
             )
         )
 
-class SlideSubmissionFactory(factory.DjangoModelFactory):
+class SlideSubmissionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = SlideSubmission
 

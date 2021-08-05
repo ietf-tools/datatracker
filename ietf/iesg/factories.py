@@ -7,7 +7,7 @@ import factory
 from ietf.iesg.models import TelechatAgendaItem
 
 
-class IESGMgmtItemFactory(factory.DjangoModelFactory):
+class IESGMgmtItemFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = TelechatAgendaItem
 
