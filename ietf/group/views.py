@@ -897,6 +897,10 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
         if not (can_manage_group(request.user, group)
                 or group.has_role(request.user, group.features.groupman_roles)):
             permission_denied(request, "You don't have permission to access this view")
+    else:
+        if not has_role(request.user, "Secretariat"):
+             permission_denied(request, "You don't have permission to access this view")
+                
 
     if request.method == 'POST':
         form = GroupForm(request.POST, group=group, group_type=group_type, field=field)
