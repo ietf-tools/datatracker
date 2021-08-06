@@ -51,7 +51,7 @@ ietfdb (7.36.0) ietf; urgency=medium
 
   * Convert IETF111 Constraint objects to use new names
 
- -- Robert Sparks <rjsparks@nostrum.com>  05 Aug 2021 22:06:18 +0000
+ -- Robert Sparks <rjsparks@nostrum.com>  06 Aug 2021 15:05:03 +0000
 
 
 ietfdb (7.35.0) ietf; urgency=medium
