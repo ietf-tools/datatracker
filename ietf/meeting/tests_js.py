@@ -11,10 +11,11 @@ from unittest import skipIf
 
 import django
 from django.utils.text import slugify
+from django.utils.timezone import now
 from django.db.models import F
 import pytz
 
-#from django.test.utils import override_settings
+from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore
 
@@ -44,6 +45,7 @@ if selenium_enabled():
 
 
 @ifSeleniumEnabled
+@override_settings(MEETING_SESSION_LOCK_TIME=datetime.timedelta(minutes=10))
 class EditMeetingScheduleTests(IetfSeleniumTestCase):
     def test_edit_meeting_schedule(self):
         meeting = make_meeting_test_data()
@@ -282,6 +284,332 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
 
         self.assertTrue(self.driver.find_elements_by_css_selector('#timeslot{} #session{}'.format(slot1b.pk, s1.pk)),
                         'Session s1 should have moved to second timeslot on first meeting day')
+
+    def test_past_flags(self):
+        """Test that timeslots and sessions in the past are marked accordingly
+
+        Would also like to test that past-hint flags are applied when a session is dragged, but that
+        requires simulating HTML5 drag-and-drop. Have not yet found a good way to do this.
+        """
+        wait = WebDriverWait(self.driver, 2)
+        meeting = MeetingFactory(type_id='ietf')
+        room = RoomFactory(meeting=meeting)
+
+        # get current time in meeting time zone
+        right_now = now().astimezone(
+            pytz.timezone(meeting.time_zone)
+        )
+        if not settings.USE_TZ:
+            right_now = right_now.replace(tzinfo=None)
+
+        past_timeslots = [
+            TimeSlotFactory(meeting=meeting, time=right_now - datetime.timedelta(hours=n),
+                            duration=datetime.timedelta(hours=1), location=room)
+            for n in range(1,4)
+        ]
+        future_timeslots = [
+            TimeSlotFactory(meeting=meeting, time=right_now + datetime.timedelta(hours=n),
+                            duration=datetime.timedelta(hours=1), location=room)
+            for n in range(1,4)
+        ]
+        now_timeslots = [
+            # timeslot just barely in the past (to avoid race conditions) but overlapping now
+            TimeSlotFactory(meeting=meeting, time=right_now - datetime.timedelta(seconds=1),
+                            duration=datetime.timedelta(hours=1), location=room),
+            # next slot is < MEETING_SESSION_LOCK_TIME in the future
+            TimeSlotFactory(meeting=meeting, time=right_now + datetime.timedelta(minutes=9),
+                            duration=datetime.timedelta(hours=1), location=room)
+        ]
+
+        past_sessions = [
+            SchedTimeSessAssignment.objects.create(
+                schedule=meeting.schedule,
+                timeslot=ts,
+                session=SessionFactory(meeting=meeting, add_to_schedule=False),
+            ).session
+            for ts in past_timeslots
+        ]
+        future_sessions = [
+            SchedTimeSessAssignment.objects.create(
+                schedule=meeting.schedule,
+                timeslot=ts,
+                session=SessionFactory(meeting=meeting, add_to_schedule=False),
+            ).session
+            for ts in future_timeslots
+        ]
+        now_sessions = [
+            SchedTimeSessAssignment.objects.create(
+                schedule=meeting.schedule,
+                timeslot=ts,
+                session=SessionFactory(meeting=meeting, add_to_schedule=False),
+            ).session
+            for ts in now_timeslots
+        ]
+
+        url = self.absreverse('ietf.meeting.views.edit_meeting_schedule', kwargs=dict(num=meeting.number))
+        self.login(username=meeting.schedule.owner.user.username)
+        self.driver.get(url)
+
+        past_flags = self.driver.find_elements_by_css_selector(
+            ','.join('#timeslot{} .past-flag'.format(ts.pk) for ts in past_timeslots)
+        )
+        self.assertGreaterEqual(len(past_flags), len(past_timeslots) + len(past_sessions),
+                                'Expected at least one flag for each past timeslot and session')
+
+        now_flags = self.driver.find_elements_by_css_selector(
+            ','.join('#timeslot{} .past-flag'.format(ts.pk) for ts in now_timeslots)
+        )
+        self.assertGreaterEqual(len(now_flags), len(now_timeslots) + len(now_sessions),
+                                'Expected at least one flag for each "now" timeslot and session')
+
+        future_flags = self.driver.find_elements_by_css_selector(
+            ','.join('#timeslot{} .past-flag'.format(ts.pk) for ts in future_timeslots)
+        )
+        self.assertGreaterEqual(len(future_flags), len(future_timeslots) + len(future_sessions),
+                                'Expected at least one flag for each future timeslot and session')
+
+        wait.until(expected_conditions.presence_of_element_located(
+            (By.CSS_SELECTOR, '#timeslot{}.past'.format(past_timeslots[0].pk))
+        ))
+        for flag in past_flags:
+            self.assertTrue(flag.is_displayed(), 'Past timeslot or session not flagged as past')
+
+        for flag in now_flags:
+            self.assertTrue(flag.is_displayed(), '"Now" timeslot or session not flagged as past')
+
+        for flag in future_flags:
+            self.assertFalse(flag.is_displayed(), 'Future timeslot or session is flagged as past')
+
+    def test_past_swap_days_buttons(self):
+        """Swap days buttons should be hidden for past items"""
+        wait = WebDriverWait(self.driver, 2)
+        meeting = MeetingFactory(type_id='ietf', date=datetime.datetime.today() - datetime.timedelta(days=3), days=7)
+        room = RoomFactory(meeting=meeting)
+
+        # get current time in meeting time zone
+        right_now = now().astimezone(
+            pytz.timezone(meeting.time_zone)
+        )
+        if not settings.USE_TZ:
+            right_now = right_now.replace(tzinfo=None)
+
+        past_timeslots = [
+            TimeSlotFactory(meeting=meeting, time=right_now - datetime.timedelta(days=n),
+                            duration=datetime.timedelta(hours=1), location=room)
+            for n in range(4)  # includes 0
+        ]
+        future_timeslots = [
+            TimeSlotFactory(meeting=meeting, time=right_now + datetime.timedelta(days=n),
+                            duration=datetime.timedelta(hours=1), location=room)
+            for n in range(1,4)
+        ]
+        now_timeslots = [
+            # timeslot just barely in the past (to avoid race conditions) but overlapping now
+            TimeSlotFactory(meeting=meeting, time=right_now - datetime.timedelta(seconds=1),
+                            duration=datetime.timedelta(hours=1), location=room),
+            # next slot is < MEETING_SESSION_LOCK_TIME in the future
+            TimeSlotFactory(meeting=meeting, time=right_now + datetime.timedelta(minutes=9),
+                            duration=datetime.timedelta(hours=1), location=room)
+        ]
+
+        url = self.absreverse('ietf.meeting.views.edit_meeting_schedule', kwargs=dict(num=meeting.number))
+        self.login(username=meeting.schedule.owner.user.username)
+        self.driver.get(url)
+
+        past_swap_days_buttons = self.driver.find_elements_by_css_selector(
+            ','.join(
+                '.swap-days[data-start="{}"]'.format(ts.time.date().isoformat()) for ts in past_timeslots
+            )
+        )
+        self.assertEqual(len(past_swap_days_buttons), len(past_timeslots), 'Missing past swap days buttons')
+
+        future_swap_days_buttons = self.driver.find_elements_by_css_selector(
+            ','.join(
+                '.swap-days[data-start="{}"]'.format(ts.time.date().isoformat()) for ts in future_timeslots
+            )
+        )
+        self.assertEqual(len(future_swap_days_buttons), len(future_timeslots), 'Missing future swap days buttons')
+
+        now_swap_days_buttons = self.driver.find_elements_by_css_selector(
+            ','.join(
+                '.swap-days[data-start="{}"]'.format(ts.time.date().isoformat()) for ts in now_timeslots
+            )
+        )
+        # only one "now" button because both sessions are on the same day
+        self.assertEqual(len(now_swap_days_buttons), 1, 'Missing "now" swap days button')
+
+        wait.until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '.timeslot.past')  # wait until timeslots are updated by JS
+            )
+        )
+
+        # check that swap buttons are disabled for past days
+        self.assertFalse(
+            any(button.is_displayed() for button in past_swap_days_buttons),
+            'Past swap days buttons still visible for official schedule',
+        )
+        self.assertTrue(
+            all(button.is_displayed() for button in future_swap_days_buttons),
+            'Future swap days buttons not visible for official schedule',
+        )
+        self.assertFalse(
+            any(button.is_displayed() for button in now_swap_days_buttons),
+            '"Now" swap days buttons still visible for official schedule',
+        )
+
+        # Open the swap days modal to verify that past day radios are disabled.
+        # Use a middle day because whichever day we click will be disabled as an
+        # option to swap. If we used the first or last day, a fencepost error in
+        # disabling options by date might be hidden.
+        clicked_index = 1
+        future_swap_days_buttons[clicked_index].click()
+        try:
+            modal = wait.until(
+                expected_conditions.visibility_of_element_located(
+                    (By.CSS_SELECTOR, '#swap-days-modal')
+                )
+            )
+        except TimeoutException:
+            self.fail('Modal never appeared')
+        self.assertFalse(
+            any(radio.is_enabled()
+                for radio in modal.find_elements_by_css_selector(','.join(
+                'input[name="target_day"][value="{}"]'.format(ts.time.date().isoformat()) for ts in past_timeslots)
+            )),
+            'Past day is enabled in swap-days modal for official schedule',
+        )
+        # future_timeslots[:-1] in the next selector because swapping a day with itself is disabled
+        enabled_timeslots = (ts for ts in future_timeslots if ts != future_timeslots[clicked_index])
+        self.assertTrue(
+            all(radio.is_enabled()
+                for radio in modal.find_elements_by_css_selector(','.join(
+                'input[name="target_day"][value="{}"]'.format(ts.time.date().isoformat()) for ts in enabled_timeslots)
+            )),
+            'Future day is not enabled in swap-days modal for official schedule',
+        )
+        self.assertFalse(
+            any(radio.is_enabled()
+                for radio in modal.find_elements_by_css_selector(','.join(
+                'input[name="target_day"][value="{}"]'.format(ts.time.date().isoformat()) for ts in now_timeslots)
+            )),
+            '"Now" day is enabled in swap-days modal for official schedule',
+        )
+
+    def test_past_swap_timeslot_col_buttons(self):
+        """Swap timeslot column buttons should be hidden for past items"""
+        wait = WebDriverWait(self.driver, 2)
+        meeting = MeetingFactory(type_id='ietf', date=datetime.datetime.today() - datetime.timedelta(days=3), days=7)
+        room = RoomFactory(meeting=meeting)
+
+        # get current time in meeting time zone
+        right_now = now().astimezone(
+            pytz.timezone(meeting.time_zone)
+        )
+        if not settings.USE_TZ:
+            right_now = right_now.replace(tzinfo=None)
+
+        past_timeslots = [
+            TimeSlotFactory(meeting=meeting, time=right_now - datetime.timedelta(hours=n),
+                            duration=datetime.timedelta(hours=1), location=room)
+            for n in range(1,4)  # does not include 0 to avoid race conditions
+        ]
+        future_timeslots = [
+            TimeSlotFactory(meeting=meeting, time=right_now + datetime.timedelta(hours=n),
+                            duration=datetime.timedelta(hours=1), location=room)
+            for n in range(1,4)
+        ]
+        now_timeslots = [
+            # timeslot just barely in the past (to avoid race conditions) but overlapping now
+            TimeSlotFactory(meeting=meeting, time=right_now - datetime.timedelta(seconds=1),
+                            duration=datetime.timedelta(hours=1), location=room),
+            # next slot is < MEETING_SESSION_LOCK_TIME in the future
+            TimeSlotFactory(meeting=meeting, time=right_now + datetime.timedelta(minutes=9),
+                            duration=datetime.timedelta(hours=1), location=room)
+        ]
+
+        url = self.absreverse('ietf.meeting.views.edit_meeting_schedule', kwargs=dict(num=meeting.number))
+        self.login(username=meeting.schedule.owner.user.username)
+        self.driver.get(url)
+
+        past_swap_ts_buttons = self.driver.find_elements_by_css_selector(
+            ','.join(
+                '.swap-timeslot-col[data-start="{}"]'.format(ts.utc_start_time().isoformat()) for ts in past_timeslots
+            )
+        )
+        self.assertEqual(len(past_swap_ts_buttons), len(past_timeslots), 'Missing past swap timeslot col buttons')
+
+        future_swap_ts_buttons = self.driver.find_elements_by_css_selector(
+            ','.join(
+                '.swap-timeslot-col[data-start="{}"]'.format(ts.utc_start_time().isoformat()) for ts in future_timeslots
+            )
+        )
+        self.assertEqual(len(future_swap_ts_buttons), len(future_timeslots), 'Missing future swap timeslot col buttons')
+
+        now_swap_ts_buttons = self.driver.find_elements_by_css_selector(
+            ','.join(
+                '.swap-timeslot-col[data-start="{}"]'.format(ts.utc_start_time().isoformat()) for ts in now_timeslots
+            )
+        )
+        self.assertEqual(len(now_swap_ts_buttons), len(now_timeslots), 'Missing "now" swap timeslot col buttons')
+
+        wait.until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '.timeslot.past')  # wait until timeslots are updated by JS
+            )
+        )
+
+        # check that swap buttons are disabled for past days
+        self.assertFalse(
+            any(button.is_displayed() for button in past_swap_ts_buttons),
+            'Past swap timeslot col buttons still visible for official schedule',
+        )
+        self.assertTrue(
+            all(button.is_displayed() for button in future_swap_ts_buttons),
+            'Future swap timeslot col buttons not visible for official schedule',
+        )
+        self.assertFalse(
+            any(button.is_displayed() for button in now_swap_ts_buttons),
+            '"Now" swap timeslot col buttons still visible for official schedule',
+        )
+
+        # Open the swap days modal to verify that past day radios are disabled.
+        # Use a middle day because whichever day we click will be disabled as an
+        # option to swap. If we used the first or last day, a fencepost error in
+        # disabling options by date might be hidden.
+        clicked_index = 1
+        future_swap_ts_buttons[clicked_index].click()
+        try:
+            modal = wait.until(
+                expected_conditions.visibility_of_element_located(
+                    (By.CSS_SELECTOR, '#swap-timeslot-col-modal')
+                )
+            )
+        except TimeoutException:
+            self.fail('Modal never appeared')
+        self.assertFalse(
+            any(radio.is_enabled()
+                for radio in modal.find_elements_by_css_selector(','.join(
+                'input[name="target_timeslot"][value="{}"]'.format(ts.pk) for ts in past_timeslots)
+            )),
+            'Past timeslot is enabled in swap-timeslot-col modal for official schedule',
+        )
+        # future_timeslots[:-1] in the next selector because swapping a timeslot with itself is disabled
+        enabled_timeslots = (ts for ts in future_timeslots if ts != future_timeslots[clicked_index])
+        self.assertTrue(
+            all(radio.is_enabled()
+                for radio in modal.find_elements_by_css_selector(','.join(
+                'input[name="target_timeslot"][value="{}"]'.format(ts.pk) for ts in enabled_timeslots)
+            )),
+            'Future timeslot is not enabled in swap-timeslot-col modal for official schedule',
+        )
+        self.assertFalse(
+            any(radio.is_enabled()
+                for radio in modal.find_elements_by_css_selector(','.join(
+                'input[name="target_timeslot"][value="{}"]'.format(ts.pk) for ts in now_timeslots)
+            )),
+            '"Now" timeslot is enabled in swap-timeslot-col modal for official schedule',
+        )
 
     def test_unassigned_sessions_sort(self):
         """Unassigned session sorting should behave correctly
