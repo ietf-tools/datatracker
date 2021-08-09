@@ -46,6 +46,7 @@ import debug                            # pyflakes:ignore
 
 import socket
 import datetime
+import pytz
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -63,6 +64,21 @@ class Command(BaseCommand):
         parser.add_argument('--delete', dest='delete', action='store_true', help='Delete the test and development dummy meeting')
         parser.add_argument('--old-conflicts', dest='old_conflicts', action='store_true',
                             help='Use old conflict types ("conflict", "conflic2", "conflic3") instead of new ("chair_conflict", "tech_overlap", "key_participant")')
+        parser.add_argument(
+            '--start-date',
+            help='Start date for the dummy meeting (yyyy-mm-dd, defaults to 2019-11-16)',
+            type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d').date(),
+            default='2019-11-16',
+        )
+        parser.add_argument('--tz', default='UTC',
+                            help='Time zone for created meeting. Defaults to UTC. Use "" to disable.')
+
+    def _meeting_datetime(self, day, *time_args):
+        """Generate a datetime on a meeting day"""
+        return datetime.datetime.combine(
+            self.start_date,
+            datetime.time(*time_args)
+        ) + datetime.timedelta(days=day)
 
     def handle(self, *args, **options):
         if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
@@ -70,6 +86,10 @@ class Command(BaseCommand):
 
         opt_delete = options.get('delete', False)
         opt_use_old_conflicts = options.get('old_conflicts', False)
+        self.start_date = options['start_date']
+        meeting_tz = options['tz']
+        if not opt_delete and (meeting_tz not in pytz.common_timezones):
+            self.stderr.write("Warning: {} is not a recognized time zone.".format(meeting_tz))
 
         if opt_delete:
             if Meeting.objects.filter(number='999').exists():
@@ -83,11 +103,15 @@ class Command(BaseCommand):
             else:
                 transaction.set_autocommit(False)
                 
+                if self.start_date.isoweekday() != 6:
+                    self.stderr.write("Warning: dummy meeting does not start on Saturday, watch out for bugs")
+
                 m = Meeting.objects.create(
                     number='999',
                     type_id='IETF',
-                    date=datetime.date(2019, 11, 16),
+                    date=self._meeting_datetime(0).date(),
                     days=7,
+                    time_zone=meeting_tz,
                 )
 
                 # Set enabled constraints
@@ -3428,1065 +3452,1065 @@ class Command(BaseCommand):
                 ##### TIMESLOTS #####
                 
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-22 12:20:00 length 1:30:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=datetime.datetime(2019, 11, 22, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session II", time=self._meeting_datetime(6, 12, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-22 12:00:00 length 0:20:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage and Snack Break", time=datetime.datetime(2019, 11, 22, 12, 0), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage and Snack Break", time=self._meeting_datetime(6, 12, 0), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-22 10:00:00 length 2:00:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 22, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(6, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-22 08:30:00 length 1:15:00 in None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 22, 8, 30), duration=datetime.timedelta(seconds=4500), location=None, show_location=False)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(6, 8, 30), duration=datetime.timedelta(seconds=4500), location=None, show_location=False)
                 ## timeslot 2019-11-22 08:30:00 length 4:00:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="reg", name="IETF Registration", time=datetime.datetime(2019, 11, 22, 8, 30), duration=datetime.timedelta(seconds=14400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="reg", name="IETF Registration", time=self._meeting_datetime(6, 8, 30), duration=datetime.timedelta(seconds=14400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-22 08:00:00 length 1:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=datetime.datetime(2019, 11, 22, 8, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=self._meeting_datetime(6, 8, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-21 17:40:00 length 1:00:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 21, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(5, 17, 40), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-21 17:20:00 length 0:20:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=datetime.datetime(2019, 11, 21, 17, 20), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=self._meeting_datetime(5, 17, 20), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-21 15:50:00 length 1:30:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 21, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(5, 15, 50), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-21 15:30:00 length 0:20:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage and Snack Break", time=datetime.datetime(2019, 11, 21, 15, 30), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage and Snack Break", time=self._meeting_datetime(5, 15, 30), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-21 13:30:00 length 2:00:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 21, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(5, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-21 12:30:00 length 0:45:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Host Speaker Series", time=datetime.datetime(2019, 11, 21, 12, 30), duration=datetime.timedelta(seconds=2700), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Host Speaker Series", time=self._meeting_datetime(5, 12, 30), duration=datetime.timedelta(seconds=2700), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-21 12:15:00 length 1:00:00 in Skai Suite 1 (Swissotel) size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Systers Lunch", time=datetime.datetime(2019, 11, 21, 12, 15), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Skai Suite 1 (Swissotel)"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Systers Lunch", time=self._meeting_datetime(5, 12, 15), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Skai Suite 1 (Swissotel)"), show_location=True)
                 ## timeslot 2019-11-21 12:00:00 length 1:30:00 in None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Break", time=datetime.datetime(2019, 11, 21, 12, 0), duration=datetime.timedelta(seconds=5400), location=None, show_location=False)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Break", time=self._meeting_datetime(5, 12, 0), duration=datetime.timedelta(seconds=5400), location=None, show_location=False)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-21 10:00:00 length 2:00:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 21, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(5, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-21 09:00:00 length 1:00:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="NomCom Office Hours", time=datetime.datetime(2019, 11, 21, 9, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="NomCom Office Hours", time=self._meeting_datetime(5, 9, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-21 08:30:00 length 1:15:00 in None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 21, 8, 30), duration=datetime.timedelta(seconds=4500), location=None, show_location=False)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(5, 8, 30), duration=datetime.timedelta(seconds=4500), location=None, show_location=False)
                 ## timeslot 2019-11-21 08:30:00 length 9:30:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="reg", name="IETF Registration", time=datetime.datetime(2019, 11, 21, 8, 30), duration=datetime.timedelta(seconds=34200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="reg", name="IETF Registration", time=self._meeting_datetime(5, 8, 30), duration=datetime.timedelta(seconds=34200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-21 08:00:00 length 1:00:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Newcomers' Feedback Session", time=datetime.datetime(2019, 11, 21, 8, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Newcomers' Feedback Session", time=self._meeting_datetime(5, 8, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-21 08:00:00 length 1:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=datetime.datetime(2019, 11, 21, 8, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=self._meeting_datetime(5, 8, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-20 17:10:00 length 2:30:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="plenary", name="IETF Plenary", time=datetime.datetime(2019, 11, 20, 17, 10), duration=datetime.timedelta(seconds=9000), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="plenary", name="IETF Plenary", time=self._meeting_datetime(4, 17, 10), duration=datetime.timedelta(seconds=9000), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-20 16:50:00 length 0:20:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage and Snack Break", time=datetime.datetime(2019, 11, 20, 16, 50), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage and Snack Break", time=self._meeting_datetime(4, 16, 50), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="unavail", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="unavail", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="unavail", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="unavail", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-20 15:20:00 length 1:30:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 20, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(4, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-20 15:00:00 length 0:20:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=datetime.datetime(2019, 11, 20, 15, 0), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=self._meeting_datetime(4, 15, 0), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-20 13:30:00 length 1:30:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 20, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(4, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-20 12:15:00 length 1:00:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="WG Chairs Forum (For WG Chairs Only)", time=datetime.datetime(2019, 11, 20, 12, 15), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="WG Chairs Forum (For WG Chairs Only)", time=self._meeting_datetime(4, 12, 15), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-20 12:00:00 length 1:30:00 in None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Break", time=datetime.datetime(2019, 11, 20, 12, 0), duration=datetime.timedelta(seconds=5400), location=None, show_location=False)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Break", time=self._meeting_datetime(4, 12, 0), duration=datetime.timedelta(seconds=5400), location=None, show_location=False)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-20 10:00:00 length 2:00:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 20, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(4, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-20 09:00:00 length 1:00:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="NomCom Office Hours", time=datetime.datetime(2019, 11, 20, 9, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="NomCom Office Hours", time=self._meeting_datetime(4, 9, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-20 09:00:00 length 0:45:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Routing AD Office Hours", time=datetime.datetime(2019, 11, 20, 9, 0), duration=datetime.timedelta(seconds=2700), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Routing AD Office Hours", time=self._meeting_datetime(4, 9, 0), duration=datetime.timedelta(seconds=2700), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-20 08:30:00 length 1:15:00 in None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 20, 8, 30), duration=datetime.timedelta(seconds=4500), location=None, show_location=False)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(4, 8, 30), duration=datetime.timedelta(seconds=4500), location=None, show_location=False)
                 ## timeslot 2019-11-20 08:30:00 length 8:40:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="reg", name="IETF Registration", time=datetime.datetime(2019, 11, 20, 8, 30), duration=datetime.timedelta(seconds=31200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="reg", name="IETF Registration", time=self._meeting_datetime(4, 8, 30), duration=datetime.timedelta(seconds=31200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-20 08:00:00 length 1:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=datetime.datetime(2019, 11, 20, 8, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=self._meeting_datetime(4, 8, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-20 07:30:00 length 2:00:00 in None ##
-                TimeSlot.objects.create(meeting=m, type_id="lead", name="IAB Breakfast", time=datetime.datetime(2019, 11, 20, 7, 30), duration=datetime.timedelta(seconds=7200), location=None, show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="lead", name="IAB Breakfast", time=self._meeting_datetime(4, 7, 30), duration=datetime.timedelta(seconds=7200), location=None, show_location=True)
                 ## timeslot 2019-11-19 19:00:00 length 4:00:00 in None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="IETF 106 Social Event at the ArtScience Museum Marina Bay Sands - Hosted by Nokia", time=datetime.datetime(2019, 11, 19, 19, 0), duration=datetime.timedelta(seconds=14400), location=None, show_location=False)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="IETF 106 Social Event at the ArtScience Museum Marina Bay Sands - Hosted by Nokia", time=self._meeting_datetime(3, 19, 0), duration=datetime.timedelta(seconds=14400), location=None, show_location=False)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Internet Area AD Office Hours", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Internet Area AD Office Hours", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-19 17:10:00 length 1:30:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 19, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(3, 17, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-19 16:50:00 length 0:20:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=datetime.datetime(2019, 11, 19, 16, 50), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=self._meeting_datetime(3, 16, 50), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-19 15:20:00 length 1:30:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 19, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(3, 15, 20), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-19 15:00:00 length 0:20:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage and Snack Break", time=datetime.datetime(2019, 11, 19, 15, 0), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage and Snack Break", time=self._meeting_datetime(3, 15, 0), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-19 13:30:00 length 1:30:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 19, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(3, 13, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-19 12:00:00 length 1:30:00 in None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Break", time=datetime.datetime(2019, 11, 19, 12, 0), duration=datetime.timedelta(seconds=5400), location=None, show_location=False)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Break", time=self._meeting_datetime(3, 12, 0), duration=datetime.timedelta(seconds=5400), location=None, show_location=False)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-19 10:00:00 length 2:00:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 19, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(3, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-19 09:00:00 length 1:00:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="NomCom Office Hours", time=datetime.datetime(2019, 11, 19, 9, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="NomCom Office Hours", time=self._meeting_datetime(3, 9, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=None, show_location=False)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=None, show_location=False)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 1:15:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=4500), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-19 08:30:00 length 10:00:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="reg", name="IETF Registration", time=datetime.datetime(2019, 11, 19, 8, 30), duration=datetime.timedelta(seconds=36000), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="reg", name="IETF Registration", time=self._meeting_datetime(3, 8, 30), duration=datetime.timedelta(seconds=36000), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-19 08:00:00 length 1:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=datetime.datetime(2019, 11, 19, 8, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=self._meeting_datetime(3, 8, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-19 07:30:00 length 2:00:00 in None ##
-                TimeSlot.objects.create(meeting=m, type_id="lead", name="IAB Breakfast", time=datetime.datetime(2019, 11, 19, 7, 30), duration=datetime.timedelta(seconds=7200), location=None, show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="lead", name="IAB Breakfast", time=self._meeting_datetime(3, 7, 30), duration=datetime.timedelta(seconds=7200), location=None, show_location=True)
                 ## timeslot 2019-11-18 19:30:00 length 1:30:00 in Skai Suite 4 (Swissotel) size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Newcomers' Dinner (Open to Newcomers. Note that pre-registration is required and a $25USD fee will be charged.)", time=datetime.datetime(2019, 11, 18, 19, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Skai Suite 4 (Swissotel)"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Newcomers' Dinner (Open to Newcomers. Note that pre-registration is required and a $25USD fee will be charged.)", time=self._meeting_datetime(2, 19, 30), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Skai Suite 4 (Swissotel)"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Hackdemo Happy Hour", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Hackdemo Happy Hour", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=5400), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-18 18:10:00 length 1:00:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=datetime.datetime(2019, 11, 18, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session III", time=self._meeting_datetime(2, 18, 10), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-18 17:50:00 length 0:20:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=datetime.datetime(2019, 11, 18, 17, 50), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=self._meeting_datetime(2, 17, 50), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-18 16:50:00 length 1:00:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="TSV AD Office Hours", time=datetime.datetime(2019, 11, 18, 16, 50), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="TSV AD Office Hours", time=self._meeting_datetime(2, 16, 50), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-18 15:50:00 length 2:00:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=datetime.datetime(2019, 11, 18, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session II", time=self._meeting_datetime(2, 15, 50), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-18 15:30:00 length 0:20:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage and Snack Break", time=datetime.datetime(2019, 11, 18, 15, 30), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage and Snack Break", time=self._meeting_datetime(2, 15, 30), duration=datetime.timedelta(seconds=1200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-18 13:30:00 length 2:00:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=datetime.datetime(2019, 11, 18, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Afternoon Session I", time=self._meeting_datetime(2, 13, 30), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-18 12:00:00 length 1:30:00 in None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Break", time=datetime.datetime(2019, 11, 18, 12, 0), duration=datetime.timedelta(seconds=5400), location=None, show_location=False)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Break", time=self._meeting_datetime(2, 12, 0), duration=datetime.timedelta(seconds=5400), location=None, show_location=False)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-18 10:00:00 length 2:00:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=datetime.datetime(2019, 11, 18, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Morning Session I", time=self._meeting_datetime(2, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-18 09:00:00 length 1:00:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="NomCom Office Hours", time=datetime.datetime(2019, 11, 18, 9, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="NomCom Office Hours", time=self._meeting_datetime(2, 9, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-18 08:30:00 length 1:15:00 in None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=datetime.datetime(2019, 11, 18, 8, 30), duration=datetime.timedelta(seconds=4500), location=None, show_location=False)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Side Meetings / Open Time", time=self._meeting_datetime(2, 8, 30), duration=datetime.timedelta(seconds=4500), location=None, show_location=False)
                 ## timeslot 2019-11-18 08:30:00 length 10:00:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="reg", name="IETF Registration", time=datetime.datetime(2019, 11, 18, 8, 30), duration=datetime.timedelta(seconds=36000), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="reg", name="IETF Registration", time=self._meeting_datetime(2, 8, 30), duration=datetime.timedelta(seconds=36000), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-18 08:00:00 length 1:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=datetime.datetime(2019, 11, 18, 8, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="break", name="Beverage Break", time=self._meeting_datetime(2, 8, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-18 08:00:00 length 1:00:00 in Skai Suite 1 (Swissotel) size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Systers Networking Event", time=datetime.datetime(2019, 11, 18, 8, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Skai Suite 1 (Swissotel)"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Systers Networking Event", time=self._meeting_datetime(2, 8, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Skai Suite 1 (Swissotel)"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Orchard size: 50 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Orchard"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in VIP A size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP A"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Hullet size: 100 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Hullet"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Collyer size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Collyer"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Padang size: 300 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Padang"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Canning size: 250 ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Canning/Padang size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Canning/Padang"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Stamford & Fairmont Ballroom Foyers size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Stamford & Fairmont Ballroom Foyers"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in VIP B size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="VIP B"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Clark size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Clark"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Mercury/Enterprise size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Mercury/Enterprise"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Minto size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Minto"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Fullerton size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fullerton"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Bonham size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bonham"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Bailey size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bailey"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Ord/Blundell size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Ord/Blundell"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Indiana size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Indiana"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Bras Basah size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Bras Basah"), show_location=True)
                 ## timeslot 2019-11-17 18:00:00 length 2:00:00 in Butterworth size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=datetime.datetime(2019, 11, 17, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="regular", name="Hot RFC Lightning Talks", time=self._meeting_datetime(1, 18, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Butterworth"), show_location=True)
                 ## timeslot 2019-11-17 17:00:00 length 2:00:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Welcome Reception", time=datetime.datetime(2019, 11, 17, 17, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Welcome Reception", time=self._meeting_datetime(1, 17, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-17 16:00:00 length 1:00:00 in Fairmont Ballroom Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Newcomers' Quick Connections (Open to Newcomers. Note that pre-registration is required)", time=datetime.datetime(2019, 11, 17, 16, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Newcomers' Quick Connections (Open to Newcomers. Note that pre-registration is required)", time=self._meeting_datetime(1, 16, 0), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Fairmont Ballroom Foyer"), show_location=True)
                 ## timeslot 2019-11-17 13:45:00 length 1:00:00 in Sophia size: 200 ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Tutorial: Service Discovery for IP Applications", time=datetime.datetime(2019, 11, 17, 13, 45), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Tutorial: Service Discovery for IP Applications", time=self._meeting_datetime(1, 13, 45), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Sophia"), show_location=True)
                 ## timeslot 2019-11-17 12:30:00 length 1:00:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Tutorial: Newcomers' Overview", time=datetime.datetime(2019, 11, 17, 12, 30), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Tutorial: Newcomers' Overview", time=self._meeting_datetime(1, 12, 30), duration=datetime.timedelta(seconds=3600), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-17 10:00:00 length 2:00:00 in Olivia size: 150 ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="IEPG Meeting", time=datetime.datetime(2019, 11, 17, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="IEPG Meeting", time=self._meeting_datetime(1, 10, 0), duration=datetime.timedelta(seconds=7200), location=Room.objects.get(meeting=m, name="Olivia"), show_location=True)
                 ## timeslot 2019-11-17 10:00:00 length 8:00:00 in Convention Foyer size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="reg", name="IETF Registration", time=datetime.datetime(2019, 11, 17, 10, 0), duration=datetime.timedelta(seconds=28800), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="reg", name="IETF Registration", time=self._meeting_datetime(1, 10, 0), duration=datetime.timedelta(seconds=28800), location=Room.objects.get(meeting=m, name="Convention Foyer"), show_location=True)
                 ## timeslot 2019-11-17 08:30:00 length 7:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="IETF Hackathon", time=datetime.datetime(2019, 11, 17, 8, 30), duration=datetime.timedelta(seconds=27000), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="IETF Hackathon", time=self._meeting_datetime(1, 8, 30), duration=datetime.timedelta(seconds=27000), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 ## timeslot 2019-11-16 09:30:00 length 8:30:00 in Ord size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="Code Sprint", time=datetime.datetime(2019, 11, 16, 9, 30), duration=datetime.timedelta(seconds=30600), location=Room.objects.get(meeting=m, name="Ord"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="Code Sprint", time=self._meeting_datetime(0, 9, 30), duration=datetime.timedelta(seconds=30600), location=Room.objects.get(meeting=m, name="Ord"), show_location=True)
                 ## timeslot 2019-11-16 08:30:00 length 13:30:00 in Moor/Morrison size: None ##
-                TimeSlot.objects.create(meeting=m, type_id="other", name="IETF Hackathon", time=datetime.datetime(2019, 11, 16, 8, 30), duration=datetime.timedelta(seconds=48600), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
+                TimeSlot.objects.create(meeting=m, type_id="other", name="IETF Hackathon", time=self._meeting_datetime(0, 8, 30), duration=datetime.timedelta(seconds=48600), location=Room.objects.get(meeting=m, name="Moor/Morrison"), show_location=True)
                 
                 for s in m.session_set.all():
                     SchedulingEvent.objects.create(session=s, status_id='schedw', by_id=1)
