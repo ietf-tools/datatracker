@@ -758,6 +758,14 @@ class Schedule(models.Model):
     def qs_assignments_with_sessions(self):
         return self.assignments.filter(session__isnull=False)
 
+    def qs_timeslots_in_use(self):
+        """Get QuerySet containing timeslots used by the schedule"""
+        return TimeSlot.objects.filter(sessionassignments__schedule=self)
+
+    def qs_sessions_scheduled(self):
+        """Get QuerySet containing sessions assigned to timeslots by this schedule"""
+        return Session.objects.filter(timeslotassignments__schedule=self)
+
     def delete_schedule(self):
         self.assignments.all().delete()
         self.delete()
