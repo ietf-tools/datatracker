@@ -3,7 +3,6 @@
 import re
 
 from django.shortcuts import render
-from django.views.decorators.cache import cache_page
 
 import debug                            # pyflakes:ignore
 
