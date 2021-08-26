@@ -374,7 +374,6 @@ def confirm(request, acronym):
 
         # send notification
         session_data['outbound_conflicts'] = [f"{d['name']}: {d['groups']}" for d in outbound_conflicts]
-        debug.show('session_data["outbound_conflicts"]')
         send_notification(group,meeting,login,session_data,'new')
 
         status_text = 'IETF Agenda to be scheduled'
