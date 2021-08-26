@@ -9,8 +9,10 @@ Number of Sessions: {{ session.num_session }}
 Length of Session(s):  {{ session.length_session1|display_duration }}{% if session.length_session2 %}, {{ session.length_session2|display_duration }}{% endif %}{% if session.length_session3 %}, {{ session.length_session3|display_duration }}{% endif %}
 Number of Attendees: {{ session.attendees }}
 Conflicts to Avoid: 
-{% for line in session.outbound_conflicts %}{{line}}
-{% endfor %}
+{% for line in session.outbound_conflicts %} {{line}}
+{% endfor %}{% if session.session_time_relation_display %} {{ session.session_time_relation_display }}{% endif %}
+{% if session.adjacent_with_wg %} Adjacent with WG: {{ session.adjacent_with_wg }}{% endif %}       
+{% if session.timeranges_display %} Can't meet: {{ session.timeranges_display|join:", " }}{% endif %}
 
 People who must be present:
 {% for person in session.bethere %}  {{ person.ascii_name }}

@@ -451,7 +451,7 @@ class SubmitRequestCase(TestCase):
         self.assertTrue("Can't meet: Thursday early afternoon, Thursday late" in notification_payload)
         self.assertTrue('Second session joint with: {}'.format(group3.acronym) in notification_payload)
         self.assertTrue(ad.ascii_name() in notification_payload)
-        self.assertIn(ConstraintName.objects.get(slug='chair_confict').name, notification_payload)
+        self.assertIn(ConstraintName.objects.get(slug='chair_conflict').name, notification_payload)
         self.assertIn(group.acronym, notification_payload)
 
 class LockAppTestCase(TestCase):
