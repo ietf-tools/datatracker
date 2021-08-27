@@ -7,9 +7,11 @@ import random
 import datetime
 
 from django.core.files.base import ContentFile
+from django.db.models import Q
 
-from ietf.meeting.models import Meeting, Session, SchedulingEvent, Schedule, TimeSlot, SessionPresentation, FloorPlan, Room, SlideSubmission
-from ietf.name.models import ConstraintName, SessionStatusName
+from ietf.meeting.models import ( Meeting, Session, SchedulingEvent, Schedule,
+    TimeSlot, SessionPresentation, FloorPlan, Room, SlideSubmission, Constraint)
+from ietf.name.models import ConstraintName, SessionStatusName, TimerangeName
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
 
@@ -100,6 +102,7 @@ class SessionFactory(factory.django.DjangoModelFactory):
     meeting = factory.SubFactory(MeetingFactory)
     type_id='regular'
     group = factory.SubFactory(GroupFactory)
+    requested_duration = datetime.timedelta(hours=1)
 
     @factory.post_generation
     def status_id(obj, create, extracted, **kwargs):
@@ -220,3 +223,28 @@ class SlideSubmissionFactory(factory.django.DjangoModelFactory):
     make_file = factory.PostGeneration(
                     lambda obj, create, extracted, **kwargs: open(obj.staged_filepath(),'a').close()
                 )
+
+class ConstraintFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Constraint
+
+    meeting = factory.SubFactory(MeetingFactory)
+    source = factory.SubFactory(GroupFactory)
+    target = factory.SubFactory(GroupFactory)
+    person = factory.SubFactory(PersonFactory)
+    time_relation = factory.Iterator(Constraint.TIME_RELATION_CHOICES)
+
+    @factory.lazy_attribute
+    def name(obj):
+        constraint_list = list(ConstraintName.objects.filter(
+              Q(slug__in=['bethere','timerange','time_relation','wg_adjacent'])
+            | Q(meeting=obj.meeting)
+        ))
+        return random.choice(constraint_list)
+
+    @factory.post_generation
+    def timeranges(self, create, extracted, **kwargs):
+        if create:
+            if extracted:
+                for tr in TimerangeName.objects.filter(slug__in=extracted):
+                    self.timeranges.add(tr)

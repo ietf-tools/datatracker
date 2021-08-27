@@ -51,7 +51,7 @@ from ietf.utils.text import xslugify
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import GroupFactory, GroupEventFactory, RoleFactory
 from ietf.meeting.factories import ( SessionFactory, SessionPresentationFactory, ScheduleFactory,
-    MeetingFactory, FloorPlanFactory, TimeSlotFactory, SlideSubmissionFactory, RoomFactory )
+    MeetingFactory, FloorPlanFactory, TimeSlotFactory, SlideSubmissionFactory, RoomFactory, ConstraintFactory )
 from ietf.doc.factories import DocumentFactory, WgDraftFactory
 from ietf.submit.tests import submission_file
 from ietf.utils.test_utils import assert_ical_response_is_valid
@@ -4450,11 +4450,15 @@ class SessionTests(TestCase):
         meeting = MeetingFactory(type_id='ietf')
         area = GroupFactory(type_id='area')
         requested_session = SessionFactory(meeting=meeting,group__parent=area,status_id='schedw',add_to_schedule=False)
+        conflicting_session = SessionFactory(meeting=meeting,group__parent=area,status_id='schedw',add_to_schedule=False)
+        ConstraintFactory(name_id='key_participant',meeting=meeting,source=requested_session.group,target=conflicting_session.group)
         not_meeting = SessionFactory(meeting=meeting,group__parent=area,status_id='notmeet',add_to_schedule=False)
         url = urlreverse('ietf.meeting.views.meeting_requests',kwargs={'num':meeting.number})
         r = self.client.get(url)
         self.assertContains(r, requested_session.group.acronym)
         self.assertContains(r, not_meeting.group.acronym)
+        self.assertContains(r, requested_session.constraints().first().name)
+        self.assertContains(r, conflicting_session.group.acronym)
 
     def test_request_minutes(self):
         meeting = MeetingFactory(type_id='ietf')
