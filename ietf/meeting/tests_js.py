@@ -25,7 +25,8 @@ from ietf.group import colors
 from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
-from ietf.meeting.factories import MeetingFactory, RoomFactory, SessionFactory, TimeSlotFactory
+from ietf.meeting.factories import ( MeetingFactory, RoomFactory, SessionFactory, TimeSlotFactory,
+                                     ProceedingsMaterialFactory )
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.models import (Schedule, SchedTimeSessAssignment, Session,
                                  Room, TimeSlot, Constraint, ConstraintName,
@@ -2428,6 +2429,105 @@ class InterimTests(IetfSeleniumTestCase):
             expected_conditions.invisibility_of_element(modal_div),
             'Modal was not hidden after clicking close button',
         )
+
+
+@ifSeleniumEnabled
+class ProceedingsMaterialTests(IetfSeleniumTestCase):
+    def setUp(self):
+        super().setUp()
+        self.wait = WebDriverWait(self.driver, 2)
+        self.meeting = MeetingFactory(type_id='ietf', number='123', date=datetime.date.today())
+
+    def test_add_proceedings_material(self):
+        url = self.absreverse(
+            'ietf.meeting.views_proceedings.upload_material',
+            kwargs=dict(num=self.meeting.number, material_type='supporters'),
+        )
+        self.login('secretary')
+        self.driver.get(url)
+
+        # get the UI elements
+        use_url_checkbox = self.wait.until(
+            expected_conditions.element_to_be_clickable((By.ID, 'id_use_url'))
+        )
+        choose_file_button = self.wait.until(
+            expected_conditions.presence_of_element_located((By.ID, 'id_file'))
+        )
+        external_url_field = self.wait.until(
+            expected_conditions.presence_of_element_located((By.ID, 'id_external_url'))
+        )
+
+        # should start with use_url unchecked for a new material
+        self.assertTrue(choose_file_button.is_displayed(),
+                        'File chooser should be shown by default')
+        self.assertFalse(external_url_field.is_displayed(),
+                         'URL field should be hidden by default')
+
+        # enable URL
+        use_url_checkbox.click()
+        self.wait.until(expected_conditions.invisibility_of_element(choose_file_button),
+                         'File chooser should be hidden when URL option is checked')
+        self.wait.until(expected_conditions.visibility_of(external_url_field),
+                        'URL field should appear when URL option is checked')
+
+        # disable URL
+        use_url_checkbox.click()
+        self.wait.until(expected_conditions.visibility_of(choose_file_button),
+                        'File chooser should appear when URL option is unchecked')
+        self.wait.until(expected_conditions.invisibility_of_element(external_url_field),
+                        'URL field should be hidden when URL option is unchecked')
+
+    def test_replace_proceedings_material_shows_correct_default(self):
+        doc_mat = ProceedingsMaterialFactory(meeting=self.meeting)
+        url_mat = ProceedingsMaterialFactory(meeting=self.meeting, document__external_url='https://example.com')
+
+        # check the document material
+        url = self.absreverse(
+            'ietf.meeting.views_proceedings.upload_material',
+            kwargs=dict(num=self.meeting.number, material_type=doc_mat.type.slug),
+        )
+        self.login('secretary')
+        self.driver.get(url)
+        use_url_checkbox = self.wait.until(
+            expected_conditions.element_to_be_clickable((By.ID, 'id_use_url'))
+        )
+        choose_file_button = self.wait.until(
+            expected_conditions.presence_of_element_located((By.ID, 'id_file'))
+        )
+        external_url_field = self.wait.until(
+            expected_conditions.presence_of_element_located((By.ID, 'id_external_url'))
+        )
+
+        # should start with use_url unchecked for a document material
+        self.assertFalse(use_url_checkbox.is_selected(), 'URL option should be unchecked for a document material')
+        self.assertTrue(choose_file_button.is_displayed(),
+                        'File chooser should be shown by default')
+        self.assertFalse(external_url_field.is_displayed(),
+                         'URL field should be hidden by default')
+
+        # check the URL material
+        url = self.absreverse(
+            'ietf.meeting.views_proceedings.upload_material',
+            kwargs=dict(num=self.meeting.number, material_type=url_mat.type.slug),
+        )
+        self.driver.get(url)
+
+        use_url_checkbox = self.wait.until(
+            expected_conditions.element_to_be_clickable((By.ID, 'id_use_url'))
+        )
+        choose_file_button = self.wait.until(
+            expected_conditions.presence_of_element_located((By.ID, 'id_file'))
+        )
+        external_url_field = self.wait.until(
+            expected_conditions.presence_of_element_located((By.ID, 'id_external_url'))
+        )
+
+        # should start with use_url unchecked for a document material
+        self.assertTrue(use_url_checkbox.is_selected(), 'URL option should be checked for URL material')
+        self.assertFalse(choose_file_button.is_displayed(),
+                         'File chooser should be hidden by default')
+        self.assertTrue(external_url_field.is_displayed(),
+                        'URL field should be shown by default')
 
 
 # The following are useful debugging tools

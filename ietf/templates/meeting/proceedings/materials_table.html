@@ -1,0 +1,57 @@
+{# Copyright The IETF Trust 2021, All Rights Reserved #}
+{% load ietf_filters misc_filters tz %}
+{# only show if user is secretariat or at least one material is active #}
+{% if proceedings_materials|list_extract:1|keep_only:'active' or user|has_role:'Secretariat' %}
+  <!-- Proceedings materials not tied to groups -->
+  <h2 class="anchor-target" id="proceedings-materials">Proceedings Materials</h2>
+  <table class="table table-condensed table-striped">
+    <thead>
+    <tr>
+      {% if user|has_role:'Secretariat' %}
+        <th class="col-md-2">Type</th>
+        <th class="col-md-8">Title</th>
+        <th class="col-md-1">Updated</th>
+        <th class="col-md-1">&nbsp;</th>
+      {% else %}
+        <th class="col-md-2">Type</th>
+        <th class="col-md-9">Title</th>
+        <th class="col-md-1">Updated</th>
+      {% endif %}
+    </tr>
+    </thead>
+
+    <tbody>
+    {% for type_name, material in proceedings_materials %}
+      {# secretariat sees empty slots, others do not #}
+      {% if user|has_role:'Secretariat' or meeting and material.active %}
+        <tr>
+          <td>{{ type_name }}</td>
+          {% if material and material.active %}
+            <td>
+              <a
+                href="{{ material.get_href }}">
+                {{ material.document.title }}
+              </a>
+            </td>
+            <td>
+              {% with timestamp=material.document.time|utc %}
+                {{ timestamp|date:"Y-m-d" }}<br><small>{{ timestamp|date:"H:i:s" }}&nbsp;UTC</small>
+              {% endwith %}
+              {% else %}
+            <td colspan="2"></td>
+          {% endif %}
+          {% if user|has_role:'Secretariat' %}
+            {% if forloop.first %}
+              <td rowspan="{{ proceedings_materials|length }}">
+                <a href="{% url 'ietf.meeting.views_proceedings.material_details' num=meeting.number %}">
+                  Edit materials
+                </a>
+              </td>
+            {% endif %}
+          {% endif %}
+        </tr>
+      {% endif %}
+    {% endfor %}
+    </tbody>
+  </table>
+{% endif %}

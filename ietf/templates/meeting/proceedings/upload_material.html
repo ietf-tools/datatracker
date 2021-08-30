@@ -1,0 +1,43 @@
+{% extends "meeting/proceedings/edit_material_base.html" %}
+{# Copyright The IETF Trust 2015-2021, All Rights Reserved #}
+
+{% load bootstrap3 %}
+
+{% block morecss %}
+  {{ form.media.css }}
+{% endblock %}
+{% block title %}
+  Upload {{ material_type.name }} for {{ meeting }} Proceedings
+{% endblock %}
+
+{% block content_header %}
+  Upload Proceedings Material<br>
+  <small>
+    {{ meeting }} {{ material_type.name }}
+  </small>
+{% endblock %}
+
+{% block intro %}
+  <p>
+    {% if material is None %}
+      This will be linked from the {{ meeting }} proceedings under
+      the title "{{ material_type.name }}".
+    {% else %}
+      Select a file or external URL to replace the existing material. This will be linked from the
+      {{ meeting }} proceedings under the title "{{ material.document.title }}".
+    {% endif %}
+  </p>
+{% endblock %}
+
+{% block edit_form %}
+  <form class="upload-material" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% block form_buttons %}{{ block.super }}{% endblock %}
+  </form>
+{% endblock %}
+
+{% block js %}
+  {{ form.media.js }}
+{% endblock %}

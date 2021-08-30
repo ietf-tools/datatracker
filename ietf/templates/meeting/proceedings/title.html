@@ -1,0 +1,52 @@
+{% comment %} Copyright The IETF Trust 2021, All Rights Reserved
+
+This renders the title block for the meeting proceedings page.
+{% endcomment %}
+{% load ietf_filters %}
+
+<div class="proceedings-title">
+  <h1>
+    IETF {{ meeting.number }} {% if not meeting.proceedings_final %}Draft{% endif %}
+    Proceedings
+  </h1>
+
+  <div class="proceedings-date">
+    {{ meeting.date|date:"d F Y" }} - {{ meeting.end_date|date:"d F Y" }}
+  </div>
+  {% if attendance is not None %}
+  <div class="proceedings-info">
+    {% if attendance.onsite > 0 %}{{ attendance.onsite }} onsite participant{{ attendance.onsite|pluralize }}{% if attendance.online > 0 %},{% endif %}{% endif %}
+    {% if attendance.online > 0 %}{{ attendance.online }} online participant{{ attendance.online|pluralize }}{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="proceedings-intro with-divider">
+  <div class="proceedings-column">
+    <div class="proceedings-row">
+      Location: {{ meeting.city|default:"TBD" }}
+    </div>
+    {% if meeting.venue_name %}
+      <div class="proceedings-row">
+        Venue: {{ meeting.venue_name }}
+      </div>
+    {% endif %}
+  </div>
+  {% with hosts=meeting.meetinghosts.all %}
+    {% if hosts.exists %}
+      <div class="proceedings-column">
+        <div class="proceedings-row">
+          Hosted by:
+          {% for host in hosts %}
+            <div class="host-logo">
+                <img class="host{{ forloop.counter }}"
+                     src="{% url 'ietf.meeting.views_proceedings.meetinghost_logo' num=meeting.number host_id=host.pk %}"
+                     height="{{ host.logo_height }}"
+                     width="{{ host.logo_width }}"
+                     title="{{ host.name }}">
+            </div>{% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  {% endwith %}
+</div>

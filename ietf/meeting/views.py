@@ -87,7 +87,7 @@ from ietf.meeting.utils import diff_meeting_schedules, prefetch_schedule_diff_ob
 from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments
 from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.message.utils import infer_message
-from ietf.name.models import SlideSubmissionStatusName
+from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
     create_recording)
@@ -173,9 +173,15 @@ def materials(request, num=None):
     for session_list in [plenaries, ietf, training, irtf, iab, other]:
         for session in session_list:
             session.past_cutoff_date = past_cutoff_date
-            
+
+    proceedings_materials = [
+        (type_name, meeting.proceedings_materials.filter(type=type_name).first())
+        for type_name in ProceedingsMaterialTypeName.objects.all()
+    ]
+
     return render(request, "meeting/materials.html", {
         'meeting': meeting,
+        'proceedings_materials': proceedings_materials,
         'plenaries': plenaries,
         'ietf': ietf,
         'training': training,
@@ -221,7 +227,7 @@ def materials_document(request, document, num=None, ext=None):
 
     if not doc.meeting_related():
         raise Http404("Not a meeting related document")
-    if not doc.session_set.filter(meeting__number=num).exists():
+    if doc.get_related_meeting() != meeting:
         raise Http404("No such document for meeting %s" % num)
     if not rev:
         filename = doc.get_file_name()
@@ -1639,7 +1645,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     meeting = get_ietf_meeting(num)
     if not meeting or (meeting.number.isdigit() and int(meeting.number) <= 64 and (not meeting.schedule or not meeting.schedule.assignments.exists())):
         if ext == '.html' or (meeting and meeting.number.isdigit() and 0 < int(meeting.number) <= 64):
-            return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
+            return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}')
         else:
             raise Http404("No such meeting")
 
@@ -3790,8 +3796,9 @@ def proceedings(request, num=None):
 
     meeting = get_meeting(num)
 
-    if (meeting.number.isdigit() and int(meeting.number) <= 96):
-        return HttpResponseRedirect('https://www.ietf.org/proceedings/%s' % meeting.number)
+    # Early proceedings were hosted on www.ietf.org rather than the datatracker
+    if meeting.proceedings_format_version == 1:
+        return HttpResponseRedirect(settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting))
 
     if not meeting.schedule or not meeting.schedule.assignments.exists():
         kwargs = dict()
@@ -3839,6 +3846,11 @@ def proceedings(request, num=None):
         'cor_cut_off_date': cor_cut_off_date,
         'submission_started': now > begin_date,
         'cache_version': cache_version,
+        'attendance': meeting.get_attendance(),
+        'meetinghost_logo': {
+            'max_height': settings.MEETINGHOST_LOGO_MAX_DISPLAY_HEIGHT,
+            'max_width': settings.MEETINGHOST_LOGO_MAX_DISPLAY_WIDTH,
+        }
     })
 
 @role_required('Secretariat')
@@ -3860,8 +3872,8 @@ def proceedings_acknowledgements(request, num=None):
     if not (num and num.isdigit()):
         raise Http404
     meeting = get_meeting(num)
-    if int(meeting.number) < settings.NEW_PROCEEDINGS_START:
-        return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/acknowledgement.html' % num )
+    if meeting.proceedings_format_version == 1:
+        return HttpResponseRedirect( f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}/acknowledgement.html')
     return render(request, "meeting/proceedings_acknowledgements.html", {
         'meeting': meeting,
     })
@@ -3871,8 +3883,8 @@ def proceedings_attendees(request, num=None):
     if not (num and num.isdigit()):
         raise Http404
     meeting = get_meeting(num)
-    if int(meeting.number) < settings.NEW_PROCEEDINGS_START:
-        return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/attendees.html' % num )
+    if meeting.proceedings_format_version == 1:
+        return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}/attendee.html')
     overview_template = '/meeting/proceedings/%s/attendees.html' % meeting.number
     try:
         template = render_to_string(overview_template, {})
@@ -3888,8 +3900,8 @@ def proceedings_overview(request, num=None):
     if not (num and num.isdigit()):
         raise Http404
     meeting = get_meeting(num)
-    if int(meeting.number) < settings.NEW_PROCEEDINGS_START:
-        return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/overview.html' % num )
+    if meeting.proceedings_format_version == 1:
+        return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}/overview.html')
     overview_template = '/meeting/proceedings/%s/overview.rst' % meeting.number
     try:
         template = render_to_string(overview_template, {})
@@ -3906,8 +3918,8 @@ def proceedings_progress_report(request, num=None):
     if not (num and num.isdigit()):
         raise Http404
     meeting = get_meeting(num)
-    if int(meeting.number) < settings.NEW_PROCEEDINGS_START:
-        return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/progress-report.html' % num )
+    if meeting.proceedings_format_version == 1:
+        return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}/progress-report.html')
     sdate = meeting.previous_meeting().date
     edate = meeting.date
     context = get_progress_stats(sdate,edate)

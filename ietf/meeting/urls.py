@@ -4,7 +4,7 @@ from django.conf.urls import include
 from django.views.generic import RedirectView
 from django.conf import settings
 
-from ietf.meeting import views, ajax
+from ietf.meeting import views, ajax, views_proceedings
 from ietf.utils.urls import url
 
 safe_for_all_meeting_types = [
@@ -104,8 +104,21 @@ type_ietf_only_patterns_id_optional = [
     url(r'^proceedings/attendees/$', views.proceedings_attendees),
     url(r'^proceedings/overview/$', views.proceedings_overview),
     url(r'^proceedings/progress-report/$', views.proceedings_progress_report),
+    url(r'^proceedings/materials/$', views_proceedings.material_details),
+    url(r'^proceedings/materials/(?P<material_type>[a-z_]+)/$', views_proceedings.edit_material),
+    url(r'^proceedings/materials/(?P<material_type>[a-z_]+)/new/$', views_proceedings.upload_material),
+    url(r'^proceedings/materials/(?P<material_type>[a-z_]+)/remove/$',
+        views_proceedings.remove_restore_material,
+        {'action': 'remove'},
+        'ietf.meeting.views_proceedings.remove_material'),
+    url(r'^proceedings/materials/(?P<material_type>[a-z_]+)/restore/$',
+        views_proceedings.remove_restore_material,
+        {'action': 'restore'},
+        'ietf.meeting.views_proceedings.restore_material'),
     url(r'^important-dates/$', views.important_dates),
     url(r'^important-dates.(?P<output_format>ics)$', views.important_dates),
+    url(r'^proceedings/meetinghosts/edit/', views_proceedings.edit_meetinghosts),
+    url(r'^proceedings/meetinghosts/(?P<host_id>\d+)/logo/$', views_proceedings.meetinghost_logo),
 ]
 
 urlpatterns = [

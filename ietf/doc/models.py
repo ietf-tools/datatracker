@@ -9,6 +9,8 @@ import os
 import rfc2html
 import time
 
+from typing import Optional, TYPE_CHECKING
+
 from django.db import models
 from django.core import checks
 from django.core.cache import caches
@@ -34,6 +36,9 @@ from ietf.utils.decorators import memoize
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
 from ietf.utils.models import ForeignKey
+if TYPE_CHECKING:
+    # importing other than for type checking causes errors due to cyclic imports
+    from ietf.meeting.models import ProceedingsMaterial, Session
 
 logger = logging.getLogger('django')
 
@@ -129,10 +134,11 @@ class DocumentInfo(models.Model):
                             self._cached_file_path = settings.INTERNET_DRAFT_PATH
                         else:
                             self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
-            elif self.type_id in ("agenda", "minutes", "slides", "bluesheets") and self.meeting_related():
-                doc = self.doc if isinstance(self, DocHistory) else self
-                if doc.session_set.exists():
-                    meeting = doc.session_set.first().meeting
+            elif self.meeting_related() and self.type_id in (
+                    "agenda", "minutes", "slides", "bluesheets", "procmaterials"
+            ):
+                meeting = self.get_related_meeting()
+                if meeting is not None:
                     self._cached_file_path = os.path.join(meeting.get_materials_path(), self.type_id) + "/"
                 else:
                     self._cached_file_path = ""
@@ -160,8 +166,9 @@ class DocumentInfo(models.Model):
                         self._cached_base_name = "%s.txt" % self.canonical_name()
                     else:
                         self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
-            elif self.type_id in ["slides", "agenda", "minutes", "bluesheets", ] and self.meeting_related():
-                    self._cached_base_name = "%s-%s.txt" % (self.canonical_name(), self.rev) 
+            elif self.type_id in ["slides", "agenda", "minutes", "bluesheets", "procmaterials", ] and self.meeting_related():
+                ext = 'pdf' if self.type_id == 'procmaterials' else 'txt'
+                self._cached_base_name = f'{self.canonical_name()}-{self.rev}.{ext}'
             elif self.type_id == 'review':
                 # TODO: This will be wrong if a review is updated on the same day it was created (or updated more than once on the same day)
                 self._cached_base_name = "%s.txt" % self.name
@@ -218,7 +225,6 @@ class DocumentInfo(models.Model):
                     log.unreachable('2018-12-28')
                     pass
 
-
             if self.type_id in settings.DOC_HREFS and self.type_id in meeting_doc_refs:
                 if self.meeting_related():
                     self.is_meeting_related = True
@@ -239,16 +245,13 @@ class DocumentInfo(models.Model):
 
             if self.is_meeting_related:
                 if not meeting:
-                    # we need to do this because DocHistory items don't have
-                    # any session_set entry:
-                    doc = self.doc if isinstance(self, DocHistory) else self
-                    sess = doc.session_set.first()
-                    if not sess:
-                        return ""
-                    meeting = sess.meeting
+                    meeting = self.get_related_meeting()
+                    if meeting is None:
+                        return ''
+
                 # After IETF 96, meeting materials acquired revision
                 # handling, and the document naming changed.
-                if meeting.number.isdigit() and int(meeting.number) <= 96:
+                if meeting.proceedings_format_version == 1:
                     format = settings.MEETING_DOC_OLD_HREFS[self.type_id]
                 else:
                     # This branch includes interims
@@ -420,9 +423,43 @@ class DocumentInfo(models.Model):
         return e != None and (e.text != "")
 
     def meeting_related(self):
-        if self.type_id in ("agenda","minutes","bluesheets","slides","recording"):
+        if self.type_id in ("agenda","minutes","bluesheets","slides","recording","procmaterials"):
              return self.type_id != "slides" or self.get_state_slug('reuse_policy')=='single'
         return False
+
+    def get_related_session(self) -> Optional['Session']:
+        """Get the meeting session related to this document
+
+        Return None if there is no related session.
+        Must define this in DocumentInfo subclasses.
+        """
+        raise NotImplementedError(f'Class {self.__class__} must define get_related_session()')
+
+    def get_related_proceedings_material(self) -> Optional['ProceedingsMaterial']:
+        """Get the proceedings material related to this document
+
+        Return None if there is no related proceedings material.
+        Must define this in DocumentInfo subclasses.
+        """
+        raise NotImplementedError(f'Class {self.__class__} must define get_related_proceedings_material()')
+
+    def get_related_meeting(self):
+        """Get the meeting this document relates to"""
+        if not self.meeting_related():
+            return None  # no related meeting if not meeting_related!
+        elif self.type_id in ("agenda", "minutes", "slides", "bluesheets",):
+            # session-related
+            session = self.get_related_session()
+            if session is not None:
+                return session.meeting
+        elif self.type_id == "procmaterials":
+            # proceedings-related
+            material = self.get_related_proceedings_material()
+            if material is not None:
+                return material.meeting
+        else:
+            log.unreachable('2021-08-29')  # if meeting_related, there must be a way to retrieve the meeting!
+            return None
 
     def relations_that(self, relationship):
         """Return the related-document objects that describe a given relationship targeting self."""
@@ -713,6 +750,13 @@ class Document(DocumentInfo):
             self._cached_absolute_url = url
         return self._cached_absolute_url
 
+    def get_related_session(self):
+        sessions = self.session_set.all()
+        return sessions.first()
+
+    def get_related_proceedings_material(self):
+        return self.proceedingsmaterial_set.first()
+
     def file_tag(self):
         return "<%s>" % self.filename_with_rev()
 
@@ -1002,6 +1046,12 @@ class DocHistory(DocumentInfo):
 
     def __str__(self):
         return force_text(self.doc.name)
+
+    def get_related_session(self):
+        return self.doc.get_related_session()
+
+    def get_related_proceedings_material(self):
+        return self.doc.get_related_proceedings_material()
 
     def canonical_name(self):
         if hasattr(self, '_canonical_name'):

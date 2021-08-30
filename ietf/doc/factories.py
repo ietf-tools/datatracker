@@ -439,3 +439,18 @@ class BofreqFactory(BaseDocumentFactory):
         else:
             obj.set_state(State.objects.get(type_id='bofreq',slug='proposed'))
 
+
+class ProceedingsMaterialDocFactory(BaseDocumentFactory):
+    type_id = 'procmaterials'
+    abstract = ''
+    expires = None
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+        else:
+            obj.set_state(State.objects.get(type_id='procmaterials', slug='active'))

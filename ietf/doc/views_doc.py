@@ -614,7 +614,7 @@ def document_main(request, name, rev=None):
 
     # TODO : Add "recording", and "bluesheets" here when those documents are appropriately
     #        created and content is made available on disk
-    if doc.type_id in ("slides", "agenda", "minutes", "bluesheets",):
+    if doc.type_id in ("slides", "agenda", "minutes", "bluesheets","procmaterials",):
         can_manage_material = can_manage_materials(request.user, doc.group)
         presentations = doc.future_presentations()
         if doc.uploaded_filename:
@@ -645,6 +645,16 @@ def document_main(request, name, rev=None):
                 t = "markdown"
             other_types.append((t, url))
 
+        # determine whether uploads are allowed
+        can_upload = can_manage_material and not snapshot
+        if doc.group is None:
+            can_upload = can_upload and (doc.type_id == 'procmaterials')
+        else:
+            can_upload = (
+                    can_upload
+                    and doc.group.features.has_nonsession_materials
+                    and doc.type_id in doc.group.features.material_types
+            )
         return render(request, "doc/document_material.html",
                                   dict(doc=doc,
                                        top=top,
@@ -654,7 +664,7 @@ def document_main(request, name, rev=None):
                                        latest_rev=latest_rev,
                                        snapshot=snapshot,
                                        can_manage_material=can_manage_material,
-                                       in_group_materials_types = doc.group and doc.group.features.has_nonsession_materials and doc.type_id in doc.group.features.material_types,
+                                       can_upload = can_upload,
                                        other_types=other_types,
                                        presentations=presentations,
                                        ))

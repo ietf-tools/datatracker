@@ -10,7 +10,7 @@ from urllib.parse import urlparse, urlsplit, urlunsplit
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator, URLValidator, EmailValidator, _lazy_re_compile
+from django.core.validators import RegexValidator, URLValidator, EmailValidator, _lazy_re_compile, BaseValidator
 from django.template.defaultfilters import filesizeformat
 from django.utils.deconstruct import deconstructible
 from django.utils.ipv6 import is_valid_ipv6_address
@@ -58,12 +58,26 @@ class RegexStringValidator(object):
 
 validate_regular_expression_string = RegexStringValidator()
 
-def validate_file_size(file):
-    if file.size > settings.SECR_MAX_UPLOAD_SIZE:
+def validate_file_size(file, missing_ok=False):
+    try:
+        size = file.size
+    except FileNotFoundError:
+        if missing_ok:
+            return
+        else:
+            raise
+
+    if size > settings.SECR_MAX_UPLOAD_SIZE:
         raise ValidationError('Please keep filesize under %s. Requested upload size was %s' % (filesizeformat(settings.SECR_MAX_UPLOAD_SIZE), filesizeformat(file.size)))
 
-def validate_mime_type(file, valid):
-    file.open()
+def validate_mime_type(file, valid, missing_ok=False):
+    try:
+        file.open()
+    except FileNotFoundError:
+        if missing_ok:
+            return None, None
+        else:
+            raise
     raw = file.read()
     mime_type, encoding = get_mime_type(raw)
     # work around mis-identification of text where a line has 'virtual' as
@@ -75,6 +89,28 @@ def validate_mime_type(file, valid):
         raise ValidationError('Found content with unexpected mime type: %s.  Expected one of %s.' %
                                     (mime_type, ', '.join(valid) ))
     return mime_type, encoding
+
+@deconstructible
+class WrappedValidator:
+    """Helper for attaching a validate function with parameters to a model
+
+    This captures extra arguments to migration functions in a way that is compatible
+    with Django's migrations. E.g., WrappedValidator(validate_mime_type, valid_type_list)
+    will arrange to call validate_mime_type.
+    """
+    def __init__(self, validate_method, *args):
+        self.validate_method = validate_method
+        self.args = args
+
+    def __call__(self, inst):
+        return self.validate_method(inst, *self.args)
+
+    def __eq__(self, other):
+        return all([
+            isinstance(other, WrappedValidator),
+            (self.validate_method == other.validate_method),
+            (self.kwargs == other.kwargs)
+        ])
 
 def validate_file_extension(file, valid):
     name, ext = os.path.splitext(file.name)
@@ -194,3 +230,21 @@ def validate_external_resource_value(name, value):
     else:
         raise ValidationError('Unknown resource type '+name.type.name)
 
+
+@deconstructible
+class MaxImageSizeValidator(BaseValidator):
+    """Validate that an image is no longer than a given size"""
+    message = 'Ensure this image is smaller than %(limit_value)s (it is %(show_value)s)'
+    code = 'max_image_size'
+
+    def __init__(self, max_width, max_height):
+        super().__init__(limit_value=(max_width, max_height))
+
+    def compare(self, a, b):
+        return (a[0] > b[0]) or (a[1] > b[1])
+
+    def clean(self, x):
+        try:
+            return x.width, x.height
+        except FileNotFoundError:
+            return 0, 0  # don't fail if the image is missing

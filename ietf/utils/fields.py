@@ -264,3 +264,19 @@ class SearchableField(forms.CharField):
             ))
 
         return objs.first() if self.max_entries == 1 else objs
+
+class MissingOkImageField(models.ImageField):
+    """Image field that can validate successfully if file goes missing
+
+    The default ImageField fails even to validate if its back-end file goes
+    missing, at least when width_field and height_field are used. This ignores
+    the exception that arises. Without this, even deleting a model instance
+    through a form fails.
+    """
+    def update_dimension_fields(self, *args, **kwargs):
+        try:
+            super().update_dimension_fields(*args, **kwargs)
+        except FileNotFoundError:
+            pass  # don't do anything if the file has gone missing
+
+

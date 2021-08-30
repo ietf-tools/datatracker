@@ -14,7 +14,7 @@ from ietf import api
 from ietf.meeting.models import ( Meeting, ResourceAssociation, Constraint, Room, Schedule, Session,
                                 TimeSlot, SchedTimeSessAssignment, SessionPresentation, FloorPlan,
                                 UrlResource, ImportantDate, SlideSubmission, SchedulingEvent,
-                                BusinessConstraint)
+                                BusinessConstraint, ProceedingsMaterial, MeetingHost)
 
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
@@ -373,3 +373,42 @@ class BusinessConstraintResource(ModelResource):
             "penalty": ALL,
         }
 api.meeting.register(BusinessConstraintResource())
+
+
+from ietf.doc.resources import DocumentResource
+from ietf.name.resources import ProceedingsMaterialTypeNameResource
+class ProceedingsMaterialResource(ModelResource):
+    meeting          = ToOneField(MeetingResource, 'meeting')
+    document         = ToOneField(DocumentResource, 'document')
+    type             = ToOneField(ProceedingsMaterialTypeNameResource, 'type')
+    class Meta:
+        queryset = ProceedingsMaterial.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'proceedingsmaterial'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "meeting": ALL_WITH_RELATIONS,
+            "document": ALL_WITH_RELATIONS,
+            "type": ALL_WITH_RELATIONS,
+        }
+api.meeting.register(ProceedingsMaterialResource())
+
+class MeetingHostResource(ModelResource):
+    meeting          = ToOneField(MeetingResource, 'meeting')
+    class Meta:
+        queryset = MeetingHost.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'meetinghost'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "name": ALL,
+            "logo": ALL,
+            "logo_width": ALL,
+            "logo_height": ALL,
+            "meeting": ALL_WITH_RELATIONS,
+        }
+api.meeting.register(MeetingHostResource())
