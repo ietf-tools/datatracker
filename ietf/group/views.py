@@ -292,8 +292,8 @@ def active_groups(request, group_type=None):
         return active_dirs(request)
     elif group_type == "review":
         return active_review_dirs(request)
-    elif group_type == "program":
-        return active_programs(request)
+    elif group_type in ("program", "iabasg"):
+        return active_iab(request)
     else:
         raise Http404
 
@@ -321,11 +321,11 @@ def active_teams(request):
         group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
     return render(request, 'group/active_teams.html', {'teams' : teams })
 
-def active_programs(request):
-    programs = Group.objects.filter(type="program", state="active").order_by("name")
-    for group in programs:
+def active_iab(request):
+    iabgroups = Group.objects.filter(type__in=("program","iabasg"), state="active").order_by("-type_id","name")
+    for group in iabgroups:
         group.leads = sorted(roles(group, "lead"), key=extract_last_name)
-    return render(request, 'group/active_programs.html', {'programs' : programs })
+    return render(request, 'group/active_iabgroups.html', {'iabgroups' : iabgroups })
 
 def active_areas(request):
         areas = Group.objects.filter(type="area", state="active").order_by("name")  
@@ -1290,12 +1290,13 @@ def group_json(request, acronym):
 @cache_control(public=True, max_age=30*60)
 @cache_page(30 * 60)
 def group_menu_data(request):
-    groups = Group.objects.filter(state="active", type__features__acts_like_wg=True, parent__state="active").order_by("acronym")
+    groups = Group.objects.filter(state="active", parent__state="active").filter(Q(type__features__acts_like_wg=True)|Q(type_id__in=['program','iabasg'])).order_by("-type_id","acronym")
 
     groups_by_parent = defaultdict(list)
     for g in groups:
         url = urlreverse("ietf.group.views.group_home", kwargs={ 'group_type': g.type_id, 'acronym': g.acronym })
-        groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'url': url })
+#        groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'url': url })
+        groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'type': escape(g.type.verbose_name or g.type.name), 'url': url })
 
     return JsonResponse(groups_by_parent)
 

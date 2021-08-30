@@ -38,13 +38,14 @@ from ietf.group.models import Group
 
 register = template.Library()
 
-area_short_names = {
+parent_short_names = {
     'ops':'Ops & Mgmt',
-    'rai':'RAI'
+    'rai':'RAI',
+    'iab':'IAB',
     }
 
 parents = Group.objects.filter(
-                models.Q(type="area") | models.Q(type="irtf", acronym="irtf"),
+                models.Q(type="area") | models.Q(type="irtf", acronym="irtf") | models.Q(acronym='iab'),
                 state="active"
             ).order_by('type_id', 'acronym')
 
@@ -53,7 +54,7 @@ def wg_menu():
     global parents
 
     for p in parents:
-        p.short_name = area_short_names.get(p.acronym) or p.name
+        p.short_name = parent_short_names.get(p.acronym) or p.name
         if p.short_name.endswith(" Area"):
             p.short_name = p.short_name[:-len(" Area")]
 
@@ -61,5 +62,7 @@ def wg_menu():
             p.menu_url = "/wg/#" + p.acronym
         elif p.acronym == "irtf":
             p.menu_url = "/rg/"
+        elif p.acronym == "iab":
+            p.menu_url = "/program/"
 
     return render_to_string('base/menu_wg.html', { 'parents': parents })
