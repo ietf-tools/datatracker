@@ -45,9 +45,9 @@ parent_short_names = {
     }
 
 parents = Group.objects.filter(
-                models.Q(type="area") | models.Q(type="irtf", acronym="irtf") | models.Q(acronym='iab'),
+                models.Q(type="area") | models.Q(type="irtf", acronym="irtf") | models.Q(acronym='iab') | models.Q(acronym='ietfadminllc'),
                 state="active"
-            ).order_by('type_id', 'acronym')
+            ).order_by('type__order','type_id', 'acronym')
 
 @register.simple_tag
 def wg_menu():
@@ -64,5 +64,7 @@ def wg_menu():
             p.menu_url = "/rg/"
         elif p.acronym == "iab":
             p.menu_url = "/program/"
+        elif p.acronym == 'ietfadminllc':
+            p.menu_url = "/adm/"
 
     return render_to_string('base/menu_wg.html', { 'parents': parents })

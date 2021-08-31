@@ -2620,7 +2620,7 @@
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
-    "pk": "admin"
+    "pk": "adm"
   },
   {
     "fields": {
@@ -2770,6 +2770,43 @@
     },
     "model": "group.groupfeatures",
     "pk": "iab"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "acts_like_wg": false,
+      "admin_roles": "[\n    \"lead\"\n]",
+      "agenda_type": "ad",
+      "create_wiki": false,
+      "custom_group_roles": true,
+      "customize_workflow": false,
+      "default_parent": "",
+      "default_tab": "ietf.group.views.group_about",
+      "default_used_roles": "[\n    \"member\",\n    \"chair\",\n    \"lead\"\n]",
+      "docman_roles": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
+      "groupman_authroles": "[\n    \"Secretariat\",\n    \"IAB\"\n]",
+      "groupman_roles": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_documents": true,
+      "has_meetings": true,
+      "has_milestones": true,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "has_session_materials": false,
+      "is_schedulable": false,
+      "material_types": "[\n    \"slides\"\n]",
+      "matman_roles": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
+      "need_parent": false,
+      "parent_types": [
+        "ietf"
+      ],
+      "req_subm_approval": false,
+      "role_order": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
+      "show_on_agenda": false
+    },
+    "model": "group.groupfeatures",
+    "pk": "iabasg"
   },
   {
     "fields": {
@@ -3295,7 +3332,7 @@
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"ad\",\n    \"member\",\n    \"delegate\",\n    \"secr\",\n    \"liaison\",\n    \"atlarge\",\n    \"chair\",\n    \"matman\",\n    \"techadv\"\n]",
       "docman_roles": "[\n    \"chair\"\n]",
-      "groupman_authroles": "[\n    \"Secretariat\"\n]",
+      "groupman_authroles": "[\n    \"Secretariat\",\n    \"Area Director\"\n]",
       "groupman_roles": "[\n    \"chair\"\n]",
       "has_chartering_process": false,
       "has_default_jabber": false,
@@ -10719,12 +10756,12 @@
     "fields": {
       "desc": "",
       "name": "Admin",
-      "order": 0,
+      "order": 1,
       "used": true,
       "verbose_name": "Administrative Group"
     },
     "model": "name.grouptypename",
-    "pk": "admin"
+    "pk": "adm"
   },
   {
     "fields": {
@@ -10769,6 +10806,17 @@
     },
     "model": "name.grouptypename",
     "pk": "iab"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "IAB ASG",
+      "order": 0,
+      "used": true,
+      "verbose_name": "IAB Administrative Support Group"
+    },
+    "model": "name.grouptypename",
+    "pk": "iabasg"
   },
   {
     "fields": {
@@ -10971,13 +11019,35 @@
   {
     "fields": {
       "default_offset_days": -57,
-      "desc": "Preliminary BOF proposals requested. To request a BOF, please see instructions on requesting a BOF at https://www.ietf.org/how/bofs/bof-procedures/",
-      "name": "Preliminary BOF proposals requested",
+      "desc": "Cut-off date for BOF proposal requests. To request a BOF, please see instructions at https://www.ietf.org/how/bofs/bof-procedures on Requesting a BOF",
+      "name": "Cut-off preliminary BOF requests",
       "order": 0,
       "used": true
     },
     "model": "name.importantdatename",
+    "pk": "bofprelimcutoff"
+  },
+  {
+    "fields": {
+      "default_offset_days": -57,
+      "desc": "Preliminary BOF proposals requested. To request a BOF, please see instructions on requesting a BOF at https://www.ietf.org/how/bofs/bof-procedures/",
+      "name": "Preliminary BOF proposals requested",
+      "order": 0,
+      "used": false
+    },
+    "model": "name.importantdatename",
     "pk": "bofproposals"
+  },
+  {
+    "fields": {
+      "default_offset_days": -43,
+      "desc": "Cut-off date for revised BOF proposal requests to Area Directors at UTC 23:59. To request a BOF, please see instructions at https://www.ietf.org/how/bofs/bof-procedures on Requesting a BOF.",
+      "name": "Cut-off revised BOF requests",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.importantdatename",
+    "pk": "bofrevcutoff"
   },
   {
     "fields": {
@@ -10996,7 +11066,7 @@
       "desc": "Cut-off date for BOF proposal requests to Area Directors at UTC 23:59",
       "name": "Cut-off BOF scheduling Requests",
       "order": 0,
-      "used": true
+      "used": false
     },
     "model": "name.importantdatename",
     "pk": "cutoffbofreq"
@@ -15485,7 +15555,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2021-07-13T00:12:25.184",
+      "time": "2021-08-30T00:16:41.046",
       "used": true,
       "version": "xym 0.5"
     },
@@ -15496,7 +15566,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2021-07-13T00:12:26.721",
+      "time": "2021-08-30T00:16:42.619",
       "used": true,
       "version": "pyang 2.5.0"
     },
@@ -15507,7 +15577,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2021-07-13T00:12:27.015",
+      "time": "2021-08-30T00:16:42.981",
       "used": true,
       "version": "yanglint SO 1.6.7"
     },
@@ -15518,7 +15588,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2021-07-13T00:12:29.814",
+      "time": "2021-08-30T00:16:45.742",
       "used": true,
       "version": "xml2rfc 3.9.1"
     },

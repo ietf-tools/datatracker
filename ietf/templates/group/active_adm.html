@@ -6,20 +6,19 @@
 <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
 {% endblock %}
 
-{% block title %}Active IAB groups{% endblock %}
+{% block title %}Active administrative groups{% endblock %}
 
 
 {% block content %}
   {% origin %}
-  {% regroup iabgroups by type as grouped_groups %}
+  {% regroup adm by parent as grouped_groups %}
   {% for grouptype in grouped_groups %}
-  <h1>Active {% firstof grouptype.grouper.verbose_name grouptype.grouper.name %}{{grouptype.list|pluralize}}</h1>
+  <h1>Active {% firstof grouptype.grouper.verbose_name grouptype.grouper.name 'Top-level Administration' %} Groups</h1>
   <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>
         <th>{{grouptype.grouper}}</th>
         <th>Name</th>
-        <th>Lead</th>
       </tr>
     </thead>
     <tbody>
@@ -27,11 +26,6 @@
         <tr>
           <td><a href="{% url "ietf.group.views.group_home" acronym=group.acronym %}">{{ group.acronym }}</a></td>
           <td>{{ group.name }}</td>
-          <td>
-            {% for lead in group.leads %}
-              <a href="mailto:{{ lead.email.address }}">{{ lead.person.plain_name }}</a>{% if not forloop.last %}, {% endif %}
-            {% endfor %}
-          </td>
         </tr>
     {% endfor %}
     </tbody>
