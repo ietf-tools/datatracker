@@ -280,7 +280,7 @@ class GroupPagesTests(TestCase):
             'rg'   : ['secretary','irtf-chair'],
             'ag'   : ['secretary', 'ad' ],
             'rag'  : ['secretary', 'irtf-chair'],
-            'team' : ['secretary',], # The code currently doesn't let ads edit teams or directorates. Maybe it should.
+            'team' : ['secretary' , 'ad'],
             'dir'  : ['secretary',],
             'review'  : ['secretary',],
             'program' : ['secretary', 'iab-member'],

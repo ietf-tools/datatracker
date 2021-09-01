@@ -155,7 +155,7 @@ class InterimMeetingModelForm(forms.ModelForm):
             return  # don't reduce group options
         q_objects = Q()
         if has_role(self.user, "Area Director"):
-            q_objects.add(Q(type__in=["wg", "ag"], state__in=("active", "proposed", "bof")), Q.OR)
+            q_objects.add(Q(type__in=["wg", "ag", "team"], state__in=("active", "proposed", "bof")), Q.OR)
         if has_role(self.user, "IRTF Chair"):
             q_objects.add(Q(type__in=["rg", "rag"], state__in=("active", "proposed")), Q.OR)
         if has_role(self.user, "WG Chair"):
