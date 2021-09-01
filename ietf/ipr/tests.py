@@ -632,16 +632,26 @@ I would like to revoke this declaration.
         self.assertEqual(len(outbox), 1)
         self.assertTrue('joe@test.com' in outbox[0]['To'])
         
-        # test process response uninteresting message
+        # test process response uninteresting messages
         addrs = gather_address_lists('ipr_disclosure_submitted').as_strings()
-        message_string = """To: {}
-Cc: {}
-From: joe@test.com
-Date: {}
-Subject: test
-""".format(addrs.to, addrs.cc, datetime.datetime.now().ctime())
-        result = process_response_email(message_string)
-        self.assertIsNone(result)
+        uninteresting_message_strings = [
+            ("To: {to}\nCc: {cc}\nFrom: joe@test.com\nDate: {date}\nSubject: test\n"),
+            ("Cc: {cc}\nFrom: joe@test.com\nDate: {date}\nSubject: test\n"),  # no To
+            ("To: {to}\nFrom: joe@test.com\nDate: {date}\nSubject: test\n"),  # no Cc
+            ("From: joe@test.com\nDate: {date}\nSubject: test\n"),  # no To or Cc
+            ("Cc: {cc}\nDate: {date}\nSubject: test\n"),  # no To
+            ("To: {to}\nDate: {date}\nSubject: test\n"),  # no Cc
+            ("Date: {date}\nSubject: test\n"),  # no To or Cc
+        ]
+        for message_string in uninteresting_message_strings:
+            result = process_response_email(
+                message_string.format(
+                    to=addrs.to,
+                    cc=addrs.cc,
+                    date=datetime.datetime.now().ctime()
+                )
+            )
+            self.assertIsNone(result)
         
         # test process response
         message_string = """To: {}

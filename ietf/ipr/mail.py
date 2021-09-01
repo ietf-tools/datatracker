@@ -175,8 +175,8 @@ def process_response_email(msg):
     IprEvent.  Create a Message object for the incoming message and associate it to
     the original message via new IprEvent"""
     message = email.message_from_string(force_str(msg))
-    to = message.get('To')
-    
+    to = message.get('To', '')
+
     # exit if this isn't a response we're interested in (with plus addressing)
     local,domain = get_base_ipr_request_address().split('@')
     if not re.match(r'^{}\+[a-zA-Z0-9_\-]{}@{}'.format(local,'{16}',domain),to):
