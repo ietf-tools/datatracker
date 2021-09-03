@@ -8,9 +8,12 @@ from django.core.management.base import CommandError
 from ietf.utils.test_utils import TestCase
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.person.factories import PersonFactory
-from ietf.meeting.models import Constraint, TimerangeName, BusinessConstraint
-from ietf.meeting.factories import MeetingFactory, RoomFactory, TimeSlotFactory, SessionFactory
-from ietf.meeting.management.commands.generate_schedule import ScheduleHandler
+from ietf.meeting.models import Constraint, TimerangeName, BusinessConstraint, SchedTimeSessAssignment, Schedule
+from ietf.meeting.factories import MeetingFactory, RoomFactory, TimeSlotFactory, SessionFactory, ScheduleFactory
+from ietf.meeting.management.commands import generate_schedule
+from ietf.name.models import ConstraintName
+
+import debug                            # pyflakes:ignore
 
 
 class ScheduleGeneratorTest(TestCase):
@@ -58,16 +61,17 @@ class ScheduleGeneratorTest(TestCase):
 
         self.person1 = PersonFactory()
 
+        self.stdout = StringIO()
+
     def test_normal_schedule(self):
-        stdout = StringIO()
         self._create_basic_sessions()
-        generator = ScheduleHandler(stdout, self.meeting.number, verbosity=3)
+        generator = generate_schedule.ScheduleHandler(self.stdout, self.meeting.number, verbosity=3)
         violations, cost = generator.run()
         self.assertEqual(violations, self.fixed_violations)
         self.assertEqual(cost, self.fixed_cost)
 
-        stdout.seek(0)
-        output = stdout.read()
+        self.stdout.seek(0)
+        output = self.stdout.read()
         self.assertIn('WARNING: session wg2 (pk 13) has no attendees set', output)
         self.assertIn('scheduling 13 sessions in 20 timeslots', output)
         self.assertIn('Optimiser starting run 1', output)
@@ -77,7 +81,6 @@ class ScheduleGeneratorTest(TestCase):
         self.assertEqual(schedule.assignments.count(), 13)
 
     def test_unresolvable_schedule(self):
-        stdout = StringIO()
         self._create_basic_sessions()
         for group in self.all_groups:
             group.parent = self.area1
@@ -88,28 +91,169 @@ class ScheduleGeneratorTest(TestCase):
             Constraint.objects.create(meeting=self.meeting, source=group,
                                       name_id='bethere', person=self.person1)
 
-        generator = ScheduleHandler(stdout, self.meeting.number, verbosity=2)
+        generator = generate_schedule.ScheduleHandler(self.stdout, self.meeting.number, verbosity=2)
         violations, cost = generator.run()
         self.assertNotEqual(violations, [])
         self.assertGreater(cost, self.fixed_cost)
 
-        stdout.seek(0)
-        output = stdout.read()
+        self.stdout.seek(0)
+        output = self.stdout.read()
         self.assertIn('Optimiser did not find perfect schedule', output)
 
     def test_too_many_sessions(self):
-        stdout = StringIO()
         self._create_basic_sessions()
         self._create_basic_sessions()
         with self.assertRaises(CommandError):
-            generator = ScheduleHandler(stdout, self.meeting.number, verbosity=0)
+            generator = generate_schedule.ScheduleHandler(self.stdout, self.meeting.number, verbosity=0)
             generator.run()
 
     def test_invalid_meeting_number(self):
-        stdout = StringIO()
         with self.assertRaises(CommandError):
-            generator = ScheduleHandler(stdout, 'not-valid-meeting-number-aaaa', verbosity=0)
+            generator = generate_schedule.ScheduleHandler(self.stdout, 'not-valid-meeting-number-aaaa', verbosity=0)
             generator.run()
+
+    def test_base_schedule(self):
+        self._create_basic_sessions()
+        base_schedule = self._create_base_schedule()
+        assignment = base_schedule.assignments.first()
+        base_session = assignment.session
+        base_timeslot = assignment.timeslot
+
+        generator = generate_schedule.ScheduleHandler(
+            self.stdout,
+            self.meeting.number,
+            verbosity=3,
+            base_id=generate_schedule.ScheduleId.from_schedule(base_schedule),
+        )
+        violations, cost = generator.run()
+
+        expected_violations = self.fixed_violations + [
+            '{}: scheduled in too small room'.format(base_session.group.acronym),
+        ]
+        expected_cost = sum([
+            self.fixed_cost,
+            BusinessConstraint.objects.get(slug='session_requires_trim').penalty,
+        ])
+
+        self.assertEqual(violations, expected_violations)
+        self.assertEqual(cost, expected_cost)
+
+        generated_schedule = Schedule.objects.get(name=generator.name)
+        self.assertEqual(generated_schedule.base, base_schedule,
+                         'Base schedule should be attached to generated schedule')
+        self.assertCountEqual(
+            [a.session for a in base_timeslot.sessionassignments.all()],
+            [base_session],
+            'A session must not be scheduled on top of a base schedule assignment',
+        )
+
+        self.stdout.seek(0)
+        output = self.stdout.read()
+        self.assertIn('Applying schedule {} as base schedule'.format(
+            generate_schedule.ScheduleId.from_schedule(base_schedule)
+        ), output)
+        self.assertIn('WARNING: session wg2 (pk 13) has no attendees set', output)
+        self.assertIn('scheduling 13 sessions in 19 timeslots', output)  # 19 because base is using one
+        self.assertIn('Optimiser starting run 1', output)
+        self.assertIn('Optimiser found an optimal schedule', output)
+
+    def test_base_schedule_dynamic_cost(self):
+        """Conflicts with the base schedule should contribute to dynamic cost"""
+        # create the base schedule
+        base_schedule = self._create_base_schedule()
+        assignment = base_schedule.assignments.first()
+        base_session = assignment.session
+        base_timeslot = assignment.timeslot
+
+        # create another base session that conflicts with the first
+        SessionFactory(
+            meeting=self.meeting,
+            group=self.wg2,
+            attendees=10,
+            add_to_schedule=False,
+        )
+        SchedTimeSessAssignment.objects.create(
+            schedule=base_schedule,
+            session=SessionFactory(meeting=self.meeting, group=self.wg2, attendees=10, add_to_schedule=False),
+            timeslot=self.meeting.timeslot_set.filter(
+                time=base_timeslot.time + datetime.timedelta(days=1)
+            ).exclude(
+                sessionassignments__schedule=base_schedule
+            ).first(),
+        )
+        # make the base session group conflict with wg1 and wg2
+        Constraint.objects.create(
+            meeting=self.meeting,
+            source=base_session.group,
+            name_id='tech_overlap',
+            target=self.wg1,
+        )
+        Constraint.objects.create(
+            meeting=self.meeting,
+            source=base_session.group,
+            name_id='wg_adjacent',
+            target=self.wg2,
+        )
+
+        # create the session to schedule that will conflict
+        conflict_session = SessionFactory(meeting=self.meeting, group=self.wg1, add_to_schedule=False,
+                                          attendees=10, requested_duration=datetime.timedelta(hours=1))
+        conflict_timeslot = self.meeting.timeslot_set.filter(
+            time=base_timeslot.time,  # same time as base session
+            location__capacity__gte=conflict_session.attendees,  # no capacity violation
+        ).exclude(
+            sessionassignments__schedule=base_schedule  # do not use the same timeslot
+        ).first()
+
+        # Create the ScheduleHandler with the base schedule
+        handler = generate_schedule.ScheduleHandler(
+            self.stdout,
+            self.meeting.number,
+            max_cycles=1,
+            base_id=generate_schedule.ScheduleId.from_schedule(base_schedule),
+        )
+
+        # run once to be sure everything is primed, we'll ignore the outcome
+        handler.run()
+
+        timeslot_lut = {ts.timeslot_pk: ts for ts in handler.schedule.timeslots}
+        session_lut = {sess.session_pk: sess for sess in handler.schedule.sessions}
+        # now create schedule with a conflict
+        handler.schedule.schedule = {
+            timeslot_lut[conflict_timeslot.pk]: session_lut[conflict_session.pk],
+        }
+
+        # check that we get the expected dynamic cost - should NOT include conflict with wg2
+        # because that is in the base schedule
+        violations, cost = handler.schedule.calculate_dynamic_cost()
+        self.assertCountEqual(
+            violations,
+            ['{}: group conflict with {}'.format(base_session.group.acronym, self.wg1.acronym)]
+        )
+        self.assertEqual(
+            cost,
+            ConstraintName.objects.get(pk='tech_overlap').penalty,
+        )
+
+        # check the total cost - now should see wg2 and capacity conflicts
+        violations, cost = handler.schedule.total_schedule_cost()
+        self.assertCountEqual(
+            violations,
+            [
+                '{}: group conflict with {}'.format(base_session.group.acronym, self.wg1.acronym),
+                '{}: missing adjacency with {}, adjacents are: '.format(base_session.group.acronym, self.wg2.acronym),
+                '{}: scheduled in too small room'.format(base_session.group.acronym),
+            ]
+        )
+        self.assertEqual(
+            cost,
+            sum([
+                BusinessConstraint.objects.get(pk='session_requires_trim').penalty,
+                ConstraintName.objects.get(pk='wg_adjacent').penalty,
+                ConstraintName.objects.get(pk='tech_overlap').penalty,
+            ]),
+        )
+
 
     def _create_basic_sessions(self):
         for group in self.all_groups:
@@ -146,3 +290,31 @@ class ScheduleGeneratorTest(TestCase):
                                  'No timeslot with sufficient capacity available for wg2, '
                                  'requested 500, trimmed to 100']
         self.fixed_cost = BusinessConstraint.objects.get(slug='session_requires_trim').penalty * 2
+
+    def _create_base_schedule(self):
+        """Create a base schedule
+
+        Generates a base schedule using the first Monday timeslot with a location
+        with capacity smaller than 200.
+        """
+        base_schedule = ScheduleFactory(meeting=self.meeting)
+        base_reg_session = SessionFactory(
+            meeting=self.meeting,
+            requested_duration=datetime.timedelta(minutes=60),
+            attendees=200,
+           add_to_schedule=False
+        )
+        # use a timeslot not on Sunday
+        ts = self.meeting.timeslot_set.filter(
+            time__gt=self.meeting.date + datetime.timedelta(days=1),
+            location__capacity__lt=base_reg_session.attendees,
+        ).order_by(
+            'time'
+        ).first()
+        SchedTimeSessAssignment.objects.create(
+            schedule=base_schedule,
+            session=base_reg_session,
+            timeslot=ts,
+        )
+        return base_schedule
+
