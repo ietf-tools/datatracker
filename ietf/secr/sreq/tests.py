@@ -395,6 +395,7 @@ class SubmitRequestCase(TestCase):
         group = GroupFactory(acronym='ames', parent=area)
         group2 = GroupFactory(acronym='ames2', parent=area)
         group3 = GroupFactory(acronym='ames2', parent=area)
+        group4 = GroupFactory(acronym='ames3', parent=area)
         RoleFactory(name_id='chair', group=group, person__user__username='ameschairman')
         resource = ResourceAssociation.objects.create(name_id='project')
         # Bit of a test data hack - the fixture now has no used resources to pick from
@@ -409,7 +410,7 @@ class SubmitRequestCase(TestCase):
                      'length_session2':'3600',
                      'attendees':'10',
                      'bethere':str(ad.pk),
-                     'constraint_chair_conflict':'',
+                     'constraint_chair_conflict':group4.acronym,
                      'comments':'',
                      'resources': resource.pk,
                      'session_time_relation': 'subsequent-days',
@@ -450,6 +451,8 @@ class SubmitRequestCase(TestCase):
         self.assertTrue("Can't meet: Thursday early afternoon, Thursday late" in notification_payload)
         self.assertTrue('Second session joint with: {}'.format(group3.acronym) in notification_payload)
         self.assertTrue(ad.ascii_name() in notification_payload)
+        self.assertIn(ConstraintName.objects.get(slug='chair_conflict').name, notification_payload)
+        self.assertIn(group.acronym, notification_payload)
 
 class LockAppTestCase(TestCase):
     def setUp(self):
