@@ -6,22 +6,24 @@
 <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
 {% endblock %}
 
-{% block title %}Active programs{% endblock %}
+{% block title %}Active IAB groups{% endblock %}
 
 
 {% block content %}
   {% origin %}
-  <h1>Active programs</h1>
+  {% regroup iabgroups by type as grouped_groups %}
+  {% for grouptype in grouped_groups %}
+  <h1>Active {% firstof grouptype.grouper.verbose_name grouptype.grouper.name %}{{grouptype.list|pluralize}}</h1>
   <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>
-        <th>Program</th>
+        <th>{{grouptype.grouper}}</th>
         <th>Name</th>
         <th>Lead</th>
       </tr>
     </thead>
     <tbody>
-    {% for group in programs %}
+    {% for group in grouptype.list %}
         <tr>
           <td><a href="{% url "ietf.group.views.group_home" acronym=group.acronym %}">{{ group.acronym }}</a></td>
           <td>{{ group.name }}</td>
@@ -34,6 +36,7 @@
     {% endfor %}
     </tbody>
   </table>
+  {% endfor %}
 
 {% endblock %}
 

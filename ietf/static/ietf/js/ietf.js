@@ -224,8 +224,13 @@ $(document).ready(function () {
                 var menu = ['<ul class="dropdown-menu" role="menu">'];
 
                 var groups = data[parentId];
+                var gtype = ""
                 for (var i = 0; i < groups.length; ++i) {
                     var g = groups[i];
+                    if (g.type != gtype) {
+                        menu.push('<li class="separator">' + g.type + 's</li>')
+                        gtype = g.type
+                    }
                     menu.push('<li><a href="' + g.url + '">' + g.acronym +' &mdash; ' + g.name + '</a></li>');
                 }
 
