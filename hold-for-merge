@@ -1,11 +1,14 @@
 # -*- conf-mode -*-
 
+# Everyting below this line is OBE
+
+/personal/rjs/7.36.1.dev0@19302 # Handled this in an earlier merge
+
 /personal/housley/7.30.1.dev0@19195 # These two should probably be solved with
 /personal/housley/7.30.1.dev0@19197 # bringing can_manage_group_type into line
 				    # with can_manage_group, and updates to
 				    # the relevant GroupFeature objects
 
-# Everyting below this line is OBE
 
 /personal/rjs/7.29.1.dev0@18992 # commit testing
 /personal/markd/7.22.1.dev0@18859 # Will need to address differently - too much lag during migration for production
