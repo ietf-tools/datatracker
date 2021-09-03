@@ -615,7 +615,8 @@ class MeetingTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_proceedings_no_agenda(self):
-        meeting = MeetingFactory(type_id='ietf',populate_schedule=False,date=datetime.date.today())
+        # Meeting number must be larger than the last special-cased proceedings (currently 96)
+        meeting = MeetingFactory(type_id='ietf',populate_schedule=False,date=datetime.date.today(), number='100')
         url = urlreverse('ietf.meeting.views.proceedings')
         r = self.client.get(url)
         self.assertRedirects(r, urlreverse('ietf.meeting.views.materials'))
