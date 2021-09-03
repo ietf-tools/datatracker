@@ -3,7 +3,6 @@
 import re
 
 from django.shortcuts import render
-from django.views.decorators.cache import cache_page
 
 import debug                            # pyflakes:ignore
 
@@ -15,9 +14,6 @@ def groups(request):
 
     return render(request, "mailinglists/group_archives.html", { "groups": groups } )
 
-# we run the import_mailman_listinfo command via cron once per hour; we can
-# safely cache this for some time.
-@cache_page(15*60)
 def nonwg(request):
     groups = Group.objects.filter(type__features__acts_like_wg=True).exclude(state__in=['bof', 'conclude']).order_by("acronym")
 

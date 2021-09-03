@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
+{% load cache %}
 {% block title %}Non-Working Group email lists{% endblock %}
 
 {% block content %}
   {% origin %}
   <h1>Non-Working Group email lists</h1>
 
+  {% cache 900 nonwglisttable %}
   <table class="table table-condensed table-striped">
     <thead>
       <tr>
@@ -24,4 +25,5 @@
       {% endfor %}
     </tbody>
   </table>
+  {% endcache %}
 {% endblock %}
