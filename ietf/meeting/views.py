@@ -40,8 +40,9 @@ from django.template.loader import render_to_string
 from django.utils.encoding import force_str
 from django.utils.functional import curry
 from django.utils.text import slugify
-from django.views.decorators.cache import cache_page
 from django.utils.html import format_html
+from django.utils.timezone import now
+from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
 
@@ -468,6 +469,13 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     can_see, can_edit, secretariat = schedule_permissions(meeting, schedule, request.user)
 
+    lock_time = settings.MEETING_SESSION_LOCK_TIME
+    def timeslot_locked(ts):
+        meeting_now = now().astimezone(pytz.timezone(meeting.time_zone))
+        if not settings.USE_TZ:
+            meeting_now = meeting_now.replace(tzinfo=None)
+        return schedule.is_official and (ts.time - meeting_now < lock_time)
+
     if not can_see:
         if request.method == 'POST':
             permission_denied(request, "Can't view this schedule.")
@@ -713,21 +721,39 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
         return days
 
+    def _json_response(success, status=None, **extra_data):
+        if status is None:
+            status = 200 if success else 400
+        data = dict(success=success, **extra_data)
+        return JsonResponse(data, status=status)
+
     if request.method == 'POST':
         if not can_edit:
             permission_denied(request, "Can't edit this schedule.")
 
         action = request.POST.get('action')
 
-        # handle ajax requests
+        # Handle ajax requests. Most of these return JSON responses with at least a 'success' key.
+        # For the swapdays and swaptimeslots actions, the response is either a redirect to the
+        # updated page or a simple BadRequest error page. The latter should not normally be seen
+        # by the user, because the front end should be preventing most invalid requests.
         if action == 'assign' and request.POST.get('session', '').isdigit() and request.POST.get('timeslot', '').isdigit():
             session = get_object_or_404(sessions, pk=request.POST['session'])
             timeslot = get_object_or_404(timeslots_qs, pk=request.POST['timeslot'])
+            if timeslot_locked(timeslot):
+                return _json_response(False, error="Can't assign to this timeslot.")
 
             tombstone_session = None
 
             existing_assignments = SchedTimeSessAssignment.objects.filter(session=session, schedule=schedule)
+
             if existing_assignments:
+                assertion('len(existing_assignments) <= 1',
+                          note='Multiple assignments for {} in schedule {}'.format(session, schedule))
+
+                if timeslot_locked(existing_assignments[0].timeslot):
+                    return _json_response(False, error="Can't reassign this session.")
+
                 if schedule.pk == meeting.schedule_id and session.current_status == 'sched':
                     old_timeslot = existing_assignments[0].timeslot
                     # clone session and leave it as a tombstone
@@ -760,17 +786,27 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
                     timeslot=timeslot,
                 )
 
-            r = {'success': True}
             if tombstone_session:
                 prepare_sessions_for_display([tombstone_session])
-                r['tombstone'] = render_to_string("meeting/edit_meeting_schedule_session.html", {'session': tombstone_session})
-            return JsonResponse(r)
+                return _json_response(
+                    True,
+                    tombstone=render_to_string("meeting/edit_meeting_schedule_session.html",
+                                               {'session': tombstone_session})
+                )
+            else:
+                return _json_response(True)
 
         elif action == 'unassign' and request.POST.get('session', '').isdigit():
             session = get_object_or_404(sessions, pk=request.POST['session'])
-            SchedTimeSessAssignment.objects.filter(session=session, schedule=schedule).delete()
+            existing_assignments = SchedTimeSessAssignment.objects.filter(session=session, schedule=schedule)
+            assertion('len(existing_assignments) <= 1',
+                      note='Multiple assignments for {} in schedule {}'.format(session, schedule))
+            if not any(timeslot_locked(ea.timeslot) for ea in existing_assignments):
+                existing_assignments.delete()
+            else:
+                return _json_response(False, error="Can't unassign this session.")
 
-            return JsonResponse({'success': True})
+            return _json_response(True)
 
         elif action == 'swapdays':
             # updating the client side is a bit complicated, so just
@@ -778,13 +814,16 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
             swap_days_form = SwapDaysForm(request.POST)
             if not swap_days_form.is_valid():
-                return HttpResponse("Invalid swap: {}".format(swap_days_form.errors), status=400)
+                return HttpResponseBadRequest("Invalid swap: {}".format(swap_days_form.errors))
 
             source_day = swap_days_form.cleaned_data['source_day']
             target_day = swap_days_form.cleaned_data['target_day']
 
             source_timeslots = [ts for ts in timeslots_qs if ts.time.date() == source_day]
             target_timeslots = [ts for ts in timeslots_qs if ts.time.date() == target_day]
+            if any(timeslot_locked(ts) for ts in source_timeslots + target_timeslots):
+                return HttpResponseBadRequest("Can't swap these days.")
+
             swap_meeting_schedule_timeslot_assignments(schedule, source_timeslots, target_timeslots, target_day - source_day)
 
             return HttpResponseRedirect(request.get_full_path())
@@ -796,7 +835,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             # The origin/target timeslots do not need to be the same duration.
             swap_timeslots_form = SwapTimeslotsForm(meeting, request.POST)
             if not swap_timeslots_form.is_valid():
-                return HttpResponse("Invalid swap: {}".format(swap_timeslots_form.errors), status=400)
+                return HttpResponseBadRequest("Invalid swap: {}".format(swap_timeslots_form.errors))
 
             affected_rooms = swap_timeslots_form.cleaned_data['rooms']
             origin_timeslot = swap_timeslots_form.cleaned_data['origin_timeslot']
@@ -812,6 +851,10 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
                 time=target_timeslot.time,
                 duration=target_timeslot.duration,
             )
+            if (any(timeslot_locked(ts) for ts in origin_timeslots)
+                    or any(timeslot_locked(ts) for ts in target_timeslots)):
+                return HttpResponseBadRequest("Can't swap these timeslots.")
+
             swap_meeting_schedule_timeslot_assignments(
                 schedule,
                 list(origin_timeslots),
@@ -820,7 +863,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             )
             return HttpResponseRedirect(request.get_full_path())
 
-        return HttpResponse("Invalid parameters", status=400)
+        return _json_response(False, error="Invalid parameters")
 
     # Show only rooms that have regular sessions
     rooms = meeting.room_set.filter(session_types__slug='regular')
@@ -904,6 +947,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'unassigned_sessions': unassigned_sessions,
         'session_parents': session_parents,
         'hide_menu': True,
+        'lock_time': lock_time,
     })
 
 

@@ -12,18 +12,26 @@
     .parent-{{ parent.acronym }}.selected { background-color: {{ parent.light_scheduling_color }}; }
     .parent-{{ parent.acronym }}.other-session-selected { background-color: {{ parent.light_scheduling_color }}; }
   {% endfor %}
+  {# style past sessions to indicate they are not editable #}
+  .edit-meeting-schedule .edit-grid .timeslot.past-hint { filter: brightness(0.9); }
+  .edit-meeting-schedule .past-flag { visibility: hidden; font-size: smaller; }
+  .edit-meeting-schedule .edit-grid .timeslot.past .past-flag { visibility: visible; color: #aaaaaa; }
 {% endblock morecss %}
 
 {% block title %}{{ schedule.name }}: IETF {{ meeting.number }} meeting agenda{% endblock %}
 
 {% block js %}
+  <script type="text/javascript" src="{% static 'moment/min/moment.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'moment-timezone/builds/moment-timezone-with-data-10-year-range.min.js' %}"></script>
   <script type="text/javascript" src="{% static 'ietf/js/edit-meeting-schedule.js' %}"></script>
 {% endblock js %}
 
 
 {% block content %}
   {% origin %}
-  <div class="edit-meeting-schedule">
+  <div class="edit-meeting-schedule {% if schedule.is_official %}official-schedule{% endif %}"
+       data-timezone="{{ meeting.time_zone }}"
+       data-lock-seconds="{{ lock_time.total_seconds }}">
 
     <p class="pull-right">
       {% if can_edit_properties %}
@@ -90,7 +98,11 @@
         {% for day, day_data in days.items %}
           <div class="day">
             <div class="day-label">
-              <strong>{{ day|date:"l" }}</strong> <i class="fa fa-exchange swap-days" data-dayid="{{ day.isoformat }}"></i><br>
+              <strong>{{ day|date:"l" }}</strong>
+              <i class="fa fa-exchange swap-days"
+                 data-dayid="{{ day.isoformat }}"
+                 data-start="{{ day.isoformat }}"></i>
+              <br>
               {{ day|date:"N j, Y" }}
             </div>
 
@@ -106,6 +118,7 @@
                         {{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}
                         <i class="fa fa-exchange swap-timeslot-col"
                            data-origin-label="{{ day|date:"l, N j" }}, {{ t.time|date:"G:i" }}-{{ t.end_time|date:"G:i" }}"
+                           data-start="{{ t.utc_start_time.isoformat }}"
                            data-timeslot-pk="{{ t.pk }}"></i>
                       </span>
                     </div>
@@ -114,9 +127,17 @@
                 {% for room_data in rgroup %}{% with room_data.room as room %}
                   <div class="timeslots" data-roomcapacity="{{ room.capacity }}">
                     {% for t in room_data.timeslots %}
-                      <div id="timeslot{{ t.pk }}" class="timeslot {{ t.start_end_group }}" data-start="{{ t.time.isoformat }}" data-end="{{ t.end_time.isoformat }}" data-duration="{{ t.duration.total_seconds }}" data-scheduledatlabel="{{ t.time|date:"l G:i" }}-{{ t.end_time|date:"G:i" }}" style="width: {{ t.layout_width }}rem;">
+                      <div id="timeslot{{ t.pk }}"
+                           class="timeslot {{ t.start_end_group }}"
+                           data-start="{{ t.utc_start_time.isoformat }}"
+                           data-end="{{ t.utc_end_time.isoformat }}"
+                           data-duration="{{ t.duration.total_seconds }}"
+                           data-scheduledatlabel="{{ t.time|date:"l G:i" }}-{{ t.end_time|date:"G:i" }}"
+                           style="width: {{ t.layout_width }}rem;">
                         <div class="time-label">
-                          {{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}
+                          <div class="past-flag">&nbsp;{# blank div keeps time centered vertically #}</div>
+                          <div>{{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}</div>
+                          <div class="past-flag">Past</div>
                         </div>
 
                         <div class="drop-target">
@@ -217,7 +238,11 @@
           <div class="modal-body">
             {% for day in days %}
               <label>
-                <input type="radio" name="target_day" value="{{ day.isoformat }}"> {{ day|date:"l, N j, Y" }}
+                <input type="radio"
+                       name="target_day"
+                       data-start="{{ day.isoformat }}"
+                       value="{{ day.isoformat }}">
+                {{ day|date:"l, N j, Y" }}
               </label>
             {% endfor %}
           </div>
@@ -255,7 +280,11 @@
                   <div class="timeslot-options">
                     {% for t in rgroup.0.timeslots %}
                       <label>
-                        <input type="radio" name="target_timeslot" value="{{ t.pk }}">{{ t.time|date:"G:i" }}-{{ t.end_time|date:"G:i" }}
+                        <input type="radio"
+                               name="target_timeslot"
+                               value="{{ t.pk }}"
+                               data-start="{{ t.utc_start_time.isoformat }}">
+                        {{ t.time|date:"G:i" }}-{{ t.end_time|date:"G:i" }}
                       </label>
                     {% endfor %}
                   </div>
