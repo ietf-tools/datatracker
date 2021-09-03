@@ -294,6 +294,8 @@ def active_groups(request, group_type=None):
         return active_review_dirs(request)
     elif group_type in ("program", "iabasg"):
         return active_iab(request)
+    elif group_type == "adm":
+        return active_adm(request)
     else:
         raise Http404
 
@@ -326,6 +328,10 @@ def active_iab(request):
     for group in iabgroups:
         group.leads = sorted(roles(group, "lead"), key=extract_last_name)
     return render(request, 'group/active_iabgroups.html', {'iabgroups' : iabgroups })
+
+def active_adm(request):
+    adm = Group.objects.filter(type="adm", state="active").order_by("parent","name")
+    return render(request, 'group/active_adm.html', {'adm' : adm })
 
 def active_areas(request):
         areas = Group.objects.filter(type="area", state="active").order_by("name")  
@@ -1290,7 +1296,7 @@ def group_json(request, acronym):
 @cache_control(public=True, max_age=30*60)
 @cache_page(30 * 60)
 def group_menu_data(request):
-    groups = Group.objects.filter(state="active", parent__state="active").filter(Q(type__features__acts_like_wg=True)|Q(type_id__in=['program','iabasg'])).order_by("-type_id","acronym")
+    groups = Group.objects.filter(state="active", parent__state="active").filter(Q(type__features__acts_like_wg=True)|Q(type_id__in=['program','iabasg'])|Q(parent__acronym='ietfadminllc')).order_by("-type_id","acronym")
 
     groups_by_parent = defaultdict(list)
     for g in groups:
