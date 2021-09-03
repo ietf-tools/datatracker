@@ -8,9 +8,12 @@ import datetime
 import io
 import os
 import pytz
+import random
 import re
 import string
 
+from collections import namedtuple
+from pathlib import Path
 from urllib.parse import urljoin
 
 import debug                            # pyflakes:ignore
@@ -30,13 +33,22 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
-from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName, ImportantDateName, TimerangeName, SlideSubmissionStatusName
+from ietf.name.models import (
+    MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName,
+    ImportantDateName, TimerangeName, SlideSubmissionStatusName, ProceedingsMaterialTypeName,
+)
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import date2datetime
 from ietf.utils.models import ForeignKey
+from ietf.utils.validators import (
+    MaxImageSizeValidator, WrappedValidator, validate_file_size, validate_mime_type,
+    validate_file_extension,
+)
+from ietf.utils.fields import MissingOkImageField
+from ietf.utils.log import unreachable
 
 countries = list(pytz.country_names.items())
 countries.sort(key=lambda x: x[1])
@@ -218,6 +230,63 @@ class Meeting(models.Model):
             return int(self.number)
         else:
             return None
+
+    def get_proceedings_materials(self):
+        """Get proceedings materials"""
+        return self.proceedings_materials.filter(
+            document__states__slug='active', document__states__type_id='procmaterials'
+        ).order_by('type__order')
+
+    def get_attendance(self):
+        """Get the meeting attendance from the MeetingRegistrations
+
+        Returns a NamedTuple with onsite and online attributes. Returns None if the record is unavailable
+        for this meeting.
+        """
+        number = self.get_number()
+        if number is None or number < 110:
+            return None
+        Attendance = namedtuple('Attendance', 'onsite online')
+        return Attendance(
+            onsite=Person.objects.filter(
+                meetingregistration__meeting=self,
+                meetingregistration__attended=True,
+                meetingregistration__reg_type__contains='in_person',
+            ).distinct().count(),
+            online=Person.objects.filter(
+                meetingregistration__meeting=self,
+                meetingregistration__attended=True,
+                meetingregistration__reg_type__contains='remote',
+            ).distinct().count(),
+        )
+
+    @property
+    def proceedings_format_version(self):
+        """Indicate version of proceedings that should be used for this meeting
+
+        Only makes sense for IETF meeting. Returns None for any meeting without a purely numeric number.
+
+        Uses settings.PROCEEDINGS_VERSION_CHANGES. Versions start at 1. Entries
+        in the array are the first meeting number using each version.
+        """
+        if not hasattr(self, '_proceedings_format_version'):
+            if not self.number.isdigit():
+                version = None  # no version for non-IETF meeting
+            else:
+                version = len(settings.PROCEEDINGS_VERSION_CHANGES)  # start assuming latest version
+                mtg_number = self.get_number()
+                if mtg_number is None:
+                    unreachable('2021-08-10')
+                else:
+                    # Find the index of the first entry in the version change array that
+                    # is >= this meeting's number. The first entry in the array is 0, so the
+                    # version is always >= 1 for positive meeting numbers.
+                    for vers, threshold in enumerate(settings.PROCEEDINGS_VERSION_CHANGES):
+                        if mtg_number < threshold:
+                            version = vers
+                            break
+            self._proceedings_format_version = version  # save this for later
+        return self._proceedings_format_version
 
     @property
     def session_constraintnames(self):
@@ -1407,3 +1476,78 @@ class SlideSubmission(models.Model):
 
     def staged_url(self):
         return "".join([settings.SLIDE_STAGING_URL, self.filename])
+
+
+class ProceedingsMaterial(models.Model):
+    meeting = ForeignKey(Meeting, related_name='proceedings_materials')
+    document = ForeignKey(
+        Document,
+        limit_choices_to=dict(type_id='procmaterials'),
+        unique=True,
+    )
+    type = ForeignKey(ProceedingsMaterialTypeName)
+
+    class Meta:
+        unique_together = (('meeting', 'type'),)
+
+    def __str__(self):
+        return self.document.title
+
+    def get_href(self):
+        return f'{self.document.get_href(self.meeting)}'
+
+    def active(self):
+        return self.document.get_state().slug == 'active'
+
+    def is_url(self):
+        return len(self.document.external_url) > 0
+
+def _host_upload_path(instance : 'MeetingHost', filename):
+    """Compute filename relative to the storage location
+
+    Must live outside a class to allow migrations to deconstruct fields that use it
+    """
+    num = instance.meeting.number
+    path = (
+            Path(num) / 'meetinghosts' / f'logo-{"".join(random.choices(string.ascii_lowercase, k=10))}'
+    ).with_suffix(
+        Path(filename).suffix
+    )
+    return str(path)
+
+
+class MeetingHost(models.Model):
+    """Meeting sponsor"""
+    meeting = ForeignKey(Meeting, related_name='meetinghosts')
+    name = models.CharField(max_length=255, blank=False)
+    logo = MissingOkImageField(
+        storage=NoLocationMigrationFileSystemStorage(location=settings.MEETINGHOST_LOGO_PATH),
+        upload_to=_host_upload_path,
+        width_field='logo_width',
+        height_field='logo_height',
+        blank=False,
+        validators=[
+            MaxImageSizeValidator(
+                settings.MEETINGHOST_LOGO_MAX_UPLOAD_WIDTH,
+                settings.MEETINGHOST_LOGO_MAX_UPLOAD_HEIGHT,
+            ),
+            WrappedValidator(validate_file_size, True),
+            WrappedValidator(
+                validate_file_extension,
+                settings.MEETING_VALID_UPLOAD_EXTENSIONS['meetinghostlogo'],
+            ),
+            WrappedValidator(
+                validate_mime_type,
+                settings.MEETING_VALID_UPLOAD_MIME_TYPES['meetinghostlogo'],
+                True,
+            ),
+        ],
+    )
+    # These are filled in by the ImageField allow retrieval of image dimensions
+    # without processing the image each time it's loaded.
+    logo_width = models.PositiveIntegerField(null=True)
+    logo_height = models.PositiveIntegerField(null=True)
+
+    class Meta:
+        unique_together = (('meeting', 'name'),)
+        ordering = ('pk',)

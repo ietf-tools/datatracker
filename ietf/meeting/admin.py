@@ -6,7 +6,8 @@ from django.contrib import admin
 
 from ietf.meeting.models import (Meeting, Room, Session, TimeSlot, Constraint, Schedule,
     SchedTimeSessAssignment, ResourceAssociation, FloorPlan, UrlResource,
-    SessionPresentation, ImportantDate, SlideSubmission, SchedulingEvent, BusinessConstraint)
+    SessionPresentation, ImportantDate, SlideSubmission, SchedulingEvent, BusinessConstraint,
+    ProceedingsMaterial, MeetingHost)
 
 
 class UrlResourceAdmin(admin.ModelAdmin):
@@ -186,3 +187,17 @@ class SlideSubmissionAdmin(admin.ModelAdmin):
     raw_id_fields = ['submitter', 'session']
 
 admin.site.register(SlideSubmission, SlideSubmissionAdmin)
+
+
+class ProceedingsMaterialAdmin(admin.ModelAdmin):
+    model = ProceedingsMaterial
+    list_display = ['meeting', 'type', 'document']
+    raw_id_fields = ['meeting', 'document']
+admin.site.register(ProceedingsMaterial, ProceedingsMaterialAdmin)
+
+
+class MeetingHostAdmin(admin.ModelAdmin):
+    model = MeetingHost
+    list_display = ['name', 'meeting']
+    raw_id_fields = ['meeting']
+admin.site.register(MeetingHost, MeetingHostAdmin)

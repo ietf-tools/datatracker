@@ -35,9 +35,10 @@
       <th class="col-md-1">{% if doc.meeting_related %}Meeting{% endif %} {{ doc.type.name }}</th>
       <td class="edit col-md-1"></td>
       <td class="col-md-10">
-        {{ doc.group.name }}
-        <a href="{{ doc.group.about_url }}">({{ doc.group.acronym }})</a> {{ doc.group.type.name }}
-
+        {% if doc.group %}
+          {{ doc.group.name }}
+          <a href="{{ doc.group.about_url }}">({{ doc.group.acronym }})</a> {{ doc.group.type.name }}
+        {% endif %}
         {% if snapshot %}
           <span class="label label-warning">Snapshot</span>
         {% endif %}
@@ -88,23 +89,35 @@
       </tr>
     {% endif %}
 
-    {% if presentations or can_manage_material %}
+    {% if doc.type_id == 'procmaterials' and doc.external_url|length > 0 %}
       <tr>
-        <th>On agenda</th>
-        <td class="edit">
-          {% if not snapshot and can_manage_material %}
-            {% doc_edit_button "ietf.doc.views_doc.all_presentations" name=doc.name %}
-          {% endif %}
-        </td>
-
+        <th>External URL</th>
+        <td class="edit"></td>
         <td>
-          {% if presentations %}
-            {% for pres in presentations %}{{ pres.session.short_name }} at {{ pres.session.meeting }} {% if pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
-          {% else %}
-            None
-          {% endif %}
+          <a href="{{ doc.external_url }}">{{ doc.external_url }}</a>
         </td>
       </tr>
+    {% endif %}
+
+    {% if doc.type_id != 'procmaterials' %}
+      {% if presentations or can_manage_material %}
+        <tr>
+          <th>On agenda</th>
+          <td class="edit">
+            {% if not snapshot and can_manage_material %}
+              {% doc_edit_button "ietf.doc.views_doc.all_presentations" name=doc.name %}
+            {% endif %}
+          </td>
+
+          <td>
+            {% if presentations %}
+              {% for pres in presentations %}{{ pres.session.short_name }} at {{ pres.session.meeting }} {% if pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
+            {% else %}
+              None
+            {% endif %}
+          </td>
+        </tr>
+      {% endif %}
     {% endif %}
 
     <tr>
@@ -116,7 +129,7 @@
   </table>
 
   <p class="buttonlist">
-    {% if not snapshot and can_manage_material and in_group_materials_types %}
+    {% if can_upload %}
       <a class="btn btn-default" href="{% url 'ietf.doc.views_material.edit_material' name=doc.name action="revise" %}">Upload New Revision</a>
     {% endif %}
   </p>

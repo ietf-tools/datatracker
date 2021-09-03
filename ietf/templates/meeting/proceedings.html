@@ -4,6 +4,45 @@
 
 {% load ietf_filters static %}
 
+{% block morecss %}
+  .proceedings-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2rem;
+    font-size: 1.8rem;
+  }
+  .proceedings-title > h1 {font-size: xx-large; margin-bottom: 0;}
+  .proceedings-date {font-size: x-large;}
+  .proceedings-intro {
+    font-size: large;
+    display: flex;
+    justify-content:
+    space-around;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+  }
+  .proceedings-intro.with-divider {border-bottom-style: solid; border-width: 1px;}
+  .proceedings-intro > .proceedings-column {display: flex; flex-direction: column;}
+  .proceedings-intro > .proceedings-column > .proceedings-row {display: flex;}
+  .finalize-button {position: absolute; top: 0; right: 0;}
+  .proceedings-intro .host-logo {
+    max-height: {{ meetinghost_logo.max_height }}px;
+    max-width: {{ meetinghost_logo.max_width }}px;
+    overflow: hidden;
+    margin: 0 0 0 1rem;
+  }
+  {# Resize logo so longest edge matches the display size, maintaining aspect ratio. #}
+  {% widthratio meetinghost_logo.max_width meetinghost_logo.max_height 1 as displayed_aspect %}
+  {% for host in meeting.meetinghosts.all %}
+    {% widthratio host.logo.width host.logo.height 1 as logo_aspect %}
+    .host-logo img.host{{ forloop.counter }}  {
+      {% if logo_aspect > displayed_aspect %}width: 100%; height: auto;{% else %}width: auto; height: 100%;{% endif %}
+    }
+  {% endfor %}
+{% endblock %}
+
 {% block pagehead %}
 <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
 {% endblock %}
@@ -17,26 +56,19 @@
   <div class="row">
     <div class="col-md-10">
 
-      <h1>IETF {{ meeting.number }} {% if not meeting.proceedings_final %}Draft{% endif %} Proceedings 
-          {% if user|has_role:"Secretariat" and not meeting.proceedings_final %}
-              <a class="btn btn-default"  href="{% url 'ietf.meeting.views.finalize_proceedings' num=meeting.number %}">Finalize Proceedings</a>
-          {% endif %}
-      </h1>
+      {% if user|has_role:"Secretariat" and not meeting.proceedings_final %}
+        <a class="btn btn-default finalize-button"
+           href="{% url 'ietf.meeting.views.finalize_proceedings' num=meeting.number %}">
+          Finalize Proceedings
+        </a>
+      {% endif %}
 
       {# cache for 15 minutes, as long as there's no proceedings activity. takes 4-8 seconds to generate. #}
       {% load cache %}
       {% cache 900 ietf_meeting_proceedings meeting.number cache_version %}
 
-      {% if meeting.proceedings_final %}
-      <h2 class="anchor-target" id="introduction">Introduction</h2>
-      <div>
-        <a href="{% url 'ietf.meeting.views.proceedings_acknowledgements' num=meeting.number %}">Acknowledgements</a><br>
-        <a href="{% url 'ietf.meeting.views.proceedings_overview' num=meeting.number %}">IETF Overview</a><br>
-        <a href="{% url 'ietf.meeting.views.proceedings_progress_report' num=meeting.number %}">Progress Report</a><br>
-        <a href="{% url 'ietf.meeting.views.proceedings_attendees' num=meeting.number %}">Attendees</a><br>
-        <a href="{% url 'ietf.meeting.views.important_dates' num=meeting.number %}">Important Dates</a><br>
-      </div>
-      {% endif %}
+        {% include 'meeting/proceedings/title.html' with meeting=meeting attendance=attendance only %}
+        {% include 'meeting/proceedings/introduction.html' with meeting=meeting only %}
 
         {% with "True" as show_agenda %}
           <!-- Plenaries -->

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2021, All Rights Reserved #}
+{% load origin bootstrap3 %}
+
+{% block morecss %}
+  img.logo {max-width: 30rem; max-height: 30rem;}
+{% endblock %}
+
+{% block title %}
+  Edit Hosts for {{ meeting }} Proceedings
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>
+      Edit Meeting Hosts<br>
+      <small>
+        {{ meeting }}
+      </small>
+  </h1>
+
+  {% if meeting.proceedings_final %}
+    <div class="alert alert-warning">
+      The proceedings for this meeting have already been finalized.
+    </div>
+  {% endif %}
+
+  <p class="help-block">
+    The entries below will appear on the proceedings as meeting hosts.
+    If you need to add more than there are slots, fill out the form below, save, and
+    reopen this page.
+  </p>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ formset.management_form }}
+    {{ formset.non_form_errors }}
+    <table class="table table-striped container-fluid">
+      {% for form in formset %}
+        <tr class="row">
+          <td class="col-md-3">
+            {% if form.instance.pk and form.instance.logo %}
+              <img class="logo"
+                   src="{% url 'ietf.meeting.views_proceedings.meetinghost_logo' num=meeting.number host_id=form.instance.pk %} ">
+            {% endif %}
+          </td>
+          <td class="col-md-9">
+            {% bootstrap_form form %}
+          </td>
+        </tr>
+    {% endfor %}
+    </table>
+    {% buttons %}
+      <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.materials' num=meeting.number %}">Back</a>
+      <button class="btn btn-primary" type="submit">Save</button>
+    {% endbuttons %}
+  </form>
+{% endblock content %}

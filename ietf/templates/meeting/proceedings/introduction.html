@@ -1,0 +1,57 @@
+{% comment %} Copyright The IETF Trust 2021, All Rights Reserved
+
+This renders the list of links below the title on the meeting proceedings page.
+{% endcomment %}
+<div class="proceedings-intro">
+  <div class="proceedings-column">
+    <div class="proceedings-row">
+      <a href="{% url 'ietf.meeting.views.proceedings_overview' num=meeting.number %}">
+        IETF Overview
+      </a>
+    </div>
+
+    <div class="proceedings-row">
+      <a href="{% url 'ietf.meeting.views.proceedings_attendees' num=meeting.number %}">
+        Participants
+      </a>
+    </div>
+
+    <div class="proceedings-row">
+      <a href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">
+        Meeting Agenda
+      </a>
+    </div>
+
+    <div class="proceedings-row">
+      <a href="{% url 'ietf.meeting.views.proceedings_progress_report' num=meeting.number %}">
+        Activity Report
+      </a>
+    </div>
+
+    <div class="proceedings-row">
+      <a href="{% url 'ietf.meeting.views.important_dates' num=meeting.number %}">
+        Important Dates
+      </a>
+    </div>
+
+    {% if meeting.proceedings_format_version < 3 %}
+      <div class="proceedings-row">
+        <a href="{% url 'ietf.meeting.views.proceedings_acknowledgements' num=meeting.number %}">
+          Acknowledgements
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+  {% with materials=meeting.get_proceedings_materials %}
+    {% if materials|length > 0 %}
+      <div class="proceedings-column">
+        {% for mat in materials %}
+          <div class="proceedings-row proceedings-material">
+            <a href="{{ mat.get_href }}">{{ mat }}</a>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+</div>

@@ -2310,10 +2310,10 @@
       "desc": "The BOF request is proposed",
       "name": "Proposed",
       "next_states": [
-        159,
-        160,
-        161,
-        162
+        178,
+        179,
+        180,
+        181
       ],
       "order": 0,
       "slug": "proposed",
@@ -2321,7 +2321,7 @@
       "used": true
     },
     "model": "doc.state",
-    "pk": 158
+    "pk": 177
   },
   {
     "fields": {
@@ -2334,7 +2334,7 @@
       "used": true
     },
     "model": "doc.state",
-    "pk": 159
+    "pk": 178
   },
   {
     "fields": {
@@ -2347,7 +2347,7 @@
       "used": true
     },
     "model": "doc.state",
-    "pk": 160
+    "pk": 179
   },
   {
     "fields": {
@@ -2360,7 +2360,7 @@
       "used": true
     },
     "model": "doc.state",
-    "pk": 161
+    "pk": 180
   },
   {
     "fields": {
@@ -2373,7 +2373,37 @@
       "used": true
     },
     "model": "doc.state",
-    "pk": 162
+    "pk": 181
+  },
+  {
+    "fields": {
+      "desc": "The material is active",
+      "name": "Active",
+      "next_states": [
+        185
+      ],
+      "order": 0,
+      "slug": "active",
+      "type": "procmaterials",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 184
+  },
+  {
+    "fields": {
+      "desc": "The material is removed",
+      "name": "Removed",
+      "next_states": [
+        184
+      ],
+      "order": 1,
+      "slug": "removed",
+      "type": "procmaterials",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 185
   },
   {
     "fields": {
@@ -2507,6 +2537,13 @@
     },
     "model": "doc.statetype",
     "pk": "minutes"
+  },
+  {
+    "fields": {
+      "label": "Proceedings Materials State"
+    },
+    "model": "doc.statetype",
+    "pk": "procmaterials"
   },
   {
     "fields": {
@@ -9996,6 +10033,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "Proceedings Materials",
+      "order": 0,
+      "prefix": "proc-materials",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "procmaterials"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Recording",
       "order": 0,
       "prefix": "recording",
@@ -11767,6 +11815,56 @@
     },
     "model": "name.nomineepositionstatename",
     "pk": "pending"
+  },
+  {
+    "fields": {
+      "desc": "Any other materials",
+      "name": "Additional Information",
+      "order": 4,
+      "used": true
+    },
+    "model": "name.proceedingsmaterialtypename",
+    "pk": "additional_information"
+  },
+  {
+    "fields": {
+      "desc": "Host speaker series",
+      "name": "Host Speaker Series",
+      "order": 1,
+      "used": true
+    },
+    "model": "name.proceedingsmaterialtypename",
+    "pk": "host_speaker_series"
+  },
+  {
+    "fields": {
+      "desc": "Social event",
+      "name": "Social Event",
+      "order": 2,
+      "used": true
+    },
+    "model": "name.proceedingsmaterialtypename",
+    "pk": "social_event"
+  },
+  {
+    "fields": {
+      "desc": "Sponsors and Supporters",
+      "name": "Sponsors and supporters",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.proceedingsmaterialtypename",
+    "pk": "supporters"
+  },
+  {
+    "fields": {
+      "desc": "Meeting wiki",
+      "name": "Meeting Wiki",
+      "order": 3,
+      "used": true
+    },
+    "model": "name.proceedingsmaterialtypename",
+    "pk": "wiki"
   },
   {
     "fields": {

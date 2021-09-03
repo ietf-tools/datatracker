@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2021, All Rights Reserved #}
+{% load origin tz %}
+
+{% load bootstrap3 %}
+
+{% block title %}
+  Edit {{ material_type.name }} for {{ meeting }} Proceedings
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>
+    {% block content_header %}
+      Edit Proceedings Material<br>
+      <small>
+        {{ meeting }} {{ material_type.name }}
+      </small>
+    {% endblock %}
+  </h1>
+
+  {% if meeting.proceedings_final %}
+    <div class="alert alert-warning">
+      The proceedings for this meeting have already been finalized.
+    </div>
+  {% endif %}
+
+  {% if material is not None %}
+    <p>
+      {% if material.active %}
+        {% if material.is_url %} An external URL for this material was set at
+        {% else %} A file for this material type was uploaded at {% endif %}
+        {% with tm=material.document.time|utc %}
+          {{ tm|date:"H:i:s" }} UTC on {{ tm|date:"Y-m-d" }}.{% endwith %}
+      {% else %}
+        This material has been removed and will not appear in the proceedings.
+      {% endif %}
+    </p>
+  {% endif %}
+  {% block intro %}{% endblock %}
+
+  {% block edit_form %}
+    <form class="edit-proceedings-material" method="post">
+      {% csrf_token %}
+
+      {% bootstrap_form form %}
+
+      {# To replace the form but keep default buttons, use block.super in the edit_form block #}
+      {% block form_buttons %}
+        {% buttons %}
+          <a class="btn btn-default pull-right"
+             href="{% url 'ietf.meeting.views_proceedings.material_details' num=meeting.number %}">Back</a>
+          <button class="btn btn-primary" type="submit">{% firstof submit_button_label 'Save' %}</button>
+        {% endbuttons %}
+      {% endblock %}
+    </form>
+  {% endblock %}
+{% endblock content %}

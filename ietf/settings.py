@@ -669,6 +669,7 @@ BOFREQ_PATH = '/a/ietfdata/doc/bofreq/'
 CONFLICT_REVIEW_PATH = '/a/ietfdata/doc/conflict-review'
 STATUS_CHANGE_PATH = '/a/ietfdata/doc/status-change'
 AGENDA_PATH = '/a/www/www6s/proceedings/'
+MEETINGHOST_LOGO_PATH = AGENDA_PATH  # put these in the same place as other proceedings files
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
 IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
 IESG_ROLL_CALL_FILE = '/a/www/www6/iesg/internal/rollcall.txt'
@@ -702,6 +703,7 @@ DOC_HREFS = {
     "draft":    "https://www.ietf.org/archive/id/{doc.name}-{doc.rev}.txt",
     "rfc":      "https://www.rfc-editor.org/rfc/rfc{doc.rfcnum}.txt",
     "slides": "https://www.ietf.org/slides/{doc.name}-{doc.rev}",
+    "procmaterials": "https://www.ietf.org/procmaterials/{doc.name}-{doc.rev}",
     "conflrev": "https://www.ietf.org/cr/{doc.name}-{doc.rev}.txt",
     "statchg": "https://www.ietf.org/sc/{doc.name}-{doc.rev}.txt",
     "liaison": "%s{doc.uploaded_filename}" % LIAISON_ATTACH_URL,
@@ -885,6 +887,7 @@ MEETING_DOC_LOCAL_HREFS = {
     "slides": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "recording": "{doc.external_url}",
     "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
+    "procmaterials": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
 }
 
 MEETING_DOC_CDN_HREFS = {
@@ -893,6 +896,7 @@ MEETING_DOC_CDN_HREFS = {
     "slides": "https://www.ietf.org/proceedings/{meeting.number}/slides/{doc.name}-{doc.rev}",
     "recording": "{doc.external_url}",
     "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
+    "procmaterials": "https://www.ietf.org/proceedings/{meeting.number}/procmaterials/{doc.name}-{doc.rev}",
 }
 
 MEETING_DOC_HREFS = MEETING_DOC_LOCAL_HREFS if MEETING_MATERIALS_SERVE_LOCALLY else MEETING_DOC_CDN_HREFS
@@ -912,6 +916,7 @@ MEETING_DOC_GREFS = {
     "slides": "/meeting/{meeting.number}/materials/{doc.name}",
     "recording": "{doc.external_url}",
     "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
+    "procmaterials": "/meeting/{meeting.number}/materials/{doc.name}",
 }
 
 MEETING_MATERIALS_DEFAULT_SUBMISSION_START_DAYS = 90
@@ -923,6 +928,8 @@ MEETING_VALID_UPLOAD_EXTENSIONS = {
     'minutes':      ['.txt','.html','.htm', '.md', '.pdf', ],
     'slides':       ['.doc','.docx','.pdf','.ppt','.pptx','.txt', ], # Note the removal of .zip
     'bluesheets':   ['.pdf', '.txt', ],
+    'procmaterials':['.pdf', ],
+    'meetinghostlogo':  ['.png', '.jpg', '.jpeg'],
 }
     
 MEETING_VALID_UPLOAD_MIME_TYPES = {
@@ -930,6 +937,8 @@ MEETING_VALID_UPLOAD_MIME_TYPES = {
     'minutes':      ['text/plain', 'text/html', 'application/pdf', 'text/markdown', 'text/x-markdown', ],
     'slides':       [],
     'bluesheets':   ['application/pdf', 'text/plain', ],
+    'procmaterials':['application/pdf', ],
+    'meetinghostlogo':  ['image/jpeg', 'image/png', ],
 }
 
 MEETING_VALID_MIME_TYPE_EXTENSIONS = {
@@ -952,6 +961,14 @@ FLOORPLAN_MEDIA_DIR = 'floor'
 FLOORPLAN_DIR = os.path.join(MEDIA_ROOT, FLOORPLAN_MEDIA_DIR)
 
 MEETING_USES_CODIMD_DATE = datetime.date(2020,7,6)
+
+# Maximum dimensions to accept at all
+MEETINGHOST_LOGO_MAX_UPLOAD_WIDTH = 400
+MEETINGHOST_LOGO_MAX_UPLOAD_HEIGHT = 400
+
+# Maximum dimensions to display
+MEETINGHOST_LOGO_MAX_DISPLAY_WIDTH = 120
+MEETINGHOST_LOGO_MAX_DISPLAY_HEIGHT = 120
 
 # Session assignments on the official schedule lock this long before the timeslot starts
 MEETING_SESSION_LOCK_TIME = datetime.timedelta(minutes=10)
@@ -994,7 +1011,12 @@ SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
 SECR_PPT2PDF_COMMAND = ['/usr/bin/soffice','--headless','--convert-to','pdf:writer_globaldocument_pdf_Export','--outdir']
 SECR_VIRTUAL_MEETINGS = ['108']
 STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
-NEW_PROCEEDINGS_START = 95
+PROCEEDINGS_VERSION_CHANGES = [
+    0,   # version 1
+    97,  # version 2: meeting 97 and later (was number was NEW_PROCEEDINGS_START)
+    111, # version 3: meeting 111 and later
+]
+PROCEEDINGS_V1_BASE_URL = 'https://www.ietf.org/proceedings/{meeting.number}'
 YOUTUBE_API_KEY = ''
 YOUTUBE_API_SERVICE_NAME = 'youtube'
 YOUTUBE_API_VERSION = 'v3'

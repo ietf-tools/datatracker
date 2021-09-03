@@ -125,7 +125,7 @@ def milestone_reviewer_for_group_type(group_type):
         return "Area Director"
 
 def can_manage_materials(user, group):
-    return has_role(user, 'Secretariat') or group.has_role(user, group.features.matman_roles)
+    return has_role(user, 'Secretariat') or (group is not None and group.has_role(user, group.features.matman_roles))
 
 def can_manage_session_materials(user, group, session):
     return has_role(user, 'Secretariat') or (group.has_role(user, group.features.matman_roles) and not session.is_material_submission_cutoff())

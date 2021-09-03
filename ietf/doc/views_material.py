@@ -54,7 +54,7 @@ class UploadMaterialForm(forms.Form):
             self.fields["state"].widget = forms.HiddenInput()
             self.fields["state"].queryset = self.fields["state"].queryset.filter(slug="active")
             self.fields["state"].initial = self.fields["state"].queryset[0].pk
-            self.fields["name"].initial = "%s-%s-" % (doc_type.slug, group.acronym)
+            self.fields["name"].initial = self._default_name()
         else:
             del self.fields["name"]
 
@@ -68,6 +68,12 @@ class UploadMaterialForm(forms.Form):
                 for fieldname in ["title","state","material","abstract"]: 
                     if fieldname != action:
                         del self.fields[fieldname]
+
+        if doc_type.slug == 'procmaterials' and 'abstract' in self.fields:
+            del self.fields['abstract']
+
+    def _default_name(self):
+        return "%s-%s-" % (self.doc_type.slug, self.group.acronym)
 
     def clean_name(self):
         name = self.cleaned_data["name"].strip().rstrip("-")
@@ -101,10 +107,13 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
         group = doc.group
         document_type = doc.type
 
-    if (document_type not in DocTypeName.objects.filter(slug__in=group.features.material_types)
-        and document_type.slug not in ['minutes','agenda','bluesheets',]):
+    valid_doctypes = ['procmaterials']
+    if group is not None:
+        valid_doctypes.extend(['minutes','agenda','bluesheets'])
+        valid_doctypes.extend(group.features.material_types)
+
+    if document_type.slug not in valid_doctypes:
         raise Http404
-       
 
     if not can_manage_materials(request.user, group):
         permission_denied(request, "You don't have permission to access this view")
@@ -186,10 +195,26 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
     else:
         form = UploadMaterialForm(document_type, action, group, doc)
 
+    # decide where to go if upload is canceled
+    if doc:
+        back_href = urlreverse('ietf.doc.views_doc.document_main', kwargs={'name': doc.name})
+    else:
+        back_href = urlreverse('ietf.group.views.materials', kwargs={'acronym': group.acronym})
+
+    if document_type.slug == 'procmaterials':
+        name_prefix = 'proceedings-'
+    else:
+        name_prefix = f'{document_type.slug}-{group.acronym}-'
+
     return render(request, 'doc/material/edit_material.html', {
         'group': group,
         'form': form,
         'action': action,
-        'document_type': document_type,
+        'material_type': document_type,
+        'name_prefix': name_prefix,
+        'doc': doc,
         'doc_name': doc.name if doc else "",
+        'back_href': back_href,
     })
+
+

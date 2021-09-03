@@ -18,6 +18,7 @@ def state_help(request, type):
         "conflict-review": ("conflrev", "Conflict Review States"),
         "status-change": ("statchg", "RFC Status Change States"),
         "bofreq": ("bofreq", "BOF Request States"),
+        "procmaterials": ("procmaterials", "Proceedings Materials States"),
         }.get(type, (None, None))
     state_type = get_object_or_404(StateType, slug=slug)
 
