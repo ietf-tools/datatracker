@@ -9,7 +9,7 @@
       <h4><span class="label label-{{ n|pos_to_label }}"> {{ n.name }}</span></h4>
       {% for p in positions %}
         <div class="balloter-name">
-          {% if p.is_old_pos %}<span class="text-muted">({% endif %}{% if p.comment or p.discuss %}<a href="#{{ p.balloter.plain_name|slugify }}">{% endif %}{{ p.balloter.plain_name }}{% if p.comment or p.discuss %}</a>{% endif %}{% if p.is_old_pos %})</span>{% endif %}
+          {% if p.is_old_pos %}<span class="text-muted">({% endif %}{% if p.comment or p.discuss %}<a href="#{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">{% endif %}{{ p.balloter.plain_name }}{% if p.comment or p.discuss %}</a>{% endif %}{% if p.is_old_pos %})</span>{% endif %}
         </div>
       {% empty %}
         (None)
@@ -73,7 +73,7 @@
     {% for n, positions in position_groups %}
       {% for p in positions %}
         {% if not p.is_old_pos %}
-          <h4 class="anchor-target" id="{{ p.balloter.plain_name|slugify }}">{{ p.balloter.plain_name }}
+          <h4 class="anchor-target" id="{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">{{ p.balloter.plain_name }}
             <span class="pull-right">
             {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
             <span class="label label-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
@@ -126,7 +126,7 @@
     {% for n, positions in position_groups %}
       {% for p in positions %}
         {% if p.is_old_pos %}
-          <h4 class="anchor-target" id="{{ p.balloter.plain_name|slugify }}">
+          <h4 class="anchor-target" id="{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">
             <span class="text-muted">({{ p.balloter.plain_name }}; former steering group member)</span>
             <span class="pull-right">
               {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}

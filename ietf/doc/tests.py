@@ -22,6 +22,7 @@ from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.forms import Form
 from django.utils.html import escape
+from django.utils.text import slugify
 
 from tastypie.test import ResourceTestCaseMixin
 
@@ -1547,6 +1548,42 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, pos2.comment)
         self.assertContains(r,  '(was %s)' % pos.pos)
+
+    def test_document_ballot_popup_unique_anchors_per_doc(self):
+        """Ballot popup anchors should be different for each document"""
+        ad = Person.objects.get(user__username="ad")
+        docs = IndividualDraftFactory.create_batch(2)
+        ballots = [create_ballot_if_not_open(None, doc, ad, 'approve') for doc in docs]
+        for doc, ballot in zip(docs, ballots):
+            BallotPositionDocEvent.objects.create(
+                doc=doc,
+                rev=doc.rev,
+                ballot=ballot,
+                type="changed_ballot_position",
+                pos_id="yes",
+                comment="Looks fine to me",
+                comment_time=datetime.datetime.now(),
+                balloter=Person.objects.get(user__username="ad"),
+                by=Person.objects.get(name="(System)"))
+
+        anchors = set()
+        author_slug = slugify(ad.plain_name())
+        for doc, ballot in zip(docs, ballots):
+            r = self.client.get(urlreverse(
+                "ietf.doc.views_doc.ballot_popup",
+                kwargs=dict(name=doc.name, ballot_id=ballot.pk)
+            ))
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            href = q(f'div.balloter-name a[href$="{author_slug}"]').attr('href')
+            ids = [
+                target.attr('id')
+                for target in q(f'h4.anchor-target[id$="{author_slug}"]').items()
+            ]
+            self.assertEqual(len(ids), 1, 'Should be exactly one link for the balloter')
+            self.assertEqual(href, f'#{ids[0]}', 'Anchor href should match ID')
+            anchors.add(href)
+        self.assertEqual(len(anchors), len(docs), 'Each doc should have a distinct anchor for the balloter')
 
     def test_document_ballot_needed_positions(self):
         # draft
