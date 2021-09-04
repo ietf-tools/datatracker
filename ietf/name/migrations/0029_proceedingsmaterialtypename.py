@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0027_add_bofrequest'),
+        ('name', '0028_iabasg'),
     ]
 
     operations = [

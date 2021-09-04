@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
         ('group', '0044_populate_groupfeatures_parent_type_fields'),
         ('liaisons', '0006_document_primary_key_cleanup'),
         ('meeting', '0018_document_primary_key_cleanup'),
-        ('name', '0029_populate_proceedingsmaterialtypename'),
+        ('name', '0030_populate_proceedingsmaterialtypename'),
         ('review', '0014_document_primary_key_cleanup'),
         ('submit', '0008_submissionextresource'),
     ]

@@ -25,7 +25,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0028_proceedingsmaterialtypename'),
+        ('name', '0029_proceedingsmaterialtypename'),
         ('meeting', '0046_meetinghost'),
     ]
 
