@@ -137,8 +137,8 @@
 	      </thead>
 
 	      <tbody>
-		{% for session in training %}
-		  {% ifchanged %}
+		{% for session in training %} 
+		  {% ifchanged %} {# TODO: Find a better way to represent purposed sessions in both materials and proceedings #}
 		    {% include "meeting/group_materials.html" %}
 		  {% endifchanged %}
 		{% endfor %}
@@ -174,7 +174,7 @@
 
 	    <tbody>
 	      {% for session in iab %}
-		{% ifchanged %}
+		{% ifchanged session.group.acronym %}
 		  {% include "meeting/group_materials.html" %}
 		{% endifchanged %}
 	      {% endfor %}
@@ -209,7 +209,7 @@
 
 	    <tbody>
 	      {% for session in irtf|dictsort:"group.acronym" %}
-		{% ifchanged %}
+		{% ifchanged session.group.acronym %}
 		  {% include "meeting/group_materials.html" %}
 		{% endifchanged %}
 	      {% endfor %}
@@ -243,7 +243,7 @@
 
 	    <tbody>
 	      {% for session in other|dictsort:"group.acronym" %}
-		{% ifchanged %}
+		{% ifchanged session.group.acronym %}
 		  {% include "meeting/group_materials.html" %}
 		{% endifchanged %}
 	      {% endfor %}
