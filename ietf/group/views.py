@@ -904,7 +904,8 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                 or group.has_role(request.user, group.features.groupman_roles)):
             permission_denied(request, "You don't have permission to access this view")
     else:
-        if not has_role(request.user, "Secretariat"):
+        # This allows ADs to create RG and the IRTF Chair to create WG, but we trust them not to
+        if not has_role(request.user, ("Secretariat", "Area Director", "IRTF Chair")):
              permission_denied(request, "You don't have permission to access this view")
                 
 

@@ -479,11 +479,16 @@ class GroupEditTests(TestCase):
         area = Group.objects.filter(type="area").first()
 
         # normal get
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=acronym]')), 1)
+        for username in ("secretary","ad","irtf-chair"):
+            self.client.logout()
+            login_testing_unauthorized(self, username, url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('form input[name=acronym]')), 1)
 
+        self.client.logout()
+        login_testing_unauthorized(self, "secretary", url)
         # faulty post
         r = self.client.post(url, dict(acronym="foobarbaz")) # No name
         self.assertEqual(r.status_code, 200)
@@ -527,7 +532,6 @@ class GroupEditTests(TestCase):
     def test_create_rg(self):
 
         url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type="rg", action="charter"))
-        login_testing_unauthorized(self, "secretary", url)
 
         irtf = Group.objects.get(acronym='irtf')
         num_rgs = len(Group.objects.filter(type="rg"))
@@ -535,11 +539,14 @@ class GroupEditTests(TestCase):
         proposed_state = GroupStateName.objects.get(slug="proposed")
 
         # normal get
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q('form input[name=acronym]')), 1)
-        self.assertEqual(q('form select[name=parent]')[0].value,'%s'%irtf.pk)
+        for username in ("secretary", "ad", "irtf-chair"):
+            self.client.logout()
+            login_testing_unauthorized(self, username, url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('form input[name=acronym]')), 1)
+            self.assertEqual(q('form select[name=parent]')[0].value,'%s'%irtf.pk)
 
         r = self.client.post(url, dict(acronym="testrg", name="Testing RG", state=proposed_state.pk, parent=irtf.pk))
         self.assertEqual(r.status_code, 302)
