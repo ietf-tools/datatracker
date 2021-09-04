@@ -300,7 +300,7 @@ def active_groups(request, group_type=None):
         raise Http404
 
 def active_group_types(request):
-    grouptypes = GroupTypeName.objects.filter(slug__in=['wg','rg','ag','rag','team','dir','review','area','program']).filter(group__state='active').annotate(group_count=Count('group'))
+    grouptypes = GroupTypeName.objects.filter(slug__in=['wg','rg','ag','rag','team','dir','review','area','program','iabasg','adm']).filter(group__state='active').annotate(group_count=Count('group'))
     return render(request, 'group/active_groups.html', {'grouptypes':grouptypes})
 
 def active_dirs(request):
