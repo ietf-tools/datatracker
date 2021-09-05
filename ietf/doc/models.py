@@ -447,19 +447,9 @@ class DocumentInfo(models.Model):
         """Get the meeting this document relates to"""
         if not self.meeting_related():
             return None  # no related meeting if not meeting_related!
-        elif self.type_id in ("agenda", "minutes", "slides", "bluesheets",):
-            # session-related
-            session = self.get_related_session()
-            if session is not None:
-                return session.meeting
-        elif self.type_id == "procmaterials":
-            # proceedings-related
-            material = self.get_related_proceedings_material()
-            if material is not None:
-                return material.meeting
-        else:
-            log.unreachable('2021-08-29')  # if meeting_related, there must be a way to retrieve the meeting!
-            return None
+        # get an item that links this doc to a meeting
+        item = self.get_related_session() or self.get_related_proceedings_material()
+        return getattr(item, 'meeting', None)
 
     def relations_that(self, relationship):
         """Return the related-document objects that describe a given relationship targeting self."""
