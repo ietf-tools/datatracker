@@ -41,9 +41,10 @@ from ietf.group.models import Group
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
 from ietf.meeting.models import Meeting, Session, SessionPresentation, SchedulingEvent
-from ietf.meeting.factories import MeetingFactory, SessionFactory, SessionPresentationFactory
+from ietf.meeting.factories import ( MeetingFactory, SessionFactory, SessionPresentationFactory,
+     ProceedingsMaterialFactory )
 
-from ietf.name.models import SessionStatusName, BallotPositionName
+from ietf.name.models import SessionStatusName, BallotPositionName, DocTypeName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.mail import outbox
@@ -2246,6 +2247,35 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(response.status_code,302)
         self.assertEqual(2,doc.docevent_set.count())
 
+    def test_get_related_meeting(self):
+        """Should be able to retrieve related meeting"""
+        meeting = MeetingFactory(type_id='ietf')
+        session = SessionFactory(meeting=meeting)
+        procmat = ProceedingsMaterialFactory(meeting=meeting)
+        for doctype in DocTypeName.objects.filter(used=True):
+            doc = DocumentFactory(type=doctype)
+            self.assertIsNone(doc.get_related_meeting(), 'Doc does not yet have a connection to the meeting')
+            # test through a session
+            doc.session_set.add(session)
+            doc = Document.objects.get(pk=doc.pk)
+            if doc.meeting_related():
+                self.assertEqual(doc.get_related_meeting(), meeting, f'{doc.type.slug} should be related to meeting')
+            else:
+                self.assertIsNone(doc.get_related_meeting(), f'{doc.type.slug} should not be related to meeting')
+            # test with both session and procmat
+            doc.proceedingsmaterial_set.add(procmat)
+            doc = Document.objects.get(pk=doc.pk)
+            if doc.meeting_related():
+                self.assertEqual(doc.get_related_meeting(), meeting, f'{doc.type.slug} should be related to meeting')
+            else:
+                self.assertIsNone(doc.get_related_meeting(), f'{doc.type.slug} should not be related to meeting')
+            # and test with only procmat
+            doc.session_set.remove(session)
+            doc = Document.objects.get(pk=doc.pk)
+            if doc.meeting_related():
+                self.assertEqual(doc.get_related_meeting(), meeting, f'{doc.type.slug} should be related to meeting')
+            else:
+                self.assertIsNone(doc.get_related_meeting(), f'{doc.type.slug} should not be related to meeting')
 
 class ChartTests(ResourceTestCaseMixin, TestCase):
     def test_search_chart_conf(self):
