@@ -72,7 +72,7 @@ ietfdb (7.37.0) ietf; urgency=medium
     Refactor get_related_meeting to simplify / correctly handle 
     recording doctype.
 
- -- Robert Sparks <rjsparks@nostrum.com>  04 Sep 2021 15:37:50 +0000
+ -- Robert Sparks <rjsparks@nostrum.com>  06 Sep 2021 15:57:35 +0000
 
 
 ietfdb (7.36.0) ietf; urgency=medium
