@@ -546,10 +546,10 @@ class MeetingTests(BaseMeetingTestCase):
         filename = cont_disp_settings.get('filename', '').strip('"')
         if filename.endswith('.md'):
             for accept, cont_type, content in [
-                    ('text/html,text/plain,text/markdown',  'text/html',     '<li><p>More work items underway</p></li>'),
+                    ('text/html,text/plain,text/markdown',  'text/html',     '<li>\n<p>More work items underway</p>\n</li>'),
                     ('text/markdown,text/html,text/plain',  'text/markdown', '1. More work items underway'),
                     ('text/plain,text/markdown, text/html', 'text/plain',    '1. More work items underway'),
-                    ('text/html',                           'text/html',     '<li><p>More work items underway</p></li>'),
+                    ('text/html',                           'text/html',     '<li>\n<p>More work items underway</p>\n</li>'),
                     ('text/markdown',                       'text/markdown', '1. More work items underway'),
                     ('text/plain',                          'text/plain',    '1. More work items underway'),
                 ]:

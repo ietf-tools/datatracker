@@ -14,7 +14,7 @@ import pytz
 import re
 import tarfile
 import tempfile
-import markdown2
+import markdown
 
 from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict
@@ -261,7 +261,7 @@ def materials_document(request, document, num=None, ext=None):
                     content_type = content_type.replace('plain', 'markdown', 1)
                     break;
                 elif atype[0] == 'text/html':
-                    bytes = "<html>\n<head></head>\n<body>\n%s\n</body>\n</html>\n" % markdown2.markdown(bytes)
+                    bytes = "<html>\n<head></head>\n<body>\n%s\n</body>\n</html>\n" % markdown.markdown(bytes.decode(),extensions=['extra'])
                     content_type = content_type.replace('plain', 'html', 1)
                     break;
                 elif atype[0] == 'text/plain':
