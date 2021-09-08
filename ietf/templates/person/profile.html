@@ -27,8 +27,6 @@
        <a href="{{person.photo.url}}">
 	 <img class="bio-photo" src="{{ person.photo.url }}" alt="Photo of {{ person }}" />
        </a>
-       {% else %}
-	 <img class="bio-photo" src="{{ MEDIA_URL }}photo/nopictureavailable.jpg" alt="No photo available"/>
        {% endif %}
        {{ person.biography | apply_markup:"restructuredtext" }}
     </div>
