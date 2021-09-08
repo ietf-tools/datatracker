@@ -20,6 +20,7 @@ info_detail_urls = [
     url(r'^documents/subscription/$', community_views.subscription),
     url(r'^charter/$', views.group_about),
     url(r'^about/$', views.group_about),
+    url(r'^about/rendertest/$', views.group_about_rendertest),
     url(r'^about/status/$', views.group_about_status),
     url(r'^about/status/edit/$', views.group_about_status_edit),
     url(r'^about/status/meeting/(?P<num>\d+)/$', views.group_about_status_meeting),

@@ -1,0 +1,60 @@
+{% extends "group/group_base.html" %}
+
+{# Copyright The IETF Trust 2021, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters %}
+
+{% block morecss %}
+.leftpanel { border-right: 1px solid #ccc;}
+.header {text-align:center; background-color:#aaf; }
+.buttonrow {text-align:center; border-bottom: 1px solid #000;}
+{% endblock %}
+
+{% block group_content %}
+    {% if charter %}
+{% comment %}
+    <div class="row">
+        <div class="col-md-6 header leftpanel">Current about page rendering</div>
+        <div class="col-md-6 header">Markdown rendering</div>
+    </div>
+    <div class="row buttonrow">
+        <div class="col-md-6 leftpanel">&nbsp;</div>
+        <div class="col-md-6 "><input type="checkbox" name="widthconstraint"> Constrain width</input></div>
+    </div>
+    <div class="row">
+        <div class="col-md-6 leftpanel">{{charter|linebreaks}}</div>
+        <div class="col-md-6 rightcontent">{{rendered|sanitize|safe}}</div>
+    </div>
+{% endcomment %}
+    <div class="row">
+        <div class="col-md-6 leftpanel">
+            <div class="header">Current about page rendering</div>
+            <div class="buttonrow">&nbsp;</div>
+            <div>{{charter|linebreaks}}</div>
+        </div>
+        <div class="col-md-6 rightpanel">
+            <div class="header">Markdown rendering</div>
+            <div class="buttonrow"><input type="checkbox" name="widthconstraint"> Constrain width</input></div>
+            <div class="rightcontent">{{rendered|sanitize|safe}}</div>
+        </div>
+    </div>
+    {% else %}
+        <div>Group has no charter document</div>
+    {% endif %}
+{% endblock %}
+
+{% block js %}
+<script>
+$(document).ready(function() {
+    $('input[name=widthconstraint]').change(function() {
+        if ($(this).is(':checked')) {
+           $('.rightcontent').css('max-width','700px')
+        } else {
+           $('.rightcontent').css('max-width','')
+        }
+    });
+    $('input[name=widthconstraint').prop('checked', true);
+    $('.rightcontent').css('max-width','700px')
+});
+</script>
+{% endblock %}

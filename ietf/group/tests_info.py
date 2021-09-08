@@ -271,6 +271,13 @@ class GroupPagesTests(TestCase):
             self.assertContains(r, milestone.desc)
             self.assertContains(r, milestone.docs.all()[0].name)
 
+    def test_about_rendertest(self):
+        group = CharterFactory().group
+        url = urlreverse('ietf.group.views.group_about_rendertest', kwargs=dict(acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+
+
     def test_group_about(self):
 
         interesting_users = [ 'plain','iana','iab-chair','irtf-chair', 'marschairman', 'teamchairman','ad', 'iab-member', 'secretary', ]

@@ -39,6 +39,7 @@ import datetime
 import itertools
 import io
 import json
+import markdown
 import math
 import os
 import re
@@ -574,6 +575,17 @@ def all_status(request):
                     'rg_reports': rg_reports,
                   }
                  )
+
+def group_about_rendertest(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    charter = None
+    if group.charter:
+        charter = get_charter_text(group)
+    try:
+        rendered = markdown.markdown(charter, extensions=['extra'])
+    except Exception as e:
+        rendered = f'Markdown rendering failed: {e}'
+    return render(request, 'group/group_about_rendertest.html', {'group':group, 'charter':charter, 'rendered':rendered})
 
 def group_about_status(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
