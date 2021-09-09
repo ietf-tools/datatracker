@@ -6,8 +6,8 @@ email addresses included in the To and CC lines. (Feel free to cut this
 introductory paragraph, however.)
 
 {% if doc.type_id == "draft" and doc.stream_id != "irtf" %}
-Please refer to https://www.ietf.org/iesg/statement/discuss-criteria.html
-for more information about DISCUSS and COMMENT positions.
+Please refer to https://www.ietf.org/blog/handling-iesg-ballot-positions/
+for more information about how to handle DISCUSS and COMMENT positions.
 {% endif %}
 
 The document, along with other ballot positions, can be found here:
