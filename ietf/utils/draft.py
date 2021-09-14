@@ -36,6 +36,7 @@ COPYRIGHT
 
 
 
+import debug     # pyflakes: ignore
 
 import datetime
 import getopt
@@ -1047,6 +1048,10 @@ class Draft():
         # std at the front of a line can hide things like IEEE STD or MIL-STD
         std_start = re.compile( r'(?i)std\n*\b' )
 
+        not_starting_regexes = [
+            re.compile( r'(?i) uri references:?$' ),
+        ]
+
         refs = {}
         in_ref_sect = False
         in_norm_ref_sect = False
@@ -1064,11 +1069,12 @@ class Draft():
                         m = sectionre3.match( line )
 
                 if m:
-                    in_ref_sect = True
-                    refType = 'info'
-                    if line.lower().find("normative") > 1:
-                        in_norm_ref_sect = True
-                        refType = 'norm'
+                    if not any( [ rule.search( line ) for rule in not_starting_regexes ]):
+                        in_ref_sect = True
+                        refType = 'info'
+                        if line.lower().find("normative") > 1:
+                            in_norm_ref_sect = True
+                            refType = 'norm'
 
             # might be subsections within a references section
             if in_ref_sect and not in_norm_ref_sect:
