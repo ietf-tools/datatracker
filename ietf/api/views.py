@@ -215,3 +215,10 @@ def version(request):
                 content_type='application/json',
             )
     
+
+@require_api_key
+@csrf_exempt
+def author_tools(request):
+    return HttpResponse(
+            json.dumps({'success': True}),
+            content_type='application/json')

@@ -355,13 +355,35 @@ class CustomApiTests(TestCase):
         missing_fields = [ f.strip() for f in fields.split(',') ]
         self.assertEqual(set(missing_fields), set(drop_fields))
 
-
     def test_api_version(self):
         url = urlreverse('ietf.api.views.version')
         r = self.client.get(url)
         data = r.json()
         self.assertEqual(data['version'], ietf.__version__+ietf.__patch__)
         self.assertIn(data['date'], ietf.__date__)
+
+    def test_api_appauth_authortools(self):
+        url = urlreverse('ietf.api.views.author_tools')
+        person = PersonFactory()
+        apikey = PersonalApiKey.objects.create(endpoint=url, person=person)
+
+        self.client.login(username=person.user.username,password=f'{person.user.username}+password')
+        self.client.logout()
+
+        # error cases
+        # missing apikey
+        r = self.client.post(url, {})
+        self.assertContains(r, 'Missing apikey parameter', status_code=400)
+
+        # invalid apikey
+        r = self.client.post(url, {'apikey': 'foobar'})
+        self.assertContains(r, 'Invalid apikey', status_code=403)
+
+        # working case
+        r = self.client.post(url, {'apikey': apikey.hash()})
+        self.assertEqual(r.status_code, 200)
+        jsondata = r.json()
+        self.assertEqual(jsondata['success'], True)
 
 
 class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
