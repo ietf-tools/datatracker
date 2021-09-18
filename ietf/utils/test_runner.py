@@ -800,10 +800,17 @@ class IetfLiveServerTestCase(StaticLiveServerTestCase):
         from ietf.person.models import Person
         if not Person.objects.exists():
             load_and_run_fixtures(verbosity=0)
+        self.replaced_settings = dict()
+        if hasattr(settings, 'IDTRACKER_BASE_URL'):
+            self.replaced_settings['IDTRACKER_BASE_URL'] = settings.IDTRACKER_BASE_URL
+            settings.IDTRACKER_BASE_URL = self.live_server_url
 
     @classmethod
     def tearDownClass(cls):
         super(IetfLiveServerTestCase, cls).tearDownClass()
         set_coverage_checking(True)
 
-    
+    def tearDown(self):
+        for k, v in self.replaced_settings.items():
+            setattr(settings, k, v)
+        super().tearDown()
