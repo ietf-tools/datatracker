@@ -27,7 +27,7 @@ var agenda_materials; // public interface
       output_elt.html("<p>Error: missing data-src attribute</p>");
     } else {
       output_elt.html("<p>Loading " + data_src + "...</p>");
-      var outer_xhr = $.get(data_src)
+      var outer_xhr = $.ajax({url:data_src,headers:{'Accept':'text/plain;q=0.8,text/html;q=0.9'}})
       outer_xhr.done(function(data, status, xhr) {
         var t = xhr.getResponseHeader("content-type");
         if (!t) {
