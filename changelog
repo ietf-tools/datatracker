@@ -1,3 +1,48 @@
+ietfdb (7.38.0) ietf; urgency=medium
+
+  **Authortools API token endpoint, Standalone proceedings, 
+  render charters with markdown**
+
+  This release improves the generation of meeting proceedings,
+  moving archival information to the datatracker, rather than
+  the wagtail portion of the www.ietf.org website. It also provides
+  a temporary view of what current charter text looks like when rendered
+  with markdown. See datatracker.ietf.org/group/{acronym}/about/rendertest/.
+  After we confirm the rendering preserves information (adjusting charters
+  as necessary), an upcoming release will remove that URL and render
+  charters through markdown directly.
+
+  * Merged in [19344] from krathnayake@ietf.org:
+    Implements /api/appauth/authortools API endpoint. Fixes #3396.  
+
+  * Merged in [19353] from jennifer@painless-security.com:
+    Use live_server_url as IDTRACKER_BASE_URL in IetfLiveServerTestCase. 
+    Fixes #3203.  
+
+  * Merged in [19355] from krathnayake@ietf.org:
+    Hides profile photo place holder. Fixes #3400.  
+
+  * Merged in [19357] from rjsparks@nostrum.com:
+    Provide a page that shows how current charter text renders through 
+    markdown. Related to #2695.  
+
+  * Merged in [19358] from rjsparks@nostrum.com:
+    Remove remaining use of markdown2. Enable markdown extras when 
+    rendering agendas. Fixes #3316.  
+
+  * Merged in [19359] from rjsparks@nostrum.com:
+    Render markdown agendas in popups on the agenda page. Fixes #3039.  
+
+  * Merged in [19360] from rjsparks@nostrum.com:
+    Change url and instructive text in email sent when a ballot position is 
+    taken. Fixes #3208.  
+
+  * Merged in [19363] from rjsparks@nostrum.com:
+    Tune text draft reference extractor. Fixes #3404.  
+
+ -- Robert Sparks <rjsparks@nostrum.com>  19 Sep 2021 14:58:20 +0000
+
+
 ietfdb (7.37.0) ietf; urgency=medium
 
   **Standalone proceedings, new group types, scheduler enhancements**
