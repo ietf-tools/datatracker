@@ -26,6 +26,7 @@ jQuery(document).ready(function () {
     }
 
     let sessions = content.find(".session").not(".readonly");
+    let sessionConstraints = sessions.find('.constraints > span');
     let timeslots = content.find(".timeslot");
     let timeslotLabels = content.find(".time-label");
     let swapDaysButtons = content.find('.swap-days');
@@ -154,25 +155,26 @@ jQuery(document).ready(function () {
         timeslotLabels.removeClass("would-violate-hint");
     }
 
+    /**
+     * Remove all would-violate-hint classes on sessions and their formatted constraints
+     */
+    function resetSessionsWouldViolate() {
+        sessions.removeClass("would-violate-hint");
+        sessionConstraints.removeClass("would-violate-hint");
+    }
+
     function showConstraintHints(selectedSession) {
         let sessionId = selectedSession ? selectedSession.id.slice("session".length) : null;
         // hints on the sessions
-        sessions.find(".constraints > span").each(function () {
-            let wouldViolate = false;
-            let applyChange = true;
-            if (sessionId) {
+        resetSessionsWouldViolate();
+        if (sessionId) {
+            sessionConstraints.each(function () {
                 let sessionIds = this.dataset.sessions;
-                if (!sessionIds) {
-                    applyChange = false;
-                } else {
-                    wouldViolate = sessionIds.split(",").indexOf(sessionId) !== -1;
+                if (sessionIds && (sessionIds.split(",").indexOf(sessionId) !== -1)) {
+                    setSessionWouldViolate(this, true);
                 }
-            }
-
-            if (applyChange) {
-                setSessionWouldViolate(this, wouldViolate);
-            }
-        });
+            });
+        }
 
         // hints on timeslots
         resetTimeslotsWouldViolate();
