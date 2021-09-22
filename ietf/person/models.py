@@ -387,9 +387,9 @@ class PersonalApiKey(models.Model):
         assert isinstance(s, bytes)
         try:
             key = base64.urlsafe_b64decode(s)
+            id, salt, hash = struct.unpack(KEY_STRUCT, key)
         except Exception:
             return None
-        id, salt, hash = struct.unpack(KEY_STRUCT, key)
         k = cls.objects.filter(id=id)
         if not k.exists():
             return None
