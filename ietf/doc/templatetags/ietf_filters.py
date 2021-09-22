@@ -5,6 +5,7 @@
 import bleach
 import datetime
 import re
+from urllib.parse import urljoin
 
 from email.utils import parseaddr
 
@@ -413,7 +414,6 @@ def format_snippet(text, trunc_words=25):
 @register.simple_tag
 def doc_edit_button(url_name, *args, **kwargs):
     """Given URL name/args/kwargs, looks up the URL just like "url" tag and returns a properly formatted button for the document material tables."""
-    from django.urls import reverse as urlreverse
     return mark_safe('<a class="btn btn-default btn-xs" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
 
 @register.filter
@@ -613,3 +613,11 @@ def action_holder_badge(action_holder):
     else:
         return ''  # no alert needed
 
+
+@register.simple_tag
+def absurl(viewname, **kwargs):
+    """Get the absolute URL for a view by name
+
+    Uses settings.IDTRACKER_BASE_URL as the base.
+    """
+    return urljoin(settings.IDTRACKER_BASE_URL, urlreverse(viewname, kwargs=kwargs))

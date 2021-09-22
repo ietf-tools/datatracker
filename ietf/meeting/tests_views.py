@@ -247,6 +247,7 @@ class MeetingTests(BaseMeetingTestCase):
         # iCal
         r = self.client.get(urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
                             + "?show=" + session.group.parent.acronym.upper())
+        assert_ical_response_is_valid(self, r)
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
         self.assertContains(r, slot.location.name)
@@ -254,9 +255,18 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, "END:VTIMEZONE")        
 
         self.assertContains(r, session.agenda().get_href())
-        self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().get_href())
-        # TODO - the ics view uses .all on a queryset in a view so it's showing the deleted slides.
-        #self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().get_absolute_url())
+        self.assertContains(
+            r,
+            urlreverse(
+                'ietf.meeting.views.session_details',
+                kwargs=dict(num=meeting.number, acronym=session.group.acronym)),
+            msg_prefix='ical should contain link to meeting materials page for session')
+        self.assertContains(
+            r,
+            urlreverse(
+                'ietf.meeting.views.agenda', kwargs=dict(num=meeting.number)
+            ) + f'#row-{session.official_timeslotassignment().slug()}',
+            msg_prefix='ical should contain link to agenda entry for session')
 
         # week view
         r = self.client.get(urlreverse("ietf.meeting.views.week_view", kwargs=dict(num=meeting.number)))
