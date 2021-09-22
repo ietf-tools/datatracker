@@ -1063,6 +1063,30 @@ class IndividualInfoFormsTests(TestCase):
         doc = Document.objects.get(name=self.docname)
         self.assertEqual(doc.ad, None)
 
+    def test_doc_change_ad_allows_pre_ad(self):
+        """Pre-ADs can be responsible for documents"""
+        # create a pre-AD
+        doc = Document.objects.get(name=self.docname)
+        pre_ad = RoleFactory(name_id='pre-ad', group=doc.group.parent).person
+
+        url = urlreverse('ietf.doc.views_draft.edit_ad', kwargs=dict(name=self.docname))
+        self.client.login(username='secretary', password='secretary+password')
+
+        # test get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(
+            len(q(f'form select[name=ad] option[value="{pre_ad.pk}"]')), 1,
+            'Pre-AD should be an option for assignment',
+        )
+
+        # test post
+        r = self.client.post(url, dict(ad=str(pre_ad.pk)))
+        self.assertEqual(r.status_code, 302)
+        doc = Document.objects.get(pk=doc.pk)  # refresh
+        self.assertEqual(doc.ad, pre_ad, 'Pre-AD was not actually assigned')
+
     def test_doc_change_shepherd(self):
         doc = Document.objects.get(name=self.docname)
         doc.shepherd = None
