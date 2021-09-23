@@ -26,7 +26,7 @@ from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
 from ietf.meeting.factories import ( MeetingFactory, RoomFactory, SessionFactory, TimeSlotFactory,
-                                     ProceedingsMaterialFactory )
+                                     ProceedingsMaterialFactory, ScheduleFactory, ConstraintFactory )
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.models import (Schedule, SchedTimeSessAssignment, Session,
                                  Room, TimeSlot, Constraint, ConstraintName,
@@ -793,6 +793,56 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
                            'Drop target for unassigned sessions collapsed to 0 height')
         self.assertGreater(drop_target.size['width'], 0,
                            'Drop target for unassigned sessions collapsed to 0 width')
+
+    def test_session_constraint_hints(self):
+        """Selecting a session should mark conflicting sessions
+
+        To test for recurrence of https://trac.ietf.org/trac/ietfdb/ticket/3327 need to have some constraints that
+        do not conflict. Testing with only violated constraints does not exercise the code adequately.
+        """
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today(), populate_schedule=False)
+        TimeSlotFactory.create_batch(5, meeting=meeting)
+        schedule = ScheduleFactory(meeting=meeting)
+        sessions = SessionFactory.create_batch(5, meeting=meeting, add_to_schedule=False)
+        groups = [s.group for s in sessions]
+
+        # Now set up constraints
+        # Get an arbitrary enabled group conflict ConstraintName
+        constraint_names = meeting.enabled_constraint_names().filter(is_group_conflict=True)
+        self.assertGreaterEqual(len(constraint_names), 2, 'Not enough constraint names enabled to perform test')
+
+        # one-way conflict from group 0 to 1
+        ConstraintFactory(meeting=meeting, name=constraint_names[0], source=groups[0], target=groups[1], person=None)
+
+        # one-way conflict from group 2 to 0
+        ConstraintFactory(meeting=meeting, name=constraint_names[0], source=groups[2], target=groups[0], person=None)
+
+        # two-way conflict between groups 0 and 3
+        ConstraintFactory(meeting=meeting, name=constraint_names[0], source=groups[0], target=groups[3], person=None)
+        ConstraintFactory(meeting=meeting, name=constraint_names[0], source=groups[3], target=groups[0], person=None)
+
+        # constraints that are not active when selecting sessions[0]
+        ConstraintFactory(meeting=meeting, name=constraint_names[1], source=groups[1], target=groups[2], person=None)
+        ConstraintFactory(meeting=meeting, name=constraint_names[1], source=groups[3], target=groups[4], person=None)
+
+        url = self.absreverse('ietf.meeting.views.edit_meeting_schedule',
+                              kwargs=dict(num=meeting.number, owner=schedule.owner.email(), name=schedule.name))
+        self.login(schedule.owner.user.username)
+        self.driver.get(url)
+        session_elements = [self.driver.find_element_by_css_selector(f'#session{sess.pk}') for sess in sessions]
+        session_elements[0].click()
+
+        # All conflicting sessions should be flagged with the would-violate-hint class.
+        self.assertIn('would-violate-hint', session_elements[1].get_attribute('class'),
+                      'Constraint violation should be indicated on conflicting session')
+        self.assertIn('would-violate-hint', session_elements[2].get_attribute('class'),
+                      'Constraint violation should be indicated on conflicting session')
+        self.assertIn('would-violate-hint', session_elements[3].get_attribute('class'),
+                      'Constraint violation should be indicated on conflicting session')
+
+        # And the non-conflicting session should not be flagged
+        self.assertNotIn('would-violate-hint', session_elements[4].get_attribute('class'),
+                         'Constraint violation should not be indicated on non-conflicting session')
 
 @ifSeleniumEnabled
 @skipIf(django.VERSION[0]==2, "Skipping test with race conditions under Django 2")
