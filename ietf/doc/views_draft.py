@@ -1111,8 +1111,16 @@ def change_shepherd_email(request, name):
     })
 
 class AdForm(forms.Form):
-    ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type="area").order_by('name'), 
-                                label="Shepherding AD", empty_label="(None)", required=False)
+    ad = forms.ModelChoiceField(
+        Person.objects.filter(
+            role__name__in=("ad", "pre-ad"),
+            role__group__state="active",
+            role__group__type="area",
+        ).order_by('name'),
+        label="Shepherding AD",
+        empty_label="(None)",
+        required=False,
+    )
 
     def __init__(self, doc, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
