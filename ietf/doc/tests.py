@@ -48,7 +48,7 @@ from ietf.name.models import SessionStatusName, BallotPositionName, DocTypeName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.mail import outbox
-from ietf.utils.test_utils import login_testing_unauthorized, unicontent
+from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
 
@@ -2502,3 +2502,123 @@ class Idnits2SupportTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r,'Proposed')
+
+class RfcdiffSupportTests(TestCase):
+
+    def setUp(self):
+        self.target_view = 'ietf.doc.views_doc.rfcdiff_latest_json'
+
+    def getJson(self, view_args):
+        url = urlreverse(self.target_view, kwargs=view_args)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        return r.json()
+
+    def test_draft(self):
+        draft = IndividualDraftFactory(name='draft-somebody-did-something',rev='00')
+        for r in range(0,13):
+            e = NewRevisionDocEventFactory(doc=draft,rev=f'{r:02d}')
+            draft.rev = f'{r:02d}'
+            draft.save_with_history([e])
+        draft = reload_db_objects(draft)
+
+        received = self.getJson(dict(name=draft.name))
+        self.assertEqual(received, dict(
+            name=draft.name,
+            rev=draft.rev,
+            content_url=draft.get_href(),
+            previous=f'{draft.name}-{(int(draft.rev)-1):02d}'
+        ))
+
+        received = self.getJson(dict(name=draft.name, rev=draft.rev))
+        self.assertEqual(received, dict(
+            name=draft.name,
+            rev=draft.rev,
+            content_url=draft.get_href(),
+            previous=f'{draft.name}-{(int(draft.rev)-1):02d}'
+        ))
+
+        received = self.getJson(dict(name=draft.name, rev='10'))
+        self.assertEqual(received, dict(
+            name=draft.name,
+            rev='10',
+            content_url=draft.history_set.get(rev='10').get_href(),
+            previous=f'{draft.name}-09'
+        ))
+
+        received = self.getJson(dict(name=draft.name, rev='00'))
+        self.assertNotIn('previous', received)
+
+        replaced = IndividualDraftFactory()
+        RelatedDocument.objects.create(relationship_id='replaces',source=draft,target=replaced.docalias.first())
+        received = self.getJson(dict(name=draft.name, rev='00'))
+        self.assertEqual(received['previous'], f'{replaced.name}-{replaced.rev}')
+
+
+    def test_draft_with_broken_history(self):
+        draft = IndividualDraftFactory(rev='10')
+        received = self.getJson(dict(name=draft.name,rev='09'))
+        self.assertEqual(received['rev'],'09')
+        self.assertEqual(received['previous'], f'{draft.name}-09')
+        self.assertTrue('warning' in received)
+
+
+    def test_draftname_with_numeric_suffix(self):
+        draft = IndividualDraftFactory(name='draft-someone-did-something-01-02',rev='00')
+        for r in range(0,4):
+            e = NewRevisionDocEventFactory(doc=draft,rev=f'{r:02d}')
+            draft.rev = f'{r:02d}'
+            draft.save_with_history([e])
+
+        received = self.getJson(dict(name=draft.name))
+        self.assertEqual(received['rev'],'03')
+        self.assertIn('01-02-03',received['content_url'])
+        self.assertIn('01-02-02',received['previous'])
+
+        received = self.getJson(dict(name=draft.name,rev='02'))
+        self.assertEqual(received['rev'],'02')
+        self.assertIn('01-02-02',received['content_url'])
+
+    def test_rfc(self):
+        draft = WgDraftFactory()
+        for r in range(0,2):
+            e = NewRevisionDocEventFactory(doc=draft,rev=f'{r:02d}')
+            draft.rev = f'{r:02d}'
+            draft.save_with_history([e])
+
+        draft.docalias.create(name='rfc8000')
+        draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
+        draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
+        draft = reload_db_objects(draft)
+        rfc = draft
+        
+        number = rfc.rfc_number()
+        received = self.getJson(dict(name=number))
+        self.assertEqual(received, dict(
+            content_url=rfc.get_href(),
+            name=rfc.canonical_name(),
+            previous=f'{draft.name}-{draft.rev}',
+        ))
+
+        num_received = received
+        received = self.getJson(dict(name=rfc.canonical_name()))
+        self.assertEqual(num_received, received)
+
+    def test_rfc_with_tombstone(self):
+        draft = WgDraftFactory()
+        for r in range(0,2):
+            e = NewRevisionDocEventFactory(doc=draft,rev=f'{r:02d}')
+            draft.rev = f'{r:02d}'
+            draft.save_with_history([e])
+
+        draft.docalias.create(name='rfc3261') # See views_doc.HAS_TOMBSTONE
+        draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
+        draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
+        draft = reload_db_objects(draft)
+        rfc = draft
+
+        # Some old rfcs had tombstones that shouldn't be used for comparisons
+        received = self.getJson(dict(name=rfc.canonical_name()))
+        self.assertTrue(received['previous'].endswith('00'))
+
+
