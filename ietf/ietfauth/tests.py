@@ -656,7 +656,7 @@ class IetfAuthTests(TestCase):
             unauthorized_url = urlreverse('ietf.api.views.author_tools')
             invalidated_apikey = PersonalApiKey.objects.create(
                         endpoint=unauthorized_url, person=person, valid=False)
-            r = self.client.post(unauthorized_url, {'apikey': invalidated_apikey})
+            r = self.client.post(unauthorized_url, {'apikey': invalidated_apikey.hash()})
             self.assertContains(r, 'Invalid apikey', status_code=403)
 
             # too long since regular login
