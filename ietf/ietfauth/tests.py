@@ -633,7 +633,7 @@ class IetfAuthTests(TestCase):
 
             # bad method
             r = self.client.put(key.endpoint, {'apikey':key.hash()})
-            self.assertEqual(r.status_code, 405)
+            self.assertContains(r, 'Method not allowed', status_code=405)
 
             # missing apikey
             r = self.client.post(key.endpoint, {'dummy':'dummy',})
@@ -641,6 +641,22 @@ class IetfAuthTests(TestCase):
 
             # invalid apikey
             r = self.client.post(key.endpoint, {'apikey':BAD_KEY, 'dummy':'dummy',})
+            self.assertContains(r, 'Invalid apikey', status_code=403)
+
+            # invalid garbage apikey (decode error)
+            r = self.client.post(key.endpoint, {'apikey':'foobar', 'dummy':'dummy',})
+            self.assertContains(r, 'Invalid apikey', status_code=403)
+
+            # invalid garbage apikey (struct unpack error)
+            # number of characters in apikey must be divisible by 4
+            r = self.client.post(key.endpoint, {'apikey':'foob', 'dummy':'dummy',})
+            self.assertContains(r, 'Invalid apikey', status_code=403)
+
+            # invalid apikey (invalidated api key)
+            unauthorized_url = urlreverse('ietf.api.views.author_tools')
+            invalidated_apikey = PersonalApiKey.objects.create(
+                        endpoint=unauthorized_url, person=person, valid=False)
+            r = self.client.post(unauthorized_url, {'apikey': invalidated_apikey})
             self.assertContains(r, 'Invalid apikey', status_code=403)
 
             # too long since regular login
