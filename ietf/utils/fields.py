@@ -6,6 +6,8 @@ import datetime
 import json
 import re
 
+import jsonfield
+
 import debug                            # pyflakes:ignore
 
 from typing import Optional, Type # pyflakes:ignore
@@ -264,6 +266,19 @@ class SearchableField(forms.CharField):
             ))
 
         return objs.first() if self.max_entries == 1 else objs
+
+
+class IETFJSONField(jsonfield.fields.forms.JSONField):
+    def __init__(self, *args, empty_values=jsonfield.fields.forms.JSONField.empty_values,
+                 accepted_empty_values=None, **kwargs):
+        if accepted_empty_values is None:
+            accepted_empty_values = []
+        self.empty_values = [x
+                             for x in empty_values
+                             if x not in accepted_empty_values]
+
+        super().__init__(*args, **kwargs)
+
 
 class MissingOkImageField(models.ImageField):
     """Image field that can validate successfully if file goes missing
