@@ -1,3 +1,34 @@
+ietfdb (7.39.0) ietf; urgency=medium
+
+  ** Improved pre-AD abilities, ical content, rfcdiff support, bugfixes.***
+
+  * Merged in [19382] from krathnayake@ietf.org:
+    Adds ability to handle garbage API keys. Fixes #3412.  
+
+  * Merged in [19383] from jennifer@painless-security.com:
+    Allow pre-ADs to be assigned as responsible for document. 
+    Fixes #3229.  
+
+  * Merged in [19384] from jennifer@painless-security.com:
+    Update links in iCal description to be more useful. 
+    Fixes #3349.  
+
+  * Merged in [19385] from jennifer@painless-security.com:
+    Correctly highlight session constraints in the meeting 
+    schedule editor. Fixes #3327.  
+
+  * Merged in [19392] from krathnayake@ietf.org:
+    Improves API authentication tests. Relates to #3412.  
+
+  * Merged in [19393] from krathnayake@ietf.org:
+    Fixes API authentication issue.  
+
+  * Merged in [19396] from rjsparks@nostrum.com:
+    Provide a metadata endpoint to assist rfcdiff.pyht.  
+
+ -- Robert Sparks <rjsparks@nostrum.com>  07 Oct 2021 15:20:42 +0000
+
+
 ietfdb (7.38.0) ietf; urgency=medium
 
   **Authortools API token endpoint, Standalone proceedings, 
