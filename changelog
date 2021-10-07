@@ -26,6 +26,8 @@ ietfdb (7.39.0) ietf; urgency=medium
   * Merged in [19396] from rjsparks@nostrum.com:
     Provide a metadata endpoint to assist rfcdiff.pyht.  
 
+  * Added scout-apm to requirements and added settings scaffolding.
+
  -- Robert Sparks <rjsparks@nostrum.com>  07 Oct 2021 15:20:42 +0000
 
 
