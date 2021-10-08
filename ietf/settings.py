@@ -1051,7 +1051,7 @@ BADNESS_MUCHTOOBIG = 500
 # Set debug apps in settings_local.DEV_APPS
 
 DEV_APPS = []                           # type: List[str]
-DEV_PRE_APPS = []
+DEV_PRE_APPS = []                       # type: List[str]
 DEV_MIDDLEWARE = ()
 
 # django-debug-toolbar and the debug listing of sql queries at the bottom of
