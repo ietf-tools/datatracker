@@ -247,7 +247,7 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
         )
 
     def scope_roles(self):
-        roles = self.user.person.role_set.values_list('name__slug', 'group__acronym')
+        roles = self.user.person.role_set.filter(group__state_id__in=('active','bof','proposed')).values_list('name__slug', 'group__acronym')
         info = {
                 'roles': list(roles)
             }
