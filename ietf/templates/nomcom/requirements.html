@@ -36,10 +36,11 @@
 {% block js %}
 <script>
   $('.collapse').collapse()
-  var header = $('#generic_iesg_reqs_header')
-  header.addClass('fa')
-  header.addClass('fa-caret-right')
-  header.text(' '+header.text()+' (click to expand)')
+  $('.generic_iesg_reqs_header').addClass('fa')
+  $('.generic_iesg_reqs_header').addClass('fa-caret-right')
+  $('.generic_iesg_reqs_header').each(function(){
+      this.text = ' '+this.text+' (click to expand)'
+  })
 </script>
 {% endblock %}
 
