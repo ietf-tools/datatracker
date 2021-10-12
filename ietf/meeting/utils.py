@@ -529,6 +529,14 @@ def swap_meeting_schedule_timeslot_assignments(schedule, source_timeslots, targe
                 for a in lts_assignments:
                     a.delete()
 
+def bulk_create_timeslots(meeting, times, locations, other_props):
+    """Creates identical timeslots for Cartesian product of times and locations"""
+    for time in times:
+        for loc in locations:
+            properties = dict(time=time, location=loc)
+            properties.update(other_props)
+            meeting.timeslot_set.create(**properties)
+
 def preprocess_meeting_important_dates(meetings):
     for m in meetings:
         m.cached_updated = m.updated()

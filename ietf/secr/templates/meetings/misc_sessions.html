@@ -1,5 +1,5 @@
 {% extends "meetings/base_rooms_times.html" %}
-
+{% load agenda_custom_tags %}
 {% block subsection %}
 
 <div class="module">
@@ -27,12 +27,12 @@
           <tr class="{% cycle 'row1' 'row2' %}{% ifchanged assignment.session.type %} break{% endifchanged %}{% if assignment.current_session_status == "canceled" %} cancelled{% endif %}">
             <td>{{ assignment.timeslot.time|date:"D" }}</td>
             <td>{{ assignment.timeslot.time|date:"H:i" }}-{{ assignment.timeslot.end_time|date:"H:i" }}</td>
-            <td>{{ assignment.timeslot.name }}</td>
+            <td>{% assignment_display_name assignment %}</td>
             <td>{{ assignment.session.short }}</td>
             <td>{{ assignment.session.group.acronym }}</td>
             <td>{{ assignment.timeslot.location }}</td>
             <td>{{ assignment.timeslot.show_location }}</td>
-            <td>{{ assignment.timeslot.type }}</td>
+            <td>{% with purpose=assignment.session.purpose %}{{ purpose }}{% if purpose.timeslot_types|length > 1 %} ({{ assignment.slot_type }}){% endif %}{% endwith %}</td>
             {% if assignment.schedule_id == schedule.pk %}
               <td><a href="{% url "ietf.secr.meetings.views.misc_session_edit" meeting_id=meeting.number schedule_name=schedule.name slot_id=assignment.timeslot.id %}">Edit</a></td>
               <td>
@@ -49,7 +49,7 @@
       </tbody>
     </table>
     {% else %}
-      <h3>No timeslots exist for this meeting.  First add the rooms and then the app will create timeslots based on the schedule from the last meeting.</h3>
+      <h3>No timeslots exist for this meeting. Add rooms with the "duplicate timeslots" option enabled to copy timeslots from the last meeting.</h3>
     {% endif %}
     <br /><hr />
     
@@ -73,4 +73,12 @@
 </div> <!-- module -->
 
 
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {{ form.media.js }}
+{% endblock %}
+{% block extrastyle %}
+  {{ form.media.css }}
 {% endblock %}

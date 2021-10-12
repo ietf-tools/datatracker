@@ -10,6 +10,9 @@
   <h1>{% block title %}Possible Meeting Agendas for IETF {{ meeting.number }}{% endblock %}</h1>
 
   <div>
+    {% if can_edit_timeslots %}
+      <p><a href="{% url "ietf.meeting.views.edit_timeslots" num=meeting.number %}">Edit timeslots and room availability</a></p>
+    {% endif %}
     {% for schedules, own, label in schedule_groups %}
       <div class="panel panel-default">
         <div class="panel-heading">

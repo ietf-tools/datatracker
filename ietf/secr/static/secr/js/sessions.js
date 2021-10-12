@@ -1,59 +1,52 @@
 // Copyright The IETF Trust 2015-2021, All Rights Reserved
+/* global alert */
 var ietf_sessions; // public interface
 
 (function() {
   'use strict';
 
-  function stat_ls (val){
-    if (val == 0) {
-      document.form_post.length_session1.disabled = true;
-      document.form_post.length_session2.disabled = true;
-      if (document.form_post.length_session3) { document.form_post.length_session3.disabled = true; }
-      document.form_post.session_time_relation.disabled = true;
-      document.form_post.joint_for_session.disabled = true;
-      document.form_post.length_session1.value = 0;
-      document.form_post.length_session2.value = 0;
-      document.form_post.length_session3.value = 0;
-      document.form_post.session_time_relation.value = '';
-      document.form_post.joint_for_session.value = '';
-      document.form_post.third_session.checked=false;
-    }
-    if (val == 1) {
-      document.form_post.length_session1.disabled = false;
-      document.form_post.length_session2.disabled = true;
-      if (document.form_post.length_session3) { document.form_post.length_session3.disabled = true; }
-      document.form_post.session_time_relation.disabled = true;
-      document.form_post.joint_for_session.disabled = true;
-      document.form_post.length_session2.value = 0;
-      document.form_post.length_session3.value = 0;
-      document.form_post.session_time_relation.value = '';
-      document.form_post.joint_for_session.value = '1';
-      document.form_post.third_session.checked=false;
-    }
-    if (val == 2) {
-      document.form_post.length_session1.disabled = false;
-      document.form_post.length_session2.disabled = false;
-      if (document.form_post.length_session3) { document.form_post.length_session3.disabled = false; }
-      document.form_post.session_time_relation.disabled = false;
-      document.form_post.joint_for_session.disabled = false;
+  function get_formset_management_data(prefix) {
+    return {
+      total_forms: document.getElementById('id_' + prefix + '-TOTAL_FORMS').value,
+    };
+  }
+
+  function update_session_form_visibility(session_num, is_visible) {
+    const elt = document.getElementById('session_row_' + session_num);
+    if (elt) {
+      elt.hidden = !is_visible;
+      elt.querySelector('[name$="DELETE"]').value = is_visible ? '' : 'on';
     }
   }
 
-  function check_num_session (val) {
-    if (document.form_post.num_session.value < val) {
-      alert("Please change the value in the Number of Sessions to use this field");
-      document.form_post.num_session.focused = true;
-      return true;
-    }
-    return false;
+  function have_additional_session() {
+    const elt = document.getElementById('id_third_session');
+    return elt && elt.checked;
   }
 
-  function check_third_session () {
-    if (document.form_post.third_session.checked == false) {
-
-      return true;
+  function update_for_num_sessions(val) {
+    const total_forms = get_formset_management_data('session_set').total_forms;
+    val = Number(val);
+    if (have_additional_session()) {
+      val++;
     }
-    return false;
+
+    for (let i=0; i < total_forms; i++) {
+      update_session_form_visibility(i, i < val);
+    }
+
+    const only_one_session = (val === 1);
+    if (document.form_post.session_time_relation) {
+      document.form_post.session_time_relation.disabled = only_one_session;
+      document.form_post.session_time_relation.closest('tr').hidden = only_one_session;
+    }
+    if (document.form_post.joint_for_session) {
+      document.form_post.joint_for_session.disabled = only_one_session;
+    }
+    const third_session_row = document.getElementById('third_session_row');
+    if (third_session_row) {
+      third_session_row.hidden = val < 2;
+    }
   }
 
   function delete_last_joint_with_groups () {
@@ -114,7 +107,39 @@ var ietf_sessions; // public interface
     delete_last_wg_constraint(slug);
   }
 
+  /**
+   * Handler for the change event on the session count select or 'third session' checkbox
+   */
+  function handle_num_session_change(event) {
+    const num_select_value = Number(event.target.value);
+    if (num_select_value !== 2) {
+      if (document.form_post.third_session) {
+        document.form_post.third_session.checked = false;
+      }
+    }
+    update_for_num_sessions(num_select_value);
+  }
+
+  function handle_third_session_change(event) {
+    const num_select_value = Number(document.getElementById('id_num_session').value);
+    if (num_select_value === 2) {
+      update_for_num_sessions(num_select_value);
+    } else {
+      event.target.checked = false;
+    }
+  }
+
+  /* Initialization */
   function on_load() {
+    // Attach event handler to session count select
+    const num_session_select = document.getElementById('id_num_session');
+    num_session_select.addEventListener('change', handle_num_session_change);
+    const third_session_input = document.getElementById('id_third_session');
+    if (third_session_input) {
+      third_session_input.addEventListener('change', handle_third_session_change);
+    }
+    update_for_num_sessions(num_session_select.value);
+
     // Attach event handlers to constraint selectors
     let selectors = document.getElementsByClassName('wg_constraint_selector');
     for (let index = 0; index < selectors.length; index++) {
@@ -128,9 +153,6 @@ var ietf_sessions; // public interface
 
   // expose public interface methods
   ietf_sessions = {
-    stat_ls: stat_ls,
-    check_num_session: check_num_session,
-    check_third_session: check_third_session,
     delete_last_joint_with_groups: delete_last_joint_with_groups,
     delete_wg_constraint_clicked: delete_wg_constraint_clicked
   }

@@ -1545,6 +1545,43 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   width: 10em;
 }
 
+.timeslot-edit .tstable div.timeslot {
+    border: #000000 solid 1px;
+    border-radius: 0.5em;
+    padding: 0.5em;
+}
+
+.timeslot-edit .tstable .timeslot .ts-name {
+    overflow: hidden;
+}
+.timeslot-edit .tstable .timeslot .ts-type {
+    font-size: smaller;
+}
+
+.timeslot-edit .tstable .timeslot .timeslot-buttons {
+    float: right;
+}
+
+.timeslot-edit .tstable .timeslot.in-official-use {
+    background-color: #d9edf7;
+}
+
+.timeslot-edit .tstable .timeslot.in-unofficial-use {
+    background-color: #f8f8e0;
+}
+
+.timeslot-edit .tstable td.timeslot-collision {
+    background-color: #ffa0a0;
+}
+
+.timeslot-edit .tstable .tstype_unavail {
+    background-color:#666;
+}
+
+.timeslot-edit .official-use-warning {
+    color: #ff0000;
+}
+
 .rightmarker, .leftmarker {
     width: 3px;
     padding-right: 0px !important;

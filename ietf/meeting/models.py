@@ -26,6 +26,7 @@ from django.conf import settings
 # mostly used by json_dict()
 #from django.template.defaultfilters import slugify, date as date_format, time as time_format
 from django.template.defaultfilters import date as date_format
+from django.urls import reverse as urlreverse
 from django.utils.text import slugify
 from django.utils.safestring import mark_safe
 
@@ -36,6 +37,7 @@ from ietf.group.utils import can_manage_materials
 from ietf.name.models import (
     MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName,
     ImportantDateName, TimerangeName, SlideSubmissionStatusName, ProceedingsMaterialTypeName,
+    SessionPurposeName,
 )
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
@@ -338,6 +340,13 @@ class Meeting(models.Model):
             }
 
     def build_timeslices(self):
+        """Get unique day/time/timeslot data for meeting
+        
+        Returns a list of days, time intervals for each day, and timeslots for each day,
+        with repeated days/time intervals removed. Ignores timeslots that do not have a
+        location. The slots return value contains only one TimeSlot for each distinct
+        time interval.
+        """
         days = []          # the days of the meetings
         time_slices = {}   # the times on each day
         slots = {}
@@ -359,8 +368,9 @@ class Meeting(models.Model):
 
         days.sort()
         for ymd in time_slices:
+            # Make sure these sort the same way
             time_slices[ymd].sort()
-            slots[ymd].sort(key=lambda x: x.time)
+            slots[ymd].sort(key=lambda x: (x.time, x.duration))
         return days,time_slices,slots
 
     # this functions makes a list of timeslices and rooms, and
@@ -487,6 +497,18 @@ class Room(models.Model):
             'capacity':             self.capacity,
             }
     # floorplan support
+    def floorplan_url(self):
+        mtg_num = self.meeting.get_number()
+        if not mtg_num:
+            return None
+        elif mtg_num <= settings.FLOORPLAN_LAST_LEGACY_MEETING:
+            base_url = settings.FLOORPLAN_LEGACY_BASE_URL.format(meeting=self.meeting)
+        elif self.floorplan:
+            base_url = urlreverse('ietf.meeting.views.floor_plan', kwargs=dict(num=mtg_num))
+        else:
+            return None
+        return f'{base_url}?room={xslugify(self.name)}'
+
     def left(self):
         return min(self.x1, self.x2) if (self.x1 and self.x2) else 0
     def top(self):
@@ -878,6 +900,14 @@ class SchedTimeSessAssignment(models.Model):
         else:
             return None
 
+    def meeting(self):
+        """Get the meeting to which this assignment belongs"""
+        return self.session.meeting
+
+    def slot_type(self):
+        """Get the TimeSlotTypeName that applies to this assignment"""
+        return self.timeslot.type
+
     def json_url(self):
         if not hasattr(self, '_cached_json_url'):
             self._cached_json_url =  "/meeting/%s/agenda/%s/%s/session/%u.json" % (
@@ -928,12 +958,12 @@ class SchedTimeSessAssignment(models.Model):
 
             g = getattr(self.session, "historic_group", None) or self.session.group
 
-            if self.timeslot.type_id in ('break', 'reg', 'other'):
+            if self.timeslot.type.slug in ('break', 'reg', 'other'):
                 components.append(g.acronym)
                 components.append(slugify(self.session.name))
 
-            if self.timeslot.type_id in ('regular', 'plenary'):
-                if self.timeslot.type_id == "plenary":
+            if self.timeslot.type.slug in ('regular', 'plenary'):
+                if self.timeslot.type.slug == "plenary":
                     components.append("1plenary")
                 else:
                     p = getattr(g, "historic_parent", None) or g.parent
@@ -1098,6 +1128,13 @@ class SessionQuerySet(models.QuerySet):
         """
         return self.with_current_status().exclude(current_status__in=Session.CANCELED_STATUSES)
 
+    def not_deleted(self):
+        """Queryset containing all sessions not deleted
+
+        Results annotated with current_status
+        """
+        return self.with_current_status().exclude(current_status='deleted')
+
     def that_can_meet(self):
         """Queryset containing sessions that can meet
         
@@ -1120,6 +1157,7 @@ class Session(models.Model):
     meeting = ForeignKey(Meeting)
     name = models.CharField(blank=True, max_length=255, help_text="Name of session, in case the session has a purpose rather than just being a group meeting.")
     short = models.CharField(blank=True, max_length=32, help_text="Short version of 'name' above, for use in filenames.")
+    purpose = ForeignKey(SessionPurposeName, null=True, help_text='Purpose of the session')
     type = ForeignKey(TimeSlotTypeName)
     group = ForeignKey(Group)    # The group type historically determined the session type.  BOFs also need to be added as a group. Note that not all meeting requests have a natural group to associate with.
     joint_with_groups = models.ManyToManyField(Group, related_name='sessions_joint_in',blank=True)

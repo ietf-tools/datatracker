@@ -53,6 +53,8 @@ type_ietf_only_patterns = [
     url(r'^agendas/diff/$', views.diff_schedules),
     url(r'^agenda/new/$', views.new_meeting_schedule),
     url(r'^timeslots/edit$',                     views.edit_timeslots),
+    url(r'^timeslot/new$',                       views.create_timeslot),
+    url(r'^timeslot/(?P<slot_id>\d+)/edit$',     views.edit_timeslot),
     url(r'^timeslot/(?P<slot_id>\d+)/edittype$', views.edit_timeslot_type),
     url(r'^rooms$',                              ajax.timeslot_roomsurl),
     url(r'^room/(?P<roomid>\d+).json$',          ajax.timeslot_roomurl),

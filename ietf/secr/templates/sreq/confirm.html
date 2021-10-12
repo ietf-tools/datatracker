@@ -3,8 +3,18 @@
 
 {% block title %}Sessions - Confirm{% endblock %}
 
+{% block extrastyle %}
+<style>
+  dl {width: 100%;}
+  dt {float: left; width: 15%; margin: 0.1em 0 0.1em 0; }
+  dt::after {content: ":";}
+  dd {float: left; width: 85%; margin: 0.1em 0 0.1em 0;}
+</style>
+{% endblock %}
+
 {% block extrahead %}{{ block.super }}
   <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
+  {{ form.media }}
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 
@@ -20,7 +30,7 @@
 
     {% include "includes/sessions_request_view.html" %}
     
-    {% if session.length_session3 %}
+    {% if form.session_forms.forms_to_keep|length > 2 %}
       <br>
             <span class="alert"><p><b>Note: Your request for a third session must be approved by an area director before
             being submitted to agenda@ietf.org.  Click "Submit" below to email an approval
@@ -30,6 +40,8 @@
     
     <form action="{% url "ietf.secr.sreq.views.confirm" acronym=group.acronym %}" method="post">{% csrf_token %}
       {{ form }}
+      {{ form.session_forms.management_form }}
+      {% for sf in form.session_forms %}{% include 'meeting/session_details_form.html' with form=sf hidden=True only %}{% endfor %}
       {% include "includes/buttons_submit_cancel.html" %}
     </form>
 

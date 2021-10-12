@@ -4,16 +4,24 @@
         <tr class="row1"><td>Working Group Name:</td><td>{{ group.name }} ({{ group.acronym }})</td></tr>
         <tr class="row2"><td>Area Name:</td><td>{{ group.parent }}</td></tr>
         <tr class="row1"><td>Number of Sessions Requested:</td><td>{% if session.length_session3 %}3{% else %}{{ session.num_session }}{% endif %}</td></tr>
-        <tr class="row2"><td>Length of Session 1:</td><td>{{ session.length_session1|display_duration }}</td></tr>
-        {% if session.length_session2 %}
-          <tr class="row2"><td>Length of Session 2:</td><td>{{ session.length_session2|display_duration }}</td></tr>
-          {% if not is_virtual %}
+        {% for sess_form in form.session_forms %}{% if sess_form.cleaned_data and not sess_form.cleaned_data.DELETE %}
+        <tr class="row2"><td>Session {{ forloop.counter }}:</td><td>
+          <dl>
+            <dt>Length</dt><dd>{{ sess_form.cleaned_data.requested_duration.total_seconds|display_duration }}</dd>
+            {% if sess_form.cleaned_data.name %}<dt>Name</dt><dd>{{ sess_form.cleaned_data.name }}</dd>{% endif %}
+            {% if sess_form.cleaned_data.purpose.slug != 'session' %}
+              <dt>Purpose</dt>
+              <dd>
+                {{ sess_form.cleaned_data.purpose }}
+                {% if sess_form.cleaned_data.purpose.timeslot_types|length > 1 %}({{ sess_form.cleaned_data.type }}{% endif %}
+              </dd>
+            {% endif %}
+          </dl>
+        </td></tr>
+          {% if forloop.counter == 2 and not is_virtual %}
             <tr class="row2"><td>Time between sessions:</td><td>{% if session.session_time_relation_display %}{{ session.session_time_relation_display }}{% else %}No preference{% endif %}</td></tr>
           {% endif %}
-        {% endif %}
-        {% if session.length_session3 %}
-          <tr class="row2"><td>Length of Session 3:</td><td>{{ session.length_session3|display_duration }}</td></tr>
-        {% endif %}
+        {% endif %}{% endfor %}
         <tr class="row1"><td>Number of Attendees:</td><td>{{ session.attendees }}</td></tr>
         <tr class="row2">
           <td>Conflicts to Avoid:</td>

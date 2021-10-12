@@ -13,7 +13,7 @@ from urllib.parse import urljoin
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models.deletion import CASCADE
+from django.db.models.deletion import CASCADE, PROTECT
 from django.dispatch import receiver
 
 #from simple_history.models import HistoricalRecords
@@ -21,11 +21,13 @@ from django.dispatch import receiver
 import debug                            # pyflakes:ignore
 
 from ietf.group.colors import fg_group_colors, bg_group_colors
-from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName, AgendaTypeName, ExtResourceName
+from ietf.name.models import (GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName, 
+                              AgendaTypeName, AgendaFilterTypeName, ExtResourceName, SessionPurposeName)
 from ietf.person.models import Email, Person
 from ietf.utils.mail import formataddr, send_mail_text
 from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.validators import JSONForeignKeyListValidator
 
 
 class GroupInfo(models.Model):
@@ -250,6 +252,7 @@ validate_comma_separated_roles = RegexValidator(
     code='invalid',
 )
 
+
 class GroupFeatures(models.Model):
     type = OneToOneField(GroupTypeName, primary_key=True, null=False, related_name='features')
     #history = HistoricalRecords()
@@ -277,6 +280,7 @@ class GroupFeatures(models.Model):
     customize_workflow      = models.BooleanField("Workflow",   default=False)
     is_schedulable          = models.BooleanField("Schedulable",default=False)
     show_on_agenda          = models.BooleanField("On Agenda",  default=False)
+    agenda_filter_type      = models.ForeignKey(AgendaFilterTypeName, default='none', on_delete=PROTECT)
     req_subm_approval       = models.BooleanField("Subm. Approval",  default=False)
     #
     agenda_type             = models.ForeignKey(AgendaTypeName, null=True, default="ietf", on_delete=CASCADE)
@@ -290,7 +294,10 @@ class GroupFeatures(models.Model):
     groupman_authroles      = jsonfield.JSONField(max_length=128, blank=False, default=["Secretariat",])
     matman_roles            = jsonfield.JSONField(max_length=128, blank=False, default=["ad","chair","delegate","secr"])
     role_order              = jsonfield.JSONField(max_length=128, blank=False, default=["chair","secr","member"],
-                                                help_text="The order in which roles are shown, for instance on photo pages.  Enter valid JSON.")
+                                                  help_text="The order in which roles are shown, for instance on photo pages.  Enter valid JSON.")
+    session_purposes        = jsonfield.JSONField(max_length=256, blank=False, default=[],
+                                                  help_text="Allowed session purposes for this group type",
+                                                  validators=[JSONForeignKeyListValidator(SessionPurposeName)])
 
 
 class GroupHistory(GroupInfo):

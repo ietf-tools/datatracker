@@ -2592,6 +2592,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "special",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": false,
@@ -2629,6 +2630,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": "ietf",
       "create_wiki": false,
       "custom_group_roles": false,
@@ -2664,6 +2666,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": true,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": true,
@@ -2702,6 +2705,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"ad\"\n]",
+      "agenda_filter_type": "heading",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": true,
@@ -2739,6 +2743,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\",\n    \"secr\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": "ad",
       "create_wiki": true,
       "custom_group_roles": true,
@@ -2776,6 +2781,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": false,
       "custom_group_roles": true,
@@ -2850,6 +2856,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": "ietf",
       "create_wiki": false,
       "custom_group_roles": false,
@@ -2885,6 +2892,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": "ad",
       "create_wiki": false,
       "custom_group_roles": true,
@@ -2920,6 +2928,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\",\n    \"lead\"\n]",
+      "agenda_filter_type": "heading",
       "agenda_type": "ietf",
       "create_wiki": false,
       "custom_group_roles": true,
@@ -2957,6 +2966,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": null,
       "create_wiki": false,
       "custom_group_roles": true,
@@ -2994,6 +3004,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "heading",
       "agenda_type": "ietf",
       "create_wiki": false,
       "custom_group_roles": true,
@@ -3031,6 +3042,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\",\n    \"lead\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": "ad",
       "create_wiki": false,
       "custom_group_roles": true,
@@ -3066,6 +3078,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": null,
       "create_wiki": false,
       "custom_group_roles": true,
@@ -3103,6 +3116,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\",\n    \"advisor\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": "side",
       "create_wiki": true,
       "custom_group_roles": true,
@@ -3140,6 +3154,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"lead\"\n]",
+      "agenda_filter_type": "normal",
       "agenda_type": "ad",
       "create_wiki": false,
       "custom_group_roles": true,
@@ -3177,6 +3192,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": true,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": true,
@@ -3214,6 +3230,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\",\n    \"secr\"\n]",
+      "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": true,
@@ -3251,6 +3268,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": "side",
       "create_wiki": false,
       "custom_group_roles": true,
@@ -3286,6 +3304,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": true,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": false,
@@ -3323,6 +3342,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": null,
       "create_wiki": false,
       "custom_group_roles": true,
@@ -3361,6 +3381,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "special",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": true,
@@ -3398,6 +3419,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": true,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": false,
@@ -6094,6 +6116,46 @@
     },
     "model": "meeting.businessconstraint",
     "pk": "sessions_out_of_order"
+  },
+  {
+    "fields": {
+      "desc": "Column heading button",
+      "name": "Heading",
+      "order": 2,
+      "used": true
+    },
+    "model": "name.agendafiltertypename",
+    "pk": "heading"
+  },
+  {
+    "fields": {
+      "desc": "Not used except for a timeslot-type column (e.g., officehours)",
+      "name": "None",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.agendafiltertypename",
+    "pk": "none"
+  },
+  {
+    "fields": {
+      "desc": "Non-heading filter button",
+      "name": "Normal",
+      "order": 1,
+      "used": true
+    },
+    "model": "name.agendafiltertypename",
+    "pk": "normal"
+  },
+  {
+    "fields": {
+      "desc": "Button in the catch-all column",
+      "name": "Special",
+      "order": 3,
+      "used": true
+    },
+    "model": "name.agendafiltertypename",
+    "pk": "special"
   },
   {
     "fields": {
@@ -13128,6 +13190,17 @@
     },
     "model": "name.timeslottypename",
     "pk": "offagenda"
+  },
+  {
+    "fields": {
+      "desc": "Office hours timeslot",
+      "name": "Office Hours",
+      "order": 0,
+      "private": false,
+      "used": true
+    },
+    "model": "name.timeslottypename",
+    "pk": "officehours"
   },
   {
     "fields": {

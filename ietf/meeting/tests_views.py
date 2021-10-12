@@ -24,9 +24,10 @@ from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import Client, override_settings
-from django.db.models import F
+from django.db.models import F, Max
 from django.http import QueryDict, FileResponse
 from django.template import Context, Template
+from django.utils.text import slugify
 from django.utils.timezone import now
 
 import debug           # pyflakes:ignore
@@ -39,7 +40,6 @@ from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_r
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_meeting_cancellation_notice, send_interim_session_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates, update_important_dates
-from ietf.meeting.helpers import filter_keyword_for_specific_session
 from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission, SchedulingEvent, Room, Constraint, ConstraintName
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
 from ietf.meeting.utils import finalize, condition_slide_order
@@ -54,8 +54,8 @@ from ietf.utils.text import xslugify
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import GroupFactory, GroupEventFactory, RoleFactory
 from ietf.meeting.factories import ( SessionFactory, ScheduleFactory,
-    SessionPresentationFactory, MeetingFactory, FloorPlanFactory, 
-    TimeSlotFactory, SlideSubmissionFactory, RoomFactory, 
+    SessionPresentationFactory, MeetingFactory, FloorPlanFactory,
+    TimeSlotFactory, SlideSubmissionFactory, RoomFactory,
     ConstraintFactory, MeetingHostFactory, ProceedingsMaterialFactory )
 from ietf.doc.factories import DocumentFactory, WgDraftFactory
 from ietf.submit.tests import submission_file
@@ -438,9 +438,12 @@ class MeetingTests(BaseMeetingTestCase):
             self.assertEqual(len(checkboxes), 1,
                              'Row for assignment {} does not have a checkbox input'.format(assignment))
             checkbox = checkboxes.eq(0)
+            kw_token = assignment.session.docname_token_only_for_multiple()
             self.assertEqual(
                 checkbox.attr('data-filter-item'),
-                filter_keyword_for_specific_session(assignment.session),
+                assignment.session.group.acronym.lower() + (
+                    '' if kw_token is None else f'-{kw_token}'
+                )
             )
 
     def test_agenda_personalize_updates_urls(self):
@@ -721,10 +724,13 @@ class MeetingTests(BaseMeetingTestCase):
             if g.parent_id is not None:
                 self.assertIn('%s?show=%s' % (ical_url, g.parent.acronym.lower()), content)
 
-        # Should be a 'non-area events' link showing appropriate types        
-        non_area_labels = [
-            'BOF', 'EDU', 'Hackathon', 'IEPG', 'IESG', 'IETF', 'Plenary', 'Secretariat', 'Tools',
-        ]
+        # The 'non-area events' are those whose keywords are in the last column of buttons
+        na_col = q('#customize td.view:last-child')  # find the column
+        non_area_labels = [e.attrib['data-filter-item']
+                           for e in na_col.find('button.pickview')]
+        assert len(non_area_labels) > 0  # test setup must produce at least one label for this test
+
+        # Should be a 'non-area events' link showing appropriate types
         self.assertIn('%s?show=%s' % (ical_url, ','.join(non_area_labels).lower()), content)
 
     def test_parse_agenda_filter_params(self):
@@ -1679,6 +1685,1048 @@ class EditMeetingScheduleTests(TestCase):
 
 
 
+class EditTimeslotsTests(TestCase):
+    def login(self, username='secretary'):
+        """Log in with permission to edit timeslots"""
+        self.client.login(username=username, password='{}+password'.format(username))
+
+    @staticmethod
+    def edit_timeslots_url(meeting):
+        return urlreverse('ietf.meeting.views.edit_timeslots', kwargs={'num': meeting.number})
+
+    @staticmethod
+    def edit_timeslot_url(ts: TimeSlot):
+        return urlreverse('ietf.meeting.views.edit_timeslot',
+                          kwargs={'num': ts.meeting.number, 'slot_id': ts.pk})
+
+    @staticmethod
+    def create_timeslots_url(meeting):
+        return urlreverse('ietf.meeting.views.create_timeslot', kwargs={'num': meeting.number})
+
+    @staticmethod
+    def create_bare_meeting(number=120) -> Meeting:
+        """Create a basic IETF meeting"""
+        return MeetingFactory(
+            type_id='ietf',
+            number=number,
+            date=datetime.datetime.today() + datetime.timedelta(days=10),
+            populate_schedule=False,
+        )
+
+    @staticmethod
+    def create_initial_schedule(meeting):
+        """Create initial / base schedule in the same manner as through the UI"""
+        owner = User.objects.get(username='secretary').person
+        base_schedule = Schedule.objects.create(
+            meeting=meeting,
+            name='base',
+            owner=owner,
+            visible=True,
+            public=True,
+        )
+
+        schedule = Schedule.objects.create(meeting = meeting,
+                                           name    = "%s-1" % slugify(owner.plain_name()),
+                                           owner   = owner,
+                                           visible = True,
+                                           public  = True,
+                                           base    = base_schedule,
+        )
+
+        meeting.schedule = schedule
+        meeting.save()
+
+    def create_meeting(self, number=120):
+        """Create a meeting ready for adding timeslots in the usual workflow"""
+        meeting = self.create_bare_meeting(number=number)
+        RoomFactory.create_batch(8, meeting=meeting)
+        self.create_initial_schedule(meeting)
+        return meeting
+
+    def test_view_permissions(self):
+        """Only the secretary should be able to edit timeslots"""
+        # test prep and helper method
+        usernames_to_reject = [
+            'plain',
+            RoleFactory(name_id='chair').person.user.username,
+            RoleFactory(name_id='ad', group__type_id='area').person.user.username,
+        ]
+        meeting = self.create_bare_meeting()
+        url = self.edit_timeslots_url(meeting)
+
+        def _assert_permissions(comment):
+            self.client.logout()
+            logged_in_username = '<nobody>'
+            try:
+                # loop through all the usernames that should be rejected
+                for username in usernames_to_reject:
+                    login_testing_unauthorized(self, username, url)
+                    logged_in_username = username
+                # test the last username to reject and log in as secretary
+                login_testing_unauthorized(self, 'secretary', url)
+            except AssertionError:
+                # give a better failure message
+                self.fail(
+                    '{} should not be able to access the edit timeslots page {}'.format(
+                        logged_in_username,
+                        comment,
+                    )
+                )
+            r = self.client.get(url)  # confirm secretary can retrieve the page
+            self.assertEqual(r.status_code, 200,
+                             'secretary should be able to access the edit timeslots page {}'.format(comment))
+
+        # Actual tests here
+        _assert_permissions('without schedule')  # first test without a meeting schedule
+        self.create_initial_schedule(meeting)
+        _assert_permissions('with schedule')  # then test with a meeting schedule
+
+    def test_linked_from_agenda_list(self):
+        """The edit timeslots view should be linked from the agenda list view"""
+        ad = RoleFactory(name_id='ad', group__type_id='area').person
+
+        meeting = self.create_bare_meeting()
+        self.create_initial_schedule(meeting)
+
+        url = urlreverse('ietf.meeting.views.list_schedules', kwargs={'num': meeting.number})
+
+        # Should have no link when logged in as area director
+        self.login(ad.user.username)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(
+            len(q('a[href="{}"]'.format(self.edit_timeslots_url(meeting)))),
+            0,
+            'User who cannot edit timeslots should not see a link to the edit timeslots page'
+        )
+
+        # Should have a link when logged in as secretary
+        self.login()
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertGreaterEqual(
+            len(q('a[href="{}"]'.format(self.edit_timeslots_url(meeting)))),
+            1,
+            'Must be at least one link from the agenda list page to the edit timeslots page'
+        )
+
+    def assert_helpful_url(self, response, helpful_url, message):
+        q = PyQuery(response.content)
+        self.assertGreaterEqual(
+            len(q('.timeslot-edit a[href="{}"]'.format(helpful_url))),
+            1,
+            message,
+        )
+
+    def test_with_no_rooms(self):
+        """Editor should be helpful when there are no rooms yet"""
+        meeting = self.create_bare_meeting()
+        self.login()
+
+        # with no schedule, should get a link to the meeting page in the secr app until we can
+        # handle this situation in the meeting app
+        r = self.client.get(self.edit_timeslots_url(meeting))
+        self.assertEqual(r.status_code, 200)
+        self.assert_helpful_url(
+            r,
+            urlreverse('ietf.secr.meetings.views.view', kwargs={'meeting_id': meeting.number}),
+            'Must be a link to a helpful URL when there are no rooms and no schedule'
+        )
+
+        # with a schedule, should get a link to the create rooms page in the secr app
+        self.create_initial_schedule(meeting)
+        r = self.client.get(self.edit_timeslots_url(meeting))
+        self.assertEqual(r.status_code, 200)
+        self.assert_helpful_url(
+            r,
+            urlreverse('ietf.secr.meetings.views.rooms',
+                       kwargs={'meeting_id': meeting.number, 'schedule_name': meeting.schedule.name}),
+            'Must be a link to a helpful URL when there are no rooms'
+        )
+
+    def test_with_no_timeslots(self):
+        """Editor should be helpful when there are rooms but no timeslots yet"""
+        meeting = self.create_bare_meeting()
+        RoomFactory(meeting=meeting)
+        self.login()
+        helpful_url = self.create_timeslots_url(meeting)
+
+        # with no schedule, should get a link to the meeting page in the secr app until we can
+        # handle this situation in the meeting app
+        r = self.client.get(self.edit_timeslots_url(meeting))
+        self.assertEqual(r.status_code, 200)
+        self.assert_helpful_url(r, helpful_url,
+                                 'Must be a link to a helpful URL when there are no timeslots and no schedule')
+
+        # with a schedule, should get a link to the create rooms page in the secr app
+        self.create_initial_schedule(meeting)
+        r = self.client.get(self.edit_timeslots_url(meeting))
+        self.assertEqual(r.status_code, 200)
+        self.assert_helpful_url(r, helpful_url,
+                                 'Must be a link to a helpful URL when there are no timeslots')
+
+    def assert_required_links_present(self, response, meeting):
+        """Assert that required links on the editor page are present"""
+        q = PyQuery(response.content)
+        self.assertGreaterEqual(
+            len(q('a[href="{}"]'.format(self.create_timeslots_url(meeting)))),
+            1,
+            'Timeslot edit page should have a link to create timeslots'
+        )
+        self.assertGreaterEqual(
+            len(q('a[href="{}"]'.format(urlreverse('ietf.secr.meetings.views.rooms',
+                                                   kwargs={'meeting_id': meeting.number,
+                                                           'schedule_name': meeting.schedule.name}))
+                  )),
+            1,
+            'Timeslot edit page should have a link to edit rooms'
+        )
+
+    def test_required_links_present(self):
+        """Editor should have links to create timeslots and edit rooms"""
+        meeting = self.create_meeting()
+        self.create_initial_schedule(meeting)
+        RoomFactory.create_batch(8, meeting=meeting)
+
+        self.login()
+        r = self.client.get(self.edit_timeslots_url(meeting))
+        self.assertEqual(r.status_code, 200)
+        self.assert_required_links_present(r, meeting)
+
+    def test_shows_timeslots(self):
+        """Timeslots should be displayed properly"""
+        def _col_index(elt):
+            """Find the column index of an element in its table row
+
+            First column is 1
+            """
+            selector = 'td, th'  # accept both td and th elements
+            col_elt = elt.closest(selector)
+            tr = col_elt.parent('tr')
+            return 1 + tr.children(selector).index(col_elt[0])  # [0] gets bare element
+
+        meeting = self.create_meeting()
+        # add some timeslots
+        times = [datetime.time(hour=h) for h in (11, 14)]
+        days = [meeting.get_meeting_date(ii).date() for ii in range(meeting.days)]
+
+        timeslots = []
+        duration = datetime.timedelta(minutes=90)
+        for room in meeting.room_set.all():
+            for day in days:
+                timeslots.extend(
+                    TimeSlotFactory(
+                        meeting=meeting,
+                        location=room,
+                        time=datetime.datetime.combine(day, t),
+                        duration=duration,
+                    )
+                    for t in times
+                )
+
+        # get the page under test
+        self.login()
+        r = self.client.get(self.edit_timeslots_url(meeting))
+        self.assertEqual(r.status_code, 200)
+
+        q = PyQuery(r.content)
+        table = q('#timeslot-table')
+        self.assertEqual(len(table), 1, 'Exactly one timeslot-table required')
+        table = table.eq(0)
+
+        # check the day super-column headings
+        day_headings = table.find('.day-label')
+        self.assertEqual(len(day_headings), len(days))
+        day_columns = dict()  # map datetime to iterable with table col indices for that day
+        next_col = _col_index(day_headings.eq(0))  # find column of the first day
+        for day, heading in zip(days, day_headings.items()):
+            self.assertIn(day.strftime('%a'), heading.text(),
+                          'Weekday abbrev for {} not found in heading'.format(day))
+            self.assertIn(day.strftime('%Y-%m-%d'), heading.text(),
+                          'Numeric date for {} not found in heading'.format(day))
+            cols = int(heading.attr('colspan'))  # columns spanned by day header
+            day_columns[day] = range(next_col, next_col + cols)
+            next_col += cols
+
+        # check the timeslot time headings
+        time_headings = table.find('.time-label')
+        self.assertEqual(len(time_headings), len(times) * len(days))
+
+        expected_columns = dict()  # [date][time] element is expected column for a timeslot
+        for day, columns in day_columns.items():
+            headings = time_headings.filter(
+                # selector for children in any of the day's columns
+                ','.join(
+                    ':nth-child({})'.format(col)
+                    for col in columns
+                )
+            )
+            expected_columns[day] = dict()
+            for time, heading in zip(times, headings.items()):
+                self.assertIn(time.strftime('%H:%M'), heading.text(),
+                              'Timeslot start {} not found for day {}'.format(time, day))
+                expected_columns[day][time] = _col_index(heading)
+
+        # check that the expected timeslots are shown with expected info / ui features
+        timeslot_elts = table.find('.timeslot')
+        self.assertEqual(len(timeslot_elts), len(timeslots), 'Unexpected or missing timeslot elements')
+        for ts in timeslots:
+            pk_elts = timeslot_elts.filter('#timeslot{}'.format(ts.pk))
+            self.assertEqual(len(pk_elts), 1, 'Expect exactly one element for each timeslot')
+            elt = pk_elts.eq(0)
+            self.assertIn(ts.name, elt.text(), 'Timeslot name should appear in the element for {}'.format(ts))
+            self.assertIn(str(ts.type), elt.text(), 'Timeslot type should appear in the element for {}'.format(ts))
+            self.assertEqual(_col_index(elt), expected_columns[ts.time.date()][ts.time.time()],
+                             'Timeslot {} is in the wrong column'.format(ts))
+            delete_btn = elt.find('.delete-button[data-delete-scope="timeslot"]')
+            self.assertEqual(len(delete_btn), 1,
+                             'Timeslot {} should have one delete button'.format(ts))
+            edit_btn = elt.find('a[href="{}"]'.format(
+                urlreverse('ietf.meeting.views.edit_timeslot',
+                           kwargs=dict(num=meeting.number, slot_id=ts.pk))
+            ))
+            self.assertEqual(len(edit_btn), 1,
+                             'Timeslot {} should have one edit button'.format(ts))
+            # find the room heading for the row
+            tr = elt.closest('tr')
+            self.assertIn(ts.location.name, tr.children('th').eq(0).text(),
+                          'Timeslot {} is not shown in the correct row'.format(ts))
+
+    def test_bulk_delete_buttons_exist(self):
+        """Delete buttons for days and columns should be shown"""
+        meeting = self.create_meeting()
+        for day in range(meeting.days):
+            TimeSlotFactory(
+                meeting=meeting,
+                location=meeting.room_set.first(),
+                time=datetime.datetime.combine(
+                    meeting.get_meeting_date(day).date(),
+                    datetime.time(hour=11)
+                ),
+            )
+            TimeSlotFactory(
+                meeting=meeting,
+                location=meeting.room_set.first(),
+                time=datetime.datetime.combine(
+                    meeting.get_meeting_date(day).date(),
+                    datetime.time(hour=14)
+                ),
+            )
+
+        self.login()
+        r = self.client.get(self.edit_timeslots_url(meeting))
+        self.assertEqual(r.status_code, 200)
+
+        q = PyQuery(r.content)
+        table = q('#timeslot-table')
+        days = table.find('.day-label')
+        self.assertEqual(len(days), meeting.days, 'Wrong number of day labels')
+        for day_label in days.items():
+            self.assertEqual(len(day_label.find('.delete-button[data-delete-scope="day"]')), 1,
+                             'No delete button for day {}'.format(day_label.text()))
+
+        slots = table.find('.time-label')
+        self.assertEqual(len(slots), 2 * meeting.days, 'Wrong number of slot labels')
+        for slot_label in slots.items():
+            self.assertEqual(len(slot_label.find('.delete-button[data-delete-scope="column"]')), 1,
+                             'No delete button for slot {}'.format(slot_label.text()))
+
+    def test_timeslot_collision_flag(self):
+        """Overlapping timeslots in a room should be flagged
+
+        Only checks exact overlap because that is all we currently handle. The display puts
+        overlapping but not exactly matching timeslots in separate columns which must be
+        manually checked.
+        """
+        meeting = self.create_bare_meeting()
+
+        t1 = TimeSlotFactory(meeting=meeting)
+        TimeSlotFactory(meeting=meeting, time=t1.time, duration=t1.duration, location=t1.location)
+        TimeSlotFactory(meeting=meeting, time=t1.time, duration=t1.duration)  # other location
+        TimeSlotFactory(meeting=meeting, time=t1.time.replace(hour=t1.time.hour + 1), location=t1.location)  # other time
+
+        self.login()
+        r = self.client.get(self.edit_timeslots_url(meeting))
+        self.assertEqual(r.status_code, 200)
+
+        q = PyQuery(r.content)
+        slots = q('#timeslot-table .tscell')
+        self.assertEqual(len(slots), 4)  # one per location per distinct time
+        collision = slots.filter('.timeslot-collision')
+        no_collision = slots.filter(':not(.timeslot-collision)')
+        self.assertEqual(len(collision), 1, 'Wrong number of timeslot collisions flagged')
+        self.assertEqual(len(no_collision), 3, 'Wrong number of non-colliding timeslots')
+        # check that the cell containing t1 is the one flagged as a conflict
+        self.assertEqual(len(collision.find('#timeslot{}'.format(t1.pk))), 1,
+                         'Wrong timeslot cell flagged as having a collision')
+
+    def test_timeslot_in_use_flag(self):
+        """Timeslots that are in use should be flagged"""
+        meeting = self.create_meeting()
+
+        # assign sessions to some timeslots
+        empty, has_official, has_other = TimeSlotFactory.create_batch(3, meeting=meeting, location=meeting.room_set.first())
+        SchedTimeSessAssignment.objects.create(
+            timeslot=has_official,
+            session=SessionFactory(meeting=meeting, add_to_schedule=False),
+            schedule=meeting.schedule,  # official schedule
+        )
+
+        SchedTimeSessAssignment.objects.create(
+            timeslot=has_other,
+            session=SessionFactory(meeting=meeting, add_to_schedule=False),
+            schedule=ScheduleFactory(meeting=meeting),  # not the official schedule
+        )
+
+        # get the page
+        self.login()
+        r = self.client.get(self.edit_timeslots_url(meeting))
+        self.assertEqual(r.status_code, 200)
+
+        # now check that all timeslots appear, flagged appropriately
+        q = PyQuery(r.content)
+        empty_elt = q('#timeslot{}'.format(empty.pk))
+        has_official_elt = q('#timeslot{}'.format(has_official.pk))
+        has_other_elt = q('#timeslot{}'.format(has_other.pk))
+
+        self.assertEqual(empty_elt.attr('data-unofficial-use'), 'false', 'Unused timeslot should not be in use')
+        self.assertEqual(empty_elt.attr('data-official-use'), 'false', 'Unused timeslot should not be in use')
+
+        self.assertEqual(has_other_elt.attr('data-unofficial-use'), 'true',
+                         'Unofficially used timeslot should be flagged')
+        self.assertEqual(has_other_elt.attr('data-official-use'), 'false',
+                         'Unofficially used timeslot is not in official use')
+
+        self.assertEqual(has_official_elt.attr('data-unofficial-use'), 'false',
+                         'Officially used timeslot not in unofficial use')
+        self.assertEqual(has_official_elt.attr('data-official-use'), 'true',
+                         'Officially used timeslot should be flagged')
+
+    def test_edit_timeslot(self):
+        """Edit page should work as expected"""
+        meeting = self.create_meeting()
+
+        name_before = 'Name Classic (tm)'
+        type_before = 'regular'
+        time_before = datetime.datetime.combine(
+            meeting.date,
+            datetime.time(hour=10),
+        )
+        duration_before = datetime.timedelta(minutes=60)
+        show_location_before = True
+        location_before = meeting.room_set.first()
+        ts = TimeSlotFactory(
+            meeting=meeting,
+            name=name_before,
+            type_id=type_before,
+            time=time_before,
+            duration=duration_before,
+            show_location=show_location_before,
+            location=location_before,
+        )
+
+        self.login()
+        name_after = 'New Name (tm)'
+        type_after = 'plenary'
+        time_after = time_before.replace(day=time_before.day + 1, hour=time_before.hour + 2)
+        duration_after = duration_before * 2
+        show_location_after = False
+        location_after = meeting.room_set.last()
+        r = self.client.post(
+            self.edit_timeslot_url(ts),
+            data=dict(
+                name=name_after,
+                type=type_after,
+                time_0=time_after.strftime('%Y-%m-%d'),  # date for SplitDateTimeField
+                time_1=time_after.strftime('%H:%M'),  # time for SplitDateTimeField
+                duration=str(duration_after),
+                # show_location=show_location_after,  # False values are omitted from form
+                location=location_after.pk,
+            )
+        )
+        self.assertEqual(r.status_code, 302)  # expect redirect to timeslot edit url
+        self.assertEqual(r['Location'], self.edit_timeslots_url(meeting),
+                         'Expected to be redirected to meeting timeslots edit page')
+
+        # check that we changed things
+        self.assertNotEqual(name_before, name_after)
+        self.assertNotEqual(type_before, type_after)
+        self.assertNotEqual(time_before, time_after)
+        self.assertNotEqual(duration_before, duration_after)
+        self.assertNotEqual(location_before, location_after)
+
+        # and that we have the new values
+        ts = TimeSlot.objects.get(pk=ts.pk)
+        self.assertEqual(ts.name, name_after)
+        self.assertEqual(ts.type_id, type_after)
+        self.assertEqual(ts.time, time_after)
+        self.assertEqual(ts.duration, duration_after)
+        self.assertEqual(ts.show_location, show_location_after)
+        self.assertEqual(ts.location, location_after)
+
+    def test_invalid_edit_timeslot(self):
+        meeting = self.create_bare_meeting()
+        ts: TimeSlot = TimeSlotFactory(meeting=meeting, name='slot')  # n.b., colon indicates type hinting
+        self.login()
+        r = self.client.post(
+            self.edit_timeslot_url(ts),
+            data=dict(
+                name='',
+                type=ts.type.pk,
+                time_0=ts.time.strftime('%Y-%m-%d'),
+                time_1=ts.time.strftime('%H:%M'),
+                duration=str(ts.duration),
+                show_location=ts.show_location,
+                location=str(ts.location.pk),
+            )
+        )
+        self.assertContains(r, 'This field is required', status_code=400,
+                            msg_prefix='Missing name not properly rejected')
+
+        r = self.client.post(
+            self.edit_timeslot_url(ts),
+            data=dict(
+                name='different name',
+                type='this is not a type id',
+                time_0=ts.time.strftime('%Y-%m-%d'),
+                time_1=ts.time.strftime('%H:%M'),
+                duration=str(ts.duration),
+                show_location=ts.show_location,
+                location=str(ts.location.pk),
+            )
+        )
+        self.assertContains(r, 'Select a valid choice', status_code=400,
+                            msg_prefix='Invalid type not properly rejected')
+
+        r = self.client.post(
+            self.edit_timeslot_url(ts),
+            data=dict(
+                name='different name',
+                type=ts.type.pk,
+                time_0='this is not a date',
+                time_1=ts.time.strftime('%H:%M'),
+                duration=str(ts.duration),
+                show_location=ts.show_location,
+                location=str(ts.location.pk),
+            )
+        )
+        self.assertContains(r, 'Enter a valid date', status_code=400,
+                            msg_prefix='Invalid date not properly rejected')
+
+        r = self.client.post(
+            self.edit_timeslot_url(ts),
+            data=dict(
+                name='different name',
+                type=ts.type.pk,
+                time_0=ts.time.strftime('%Y-%m-%d'),
+                time_1='this is not a time',
+                duration=str(ts.duration),
+                show_location=ts.show_location,
+                location=str(ts.location.pk),
+            )
+        )
+        self.assertContains(r, 'Enter a valid time', status_code=400,
+                            msg_prefix='Invalid time not properly rejected')
+
+        r = self.client.post(
+            self.edit_timeslot_url(ts),
+            data=dict(
+                name='different name',
+                type=ts.type.pk,
+                time_0=ts.time.strftime('%Y-%m-%d'),
+                time_1=ts.time.strftime('%H:%M'),
+                duration='this is not a duration',
+                show_location=ts.show_location,
+                location=str(ts.location.pk),
+            )
+        )
+        self.assertContains(r, 'Enter a valid duration', status_code=400,
+                            msg_prefix='Invalid duration not properly rejected')
+
+        r = self.client.post(
+            self.edit_timeslot_url(ts),
+            data=dict(
+                name='different name',
+                type=ts.type.pk,
+                time_0=ts.time.strftime('%Y-%m-%d'),
+                time_1=ts.time.strftime('%H:%M'),
+                duration='26:00',  # longer than 12 hours,
+                show_location=ts.show_location,
+                location=str(ts.location.pk),
+            )
+        )
+        self.assertContains(r, 'Ensure this value is less than or equal to', status_code=400,
+                            msg_prefix='Overlong duration not properly rejected')
+
+        r = self.client.post(
+            self.edit_timeslot_url(ts),
+            data=dict(
+                name='different name',
+                type=str(ts.type.pk),
+                time_0=ts.time.strftime('%Y-%m-%d'),
+                time_1=ts.time.strftime('%H:%M'),
+                duration=str(ts.duration),
+                show_location=ts.show_location,
+                location='this is not a location',
+            )
+        )
+        self.assertContains(r, 'Select a valid choice', status_code=400,
+                            msg_prefix='Invalid location not properly rejected')
+
+        ts_after = meeting.timeslot_set.get(pk=ts.pk)
+        self.assertEqual(ts.name, ts_after.name)
+        self.assertEqual(ts.type, ts_after.type)
+        self.assertEqual(ts.time, ts_after.time)
+        self.assertEqual(ts.duration, ts_after.duration)
+        self.assertEqual(ts.show_location, ts_after.show_location)
+        self.assertEqual(ts.location, ts_after.location)
+
+    def test_create_single_timeslot(self):
+        """Creating a single timeslot should work"""
+        meeting = self.create_meeting()
+        timeslots_before = set(ts.pk for ts in meeting.timeslot_set.all())
+
+        post_data = dict(
+            name='some name',
+            type='regular',
+            days=str(meeting.date.toordinal()),
+            time='14:37',
+            duration='1:13',  # does not include seconds
+            show_location=True,
+            locations=str(meeting.room_set.first().pk),
+        )
+        self.login()
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=post_data,
+        )
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r['Location'], self.edit_timeslots_url(meeting),
+                         'Expected to be redirected to meeting timeslots edit page')
+
+        self.assertEqual(meeting.timeslot_set.count(), len(timeslots_before) + 1)
+        ts = meeting.timeslot_set.exclude(pk__in=timeslots_before).first()  # only 1
+        self.assertEqual(ts.name, post_data['name'])
+        self.assertEqual(ts.type_id, post_data['type'])
+        self.assertEqual(str(ts.time.date().toordinal()), post_data['days'])
+        self.assertEqual(ts.time.strftime('%H:%M'), post_data['time'])
+        self.assertEqual(str(ts.duration), '{}:00'.format(post_data['duration']))  # add seconds
+        self.assertEqual(ts.show_location, post_data['show_location'])
+        self.assertEqual(str(ts.location.pk), post_data['locations'])
+
+    def test_create_single_timeslot_outside_meeting_days(self):
+        """Creating a single timeslot outside the official meeting days should work"""
+        meeting = self.create_meeting()
+        timeslots_before = set(ts.pk for ts in meeting.timeslot_set.all())
+        other_date = meeting.get_meeting_date(-7).date()
+        post_data = dict(
+            name='some name',
+            type='regular',
+            other_date=other_date.strftime('%Y-%m-%d'),
+            time='14:37',
+            duration='1:13',  # does not include seconds
+            show_location=True,
+            locations=str(meeting.room_set.first().pk),
+        )
+        self.login()
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=post_data,
+        )
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r['Location'], self.edit_timeslots_url(meeting),
+                         'Expected to be redirected to meeting timeslots edit page')
+
+        self.assertEqual(meeting.timeslot_set.count(), len(timeslots_before) + 1)
+        ts = meeting.timeslot_set.exclude(pk__in=timeslots_before).first()  # only 1
+        self.assertEqual(ts.name, post_data['name'])
+        self.assertEqual(ts.type_id, post_data['type'])
+        self.assertEqual(ts.time.date(), other_date)
+        self.assertEqual(ts.time.strftime('%H:%M'), post_data['time'])
+        self.assertEqual(str(ts.duration), '{}:00'.format(post_data['duration']))  # add seconds
+        self.assertEqual(ts.show_location, post_data['show_location'])
+        self.assertEqual(str(ts.location.pk), post_data['locations'])
+
+
+    def test_invalid_create_timeslot(self):
+        meeting = self.create_bare_meeting()
+        room_pk = str(RoomFactory(meeting=meeting).pk)
+        timeslot_count = TimeSlot.objects.count()
+
+        self.login()
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=dict(
+                name='',
+                type='regular',
+                days=str(meeting.date.toordinal()),
+                time='14:37',
+                duration='1:13',  # does not include seconds
+                show_location=True,
+                locations=room_pk,
+            )
+        )
+        self.assertContains(r, 'This field is required', status_code=400,
+                            msg_prefix='Empty name not rejected properly')
+
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=dict(
+                name='this is a name',
+                type='this is not a type',
+                days=str(meeting.date.toordinal()),
+                time='14:37',
+                duration='1:13',  # does not include seconds
+                show_location=True,
+                locations=room_pk,
+            )
+        )
+        self.assertContains(r, 'Select a valid choice', status_code=400,
+                            msg_prefix='Invalid type not rejected properly')
+
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=dict(
+                name='this is a name',
+                type='regular',
+                # days='',
+                time='14:37',
+                duration='1:13',  # does not include seconds
+                show_location=True,
+                locations=room_pk,
+            )
+        )
+        self.assertContains(r, 'Please select a day or specify a date', status_code=400,
+                            msg_prefix='Missing date not rejected properly')
+
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=dict(
+                name='this is a name',
+                type='regular',
+                days='this is not an ordinal date',
+                time='14:37',
+                duration='1:13',  # does not include seconds
+                show_location=True,
+                locations=room_pk,
+            )
+        )
+        self.assertContains(r, 'Select a valid choice', status_code=400,
+                            msg_prefix='Invalid day not rejected properly')
+
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=dict(
+                name='this is a name',
+                type='regular',
+                days=[str(meeting.date.toordinal()), 'this is not an ordinal date'],
+                time='14:37',
+                duration='1:13',  # does not include seconds
+                show_location=True,
+                locations=room_pk,
+            )
+        )
+        self.assertContains(r, 'Select a valid choice', status_code=400,
+                            msg_prefix='Invalid day with valid day not rejected properly')
+
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=dict(
+                name='this is a name',
+                type='regular',
+                days=str(meeting.date.toordinal()),
+                other_date='this is not a date',
+                time='14:37',
+                duration='1:13',  # does not include seconds
+                show_location=True,
+                locations=room_pk,
+            )
+        )
+        self.assertContains(r, 'Enter a valid date', status_code=400,
+                            msg_prefix='Invalid other_date with valid days not rejected properly')
+
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=dict(
+                name='this is a name',
+                type='regular',
+                days='this is not an ordinal date',
+                other_date='2021-07-13',
+                time='14:37',
+                duration='1:13',  # does not include seconds
+                show_location=True,
+                locations=room_pk,
+            )
+        )
+        self.assertContains(r, 'Select a valid choice', status_code=400,
+                            msg_prefix='Invalid day with valid other_date not rejected properly')
+
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=dict(
+                name='this is a name',
+                type='regular',
+                other_date='this is not a date',
+                time='14:37',
+                duration='1:13',  # does not include seconds
+                show_location=True,
+                locations=room_pk,
+            )
+        )
+        self.assertContains(r, 'Enter a valid date', status_code=400,
+                            msg_prefix='Invalid other_date not rejected properly')
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=dict(
+                name='this is a name',
+                type='regular',
+                days=str(meeting.date.toordinal()),
+                time='14:37',
+                duration="ceci n'est pas une duree",
+                show_location=True,
+                locations=room_pk,
+            )
+        )
+        self.assertContains(r, 'Enter a valid duration', status_code=400,
+                            msg_prefix='Invalid duration not rejected properly')
+
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=dict(
+                name='this is a name',
+                type='regular',
+                days=str(meeting.date.toordinal()),
+                time='14:37',
+                duration="26:00",
+                show_location=True,
+                locations=room_pk,
+            )
+        )
+        self.assertContains(r, 'Ensure this value is less than or equal to', status_code=400,
+                            msg_prefix='Overlong duration not rejected properly')
+
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=dict(
+                name='this is a name',
+                type='regular',
+                days=str(meeting.date.toordinal()),
+                time='14:37',
+                duration="1:13",
+                show_location=True,
+                locations='this is not a room',
+            )
+        )
+        self.assertContains(r, 'is not a valid value', status_code=400,
+                            msg_prefix='Invalid location not rejected properly')
+
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=dict(
+                name='this is a name',
+                type='regular',
+                days=str(meeting.date.toordinal()),
+                time='14:37',
+                duration="1:13",
+                show_location=True,
+                locations=[room_pk, 'this is not a room'],
+            )
+        )
+        self.assertContains(r, 'is not a valid value', status_code=400,
+                            msg_prefix='Invalid location with valid location not rejected properly')
+
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=dict(
+                name='this is a name',
+                type='regular',
+                days=str(meeting.date.toordinal()),
+                time='14:37',
+                duration="1:13",
+                show_location=True,
+            )
+        )
+        self.assertContains(r, 'This field is required', status_code=400,
+                            msg_prefix='Missing location not rejected properly')
+
+        self.assertEqual(TimeSlot.objects.count(), timeslot_count,
+                         'TimeSlot unexpectedly created')
+
+    def test_create_bulk_timeslots(self):
+        """Creating multiple timeslots should work"""
+        meeting = self.create_meeting()
+        timeslots_before = set(ts.pk for ts in meeting.timeslot_set.all())
+        days = [meeting.get_meeting_date(n).date() for n in range(meeting.days)]
+        other_date = meeting.get_meeting_date(-1).date()  # date before start of meeting
+        self.assertNotIn(other_date, days)
+        locations = meeting.room_set.all()
+        post_data = dict(
+            name='some name',
+            type='regular',
+            days=[str(d.toordinal()) for d in days],
+            other_date=other_date.strftime('%Y-%m-%d'),
+            time='14:37',
+            duration='1:13',  # does not include seconds
+            show_location=True,
+            locations=[str(loc.pk) for loc in locations],
+        )
+        self.login()
+        r = self.client.post(
+            self.create_timeslots_url(meeting),
+            data=post_data,
+        )
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r['Location'], self.edit_timeslots_url(meeting),
+                         'Expected to be redirected to meeting timeslots edit page')
+
+        days.append(other_date)
+        new_slot_count = len(days) * len(locations)
+        self.assertEqual(meeting.timeslot_set.count(), len(timeslots_before) + new_slot_count)
+
+        day_locs = set((day, loc) for day in days for loc in locations)  # cartesian product
+        for ts in meeting.timeslot_set.exclude(pk__in=timeslots_before):
+            self.assertEqual(ts.name, post_data['name'])
+            self.assertEqual(ts.type_id, post_data['type'])
+            self.assertEqual(ts.time.strftime('%H:%M'), post_data['time'])
+            self.assertEqual(str(ts.duration), '{}:00'.format(post_data['duration']))  # add seconds
+            self.assertEqual(ts.show_location, post_data['show_location'])
+            self.assertIn(ts.time.date(), days)
+            self.assertIn(ts.location, locations)
+            self.assertIn((ts.time.date(), ts.location), day_locs,
+                          'Duplicated day / location found')
+            day_locs.discard((ts.time.date(), ts.location))
+        self.assertEqual(day_locs, set(), 'Not all day/location combinations created')
+
+    def test_ajax_delete_timeslot(self):
+        """AJAX call to delete timeslot should work"""
+        meeting = self.create_bare_meeting()
+        ts_to_del, ts_to_keep = TimeSlotFactory.create_batch(2, meeting=meeting)
+
+        self.login()
+        r = self.client.post(
+            self.edit_timeslots_url(meeting),
+            data=dict(
+                action='delete',
+                slot_id=str(ts_to_del.pk),
+            )
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Deleted TimeSlot {}'.format(ts_to_del.pk))
+        self.assertNotContains(r, 'Deleted TimeSlot {}'.format(ts_to_keep.pk))
+        self.assertEqual(meeting.timeslot_set.filter(pk=ts_to_del.pk).count(), 0,
+                         'Timeslot not deleted')
+        self.assertEqual(meeting.timeslot_set.filter(pk=ts_to_keep.pk).count(), 1,
+                         'Extra timeslot deleted')
+
+    def test_ajax_delete_timeslots(self):
+        """AJAX call to delete several timeslots should work"""
+        meeting = self.create_bare_meeting()
+        ts_to_del = TimeSlotFactory.create_batch(5, meeting=meeting)
+        ts_to_keep = TimeSlotFactory(meeting=meeting)
+
+        self.login()
+        r = self.client.post(
+            self.edit_timeslots_url(meeting),
+            data=dict(
+                action='delete',
+                slot_id=','.join(str(ts.pk) for ts in ts_to_del),
+            )
+        )
+        self.assertEqual(r.status_code, 200)
+        for ts in ts_to_del:
+            self.assertContains(r, 'Deleted TimeSlot {}'.format(ts.pk))
+        self.assertNotContains(r, 'Deleted TimeSlot {}'.format(ts_to_keep.pk))
+        self.assertEqual(
+            meeting.timeslot_set.filter(pk__in=(ts.pk for ts in ts_to_del)).count(),
+            0,
+            'Timeslots not deleted',
+        )
+        self.assertEqual(meeting.timeslot_set.filter(pk=ts_to_keep.pk).count(), 1,
+                         'Extra timeslot deleted')
+
+    def test_ajax_delete_timeslots_invalid(self):
+        meeting = self.create_bare_meeting()
+        ts = TimeSlotFactory(meeting=meeting)
+        self.login()
+        r = self.client.post(
+            self.edit_timeslots_url(meeting),
+        )
+        self.assertEqual(r.status_code, 400, 'Missing POST data not handled')
+
+        r = self.client.post(
+            self.edit_timeslots_url(meeting),
+            data=dict()
+        )
+        self.assertEqual(r.status_code, 400, 'Empty POST data not handled')
+
+        r = self.client.post(
+            self.edit_timeslots_url(meeting),
+            data=dict(
+                slot_id=str(ts.pk),
+            )
+        )
+        self.assertEqual(r.status_code, 400, 'Missing action not handled')
+
+        r = self.client.post(
+            self.edit_timeslots_url(meeting),
+            data=dict(
+                action='deletify',
+                slot_id=str(ts.pk),
+            )
+        )
+        self.assertEqual(r.status_code, 400, 'Invalid action not handled')
+
+        r = self.client.post(
+            self.edit_timeslots_url(meeting),
+            data=dict(
+                action='delete',
+            )
+        )
+        self.assertEqual(r.status_code, 400, 'Missing slot_id not handled')
+
+        r = self.client.post(
+            self.edit_timeslots_url(meeting),
+            data=dict(
+                action='delete',
+                slot_id='not an id',
+            )
+        )
+        self.assertEqual(r.status_code, 400, 'Invalid slot_id not handled')
+
+        r = self.client.post(
+            self.edit_timeslots_url(meeting),
+            data=dict(
+                action='delete',
+                slot_id='{}, not an id'.format(ts.pk),
+            )
+        )
+        self.assertEqual(r.status_code, 400, 'Invalid slot_id not handled in bulk')
+
+        nonexistent_id = TimeSlot.objects.all().aggregate(Max('id'))['id__max'] + 1
+        r = self.client.post(
+            self.edit_timeslots_url(meeting),
+            data=dict(
+                action='delete',
+                slot_id=str(nonexistent_id),
+            )
+        )
+        self.assertEqual(r.status_code, 404, 'Nonexistent slot_id not handled in bulk')
+
+        r = self.client.post(
+            self.edit_timeslots_url(meeting),
+            data=dict(
+                action='delete',
+                slot_id='{},{}'.format(nonexistent_id, ts.pk),
+            )
+        )
+        self.assertEqual(r.status_code, 404, 'Nonexistent slot_id not handled in bulk')
+
+        self.assertEqual(meeting.timeslot_set.filter(pk=ts.pk).count(), 1,
+                         'TimeSlot unexpectedly deleted')
+
+
 class ReorderSlidesTests(TestCase):
 
     def test_add_slides_to_session(self):
@@ -2024,7 +3072,7 @@ class EditTests(TestCase):
             meeting.date = datetime.date.today() + datetime.timedelta(days=days_offset)
             meeting.save()
             client.login(username="secretary", password="secretary+password")
-            url = urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs=dict(num=meeting.number)) 
+            url = urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs=dict(num=meeting.number))
             r = client.get(url)
             q = PyQuery(r.content)
             return(r, q)
@@ -2419,7 +3467,7 @@ class EditTests(TestCase):
             'time': assignment.timeslot.time.time().isoformat(),
             'duration': assignment.timeslot.duration,
             'location': assignment.timeslot.location_id,
-            'type': assignment.timeslot.type_id,
+            'type': assignment.slot_type().slug,
             'name': assignment.timeslot.name,
             'agenda_note': "New Test Note",
             'action': 'edit-timeslot',

@@ -63,21 +63,66 @@ def yyyymmdd_to_strftime_format(fmt):
             remaining = remaining[1:]
     return res
 
-class DatepickerDateField(forms.DateField):
-    """DateField with some glue for triggering JS Bootstrap datepicker."""
 
-    def __init__(self, date_format, picker_settings={}, *args, **kwargs):
+class DatepickerMedia:
+    """Media definitions needed for Datepicker widgets"""
+    css = dict(all=('bootstrap-datepicker/css/bootstrap-datepicker3.min.css',))
+    js = ('bootstrap-datepicker/js/bootstrap-datepicker.min.js',)
+
+
+class DatepickerDateInput(forms.DateInput):
+    """DateInput that uses the Bootstrap datepicker
+
+    The format must be in the Bootstrap datepicker format (yyyy-mm-dd, e.g.), not the
+    strftime format. The picker_settings argument is a dict of parameters for the datepicker,
+    converting their camelCase names to dash-separated lowercase names and omitting the
+    'data-date' prefix to the key.
+    """
+    Media = DatepickerMedia
+
+    def __init__(self, attrs=None, date_format=None, picker_settings=None):
+        super().__init__(
+            attrs,
+            yyyymmdd_to_strftime_format(date_format),
+        )
+        self.attrs.setdefault('data-provide', 'datepicker')
+        self.attrs.setdefault('data-date-format', date_format)
+        self.attrs.setdefault("data-date-autoclose", "1")
+        self.attrs.setdefault('placeholder', date_format)
+        if picker_settings is not None:
+            for k, v in picker_settings.items():
+                self.attrs['data-date-{}'.format(k)] = v
+
+
+class DatepickerSplitDateTimeWidget(forms.SplitDateTimeWidget):
+    """Split datetime widget using Bootstrap datepicker
+
+    The format must be in the Bootstrap datepicker format (yyyy-mm-dd, e.g.), not the
+    strftime format. The picker_settings argument is a dict of parameters for the datepicker,
+    converting their camelCase names to dash-separated lowercase names and omitting the
+    'data-date' prefix to the key.
+    """
+    Media = DatepickerMedia
+
+    def __init__(self, *, date_format='yyyy-mm-dd', picker_settings=None, **kwargs):
+        date_attrs = kwargs.setdefault('date_attrs', dict())
+        date_attrs.setdefault("data-provide", "datepicker")
+        date_attrs.setdefault("data-date-format", date_format)
+        date_attrs.setdefault("data-date-autoclose", "1")
+        date_attrs.setdefault("placeholder", date_format)
+        if picker_settings is not None:
+            for k, v in picker_settings.items():
+                date_attrs['data-date-{}'.format(k)] = v
+        super().__init__(date_format=yyyymmdd_to_strftime_format(date_format), **kwargs)
+
+
+class DatepickerDateField(forms.DateField):
+    """DateField with some glue for triggering JS Bootstrap datepicker"""
+    def __init__(self, date_format, picker_settings=None, *args, **kwargs):
         strftime_format = yyyymmdd_to_strftime_format(date_format)
         kwargs["input_formats"] = [strftime_format]
-        kwargs["widget"] = forms.DateInput(format=strftime_format)
+        kwargs["widget"] = DatepickerDateInput(dict(placeholder=date_format), date_format, picker_settings)
         super(DatepickerDateField, self).__init__(*args, **kwargs)
-
-        self.widget.attrs["data-provide"] = "datepicker"
-        self.widget.attrs["data-date-format"] = date_format
-        if "placeholder" not in self.widget.attrs:
-            self.widget.attrs["placeholder"] = date_format
-        for k, v in picker_settings.items():
-            self.widget.attrs["data-date-%s" % k] = v
 
 
 # This accepts any ordered combination of labelled days, hours, minutes, seconds

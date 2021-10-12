@@ -8,7 +8,7 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.name.models import ( AgendaTypeName, BallotPositionName, ConstraintName,
+from ietf.name.models import ( AgendaFilterTypeName, AgendaTypeName, BallotPositionName, ConstraintName,
     ContinentName, CountryName, DBTemplateTypeName, DocRelationshipName, DocReminderTypeName,
     DocTagName, DocTypeName, DocUrlTagName, DraftSubmissionStateName, FeedbackTypeName,
     FormalLanguageName, GroupMilestoneStateName, GroupStateName, GroupTypeName,
@@ -684,3 +684,20 @@ class ProceedingsMaterialTypeNameResource(ModelResource):
             "order": ALL,
         }
 api.name.register(ProceedingsMaterialTypeNameResource())
+
+
+class AgendaFilterTypeNameResource(ModelResource):
+    class Meta:
+        queryset = AgendaFilterTypeName.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'agendafiltertypename'
+        ordering = ['slug', ]
+        filtering = {
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(AgendaFilterTypeNameResource())
