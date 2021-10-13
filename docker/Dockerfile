@@ -5,12 +5,12 @@
 # available. Do this in the top-level directory of your datatracker source
 # tree:
 #
-# docker build --tag dt:latest .
+# docker/build
 #
 # You can then execute the datatracker like this (also from the top-level
 # datatracker source directory):
 #
-# docker run -ti -v $(pwd):/root/src dt:latest
+# docker/run
 
 FROM ubuntu:hirsute
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
@@ -21,9 +21,9 @@ EXPOSE 8000
 # Default mysqld/mariadb port
 EXPOSE 3306
 
-# Install all dependencies that are available as packages
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get -y update && \
+    # Install all dependencies that are available as packages
     apt-get -y install --no-install-recommends \
         apache2-utils \
         apt-file \
@@ -47,6 +47,13 @@ RUN apt-get -y update && \
         rsyslog \
         unzip \
         yang-tools && \
+    # Install some other packages that are not dependencies but make life easier
+    apt-get -y install --no-install-recommends \
+        fish \
+        less \
+        nano \
+        ripgrep \
+        zsh && \
     apt-get -y clean && \
     rm -rf /var/lib/apt/lists/*
 
