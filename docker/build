@@ -1,11 +1,11 @@
 #!/bin/bash
 
-version=0.10
+version=0.11
 program=${0##*/}
 progdir=${0%/*}
 if [ "$progdir" = "$program" ]; then progdir="."; fi
 if [ "$progdir" = "." ]; then progdir="$PWD"; fi
-parent=$(dirname $progdir)
+parent=$(dirname "$progdir")
 if [ "$parent" = "." ]; then parent="$PWD"; fi
 
 export LANG=C
@@ -31,10 +31,10 @@ DESCRIPTION
 
 EOF
     echo -e "OPTIONS"
-    if   [ "$(uname)" = "Linux" ]; then
-        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | tr -s "\t|" "\t," | sed -r -e 's/\)[ \t]+([A-Z]+)=\$2[^#]*#/=\1\t/' -e 's/\)[^#]*#/\t/'
+    if   [ "$(uname)" = "Linux" ] || [ "$(uname)" = "Darwin" ]; then
+        grep -E "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" "$0" | tr -s "\t|" "\t," | sed -r -e 's/\)[ \t]+([A-Z]+)=\$2[^#]*#/=\1\t/' -e 's/\)[^#]*#/\t/'
     else
-        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | sed 's/\|.*\$2[^#]*#/	/'| sed -E 's/\|.*\)[^#]*#/	/'
+        grep -E "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" "$0" | sed 's/\|.*\$2[^#]*#/	/'| sed -E 's/\|.*\)[^#]*#/	/'
     fi
     cat <<EOF
 
@@ -48,7 +48,7 @@ COPYRIGHT
 	Copyright (c) 2016 IETF Trust and the persons identified as authors of
 	the code. All rights reserved.  License 'Simplified BSD', as specified
 	in http://opensource.org/licenses/BSD-3-Clause.
-	
+
 EOF
 
 }
@@ -57,10 +57,6 @@ EOF
 function die() {
     echo -e "\n$program: error: $*" >&2
     exit 1
-}
-
-function note() { 
-	if [ -n "$VERBOSE" ]; then echo -e "$*"; fi
 }
 
 # ----------------------------------------------------------------------
@@ -77,24 +73,22 @@ trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; 
 
 # Options
 shortopts=hlt:vV
-longopts=help,local,tag=,verbose,version
+longopts=help,local,tag=,version
 
 # Default values
-BRANCH=$(svn log -v ^/tags -l 2 | grep 'A /tags/[1-9]' | awk '{print $2}')
-TAG=${BRANCH##*/}
+IMAGE=ietf/datatracker-environment
+TAG=$(basename "$(svn info "$parent" | grep ^URL | awk '{print $2}')")
 LOCAL=""
 
 if   [ "$(uname)" = "Linux" ]; then
     args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
     if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
     eval set -- "$args"
-    sed="sed -r"
 else
     # Darwin, BSDs
     args=$(getopt -o$shortopts $SV $*)
     if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
     set -- $args
-    sed="sed -E"
 fi
 
 while true ; do
@@ -102,7 +96,6 @@ while true ; do
 	-h| --help)	usage; exit;;		# Show this help, then exit
 	-l| --local)	LOCAL=1;;		# Don't upload
 	-t| --tag)	TAG=$2; shift;;		# Use this docker image tag, instead of the latest svn tags name
-	-v| --verbose)	VERBOSE=1;;		# Be more talkative
 	-V| --version)	version; exit;;		# Show program version, then exit
 	--)		shift; break;;
 	*) die "Internal error, inconsistent option specification: '$1'";;
@@ -113,14 +106,10 @@ done
 # ----------------------------------------------------------------------
 # The program itself
 
-if [ "$(uname)" == "Linux" ]; then
-    die "Didn't expect to run this script on Linux -- are you inside docker?"
-fi
-
-docker rmi -f ietf/datatracker-environment:trunk || true
-docker build -t ietf/datatracker-environment:$TAG docker/
-docker tag $(docker images -q ietf/datatracker-environment | head -n 1) ietf/datatracker-environment:latest
+docker rmi -f $IMAGE:trunk 2>/dev/null || true
+docker build --progress plain -t "$IMAGE:$TAG" docker/
+docker tag "$(docker images -q $IMAGE | head -n 1)" $IMAGE:latest
 if [ -z "$LOCAL" ]; then
-    docker push ietf/datatracker-environment:latest
-    docker push ietf/datatracker-environment:$TAG
+    docker push $IMAGE:latest
+    docker push "$IMAGE:$TAG"
 fi
