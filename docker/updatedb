@@ -1,5 +1,4 @@
 #!/bin/bash
-# -*- indent-with-tabs: 1 -*-
 
 version=0.20
 program=${0##*/}
@@ -9,7 +8,7 @@ if [ "$progdir" = "." ]; then progdir="$PWD"; fi
 parent=$(dirname "$progdir")
 if [ "$parent" = "." ]; then parent="$PWD"; fi
 
-# ----------------------------------------------------------------------
+
 function usage() {
     cat <<EOF
 NAME
@@ -19,89 +18,68 @@ SYNOPSIS
 	$program [OPTIONS] ARGS
 
 DESCRIPTION
-
 	This script downloads a dump of the IETF database and loads into the
 	local sql server if it is newer than the current dump.
 
+OPTIONS
 EOF
-    echo -e "OPTIONS"
-    if   [ "$(uname)" = "Linux" ]; then
-        grep -E "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" "$0" | tr -s "\t|" "\t," | sed -r -e 's/\)[ \t]+([A-Z]+)=\$2[^#]*#/=\1\t/' -e 's/\)[^#]*#/\t/'
-    else
-        grep -E "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" "$0" | sed 's/\|.*\$2[^#]*#/	/'| sed -E 's/\|.*\)[^#]*#/	/'
-    fi
+    sed -n -E "s|(^\s+-[A-Za-z])\).*#(.*)|\1 \2|p" "$0"
     cat <<EOF
 
-FILES
-
 AUTHOR
-	Written by Henrik Levkowetz, <henrik@levkowetz.com>
+	Written by:
+		Henrik Levkowetz, <henrik@levkowetz.com>
+		Lars Eggert, <lars@eggert.org>
 
 COPYRIGHT
-
-	Copyright (c) 2015 IETF Trust and the persons identified as authors of
-	the code. All rights reserved.  License 'Simplified BSD', as specified
-	in http://opensource.org/licenses/BSD-3-Clause.
-
+	Copyright (c) 2016 IETF Trust and the persons identified as authors of
+	the code. All rights reserved. Redistribution and use in source and
+	binary forms, with or without modification, is permitted pursuant to,
+	and subject to the license terms contained in, the Revised BSD
+	License set forth in Section 4.c of the IETF Trust’s Legal Provisions
+	Relating to IETF Documents(https://trustee.ietf.org/license-info).
 EOF
-
 }
 
-# ----------------------------------------------------------------------
+
 function die() {
     echo -e "\n$program: error: $*" >&2
     exit 1
 }
 
-# ----------------------------------------------------------------------
+
 function version() {
 	echo -e "$program $version"
 }
 
-# ----------------------------------------------------------------------
+
 trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; exit 1' ERR
 
-
-# ----------------------------------------------------------------------
 # Option parsing
-
-# Options
 shortopts=DLZhqvV
-longopts=no-download,no-load,no-zap,help,version
-
 LOAD=1
 DOWNLOAD=1
 DROP=1
 
-if   [ "$(uname)" = "Linux" ]; then
-    args=$(getopt -o "$shortopts" --long "$longopts" -n "$program" -- $SV "$@")
-    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
-    eval set -- "$args"
-else
-    # Darwin, BSDs
-    args=$(getopt -o$shortopts $SV $*)
-    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
-    set -- $args
-fi
+args=$(getopt -o$shortopts $SV $*)
+if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
+set -- $args
 
 while true ; do
     case "$1" in
-	-D| --no-download)	DOWNLOAD="";;	#Don't download, use existing file
-	-L| --no-load)	LOAD=""; ;;		#	Don't load the database
-	-Z| --no-zap)	DROP="";;		#	Don't drop new tables
-	-h| --help)	usage; exit;;		#	Show this help, then exit
-	-V| --version)	version; exit;;		#	Show program version, then exit
-	--)		shift; break;;
-	*) die "Internal error, inconsistent option specification: '$1'";;
+    	-D)    DOWNLOAD="";;	# Don't download, use existing file
+    	-L)    LOAD=""; ;;		# Don't load the database
+    	-Z)    DROP="";;		# Don't drop new tables
+    	-h)    usage; exit;;	# Show this help, then exit
+    	-V)    version; exit;;	# Show program version, then exit
+    	--)    shift; break;;
+    	*) die "Internal error, inconsistent option specification: '$1'";;
     esac
     shift
 done
 
-# ----------------------------------------------------------------------
 # The program itself
-
 DATADIR=$parent/data
-
 DUMP=ietf_utf8.sql.gz
 if [ "$DOWNLOAD" ]; then
     echo "Fetching database dump..."

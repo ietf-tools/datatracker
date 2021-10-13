@@ -18,7 +18,7 @@
 4. **TEMPORARY:** Until Lars' changes have been merged and a docker image is
    available for download, you will need to build it locally:
 
-       docker/build -l
+       docker/build
 
     This will take a while, but only needs to be done once.
 
