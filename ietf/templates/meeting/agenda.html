@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2021, All Rights Reserved #}
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
@@ -182,7 +182,10 @@
                     </span>
                     {% if item.timeslot.show_location and item.timeslot.get_html_location %}
 		      {% if schedule.meeting.number|add:"0" < 96 %}
-                      <a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
+                      {% comment %}<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{% endcomment %}
+                        {{item.timeslot.get_html_location}}
+                      }
+                      {% comment %}</a>{% endcomment %}
                       {% elif item.timeslot.location.floorplan %}
 		      <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
 		      {% else %}
@@ -248,7 +251,9 @@
                       </span>
 		      {% if item.timeslot.show_location and item.timeslot.get_html_location %}
 			{% if schedule.meeting.number|add:"0" < 96 %}
-			<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
+			{% comment %}<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{% endcomment %}
+      {{item.timeslot.get_html_location}}
+      {% comment %}</a>{% endcomment %}
                         {% elif item.timeslot.location.floorplan %}
 			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
 			{% else %}
@@ -271,7 +276,9 @@
                     <td>
                       {% if item.timeslot.show_location and item.timeslot.get_html_location %}
 			{% if schedule.meeting.number|add:"0" < 96 %}
-			<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
+			{% comment %}<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{% endcomment %}
+      {{item.timeslot.get_html_location}}
+      {% comment %}</a>{% endcomment %}
                         {% elif item.timeslot.location.floorplan %}
 			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_html_location|xslugify }}">{{item.timeslot.get_html_location}}</a>
                         {% else %}

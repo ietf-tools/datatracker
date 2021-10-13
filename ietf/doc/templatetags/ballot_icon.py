@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2021, All Rights Reserved
 # Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
@@ -181,7 +181,7 @@ def state_age_colored(doc):
             state_date = datetime.date(1990,1,1)
         days = (datetime.date.today() - state_date).days
         # loosely based on
-        # http://trac.tools.ietf.org/group/iesg/trac/wiki/PublishPath
+        # https://trac.ietf.org/trac/iesg/wiki/PublishPath
         if iesg_state == "lc":
             goal1 = 30
             goal2 = 30

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2019-2020, All Rights Reserved
+# Copyright The IETF Trust 2019-2021, All Rights Reserved
 
 
 import re
@@ -23,7 +23,7 @@ from ietf.utils import log
 """
 This file contains policies regarding reviewer queues.
 The policies are documented in more detail on:
-https://trac.tools.ietf.org/tools/ietfdb/wiki/ReviewerQueuePolicy
+https://trac.ietf.org/trac/ietfdb/wiki/ReviewerQueuePolicy
 Terminology used here should match terminology used in that document.
 """
 
