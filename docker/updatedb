@@ -7,6 +7,7 @@ if [ "$progdir" = "$program" ]; then progdir="."; fi
 if [ "$progdir" = "." ]; then progdir="$PWD"; fi
 parent=$(dirname "$progdir")
 if [ "$parent" = "." ]; then parent="$PWD"; fi
+if [[ $(uname) =~ CYGWIN.* ]]; then parent=$(echo "$parent" | sed -e 's/^\/cygdrive\/\(.\)/\1:/'); fi
 
 
 function usage() {
@@ -56,12 +57,12 @@ function version() {
 trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; exit 1' ERR
 
 # Option parsing
-shortopts=DLZhqvV
+shortopts=DLZhV
 LOAD=1
 DOWNLOAD=1
 DROP=1
 
-args=$(getopt -o$shortopts $SV $*)
+args=$(getopt -o$shortopts $*)
 if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
 set -- $args
 
