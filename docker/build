@@ -61,7 +61,7 @@ trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; 
 
 # Default values
 IMAGE=ietf/datatracker-environment
-TAG=$(basename "$(svn info "$parent" | grep ^URL | awk '{print $2}') | tr -d '\r')")
+TAG=$(basename "$(svn info "$parent" | grep ^URL | awk '{print $2}' | tr -d '\r')")
 LOCAL=1
 
 # Option parsing

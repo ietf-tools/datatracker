@@ -86,7 +86,7 @@ while true ; do
 done
 
 if [ -z "$TAG" ]; then
-  TAG=$(basename "$(svn info "$parent" | grep ^URL | awk '{print $2}')")
+  TAG=$(basename "$(svn info "$parent" | grep ^URL | awk '{print $2}' | tr -d '\r')")
 fi
 
 echo "Starting a docker container for '$REPO:$TAG'."

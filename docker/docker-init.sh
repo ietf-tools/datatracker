@@ -22,6 +22,11 @@ if ! service mariadb status; then
     exit 1
 fi
 
+if [ ! -f /root/src/ietf/settings_local.py ]; then
+    echo "Setting up a default settings_local.py ..."
+    cp /root/src/docker/settings_local.py /root/src/ietf/settings_local.py
+fi
+
 if [ ! -d $MYSQLDIR/ietf_utf8 ]; then
     echo "WARNING: IETF database seems to be missing; populating it from dump."
     mysqladmin -u root --default-character-set=utf8 create ietf_utf8
@@ -66,11 +71,6 @@ for sub in					\
 	mkdir -p "$dir";
     fi
 done
-
-if [ ! -f /root/src/ietf/settings_local.py ]; then
-    echo "Setting up a default settings_local.py ..."
-    cp /root/src/docker/settings_local.py /root/src/ietf/settings_local.py
-fi
 
 python -m smtpd -n -c DebuggingServer localhost:2025 &
 echo
