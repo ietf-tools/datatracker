@@ -18,7 +18,7 @@
             {% endif %}
           </dl>
         </td></tr>
-          {% if forloop.counter == 2 and not is_virtual %}
+          {% if group.features.acts_like_wg and forloop.counter == 2 and not is_virtual %}
             <tr class="row2"><td>Time between sessions:</td><td>{% if session.session_time_relation_display %}{{ session.session_time_relation_display }}{% else %}No preference{% endif %}</td></tr>
           {% endif %}
         {% endif %}{% endfor %}

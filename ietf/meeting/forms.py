@@ -531,27 +531,49 @@ class TimeSlotCreateForm(forms.Form):
 
 
 class DurationChoiceField(forms.ChoiceField):
-    duration_choices = (('3600', '60 minutes'), ('7200', '120 minutes'))
-
-    # todo expand range of choices and make configurable
-    def __init__(self, *args, **kwargs):
+    def __init__(self, durations=None, *args, **kwargs):
+        if durations is None:
+            durations = (3600, 7200)
         super().__init__(
-            choices=(('','--Please select'), *self.duration_choices),
+            choices=self._make_choices(durations),
             *args, **kwargs,
         )
 
     def prepare_value(self, value):
         """Converts incoming value into string used for the option value"""
         if value:
-            return str(int(value.total_seconds())) if hasattr(value, 'total_seconds') else str(value)
+            return str(int(value.total_seconds())) if isinstance(value, datetime.timedelta) else str(value)
         return ''
 
-    def clean(self, value):
-        """Convert option value string back to a timedelta"""
-        val = super().clean(value)
-        if val == '':
-            return None
-        return datetime.timedelta(seconds=int(val))
+    def to_python(self, value):
+        return datetime.timedelta(seconds=round(float(value))) if value not in self.empty_values else None
+
+    def valid_value(self, value):
+        return super().valid_value(self.prepare_value(value))
+
+    def _format_duration_choice(self, dur):
+        seconds = int(dur.total_seconds()) if isinstance(dur, datetime.timedelta) else int(dur)
+        hours = int(seconds / 3600)
+        minutes = round((seconds - 3600 * hours) / 60)
+        hr_str = '{} hour{}'.format(hours, '' if hours == 1 else 's')
+        min_str = '{} minute{}'.format(minutes, '' if minutes == 1 else 's')
+        if hours > 0 and minutes > 0:
+            time_str = ' '.join((hr_str, min_str))
+        elif hours > 0:
+            time_str = hr_str
+        else:
+            time_str = min_str
+        return (str(seconds), time_str)
+
+    def _make_choices(self, durations):
+        return (
+            ('','--Please select'),
+            *[self._format_duration_choice(dur) for dur in durations])
+
+    def _set_durations(self, durations):
+        self.choices = self._make_choices(durations)
+
+    durations = property(None, _set_durations)
 
 
 class SessionDetailsForm(forms.ModelForm):
@@ -573,6 +595,8 @@ class SessionDetailsForm(forms.ModelForm):
             }),
         })
         self.fields['purpose'].queryset = SessionPurposeName.objects.filter(pk__in=session_purposes)
+        if not group.features.acts_like_wg:
+            self.fields['requested_duration'].durations = [datetime.timedelta(minutes=m) for m in range(30, 241, 30)]
 
     class Meta:
         model = Session
@@ -606,7 +630,7 @@ class SessionDetailsInlineFormset(forms.BaseInlineFormSet):
 
     def save_new(self, form, commit=True):
         form.instance.meeting = self._meeting
-        super().save_new(form, commit)
+        return super().save_new(form, commit)
 
     def save(self, commit=True):
         existing_instances = set(form.instance for form in self.forms if form.instance.pk)
@@ -619,14 +643,15 @@ class SessionDetailsInlineFormset(forms.BaseInlineFormSet):
         """Get the not-deleted forms"""
         return [f for f in self.forms if f not in self.deleted_forms]
 
-SessionDetailsFormSet = forms.inlineformset_factory(
-    Group,
-    Session,
-    formset=SessionDetailsInlineFormset,
-    form=SessionDetailsForm,
-    can_delete=True,
-    can_order=False,
-    min_num=1,
-    max_num=3,
-    extra=3,
-)
+def sessiondetailsformset_factory(min_num=1, max_num=3):
+    return forms.inlineformset_factory(
+        Group,
+        Session,
+        formset=SessionDetailsInlineFormset,
+        form=SessionDetailsForm,
+        can_delete=True,
+        can_order=False,
+        min_num=min_num,
+        max_num=max_num,
+        extra=max_num,  # only creates up to max_num total
+    )

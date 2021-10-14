@@ -8,7 +8,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.name.models import TimerangeName, ConstraintName
 from ietf.group.models import Group
-from ietf.meeting.forms import SessionDetailsFormSet
+from ietf.meeting.forms import sessiondetailsformset_factory
 from ietf.meeting.models import ResourceAssociation, Constraint
 from ietf.person.fields import SearchablePersonsField
 from ietf.utils.html import clean_text_field
@@ -90,9 +90,12 @@ class SessionForm(forms.Form):
             self.hidden = False
 
         self.group = group
-        self.session_forms = SessionDetailsFormSet(group=self.group, meeting=meeting, data=data)
+        formset_class = sessiondetailsformset_factory(max_num=3 if group.features.acts_like_wg else 12)
+        self.session_forms = formset_class(group=self.group, meeting=meeting, data=data)
         super(SessionForm, self).__init__(data=data, *args, **kwargs)
 
+        if not self.group.features.acts_like_wg:
+            self.fields['num_session'].choices = ((n, str(n)) for n in range(1, 13))
         self.fields['comments'].widget = forms.Textarea(attrs={'rows':'3','cols':'65'})
 
         other_groups = list(allowed_conflicting_groups().exclude(pk=group.pk).values_list('acronym', 'acronym').order_by('acronym'))

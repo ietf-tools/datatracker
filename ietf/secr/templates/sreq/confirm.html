@@ -30,7 +30,7 @@
 
     {% include "includes/sessions_request_view.html" %}
     
-    {% if form.session_forms.forms_to_keep|length > 2 %}
+    {% if group.features.acts_like_wg and form.session_forms.forms_to_keep|length > 2 %}
       <br>
             <span class="alert"><p><b>Note: Your request for a third session must be approved by an area director before
             being submitted to agenda@ietf.org.  Click "Submit" below to email an approval
