@@ -222,7 +222,12 @@ def compute_hirsch_index(citation_counts):
 
 def get_meeting_registration_data(meeting):
     """"Retrieve registration attendee data and summary statistics.  Returns number
-    of Registration records created."""
+    of Registration records created.
+    
+    MeetingRegistration records are created in realtime as people register for a 
+    meeting. This function serves as an audit / reconciliation. Most records are
+    expected to already exist. The function has been optimized with this in mind.
+    """
     num_created = 0
     num_processed = 0
     response = requests.get(settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number))
@@ -236,9 +241,8 @@ def get_meeting_registration_data(meeting):
             else:
                 raise RuntimeError("Could not decode response from registrations API: '%s...'" % (response.content[:64], ))
 
-
-        # for each user identified in the Registration system
-        # Create a DataTracker MeetingRegistration object
+        records = MeetingRegistration.objects.filter(meeting_id=meeting.pk).select_related('person')
+        meeting_registrations = {r.email:r for r in records}
         for registration in decoded:
             person = None
             # capture the stripped registration values for later use
@@ -247,19 +251,22 @@ def get_meeting_registration_data(meeting):
             affiliation     = registration['Company'].strip()
             country_code    = registration['Country'].strip()
             address         = registration['Email'].strip()
-            matching = MeetingRegistration.objects.filter(meeting_id=meeting.pk, email=address)
-            if matching.exists():
-                object = matching.first()
+            if address in meeting_registrations:
+                object = meeting_registrations[address]
                 created = False
             else:
                 object = MeetingRegistration.objects.create(meeting_id=meeting.pk, email=address)
                 created = True
-            object.first_name=first_name[:200]
-            object.last_name=last_name[:200]
-            object.affiliation=affiliation
-            object.country_code=country_code
-            object.attended = True
-            object.save()
+            
+            if (object.first_name != first_name[:200] or
+                object.last_name != last_name[:200] or
+                object.affiliation != affiliation or
+                object.country_code != country_code):
+                    object.first_name=first_name[:200]
+                    object.last_name=last_name[:200]
+                    object.affiliation=affiliation
+                    object.country_code=country_code
+                    object.save()
 
             # Add a Person object to MeetingRegistration object
             # if valid email is available
