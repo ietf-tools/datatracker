@@ -26,7 +26,7 @@ DESCRIPTION
 
 OPTIONS
 EOF
-    sed -n -E "s|(^\s+-[A-Za-z])\).*#(.*)|\1 \2|p" "$0"
+    grep -E '^\s+-[a-zA-Z])' "$0" | sed -E -e 's/\)[^#]+#/ /'
     cat <<EOF
 
 AUTHOR
