@@ -1,4 +1,9 @@
-<div id="session{{ session.pk }}" class="session {% if not session.group.parent.scheduling_color %}untoggleable{% endif %} {% if session.parent_acronym %}parent-{{ session.parent_acronym }}{% endif %} {% if session.readonly %}readonly{% endif %}" style="width:{{ session.layout_width }}em;" data-duration="{{ session.requested_duration.total_seconds }}" {% if session.attendees != None %}data-attendees="{{ session.attendees }}"{% endif %}>
+<div id="session{{ session.pk }}"
+     class="session {% if not session.group.parent.scheduling_color %}untoggleable-by-parent{% endif %} {% if session.parent_acronym %}parent-{{ session.parent_acronym }} {% endif %}{% if session.purpose %}purpose-{{ session.purpose.slug }} {% else %} purpose-session {% endif %}{% if session.readonly %}readonly {% endif %}"
+     style="width:{{ session.layout_width }}em;"
+     data-duration="{{ session.requested_duration.total_seconds }}" {% if session.attendees != None %}
+     data-attendees="{{ session.attendees }}"{% endif %}
+     data-type="{{ session.type.slug }}">
   <div class="session-label {% if session.group and session.group.is_bof %}bof-session{% endif %}">
     {{ session.scheduling_label }}
     {% if session.group and session.group.is_bof %}<span class="bof-tag">BOF</span>{% endif %}
@@ -30,14 +35,9 @@
     <div class="title">
       <strong>
         <span class="time pull-right"></span>
-        {{ session.scheduling_label }}
-        &middot; {{ session.requested_duration_in_hours }}h
-        {% if session.group %}
-          &middot; {% if session.group.is_bof %}BOF{% else %}{{ session.group.type.name }}{% endif %}
-        {% endif %}
-        {% if session.attendees != None %}
-          &middot; {{ session.attendees }} <i class="fa fa-user-o"></i>
-        {% endif %}
+        {{ session.scheduling_label }} &middot; {{ session.requested_duration_in_hours }}h
+        {% if session.purpose_label  %} &middot; {{ session.purpose_label }} {% endif %}
+        {% if session.attendees != None %} &middot; {{ session.attendees }} <i class="fa fa-user-o"></i> {% endif %}
       </strong>
     </div>
 

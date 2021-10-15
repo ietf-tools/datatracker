@@ -8,6 +8,7 @@ from django.db import migrations
 default_purposes = dict(
     dir=['presentation', 'social', 'tutorial'],
     ietf=['admin', 'presentation', 'social'],
+    nomcom=['closed', 'officehours'],
     rg=['session'],
     team=['coding', 'presentation', 'social', 'tutorial'],
     wg=['session'],

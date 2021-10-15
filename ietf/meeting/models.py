@@ -1146,6 +1146,11 @@ class SessionQuerySet(models.QuerySet):
             type__slug='regular'
         )
 
+    def requests(self):
+        """Queryset containing sessions that may be handled as requests"""
+        return self.exclude(
+            type__in=('offagenda', 'reserved', 'unavail')
+        )
 
 class Session(models.Model):
     """Session records that a group should have a session on the

@@ -16,7 +16,8 @@ def forward(apps, schema_editor):
             ('coding', 'Coding', 'Coding session', ['other']),
             ('admin', 'Administrative', 'Meeting administration', ['other', 'reg']),
             ('social', 'Social', 'Social event or activity', ['other']),
-            ('presentation', 'Presentation', 'Presentation session', ['other', 'regular'])
+            ('presentation', 'Presentation', 'Presentation session', ['other', 'regular']),
+            ('closed', 'Closed meeting', 'Closed meeting', ['other',]),
     )):
         # verify that we're not about to use an invalid purpose
         for ts_type in tstypes:
