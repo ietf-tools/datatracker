@@ -28,12 +28,12 @@ RUN apt-get -y update && \
         apache2-utils \
         apt-file \
         apt-utils \
-        chromium-driver \
         curl \
         enscript \
         gcc \
         ghostscript \
         git \
+        gnupg \
         graphviz \
         libmagic-dev \
         libmariadb-dev \
@@ -47,6 +47,17 @@ RUN apt-get -y update && \
         rsyslog \
         unzip \
         yang-tools && \
+    # Since snap doesn't work in Docker containers, install chromedriver per
+    # https://gist.github.com/varyonic/dea40abcf3dd891d204ef235c6e8dd79#gistcomment-3160722
+    curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list && \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends google-chrome-stable && \
+    CHROMEVER=$(google-chrome --product-version | grep -o "[^\.]*\.[^\.]*\.[^\.]*") && \
+    DRIVERVER=$(curl "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROMEVER") && \
+    curl -L -O -C - "http://chromedriver.storage.googleapis.com/$DRIVERVER/chromedriver_linux64.zip" && \
+    unzip chromedriver_linux64.zip -d /bin && \
+    rm chromedriver_linux64.zip && \
     # Install some other packages that are not dependencies but make life easier
     apt-get -y install --no-install-recommends \
         fish \
@@ -54,6 +65,7 @@ RUN apt-get -y update && \
         nano \
         ripgrep \
         zsh && \
+    # Reduce image footprint (not that it matters given the size of the above)
     apt-get -y clean && \
     rm -rf /var/lib/apt/lists/*
 
