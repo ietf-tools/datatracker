@@ -26,7 +26,9 @@ safe_for_all_meeting_types = [
 
 
 type_ietf_only_patterns = [
-    url(r'^agenda/%(owner)s/%(schedule_name)s/edit$' % settings.URL_REGEXPS, views.edit_schedule),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/edit$' % settings.URL_REGEXPS,
+        RedirectView.as_view(pattern_name='ietf.meeting.views.edit_meeting_schedule', permanent=True),
+        name='ietf.meeting.views.edit_schedule'),
     url(r'^agenda/%(owner)s/%(schedule_name)s/edit/$' % settings.URL_REGEXPS, views.edit_meeting_schedule),
     url(r'^agenda/%(owner)s/%(schedule_name)s/timeslots/$' % settings.URL_REGEXPS, views.edit_meeting_timeslots_and_misc_sessions),
     url(r'^agenda/%(owner)s/%(schedule_name)s/details$' % settings.URL_REGEXPS, views.edit_schedule_properties),
@@ -84,7 +86,9 @@ type_ietf_only_patterns_id_optional = [
     url(r'^agenda(?P<utc>-utc)?(?P<ext>.html)?/?$',     views.agenda),
     url(r'^agenda(?P<ext>.txt)$', views.agenda),
     url(r'^agenda(?P<ext>.csv)$', views.agenda),
-    url(r'^agenda/edit$', views.edit_schedule),
+    url(r'^agenda/edit$',
+        RedirectView.as_view(pattern_name='ietf.meeting.views.edit_meeting_schedule', permanent=True),
+        name='ietf.meetingviews.edit_schedule'),
     url(r'^agenda/edit/$', views.edit_meeting_schedule),
     url(r'^requests$', views.meeting_requests),
     url(r'^agenda/agenda\.ics$', views.agenda_ical),
