@@ -25,6 +25,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.group.models import Role, GroupFeatures
 from ietf.person.models import Person
+from ietf.person.utils import get_dots
 from ietf.doc.utils_bofreq import bofreq_editors
 
 def user_is_person(user, person):
@@ -252,6 +253,10 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
                 'roles': list(roles)
             }
         return info
+
+    def scope_dots(self):
+        dots = get_dots(self.user.person)
+        return { 'dots': dots }
 
     info_registration = (
             "IETF Meeting Registration Info",
