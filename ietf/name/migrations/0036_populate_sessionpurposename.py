@@ -10,14 +10,16 @@ def forward(apps, schema_editor):
     TimeSlotTypeName = apps.get_model('name', 'TimeSlotTypeName')
 
     for order, (slug, name, desc, tstypes) in enumerate((
-            ('session', 'Session', 'Group session', ['regular']),
+            ('regular', 'Regular', 'Regular group session', ['regular']),
             ('tutorial', 'Tutorial', 'Tutorial or training session', ['other']),
             ('officehours', 'Office hours', 'Office hours session', ['other']),
             ('coding', 'Coding', 'Coding session', ['other']),
             ('admin', 'Administrative', 'Meeting administration', ['other', 'reg']),
-            ('social', 'Social', 'Social event or activity', ['other']),
+            ('social', 'Social', 'Social event or activity', ['break', 'other']),
+            ('plenary', 'Plenary', 'Plenary session', ['plenary']),
             ('presentation', 'Presentation', 'Presentation session', ['other', 'regular']),
-            ('closed', 'Closed meeting', 'Closed meeting', ['other',]),
+            ('open_meeting', 'Open meeting', 'Open meeting', ['other']),
+            ('closed_meeting', 'Closed meeting', 'Closed meeting', ['other', 'regular']),
     )):
         # verify that we're not about to use an invalid purpose
         for ts_type in tstypes:

@@ -195,12 +195,6 @@
             {% endfor %}
           </span>
 
-          <span class="timeslot-type-toggles">
-            {% for purpose in session_purposes %}
-              <label class="purpose-{{ purpose.slug }}"><input type="checkbox" checked value="{{ purpose.slug }}"> {{ purpose }}</label>
-            {% endfor %}
-          </span>
-
           <span class="timeslot-group-toggles">
             <button class="btn btn-default" data-toggle="modal" data-target="#timeslot-group-toggles-modal"><input type="checkbox" checked="checked" disabled> Timeslots</button>
           </span>

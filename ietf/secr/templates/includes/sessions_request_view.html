@@ -9,7 +9,7 @@
           <dl>
             <dt>Length</dt><dd>{{ sess_form.cleaned_data.requested_duration.total_seconds|display_duration }}</dd>
             {% if sess_form.cleaned_data.name %}<dt>Name</dt><dd>{{ sess_form.cleaned_data.name }}</dd>{% endif %}
-            {% if sess_form.cleaned_data.purpose.slug != 'session' %}
+            {% if sess_form.cleaned_data.purpose.slug != 'regular' %}
               <dt>Purpose</dt>
               <dd>
                 {{ sess_form.cleaned_data.purpose }}

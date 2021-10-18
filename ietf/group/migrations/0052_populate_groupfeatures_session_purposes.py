@@ -6,12 +6,21 @@ from django.db import migrations
 
 
 default_purposes = dict(
-    dir=['presentation', 'social', 'tutorial'],
-    ietf=['admin', 'presentation', 'social'],
-    nomcom=['closed', 'officehours'],
-    rg=['session'],
+    adhoc=['presentation'],
+    adm=['closed_meeting', 'officehours'],
+    ag=['regular'],
+    area=['regular'],
+    dir=['presentation', 'social', 'tutorial', 'regular'],
+    iab=['closed_meeting', 'regular'],
+    iabasg=['open_meeting', 'closed_meeting'],
+    ietf=['admin', 'plenary', 'presentation', 'social'],
+    nomcom=['closed_meeting', 'officehours'],
+    program=['regular', 'tutorial'],
+    rag=['regular'],
+    review=['open_meeting', 'social'],
+    rg=['regular'],
     team=['coding', 'presentation', 'social', 'tutorial'],
-    wg=['session'],
+    wg=['regular'],
 )
 
 

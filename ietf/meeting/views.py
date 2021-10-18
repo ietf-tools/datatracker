@@ -597,7 +597,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
             s.scheduling_label = "???"
             s.purpose_label = None
-            if (s.purpose is None or s.purpose.slug == 'session') and s.group:
+            if (s.purpose is None or s.purpose.slug == 'regular') and s.group:
                 s.scheduling_label = s.group.acronym
                 s.purpose_label = 'BoF' if s.group.is_bof() else s.group.type.name
             else:
