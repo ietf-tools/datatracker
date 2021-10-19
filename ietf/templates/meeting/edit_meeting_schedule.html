@@ -17,9 +17,12 @@
   .edit-meeting-schedule .past-flag { visibility: hidden; font-size: smaller; }
   .edit-meeting-schedule .edit-grid .timeslot.past .past-flag { visibility: visible; color: #aaaaaa; }
   {# type and purpose styling #}
-  .edit-meeting-schedule .edit-grid .timeslot.wrong-timeslot-type { background-color: transparent; ); }
-  .edit-meeting-schedule .edit-grid .timeslot.wrong-timeslot-type .time-label { color: transparent; ); }
-  .edit-meeting-schedule .session.hidden-purpose { filter: blur(3px); }
+  .edit-meeting-schedule .edit-grid .timeslot.wrong-timeslot-type,
+  .edit-meeting-schedule .edit-grid .timeslot.hidden-timeslot-type { background-color: transparent; ); }
+  .edit-meeting-schedule .edit-grid .timeslot.wrong-timeslot-type .time-label,
+  .edit-meeting-schedule .edit-grid .timeslot.hidden-timeslot-type .time-label { color: transparent; ); }
+  .edit-meeting-schedule .session.hidden-purpose,
+  .edit-meeting-schedule .session.hidden-timeslot-type { filter: blur(3px); }
 {% endblock morecss %}
 
 {% block title %}{{ schedule.name }}: IETF {{ meeting.number }} meeting agenda{% endblock %}
@@ -172,32 +175,44 @@
         </div>
 
         <div class="preferences">
-          <span class="sort-unassigned">
-            Sort unassigned:
-            <select name="sort_unassigned" class="form-control">
-              <option value="name" selected="selected">By name</option>
-              <option value="parent">By area</option>
-              <option value="duration">By duration</option>
-              <option value="comments">Special requests</option>
-            </select>
-          </span>
+          <div>
+            <span class="sort-unassigned">
+              Sort unassigned:
+              <select name="sort_unassigned" class="form-control">
+                <option value="name" selected="selected">By name</option>
+                <option value="parent">By area</option>
+                <option value="duration">By duration</option>
+                <option value="comments">Special requests</option>
+              </select>
+            </span>
 
-          <span class="session-parent-toggles">
-            Show:
-            {% for p in session_parents %}
-              <label class="parent-{{ p.acronym }}"><input type="checkbox" checked value="{{ p.acronym }}"> {{ p.acronym }}</label>
-            {% endfor %}
-          </span>
+            <span class="timeslot-group-toggles">
+              <button class="btn btn-default" data-toggle="modal" data-target="#timeslot-group-toggles-modal"><input type="checkbox" checked="checked" disabled> Timeslots</button>
+            </span>
+          </div>
 
-          <span class="session-purpose-toggles">
-            {% for purpose in session_purposes %}
-              <label class="purpose-{{ purpose.slug }}"><input type="checkbox" checked value="{{ purpose.slug }}"> {{ purpose }}</label>
-            {% endfor %}
-          </span>
+          <div>
+            <span class="toggle-inputs session-parent-toggles">
+              Show:
+              {% for p in session_parents %}
+                <label class="parent-{{ p.acronym }}"><input type="checkbox" checked value="{{ p.acronym }}"> {{ p.acronym }}</label>
+              {% endfor %}
+            </span>
 
-          <span class="timeslot-group-toggles">
-            <button class="btn btn-default" data-toggle="modal" data-target="#timeslot-group-toggles-modal"><input type="checkbox" checked="checked" disabled> Timeslots</button>
-          </span>
+            <span class="toggle-inputs session-purpose-toggles">
+              Purpose:
+              {% for purpose in session_purposes %}
+                <label class="purpose-{{ purpose.slug }}"><input type="checkbox" checked value="{{ purpose.slug }}"> {{ purpose }}</label>
+              {% endfor %}
+            </span>
+
+            <span class="toggle-inputs timeslot-type-toggles">
+              Type:
+              {% for type in timeslot_types %}
+                <label class="timeslot-type-{{ type.slug }}"><input type="checkbox" checked value="{{ type.slug }}"> {{ type }}</label>
+              {% endfor %}
+            </span>
+          </div>
         </div>
       </div>
 

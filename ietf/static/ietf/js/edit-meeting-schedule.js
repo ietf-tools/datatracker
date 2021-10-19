@@ -724,6 +724,23 @@ jQuery(document).ready(function () {
     sessionParentInputs.on("click", updateSessionParentToggling);
     updateSessionParentToggling();
 
+    // Toggling timeslot types
+    let timeSlotTypeInputs = content.find('.timeslot-type-toggles input');
+    function updateTimeSlotTypeToggling() {
+        let checked = [];
+        timeSlotTypeInputs.filter(":checked").each(function () {
+            checked.push("[data-type=" + this.value + "]");
+        });
+
+        sessions.filter(checked.join(",")).removeClass('hidden-timeslot-type');
+        sessions.not(checked.join(",")).addClass('hidden-timeslot-type');
+        timeslots.filter(checked.join(",")).removeClass('hidden-timeslot-type');
+        timeslots.not(checked.join(",")).addClass('hidden-timeslot-type');
+    }
+
+    timeSlotTypeInputs.on("click", updateTimeSlotTypeToggling);
+    updateTimeSlotTypeToggling();
+
     // Toggling session purposes
     let sessionPurposeInputs = content.find('.session-purpose-toggles input');
     function updateSessionPurposeToggling() {

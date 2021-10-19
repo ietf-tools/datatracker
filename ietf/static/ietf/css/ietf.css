@@ -1333,10 +1333,20 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 
 .edit-meeting-schedule .scheduling-panel .preferences {
   margin: 0.5em 0;
+  display: flex;
+  align-items: flex-start;
 }
 
-.edit-meeting-schedule .scheduling-panel .preferences > span {
+.edit-meeting-schedule .scheduling-panel .preferences > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.edit-meeting-schedule .scheduling-panel .preferences > div > span {
+  margin-top: 0;
   margin-right: 1em;
+  white-space: nowrap;
 }
 
 .edit-meeting-schedule .sort-unassigned select {
@@ -1363,7 +1373,7 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   margin-top: 1em;
 }
 
-.edit-meeting-schedule .session-parent-toggles label {
+.edit-meeting-schedule .toggle-inputs label {
   font-weight: normal;
   margin-right: 1em;
   padding: 0 1em;

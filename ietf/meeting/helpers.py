@@ -310,7 +310,7 @@ class AgendaKeywordTool:
 
     @property
     def filterable_purposes(self):
-        return SessionPurposeName.objects.exclude(slug='session').order_by('name')
+        return SessionPurposeName.objects.exclude(slug='regular').order_by('name')
 
 
 class AgendaFilterOrganizer(AgendaKeywordTool):

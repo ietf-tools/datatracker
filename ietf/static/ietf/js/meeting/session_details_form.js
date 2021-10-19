@@ -55,7 +55,7 @@
 
   function update_name_field_visibility(name_elt, purpose) {
     const row = name_elt.closest('tr');
-    if (purpose === 'session') {
+    if (purpose === 'regular') {
       row.setAttribute('hidden', 'hidden');
     } else {
       row.removeAttribute('hidden');

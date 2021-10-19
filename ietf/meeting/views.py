@@ -991,6 +991,14 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             p.light_scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round((0.9 + 0.1 * x) * 255)) for x in rgb_color))
 
     session_purposes = sorted(set(s.purpose for s in sessions if s.purpose), key=lambda p: p.name)
+    timeslot_types = sorted(
+        set(
+            s.type for s in sessions if s.type
+        ).union(
+            t.type for t in timeslots_qs.all()
+        ),
+        key=lambda tstype: tstype.name,
+    )
 
     return render(request, "meeting/edit_meeting_schedule.html", {
         'meeting': meeting,
@@ -1003,6 +1011,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'unassigned_sessions': unassigned_sessions,
         'session_parents': session_parents,
         'session_purposes': session_purposes,
+        'timeslot_types': timeslot_types,
         'hide_menu': True,
         'lock_time': lock_time,
     })
