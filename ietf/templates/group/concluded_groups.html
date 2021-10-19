@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2021, All Rights Reserved #}
 {% load origin static %}
 
 {% block pagehead %}
@@ -36,10 +36,12 @@
       <div class="panel-body">
 
     {% if label == "WGs" %}
+{% comment "Replace this if that tools page is moved" %}
       <p>
         Some additional concluded WGs may
         be present <a href="https://tools.ietf.org/wg/concluded">here</a>.
       </p>
+{% endcomment %}
     {% elif label == "RGs" %}
       <p>
         The information below is incomplete and misses a few older RGs.

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -48,7 +48,7 @@ def redirect(request, path="", script=""):
             pass	# it's ok, request didn't have 'command'.
         except:
             pass	# strange exception like the one described in
-                        # http://merlot.tools.ietf.org/tools/ietfdb/ticket/179 ?
+                        # https://trac.ietf.org/trac/ietfdb/ticket/179?
                         # just ignore the command string.
     if cmd is not None:
         remove_args.append('command')

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2020, All Rights Reserved
+# Copyright The IETF Trust 2010-2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -190,9 +190,6 @@ class Group(GroupInfo):
         group1['list_archive'] = self.list_archive
         group1['comments']     = self.comments
         return group1
-
-    def has_tools_page(self):
-        return self.type_id in ['wg', ] and self.state_id in ['active', 'dormant', 'replaced', 'conclude']
 
     def liaison_approvers(self):
         '''Returns roles that have liaison statement approval authority for group'''

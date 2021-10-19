@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -208,8 +208,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     entries.append(("Email expansions", urlreverse("ietf.group.views.email", kwargs=kwargs)))
     if group.list_archive.startswith("http:") or group.list_archive.startswith("https:") or group.list_archive.startswith("ftp:"):
         entries.append((mark_safe("List archive &raquo;"), group.list_archive))
-    if group.has_tools_page():
-        entries.append((mark_safe("Tools &raquo;"), "https://tools.ietf.org/%s/%s/" % (group.type_id, group.acronym)))
+
 
     # actions
     actions = []
