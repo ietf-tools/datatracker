@@ -199,19 +199,23 @@
               {% endfor %}
             </span>
 
-            <span class="toggle-inputs session-purpose-toggles">
-              Purpose:
-              {% for purpose in session_purposes %}
-                <label class="purpose-{{ purpose.slug }}"><input type="checkbox" checked value="{{ purpose.slug }}"> {{ purpose }}</label>
-              {% endfor %}
-            </span>
+            {% if session_purposes|length > 1 %}
+              <span class="toggle-inputs session-purpose-toggles">
+                Purpose:
+                {% for purpose in session_purposes %}
+                  <label class="purpose-{{ purpose.slug }}"><input type="checkbox" checked value="{{ purpose.slug }}"> {{ purpose }}</label>
+                {% endfor %}
+              </span>
+            {% endif %}
 
-            <span class="toggle-inputs timeslot-type-toggles">
-              Type:
-              {% for type in timeslot_types %}
-                <label class="timeslot-type-{{ type.slug }}"><input type="checkbox" checked value="{{ type.slug }}"> {{ type }}</label>
-              {% endfor %}
-            </span>
+            {% if timeslot_types|length > 1 %}
+              <span class="toggle-inputs timeslot-type-toggles">
+                Type:
+                {% for type in timeslot_types %}
+                  <label class="timeslot-type-{{ type.slug }}"><input type="checkbox" checked value="{{ type.slug }}"> {{ type }}</label>
+                {% endfor %}
+              </span>
+            {% endif %}
           </div>
         </div>
       </div>

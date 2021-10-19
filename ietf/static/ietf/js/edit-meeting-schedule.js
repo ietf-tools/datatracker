@@ -737,9 +737,10 @@ jQuery(document).ready(function () {
         timeslots.filter(checked.join(",")).removeClass('hidden-timeslot-type');
         timeslots.not(checked.join(",")).addClass('hidden-timeslot-type');
     }
-
-    timeSlotTypeInputs.on("click", updateTimeSlotTypeToggling);
-    updateTimeSlotTypeToggling();
+    if (timeSlotTypeInputs.length > 0) {
+        timeSlotTypeInputs.on("click", updateTimeSlotTypeToggling);
+        updateTimeSlotTypeToggling();
+    }
 
     // Toggling session purposes
     let sessionPurposeInputs = content.find('.session-purpose-toggles input');
@@ -752,9 +753,10 @@ jQuery(document).ready(function () {
         sessions.filter(checked.join(",")).removeClass('hidden-purpose');
         sessions.not(checked.join(",")).addClass('hidden-purpose');
     }
-
-    sessionPurposeInputs.on("click", updateSessionPurposeToggling);
-    updateSessionPurposeToggling();
+    if (sessionPurposeInputs.length > 0) {
+        sessionPurposeInputs.on("click", updateSessionPurposeToggling);
+        updateSessionPurposeToggling();
+    }
 
     // toggling visible timeslots
     let timeslotGroupInputs = content.find("#timeslot-group-toggles-modal .modal-body input");
