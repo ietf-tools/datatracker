@@ -827,7 +827,7 @@ class OpenIDConnectTests(TestCase):
             session["nonce"] = rndstr()
             args = {
                 "response_type": "code",
-                "scope": ['openid', 'profile', 'email', 'roles', 'registration', ],
+                "scope": ['openid', 'profile', 'email', 'roles', 'registration', 'dots' ],
                 "nonce": session["nonce"],
                 "redirect_uri": redirect_uris[0],
                 "state": session["state"]
@@ -876,7 +876,7 @@ class OpenIDConnectTests(TestCase):
             # Get userinfo, check keys present
             userinfo = client.do_user_info_request(state=params["state"], scope=args['scope'])
             for key in [ 'email', 'family_name', 'given_name', 'meeting', 'name', 'roles',
-                         'ticket_type', 'reg_type', 'affiliation', 'picture', ]:
+                         'ticket_type', 'reg_type', 'affiliation', 'picture', 'dots', ]:
                 self.assertIn(key, userinfo)
                 self.assertTrue(userinfo[key])
             self.assertIn('remote', set(userinfo['reg_type'].split()))

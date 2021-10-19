@@ -15,6 +15,7 @@ from django.core.exceptions import ObjectDoesNotExist
 import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person
+from ietf.group.models import GroupFeatures
 from ietf.utils.mail import send_mail
 
 def merge_persons(request, source, target, file=sys.stdout, verbose=False):
@@ -220,3 +221,22 @@ def get_active_irsg():
         cache.set(cache_key, active_irsg_balloters)
     return active_irsg_balloters        
 
+def get_dots(person):
+        roles = person.role_set.filter(group__state_id__in=('active','bof','proposed'))
+        chair_group_types = ['wg', 'program', 'rg', 'iabasg']
+        dots = []
+        if roles.filter(name_id='chair',group__type_id__in=chair_group_types).exists():
+            dots.append('chair')
+        if roles.filter(group__acronym='iesg',name_id='ad').exists():
+            dots.append('ad')
+        if roles.filter(group__acronym='iab',name_id='member').exists():
+            dots.append('iab')
+        if roles.filter(group__acronym='irsg').exists():
+            dots.append('irsg')
+        if roles.filter(group__acronym='llc-board').exists():
+            dots.append('llc')
+        if roles.filter(group__acronym='ietf-trust').exists():
+            dots.append('trust')
+        if roles.filter(group__acronym__startswith='nomcom', name_id__in=('chair','member')).exists():
+            dots.append('nomcom')
+        return dots
