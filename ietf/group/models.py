@@ -23,6 +23,7 @@ import debug                            # pyflakes:ignore
 from ietf.group.colors import fg_group_colors, bg_group_colors
 from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName, AgendaTypeName, ExtResourceName
 from ietf.person.models import Email, Person
+from ietf.utils.db import IETFJSONField
 from ietf.utils.mail import formataddr, send_mail_text
 from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
@@ -282,14 +283,14 @@ class GroupFeatures(models.Model):
     agenda_type             = models.ForeignKey(AgendaTypeName, null=True, default="ietf", on_delete=CASCADE)
     about_page              = models.CharField(max_length=64, blank=False, default="ietf.group.views.group_about" )
     default_tab             = models.CharField(max_length=64, blank=False, default="ietf.group.views.group_about" )
-    material_types          = jsonfield.JSONField(max_length=64, blank=False, default=["slides"])
-    default_used_roles      = jsonfield.JSONField(max_length=256, blank=False, default=[])
-    admin_roles             = jsonfield.JSONField(max_length=64, blank=False, default=["chair"]) # Trac Admin
-    docman_roles            = jsonfield.JSONField(max_length=128, blank=False, default=["ad","chair","delegate","secr"])
-    groupman_roles          = jsonfield.JSONField(max_length=128, blank=False, default=["ad","chair",])
-    groupman_authroles      = jsonfield.JSONField(max_length=128, blank=False, default=["Secretariat",])
-    matman_roles            = jsonfield.JSONField(max_length=128, blank=False, default=["ad","chair","delegate","secr"])
-    role_order              = jsonfield.JSONField(max_length=128, blank=False, default=["chair","secr","member"],
+    material_types          = IETFJSONField(max_length=64, accepted_empty_values=[[], {}], blank=False, default=["slides"])
+    default_used_roles      = IETFJSONField(max_length=256, accepted_empty_values=[[], {}], blank=False, default=[])
+    admin_roles             = IETFJSONField(max_length=64, accepted_empty_values=[[], {}], blank=False, default=["chair"]) # Trac Admin
+    docman_roles            = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=["ad","chair","delegate","secr"])
+    groupman_roles          = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=["ad","chair",])
+    groupman_authroles      = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=["Secretariat",])
+    matman_roles            = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=["ad","chair","delegate","secr"])
+    role_order              = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=["chair","secr","member"],
                                                 help_text="The order in which roles are shown, for instance on photo pages.  Enter valid JSON.")
 
 
