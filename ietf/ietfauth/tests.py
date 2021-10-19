@@ -810,7 +810,8 @@ class OpenIDConnectTests(TestCase):
 
             # Get a user for which we want to get access
             person = PersonFactory(with_bio=True)
-            RoleFactory(name_id='chair', person=person)
+            active_group = RoleFactory(name_id='chair', person=person).group
+            closed_group = RoleFactory(name_id='chair', person=person, group__state_id='conclude').group
             # an additional email
             EmailFactory(person=person)
             email_list = person.email_set.all().values_list('address', flat=True)
@@ -880,6 +881,8 @@ class OpenIDConnectTests(TestCase):
                 self.assertTrue(userinfo[key])
             self.assertIn('remote', set(userinfo['reg_type'].split()))
             self.assertNotIn('hackathon', set(userinfo['reg_type'].split()))
+            self.assertIn(active_group.acronym, [i[1] for i in userinfo['roles']])
+            self.assertNotIn(closed_group.acronym, [i[1] for i in userinfo['roles']])
 
             # Create another registration, with a different email
             MeetingRegistration.objects.create(
