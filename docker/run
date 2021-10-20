@@ -89,6 +89,19 @@ if [ -z "$TAG" ]; then
   TAG=$(basename "$(svn info "$parent" | grep ^URL | awk '{print $2}' | tr -d '\r')")
 fi
 
+if [[ $(uname) =~ CYGWIN.* ]]; then
+    echo "Running under Cygwin, replacing symlinks with file copies"
+    ICSFILES=$(/usr/bin/find "$parent/vzic/zoneinfo/" -name '*.ics' -print)
+    for ICSFILE in $ICSFILES; do
+        LINK=$(head -n1 "$ICSFILE" | sed -e '/link .*/!d' -e 's/link \(.*\)/\1/')
+        if [ "$LINK" ]; then
+            WDIR=$(dirname "$ICSFILE")
+            echo "Replacing $(basename "$ICSFILE") with $LINK"
+            cp -f "$WDIR/$LINK" "$ICSFILE"
+        fi
+    done
+fi
+
 echo "Starting a docker container for '$REPO:$TAG'."
 mkdir -p "$MYSQLDIR"
 docker run -ti -p "$PORT":8000 -p 33306:3306 \
