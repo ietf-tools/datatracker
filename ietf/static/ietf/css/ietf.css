@@ -1239,6 +1239,9 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 .edit-meeting-schedule .session .session-label {
   flex-grow: 1;
   margin-left: 0.1em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .edit-meeting-schedule .session .session-label .bof-tag {
@@ -1333,20 +1336,11 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
 
 .edit-meeting-schedule .scheduling-panel .preferences {
   margin: 0.5em 0;
-  display: flex;
-  align-items: flex-start;
 }
 
-.edit-meeting-schedule .scheduling-panel .preferences > div {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.edit-meeting-schedule .scheduling-panel .preferences > div > span {
+.edit-meeting-schedule .scheduling-panel .preferences  > span {
   margin-top: 0;
   margin-right: 1em;
-  white-space: nowrap;
 }
 
 .edit-meeting-schedule .sort-unassigned select {
@@ -1354,17 +1348,20 @@ a.fc-event, .fc-event, .fc-content, .fc-title, .fc-event-container {
   display: inline-block;
 }
 
-.edit-meeting-schedule #timeslot-group-toggles-modal .modal-body {
+.edit-meeting-schedule #timeslot-group-toggles-modal .modal-body > div {
+    margin-bottom: 1.5em;
+}
+.edit-meeting-schedule #timeslot-group-toggles-modal .modal-body .individual-timeslots {
   /*column-count: 3;*/
   display: flex;
   flex-flow: row wrap;
 }
 
-.edit-meeting-schedule #timeslot-group-toggles-modal .modal-body > * {
+.edit-meeting-schedule #timeslot-group-toggles-modal .modal-body .individual-timeslots > * {
   margin-right: 1.5em;
 }
 
-.edit-meeting-schedule #timeslot-group-toggles-modal .modal-body label {
+.edit-meeting-schedule #timeslot-group-toggles-modal .modal-body .individual-timeslots label {
   display: block;
   font-weight: normal;
 }

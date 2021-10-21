@@ -738,13 +738,13 @@ jQuery(document).ready(function () {
         timeslots.not(checked.join(",")).addClass('hidden-timeslot-type');
     }
     if (timeSlotTypeInputs.length > 0) {
-        timeSlotTypeInputs.on("click", updateTimeSlotTypeToggling);
+        timeSlotTypeInputs.on("change", updateTimeSlotTypeToggling);
         updateTimeSlotTypeToggling();
     }
 
     // Toggling session purposes
     let sessionPurposeInputs = content.find('.session-purpose-toggles input');
-    function updateSessionPurposeToggling() {
+    function updateSessionPurposeToggling(evt) {
         let checked = [];
         sessionPurposeInputs.filter(":checked").each(function () {
             checked.push(".purpose-" + this.value);
@@ -754,12 +754,24 @@ jQuery(document).ready(function () {
         sessions.not(checked.join(",")).addClass('hidden-purpose');
     }
     if (sessionPurposeInputs.length > 0) {
-        sessionPurposeInputs.on("click", updateSessionPurposeToggling);
+        sessionPurposeInputs.on("change", updateSessionPurposeToggling);
         updateSessionPurposeToggling();
+        content.find('#session-toggles-modal .select-all').get(0).addEventListener(
+          'click',
+          function() {
+              sessionPurposeInputs.prop('checked', true);
+              updateSessionPurposeToggling();
+          });
+        content.find('#session-toggles-modal .clear-all').get(0).addEventListener(
+          'click',
+          function() {
+              sessionPurposeInputs.prop('checked', false);
+              updateSessionPurposeToggling();
+          });
     }
 
     // toggling visible timeslots
-    let timeslotGroupInputs = content.find("#timeslot-group-toggles-modal .modal-body input");
+    let timeslotGroupInputs = content.find("#timeslot-group-toggles-modal .modal-body .individual-timeslots input");
     function updateTimeslotGroupToggling() {
         let checked = [];
         timeslotGroupInputs.filter(":checked").each(function () {

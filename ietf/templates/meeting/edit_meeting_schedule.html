@@ -175,48 +175,27 @@
         </div>
 
         <div class="preferences">
-          <div>
-            <span class="sort-unassigned">
-              Sort unassigned:
-              <select name="sort_unassigned" class="form-control">
-                <option value="name" selected="selected">By name</option>
-                <option value="parent">By area</option>
-                <option value="duration">By duration</option>
-                <option value="comments">Special requests</option>
-              </select>
-            </span>
+          <span class="sort-unassigned">
+            Sort unassigned:
+            <select name="sort_unassigned" class="form-control">
+              <option value="name" selected="selected">By name</option>
+              <option value="parent">By area</option>
+              <option value="duration">By duration</option>
+              <option value="comments">Special requests</option>
+            </select>
+          </span>
 
-            <span class="timeslot-group-toggles">
-              <button class="btn btn-default" data-toggle="modal" data-target="#timeslot-group-toggles-modal"><input type="checkbox" checked="checked" disabled> Timeslots</button>
-            </span>
-          </div>
+          <span class="toggle-inputs session-parent-toggles">
+            Show:
+            {% for p in session_parents %}
+              <label class="parent-{{ p.acronym }}"><input type="checkbox" checked value="{{ p.acronym }}"> {{ p.acronym }}</label>
+            {% endfor %}
+          </span>
 
-          <div>
-            <span class="toggle-inputs session-parent-toggles">
-              Show:
-              {% for p in session_parents %}
-                <label class="parent-{{ p.acronym }}"><input type="checkbox" checked value="{{ p.acronym }}"> {{ p.acronym }}</label>
-              {% endfor %}
-            </span>
-
-            {% if session_purposes|length > 1 %}
-              <span class="toggle-inputs session-purpose-toggles">
-                Purpose:
-                {% for purpose in session_purposes %}
-                  <label class="purpose-{{ purpose.slug }}"><input type="checkbox" checked value="{{ purpose.slug }}"> {{ purpose }}</label>
-                {% endfor %}
-              </span>
-            {% endif %}
-
-            {% if timeslot_types|length > 1 %}
-              <span class="toggle-inputs timeslot-type-toggles">
-                Type:
-                {% for type in timeslot_types %}
-                  <label class="timeslot-type-{{ type.slug }}"><input type="checkbox" checked value="{{ type.slug }}"> {{ type }}</label>
-                {% endfor %}
-              </span>
-            {% endif %}
-          </div>
+          {% if session_purposes|length > 1 %}
+            <button class="btn btn-default" data-toggle="modal" data-target="#session-toggles-modal"><input type="checkbox" checked="checked" disabled> Sessions</button>
+          {% endif %}
+          <button class="btn btn-default" data-toggle="modal" data-target="#timeslot-group-toggles-modal"><input type="checkbox" checked="checked" disabled> Timeslots</button>
         </div>
       </div>
 
@@ -235,14 +214,52 @@
           </div>
 
           <div class="modal-body">
-            {% for day, t_groups in timeslot_groups %}
-              <div>
-                <div><strong>{{ day|date:"M. d" }}</strong></div>
-                {% for start, end, key in t_groups %}
-                  <label><input type="checkbox" name="timeslot-group" value="{{ key }}" checked="checked"> {{ start|date:"H:i" }} - {{ end|date:"H:i" }}</label>
+            <div class="individual-timeslots">
+              {% for day, t_groups in timeslot_groups %}
+                <div>
+                  <div><strong>{{ day|date:"M. d" }}</strong></div>
+                  {% for start, end, key in t_groups %}
+                    <label><input type="checkbox" name="timeslot-group" value="{{ key }}" checked="checked"> {{ start|date:"H:i" }} - {{ end|date:"H:i" }}</label>
+                  {% endfor %}
+                </div>
+              {% endfor %}
+            </div>
+            <div class="timeslots-by-type timeslot-type-toggles">
+                Type:
+                {% for type in timeslot_types %}
+                  <label class="timeslot-type-{{ type.slug }}"><input type="checkbox" checked value="{{ type.slug }}"> {{ type }}</label>
                 {% endfor %}
-              </div>
-            {% endfor %}
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="session-toggles-modal" class="modal" role="dialog" aria-labelledby="session-toggles-modal-title">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">
+              <span aria-hidden="true">&times;</span>
+              <span class="sr-only">Close</span>
+            </button>
+            <h4 class="modal-title" id="session-toggles-modal-title">Displayed sessions</h4>
+          </div>
+
+          <div class="modal-body">
+            <div class="session-purpose-toggles">
+              {% for purpose in session_purposes %}
+                <div>
+                  <label class="purpose-{{ purpose.slug }}"><input type="checkbox" checked value="{{ purpose.slug }}"> {{ purpose }}</label>
+                </div>
+              {% endfor %}
+              <button type="button" class="btn btn-default select-all">Select all</button>
+              <button type="button" class="btn btn-default clear-all">Clear all</button>
+            </div>
           </div>
 
           <div class="modal-footer">

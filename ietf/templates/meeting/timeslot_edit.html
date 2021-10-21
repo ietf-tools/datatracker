@@ -1,15 +1,33 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load agenda_custom_tags %}
+{% load agenda_custom_tags misc_filters %}
 
 {% block title %}IETF {{ meeting.number }} Meeting Agenda: Timeslots and Room Availability{% endblock %}
 
 {% block morecss %}
-  .tstable { width: 100%;}
+  {% comment %}
+  Put scrollbars on the editor table. Requires fixed height so the scroll bars appear on the div, not the page body.
+  Note that 100vh is viewport height. Using that minus 25rem seems to leave space for the page header/footer.
+  {% endcomment %}
+  .timeslot-edit { overflow: auto; height: max(30rem, calc(100vh - 25rem));}
+  .tstable { width: 100%; border-collapse: separate; } {# "separate" to ensure sticky cells keep their borders #}
+  .tstable thead  { position: sticky; top: 0; z-index: 2; background-color: white;}
+  .tstable th:first-child, .tstable td:first-child {
+    background-color: white; {# needs to match the lighter of the striped-table colors! #}
+    position: sticky;
+    left: 0;
+    z-index: 1.5; {# render above other cells / borders but below thead (z-index 2, above) #}
+  }
+  .tstable tbody > tr:nth-of-type(odd) > th:first-child {
+    background-color: rgb(249, 249, 249); {# needs to match the darker of the striped-table colors! #}
+  }
+
   .tstable th { white-space: nowrap;}
   .tstable td { white-space: nowrap;}
   .capacity { font-size:80%; font-weight: normal;}
+
+  a.new-timeslot-link { color: lightgray; font-size: large;}
 {% endblock %}
 
 {% block content %}
@@ -90,15 +108,21 @@
               <a href="{% url "ietf.meeting.views.create_timeslot" num=meeting.number %}">Create a timeslot.</a>
             </td>
           {% else %}
-            {% for day in time_slices %}
-              {% for slice in date_slices|lookup:day %}{% with cell_ts=ts_list.popleft %}
+            {% for day in time_slices %}{% with slots=slot_slices|lookup:day %}
+              {% for slice in date_slices|lookup:day %}{% with cell_ts=ts_list.popleft slot=slots|index:forloop.counter0 %}
                 <td class="tscell {% if cell_ts|length > 1 %}timeslot-collision {% endif %}{% for ts in cell_ts %}tstype_{{ ts.type.slug }} {% endfor %}">
-                {% for ts in cell_ts %}
-                  {% include 'meeting/timeslot_edit_timeslot.html' with ts=ts in_use=ts_with_any_assignments in_official_use=ts_with_official_assignments only %}
-                {% endfor %}
+                {% if cell_ts %}
+                  {% for ts in cell_ts %}
+                    {% include 'meeting/timeslot_edit_timeslot.html' with ts=ts in_use=ts_with_any_assignments in_official_use=ts_with_official_assignments only %}
+                  {% endfor %}
+                {% endif %}
+                <a class="new-timeslot-link {% if cell_ts %}hidden{% endif %}"
+                   href="{% url "ietf.meeting.views.create_timeslot" num=meeting.number %}?day={{ day.toordinal }}&date={{ day|date:"Y-m-d" }}&location={{ room.pk }}&time={{ slot.time|date:'H:i' }}&duration={{ slot.duration }}">
+                  <span class="fa fa-plus-square"></span>
+                </a>
               {% endwith %}{% endfor %}
               </td>
-            {% endfor %}
+            {% endwith %}{% endfor %}
           {% endif %}
         </tr>
       {% endfor %}
@@ -378,7 +402,12 @@
       .error(function(jqXHR, textStatus) {
         displayError('Error deleting timeslot: ' + jqXHR.responseText)
       })
-      .done(function () {timeslotElts.forEach(tse => tse.parentNode.removeChild(tse))})
+      .done(function () {timeslotElts.forEach(
+        tse => {
+          tse.closest('td.tscell').querySelector('.new-timeslot-link').classList.remove('hidden');
+          tse.parentNode.removeChild(tse);
+        }
+      )})
       .always(function () {deleteModal.modal('hide')});
     }
 
