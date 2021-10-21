@@ -23,6 +23,8 @@ EXPOSE 3306
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get -y update && \
+    # apt-get upgrade is normally not a good idea, but this is a dev container
+    apt-get upgrade && \
     # Install all dependencies that are available as packages
     apt-get -y install --no-install-recommends \
         apache2-utils \
@@ -37,6 +39,7 @@ RUN apt-get -y update && \
         graphviz \
         libmagic-dev \
         libmariadb-dev \
+        locales \
         mariadb-server \
         npm \
         pigz \
@@ -69,6 +72,12 @@ RUN apt-get -y update && \
     apt-get -y clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Set locale to en_US.UTF-8
+RUN dpkg-reconfigure locales && \
+    locale-gen en_US.UTF-8 && \
+    update-locale LC_ALL en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+
 # Install bower
 RUN npm install -g bower
 
@@ -95,6 +104,10 @@ RUN sed -i 's/\[mysqld\]/\[mysqld\]\nperformance_schema=ON/' /etc/mysql/mariadb.
 # This is the repo that has the PR:
 ADD https://github.com/grooverdan/mariadb-sys/archive/refs/heads/master.zip /
 RUN unzip /master.zip
+RUN rm /master.zip
+
+# Colorize the bash shell
+RUN sed -i 's/#force_color_prompt=/force_color_prompt=/' /root/.bashrc
 
 # Copy the startup file
 COPY docker-init.sh /docker-init.sh
