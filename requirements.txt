@@ -28,7 +28,8 @@ docutils>=0.12,!=0.15
 #factory-boy>=2.9.0,<3
 #Faker>=0.8.8,!=0.8.9,!=0.8.10   # from factory-boy # Faker 0.8.9,0.8.10 sometimes return string names instead of unicode.
 factory-boy>=3
-Faker>=0.8.11   # from factory-boy # Faker 0.8.9,0.8.10 sometimes return string names instead of unicode.
+#Faker>=0.8.11   # from factory-boy # Faker 0.8.9,0.8.10 sometimes return string names instead of unicode.
+Faker==9.20
 github3.py>=1.2
 hashids>=1.1.0
 html2text>=2019.8.11
