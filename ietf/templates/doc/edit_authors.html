@@ -78,7 +78,7 @@
               var list_container;
               var form_counter;
               var author_template;
-              var ajax_url = '{% url "ietf.person.ajax.person_email_json" personid="0000placeholder0000" %}';
+              var ajax_url = '{% url "ietf.person.ajax.person_email_json" personid="123454321" %}';
               var person_select2_input_selector = 'input.select2-field[name^="author-"][name$="-person"]'; 
 
               function handle_drag_end() {
@@ -126,7 +126,7 @@
                   var person_elt = $(this);
                   var email_select = $('#' + person_elt.attr('id').replace(/-person$/, '-email'));
                   $.get(
-                    ajax_url.replace('0000placeholder0000', $(this).val()),
+                    ajax_url.replace('123454321', $(this).val()),
                     null,
                     update_email_options_cb_factory(email_select)
                   );
