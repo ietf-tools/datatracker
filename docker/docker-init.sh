@@ -10,31 +10,29 @@ fi
 service rsyslog start
 
 if [ -z "$(ls -A $MYSQLDIR/mysql 2>/dev/null)" ]; then
-    echo "WARNING: Database seems to be empty."
-    mysql_install_db > /dev/null || exit 1
+    can=$(date -r /mysql +%s)
+    now=$(date +%s)
+    age=$((($now - $can)/86400))
+    echo "NOTE: Database empty; populating it from canned snapshot ($age days old)"
+    echo "      This will take a little while..."
+    cp -r /mysql/* $MYSQLDIR
 fi
 
 service mariadb start
 
 if ! service mariadb status; then
-    echo "ERROR: MySQL isn't running."
+    echo "ERROR: MySQL didn't start. Here are some possible causes:"
+    echo "-------------------------------------------------------------------"
     grep mysqld /var/log/syslog
+    echo "-------------------------------------------------------------------"
+    echo "Such errors are usually due to a corrupt or outdated database."
+    echo "Remove your local database and let the image install a clean copy."
     exit 1
 fi
 
 if [ ! -f /root/src/ietf/settings_local.py ]; then
     echo "Setting up a default settings_local.py ..."
     cp /root/src/docker/settings_local.py /root/src/ietf/settings_local.py
-fi
-
-if [ ! -d $MYSQLDIR/ietf_utf8 ]; then
-    echo "WARNING: IETF database seems to be missing; populating it from dump."
-    mysqladmin -u root --default-character-set=utf8 create ietf_utf8
-    pushd /mariadb-sys-master || exit
-    mysql -u root < sys_10.sql
-    popd || exit
-    mysql -u root ietf_utf8 <<< "GRANT ALL PRIVILEGES ON *.* TO django@localhost IDENTIFIED BY 'RkTkDPFnKpko'; FLUSH PRIVILEGES;"
-    /root/src/docker/updatedb
 fi
 
 for sub in					\

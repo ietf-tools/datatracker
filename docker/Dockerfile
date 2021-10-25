@@ -109,6 +109,21 @@ RUN rm /master.zip
 # Colorize the bash shell
 RUN sed -i 's/#force_color_prompt=/force_color_prompt=/' /root/.bashrc
 
+# Make a database dump available as part of the image, for if a user doesn't
+# have one installed locally yet - this saves a bunch of time then
+ADD https://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz /
+RUN pigz -v -d /ietf_utf8.sql.gz && \
+    sed -i -e 's/ENGINE=MyISAM/ENGINE=InnoDB/' /ietf_utf8.sql
+RUN service mariadb start && \
+    echo "This sequence will take a long time, please be patient" && \
+    mysqladmin -u root --default-character-set=utf8 create ietf_utf8 && \
+    bash -c "cd /mariadb-sys-master && mysql --user root < sys_10.sql" && \
+    bash -c "mysql --user root ietf_utf8 <<< \"GRANT ALL PRIVILEGES ON *.* TO django@localhost IDENTIFIED BY 'RkTkDPFnKpko'; FLUSH PRIVILEGES;\"" && \
+    bash -c "mysql --user=django --password=RkTkDPFnKpko -f ietf_utf8 < /ietf_utf8.sql" && \
+    service mariadb stop && \
+    rm -rf /ietf_utf8.sql /mariadb-sys-master && \
+    mv /var/lib/mysql /
+
 # Copy the startup file
 COPY docker-init.sh /docker-init.sh
 RUN chmod +x /docker-init.sh
