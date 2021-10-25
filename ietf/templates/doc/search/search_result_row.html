@@ -85,6 +85,7 @@
     {% endif %}
     </span>
 
+{% comment %}
     {% for check in doc.submission.latest_checks %}
       {% if check.passed != None and check.symbol.strip %}
 	{% if check.errors or check.warnings %}
@@ -95,6 +96,7 @@
 	{% include "doc/yang-check-modal-overlay.html" %}
       {% endif %}
     {% endfor %}
+{% endcomment %}
 
     {% if doc.pages %}
       <br><small class="text-muted">{{doc.pages}} page{{ doc.pages|pluralize }}</small>
