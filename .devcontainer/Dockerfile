@@ -13,6 +13,7 @@ RUN apt-get -qy upgrade
 
 # Install the packages we need
 RUN apt-get install -qy \
+    bash \
 	build-essential \
 	bzip2 \
 	ca-certificates \
@@ -117,8 +118,9 @@ RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requ
     && rm -rf /tmp/pip-tmp
 
 COPY .devcontainer/init.sh /docker-init.sh
-RUN chmod +x /docker-init.sh
-ENTRYPOINT ["/docker-init.sh"]
+RUN sed -i 's/\r$//' /docker-init.sh && \
+    chmod +x /docker-init.sh
+# ENTRYPOINT ["/usr/local/share/datatracker/.devcontainer/init.sh"]
 CMD	["sleep", "infinity"]
 
 # [Optional] Uncomment this section to install additional OS packages.
