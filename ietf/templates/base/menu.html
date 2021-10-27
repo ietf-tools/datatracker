@@ -35,6 +35,7 @@
   <li><a href="{% url 'ietf.mailinglists.views.nonwg' %}">Non-WG lists</a></li>
 
 {% if flavor == "top" %}</ul>{% endif %}
+</li>
 
 <li {% if flavor == "top" %}class="dropdown"{% else %}class="nav-header"{% endif %}>
   {% if flavor == "top" %}<a href="#" class="dropdown-toggle" data-toggle="dropdown">{% endif %}
@@ -100,6 +101,7 @@
         <li><a href="{% url "ietf.group.views.stream_documents" acronym="ise" %}">ISE</a></li>
 
 {% if flavor == "top" %}</ul>{% endif %}
+</li>
 
 <li {% if flavor == "top" %}class="dropdown"{% else %}class="nav-header"{% endif %}>
   {% if flavor == "top" %}<a href="#" class="dropdown-toggle" data-toggle="dropdown">{% endif %}
@@ -121,6 +123,7 @@
   <li><a href="/secr/sreq/">Request a session</a></li>
   <li><a href="/meeting/requests">Session requests</a></li>
 {% if flavor == "top" %}</ul>{% endif %}
+</li>
 
 <li {% if flavor == "top" %}class="dropdown"{% else %}class="nav-header"{% endif %}>
   {% if flavor == "top" %}<a href="#" class="dropdown-toggle" data-toggle="dropdown">{% endif %}
@@ -152,6 +155,7 @@
   {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
   <li><a href="https://trac.ietf.org/trac/ietfdb/newticket"><span class="fa fa-bug"></span> Report a bug</a></li>
 {% if flavor == "top" %}</ul>{% endif %}
+</li>
 
 {% if flavor == "top" %}
   {% include "base/menu_user.html" %}
