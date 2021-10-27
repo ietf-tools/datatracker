@@ -74,8 +74,16 @@ python -m smtpd -n -c DebuggingServer localhost:2025 &
 echo
 
 if [ -z "$*" ]; then
+    echo "You can execute arbitrary commands now, e.g.,"
+    echo
+    echo "    ietf/manage.py runserver 0.0.0.0:8000"
+    echo
+    echo "to start a development instance of the Datatracker."
+    echo
     bash
 else
+    echo "Executing \"$*\" and stopping container."
+    echo
     bash -c "$*"
 fi
 
