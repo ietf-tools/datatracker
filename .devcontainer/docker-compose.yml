@@ -29,6 +29,7 @@ services:
             UID: 1001
             GID: 1001
             DATADIR: data
+            # DJANGO_SETTINGS_MODULE: settings_sqlitetest
         
         # Uncomment the next line to use a non-root user for all processes.
         # user: vscode

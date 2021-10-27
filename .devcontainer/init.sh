@@ -75,7 +75,7 @@ if [ ! -f $VIRTDIR/bin/activate ]; then
 # datatracker virtual python environment on docker container entry:
 " >> /etc/bash.bashrc
     cat $VIRTDIR/bin/activate >> /etc/bash.bashrc
-    cat /usr/local/share/datatracker/setprompt >> /etc/bash.bashrc 
+    cat /usr/local/share/datatracker/docker/setprompt >> /etc/bash.bashrc 
 else
     echo "Using virtual environment at $VIRTDIR"
 fi
@@ -150,6 +150,8 @@ else
 fi
 
 HOME=/opt/home/$USER
+
+/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check --settings=settings_local
 
 # su -p $USER
 

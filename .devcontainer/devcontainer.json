@@ -10,6 +10,7 @@
 
 	// Set *default* container specific settings.json values on container create.
 	"settings": { 
+        "terminal.integrated.defaultProfile.linux": "zsh",
 		"python.pythonPath": "/usr/local/bin/python",
 		"python.languageServer": "Pylance",
 		"python.linting.enabled": true,
@@ -35,6 +36,7 @@
             "-p",
             "test*.py"
         ]
+        // "python.envFile": "${workspaceFolder}/.devcontainer/dev.env"
 	},
 
 	// Add the IDs of extensions you want installed when the container is created.
@@ -46,11 +48,10 @@
 		"redhat.vscode-yaml",
 		"visualstudioexptteam.vscodeintellicode",
 		"batisteo.vscode-django",
-		"littlefoxteam.vscode-python-test-adapter"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	"forwardPorts": [8000, 3306],
+	"forwardPorts": [8000, 3306]
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "sh /docker-init.sh",
