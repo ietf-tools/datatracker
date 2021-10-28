@@ -1,6 +1,6 @@
 ietfdb (7.39.0) ietf; urgency=medium
 
-  ** Improved pre-AD abilities, ical content, rfcdiff support, bugfixes.***
+  **Improved pre-AD abilities, ical content, rfcdiff support, bugfixes**
 
   * Merged in [19382] from krathnayake@ietf.org:
     Adds ability to handle garbage API keys. Fixes #3412.  
@@ -33,8 +33,7 @@ ietfdb (7.39.0) ietf; urgency=medium
 
 ietfdb (7.38.0) ietf; urgency=medium
 
-  **Authortools API token endpoint, Standalone proceedings, 
-  render charters with markdown**
+  **Authortools API token endpoint, Standalone proceedings, render charters with markdown**
 
   This release improves the generation of meeting proceedings,
   moving archival information to the datatracker, rather than
