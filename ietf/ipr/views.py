@@ -459,26 +459,14 @@ def by_draft_txt(request):
     return HttpResponse("\n".join(lines), content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
 def by_draft_recursive_txt(request):
-    docipr = {}
+    """Returns machine-readable list of IPR disclosures by draft name, recursive.
+    NOTE: this view is expensive and should be removed once tools.ietf.org is retired,
+    including util function and management commands that generate the content for
+    this view."""
 
-    for o in IprDocRel.objects.filter(disclosure__state='posted').select_related('document'):
-        alias = o.document
-        name = alias.name
-        for document in alias.docs.all():
-            related = set(document.docalias.all()) | set(document.all_related_that_doc(('obs', 'replaces')))
-            for alias in related:
-                name = alias.name
-                if name.startswith("rfc"):
-                    name = name.upper()
-                if not name in docipr:
-                    docipr[name] = []
-                docipr[name].append(o.disclosure_id)
-
-    lines = [ "# Machine-readable list of IPR disclosures by draft name" ]
-    for name, iprs in docipr.items():
-        lines.append(name + "\t" + "\t".join(str(ipr_id) for ipr_id in sorted(iprs)))
-
-    return HttpResponse("\n".join(lines), content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
+    with open('/a/ietfdata/derived/ipr_draft_recursive.txt') as f:
+        content = f.read()
+    return HttpResponse(content, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
 
 def new(request, type, updates=None):
