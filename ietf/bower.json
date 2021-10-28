@@ -9,13 +9,11 @@
     "font-awesome": "~4",
     "fullcalendar": "~4",
     "highcharts": "~6",
-    "html5shiv": "~3",
     "js-cookie": "~2",
     "jquery": "~1",
     "jquery.tablesorter": "~2",
     "moment": "~2",
     "moment-timezone": "~0",
-    "respond": "~1",
     "select2": "~3",
     "select2-bootstrap-css": "~1",
     "spin.js": "~2",
@@ -45,9 +43,6 @@
             "dist/js/jquery.tablesorter.combined.min.js",
             "dist/css/theme.bootstrap.min.css"
         ]
-    },
-    "respond": {
-      "main": "dest/respond.min.js"
     },
     "spin.js": {
         "main": "spin.min.js"
