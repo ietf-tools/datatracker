@@ -24,8 +24,8 @@ def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
     seen = set()
     for e in TelechatDocEvent.objects.filter(doc__id__in=doc_ids, type="scheduled_for_telechat").order_by('-time'):
         if e.doc_id not in seen:
-            d = doc_dict[e.doc_id]
-            d.telechat_date = wrap_value(d.telechat_date(e))
+            #d = doc_dict[e.doc_id]
+            #d.telechat_date = wrap_value(d.telechat_date(e))
             seen.add(e.doc_id)
 
 def fill_in_document_sessions(docs, doc_dict, doc_ids):
@@ -82,7 +82,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     # misc
     for d in docs:
         # emulate canonical name which is used by a lot of the utils
-        d.canonical_name = wrap_value(rfc_aliases[d.pk] if d.pk in rfc_aliases else d.name)
+        # d.canonical_name = wrap_value(rfc_aliases[d.pk] if d.pk in rfc_aliases else d.name)
 
         if d.rfc_number() != None and d.latest_event_cache["published_rfc"]:
             d.latest_revision_date = d.latest_event_cache["published_rfc"].time
