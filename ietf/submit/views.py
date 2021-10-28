@@ -199,9 +199,6 @@ def api_submit(request):
     else:
         return err(405, "Method not allowed")
 
-def note_well(request):
-    return render(request, 'submit/note_well.html', {'selected': 'notewell'})
-
 def tool_instructions(request):
     return render(request, 'submit/tool_instructions.html', {'selected': 'instructions'})
 
