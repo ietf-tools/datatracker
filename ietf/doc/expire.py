@@ -8,7 +8,7 @@ from django.conf import settings
 import datetime, os, shutil, glob, re
 from pathlib import Path
 
-from typing import List, Tuple      # pyflakes:ignore
+from typing import List, Optional      # pyflakes:ignore
 
 from ietf.utils import log
 from ietf.utils.mail import send_mail
@@ -19,15 +19,7 @@ from ietf.doc.utils import add_state_change_event, update_action_holders
 from ietf.mailtrigger.utils import gather_address_lists
 
 
-def expirable_draft(draft):
-    """Return whether draft is in an expirable state or not. This is
-    the single draft version of the logic in expirable_drafts. These
-    two functions need to be kept in sync."""
-    if draft.type_id != 'draft':
-        return False
-    return bool(expirable_drafts(Document.objects.filter(pk=draft.pk)))
-
-nonexpirable_states = []                # type: List[State]
+nonexpirable_states: Optional[List[State]] = None
 
 def expirable_drafts(queryset=None):
     """Return a queryset with expirable drafts."""
@@ -39,31 +31,25 @@ def expirable_drafts(queryset=None):
         queryset = Document.objects.all()
 
     # Populate this first time through (but after django has been set up)
-    if nonexpirable_states == []:
+    if nonexpirable_states is None:
         # all IESG states except I-D Exists, AD Watching, and Dead block expiry
-        nonexpirable_states += list(State.objects.filter(used=True, type="draft-iesg").exclude(slug__in=("idexists","watching", "dead")))
+        nonexpirable_states = list(State.objects.filter(used=True, type="draft-iesg").exclude(slug__in=("idexists","watching", "dead")))
         # sent to RFC Editor and RFC Published block expiry (the latter
         # shouldn't be possible for an active draft, though)
         nonexpirable_states += list(State.objects.filter(used=True, type__in=("draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"), slug__in=("rfc-edit", "pub")))
         # other IRTF states that block expiration
         nonexpirable_states += list(State.objects.filter(used=True, type_id="draft-stream-irtf", slug__in=("irsgpoll", "iesg-rev",)))
 
-    d = queryset.filter(states__type="draft", states__slug="active")
-    if not d.exists():
-        return d
-        
-    d = d.exclude(expires=None)
-    if not d.exists():
-        return d
+    return queryset.filter(
+        states__type="draft", states__slug="active"
+    ).exclude(
+        expires=None
+    ).exclude(
+        states__in=nonexpirable_states
+    ).exclude(
+        tags="rfc-rev"  # under review by the RFC Editor blocks expiry
+    ).distinct()
 
-    d = d.exclude(states__in=nonexpirable_states)
-    if not d.exists():
-        return d
-
-    # under review by the RFC Editor blocks expiry
-    d = d.exclude(tags="rfc-rev")
-
-    return d.distinct()
 
 def get_soon_to_expire_drafts(days_of_warning):
     start_date = datetime.date.today() - datetime.timedelta(1)
