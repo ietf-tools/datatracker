@@ -15,7 +15,6 @@ from django.core.exceptions import ObjectDoesNotExist
 import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person
-from ietf.group.models import GroupFeatures
 from ietf.utils.mail import send_mail
 
 def merge_persons(request, source, target, file=sys.stdout, verbose=False):
