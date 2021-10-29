@@ -8,7 +8,10 @@ skip_selenium = False
 skip_message  = ""
 try:
     from selenium import webdriver
+    from selenium.webdriver.chrome.service import Service
+    from selenium.webdriver.chrome.options import Options
     from selenium.webdriver.common.action_chains import ActionChains
+    from selenium.webdriver.common.by import By
 except ImportError as e:
     skip_selenium = True
     skip_message = "Skipping selenium tests: %s" % e
@@ -17,7 +20,6 @@ except ImportError as e:
 from ietf.utils.pipe import pipe
 from ietf.utils.test_runner import IetfLiveServerTestCase
 from ietf import settings
-
 
 executable_name = 'chromedriver'
 code, out, err = pipe('{} --version'.format(executable_name))
@@ -28,12 +30,15 @@ if skip_selenium:
     print("     "+skip_message)
 
 def start_web_driver():
-    options = webdriver.ChromeOptions()
+    service = Service(executable_path="chromedriver",
+                      log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
+    service.start()
+    options = Options()
     options.add_argument("headless")
     options.add_argument("disable-extensions")
     options.add_argument("disable-gpu") # headless needs this
     options.add_argument("no-sandbox") # docker needs this
-    return webdriver.Chrome(options=options, service_log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
+    return webdriver.Chrome(service=service, options=options)
 
 
 def selenium_enabled():
@@ -69,9 +74,9 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
         url = self.absreverse(self.login_view)
         password = '%s+password' % username
         self.driver.get(url)
-        self.driver.find_element_by_name('username').send_keys(username)
-        self.driver.find_element_by_name('password').send_keys(password)
-        self.driver.find_element_by_xpath('//button[@type="submit"]').click()
+        self.driver.find_element(By.NAME, 'username').send_keys(username)
+        self.driver.find_element(By.NAME, 'password').send_keys(password)
+        self.driver.find_element(By.XPATH, '//button[@type="submit"]').click()
 
     def scroll_to_element(self, element):
         """Scroll an element into view"""
@@ -89,5 +94,5 @@ class presence_of_element_child_by_css_selector:
         self.child_selector = child_selector
 
     def __call__(self, driver):
-        child = self.element.find_element_by_css_selector(self.child_selector)
+        child = self.element.find_element(By.CSS_SELECTOR, self.child_selector)
         return child if child is not None else False

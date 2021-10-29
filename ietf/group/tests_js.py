@@ -34,7 +34,7 @@ class MilestoneTests(IetfSeleniumTestCase):
                 (By.CSS_SELECTOR, result_selector),
                 draft.name
             ))
-        results = self.driver.find_elements_by_css_selector(result_selector)
+        results = self.driver.find_elements(By.CSS_SELECTOR, result_selector)
         matching_results = [r for r in results if draft.name in r.text]
         self.assertEqual(len(matching_results), 1)
         return matching_results[0]
@@ -61,7 +61,7 @@ class MilestoneTests(IetfSeleniumTestCase):
         except TimeoutException:
             found_expected_text = False
         self.assertTrue(found_expected_text, 'Milestone never marked as "changed"')
-        return self.driver.find_element_by_css_selector(milestone_selector)
+        return self.driver.find_element(By.CSS_SELECTOR, milestone_selector)
 
     def test_add_milestone(self):
         draft = WgDraftFactory()
@@ -89,9 +89,9 @@ class MilestoneTests(IetfSeleniumTestCase):
                 (By.CSS_SELECTOR, 'form#milestones-form div.edit-milestone')
             ))
 
-        desc_input = edit_div.find_element_by_css_selector('input[id$="_desc"]')
-        due_input = edit_div.find_element_by_css_selector('input[id$="_due"]')
-        draft_input = edit_div.find_element_by_css_selector(
+        desc_input = edit_div.find_element(By.CSS_SELECTOR, 'input[id$="_desc"]')
+        due_input = edit_div.find_element(By.CSS_SELECTOR, 'input[id$="_due"]')
+        draft_input = edit_div.find_element(By.CSS_SELECTOR,
             'div.select2-container[id$="id_docs"] input.select2-input'
         )
         
@@ -149,9 +149,9 @@ class MilestoneTests(IetfSeleniumTestCase):
         # Get the prefix used to identify inputs related to this milestone
         prefix = desc_field.get_attribute('id')[:-4]  # -4 to strip off 'desc', leave '-'
 
-        due_field = self.driver.find_element_by_id(prefix + 'due')
-        hidden_drafts_field = self.driver.find_element_by_id(prefix + 'docs')
-        draft_input = self.driver.find_element_by_css_selector(
+        due_field = self.driver.find_element(By.ID, prefix + 'due')
+        hidden_drafts_field = self.driver.find_element(By.ID, prefix + 'docs')
+        draft_input = self.driver.find_element(By.CSS_SELECTOR,
             'div.select2-container[id*="%s"] input.select2-input' % prefix
         )
         self.assertEqual(due_field.get_attribute('value'), milestone.due.strftime('%B %Y'))

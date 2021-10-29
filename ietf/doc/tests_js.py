@@ -30,7 +30,7 @@ class EditAuthorsTests(IetfSeleniumTestCase):
             # To enter the person, type their name in the select2 search box, wait for the
             # search to offer the result, then press 'enter' to accept the result and close
             # the search input.
-            person_span = form_elt.find_element_by_class_name('select2-chosen')
+            person_span = form_elt.find_element(By.CLASS_NAME, 'select2-chosen')
             self.scroll_to_element(person_span)
             person_span.click()
             input = self.driver.switch_to.active_element
@@ -46,16 +46,16 @@ class EditAuthorsTests(IetfSeleniumTestCase):
             # After the author is selected, the email select options will be populated.
             # Wait for that, then click on the option corresponding to the requested email.
             # This will only work if the email matches an address for the selected person.
-            email_select = form_elt.find_element_by_css_selector('select[name$="email"]')
+            email_select = form_elt.find_element(By.CSS_SELECTOR, 'select[name$="email"]')
             email_option = self.wait.until(
                 presence_of_element_child_by_css_selector(email_select, 'option[value="{}"]'.format(email))
             )
             email_option.click()  # select the email
 
             # Fill in the affiliation and country. Finally, simple text inputs!
-            affil_input = form_elt.find_element_by_css_selector('input[name$="affiliation"]')
+            affil_input = form_elt.find_element(By.CSS_SELECTOR, 'input[name$="affiliation"]')
             affil_input.send_keys(affiliation)
-            country_input = form_elt.find_element_by_css_selector('input[name$="country"]')
+            country_input = form_elt.find_element(By.CSS_SELECTOR, 'input[name$="country"]')
             country_input.send_keys(country)
 
         def _read_author_form(form_elt):
@@ -63,10 +63,10 @@ class EditAuthorsTests(IetfSeleniumTestCase):
 
             Note: returns the Person instance named in the person field, not just their name.
             """
-            hidden_person_input = form_elt.find_element_by_css_selector('input[type="text"][name$="person"]')
-            email_select = form_elt.find_element_by_css_selector('select[name$="email"]')
-            affil_input = form_elt.find_element_by_css_selector('input[name$="affiliation"]')
-            country_input = form_elt.find_element_by_css_selector('input[name$="country"]')
+            hidden_person_input = form_elt.find_element(By.CSS_SELECTOR, 'input[type="text"][name$="person"]')
+            email_select = form_elt.find_element(By.CSS_SELECTOR, 'select[name$="email"]')
+            affil_input = form_elt.find_element(By.CSS_SELECTOR, 'input[name$="affiliation"]')
+            country_input = form_elt.find_element(By.CSS_SELECTOR, 'input[name$="country"]')
             return (
                 Person.objects.get(pk=hidden_person_input.get_attribute('value')),
                 email_select.get_attribute('value'),
@@ -87,16 +87,16 @@ class EditAuthorsTests(IetfSeleniumTestCase):
         self.driver.get(url)
 
         # The draft has one author to start with. Find the list and check the count.
-        authors_list = self.driver.find_element_by_id('authors-list')
-        author_forms = authors_list.find_elements_by_class_name('author-panel')
+        authors_list = self.driver.find_element(By.ID, 'authors-list')
+        author_forms = authors_list.find_elements(By.CLASS_NAME, 'author-panel')
         self.assertEqual(len(author_forms), 1)
 
         # get the "add author" button so we can add blank author forms
-        add_author_button = self.driver.find_element_by_id('add-author-button')
+        add_author_button = self.driver.find_element(By.ID, 'add-author-button')
         for index, auth in enumerate(authors):
             self.scroll_to_element(add_author_button)  # Can only click if it's in view!
             add_author_button.click()  # Create a new form. Automatically scrolls to it.
-            author_forms = authors_list.find_elements_by_class_name('author-panel')
+            author_forms = authors_list.find_elements(By.CLASS_NAME, 'author-panel')
             authors_added = index + 1
             self.assertEqual(len(author_forms), authors_added + 1)  # Started with 1 author, hence +1
             _fill_in_author_form(author_forms[index + 1], auth.name, str(auth.email()), orgs[index], countries[index])
@@ -114,9 +114,9 @@ class EditAuthorsTests(IetfSeleniumTestCase):
             )
 
         # Must provide a "basis" (change reason)
-        self.driver.find_element_by_id('id_basis').send_keys('change testing')
+        self.driver.find_element(By.ID, 'id_basis').send_keys('change testing')
         # Now click the 'submit' button and check that the update was accepted.
-        submit_button = self.driver.find_element_by_css_selector('button[type="submit"]')
+        submit_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
         self.scroll_to_element(submit_button)
         submit_button.click()
         # Wait for redirect to the document_main view
