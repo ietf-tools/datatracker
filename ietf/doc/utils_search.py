@@ -158,7 +158,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
         # the number of queries
         docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream", "shepherd", )
         docs = docs.prefetch_related("states__type", "tags", "groupmilestone_set__group", "reviewrequest_set__team",
-                                     "submission_set__checks", "ad__email_set", "docalias__iprdocrel_set")
+                                     "ad__email_set", "docalias__iprdocrel_set")
         docs = list(docs)
 
     fill_in_document_table_attributes(docs)
