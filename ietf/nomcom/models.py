@@ -102,6 +102,15 @@ class NomCom(models.Model):
         else:
             raise EncryptedException(error)
 
+    def chair_emails(self):
+        if not hasattr(self, '_cached_chair_emails'):
+            if self.group:
+                self._cached_chair_emails = list(
+                    self.group.role_set.filter(name_id='chair').values_list('email__address', flat=True)
+                )
+            else:
+                self._cached_chair_emails = []
+        return self._cached_chair_emails
 
 def delete_nomcom(sender, **kwargs):
     nomcom = kwargs.get('instance', None)

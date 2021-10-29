@@ -41,9 +41,11 @@ import html5lib
 import sys
 
 from urllib.parse import unquote
-
 from unittest.util import strclass
 from bs4 import BeautifulSoup
+from contextlib import contextmanager
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 import django.test
 from django.conf import settings
@@ -99,6 +101,16 @@ def reload_db_objects(*objects):
         return t[0]
     else:
         return t
+
+@contextmanager
+def name_of_file_containing(contents):
+    """Get a context with the name of an email file"""
+    f = NamedTemporaryFile('w', delete=False)
+    f.write(contents)
+    f.close()
+    yield f.name  # hand the filename to the context
+    Path(f.name).unlink()  # clean up after context exits
+
 
 def assert_ical_response_is_valid(test_inst, response, expected_event_summaries=None,
                                   expected_event_uids=None, expected_event_count=None):
