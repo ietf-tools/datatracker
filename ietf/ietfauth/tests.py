@@ -149,7 +149,7 @@ class IetfAuthTests(TestCase):
         empty_outbox()
         r = self.client.post(url, { 'email': email })
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Account creation failed")
+        self.assertContains(r, "Additional Assistance Required")
 
     def register_and_verify(self, email):
         url = urlreverse(ietf.ietfauth.views.create_account)
