@@ -1492,7 +1492,7 @@ class SubmitTests(TestCase):
         rev = "00"
         group = "mars"
 
-        self.do_submission(name, rev, group, ["txt", "xml", "ps", "pdf"])
+        self.do_submission(name, rev, group, ["txt", "xml", "pdf"])
 
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
 
@@ -1503,8 +1503,6 @@ class SubmitTests(TestCase):
         self.assertTrue('<?xml version="1.0" encoding="UTF-8"?>' in io.open(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev))).read())
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.pdf" % (name, rev))))
         self.assertTrue('This is PDF' in io.open(os.path.join(self.staging_dir, "%s-%s.pdf" % (name, rev))).read())
-        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.ps" % (name, rev))))
-        self.assertTrue('This is PostScript' in io.open(os.path.join(self.staging_dir, "%s-%s.ps" % (name, rev))).read())
 
     def test_expire_submissions(self):
         s = Submission.objects.create(name="draft-ietf-mars-foo",
@@ -1663,12 +1661,6 @@ class SubmitTests(TestCase):
         self.assertIn('Invalid characters were found in the name', m)
         self.assertIn('Expected the PDF file to have extension ".pdf"', m)
         self.assertIn('Expected an PDF file of type "application/pdf"', m)
-
-    def test_submit_bad_file_ps(self):
-        r, q, m = self.submit_bad_file("some name", ["ps"])
-        self.assertIn('Invalid characters were found in the name', m)
-        self.assertIn('Expected the PS file to have extension ".ps"', m)
-        self.assertIn('Expected an PS file of type "application/postscript"', m)
 
     def test_submit_file_in_archive(self):
         name = "draft-authorname-testing-file-exists"

@@ -36,7 +36,6 @@ from ietf.submit.models import Submission, Preapproval
 from ietf.submit.utils import validate_submission_name, validate_submission_rev, validate_submission_document_date
 from ietf.submit.parsers.pdf_parser import PDFParser
 from ietf.submit.parsers.plain_parser import PlainParser
-from ietf.submit.parsers.ps_parser import PSParser
 from ietf.submit.parsers.xml_parser import XMLParser
 from ietf.utils import log
 from ietf.utils.draft import Draft
@@ -450,7 +449,6 @@ class SubmissionManualUploadForm(SubmissionBaseUploadForm):
     # html for version 3 xml submissions.
     # html = forms.FileField(label='.html format', required=False)
     pdf = forms.FileField(label='.pdf format', required=False)
-    ps  = forms.FileField(label='.ps format', required=False)
 
     def __init__(self, request, *args, **kwargs):
         super(SubmissionManualUploadForm, self).__init__(request, *args, **kwargs)
@@ -462,9 +460,6 @@ class SubmissionManualUploadForm(SubmissionBaseUploadForm):
 
     def clean_pdf(self):
         return self.clean_file("pdf", PDFParser)
-
-    def clean_ps(self):
-        return self.clean_file("ps",  PSParser)
 
 class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
     user = forms.EmailField(required=True)
