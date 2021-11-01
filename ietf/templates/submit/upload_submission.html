@@ -8,63 +8,107 @@
 
 {% block submit_content %}
   {% origin %}
+
   {% if form.shutdown and user|has_role:"Secretariat" %}
-  <p class="bg-warning">WARNING: currently in draft submission blackout period</p>
+    <p class="alert alert-warning">
+        <b>Warning:</b> Currently in I-D submission blackout period.
+    </p>
   {% endif %}
   
-  <p>This page is used to submit Internet-Drafts to the Internet-Draft repository.</p>
-  
   {% if form.cutoff_warning %}
-    <div class="cutoff-warning">
+    <div class="alert alert-info">
       {{ form.cutoff_warning|safe }}
     </div>
   {% endif %}
 
   {% if not form.shutdown or user|has_role:"Secretariat" %}
-    <p>
-      By submitting your I-D, you are granting some rights to the IETF Trust.  Before you submit your I-D,
-      review the information on the NOTE WELL tab and <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc5378' %}">BCP 78</a>,
+    <p class="alert alert-warning">
+      By submitting your I-D, you are granting some rights to the IETF Trust.
+      Before you submit your I-D, review the information on the NOTE WELL tab and
+      <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc5378' %}">BCP 78</a>,
       "Rights Contributors Provide to the IETF Trust".
     </p>
 
     <p>
       Before you submit your I-D, it is recommended that you check it for nits
-      using the <b><a href="{{settings.IDNITS_BASE_URL}}">idnits tool</a></b>.
+      using the <a href="{{settings.IDNITS_BASE_URL}}">idnits</a> tool, and
+      fix them.
     </p>
-    
-    {% include "submit/problem-reports-footer.html" %}
 
-      <h2>Upload an Internet-Draft</h2>
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
 
-      <p>
-	 <i>
-            The best way to submit an Internet-Draft is to provide a single v3 .xml source file.
-            The datatracker will generate the .txt and other formats from that file.
-            <br/>
-            Source v3 .xml which include external files must be preprocessed through xml2rfc with
-            the <tt>--expand</tt> option, to produce a completely expanded (standalone) .xml source 
-            file for upload. 
-            <br/>
-            The <a href="{{settings.XML2RFC_BASE_URL}}">online conversion tool</a> can be used to
-            convert v2 .xml documents to v3. 
-            <br/>
-            A single v3 .xml source is preferred. A single v2 .xml source will be accepted. If
-            neither of those are available, a plain-text document may be provided. One of these
-            three options <b>must</b> be provided.
-            <br/>
-            Other file types are optional.
-         </i>
-      </p>
+                <div class="form-group">
+                    {% bootstrap_field form.xml label='<i class="fa fw-fw fa-file-code-o" aria-hidden="true"></i> XML source of the I-D' %}
+                    <p class="help-block">
+                        Preferably, submit a standalone
+                        <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc7991' %}">xml2rfc version 3</a>
+                        source file. You can use this online
+                        <a href="https://author-tools.ietf.org/">conversion service</a>
+                        to convert your I-D to this format.
+                        (You may submit an older
+                        <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc7749' %}">xml2rfc version 2</a>
+                        file if you must.)
+                    </p>
+                </div>
 
-      <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
+                <div class="form-group">
+                    <div class="checkbox">
+                        <label data-toggle="collapse" data-target="#other-formats" aria-expanded="false" aria-controls="other-formats">
+                            <input id="checkbox" type="checkbox" /> Submit other formats
+                        </label>
+                    </div>
+                </div>
+                <div class="collapse" id="other-formats">
+                    <div class="form-group">
+                        {% bootstrap_field form.txt label='<i class="fa fw-fw fa-file-text-o" aria-hidden="true"></i> Plaintext rendering of the I-D'%}
+                        <p class="help-block">
+                            Optional to submit, will be auto-generated based
+                            on the submitted XML.
+                            However, if you cannot for some reason submit XML, you must
+                            submit a plaintext rendering of your I-D.
+                        </p>
+                    </div>
 
-        {% bootstrap_form form %}
+                    <div class="form-group">
+                        {% bootstrap_field form.pdf label='<i class="fa fw-fw fa-file-pdf-o" aria-hidden="true"></i> PDF rendering of the I-D'%}
+                        <p class="help-block">
+                            Optional to submit, will be auto-generated based
+                            on the submitted XML.
+                        </p>
+                    </div>
 
-        {% buttons %}
-          <input class="btn btn-primary" type="submit" value="Upload" name="upload">
-        {% endbuttons %}
-      </form>
-  {% endif %}
+                    <div class="form-group">
+                        {% bootstrap_field form.ps label='<i class="fa fw-fw fa-file-image-o" aria-hidden="true"></i> Postscript rendering of the I-D'%}
+                        <p class="help-block">
+                            Optional to submit, will be auto-generated based
+                            on the submitted XML.
+                        </p>
+                    </div>
+                </div>
 
+                {% bootstrap_form_errors form %}
+
+                <div class="form-group">
+                    {% buttons %}
+                        <input class="btn btn-primary" type="submit" value="Upload" name="upload">
+                    {% endbuttons %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% include "submit/problem-reports-footer.html" %}{% endif %}
+
+{% endblock %}
+
+{% block js %}
+<script>
+    $(document).ready(function() {
+        if ($("#checkbox").is(':checked'))
+            $("#other-formats").collapse('show')
+    });
+</script>
 {% endblock %}
