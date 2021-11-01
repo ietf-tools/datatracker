@@ -149,13 +149,6 @@
 
     </div>
 
-      {% comment %}
-      <!-- Remove the *-nojs attributes if we are running js.  This depends on jQuery's removeClass(): -->
-      <!-- Do this as early as possible (after loading the page and jQuery) to avoid rendering changes -->
-      {% endcomment %}
-      <script>$(".visible-nojs").removeClass("visible-nojs");</script>
-      <script>$(".hidden-nojs").removeClass("hidden-nojs");</script>
       {% block js %}{% endblock %}
   </body>
 </html>
-
