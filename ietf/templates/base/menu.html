@@ -1,5 +1,5 @@
 {# Copyright The IETF Trust 2015-2019, All Rights Reserved #}{% load origin %}{% origin %}
-{% load ietf_filters managed_groups wg_menu streams_menu active_groups_menu group_filters %}
+{% load ietf_filters managed_groups wg_menu active_groups_menu group_filters %}
 
 {% if flavor != "top" %}
   {% include "base/menu_user.html" %}
@@ -12,16 +12,11 @@
   {% if flavor == "top" %}
     </a>
     <ul class="dropdown-menu" role="menu">
+
+    <li class="dropdown-header visible-lg-block">By area/parent</li>
   {% endif %}
-
-  <li><a href="{% url "ietf.group.views.active_groups" group_type="wg" %}">Active WGs</a></li>
-  <li><a href="{% url "ietf.group.views.active_groups" group_type="rg" %}">Active RGs</a></li>
-  <li class="dropdown-submenu group-menu"><a href="{% url "ietf.group.views.active_groups" %}">Other</a>{% active_groups_menu %} </li>
-
-  {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
-  <li {%if flavor == "top" %}class="dropdown-header visible-lg-block"{% else %}class="nav-header hidden-nojs"{% endif %}>By area/parent</li>
         {% wg_menu %}
-        {# <li class="hidden-lg hidden-nojs"><a href="#" data-toggle="modal" data-target="#navmodal">Jump to group</a></li> #}
+        <li class="dropdown-submenu group-menu"><a href="{% url "ietf.group.views.active_groups" %}">Other</a>{% active_groups_menu %} </li>
 
   {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
   <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>New work</li>
@@ -88,9 +83,6 @@
         <li><a href="{% url "ietf.nomcom.views.private_index" g.nomcom_set.first.year %}">{{ g.acronym|capfirst }}</a></li>
       {% endfor %}
     {% endif %}
-
-  {% else %}
-    <li><a rel="nofollow" href="/accounts/login/?next={{ request.get_full_path|urlencode }}">Sign in to track docs</a></li>
   {% endif %}
 
 
@@ -112,16 +104,28 @@
     <ul class="dropdown-menu" role="menu">
   {% endif %}
 
+
+  {% if flavor == "top" %}
+  <li class="dropdown-header visible-lg-block">Next meeting</li>
+  {% endif %}
   <li><a href="/meeting/agenda/">Agenda</a></li>
   <li><a href="/meeting/materials/">Materials</a></li>
   <li><a href="/meeting/floor-plan/">Floor plan</a></li>
   <li><a href="https://www.ietf.org/how/meetings/register/">Registration</a></li>
   <li><a href="{% url 'ietf.meeting.views.important_dates' %}">Important dates</a></li>
-  <li><a href="https://www.ietf.org/how/meetings/past/">Proceedings</a></li>
-  <li><a href="/meeting/upcoming">Upcoming</a></li>
-  <li><a href="/meeting/past">Past</a></li>
   <li><a href="/secr/sreq/">Request a session</a></li>
   <li><a href="/meeting/requests">Session requests</a></li>
+  {% if flavor == "top" %}
+  <li class="divider hidden-xs"></li>
+  <li class="dropdown-header visible-lg-block">Upcoming meetings</li>
+  {% endif %}
+  <li><a href="/meeting/upcoming">Upcoming meetings</a></li>
+  {% if flavor == "top" %}
+  <li class="divider hidden-xs"></li>
+  <li class="dropdown-header visible-lg-block">Past meetings</li>
+  {% endif %}
+  <li><a href="/meeting/past">Past meetings</a></li>
+  <li><a href="https://www.ietf.org/how/meetings/past/">Meeting proceedings</a></li>
 {% if flavor == "top" %}</ul>{% endif %}
 </li>
 

@@ -42,6 +42,8 @@ parent_short_names = {
     'ops':'Ops & Mgmt',
     'rai':'RAI',
     'iab':'IAB',
+    'art':'Apps & Realtime',
+    'ietfadminllc' : 'IETF LLC',
     }
 
 parents = Group.objects.filter(
