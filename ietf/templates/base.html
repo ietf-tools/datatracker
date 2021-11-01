@@ -76,9 +76,7 @@
             </ul>
         {% if not user.is_authenticated %}
             <p class="navbar-text"></p>
-            <button type="button" class="btn {% if server_mode and server_mode == "production" %}btn-warning{% else %}btn-default{% endif %} btn-sm navbar-btn">
-                <a style="color:inherit" rel="nofollow" href="/accounts/login/?next={{request.get_full_path|urlencode}}">Sign in</a>
-            </button>
+            <a class="btn {% if server_mode and server_mode == "production" %}btn-warning{% else %}btn-default{% endif %} btn-sm navbar-btn" rel="nofollow" href="/accounts/login/?next={{request.get_full_path|urlencode}}">Sign in</a>
         {% endif %}
 
 	    <form class="navbar-form navbar-right hidden-xs" action="/doc/search/">
