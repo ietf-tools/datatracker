@@ -5,7 +5,7 @@
 {% origin %}
 
 {% with slug=item.slug %}{% with session=item.session %}{% with timeslot=item.timeslot %}{% with meeting=schedule.meeting %}
-<span id="session-buttons-{{session.pk}}" class="text-nowrap">
+<div id="session-buttons-{{session.pk}}" class="text-nowrap">
   {% with acronym=session.historic_group.acronym %}
   {% if session.agenda and show_agenda %}
     {# Note: if called with show_agenda=True, calling template must load agenda_materials.js, needed by session_agenda_include.html #}
@@ -110,5 +110,5 @@
     {% endif %}
   {% endif %}
   {% endwith %}
-</span>
+</div>
 {% endwith %}{% endwith %}{% endwith %}{% endwith %}

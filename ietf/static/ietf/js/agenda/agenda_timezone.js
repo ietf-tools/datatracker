@@ -127,9 +127,9 @@ function format_tooltip_table(start, end) {
 
 // Format tooltip for item
 function format_tooltip(start, end) {
-    return '<span class="timetooltiptext">' +
+    return '<div class="timetooltiptext">' +
         format_tooltip_table(start, end) +
-        '</span>';
+        '</div>';
 }
 
 // Add tooltips

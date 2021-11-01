@@ -127,7 +127,7 @@
           {% endif %}
         </h2>
 
-        <iframe seamless class="hidden" id="weekview"></iframe>
+        <iframe class="hidden" id="weekview"></iframe>
 
         <table class="table table-condensed table-striped">
           {% for item in filtered_assignments %}
@@ -150,14 +150,14 @@
                     data-slot-end-ts="{{item.end_timestamp}}">
                   <td class="leftmarker"></td>
 	          <th class="text-nowrap text-right">
-                    <span class="hidden-xs">
+                    <div class="hidden-xs">
                        {% include "meeting/timeslot_start_end.html" %}
-                    </span>
+                    </div>
 	          </th>
 	          <th colspan="4">
-                    <span class="hidden-sm hidden-md hidden-lg">
+                    <div class="hidden-sm hidden-md hidden-lg">
                        {% include "meeting/timeslot_start_end.html" %}
-                    </span>
+                    </div>
 	            {{ item.timeslot.time|date:"l"}}
 	            {{item.timeslot.name|capfirst_allcaps}}
 	          </th>
@@ -172,14 +172,14 @@
                     data-slot-end-ts="{{item.end_timestamp}}">
                   <td class="leftmarker"></td>
 	          <td class="text-nowrap text-right">
-                    <span class="hidden-xs">
+                    <div class="hidden-xs">
                        {% include "meeting/timeslot_start_end.html" %}
-                    </span>
+                    </div>
 	          </td>
                   <td colspan="3">
-                    <span class="hidden-sm hidden-md hidden-lg">
+                    <div class="hidden-sm hidden-md hidden-lg">
                        {% include "meeting/timeslot_start_end.html" %}
-                    </span>
+                    </div>
                     {% if item.timeslot.show_location and item.timeslot.get_html_location %}
 		      {% if schedule.meeting.number|add:"0" < 96 %}
                       {% comment %}<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{% endcomment %}
@@ -193,10 +193,10 @@
 		      {% endif %}
 		      {% with item.timeslot.location.floorplan as floor %}
 		      {% if item.timeslot.location.floorplan %}
-                      <span class="hidden-xs">
+                      <div class="hidden-xs">
 			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
 			  class="pull-right" title="{{floor.name}}"><span class="label label-blank label-wide">{{floor.short}}</span></a>
-                      </span>
+                      </divn>
 		      {% endif %}
 		      {% endwith %}
 	            {% endif %}
@@ -241,14 +241,14 @@
                   <td class="leftmarker"></td>
 		  {% if item.timeslot.type.slug == 'plenary' %}
 	            <th class="text-nowrap text-right">
-                      <span class="hidden-xs">
+                      <div class="hidden-xs">
                          {% include "meeting/timeslot_start_end.html" %}
-                      </span>
+                      </div>
 		    </th>
 		    <td colspan="3">
-                      <span class="hidden-sm hidden-md hidden-lg">
+                      <div class="hidden-sm hidden-md hidden-lg">
                          {% include "meeting/timeslot_start_end.html" %}
-                      </span>
+                      </div>
 		      {% if item.timeslot.show_location and item.timeslot.get_html_location %}
 			{% if schedule.meeting.number|add:"0" < 96 %}
 			{% comment %}<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_html_location|xslugify }}">{% endcomment %}
@@ -266,10 +266,10 @@
 		    <td>
 		      {% with item.timeslot.location.floorplan as floor %}
 		      {% if item.timeslot.location.floorplan %}
-                      <span class="hidden-xs">
+                      <div class="hidden-xs">
 			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{floor.name|xslugify}}"
 			  class="pull-right" title="{{floor.name}}"><span class="label label-blank">{{floor.short}}</span></a>
-                      </span>
+                      </div>
 		      {% endif %}
 		      {% endwith %}
 		    </td>
@@ -287,7 +287,7 @@
                       {% endif %}
                     </td>
 
-		      <td><span class="hidden-xs">{{item.session.historic_group.historic_parent.acronym}}</span></td>
+		      <td><div class="hidden-xs">{{item.session.historic_group.historic_parent.acronym}}</div></td>
 
                     <td>
                       {% if item.session.historic_group %}
@@ -324,19 +324,19 @@
                     {% endif %}
 
                     {% if item.session.current_status == 'resched' %}
-                      <span class="label label-danger pull-right">
+                      <div class="label label-danger pull-right">
                         RESCHEDULED
                         {% if item.session.rescheduled_to %}
                           TO
-                          <span class="timetooltip reschedtimetooltip"><span class="time" data-start-time="{{item.session.rescheduled_to.utc_start_time|date:"U"}}" data-end-time="{{item.session.rescheduled_to.utc_end_time|date:"U"}}" {% if item.timeslot.time|date:"l" != item.session.rescheduled_to.time|date:"l" %} weekday="1"{% endif %}>
+                          <div class="timetooltip reschedtimetooltip"><div class="time" data-start-time="{{item.session.rescheduled_to.utc_start_time|date:"U"}}" data-end-time="{{item.session.rescheduled_to.utc_end_time|date:"U"}}" {% if item.timeslot.time|date:"l" != item.session.rescheduled_to.time|date:"l" %} weekday="1"{% endif %}>
 		          {% if "-utc" in request.path %}
                             {{ item.session.rescheduled_to.utc_start_time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.utc_end_time|date:"G:i" }}
 		          {% else %}
                             {{ item.session.rescheduled_to.time|date:"l G:i"|upper }}-{{ item.session.rescheduled_to.end_time|date:"G:i" }}
 		          {% endif %}
-                          </span></span>
+                          </div></div>
                         {% endif %}
-                      </span>
+                      </div>
                     {% endif %}
 
                     {% if item.session.agenda_note|first_url|conference_url %}
