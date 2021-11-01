@@ -67,6 +67,7 @@ RUN apt-get -y update && \
         less \
         nano \
         ripgrep \
+        subversion \
         zsh && \
     # Reduce image footprint (not that it matters given the size of the above)
     apt-get -y clean && \
@@ -82,7 +83,7 @@ ENV LC_ALL en_US.UTF-8
 RUN npm install -g bower
 
 # Install idnits
-ADD https://tools.ietf.org/tools/idnits/idnits /usr/local/bin/
+ADD https://raw.githubusercontent.com/ietf-tools/idnits-mirror/main/idnits /usr/local/bin/
 RUN chmod +rx /usr/local/bin/idnits
 
 # Install current datatracker python dependencies
@@ -114,13 +115,16 @@ RUN sed -i 's/#force_color_prompt=/force_color_prompt=/' /root/.bashrc
 ADD https://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz /
 RUN pigz -v -d /ietf_utf8.sql.gz && \
     sed -i -e 's/ENGINE=MyISAM/ENGINE=InnoDB/' /ietf_utf8.sql
-RUN service mariadb start && \
+# see https://dba.stackexchange.com/a/83385
+RUN sed -i 's/\[mysqld\]/\[mysqld\]\ninnodb_buffer_pool_size = 1G\ninnodb_log_buffer_size = 128M\ninnodb_log_file_size = 256M\ninnodb_write_io_threads = 8\ninnodb_flush_log_at_trx_commit = 0/' /etc/mysql/mariadb.conf.d/50-server.cnf && \
+    service mariadb start --innodb-doublewrite=0 && \
     echo "This sequence will take a long time, please be patient" && \
     mysqladmin -u root --default-character-set=utf8 create ietf_utf8 && \
     bash -c "cd /mariadb-sys-master && mysql --user root < sys_10.sql" && \
     bash -c "mysql --user root ietf_utf8 <<< \"GRANT ALL PRIVILEGES ON *.* TO django@localhost IDENTIFIED BY 'RkTkDPFnKpko'; FLUSH PRIVILEGES;\"" && \
     bash -c "mysql --user=django --password=RkTkDPFnKpko -f ietf_utf8 < /ietf_utf8.sql" && \
     service mariadb stop && \
+    sed -i 's/^innodb_.*//g' /etc/mysql/mariadb.conf.d/50-server.cnf && \
     rm -rf /ietf_utf8.sql /mariadb-sys-master && \
     mv /var/lib/mysql /
 
