@@ -1534,9 +1534,6 @@ class SubmitTests(TestCase):
         self.assertEqual(s.state_id, "cancel")
 
     def test_help_pages(self):
-        r = self.client.get(urlreverse("ietf.submit.views.note_well"))
-        self.assertEqual(r.status_code, 200)
-
         r = self.client.get(urlreverse("ietf.submit.views.tool_instructions"))
         self.assertEqual(r.status_code, 200)
         

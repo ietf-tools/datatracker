@@ -20,9 +20,6 @@
     <li {% if selected == "instructions" %}class="active"{% endif %}>
       <a href="{% url "ietf.submit.views.tool_instructions" %}">Instructions</a>
     </li>
-    <li {% if selected == "notewell" %}class="active"{% endif %}>
-      <a href="{% url "ietf.submit.views.note_well" %}">Note Well</a>
-    </li>
     <li {% if selected == "approvals" %}class="active"{% endif %}>
       <a href="{% url "ietf.submit.views.approvals" %}">Approvals</a>
     </li>
