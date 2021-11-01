@@ -29,8 +29,8 @@
           <ul class="list-unstyled">
             {% for ad in area.ads_and_pre_ads %}
               <li>
-		<a href="mailto:{{ ad.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>
 		<a href="{% url 'ietf.person.views.profile' email_or_name=ad.person.name %}">{{ ad.person.plain_name }}</a>
+        <a href="mailto:{{ ad.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>
 	        {% if ad.name == "pre-ad" %} (Incoming AD){% endif %}
               </li>
             {% endfor %}
@@ -41,7 +41,7 @@
           <h3>{{ area.acronym }} area-specific web page{{ area.urls|pluralize}}</h3>
           <ul class="list-unstyled">
             {% for url in area.urls %}
-              <li><a href="{{ url.url }}">{{ url.name }}</a></li>
+              <li><a href="{{ url.value }}">{{ url.name }}</a></li>
             {% endfor %}
           </ul>
         {% endif %}
@@ -63,8 +63,8 @@
 		  <td><div class="anchor-target" id="{{group.acronym}}"><a href="{% url "ietf.group.views.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></div></td>
 	          <td>
 		    {% if group.ad_role %}
-		    <a href="mailto:{{ group.ad_role.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>
 		    <a href="{% url 'ietf.person.views.profile' email_or_name=group.ad_role.person.name %}">{{ group.ad_role.person.plain_name.split.0 }}</a>
+            <a href="mailto:{{ group.ad_role.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>
 		    {% endif %}
 	          </td>
 	          <td>{{ group.name }}</td>
