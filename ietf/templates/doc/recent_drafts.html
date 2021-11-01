@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin static %}
+{% load cache %}
 
 {% block pagehead %}
 <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
@@ -9,6 +10,7 @@
 {% block title %}Internet-Drafts submitted during the last {{days|default:7}} days{% endblock %}
 
 {% block content %}
+{% cache 1800 recentdrafts days using="slowpages" %} 
   {% origin %}
   <h1>
     Internet-Drafts submitted during the last {{days|default:7}} days
@@ -18,7 +20,7 @@
   </h1>
 
   {% include "doc/search/search_results.html" %}
-
+{% endcache %}
 {% endblock %}
 
 {% block js %}
