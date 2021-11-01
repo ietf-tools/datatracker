@@ -30,10 +30,6 @@
      {% block morecss %}{% endblock %}
     </style>
 
-    <!--[if lt IE 9]>
-        <script src="{% static 'html5shiv/html5shiv.min.js' %}"></script>
-        <script src="{% static 'respond/dest/respond.min.js' %}"></script>
-    <![endif]-->
     {% block pagehead %}{% endblock %}
 
     {% if server_mode and server_mode == "production" %}
@@ -102,12 +98,6 @@
               </ul>
 	    </div>
             <div class="col-md-10" id="content">
-	      <!--[if lt IE 8]>
-	      <p id="browsehappy" class="collapse alert alert-warning alert-dismissible">
-	      <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-	      <b>You are using an outdated browser.</b> Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.
-	      </p>
-	      <![endif]-->
 	{% else %}
 	  <div class="col-md-12 col-sm-12" id="content">
         {% endif %}

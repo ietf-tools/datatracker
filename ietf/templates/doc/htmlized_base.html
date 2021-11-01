@@ -122,10 +122,6 @@
      {% block morecss %}{% endblock %}
     </style>
 
-    <!--[if lt IE 9]>
-        <script src="{% static 'html5shiv/html5shiv.min.js' %}"></script>
-        <script src="{% static 'respond/dest/respond.min.js' %}"></script>
-    <![endif]-->
     {% block pagehead %}{% endblock %}
 
     {% if server_mode and server_mode == "production" %}
