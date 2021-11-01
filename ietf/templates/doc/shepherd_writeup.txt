@@ -43,7 +43,7 @@ Are there existing implementations of the protocol? Have a significant number of
 
 (14) Are there normative references to documents that are not ready for advancement or are otherwise in an unclear state? If such normative references exist, what is the plan for their completion? 
 
-(15) Are there downward normative references references (see RFC 3967)? If so, list these downward references to support the Area Director in the Last Call procedure. 
+(15) Are there downward normative references (see RFC 3967)? If so, list these downward references to support the Area Director in the Last Call procedure. 
 
 (16) Will publication of this document change the status of any existing RFCs? Are those RFCs listed on the title page header, listed in the abstract, and discussed in the introduction? If the RFCs are not listed in the Abstract and Introduction, explain why, and point to the part of the document where the relationship of this document to the other RFCs is discussed. If this information is not in the document, explain why the interested community considers it unnecessary. 
 
@@ -103,7 +103,7 @@ Who is the Document Shepherd? Who is the Responsible Area Director?
 
 (14) Are there normative references to documents that are not ready for advancement or are otherwise in an unclear state? If such normative references exist, what is the plan for their completion? 
 
-(15) Are there downward normative references references (see RFC 3967)? If so, list these downward references to support the Area Director in the Last Call procedure. 
+(15) Are there downward normative references (see RFC 3967)? If so, list these downward references to support the Area Director in the Last Call procedure. 
 
 (16) Will publication of this document change the status of any existing RFCs? Are those RFCs listed on the title page header, listed in the abstract, and discussed in the introduction? If the RFCs are not listed in the Abstract and Introduction, explain why, and point to the part of the document where the relationship of this document to the other RFCs is discussed. If this information is not in the document, explain why the WG considers it unnecessary. 
 
