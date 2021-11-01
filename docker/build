@@ -1,126 +1,92 @@
 #!/bin/bash
 
-version=0.10
+version=0.20
 program=${0##*/}
 progdir=${0%/*}
 if [ "$progdir" = "$program" ]; then progdir="."; fi
 if [ "$progdir" = "." ]; then progdir="$PWD"; fi
-parent=$(dirname $progdir)
+parent=$(dirname "$progdir")
 if [ "$parent" = "." ]; then parent="$PWD"; fi
+if [[ $(uname) =~ CYGWIN.* ]]; then parent=$(echo "$parent" | sed -e 's/^\/cygdrive\/\(.\)/\1:/'); fi
 
-export LANG=C
 
-# ----------------------------------------------------------------------
 function usage() {
     cat <<EOF
 NAME
-	$program - Build a docker datatracker image.
+	$program - Build a datatracker docker image
 
 SYNOPSIS
-	$program [OPTIONS] ARGS
+	$program [OPTIONS]
 
 DESCRIPTION
-
-	This script builds a debian-based docker image which has been
+	This script builds a Ubuntu-based docker image that has been
 	set up with the dependencies needed to easily run the IETF
 	datatracker in development mode.  It uses docker/Dockerfile;
 	i.e., the Dockerfile in the same directory as this script.
-	It assumes that the user has upload rights for the docker
-	ietf/datatracker-environment repository, in order to push the
-	image.
 
+OPTIONS
 EOF
-    echo -e "OPTIONS"
-    if   [ "$(uname)" = "Linux" ]; then
-        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | tr -s "\t|" "\t," | sed -r -e 's/\)[ \t]+([A-Z]+)=\$2[^#]*#/=\1\t/' -e 's/\)[^#]*#/\t/'
-    else
-        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | sed 's/\|.*\$2[^#]*#/	/'| sed -E 's/\|.*\)[^#]*#/	/'
-    fi
+    grep -E '^\s+-[a-zA-Z])' "$0" | sed -E -e 's/\)[^#]+#/ /'
     cat <<EOF
 
-FILES
-
 AUTHOR
-	Written by Henrik Levkowetz, <henrik@levkowetz.com>
+	Written by:
+        Henrik Levkowetz, <henrik@levkowetz.com>
+        Lars Eggert, <lars@eggert.org>
 
 COPYRIGHT
-
 	Copyright (c) 2016 IETF Trust and the persons identified as authors of
-	the code. All rights reserved.  License 'Simplified BSD', as specified
-	in http://opensource.org/licenses/BSD-3-Clause.
-	
-EOF
+	the code. All rights reserved. Redistribution and use in source and
+	binary forms, with or without modification, is permitted pursuant to,
+	and subject to the license terms contained in, the Revised BSD
+	License set forth in Section 4.c of the IETF Trust’s Legal Provisions
+	Relating to IETF Documents(https://trustee.ietf.org/license-info).
 
+EOF
 }
 
-# ----------------------------------------------------------------------
+
 function die() {
     echo -e "\n$program: error: $*" >&2
     exit 1
 }
 
-function note() { 
-	if [ -n "$VERBOSE" ]; then echo -e "$*"; fi
-}
 
-# ----------------------------------------------------------------------
 function version() {
 	echo -e "$program $version"
 }
 
-# ----------------------------------------------------------------------
+
 trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; exit 1' ERR
 
-
-# ----------------------------------------------------------------------
-# Option parsing
-
-# Options
-shortopts=hlt:vV
-longopts=help,local,tag=,verbose,version
-
 # Default values
-BRANCH=$(svn log -v ^/tags -l 2 | grep 'A /tags/[1-9]' | awk '{print $2}')
-TAG=${BRANCH##*/}
-LOCAL=""
+IMAGE=ietf/datatracker-environment
+TAG=$(basename "$(svn info "$parent" | grep ^URL | awk '{print $2}' | tr -d '\r')")
+LOCAL=1
 
-if   [ "$(uname)" = "Linux" ]; then
-    args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
-    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
-    eval set -- "$args"
-    sed="sed -r"
-else
-    # Darwin, BSDs
-    args=$(getopt -o$shortopts $SV $*)
-    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
-    set -- $args
-    sed="sed -E"
-fi
+# Option parsing
+shortopts=hut:V
+args=$(getopt -o$shortopts $*)
+if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
+set -- $args
 
 while true ; do
     case "$1" in
-	-h| --help)	usage; exit;;		# Show this help, then exit
-	-l| --local)	LOCAL=1;;		# Don't upload
-	-t| --tag)	TAG=$2; shift;;		# Use this docker image tag, instead of the latest svn tags name
-	-v| --verbose)	VERBOSE=1;;		# Be more talkative
-	-V| --version)	version; exit;;		# Show program version, then exit
-	--)		shift; break;;
-	*) die "Internal error, inconsistent option specification: '$1'";;
+    	-h)    usage; exit;;	# Show this help, then exit
+    	-u)    LOCAL=0;;		# Upload image to repository after build
+    	-t)    TAG=$2; shift;;	# Use this docker image tag
+    	-V)    version; exit;;	# Show program version, then exit
+    	--)    shift; break;;
+    	*) die "Internal error, inconsistent option specification: '$1'";;
     esac
     shift
 done
 
-# ----------------------------------------------------------------------
 # The program itself
-
-if [ "$(uname)" == "Linux" ]; then
-    die "Didn't expect to run this script on Linux -- are you inside docker?"
-fi
-
-docker rmi -f ietf/datatracker-environment:trunk || true
-docker build -t ietf/datatracker-environment:$TAG docker/
-docker tag $(docker images -q ietf/datatracker-environment | head -n 1) ietf/datatracker-environment:latest
+docker rmi -f $IMAGE:trunk 2>/dev/null || true
+docker build --progress plain -t "$IMAGE:$TAG" docker/
+docker tag "$(docker images -q $IMAGE | head -n 1)" $IMAGE:latest
 if [ -z "$LOCAL" ]; then
-    docker push ietf/datatracker-environment:latest
-    docker push ietf/datatracker-environment:$TAG
+    docker push $IMAGE:latest
+    docker push "$IMAGE:$TAG"
 fi

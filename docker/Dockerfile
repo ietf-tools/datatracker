@@ -1,185 +1,132 @@
-# -*- shell-mode -*-
-# This file is a docker (https://www.docker.com/what-docker) recipe, which can be used to build
-# a docker image which is ready to run a datatracker in development mode.
+# This is a Dockerfile with everything in it to run the IETF datatracker.
 #
-# It is used to build an image (once you've installed docker) using a command like this (assuming
-# suitable replacement of $variables:
+# If you make changes to the datatracker that add new dependencies (python
+# packages or otherwise), you need to rebuild this image to make them
+# available. Do this in the top-level directory of your datatracker source
+# tree:
 #
-#	$ docker build -t $yourdockerid/datatracker:$version
+# docker/build
 #
-# To use a pre-built image, assuming we're on OS X and have a checked-out datatracker repository
-# at /Users/$login/src/6.8.1.dev0, you would start (again assuming you've installed docker)
-# a container from an image, as follows:
-# 
-#	$ docker run -ti --name=$containername -v /Users/$login:/home/$login levkowetz/datatracker:$version /bin/bash
-# 
-# This maps your home directory to /home/$login in the container, and starts it running /bin/bash.
-# 
-# In this first version, the docker environment is set up so that tests will run successfully,
-# but the database has *not* been loaded with a dump, and supporting files (drafts, charters, etc.)
-# have *not* been downloaded.
+# You can then execute the datatracker like this (also from the top-level
+# datatracker source directory):
+#
+# docker/run
 
-FROM dyne/devuan:beowulf
-LABEL maintainer="Henrik Levkowetz <henrik@levkowetz.com>"
+FROM ubuntu:hirsute
+LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 # Default django runserver port
-EXPOSE	8000
+EXPOSE 8000
 
-# Run apt-get noninteractive
+# Default mysqld/mariadb port
+EXPOSE 3306
+
 ENV DEBIAN_FRONTEND=noninteractive
-ENV DEVUAN_FRONTEND=noninteractive
-
-# Uncomment this to be able to install and run apt-show-versions:
-RUN rm -v /etc/apt/apt.conf.d/docker-compress
-RUN rm -v /var/lib/apt/lists/*lz4
-
-RUN apt-get update --allow-releaseinfo-change
-RUN apt-get install -qy apt-transport-https
-
-# Use backports, updates, and security updates
-RUN echo "deb http://deb.devuan.org/merged beowulf main contrib non-free"  > /etc/apt/sources.list
-RUN echo "deb http://deb.devuan.org/merged beowulf-security main contrib non-free" >> /etc/apt/sources.list
-RUN echo "deb http://deb.devuan.org/merged beowulf-updates main contrib non-free" >> /etc/apt/sources.list
-RUN echo "deb http://deb.devuan.org/merged beowulf-backports main contrib non-free" >> /etc/apt/sources.list
-
-# Remove some excludes for the docker image
-RUN sed -i -e '/^path-exclude=.*\/groff/d' \
-           -e '/^path-exclude=.*\/locale/d' \
-           -e '/^path-exclude=.*\/man/d' /etc/dpkg/dpkg.cfg.d/docker-excludes
-
-# Install needed packages
-#
-# We're not including graphviz and ghostscript, needed for the 3 document
-# dependency graph tests; they would increase the size of the image by about
-# 15%, about 100MB.
-
-# Fetch apt package information, and upgrade to latest package versions
-
-RUN apt-get update
-RUN apt-get -qy upgrade
-
-# Install the packages we need
-RUN apt-get install -qy \
-	build-essential \
-	bzip2 \
-	ca-certificates \
-	colordiff \
-	gawk \
-	gcc \
-	ipython \
-	jq \
-	less \
-	libbz2-dev \
-	libdb5.3-dev \
-	libexpat1-dev \
-	libffi-dev \
-	libgdbm-dev \
-	libjpeg62-turbo-dev \
-	liblzma-dev \
-	libmagic1 \
-	libmariadbclient-dev \
-	libncurses5-dev \
-	libncursesw5-dev \
-	libreadline-dev \
-	libsqlite3-dev \
-	libssl-dev \
-	libsvn1 \
-	libxml2-dev \
-	libxslt-dev \
-	libz-dev \
-	libffi-dev \
-	locales \
-	make \
-	man \
-	mariadb-client \
-	mariadb-server \
-	openssh-client \
-	patch \
-	procps \
-	pv \
-	rsync \
+RUN apt-get -y update && \
+    # apt-get upgrade is normally not a good idea, but this is a dev container
+    apt-get upgrade && \
+    # Install all dependencies that are available as packages
+    apt-get -y install --no-install-recommends \
+        apache2-utils \
+        apt-file \
+        apt-utils \
+        curl \
+        enscript \
+        gcc \
+        ghostscript \
+        git \
+        gnupg \
+        graphviz \
+        libmagic-dev \
+        libmariadb-dev \
+        locales \
+        mariadb-server \
+        npm \
+        pigz \
+        pv \
+        python-is-python3 \
+        python3-dev \
+        python3-pip \
         rsyslog \
-	subversion \
-	sudo \
-	uuid-dev  \
-	vim \
-	wget \
-	xz-utils\
-	zile \
-	zlib1g-dev
+        unzip \
+        yang-tools && \
+    # Since snap doesn't work in Docker containers, install chromedriver per
+    # https://gist.github.com/varyonic/dea40abcf3dd891d204ef235c6e8dd79#gistcomment-3160722
+    curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list && \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends google-chrome-stable && \
+    CHROMEVER=$(google-chrome --product-version | grep -o "[^\.]*\.[^\.]*\.[^\.]*") && \
+    DRIVERVER=$(curl "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROMEVER") && \
+    curl -L -O -C - "http://chromedriver.storage.googleapis.com/$DRIVERVER/chromedriver_linux64.zip" && \
+    unzip chromedriver_linux64.zip -d /bin && \
+    rm chromedriver_linux64.zip && \
+    # Install some other packages that are not dependencies but make life easier
+    apt-get -y install --no-install-recommends \
+        fish \
+        less \
+        nano \
+        ripgrep \
+        zsh && \
+    # Reduce image footprint (not that it matters given the size of the above)
+    apt-get -y clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Postgresql packages
-RUN apt-get install -qy \
-        postgresql-11 \
-        postgresql-server-dev-11 
+# Set locale to en_US.UTF-8
+RUN dpkg-reconfigure locales && \
+    locale-gen en_US.UTF-8 && \
+    update-locale LC_ALL en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
 
-# Get the key used to sign the libyang repo
-RUN wget -nv http://download.opensuse.org/repositories/home:liberouter/Debian_9.0/Release.key
-RUN apt-key add - < Release.key
-RUN rm Release.key
+# Install bower
+RUN npm install -g bower
 
-# Add apt source entry for libyang
-RUN echo "deb http://download.opensuse.org/repositories/home:/liberouter/Debian_9.0/ /" >> /etc/apt/sources.list.d/libyang.list
-
-# Update the package defs, and install the desired mysql from the mysql repo
-RUN apt-get update
-RUN apt-get install -qy libyang1
-
-# This is expected to exist by the mysql startup scripts:
-#RUN touch /etc/mysql/debian.cnf
-# ------------------------------------------------------------------------------
-
-# Get rid of installation files we don't need in the image, to reduce size
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Enable some common locales
-RUN sed -i -e 's/^. en_US/en_US/' -e 's/^. en_GB/en_GB/' -e 's/^. en_IE/en_IE/' /etc/locale.gen
-RUN locale-gen
-
-# Remove an rsyslog module that we don't need, which also requires extra permissions
-RUN sed -i -e '/load="imklog"/d' /etc/rsyslog.conf
-
-# Set up root password
-RUN echo "root:root" | chpasswd
-
-# MySQL
-VOLUME /var/lib/mysql
-
-# idnits and dependencies
+# Install idnits
 ADD https://tools.ietf.org/tools/idnits/idnits /usr/local/bin/
 RUN chmod +rx /usr/local/bin/idnits
 
-# Directory for Mac certs
-RUN mkdir /etc/certificates
+# Install current datatracker python dependencies
+COPY requirements.txt /
+RUN pip install -r /requirements.txt
 
-# # Python 3
-# # Comment in if OS does not provide python3.6, which is the current
-# # production version
-ENV PYVER=3.6.10
-ENV PYREV=3.6
+# Turn off rsyslog kernel logging (doesn't work in Docker)
+RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 
-WORKDIR /usr/src
-RUN wget -q https://www.python.org/ftp/python/$PYVER/Python-$PYVER.tar.xz
-RUN tar xJf Python-$PYVER.tar.xz
-RUN rm Python-$PYVER.tar.xz
-WORKDIR /usr/src/Python-$PYVER/
-RUN ./configure
-RUN make
-RUN make altinstall
-WORKDIR /usr/src
-RUN rm -rf /usr/src/Python-$PYVER/
+# Allow access to mariadb over the network
+RUN sed -i 's/127.0.0.1/0.0.0.0/' /etc/mysql/mariadb.conf.d/50-server.cnf
 
-ENV HOSTNAME="datatracker"
+# Turn on mariadb performance_schema
+RUN sed -i 's/\[mysqld\]/\[mysqld\]\nperformance_schema=ON/' /etc/mysql/mariadb.conf.d/50-server.cnf
 
-ENV DDIR="/usr/local/share/datatracker"
-RUN mkdir -p $DDIR
-WORKDIR $DDIR
+# Make the mariadb sys schema available for possible installation
+# We would normally use the next line, but that has a bug:
+# ADD https://github.com/FromDual/mariadb-sys/archive/master.zip /
+# This is the repo that has the PR:
+ADD https://github.com/grooverdan/mariadb-sys/archive/refs/heads/master.zip /
+RUN unzip /master.zip
+RUN rm /master.zip
 
-COPY requirements.txt ./
-COPY setprompt ./
+# Colorize the bash shell
+RUN sed -i 's/#force_color_prompt=/force_color_prompt=/' /root/.bashrc
 
+# Make a database dump available as part of the image, for if a user doesn't
+# have one installed locally yet - this saves a bunch of time then
+ADD https://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz /
+RUN pigz -v -d /ietf_utf8.sql.gz && \
+    sed -i -e 's/ENGINE=MyISAM/ENGINE=InnoDB/' /ietf_utf8.sql
+RUN service mariadb start && \
+    echo "This sequence will take a long time, please be patient" && \
+    mysqladmin -u root --default-character-set=utf8 create ietf_utf8 && \
+    bash -c "cd /mariadb-sys-master && mysql --user root < sys_10.sql" && \
+    bash -c "mysql --user root ietf_utf8 <<< \"GRANT ALL PRIVILEGES ON *.* TO django@localhost IDENTIFIED BY 'RkTkDPFnKpko'; FLUSH PRIVILEGES;\"" && \
+    bash -c "mysql --user=django --password=RkTkDPFnKpko -f ietf_utf8 < /ietf_utf8.sql" && \
+    service mariadb stop && \
+    rm -rf /ietf_utf8.sql /mariadb-sys-master && \
+    mv /var/lib/mysql /
+
+# Copy the startup file
 COPY docker-init.sh /docker-init.sh
 RUN chmod +x /docker-init.sh
-ENTRYPOINT ["/docker-init.sh"]
 
-CMD	/bin/bash
+WORKDIR /root/src
+ENTRYPOINT ["/docker-init.sh"]
