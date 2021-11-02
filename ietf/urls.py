@@ -94,6 +94,6 @@ if settings.SERVER_MODE in ('development', 'test'):
 if hasattr(settings, 'USE_DEBUG_TOOLBAR') and settings.USE_DEBUG_TOOLBAR:
     try:
         import debug_toolbar
-        path('__debug__/', include(debug_toolbar.urls)),
+        urlpatterns = urlpatterns + [path('__debug__/', include(debug_toolbar.urls)), ]
     except ImportError:
         pass
