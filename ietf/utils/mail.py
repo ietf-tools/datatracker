@@ -390,7 +390,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     try:
         copy_to = settings.EMAIL_COPY_TO
     except AttributeError:
-        copy_to = "ietf.tracker.archive+%s@gmail.com" % settings.SERVER_MODE
+        copy_to = None
     if copy_to and (copy or not production) and not (test_mode or debugging): # if we're running automated tests, this copy is just annoying
         if bcc:
             msg['X-Tracker-Bcc']=bcc
@@ -575,7 +575,7 @@ def send_error_to_secretariat(msg):
         try:
             copy_to = settings.EMAIL_COPY_TO
         except AttributeError:
-            copy_to = "ietf.tracker.archive+%s@gmail.com" % settings.SERVER_MODE
+            copy_to = None
         if copy_to and not test_mode and not debugging: # if we're running automated tests, this copy is just annoying
             copy_email(msg, copy_to,originalBcc=None)
     except smtplib.SMTPException:
