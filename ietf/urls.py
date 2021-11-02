@@ -91,7 +91,7 @@ if settings.SERVER_MODE in ('development', 'test'):
     settings.DEBUG = save_debug
 
 # Debug Toolbar
-if hasattr(settings, 'USE_DEBUG_TOOLBAR') and settings.USE_DEBUG_TOOLBAR:
+if getattr(settings, 'USE_DEBUG_TOOLBAR', False):
     try:
         import debug_toolbar
         urlpatterns = urlpatterns + [path('__debug__/', include(debug_toolbar.urls)), ]
