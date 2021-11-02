@@ -1,4 +1,8 @@
 # -*- conf-mode -*-
+#
+
+/personal/lars/7.39.1.dev0@19495 # Hold the modal 'give us your xml' poking until bibxml service is stable 
+				 # and maybe until we have rendered previews.
 
 # Everyting below this line is OBE
 
