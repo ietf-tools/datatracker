@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+from ietf.ipr.models import IprDocRel
 
 import debug                            # pyflakes:ignore
 
@@ -60,5 +61,31 @@ def related_docs(alias, relationship=('replaces', 'obs')):
         results += rel_aliases
 
     return list(set(results))
+
+
+def generate_draft_recursive_txt():
+    docipr = {}
+
+    for o in IprDocRel.objects.filter(disclosure__state='posted').select_related('document'):
+        alias = o.document
+        name = alias.name
+        for document in alias.docs.all():
+            related = set(document.docalias.all()) | set(document.all_related_that_doc(('obs', 'replaces')))
+            for alias in related:
+                name = alias.name
+                if name.startswith("rfc"):
+                    name = name.upper()
+                if not name in docipr:
+                    docipr[name] = []
+                docipr[name].append(o.disclosure_id)
+
+    lines = [ "# Machine-readable list of IPR disclosures by draft name" ]
+    for name, iprs in docipr.items():
+        lines.append(name + "\t" + "\t".join(str(ipr_id) for ipr_id in sorted(iprs)))
+
+    data = '\n'.join(lines)
+    filename = '/a/ietfdata/derived/ipr_draft_recursive.txt'
+    with open(filename, 'w') as f:
+        f.write(data)
 
     

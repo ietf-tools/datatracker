@@ -13,7 +13,7 @@ from django.urls import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocAlias
-from ietf.doc.factories import DocumentFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory
+from ietf.doc.factories import DocumentFactory, WgDraftFactory, WgRfcFactory
 from ietf.group.factories import RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory, GenericIprDisclosureFactory, IprEventFactory
 from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_submitter_emails,
@@ -127,16 +127,6 @@ class IprTests(TestCase):
         ipr = HolderIprDisclosureFactory(docs=[draft,])
         r = self.client.get(urlreverse("ietf.ipr.views.by_draft_txt"))
         self.assertContains(r, draft.name)
-        self.assertContains(r, str(ipr.pk))
-
-    def test_iprs_for_drafts_recursive(self):
-        draft = WgDraftFactory(relations=[('replaces', IndividualDraftFactory())])
-        ipr = HolderIprDisclosureFactory(docs=[draft,])
-        replaced = draft.all_related_that_doc('replaces')
-        r = self.client.get(urlreverse("ietf.ipr.views.by_draft_recursive_txt"))
-        self.assertContains(r, draft.name)
-        for alias in replaced:
-            self.assertContains(r, alias.name)
         self.assertContains(r, str(ipr.pk))
 
     def test_about(self):
