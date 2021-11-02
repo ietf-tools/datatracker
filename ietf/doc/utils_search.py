@@ -6,7 +6,7 @@ import datetime
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, DocAlias, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent
-from ietf.doc.expire import expirable_draft
+from ietf.doc.expire import expirable_drafts
 from ietf.doc.utils import augment_docs_and_user_with_user_info
 from ietf.meeting.models import SessionPresentation, Meeting, Session
 
@@ -80,6 +80,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     fill_in_document_sessions(docs, doc_dict, doc_ids)
 
     # misc
+    expirable_pks = expirable_drafts(Document.objects.filter(pk__in=doc_ids)).values_list('pk', flat=True)
     for d in docs:
         # emulate canonical name which is used by a lot of the utils
         # d.canonical_name = wrap_value(rfc_aliases[d.pk] if d.pk in rfc_aliases else d.name)
@@ -102,7 +103,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
             else:
                 d.search_heading = "%s Internet-Draft" % d.get_state()
                 if state_slug == "active":
-                    d.expirable = expirable_draft(d)
+                    d.expirable = d.pk in expirable_pks
                 else:
                     d.expirable = False
         else:
