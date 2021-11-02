@@ -39,12 +39,13 @@ import datetime
 
 from django import forms
 from django.conf import settings
-from django.core.cache import cache
+from django.core.cache import cache, caches
 from django.urls import reverse as urlreverse
 from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
 from django.utils.cache import _generate_cache_key # type: ignore
+
 
 
 import debug                            # pyflakes:ignore
@@ -485,12 +486,20 @@ def drafts_in_iesg_process(request):
             })
 
 def recent_drafts(request, days=7):
-    since = datetime.datetime.now()-datetime.timedelta(days=days)
-    state = State.objects.get(type='draft', slug='active')
-    events = NewRevisionDocEvent.objects.filter(time__gt=since)
-    names = [ e.doc.name for e in events ]
-    docs = Document.objects.filter(name__in=names, states=state)
-    results, meta = prepare_document_table(request, docs, query={'sort':'-date', }, max_results=len(names))
+    slowcache = caches['slowpages']
+    cache_key = f'recentdraftsview{days}' 
+    cached_val = slowcache.get(cache_key)
+    if not cached_val:
+        since = datetime.datetime.now()-datetime.timedelta(days=days)
+        state = State.objects.get(type='draft', slug='active')
+        events = NewRevisionDocEvent.objects.filter(time__gt=since)
+        names = [ e.doc.name for e in events ]
+        docs = Document.objects.filter(name__in=names, states=state)
+        results, meta = prepare_document_table(request, docs, query={'sort':'-date', }, max_results=len(names))
+        slowcache.set(cache_key, [docs, results, meta], 1800)
+    else:
+        [docs, results, meta] = cached_val
+
     pages = 0
     for doc in results:
         pages += doc.pages or 0
