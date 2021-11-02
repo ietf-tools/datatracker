@@ -9,6 +9,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views import static as static_view
 from django.views.generic import TemplateView
 from django.views.defaults import server_error
+from django.urls import path
 
 import debug                            # pyflakes:ignore
 
@@ -89,3 +90,10 @@ if settings.SERVER_MODE in ('development', 'test'):
     urlpatterns += static_url(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     settings.DEBUG = save_debug
 
+# Debug Toolbar
+if hasattr(settings, 'USE_DEBUG_TOOLBAR') and settings.USE_DEBUG_TOOLBAR:
+    try:
+        import debug_toolbar
+        urlpatterns = urlpatterns + [path('__debug__/', include(debug_toolbar.urls)), ]
+    except ImportError:
+        pass

@@ -13,6 +13,7 @@ Django>=2.2.15,<3.0
 django-bootstrap3>=14.0
 django-csp>=3.5
 django-cors-headers>=2.4.0
+django-debug-toolbar>=3.2.2
 django-form-utils>=1.0.3
 django-formtools>=1.0		# instead of django.contrib.formtools in 1.8
 django-markup>=1.5
