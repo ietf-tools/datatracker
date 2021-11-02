@@ -5,13 +5,15 @@ import six
 if six.PY3:
     from typing import Collection, Dict, List, Tuple      # pyflakes:ignore
 
+from ietf.settings import *                  # pyflakes:ignore
+
 ALLOWED_HOSTS = ['*']
 
 SECRET_KEY = 'jzv$o93h_lzw4a0%0oz-5t5lk+ai=3f8x@uo*9ahu8w4i300o6'
 
 DATABASES = {
     'default': {
-        'HOST': 'localhost',
+        'HOST': 'db',
         'PORT': 3306,
         'NAME': 'ietf_utf8',
         'ENGINE': 'django.db.backends.mysql',
@@ -61,5 +63,3 @@ SUBMIT_YANG_DRAFT_MODEL_DIR = 'data/developers/ietf-ftp/yang/draftmod/'
 SUBMIT_YANG_INVAL_MODEL_DIR = 'data/developers/ietf-ftp/yang/invalmod/'
 SUBMIT_YANG_IANA_MODEL_DIR = 'data/developers/ietf-ftp/yang/ianamod/'
 SUBMIT_YANG_RFC_MODEL_DIR   = 'data/developers/ietf-ftp/yang/rfcmod/'
-
-

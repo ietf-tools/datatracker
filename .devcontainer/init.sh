@@ -83,9 +83,14 @@ fi
 echo "Activating the virtual python environment ..."
 . $VIRTDIR/bin/activate
 
-if [ ! -f $WORKSPACEDIR/ietf/settings_local.py ]; then
+if [ ! -f "$WORKSPACEDIR/ietf/settings_local.py" ]; then
     echo "Setting up a default settings_local.py ..."
     cp $WORKSPACEDIR/.devcontainer/settings_local.py $WORKSPACEDIR/ietf/settings_local.py
+fi
+
+if [ ! -f "$WORKSPACEDIR/ietf/settings_local_debug.py" ]; then
+    echo "Setting up a default settings_local_debug.py ..."
+    cp $WORKSPACEDIR/.devcontainer/settings_local_debug.py $WORKSPACEDIR/ietf/settings_local_debug.py
 fi
 
 for sub in test/id/ test/staging/ test/archive/ test/rfc test/media test/wiki/ietf; do
@@ -141,7 +146,6 @@ chmod -R g+w   /usr/local/lib/		# so we can patch libs if needed
 
 cd "$WORKSPACEDIR" || cd "/home/$USER/"
 
-echo "Done!"
 if ! echo "$LANG" | grep "UTF-8"; then
     echo ""
     echo "Make sure you export LANG=en_GB.UTF-8 (or another UTF-8 locale) in your .bashrc"
@@ -152,6 +156,8 @@ fi
 HOME=/opt/home/$USER
 
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py check --settings=settings_local
+
+echo "Done!"
 
 # su -p $USER
 

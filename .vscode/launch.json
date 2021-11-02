@@ -16,6 +16,19 @@
                 "--settings=settings_local"
             ],
             "django": true
+        },
+        {
+            "name": "Run Server with Debug Toolbar",
+            "type": "python",
+            "request": "launch",
+            "python": "/usr/local/bin/python",
+            "program": "${workspaceFolder}/ietf/manage.py",
+            "args": [
+                "runserver",
+                "0.0.0.0:8000",
+                "--settings=settings_local_debug"
+            ],
+            "django": true
         }
     ]
 }

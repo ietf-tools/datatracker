@@ -64,14 +64,6 @@ RUN apt-get install -qy \
 	zile \
 	zlib1g-dev
 
-# Install libyang
-# RUN wget -nv http://download.opensuse.org/repositories/home:liberouter/Debian_9.0/Release.key && \
-#     apt-key add - < Release.key && \
-#     rm Release.key && \
-#     echo "deb http://download.opensuse.org/repositories/home:/liberouter/Debian_9.0/ /" >> /etc/apt/sources.list.d/libyang.list && \
-#     apt-get update && \
-#     apt-get install -qy libyang1
-
 # Install chromedriver
 RUN apt-get update && \
     apt-get install -y gnupg wget curl unzip --no-install-recommends && \
@@ -120,12 +112,6 @@ RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requ
 COPY .devcontainer/init.sh /docker-init.sh
 RUN sed -i 's/\r$//' /docker-init.sh && \
     chmod +x /docker-init.sh
+
 # ENTRYPOINT ["/usr/local/share/datatracker/.devcontainer/init.sh"]
 CMD	["sleep", "infinity"]
-
-# [Optional] Uncomment this section to install additional OS packages.
-# RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-#     && apt-get -y install --no-install-recommends <your-package-list-here>
-
-# [Optional] Uncomment this line to install global node packages.
-# RUN su vscode -c "source /usr/local/share/nvm/nvm.sh && npm install -g <your-package-here>" 2>&1

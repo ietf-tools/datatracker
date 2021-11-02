@@ -39,6 +39,7 @@ import datetime
 import itertools
 import io
 import json
+from traceback import print_list
 import markdown
 import math
 import os
@@ -63,7 +64,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList, EmailSubscription
 from ietf.community.utils import docs_tracked_by_community_list
-from ietf.doc.models import DocTagName, State, DocAlias, RelatedDocument, Document
+from ietf.doc.models import DocTagName, State, DocAlias, RelatedDocument, Document, Person
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.doc.utils import get_chartering_type, get_tags_for_stream_id
 from ietf.doc.utils_charter import charter_name_for_group, replace_charter_of_replaced_group
