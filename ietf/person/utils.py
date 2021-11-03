@@ -11,6 +11,7 @@ import syslog
 from django.contrib import admin
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
 
 import debug                            # pyflakes:ignore
 
@@ -222,12 +223,11 @@ def get_active_irsg():
 
 def get_dots(person):
         roles = person.role_set.filter(group__state_id__in=('active','bof','proposed'))
-        chair_group_types = ['wg', 'program', 'rg', 'iabasg']
         dots = []
-        if roles.filter(name_id='chair',group__type_id__in=chair_group_types).exists():
+        if roles.filter(group__type_id='wg',name_id='chair').exists():
             dots.append('chair')
-        if roles.filter(group__acronym='iesg',name_id='ad').exists():
-            dots.append('ad')
+        if roles.filter(Q(group__acronym='iesg',name_id='ad')|Q(group__acronym='iab',name_id='chair')).exists():
+            dots.append('iesg')
         if roles.filter(group__acronym='iab',name_id='member').exists():
             dots.append('iab')
         if roles.filter(group__acronym='irsg').exists():
