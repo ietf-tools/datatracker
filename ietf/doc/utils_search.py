@@ -151,16 +151,16 @@ def prepare_document_table(request, docs, query=None, max_results=200):
     displaying a full table of information about the documents, plus
     dict with information about the columns."""
 
-    if docs.count() > max_results:
-        docs = docs[:max_results]
-
     if not isinstance(docs, list):
         # evaluate and fill in attribute results immediately to decrease
         # the number of queries
         docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream", "shepherd", )
         docs = docs.prefetch_related("states__type", "tags", "groupmilestone_set__group", "reviewrequest_set__team",
                                      "ad__email_set", "docalias__iprdocrel_set")
+        docs = docs[:max_results] # <- that is still a queryset, but with a LIMIT now
         docs = list(docs)
+    else:
+        docs = docs[:max_results]
 
     fill_in_document_table_attributes(docs)
     augment_docs_and_user_with_user_info(docs, request.user)
