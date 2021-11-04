@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0037_depopulate_timeslottypename_private'),
+        ('name', '0036_depopulate_timeslottypename_private'),
     ]
 
     operations = [

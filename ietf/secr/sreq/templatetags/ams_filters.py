@@ -25,6 +25,8 @@ def display_duration(value):
     """
     Maps a session requested duration from select index to 
     label."""
+    if value in (None, ''):
+        return 'unspecified'
     value = int(value)
     map = {0: 'None',
            1800: '30 Minutes',

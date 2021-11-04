@@ -1162,7 +1162,7 @@ class Session(models.Model):
     meeting = ForeignKey(Meeting)
     name = models.CharField(blank=True, max_length=255, help_text="Name of session, in case the session has a purpose rather than just being a group meeting.")
     short = models.CharField(blank=True, max_length=32, help_text="Short version of 'name' above, for use in filenames.")
-    purpose = ForeignKey(SessionPurposeName, null=True, help_text='Purpose of the session')
+    purpose = ForeignKey(SessionPurposeName, null=False, help_text='Purpose of the session')
     type = ForeignKey(TimeSlotTypeName)
     group = ForeignKey(Group)    # The group type historically determined the session type.  BOFs also need to be added as a group. Note that not all meeting requests have a natural group to associate with.
     joint_with_groups = models.ManyToManyField(Group, related_name='sessions_joint_in',blank=True)

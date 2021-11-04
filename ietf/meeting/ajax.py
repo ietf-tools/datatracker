@@ -10,7 +10,7 @@ from django.views.decorators.http import require_POST
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.meeting.helpers import get_meeting, get_schedule, schedule_permissions, get_person_by_email, get_schedule_by_name
 from ietf.meeting.models import TimeSlot, Session, Schedule, Room, Constraint, SchedTimeSessAssignment, ResourceAssociation
-from ietf.meeting.views import edit_timeslots, edit_schedule
+from ietf.meeting.views import edit_timeslots, edit_meeting_schedule
 
 import debug                            # pyflakes:ignore
 
@@ -286,7 +286,7 @@ def schedule_add(request, meeting):
     if "HTTP_ACCEPT" in request.META and "application/json" in request.META['HTTP_ACCEPT']:
         return redirect(schedule_infourl, meeting.number, newschedule.owner_email(), newschedule.name)
     else:
-        return redirect(edit_schedule, meeting.number, newschedule.owner_email(), newschedule.name)
+        return redirect(edit_meeting_schedule, meeting.number, newschedule.owner_email(), newschedule.name)
 
 @require_POST
 def schedule_update(request, meeting, schedule):
@@ -325,7 +325,7 @@ def schedule_update(request, meeting, schedule):
         return HttpResponse(json.dumps(schedule.json_dict(request.build_absolute_uri('/'))),
                             content_type="application/json")
     else:
-        return redirect(edit_schedule, meeting.number, schedule.owner_email(), schedule.name)
+        return redirect(edit_meeting_schedule, meeting.number, schedule.owner_email(), schedule.name)
 
 @role_required('Secretariat')
 def schedule_del(request, meeting, schedule):

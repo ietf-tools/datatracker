@@ -5,7 +5,7 @@ from django import forms
 
 from ietf.name.models import SessionPurposeName, TimeSlotTypeName
 
-import debug
+import debug  # pyflakes: ignore
 
 class SessionPurposeAndTypeWidget(forms.MultiWidget):
     css_class = 'session_purpose_widget'  # class to apply to all widgets

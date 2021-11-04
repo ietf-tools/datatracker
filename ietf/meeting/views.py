@@ -88,7 +88,7 @@ from ietf.meeting.utils import diff_meeting_schedules, prefetch_schedule_diff_ob
 from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_create_timeslots
 from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.message.utils import infer_message
-from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName
+from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
     create_recording)
@@ -621,7 +621,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
             s.scheduling_label = "???"
             s.purpose_label = None
-            if (s.purpose is None or s.purpose.slug == 'regular') and s.group:
+            if (s.purpose.slug in ('none', 'regular')) and s.group:
                 s.scheduling_label = s.group.acronym
                 s.purpose_label = 'BoF' if s.group.is_bof() else s.group.type.name
             else:
@@ -1058,6 +1058,7 @@ class TimeSlotForm(forms.Form):
     location = RoomNameModelChoiceField(queryset=Room.objects.all(), required=False, empty_label="(No location)")
     show_location = forms.BooleanField(initial=True, required=False)
     type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(used=True), empty_label=None, required=False)
+    purpose = forms.ModelChoiceField(queryset=SessionPurposeName.objects.filter(used=True), required=False, widget=forms.HiddenInput)
     name = forms.CharField(help_text='Name that appears on the agenda', required=False)
     short = forms.CharField(max_length=32,label='Short name', help_text='Abbreviated session name used for material file names', required=False)
     group = forms.ModelChoiceField(queryset=Group.objects.filter(type__in=['ietf', 'team'], state='active'),
@@ -1082,6 +1083,12 @@ class TimeSlotForm(forms.Form):
         self.fields['group'].widget.attrs['data-ietf'] = Group.objects.get(acronym='ietf').pk
 
         self.active_assignment = None
+
+        # only allow timeslots with at least one purpose
+        timeslot_types_with_purpose = set()
+        for spn in SessionPurposeName.objects.filter(used=True):
+            timeslot_types_with_purpose.update(spn.timeslot_types)
+        self.fields['type'].queryset = self.fields['type'].queryset.filter(pk__in=timeslot_types_with_purpose)
 
         if timeslot:
             self.initial = {
@@ -1115,7 +1122,10 @@ class TimeSlotForm(forms.Form):
         ts_type = self.cleaned_data.get('type')
         short = self.cleaned_data.get('short')
 
-        if ts_type:
+        if not ts_type:
+            # assign a generic purpose if no type has been set
+            self.cleaned_data['purpose'] = SessionPurposeName.objects.get(slug='open_meeting')
+        else:
             if ts_type.slug in ['break', 'reg', 'reserved', 'unavail', 'regular']:
                 if ts_type.slug != 'regular':
                     self.cleaned_data['group'] = self.fields['group'].queryset.get(acronym='secretariat')
@@ -1127,6 +1137,15 @@ class TimeSlotForm(forms.Form):
 
             if self.timeslot and self.timeslot.type.slug == 'regular' and self.active_assignment and ts_type.slug != self.timeslot.type.slug:
                 self.add_error('type', "Can't change type on time slots for regular sessions when a session has been assigned")
+
+            # find an allowed session purpose (guaranteed by TimeSlotForm)
+            for purpose in SessionPurposeName.objects.filter(used=True):
+                if ts_type.pk in purpose.timeslot_types:
+                    self.cleaned_data['purpose'] = purpose
+                    break
+            if self.cleaned_data['purpose'] is None:
+                self.add_error('type', f'{ts_type} has no allowed purposes')
+
 
         if (self.active_assignment
             and self.active_assignment.session.group != self.cleaned_data.get('group')
@@ -1211,6 +1230,7 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
                     short=c['short'],
                     group=c['group'],
                     type=c['type'],
+                    purpose=c['purpose'],
                     agenda_note=c.get('agenda_note') or "",
                 )
 

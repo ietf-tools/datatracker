@@ -10,7 +10,7 @@ import jsonfield
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0034_add_officehours_timeslottypename'),
+        ('name', '0033_populate_agendafiltertypename'),
     ]
 
     operations = [

@@ -15,7 +15,9 @@ def forward(apps, schema_editor):
         ),
         timeslot__type__private=True,
     )
-    Session.objects.filter(timeslotassignments__in=private_assignments).update(on_agenda=False)
+    for pa in private_assignments:
+        pa.session.on_agenda = False
+        pa.session.save()
     # Also update any sessions to match their purpose's default setting (this intentionally
     # overrides the timeslot settings above, but that is unlikely to matter because the
     # purposes will roll out at the same time as the on_agenda field)

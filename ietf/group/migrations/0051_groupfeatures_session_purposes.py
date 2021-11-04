@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('group', '0050_populate_groupfeatures_agenda_filter_type'),
-        ('name', '0035_sessionpurposename'),
+        ('name', '0034_sessionpurposename'),
     ]
 
     operations = [

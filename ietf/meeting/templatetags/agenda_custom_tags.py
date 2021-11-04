@@ -5,8 +5,6 @@
 from django import template
 from django.urls import reverse
 
-from ietf.utils.text import xslugify
-
 register = template.Library()
 
 

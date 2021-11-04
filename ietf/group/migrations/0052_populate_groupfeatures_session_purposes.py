@@ -7,23 +7,23 @@ from django.db import migrations
 
 default_purposes = dict(
     adhoc=['presentation'],
-    adm=['closed_meeting', 'office_hours'],
+    adm=['closed_meeting', 'officehours'],
     ag=['regular'],
     area=['regular'],
     dir=['open_meeting', 'presentation', 'regular', 'social', 'tutorial'],
     iab=['closed_meeting', 'regular'],
-    iabasg=['closed_meeting', 'open_meeting'],
-    iana=['office_hours'],
+    iabasg=['closed_meeting', 'officehours', 'open_meeting'],
+    iana=['officehours'],
     iesg=['closed_meeting', 'open_meeting'],
     ietf=['admin', 'plenary', 'presentation', 'social'],
     irtf=[],
-    ise=['office_hours'],
-    isoc=['office_hours', 'open_meeting', 'presentation'],
-    nomcom=['closed_meeting', 'office_hours'],
+    ise=['officehours'],
+    isoc=['officehours', 'open_meeting', 'presentation'],
+    nomcom=['closed_meeting', 'officehours'],
     program=['regular', 'tutorial'],
     rag=['regular'],
     review=['open_meeting', 'social'],
-    rfcedtyp=['office_hours'],
+    rfcedtyp=['officehours'],
     rg=['regular'],
     team=['coding', 'presentation', 'social', 'tutorial'],
     wg=['regular'],
@@ -55,7 +55,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('group', '0051_groupfeatures_session_purposes'),
-        ('name', '0036_populate_sessionpurposename'),
+        ('name', '0035_populate_sessionpurposename'),
 
     ]
 

@@ -1,5 +1,5 @@
 <div id="session{{ session.pk }}"
-     class="session {% if not session.group.parent.scheduling_color %}untoggleable-by-parent{% endif %} {% if session.parent_acronym %}parent-{{ session.parent_acronym }}{% endif %} purpose-{% firstof session.purpose.slug 'regular' %} {% if session.readonly %}readonly{% endif %} {% if not session.on_agenda %}off-agenda{% endif %}"
+     class="session {% if not session.group.parent.scheduling_color %}untoggleable-by-parent{% endif %} {% if session.parent_acronym %}parent-{{ session.parent_acronym }}{% endif %} purpose-{{ session.purpose.slug }} {% if session.readonly %}readonly{% endif %} {% if not session.on_agenda %}off-agenda{% endif %}"
      style="width:{{ session.layout_width }}em;"
      data-duration="{{ session.requested_duration.total_seconds }}" {% if session.attendees != None %}
      data-attendees="{{ session.attendees }}"{% endif %}

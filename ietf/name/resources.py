@@ -18,7 +18,7 @@ from ietf.name.models import ( AgendaFilterTypeName, AgendaTypeName, BallotPosit
     ReviewAssignmentStateName, ReviewRequestStateName, ReviewResultName, ReviewTypeName,
     RoleName, RoomResourceName, SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName,
     TopicAudienceName, ReviewerQueuePolicyName, TimerangeName, ExtResourceTypeName, ExtResourceName,
-    SlideSubmissionStatusName, ProceedingsMaterialTypeName)
+    SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName )
 
 class TimeSlotTypeNameResource(ModelResource):
     class Meta:
@@ -701,3 +701,22 @@ class AgendaFilterTypeNameResource(ModelResource):
             "order": ALL,
         }
 api.name.register(AgendaFilterTypeNameResource())
+
+
+class SessionPurposeNameResource(ModelResource):
+    class Meta:
+        queryset = SessionPurposeName.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'sessionpurposename'
+        ordering = ['slug', ]
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+            "timeslot_types": ALL,
+            "on_agenda": ALL,
+        }
+api.name.register(SessionPurposeNameResource())

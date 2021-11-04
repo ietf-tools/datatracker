@@ -963,7 +963,7 @@ FLOORPLAN_LEGACY_BASE_URL = 'https://tools.ietf.org/agenda/{meeting.number}/venu
 FLOORPLAN_LAST_LEGACY_MEETING = 95  # last meeting to use FLOORPLAN_LEGACY_BASE_URL
 
 MEETING_USES_CODIMD_DATE = datetime.date(2020,7,6)
-MEETING_LEGACY_OFFICE_HOURS_END = 111  # last meeting to use legacy office hours representation
+MEETING_LEGACY_OFFICE_HOURS_END = 112  # last meeting to use legacy office hours representation
 
 # Maximum dimensions to accept at all
 MEETINGHOST_LOGO_MAX_UPLOAD_WIDTH = 400

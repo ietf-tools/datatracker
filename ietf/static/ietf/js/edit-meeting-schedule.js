@@ -740,6 +740,18 @@ jQuery(document).ready(function () {
     if (timeSlotTypeInputs.length > 0) {
         timeSlotTypeInputs.on("change", updateTimeSlotTypeToggling);
         updateTimeSlotTypeToggling();
+        content.find('#timeslot-group-toggles-modal .timeslot-type-toggles .select-all').get(0).addEventListener(
+          'click',
+          function() {
+              timeSlotTypeInputs.prop('checked', true);
+              updateTimeSlotTypeToggling();
+          });
+        content.find('#timeslot-group-toggles-modal .timeslot-type-toggles .clear-all').get(0).addEventListener(
+          'click',
+          function() {
+              timeSlotTypeInputs.prop('checked', false);
+              updateTimeSlotTypeToggling();
+          });
     }
 
     // Toggling session purposes
@@ -771,10 +783,10 @@ jQuery(document).ready(function () {
     }
 
     // toggling visible timeslots
-    let timeslotGroupInputs = content.find("#timeslot-group-toggles-modal .modal-body .individual-timeslots input");
-    function updateTimeslotGroupToggling() {
+    let timeSlotGroupInputs = content.find("#timeslot-group-toggles-modal .modal-body .individual-timeslots input");
+    function updateTimeSlotGroupToggling() {
         let checked = [];
-        timeslotGroupInputs.filter(":checked").each(function () {
+        timeSlotGroupInputs.filter(":checked").each(function () {
             checked.push("." + this.value);
         });
 
@@ -786,8 +798,21 @@ jQuery(document).ready(function () {
         });
     }
 
-    timeslotGroupInputs.on("click change", updateTimeslotGroupToggling);
-    updateTimeslotGroupToggling();
+    timeSlotGroupInputs.on("click change", updateTimeSlotGroupToggling);
+    content.find('#timeslot-group-toggles-modal .timeslot-group-buttons .select-all').get(0).addEventListener(
+      'click',
+      function() {
+          timeSlotGroupInputs.prop('checked', true);
+          updateTimeSlotGroupToggling();
+      });
+    content.find('#timeslot-group-toggles-modal .timeslot-group-buttons .clear-all').get(0).addEventListener(
+      'click',
+      function() {
+          timeSlotGroupInputs.prop('checked', false);
+          updateTimeSlotGroupToggling();
+      });
+
+    updateTimeSlotGroupToggling();
     updatePastTimeslots();
     setInterval(updatePastTimeslots, 10 * 1000 /* ms */);
 

@@ -195,9 +195,9 @@
           </span>
 
           {% if session_purposes|length > 1 %}
-            <button class="btn btn-default" data-toggle="modal" data-target="#session-toggles-modal"><input type="checkbox" checked="checked" disabled> Sessions</button>
+            <button id="session-toggle-modal-open" class="btn btn-default" data-toggle="modal" data-target="#session-toggles-modal"><input type="checkbox" checked="checked" disabled> Sessions</button>
           {% endif %}
-          <button class="btn btn-default" data-toggle="modal" data-target="#timeslot-group-toggles-modal"><input type="checkbox" checked="checked" disabled> Timeslots</button>
+          <button id="timeslot-toggle-modal-open" class="btn btn-default" data-toggle="modal" data-target="#timeslot-group-toggles-modal"><input type="checkbox" checked="checked" disabled> Timeslots</button>
         </div>
       </div>
 
@@ -216,7 +216,12 @@
           </div>
 
           <div class="modal-body">
+            <div class="timeslot-group-buttons">
+              <button type="button" class="btn btn-default select-all">Select all times</button>
+              <button type="button" class="btn btn-default clear-all">Clear times</button>
+            </div>
             <div class="individual-timeslots">
+
               {% for day, t_groups in timeslot_groups %}
                 <div>
                   <div><strong>{{ day|date:"M. d" }}</strong></div>
@@ -231,6 +236,8 @@
                 {% for type in timeslot_types %}
                   <label class="timeslot-type-{{ type.slug }}"><input type="checkbox" checked value="{{ type.slug }}"> {{ type }}</label>
                 {% endfor %}
+                <button type="button" class="btn btn-default select-all">Select all types</button>
+                <button type="button" class="btn btn-default clear-all">Clear types</button>
             </div>
           </div>
 
@@ -256,7 +263,7 @@
             <div class="session-purpose-toggles">
               {% for purpose in session_purposes %}
                 <div>
-                  <label class="purpose-{{ purpose.slug }}"><input type="checkbox" checked value="{{ purpose.slug }}"> {{ purpose }}</label>
+                  <label class="purpose-{{ purpose.slug }}"><input type="checkbox" checked value="{% firstof purpose.slug 'none' %}"> {{ purpose }}</label>
                 </div>
               {% endfor %}
               <button type="button" class="btn btn-default select-all">Select all</button>

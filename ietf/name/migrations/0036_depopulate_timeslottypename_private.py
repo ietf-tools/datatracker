@@ -22,7 +22,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0036_populate_sessionpurposename'),
+        ('name', '0035_populate_sessionpurposename'),
         ('meeting', '0050_populate_session_on_agenda'),
     ]
 

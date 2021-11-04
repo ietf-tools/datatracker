@@ -322,12 +322,12 @@ class MeetingTests(BaseMeetingTestCase):
             parent=iab,
             list_email="venus@ietf.org",
         )
-        venus_session = Session.objects.create(
+        venus_session = SessionFactory(
             meeting=meeting,
             group=venus,
             attendees=10,
             requested_duration=datetime.timedelta(minutes=60),
-            type_id='regular',
+            add_to_schedule=False,
         )
         system_person = Person.objects.get(name="(System)")
         SchedulingEvent.objects.create(session=venus_session, status_id='schedw', by=system_person)
@@ -784,7 +784,7 @@ class MeetingTests(BaseMeetingTestCase):
         )
         self.do_ical_filter_test(
             meeting,
-            querystring='?show=plenary,secretariat,ames&hide=reg',
+            querystring='?show=plenary,secretariat,ames&hide=admin',
             expected_session_summaries=[
                 'Morning Break',
                 'IETF Plenary',
@@ -3062,10 +3062,14 @@ class EditTests(TestCase):
 
     def test_edit_schedule(self):
         meeting = make_meeting_test_data()
- 
+
         self.client.login(username="secretary", password="secretary+password")
-        r = self.client.get(urlreverse("ietf.meeting.views.edit_schedule", kwargs=dict(num=meeting.number)))
-        self.assertContains(r, "load_assignments")
+        r = self.client.get(urlreverse("ietf.meeting.views.edit_schedule", kwargs={'num': meeting.number}))
+        self.assertRedirects(
+            r,
+            urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs={'num': meeting.number}),
+            status_code=301,
+        )
 
     def test_official_record_schedule_is_read_only(self):
         def _set_date_offset_and_retrieve_page(meeting, days_offset, client):
@@ -3156,9 +3160,9 @@ class EditTests(TestCase):
 
         timeslots = list(TimeSlot.objects.filter(meeting=meeting, type='regular').order_by('time'))
 
-        base_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="irg"),
-                                              attendees=20, requested_duration=datetime.timedelta(minutes=30),
-                                              type_id='regular')
+        base_session = SessionFactory(meeting=meeting, group=Group.objects.get(acronym="irg"),
+                                      attendees=20, requested_duration=datetime.timedelta(minutes=30),
+                                      add_to_schedule=False)
         SchedulingEvent.objects.create(session=base_session, status_id='schedw', by=Person.objects.get(user__username='secretary'))
         SchedTimeSessAssignment.objects.create(timeslot=base_timeslot, session=base_session, schedule=meeting.schedule.base)
 
@@ -3872,9 +3876,9 @@ class EditScheduleListTests(TestCase):
 
         session1 = Session.objects.filter(meeting=meeting, group__acronym='mars').first()
         session2 = Session.objects.filter(meeting=meeting, group__acronym='ames').first()
-        session3 = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym='mars'),
-                               attendees=10, requested_duration=datetime.timedelta(minutes=70),
-                               type_id='regular')
+        session3 = SessionFactory(meeting=meeting, group=Group.objects.get(acronym='mars'),
+                                  attendees=10, requested_duration=datetime.timedelta(minutes=70),
+                                  add_to_schedule=False)
         SchedulingEvent.objects.create(session=session3, status_id='schedw', by=Person.objects.first())
 
         slot2 = TimeSlot.objects.filter(meeting=meeting, type='regular').order_by('-time').first()
@@ -6200,11 +6204,13 @@ class AgendaFilterTests(TestCase):
                         dict(
                             label='child00',
                             keyword='keyword00',
+                            toggled_by=['keyword0'],
                             is_bof=False,
                         ),
                         dict(
                             label='child01',
                             keyword='keyword01',
+                            toggled_by=['keyword0', 'bof'],
                             is_bof=True,
                         ),
                     ]),
@@ -6215,11 +6221,13 @@ class AgendaFilterTests(TestCase):
                         dict(
                             label='child10',
                             keyword='keyword10',
+                            toggled_by=['keyword1'],
                             is_bof=False,
                         ),
                         dict(
                             label='child11',
                             keyword='keyword11',
+                            toggled_by=['keyword1', 'bof'],
                             is_bof=True,
                         ),
                     ]),
@@ -6232,11 +6240,13 @@ class AgendaFilterTests(TestCase):
                         dict(
                             label='child20',
                             keyword='keyword20',
+                            toggled_by=['keyword2', 'bof'],
                             is_bof=True,
                         ),
                         dict(
                             label='child21',
                             keyword='keyword21',
+                            toggled_by=['keyword2'],
                             is_bof=False,
                         ),
                     ]),
@@ -6249,11 +6259,13 @@ class AgendaFilterTests(TestCase):
                         dict(
                             label='child30',
                             keyword='keyword30',
+                            toggled_by=[],
                             is_bof=False,
                         ),
                         dict(
                             label='child31',
                             keyword='keyword31',
+                            toggled_by=['bof'],
                             is_bof=True,
                         ),
                     ]),
@@ -6283,7 +6295,6 @@ class AgendaFilterTests(TestCase):
         _assert_button_ok(header_cells.eq(0)('button.keyword0'),
                           expected_label='area0',
                           expected_filter_item='keyword0')
-        
         buttons = button_cells.eq(0)('button.pickview')
         self.assertEqual(len(buttons), 2)  # two children
         _assert_button_ok(buttons('.keyword00'),

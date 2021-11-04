@@ -336,7 +336,7 @@ def confirm(request, acronym):
             jfs = form.data.get('joint_for_session', '-1')
             if not jfs: # jfs might be ''
                 jfs = '-1'
-            if int(jfs) == count:
+            if int(jfs) == count + 1:  # count is zero-indexed
                 groups_split = form.cleaned_data.get('joint_with_groups').replace(',',' ').split()
                 joint = Group.objects.filter(acronym__in=groups_split)
                 new_session.joint_with_groups.set(joint)
@@ -645,7 +645,7 @@ def new(request, acronym):
         raise Http404(f'Cannot request sessions for group "{acronym}"')
     meeting = get_meeting(days=14)
     session_conflicts = dict(inbound=inbound_session_conflicts_as_string(group, meeting))
-    is_virtual = meeting.number in settings.SECR_VIRTUAL_MEETINGS,
+    is_virtual = meeting.number in settings.SECR_VIRTUAL_MEETINGS
     FormClass = get_session_form_class()
 
     # check if app is locked
@@ -723,6 +723,7 @@ def no_session(request, acronym):
         meeting=meeting,
         requested_duration=datetime.timedelta(0),
         type_id='regular',
+        purpose_id='regular',
     )
     SchedulingEvent.objects.create(
         session=session,
@@ -845,7 +846,8 @@ def view(request, acronym, num = None):
     return render(request, 'sreq/view.html', {
         'is_locked': is_locked,
         'is_virtual': meeting.number in settings.SECR_VIRTUAL_MEETINGS,
-        'session': session,
+        'session': session,  # legacy processed data
+        'sessions': sessions,  # actual session instances
         'activities': activities,
         'meeting': meeting,
         'group': group,

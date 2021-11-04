@@ -336,7 +336,8 @@ class SecrMeetingTestCase(TestCase):
             'duration':'02:00',
             'name':'Testing',
             'short':'test',
-            'type':'reg',
+            'purpose_0': 'admin',  # purpose
+            'purpose_1':'reg',  # type
             'group':group.pk,
             'location': room.pk,
             'remote_instructions': 'http://webex.com/foobar',
@@ -382,7 +383,8 @@ class SecrMeetingTestCase(TestCase):
             'time':new_time.strftime('%H:%M'),
             'duration':'01:00',
             'day':'2',
-            'type':'other',
+            'purpose_0': 'coding',  # purpose
+            'purpose_1': 'other',  # type
             'remote_instructions': 'http://webex.com/foobar',
         })
         self.assertRedirects(response, redirect_url)

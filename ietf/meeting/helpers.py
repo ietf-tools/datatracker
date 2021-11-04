@@ -310,7 +310,7 @@ class AgendaKeywordTool:
 
     @property
     def filterable_purposes(self):
-        return SessionPurposeName.objects.exclude(slug='regular').order_by('name')
+        return SessionPurposeName.objects.exclude(slug='none').order_by('name')
 
 
 class AgendaFilterOrganizer(AgendaKeywordTool):
@@ -336,7 +336,7 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
     # group acronyms in this list will never be used as filter buttons
     exclude_acronyms = ('iesg', 'ietf', 'secretariat')
     # extra keywords to include in the no-heading column if they apply to any sessions
-    extra_labels = ('BoF', 'Plenary')
+    extra_labels = ('BoF',)
     # group types whose acronyms should be word-capitalized
     capitalized_group_types = ('team',)
     # group types whose acronyms should be all-caps
@@ -352,6 +352,8 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
         # filled in when _organize_filters() is called
         self.filter_categories = None
         self.special_filters = None
+        if self._use_legacy_keywords():
+            self.extra_labels += ('Plenary',)  # need this when not using session purpose
 
     def get_non_area_keywords(self):
         """Get list of any 'non-area' (aka 'special') keywords
@@ -465,11 +467,14 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
 
         # Call legacy version for older meetings
         if self._use_legacy_keywords():
-            return self._legacy_non_group_filters()
+            return self._legacy_non_group_filters(sessions)
 
         # Not using legacy version
         filter_cols = []
         for purpose in self.filterable_purposes:
+            if purpose.slug == 'regular':
+                continue
+
             # Map label to its keyword, discarding duplicate labels.
             # This does what we want as long as sessions with the same
             # name and purpose belong to the same group.
@@ -497,19 +502,16 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
 
         return filter_cols
 
-    def _legacy_non_group_filters(self):
+    def _legacy_non_group_filters(self, sessions):
         """Get list of non-group filters for older meetings
 
         Returns a list of filter columns
         """
-        if self.assignments is None:
-            return []  # can only use timeslot type when we have assignments
-
         office_hours_items = set()
         suffix = ' office hours'
-        for a in self.assignments:
-            if a.session.name.lower().endswith(suffix):
-                office_hours_items.add((a.session.name[:-len(suffix)].strip(), a.session.group))
+        for s in sessions:
+            if s.name.lower().endswith(suffix):
+                office_hours_items.add((s.name[:-len(suffix)].strip(), s.group))
 
         headings = []
         # currently we only do office hours
@@ -640,8 +642,7 @@ class AgendaKeywordTagger(AgendaKeywordTool):
         Keywords are all lower case.
         """
         for a in self.assignments:
-            a.filter_keywords = {a.slot_type().slug.lower()}
-            a.filter_keywords.update(self._filter_keywords_for_assignment(a))
+            a.filter_keywords = self._filter_keywords_for_assignment(a)
             a.filter_keywords = sorted(list(a.filter_keywords))
 
     def _tag_sessions_with_filter_keywords(self):
@@ -652,14 +653,17 @@ class AgendaKeywordTagger(AgendaKeywordTool):
     @staticmethod
     def _legacy_extra_session_keywords(session):
         """Get extra keywords for a session at a legacy meeting"""
+        extra = []
+        if session.type_id == 'plenary':
+            extra.append('plenary')
         office_hours_match = re.match(r'^ *\w+(?: +\w+)* +office hours *$', session.name, re.IGNORECASE)
         if office_hours_match is not None:
             suffix = 'officehours'
-            return [
+            extra.extend([
                 'officehours',
                 session.name.lower().replace(' ', '')[:-len(suffix)] + '-officehours',
-            ]
-        return []
+            ])
+        return extra
 
     def _filter_keywords_for_session(self, session):
         keywords = set()

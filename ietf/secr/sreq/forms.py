@@ -260,7 +260,7 @@ class SessionForm(forms.Form):
             num_sessions_expected = int(data.get('num_session', ''))
         except ValueError:
             self.add_error('num_session', 'Invalid value for number of sessions')
-        if len(self.session_forms.errors) == 0 and num_sessions_with_data < num_sessions_expected:
+        if num_sessions_with_data < num_sessions_expected:
             self.add_error('num_session', 'Must provide data for all sessions')
 
         # if default (empty) option is selected, cleaned_data won't include num_session key
