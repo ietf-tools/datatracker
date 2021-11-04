@@ -55,10 +55,12 @@
 
   function update_name_field_visibility(name_elt, purpose) {
     const row = name_elt.closest('tr');
-    if (purpose === 'regular') {
-      row.setAttribute('hidden', 'hidden');
-    } else {
-      row.removeAttribute('hidden');
+    if (row) {
+      if (purpose === 'regular') {
+        row.setAttribute('hidden', 'hidden');
+      } else {
+        row.removeAttribute('hidden');
+      }
     }
   }
 
@@ -72,12 +74,16 @@
   }
 
   function add_purpose_change_handler(form) {
-    const id_prefix = 'id_' + form.dataset.prefix;
-    const name_elt = document.getElementById(id_prefix + '-name');
-    const purpose_elt = document.getElementById(id_prefix + '-purpose');
-    const type_elt = document.getElementById(id_prefix + '-type');
+    const id_prefix = 'id_' + (form.dataset.prefix ? (form.dataset.prefix + '-') : '');
+    const purpose_elt = document.getElementById(id_prefix + 'purpose');
+    if (purpose_elt.type === 'hidden') {
+      return; // element is hidden, so nothing to do
+    }
+    const name_elt = document.getElementById(id_prefix + 'name');
+    const type_elt = document.getElementById(id_prefix + 'type');
     const type_options = type_elt.getElementsByTagName('option');
-    const allowed_types = JSON.parse(type_elt.dataset.allowedOptions);
+    const allowed_types = (type_elt.dataset.allowedOptions) ?
+      JSON.parse(type_elt.dataset.allowedOptions) : [];
 
     // update on future changes
     purpose_elt.addEventListener(

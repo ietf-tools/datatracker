@@ -430,7 +430,7 @@ class MeetingTests(BaseMeetingTestCase):
         q = PyQuery(r.content)
         for assignment in SchedTimeSessAssignment.objects.filter(
                 schedule__in=[meeting.schedule, meeting.schedule.base],
-                timeslot__type__private=False,
+                session__on_agenda=True,
         ):
             row = q('#row-{}'.format(assignment.slug()))
             self.assertIsNotNone(row, 'No row for assignment {}'.format(assignment))

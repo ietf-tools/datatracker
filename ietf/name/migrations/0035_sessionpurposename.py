@@ -23,6 +23,7 @@ class Migration(migrations.Migration):
                 ('used', models.BooleanField(default=True)),
                 ('order', models.IntegerField(default=0)),
                 ('timeslot_types', jsonfield.fields.JSONField(default=[], help_text='Allowed TimeSlotTypeNames', max_length=256, validators=[ietf.name.models.JSONForeignKeyListValidator('name.TimeSlotTypeName')])),
+                ('on_agenda', models.BooleanField(default=True, help_text='Are sessions of this purpose visible on the agenda by default?')),
             ],
             options={
                 'ordering': ['order', 'name'],

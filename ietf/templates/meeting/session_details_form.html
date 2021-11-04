@@ -1,24 +1,25 @@
 {# Copyright The IETF Trust 2007-2020, All Rights Reserved #}
-{% if hidden %}{{ form.name.as_hidden }}{{ form.purpose.as_hidden }}{{ form.type.as_hidden }}{{ form.requested_duration.as_hidden }}
-{% else %}<div class="session-details-form" data-prefix="{{ form.prefix }}">
-  {{ form.id.as_hidden }}
-  {{ form.DELETE.as_hidden }}
-  <table>
-    <tr>
-      <th>{{ form.name.label_tag }}</th>
-      <td>{{ form.name }}{{ form.purpose.errors }}</td>
-    </tr>
-    <tr>
-      <th>{{ form.purpose.label_tag }}</th>
-      <td>
-        {{ form.purpose }} {{ form.type }}
-        {{ form.purpose.errors }}{{ form.type.errors }}
-      </td>
-    <tr>
-      <th>{{ form.requested_duration.label_tag }}</th>
-      <td>{{ form.requested_duration }}{{ form.requested_duration.errors }}</td>
-    </tr>
-    </tr>
-  </table>
+<div class="session-details-form" data-prefix="{{ form.prefix }}">
+  {% if hidden %}{{ form.name.as_hidden }}{{ form.purpose.as_hidden }}{{ form.type.as_hidden }}{{ form.requested_duration.as_hidden }}
+  {% else %}
+    <table>
+      <tr>
+        <th>{{ form.name.label_tag }}</th>
+        <td>{{ form.name }}{{ form.purpose.errors }}</td>
+      </tr>
+      <tr>
+        <th>{{ form.purpose.label_tag }}</th>
+        <td>
+          {{ form.purpose }} {{ form.type }}
+          {{ form.purpose.errors }}{{ form.type.errors }}
+        </td>
+      </tr>
+      <tr>
+        <th>{{ form.requested_duration.label_tag }}</th>
+        <td>{{ form.requested_duration }}{{ form.requested_duration.errors }}</td>
+      </tr>
+    </table>
+  {% endif %}
+  {# hidden fields shown whether or not the whole form is hidden #}
+  {{ form.attendees.as_hidden }}{{ form.comments.as_hidden }}{{ form.id.as_hidden }}{{ form.on_agenda.as_hidden }}{{ form.DELETE.as_hidden }}
 </div>
-{% endif %}

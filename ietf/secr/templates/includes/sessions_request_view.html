@@ -13,7 +13,7 @@
               <dt>Purpose</dt>
               <dd>
                 {{ sess_form.cleaned_data.purpose }}
-                {% if sess_form.cleaned_data.purpose.timeslot_types|length > 1 %}({{ sess_form.cleaned_data.type }}{% endif %}
+                {% if sess_form.cleaned_data.purpose.timeslot_types|length > 1 %}({{ sess_form.cleaned_data.type }}){% endif %}
               </dd>
             {% endif %}
           </dl>

@@ -287,7 +287,7 @@ class SessionForm(forms.Form):
     @property
     def media(self):
         # get media for our formset
-        return super().media + self.session_forms.media
+        return super().media + self.session_forms.media + forms.Media(js=('secr/js/session_form.js',))
 
 
 class VirtualSessionForm(SessionForm):

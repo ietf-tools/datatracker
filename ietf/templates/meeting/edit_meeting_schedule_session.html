@@ -1,5 +1,5 @@
 <div id="session{{ session.pk }}"
-     class="session {% if not session.group.parent.scheduling_color %}untoggleable-by-parent{% endif %} {% if session.parent_acronym %}parent-{{ session.parent_acronym }}{% endif %} purpose-{% firstof session.purpose.slug 'regular' %} {% if session.readonly %}readonly{% endif %}"
+     class="session {% if not session.group.parent.scheduling_color %}untoggleable-by-parent{% endif %} {% if session.parent_acronym %}parent-{{ session.parent_acronym }}{% endif %} purpose-{% firstof session.purpose.slug 'regular' %} {% if session.readonly %}readonly{% endif %} {% if not session.on_agenda %}off-agenda{% endif %}"
      style="width:{{ session.layout_width }}em;"
      data-duration="{{ session.requested_duration.total_seconds }}" {% if session.attendees != None %}
      data-attendees="{{ session.attendees }}"{% endif %}
@@ -47,6 +47,7 @@
         {% if session.group.parent %}
           &middot; <span class="session-parent">{{ session.group.parent.acronym }}</span>
         {% endif %}
+        {% if not session.on_agenda %}&middot; <i>off agenda</i>{% endif %}
       </div>
     {% endif %}
 
@@ -84,5 +85,7 @@
     {% for s in session.other_sessions %}
       <div class="other-session" data-othersessionid="{{ s.pk }}"><i class="fa fa-calendar"></i> Other session <span class="time" data-scheduled="scheduled: {time}" data-notscheduled="not yet scheduled"></span></div>
     {% endfor %}
+
+    <a href="{% url 'ietf.meeting.views.edit_session' session_id=session.pk %}">Edit session</a>
   </div>
 </div>

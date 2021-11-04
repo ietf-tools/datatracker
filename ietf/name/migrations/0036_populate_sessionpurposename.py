@@ -9,19 +9,19 @@ def forward(apps, schema_editor):
     SessionPurposeName = apps.get_model('name', 'SessionPurposeName')
     TimeSlotTypeName = apps.get_model('name', 'TimeSlotTypeName')
 
-    for order, (slug, name, desc, tstypes) in enumerate((
-            ('regular', 'Regular', 'Regular group session', ['regular']),
-            ('tutorial', 'Tutorial', 'Tutorial or training session', ['other']),
-            ('officehours', 'Office hours', 'Office hours session', ['other']),
-            ('coding', 'Coding', 'Coding session', ['other']),
-            ('admin', 'Administrative', 'Meeting administration', ['other', 'reg']),
-            ('social', 'Social', 'Social event or activity', ['break', 'other']),
-            ('plenary', 'Plenary', 'Plenary session', ['plenary']),
-            ('presentation', 'Presentation', 'Presentation session', ['other', 'regular']),
-            ('open_meeting', 'Open meeting', 'Open meeting', ['other']),
-            ('closed_meeting', 'Closed meeting', 'Closed meeting', ['other', 'regular']),
+    for order, (slug, name, desc, tstypes, on_agenda) in enumerate((
+            ('regular', 'Regular', 'Regular group session', ['regular'], True),
+            ('tutorial', 'Tutorial', 'Tutorial or training session', ['other'], True),
+            ('office_hours', 'Office hours', 'Office hours session', ['other'], True),
+            ('coding', 'Coding', 'Coding session', ['other'], True),
+            ('admin', 'Administrative', 'Meeting administration', ['other', 'reg'], True),
+            ('social', 'Social', 'Social event or activity', ['break', 'other'], True),
+            ('plenary', 'Plenary', 'Plenary session', ['plenary'], True),
+            ('presentation', 'Presentation', 'Presentation session', ['other', 'regular'], True),
+            ('open_meeting', 'Open meeting', 'Open meeting', ['other'], True),
+            ('closed_meeting', 'Closed meeting', 'Closed meeting', ['other', 'regular'], False),
     )):
-        # verify that we're not about to use an invalid purpose
+        # verify that we're not about to use an invalid type
         for ts_type in tstypes:
             TimeSlotTypeName.objects.get(pk=ts_type)  # throws an exception unless exists
 
@@ -31,7 +31,8 @@ def forward(apps, schema_editor):
             desc=desc,
             used=True,
             order=order,
-            timeslot_types = tstypes
+            timeslot_types = tstypes,
+            on_agenda=on_agenda,
         )
 
 
