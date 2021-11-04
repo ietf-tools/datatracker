@@ -59,11 +59,7 @@ from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPr
 from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
 from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm,
                                  TimeSlotCreateForm, TimeSlotEditForm, SessionEditForm )
-from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
-from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
-from ietf.meeting.helpers import get_all_assignments_from_schedule
-from ietf.meeting.helpers import get_modified_from_assignments
-from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
+from ietf.meeting.helpers import get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import get_meeting, get_ietf_meeting, get_current_ietf_meeting_num
 from ietf.meeting.helpers import get_schedule, schedule_permissions
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
@@ -279,86 +275,6 @@ def materials_editable_groups(request, num=None):
     meeting = get_meeting(num)
     return render(request, "meeting/materials_editable_groups.html", {
         'meeting_num': meeting.number})
-
-def ascii_alphanumeric(string):
-    return re.match(r'^[a-zA-Z0-9]*$', string)
-
-class SaveAsForm(forms.Form):
-    savename = forms.CharField(max_length=16)
-
-@role_required('Area Director','Secretariat')
-def schedule_create(request, num=None, owner=None, name=None):
-    meeting  = get_meeting(num)
-    person   = get_person_by_email(owner)
-    schedule = get_schedule_by_name(meeting, person, name)
-
-    if schedule is None:
-        # here we have to return some ajax to display an error.
-        messages.error("Error: No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name)) # pylint: disable=no-value-for-parameter
-        return redirect(edit_schedule, num=num, owner=owner, name=name)
-
-    # authorization was enforced by the @group_require decorator above.
-
-    saveasform = SaveAsForm(request.POST)
-    if not saveasform.is_valid():
-        messages.info(request, "This name is not valid. Please choose another one.")
-        return redirect(edit_schedule, num=num, owner=owner, name=name)
-
-    savedname = saveasform.cleaned_data['savename']
-
-    if not ascii_alphanumeric(savedname):
-        messages.info(request, "This name contains illegal characters. Please choose another one.")
-        return redirect(edit_schedule, num=num, owner=owner, name=name)
-
-    # create the new schedule, and copy the assignments
-    try:
-        sched = meeting.schedule_set.get(name=savedname, owner=request.user.person)
-        if sched:
-            return redirect(edit_schedule, num=meeting.number, owner=sched.owner_email(), name=sched.name)
-        else:
-            messages.info(request, "Schedule creation failed. Please try again.")
-            return redirect(edit_schedule, num=num, owner=owner, name=name)
-
-    except Schedule.DoesNotExist:
-        pass
-
-    # must be done
-    newschedule = Schedule(name=savedname,
-                           owner=request.user.person,
-                           meeting=meeting,
-                           base=schedule.base,
-                           origin=schedule,
-                           visible=False,
-                           public=False)
-
-    newschedule.save()
-    if newschedule is None:
-        return HttpResponse(status=500)
-
-    # keep a mapping so that extendedfrom references can be chased.
-    mapping = {};
-    for ss in schedule.assignments.all():
-        # hack to copy the object, creating a new one
-        # just reset the key, and save it again.
-        oldid = ss.pk
-        ss.pk = None
-        ss.schedule=newschedule
-        ss.save()
-        mapping[oldid] = ss.pk
-        #print "Copying %u to %u" % (oldid, ss.pk)
-
-    # now fix up any extendedfrom references to new set.
-    for ss in newschedule.assignments.all():
-        if ss.extendedfrom is not None:
-            oldid = ss.extendedfrom.id
-            newid = mapping[oldid]
-            #print "Fixing %u to %u" % (oldid, newid)
-            ss.extendedfrom = newschedule.assignments.get(pk = newid)
-            ss.save()
-
-
-    # now redirect to this new schedule.
-    return redirect(edit_schedule, meeting.number, newschedule.owner_email(), newschedule.name)
 
 
 @role_required('Secretariat')
@@ -1397,80 +1313,6 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
     })
 
 
-##############################################################################
-#@role_required('Area Director','Secretariat')
-# disable the above security for now, check it below.
-@ensure_csrf_cookie
-def edit_schedule(request, num=None, owner=None, name=None):
-
-    if request.method == 'POST':
-        return schedule_create(request, num, owner, name)
-
-    user     = request.user
-    meeting  = get_meeting(num)
-    person   = get_person_by_email(owner)
-    if name is None:
-        schedule = meeting.schedule
-    else:
-        schedule = get_schedule_by_name(meeting, person, name)
-    if schedule is None:
-        raise Http404("No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
-
-    meeting_base_url = request.build_absolute_uri(meeting.base_url())
-    site_base_url = request.build_absolute_uri('/')[:-1] # skip the trailing slash
-
-    rooms = meeting.room_set.filter(session_types__slug='regular').distinct().order_by("capacity")
-    saveas = SaveAsForm()
-    saveasurl=reverse(edit_schedule,
-                      args=[meeting.number, schedule.owner_email(), schedule.name])
-
-    can_see, can_edit,secretariat = schedule_permissions(meeting, schedule, user)
-
-    if not can_see:
-        return render(request, "meeting/private_schedule.html",
-                                             {"schedule":schedule,
-                                              "meeting": meeting,
-                                              "meeting_base_url":meeting_base_url,
-                                              "hide_menu": True
-                                          }, status=403, content_type="text/html")
-
-    assignments = get_all_assignments_from_schedule(schedule)
-
-    # get_modified_from needs the query set, not the list
-    modified = get_modified_from_assignments(assignments)
-
-    area_list = get_areas()
-    wg_name_list = get_wg_name_list(assignments)
-    wg_list = get_wg_list(wg_name_list)
-    ads = find_ads_for_meeting(meeting)
-    for ad in ads:
-        # set the default to avoid needing extra arguments in templates
-        # django 1.3+
-        ad.default_hostscheme = site_base_url
-
-    time_slices,date_slices = build_all_agenda_slices(meeting)
-
-    return render(request, "meeting/landscape_edit.html",
-                                         {"schedule":schedule,
-                                          "saveas": saveas,
-                                          "saveasurl": saveasurl,
-                                          "meeting_base_url": meeting_base_url,
-                                          "site_base_url": site_base_url,
-                                          "rooms":rooms,
-                                          "time_slices":time_slices,
-                                          "date_slices":date_slices,
-                                          "modified": modified,
-                                          "meeting":meeting,
-                                          "area_list": area_list,
-                                          "area_directors" : ads,
-                                          "wg_list": wg_list ,
-                                          "assignments": assignments,
-                                          "show_inline": set(["txt","htm","html"]),
-                                          "hide_menu": True,
-                                          "can_edit_properties": can_edit or secretariat,
-                                      })
-
-
 class SchedulePropertiesForm(forms.ModelForm):
     class Meta:
         model = Schedule
@@ -1504,7 +1346,7 @@ def edit_schedule_properties(request, num, owner, name):
            form.save()
            if request.GET.get('next'):
                return HttpResponseRedirect(request.GET.get('next'))
-           return redirect('ietf.meeting.views.edit_schedule', num=num, owner=owner, name=name)
+           return redirect('ietf.meeting.views.edit_meeting_schedule', num=num, owner=owner, name=name)
     else:
         form = SchedulePropertiesForm(meeting, instance=schedule)
 

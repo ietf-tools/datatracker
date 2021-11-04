@@ -8,15 +8,11 @@ import jsonfield
 import os
 import re
 
-from urllib.parse import urljoin
-
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.deletion import CASCADE, PROTECT
 from django.dispatch import receiver
-
-#from simple_history.models import HistoricalRecords
 
 import debug                            # pyflakes:ignore
 
@@ -167,30 +163,6 @@ class Group(GroupInfo):
     @property
     def bg_color(self):
         return bg_group_colors[self.upcase_acronym]
-
-    def json_url(self):
-        return "/group/%s.json" % (self.acronym,)
-
-    def json_dict(self, host_scheme):
-        group1= dict()
-        group1['href'] = urljoin(host_scheme, self.json_url())
-        group1['acronym'] = self.acronym
-        group1['name']    = self.name
-        group1['state']   = self.state.slug
-        group1['type']    = self.type.slug
-        if self.parent is not None:
-            group1['parent_href']  = urljoin(host_scheme, self.parent.json_url())
-        # uncomment when people URL handle is created
-        try:
-            if self.ad_role() is not None:
-                group1['ad_href']      = urljoin(host_scheme, self.ad_role().person.json_url())
-        except Person.DoesNotExist:
-            pass
-        group1['list_email'] = self.list_email
-        group1['list_subscribe'] = self.list_subscribe
-        group1['list_archive'] = self.list_archive
-        group1['comments']     = self.comments
-        return group1
 
     def has_tools_page(self):
         return self.type_id in ['wg', ] and self.state_id in ['active', 'dormant', 'replaced', 'conclude']

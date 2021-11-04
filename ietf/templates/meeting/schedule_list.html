@@ -38,12 +38,12 @@
             {% for schedule in schedules %}
               <tr>
                 <td>
-                  <a href="{% url "ietf.meeting.views.edit_schedule" meeting.number schedule.owner_email schedule.name %}" title="Show regular sessions in agenda">{{ schedule.name }}</a>
+                  <a href="{% url "ietf.meeting.views.edit_meeting_schedule" meeting.number schedule.owner_email schedule.name %}" title="Show regular sessions in agenda">{{ schedule.name }}</a>
                 </td>
                 <td>{{ schedule.owner }}</td>
                 <td>
                   {% if schedule.origin %}
-                    <a href="{% url "ietf.meeting.views.edit_schedule" meeting.number schedule.origin.owner_email schedule.origin.name %}">{{ schedule.origin.name }}</a>
+                    <a href="{% url "ietf.meeting.views.edit_meeting_schedule" meeting.number schedule.origin.owner_email schedule.origin.name %}">{{ schedule.origin.name }}</a>
                     <a href="{% url "ietf.meeting.views.diff_schedules" meeting.number %}?from_schedule={{ schedule.origin.name|urlencode }}&to_schedule={{ schedule.name|urlencode }}" title="{{ schedule.changes_from_origin }} change{{ schedule.changes_from_origin|pluralize }} from {{ schedule.origin.name }}">+{{ schedule.changes_from_origin }}</a>
                   {% endif %}
                 </td>

@@ -3053,23 +3053,13 @@ class ReorderSlidesTests(TestCase):
 
 
 class EditTests(TestCase):
+    """Test schedule edit operations"""
     def setUp(self):
         # make sure we have the colors of the area
         from ietf.group.colors import fg_group_colors, bg_group_colors
         area_upper = "FARFUT"
         fg_group_colors[area_upper] = "#333"
         bg_group_colors[area_upper] = "#aaa"
-
-    def test_edit_schedule(self):
-        meeting = make_meeting_test_data()
-
-        self.client.login(username="secretary", password="secretary+password")
-        r = self.client.get(urlreverse("ietf.meeting.views.edit_schedule", kwargs={'num': meeting.number}))
-        self.assertRedirects(
-            r,
-            urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs={'num': meeting.number}),
-            status_code=301,
-        )
 
     def test_official_record_schedule_is_read_only(self):
         def _set_date_offset_and_retrieve_page(meeting, days_offset, client):
@@ -3598,8 +3588,8 @@ class EditTests(TestCase):
         self.assertEqual(tostring(s2_constraints[1][0]), conf_label)  # [0][0] is the innermost <span>
 
     def test_new_meeting_schedule(self):
+        """Can create a meeting schedule from scratch"""
         meeting = make_meeting_test_data()
-
         self.client.login(username="secretary", password="secretary+password")
 
         # new from scratch
@@ -3623,7 +3613,11 @@ class EditTests(TestCase):
         self.assertEqual(new_schedule.origin, None)
         self.assertEqual(new_schedule.base_id, meeting.schedule.base_id)
 
-        # copy
+    def test_copy_meeting_schedule(self):
+        """Can create a copy of an existing meeting schedule"""
+        meeting = make_meeting_test_data()
+        self.client.login(username="secretary", password="secretary+password")
+
         url = urlreverse("ietf.meeting.views.new_meeting_schedule", kwargs=dict(num=meeting.number, owner=meeting.schedule.owner_email(), name=meeting.schedule.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -3647,34 +3641,21 @@ class EditTests(TestCase):
         for a in SchedTimeSessAssignment.objects.filter(schedule=new_schedule):
             self.assertIn((a.session_id, a.timeslot_id), old_assignments)
 
-    def test_save_agenda_as_and_read_permissions(self):
+    def test_schedule_read_permissions(self):
         meeting = make_meeting_test_data()
+        schedule = meeting.schedule
 
         # try to get non-existing agenda
-        url = urlreverse("ietf.meeting.views.edit_schedule", kwargs=dict(num=meeting.number,
-                                                                       owner=meeting.schedule.owner_email(),
-                                                                       name="foo"))
+        url = urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs=dict(num=meeting.number,
+                                                                                 owner=schedule.owner_email(),
+                                                                                 name="foo"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 404)
 
-        # save as new name (requires valid existing agenda)
-        url = urlreverse("ietf.meeting.views.edit_schedule", kwargs=dict(num=meeting.number,
-                                                                       owner=meeting.schedule.owner_email(),
-                                                                       name=meeting.schedule.name))
-        self.client.login(username="ad", password="ad+password")
-        r = self.client.post(url, {
-            'savename': "foo",
-            'saveas': "saveas",
-            })
-        self.assertEqual(r.status_code, 302)
-        # Verify that we actually got redirected to a new place.
-        self.assertNotEqual(urlparse(r.url).path, url)
-
-        # get
-        schedule = meeting.get_schedule_by_name("foo")
-        url = urlreverse("ietf.meeting.views.edit_schedule", kwargs=dict(num=meeting.number,
-                                                                       owner=schedule.owner_email(),
-                                                                       name="foo"))
+        url = urlreverse("ietf.meeting.views.edit_meeting_schedule", kwargs=dict(num=meeting.number,
+                                                                                 owner=schedule.owner_email(),
+                                                                                 name=schedule.name))
+        self.client.login(username='ad', password='ad+password')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
@@ -3701,39 +3682,73 @@ class EditTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-    def test_save_agenda_broken_names(self):
+    def test_new_meeting_schedule_rejects_invalid_names(self):
         meeting = make_meeting_test_data()
 
-        # save as new name (requires valid existing agenda)
-        url = urlreverse("ietf.meeting.views.edit_schedule", kwargs=dict(num=meeting.number,
-                                                                       owner=meeting.schedule.owner_email(),
-                                                                       name=meeting.schedule.name))
+        orig_schedule_count = meeting.schedule_set.count()
         self.client.login(username="ad", password="ad+password")
+        url = urlreverse("ietf.meeting.views.new_meeting_schedule", kwargs=dict(num=meeting.number))
         r = self.client.post(url, {
-            'savename': "/no/this/should/not/work/it/is/too/long",
-            'saveas': "saveas",
-            })
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse(r.url).path, url)
-        # TODO: Verify that an error message was in fact returned.
+            'name': "/no/this/should/not/work/it/is/too/long",
+            'public': "on",
+            'notes': "Name too long",
+            'base': meeting.schedule.base_id,
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertFormError(r, 'form', 'name', 'Enter a valid value.')
+        self.assertEqual(meeting.schedule_set.count(), orig_schedule_count, 'Schedule should not be created')
 
         r = self.client.post(url, {
-            'savename': "/invalid/chars/",
-            'saveas': "saveas",
-            })
-        # TODO: Verify that an error message was in fact returned.
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse(r.url).path, url)
+            'name': "/invalid/chars/",
+            'public': "on",
+            'notes': "Name too long",
+            'base': meeting.schedule.base_id,
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertFormError(r, 'form', 'name', 'Enter a valid value.')
+        self.assertEqual(meeting.schedule_set.count(), orig_schedule_count, 'Schedule should not be created')
 
         # Non-ASCII alphanumeric characters
         r = self.client.post(url, {
-            'savename': "f\u00E9ling",
-            'saveas': "saveas",
-            })
-        # TODO: Verify that an error message was in fact returned.
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse(r.url).path, url)
-        
+            'name': "f\u00E9ling",
+            'public': "on",
+            'notes': "Name too long",
+            'base': meeting.schedule.base_id,
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertFormError(r, 'form', 'name', 'Enter a valid value.')
+        self.assertEqual(meeting.schedule_set.count(), orig_schedule_count, 'Schedule should not be created')
+
+    def test_edit_session(self):
+        session = SessionFactory(group__type_id='team')  # type determines allowed session purposes
+        self.client.login(username='secretary', password='secretary+password')
+        url = urlreverse('ietf.meeting.views.edit_session', kwargs={'session_id': session.pk})
+        r = self.client.get(url)
+        self.assertContains(r, 'Edit session', status_code=200)
+        r = self.client.post(url, {
+            'name': 'this is a name',
+            'short': 'tian',
+            'purpose': 'coding',
+            'type': 'other',
+            'requested_duration': '3600',
+            'on_agenda': True,
+            'remote_instructions': 'Do this do that',
+            'attendees': '103',
+            'comments': 'So much to say',
+        })
+        self.assertNoFormPostErrors(r)
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.edit_meeting_schedule',
+                                           kwargs={'num': session.meeting.number}))
+        session = Session.objects.get(pk=session.pk)  # refresh objects from DB
+        self.assertEqual(session.name, 'this is a name')
+        self.assertEqual(session.short, 'tian')
+        self.assertEqual(session.purpose_id, 'coding')
+        self.assertEqual(session.type_id, 'other')
+        self.assertEqual(session.requested_duration, datetime.timedelta(hours=1))
+        self.assertEqual(session.on_agenda, True)
+        self.assertEqual(session.remote_instructions, 'Do this do that')
+        self.assertEqual(session.attendees, 103)
+        self.assertEqual(session.comments, 'So much to say')
 
     def test_edit_timeslots(self):
         meeting = make_meeting_test_data()

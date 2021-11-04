@@ -49,7 +49,7 @@
         &middot;
       {% endif %}
 
-      <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">New agenda</a>
+      <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">Copy agenda</a>
       &middot;
 
       <a href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">Other Agendas</a>

@@ -539,10 +539,6 @@ def edit(request, acronym, num=None):
                 # send notification
                 send_notification(group,meeting,login,form.cleaned_data,'update')
 
-            # nuke any cache that might be lingering around.
-            from ietf.meeting.helpers import session_constraint_expire
-            session_constraint_expire(request,session)
-
             messages.success(request, 'Session Request updated')
             return redirect('ietf.secr.sreq.views.view', acronym=acronym)
 
