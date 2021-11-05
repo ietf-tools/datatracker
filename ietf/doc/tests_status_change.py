@@ -4,7 +4,6 @@
 
 import io
 import os
-import shutil
 
 import debug    # pyflakes:ignore
 
@@ -441,12 +440,14 @@ class StatusChangeTests(TestCase):
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Affected RFC list changed.'))       
         
     def setUp(self):
+        super().setUp()
         IndividualRfcFactory(alias2__name='rfc14',name='draft-was-never-issued',std_level_id='unkn')
         WgRfcFactory(alias2__name='rfc9999',name='draft-ietf-random-thing',std_level_id='ps')
         WgRfcFactory(alias2__name='rfc9998',name='draft-ietf-random-other-thing',std_level_id='inf')
         DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',notify='notify@example.org')
 
 class StatusChangeSubmitTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['STATUS_CHANGE_PATH']
     def test_initial_submission(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         url = urlreverse('ietf.doc.views_status_change.submit',kwargs=dict(name=doc.name))
@@ -532,11 +533,5 @@ class StatusChangeSubmitTests(TestCase):
         self.assertContains(r, "This is the old proposal.")
 
     def setUp(self):
+        super().setUp()
         DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',notify='notify@example.org')
-        self.test_dir = self.tempdir('status-change')
-        self.saved_status_change_path = settings.STATUS_CHANGE_PATH
-        settings.STATUS_CHANGE_PATH = self.test_dir
-
-    def tearDown(self):
-        settings.STATUS_CHANGE_PATH = self.saved_status_change_path
-        shutil.rmtree(self.test_dir)

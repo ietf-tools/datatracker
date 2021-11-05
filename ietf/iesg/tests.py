@@ -4,10 +4,9 @@
 
 import datetime
 import io
-import os
-import shutil
 import tarfile
 
+from pathlib import Path
 from pyquery import PyQuery
 
 from django.conf import settings
@@ -98,6 +97,7 @@ class IESGTests(TestCase):
         
 class IESGAgendaTests(TestCase):
     def setUp(self):
+        super().setUp()
         mars = GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut'))
         wgdraft = WgDraftFactory(name='draft-ietf-mars-test', group=mars, intended_std_level_id='ps')
         rfc = IndividualRfcFactory.create(stream_id='irtf', other_aliases=['rfc6666',], states=[('draft','rfc'),('draft-iesg','pub')], std_level_id='inf', )
@@ -122,10 +122,6 @@ class IESGAgendaTests(TestCase):
         by = Person.objects.get(name="Areað Irector")
         date = get_agenda_date()
 
-        self.draft_dir = self.tempdir('agenda-draft')
-        self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
-        settings.INTERNET_DRAFT_PATH = self.draft_dir
-
         for d in list(self.telechat_docs.values()):
             TelechatDocEvent.objects.create(type="scheduled_for_telechat",
                                             doc=d,
@@ -137,10 +133,6 @@ class IESGAgendaTests(TestCase):
         self.mgmt_items = [ ]
         for i in range(0, 10):
             self.mgmt_items.append(IESGMgmtItemFactory())
-
-    def tearDown(self):
-        settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
-        shutil.rmtree(self.draft_dir)
 
     def test_fill_in_agenda_docs(self):
         draft = self.telechat_docs["ietf_draft"]
@@ -479,7 +471,7 @@ class IESGAgendaTests(TestCase):
         d1_filename = "%s-%s.txt" % (d1.name, d1.rev)
         d2_filename = "%s-%s.txt" % (d2.name, d2.rev)
 
-        with io.open(os.path.join(self.draft_dir, d1_filename), "w") as f:
+        with (Path(settings.INTERNET_DRAFT_PATH) / d1_filename).open("w") as f:
             f.write("test content")
 
         url = urlreverse("ietf.iesg.views.telechat_docs_tarfile", kwargs=dict(date=get_agenda_date().isoformat()))

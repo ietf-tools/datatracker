@@ -4,10 +4,10 @@
 
 import datetime
 import io
-import os
-import shutil
 
 import debug    # pyflakes:ignore
+
+from pathlib import Path
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -260,14 +260,7 @@ class ManagementCommandTests(TestCase):
 
 
 class LiaisonManagementTests(TestCase):
-    def setUp(self):
-        self.saved_liaison_attach_path = settings.LIAISON_ATTACH_PATH
-        self.liaison_dir = self.tempdir('liaison')
-        settings.LIAISON_ATTACH_PATH = self.liaison_dir
-
-    def tearDown(self):
-        settings.LIAISON_ATTACH_PATH = self.saved_liaison_attach_path
-        shutil.rmtree(self.liaison_dir)
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['LIAISON_ATTACH_PATH']
 
     def test_add_restrictions(self):
         # incoming restrictions
@@ -443,7 +436,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(new_liaison.attachments.count(), attachments_before + 1)
         attachment = new_liaison.attachments.order_by("-name")[0]
         self.assertEqual(attachment.title, "attachment")
-        with io.open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
+        with (Path(settings.LIAISON_ATTACH_PATH) / attachment.uploaded_filename).open() as f:
             written_content = f.read()
 
         test_file.seek(0)
@@ -747,7 +740,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(l.attachments.count(), 1)
         attachment = l.attachments.all()[0]
         self.assertEqual(attachment.title, "attachment")
-        with io.open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
+        with (Path(settings.LIAISON_ATTACH_PATH) / attachment.uploaded_filename).open() as f:
             written_content = f.read()
 
         test_file.seek(0)
@@ -826,7 +819,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(l.attachments.count(), 1)
         attachment = l.attachments.all()[0]
         self.assertEqual(attachment.title, "attachment")
-        with io.open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
+        with (Path(settings.LIAISON_ATTACH_PATH) / attachment.uploaded_filename).open() as f:
             written_content = f.read()
 
         test_file.seek(0)

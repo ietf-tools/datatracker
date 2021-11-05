@@ -76,7 +76,8 @@ class _Wrapper(TestCase):
         reviewer_queue_policy_id = ''
 
         def setUp(self):
-            self.team = ReviewTeamFactory(acronym="rotationteam", 
+            super().setUp()
+            self.team = ReviewTeamFactory(acronym="rotationteam",
                                           name="Review Team",
                                           list_email="rotationteam@ietf.org", 
                                           parent=Group.objects.get(acronym="farfut"))

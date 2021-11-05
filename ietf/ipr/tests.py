@@ -44,12 +44,6 @@ def make_data_from_content(content):
     return data
 
 class IprTests(TestCase):
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-    
     def test_get_genitive(self):
         self.assertEqual(get_genitive("Cisco"),"Cisco's")
         self.assertEqual(get_genitive("Ross"),"Ross'")

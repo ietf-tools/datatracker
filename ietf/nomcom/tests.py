@@ -76,6 +76,7 @@ class NomcomViewsTest(TestCase):
         return response
 
     def setUp(self):
+        super().setUp()
         setup_test_public_keys_dir(self)
         nomcom_test_data()
         self.cert_file, self.privatekey_file = get_cert_files()
@@ -107,6 +108,7 @@ class NomcomViewsTest(TestCase):
 
     def tearDown(self):
         teardown_test_public_keys_dir(self)
+        super().tearDown()
 
     def access_member_url(self, url):
         login_testing_unauthorized(self, COMMUNITY_USER, url)
@@ -954,12 +956,14 @@ class NomineePositionStateSaveTest(TestCase):
     """Tests for the NomineePosition save override method"""
 
     def setUp(self):
+        super().setUp()
         setup_test_public_keys_dir(self)
         nomcom_test_data()
         self.nominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
 
     def tearDown(self):
         teardown_test_public_keys_dir(self)
+        super().tearDown()
 
     def test_state_autoset(self):
         """Verify state is autoset correctly"""
@@ -989,6 +993,7 @@ class NomineePositionStateSaveTest(TestCase):
 class FeedbackTest(TestCase):
 
     def setUp(self):
+        super().setUp()
         setup_test_public_keys_dir(self)
 
         nomcom_test_data()
@@ -996,6 +1001,7 @@ class FeedbackTest(TestCase):
 
     def tearDown(self):
         teardown_test_public_keys_dir(self)
+        super().tearDown()
 
     def test_encrypted_comments(self):
 
@@ -1022,6 +1028,7 @@ class FeedbackTest(TestCase):
 class ReminderTest(TestCase):
 
     def setUp(self):
+        super().setUp()
         setup_test_public_keys_dir(self)
         nomcom_test_data()
         self.nomcom = get_nomcom_by_year(NOMCOM_YEAR)
@@ -1065,6 +1072,7 @@ class ReminderTest(TestCase):
 
     def tearDown(self):
         teardown_test_public_keys_dir(self)
+        super().tearDown()
 
     def test_is_time_to_send(self):
         self.nomcom.reminder_interval = 4
@@ -1120,6 +1128,7 @@ class ReminderTest(TestCase):
 class InactiveNomcomTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         setup_test_public_keys_dir(self)
         self.nc = NomComFactory.create(**nomcom_kwargs_for_year(group__state_id='conclude'))
         self.plain_person = PersonFactory.create()
@@ -1128,6 +1137,7 @@ class InactiveNomcomTests(TestCase):
 
     def tearDown(self):
         teardown_test_public_keys_dir(self)
+        super().tearDown()
 
     def test_feedback_closed(self):
         for view in ['ietf.nomcom.views.public_feedback', 'ietf.nomcom.views.private_feedback']:
@@ -1314,6 +1324,7 @@ class InactiveNomcomTests(TestCase):
 class FeedbackLastSeenTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         setup_test_public_keys_dir(self)
         self.nc = NomComFactory.create(**nomcom_kwargs_for_year())
         self.author = PersonFactory.create().email_set.first().address
@@ -1334,6 +1345,7 @@ class FeedbackLastSeenTests(TestCase):
 
     def tearDown(self):
         teardown_test_public_keys_dir(self)
+        super().tearDown()
 
     def test_feedback_index_badges(self):
         url = reverse('ietf.nomcom.views.view_feedback',kwargs={'year':self.nc.year()})
@@ -1420,6 +1432,7 @@ class FeedbackLastSeenTests(TestCase):
 class NewActiveNomComTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         setup_test_public_keys_dir(self)
         self.nc = NomComFactory.create(**nomcom_kwargs_for_year())
         self.chair = self.nc.group.role_set.filter(name='chair').first().person
@@ -1428,6 +1441,7 @@ class NewActiveNomComTests(TestCase):
     def tearDown(self):
         teardown_test_public_keys_dir(self)
         settings.DAYS_TO_EXPIRE_NOMINATION_LINK = self.saved_days_to_expire_nomination_link
+        super().tearDown()
 
     def test_help(self):
         url = reverse('ietf.nomcom.views.configuration_help',kwargs={'year':self.nc.year()})
@@ -1875,6 +1889,7 @@ Junk body for testing
 
 class NomComIndexTests(TestCase):
     def setUp(self):
+        super().setUp()
         for year in range(2000,2014):
             NomComFactory.create(**nomcom_kwargs_for_year(year=year,populate_positions=False,populate_personnel=False))
 
@@ -1885,6 +1900,7 @@ class NomComIndexTests(TestCase):
 
 class NoPublicKeyTests(TestCase):
     def setUp(self):
+        super().setUp()
         self.nc = NomComFactory.create(**nomcom_kwargs_for_year(public_key=None))
         self.chair = self.nc.group.role_set.filter(name='chair').first().person
 
@@ -1914,6 +1930,7 @@ class NoPublicKeyTests(TestCase):
         
 class AcceptingTests(TestCase):
     def setUp(self):
+        super().setUp()
         setup_test_public_keys_dir(self)
         self.nc = NomComFactory(**nomcom_kwargs_for_year())
         self.plain_person = PersonFactory.create()
@@ -1921,6 +1938,7 @@ class AcceptingTests(TestCase):
 
     def tearDown(self):
         teardown_test_public_keys_dir(self)
+        super().tearDown()
 
     def test_public_accepting_nominations(self):
         url = reverse('ietf.nomcom.views.public_nominate',kwargs={'year':self.nc.year()})
@@ -2021,12 +2039,14 @@ class AcceptingTests(TestCase):
 
 class ShowNomineeTests(TestCase):
     def setUp(self):
+        super().setUp()
         setup_test_public_keys_dir(self)
         self.nc = NomComFactory(**nomcom_kwargs_for_year())
         self.plain_person = PersonFactory.create()
 
     def tearDown(self):
         teardown_test_public_keys_dir(self)
+        super().tearDown()
 
     def test_feedback_pictures(self):
         url = reverse('ietf.nomcom.views.public_nominate',kwargs={'year':self.nc.year()})
@@ -2042,6 +2062,7 @@ class ShowNomineeTests(TestCase):
 
 class TopicTests(TestCase):
     def setUp(self):
+        super().setUp()
         setup_test_public_keys_dir(self)
         self.nc = NomComFactory(**nomcom_kwargs_for_year(populate_topics=False))
         self.plain_person = PersonFactory.create()
@@ -2049,7 +2070,8 @@ class TopicTests(TestCase):
 
     def tearDown(self):
         teardown_test_public_keys_dir(self)
-    
+        super().tearDown()
+
     def testAddEditListRemoveTopic(self):
         self.assertFalse(self.nc.topic_set.exists())
 
@@ -2192,6 +2214,7 @@ class EligibilityUnitTests(TestCase):
 class rfc8713EligibilityTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         self.nomcom = NomComFactory(group__acronym='nomcom2019', populate_personnel=False, first_call_for_volunteers=datetime.date(2019,5,1))
 
         meetings = [ MeetingFactory(date=date,type_id='ietf') for date in (
@@ -2249,6 +2272,7 @@ class rfc8713EligibilityTests(TestCase):
 class rfc8788EligibilityTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         self.nomcom = NomComFactory(group__acronym='nomcom2020', populate_personnel=False, first_call_for_volunteers=datetime.date(2020,5,1))
 
         meetings = [MeetingFactory(number=number, date=date, type_id='ietf') for number,date in [
@@ -2286,6 +2310,7 @@ class rfc8788EligibilityTests(TestCase):
 class rfc8989EligibilityTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         self.nomcom = NomComFactory(group__acronym='nomcom2021', populate_personnel=False, first_call_for_volunteers=datetime.date(2021,5,15))
         # make_immutable_test_data makes things this test does not want
         Role.objects.filter(name_id__in=('chair','secr')).delete()

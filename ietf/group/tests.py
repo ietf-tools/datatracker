@@ -76,6 +76,7 @@ class StreamTests(TestCase):
 class GroupDocDependencyGraphTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         set_coverage_checking(False)
         a = WgDraftFactory()
         b = WgDraftFactory()
@@ -83,6 +84,7 @@ class GroupDocDependencyGraphTests(TestCase):
 
     def tearDown(self):
         set_coverage_checking(True)
+        super().tearDown()
 
     def test_group_document_dependency_dotfile(self):
         for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
@@ -123,6 +125,7 @@ class GroupDocDependencyGraphTests(TestCase):
 
 class GenerateGroupAliasesTests(TestCase):
     def setUp(self):
+        super().setUp()
         self.doc_aliases_file = NamedTemporaryFile(delete=False, mode='w+')
         self.doc_aliases_file.close()
         self.doc_virtual_file = NamedTemporaryFile(delete=False, mode='w+')
@@ -137,6 +140,7 @@ class GenerateGroupAliasesTests(TestCase):
         settings.GROUP_VIRTUAL_PATH = self.saved_draft_virtual_path
         os.unlink(self.doc_aliases_file.name)
         os.unlink(self.doc_virtual_file.name)
+        super().tearDown()
 
     def testManagementCommand(self):
         a_month_ago = datetime.datetime.now() - datetime.timedelta(30)
@@ -237,6 +241,7 @@ class GenerateGroupAliasesTests(TestCase):
 class GroupRoleEmailTests(TestCase):
     
     def setUp(self):
+        super().setUp()
         # make_immutable_base_data makes two areas, and puts a group in one of them
         # the tests below assume all areas have groups
         for area in Group.objects.filter(type_id='area'):

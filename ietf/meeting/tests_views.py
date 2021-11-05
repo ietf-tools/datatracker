@@ -82,23 +82,19 @@ class BaseMeetingTestCase(TestCase):
     superclass methods.
     """
     def setUp(self):
+        super().setUp()
         self.materials_dir = self.tempdir('materials')
-        self.id_dir = self.tempdir('id')
-        self.archive_dir = self.tempdir('id-archive')
         self.storage_dir = self.tempdir('storage')
         #
-        os.mkdir(os.path.join(self.archive_dir, "unknown_ids"))
-        os.mkdir(os.path.join(self.archive_dir, "deleted_tombstones"))
-        os.mkdir(os.path.join(self.archive_dir, "expired_without_tombstone"))
+        archive_dir = Path(settings.INTERNET_DRAFT_ARCHIVE_DIR)
+        (archive_dir / "unknown_ids").mkdir()
+        (archive_dir / "deleted_tombstones").mkdir()
+        (archive_dir / "expired_without_tombstone").mkdir()
         #
         self.saved_agenda_path = settings.AGENDA_PATH
-        self.saved_id_dir = settings.INTERNET_DRAFT_PATH
-        self.saved_archive_dir = settings.INTERNET_DRAFT_ARCHIVE_DIR
         self.saved_meetinghost_logo_path = settings.MEETINGHOST_LOGO_PATH
         #
         settings.AGENDA_PATH = self.materials_dir
-        settings.INTERNET_DRAFT_PATH = self.id_dir
-        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
         settings.MEETINGHOST_LOGO_PATH = self.storage_dir
 
         # The FileSystemStorage has already set its location before
@@ -116,14 +112,11 @@ class BaseMeetingTestCase(TestCase):
         self.patcher.stop()
         #
         shutil.rmtree(self.storage_dir)
-        shutil.rmtree(self.id_dir)
-        shutil.rmtree(self.archive_dir)
         shutil.rmtree(self.materials_dir)
         #
         settings.AGENDA_PATH = self.saved_agenda_path
-        settings.INTERNET_DRAFT_PATH = self.saved_id_dir
-        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
         settings.MEETINGHOST_LOGO_PATH = self.saved_meetinghost_logo_path
+        super().tearDown()
 
     def write_materials_file(self, meeting, doc, content):
         path = os.path.join(self.materials_dir, "%s/%s/%s" % (meeting.number, doc.type_id, doc.uploaded_filename))
@@ -2006,6 +1999,7 @@ class ReorderSlidesTests(TestCase):
 
 class EditTests(TestCase):
     def setUp(self):
+        super().setUp()
         # make sure we have the colors of the area
         from ietf.group.colors import fg_group_colors, bg_group_colors
         area_upper = "FARFUT"
@@ -2803,6 +2797,7 @@ class SessionDetailsTests(TestCase):
 
 class EditScheduleListTests(TestCase):
     def setUp(self):
+        super().setUp()
         self.mtg = MeetingFactory(type_id='ietf')
         ScheduleFactory(meeting=self.mtg, name='secretary1')
 
@@ -2921,14 +2916,7 @@ class EditScheduleListTests(TestCase):
 # -------------------------------------------------
 
 class InterimTests(TestCase):
-    def setUp(self):
-        self.materials_dir = self.tempdir('materials')
-        self.saved_agenda_path = settings.AGENDA_PATH
-        settings.AGENDA_PATH = self.materials_dir
-
-    def tearDown(self):
-        settings.AGENDA_PATH = self.saved_agenda_path
-        shutil.rmtree(self.materials_dir)
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
 
     # test_interim_announce subsumed by test_appears_on_announce
 
@@ -4299,12 +4287,6 @@ class AjaxTests(TestCase):
         self.assertEqual(data['utc'], '20:00')
 
 class FloorPlanTests(TestCase):
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
     def test_floor_plan_page(self):
         make_meeting_test_data()
         meeting = Meeting.objects.filter(type_id='ietf').order_by('id').last()
@@ -4319,12 +4301,6 @@ class FloorPlanTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
 class IphoneAppJsonTests(TestCase):
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
     def test_iphone_app_json_interim(self):
         make_interim_test_data()
         meeting = Meeting.objects.filter(type_id='interim').order_by('id').last()
@@ -4383,22 +4359,19 @@ class FinalizeProceedingsTests(TestCase):
         self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().sessionpresentation_set.filter(document__type="draft").first().rev,'00')
  
 class MaterialsTests(TestCase):
-
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
+        'AGENDA_PATH',
+        'SLIDE_STAGING_PATH'
+    ]
     def setUp(self):
+        super().setUp()
         self.materials_dir = self.tempdir('materials')
-        self.staging_dir = self.tempdir('staging')
         if not os.path.exists(self.materials_dir):
             os.mkdir(self.materials_dir)
-        self.saved_agenda_path = settings.AGENDA_PATH
-        settings.AGENDA_PATH = self.materials_dir
-        self.saved_staging_path = settings.SLIDE_STAGING_PATH
-        settings.SLIDE_STAGING_PATH = self.staging_dir
 
     def tearDown(self):
-        settings.AGENDA_PATH = self.saved_agenda_path
-        settings.SLIDE_STAGING_PATH = self.saved_staging_path
         shutil.rmtree(self.materials_dir)
-        shutil.rmtree(self.staging_dir)
+        super().tearDown()
 
     def crawl_materials(self, url, top):
         seen = set()
@@ -4926,17 +4899,7 @@ class SessionTests(TestCase):
         self.assertEqual(len(outbox),1)
 
 class HasMeetingsTests(TestCase):
-    def setUp(self):
-        self.materials_dir = self.tempdir('materials')
-        #
-        self.saved_agenda_path = settings.AGENDA_PATH
-        #
-        settings.AGENDA_PATH = self.materials_dir
-
-    def tearDown(self):
-        shutil.rmtree(self.materials_dir)
-        #
-        settings.AGENDA_PATH = self.saved_agenda_path
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
 
     def do_request_interim(self, url, group, user, meeting_count):
         login_testing_unauthorized(self,user.username, url)

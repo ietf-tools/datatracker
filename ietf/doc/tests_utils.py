@@ -17,6 +17,7 @@ class ActionHoldersTests(TestCase):
 
     def setUp(self):
         """Set up helper for the update_action_holders tests"""
+        super().setUp()
         self.authors = PersonFactory.create_batch(3)
         self.ad = Person.objects.get(user__username='ad')
         self.group = GroupFactory()

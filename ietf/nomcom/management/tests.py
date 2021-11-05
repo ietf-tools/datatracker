@@ -15,6 +15,7 @@ from ietf.utils.test_utils import TestCase, name_of_file_containing
 @override_settings(ADMINS=(('Some Admin', 'admin@example.com'),))
 class FeedbackEmailTests(TestCase):
     def setUp(self):
+        super().setUp()
         self.year = 2021
         self.nomcom = NomComFactory(group__acronym=f'nomcom{self.year}')
 

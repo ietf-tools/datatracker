@@ -456,6 +456,7 @@ class SubmitRequestCase(TestCase):
 
 class LockAppTestCase(TestCase):
     def setUp(self):
+        super().setUp()
         self.meeting = MeetingFactory(type_id='ietf', date=datetime.date.today(),session_request_lock_message='locked')
         self.group = GroupFactory(acronym='mars')
         RoleFactory(name_id='chair', group=self.group, person__user__username='marschairman')
@@ -531,6 +532,7 @@ class RetrievePreviousCase(TestCase):
 
 class SessionFormTest(TestCase):
     def setUp(self):
+        super().setUp()
         self.meeting = MeetingFactory(type_id='ietf')
         self.group1 = GroupFactory()
         self.group2 = GroupFactory()

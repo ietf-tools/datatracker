@@ -15,6 +15,7 @@ SECR_USER='secretary'
 class SecrRolesMainTestCase(TestCase):
 
     def setUp(self):
+        super().setUp()
         GroupFactory(type_id='sdo') # need this for the RoleForm initialization
 
     def test_main(self):

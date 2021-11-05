@@ -3,12 +3,12 @@
 
 
 import os
-import shutil
 import calendar
 import datetime
 import io
 import bleach
 
+from pathlib import Path
 from pyquery import PyQuery
 from tempfile import NamedTemporaryFile
 
@@ -52,14 +52,7 @@ def pklist(docs):
     return [ str(doc.pk) for doc in docs.all() ]
 
 class GroupPagesTests(TestCase):
-    def setUp(self):
-        self.charter_dir = self.tempdir('charter')
-        self.saved_charter_path = settings.CHARTER_PATH
-        settings.CHARTER_PATH = self.charter_dir
-
-    def tearDown(self):
-        settings.CHARTER_PATH = self.saved_charter_path
-        shutil.rmtree(self.charter_dir)
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['CHARTER_PATH']
 
     def test_active_groups(self):
         area = GroupFactory.create(type_id='area')
@@ -120,7 +113,7 @@ class GroupPagesTests(TestCase):
 
         chair = Email.objects.filter(role__group=group, role__name="chair")[0]
 
-        with io.open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
+        with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
             f.write("This is a charter.")
 
         url = urlreverse('ietf.group.views.wg_summary_area', kwargs=dict(group_type="wg"))
@@ -252,7 +245,7 @@ class GroupPagesTests(TestCase):
         group = CharterFactory().group
         draft = WgDraftFactory(group=group)
 
-        with io.open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
+        with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
             f.write("This is a charter.")
 
         milestone = GroupMilestone.objects.create(
@@ -465,14 +458,7 @@ class GroupPagesTests(TestCase):
 
 
 class GroupEditTests(TestCase):
-    def setUp(self):
-        self.charter_dir = self.tempdir('charter')
-        self.saved_charter_path = settings.CHARTER_PATH
-        settings.CHARTER_PATH = self.charter_dir
-
-    def tearDown(self):
-        settings.CHARTER_PATH = self.saved_charter_path
-        shutil.rmtree(self.charter_dir)
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['CHARTER_PATH']
 
     def test_create(self):
 
@@ -632,7 +618,7 @@ class GroupEditTests(TestCase):
         self.assertTrue(len(q('form .has-error')) > 0)
         
         # edit info
-        with io.open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
+        with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
             f.write("This is a charter.")
         area = group.parent
         ad = Person.objects.get(name="Areað Irector")
@@ -673,7 +659,7 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.list_subscribe, "subscribe.mars")
         self.assertEqual(group.list_archive, "archive.mars")
 
-        self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))))
+        self.assertTrue((Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).exists())
         self.assertEqual(len(outbox), 2)
         self.assertTrue('Personnel change' in outbox[0]['Subject'])
         for prefix in ['ad1','ad2','aread','marschairman','marsdelegate']:
@@ -1558,6 +1544,7 @@ class CustomizeWorkflowTests(TestCase):
 class EmailAliasesTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         PersonFactory(user__username='plain')
         GroupFactory(acronym='mars',parent=GroupFactory(type_id='area'))
         GroupFactory(acronym='ames',parent=GroupFactory(type_id='area'))
@@ -1580,6 +1567,7 @@ expand-ames-chairs@virtual.ietf.org                              mars_chair@ietf
     def tearDown(self):
         settings.GROUP_VIRTUAL_PATH = self.saved_group_virtual_path
         os.unlink(self.group_alias_file.name)
+        super().tearDown()
 
     def testAliases(self):
         url = urlreverse('ietf.group.urls_info_details.redirect.email', kwargs=dict(acronym="mars"))
@@ -1644,6 +1632,7 @@ class AjaxTests(TestCase):
 class MeetingInfoTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         self.group = GroupFactory.create(type_id='wg')
         today = datetime.date.today()
         SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=14))

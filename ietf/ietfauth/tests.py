@@ -58,6 +58,7 @@ else:
 
 class IetfAuthTests(TestCase):
     def setUp(self):
+        super().setUp()
         self.saved_use_python_htdigest = getattr(settings, "USE_PYTHON_HTDIGEST", None)
         settings.USE_PYTHON_HTDIGEST = True
 
@@ -74,6 +75,7 @@ class IetfAuthTests(TestCase):
         settings.USE_PYTHON_HTDIGEST = self.saved_use_python_htdigest
         settings.HTPASSWD_FILE = self.saved_htpasswd_file
         settings.HTDIGEST_REALM = self.saved_htdigest_realm
+        super().tearDown()
 
     def test_index(self):
         self.assertEqual(self.client.get(urlreverse(ietf.ietfauth.views.index)).status_code, 200)

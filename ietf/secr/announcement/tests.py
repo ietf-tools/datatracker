@@ -23,6 +23,7 @@ AD_USER=''
 
 class SecrAnnouncementTestCase(TestCase):
     def setUp(self):
+        super().setUp()
         chair = RoleName.objects.get(slug='chair')
         secr = RoleName.objects.get(slug='secr')
         ietf = Group.objects.get(acronym='ietf')

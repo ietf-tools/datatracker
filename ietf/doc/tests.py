@@ -3,7 +3,6 @@
 
 
 import os
-import shutil
 import datetime
 import io
 import lxml
@@ -13,6 +12,7 @@ import json
 import copy
 
 from http.cookies import SimpleCookie
+from pathlib import Path
 from pyquery import PyQuery
 from urllib.parse import urlparse, parse_qs
 from tempfile import NamedTemporaryFile
@@ -523,19 +523,10 @@ Man                    Expires September 22, 2015               [Page 3]
 """
 
     def setUp(self):
-        self.id_dir = self.tempdir('id')
-        self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
-        settings.INTERNET_DRAFT_PATH = self.id_dir
-        self.saved_internet_all_drafts_archive_dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
-        settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR = self.id_dir
-        f = io.open(os.path.join(self.id_dir, 'draft-ietf-mars-test-01.txt'), 'w')
-        f.write(self.draft_text)
-        f.close()
-
-    def tearDown(self):
-        settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR = self.saved_internet_all_drafts_archive_dir
-        settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
-        shutil.rmtree(self.id_dir)
+        super().setUp()
+        for dir in [settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, settings.INTERNET_DRAFT_PATH]:
+            with (Path(dir) / 'draft-ietf-mars-test-01.txt').open('w') as f:
+                f.write(self.draft_text)
 
     def test_document_draft(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01')
@@ -694,6 +685,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(r.status_code, 200)
 
         rfc = WgRfcFactory()
+        (Path(settings.RFC_PATH) / rfc.get_base_name()).touch()
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
         self.assertEqual(r.status_code, 200)
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.rfc_number())))
@@ -1895,6 +1887,7 @@ class ReferencesTest(TestCase):
 
 class GenerateDraftAliasesTests(TestCase):
    def setUp(self):
+       super().setUp()
        self.doc_aliases_file = NamedTemporaryFile(delete=False, mode='w+')
        self.doc_aliases_file.close()
        self.doc_virtual_file = NamedTemporaryFile(delete=False, mode='w+')
@@ -1909,6 +1902,7 @@ class GenerateDraftAliasesTests(TestCase):
        settings.DRAFT_VIRTUAL_PATH = self.saved_draft_virtual_path
        os.unlink(self.doc_aliases_file.name)
        os.unlink(self.doc_virtual_file.name)
+       super().tearDown()
 
    def testManagementCommand(self):
        a_month_ago = datetime.datetime.now() - datetime.timedelta(30)
@@ -2013,6 +2007,7 @@ class GenerateDraftAliasesTests(TestCase):
 class EmailAliasesTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         WgDraftFactory(name='draft-ietf-mars-test',group__acronym='mars')
         WgDraftFactory(name='draft-ietf-ames-test',group__acronym='ames')
         RoleFactory(group__type_id='review', group__acronym='yangdoctors', name_id='secr')
@@ -2044,6 +2039,7 @@ expand-draft-ietf-ames-test.all@virtual.ietf.org  ames-author@example.ames, ames
     def tearDown(self):
         settings.DRAFT_VIRTUAL_PATH = self.saved_draft_virtual_path
         os.unlink(self.doc_alias_file.name)
+        super().tearDown()
 
     def testAliases(self):
         PersonFactory(user__username='plain')
@@ -2068,6 +2064,7 @@ expand-draft-ietf-ames-test.all@virtual.ietf.org  ames-author@example.ames, ames
 class DocumentMeetingTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         self.group = GroupFactory(type_id='wg',state_id='active')
         self.group_chair = PersonFactory()
         self.group.role_set.create(name_id='chair',person=self.group_chair,email=self.group_chair.email())
@@ -2384,17 +2381,15 @@ class FieldTests(TestCase):
             )
 
 class MaterialsTests(TestCase):
-
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
     def setUp(self):
-        self.id_dir = self.tempdir('id')
-        self.saved_agenda_path = settings.AGENDA_PATH
-        settings.AGENDA_PATH = self.id_dir
+        super().setUp()
 
         meeting_number='111'
-        meeting_dir = os.path.join(f'{settings.AGENDA_PATH}',f'{meeting_number}')
-        os.mkdir(meeting_dir)
-        agenda_dir = os.path.join(meeting_dir,'agenda')
-        os.mkdir(agenda_dir)
+        meeting_dir = Path(settings.AGENDA_PATH) / meeting_number
+        meeting_dir.mkdir()
+        agenda_dir = meeting_dir / 'agenda'
+        agenda_dir.mkdir()
 
         group_acronym='bogons'
 
@@ -2402,35 +2397,26 @@ class MaterialsTests(TestCase):
         # * build the DocumentHistory correctly 
         # * maybe do something by default with uploaded_filename
         # and there should be a more usable unit to save bits to disk (handle_file_upload isn't quite right) that tests can leverage
-        try:
-            uploaded_filename_00 = f'agenda-{meeting_number}-{group_acronym}-00.txt'
-            uploaded_filename_01 = f'agenda-{meeting_number}-{group_acronym}-01.md'
-            f = io.open(os.path.join(agenda_dir, uploaded_filename_00), 'w')
-            f.write('This is some unremarkable text')
-            f.close()
-            f = io.open(os.path.join(agenda_dir, uploaded_filename_01), 'w')
-            f.write('This links to [an unusual place](https://unusual.example).')
-            f.close()
+        uploaded_filename_00 = f'agenda-{meeting_number}-{group_acronym}-00.txt'
+        uploaded_filename_01 = f'agenda-{meeting_number}-{group_acronym}-01.md'
+        f = io.open(os.path.join(agenda_dir, uploaded_filename_00), 'w')
+        f.write('This is some unremarkable text')
+        f.close()
+        f = io.open(os.path.join(agenda_dir, uploaded_filename_01), 'w')
+        f.write('This links to [an unusual place](https://unusual.example).')
+        f.close()
 
-            self.doc = DocumentFactory(type_id='agenda',rev='00',group__acronym=group_acronym, newrevisiondocevent=None, name=f'agenda-{meeting_number}-{group_acronym}', uploaded_filename=uploaded_filename_00)
-            e = NewRevisionDocEventFactory(doc=self.doc,rev='00')
-            self.doc.save_with_history([e])
-            self.doc.rev = '01'
-            self.doc.uploaded_filename = uploaded_filename_01
-            e = NewRevisionDocEventFactory(doc=self.doc, rev='01')
-            self.doc.save_with_history([e])
+        self.doc = DocumentFactory(type_id='agenda',rev='00',group__acronym=group_acronym, newrevisiondocevent=None, name=f'agenda-{meeting_number}-{group_acronym}', uploaded_filename=uploaded_filename_00)
+        e = NewRevisionDocEventFactory(doc=self.doc,rev='00')
+        self.doc.save_with_history([e])
+        self.doc.rev = '01'
+        self.doc.uploaded_filename = uploaded_filename_01
+        e = NewRevisionDocEventFactory(doc=self.doc, rev='01')
+        self.doc.save_with_history([e])
 
-            # This is necessary for the view to be able to find the document
-            # which hints that the view has an issue : if a materials document is taken out of all SessionPresentations, it is no longer accessable by this view
-            SessionPresentationFactory(session__meeting__number=meeting_number, session__group=self.doc.group, document=self.doc)
-
-        except: 
-            shutil.rmtree(self.id_dir)
-            raise
-
-    def tearDown(self):
-        settings.AGENDA_PATH = self.saved_agenda_path
-        shutil.rmtree(self.id_dir)
+        # This is necessary for the view to be able to find the document
+        # which hints that the view has an issue : if a materials document is taken out of all SessionPresentations, it is no longer accessable by this view
+        SessionPresentationFactory(session__meeting__number=meeting_number, session__group=self.doc.group, document=self.doc)
 
     def test_markdown_and_text(self):
         url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=self.doc.name,rev='00'))
@@ -2446,15 +2432,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(q('#materials-content .panel-body a').attr['href'],'https://unusual.example')
 
 class Idnits2SupportTests(TestCase):
-
-    def setUp(self):
-        self.derived_dir = self.tempdir('derived')
-        self.saved_derived_dir = settings.DERIVED_DIR
-        settings.DERIVED_DIR = self.derived_dir
-
-    def tearDown(self):
-        settings.DERIVED_DIR = self.saved_derived_dir
-        shutil.rmtree(self.derived_dir)
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']
 
     def test_obsoleted(self):
         rfc = WgRfcFactory(alias2__name='rfc1001')
@@ -2506,6 +2484,7 @@ class Idnits2SupportTests(TestCase):
 class RfcdiffSupportTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         self.target_view = 'ietf.doc.views_doc.rfcdiff_latest_json'
 
     def getJson(self, view_args):

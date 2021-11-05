@@ -7,6 +7,7 @@ import shutil
 import datetime
 import io
 
+from pathlib import Path
 from pyquery import PyQuery
 
 import debug              # pyflakes:ignore
@@ -25,26 +26,24 @@ from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 
 
 class GroupMaterialTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
     def setUp(self):
+        super().setUp()
         self.materials_dir = self.tempdir("materials")
-        self.slides_dir = os.path.join(self.materials_dir, "slides")
-        if not os.path.exists(self.slides_dir):
-            os.mkdir(self.slides_dir)
+        self.slides_dir = Path(self.materials_dir) / "slides"
+        if not self.slides_dir.exists():
+            self.slides_dir.mkdir()
         self.saved_document_path_pattern = settings.DOCUMENT_PATH_PATTERN
         settings.DOCUMENT_PATH_PATTERN = self.materials_dir + "/{doc.type_id}/"
 
-        self.agenda_dir = self.tempdir("agenda")
-        self.meeting_slides_dir = os.path.join(self.agenda_dir, "42", "slides")
-        if not os.path.exists(self.meeting_slides_dir):
-            os.makedirs(self.meeting_slides_dir)
-        self.saved_agenda_path = settings.AGENDA_PATH
-        settings.AGENDA_PATH = self.agenda_dir
+        self.meeting_slides_dir = Path(settings.AGENDA_PATH) / "42" / "slides"
+        if not self.meeting_slides_dir.exists():
+            self.meeting_slides_dir.mkdir(parents=True)
 
     def tearDown(self):
         settings.DOCUMENT_PATH_PATTERN = self.saved_document_path_pattern
         shutil.rmtree(self.materials_dir)
-        settings.AGENDA_PATH = self.saved_agenda_path
-        shutil.rmtree(self.agenda_dir)
+        super().tearDown()
 
     def create_slides(self):
 

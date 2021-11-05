@@ -4,7 +4,6 @@
 
 import io
 import os
-import shutil
 
 from pyquery import PyQuery
 from textwrap import wrap
@@ -367,11 +366,13 @@ class ConflictReviewTests(TestCase):
         self.assertEqual(len(outbox), 0)
 
     def setUp(self):
+        super().setUp()
         IndividualDraftFactory(name='draft-imaginary-independent-submission')
         ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission',review_of=IndividualDraftFactory(name='draft-imaginary-irtf-submission',stream_id='irtf'),notify='notifyme@example.net')
 
 
 class ConflictReviewSubmitTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['CONFLICT_REVIEW_PATH']
     def test_initial_submission(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         url = urlreverse('ietf.doc.views_conflict_review.submit',kwargs=dict(name=doc.name))
@@ -447,11 +448,5 @@ class ConflictReviewSubmitTests(TestCase):
         self.assertTrue(q('textarea')[0].text.strip().startswith("[Edit this page"))
         
     def setUp(self):
+        super().setUp()
         ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission',review_of=IndividualDraftFactory(name='draft-imaginary-irtf-submission',stream_id='irtf'),notify='notifyme@example.net')
-        self.test_dir = self.tempdir('conflict-review')
-        self.saved_conflict_review_path = settings.CONFLICT_REVIEW_PATH
-        settings.CONFLICT_REVIEW_PATH = self.test_dir
-
-    def tearDown(self):
-        settings.CONFLICT_REVIEW_PATH = self.saved_conflict_review_path
-        shutil.rmtree(self.test_dir)

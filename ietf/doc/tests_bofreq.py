@@ -2,10 +2,9 @@
 
 import datetime
 import debug    # pyflakes:ignore
-import io
 import os
-import shutil
 
+from pathlib import Path
 from pyquery import PyQuery
 from random import randint
 from tempfile import NamedTemporaryFile
@@ -24,19 +23,11 @@ from ietf.utils.test_utils import TestCase, reload_db_objects, unicontent, login
 
 
 class BofreqTests(TestCase):
-
-    def setUp(self):
-        self.bofreq_dir = self.tempdir('bofreq')
-        self.saved_bofreq_path = settings.BOFREQ_PATH
-        settings.BOFREQ_PATH = self.bofreq_dir
-
-    def tearDown(self):
-        settings.BOFREQ_PATH = self.saved_bofreq_path
-        shutil.rmtree(self.bofreq_dir)
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['BOFREQ_PATH']
 
     def write_bofreq_file(self, bofreq):
-        fname = os.path.join(self.bofreq_dir, "%s-%s.md" % (bofreq.canonical_name(), bofreq.rev))
-        with io.open(fname, "w") as f:
+        fname = Path(settings.BOFREQ_PATH) / ("%s-%s.md" % (bofreq.canonical_name(), bofreq.rev))
+        with fname.open("w") as f:
             f.write(f"""# This is a test bofreq.
 Version: {bofreq.rev}
 
