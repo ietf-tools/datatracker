@@ -57,12 +57,12 @@
             RFC - {{ doc.std_level }}
             ({% if published %}{{ published.time|date:"F Y" }}{% else %}publication date unknown{% endif %}{% if has_errata %}; <a href="https://www.rfc-editor.org/errata_search.php?rfc={{ rfc_number }}" rel="nofollow">Errata</a>{% else %}; No errata{% endif %})
 
-            {% if obsoleted_by %}<div>Obsoleted by {{ obsoleted_by|urlize_doc_list|join:", " }}</div>{% endif %}
-            {% if updated_by %}<div>Updated by {{ updated_by|urlize_doc_list|join:", " }}</div>{% endif %}
-            {% if obsoletes %}<div>Obsoletes {{ obsoletes|urlize_doc_list|join:", " }}</div>{% endif %}
-            {% if updates %}<div> Updates {{ updates|urlize_doc_list|join:", " }}</div>{% endif %}
-            {% if status_changes %}<div>Status changed by {{ status_changes|join:", "|urlize_ietf_docs }}</div>{% endif %}
-            {% if proposed_status_changes %}<div>Proposed status changed by {{ proposed_status_changes|join:", "|urlize_ietf_docs }}</div>{% endif %}
+            {% if obsoleted_by %}<div>Obsoleted by {{ obsoleted_by|urlize_related_source_list|join:", " }}</div>{% endif %}
+            {% if updated_by %}<div>Updated by {{ updated_by|urlize_related_source_list|join:", " }}</div>{% endif %}
+            {% if obsoletes %}<div>Obsoletes {{ obsoletes|urlize_related_target_list|join:", " }}</div>{% endif %}
+            {% if updates %}<div> Updates {{ updates|urlize_related_target_list|join:", " }}</div>{% endif %}
+            {% if status_changes %}<div>Status changed by {{ status_changes|join:", "|urlize_related_source_list }}</div>{% endif %}
+            {% if proposed_status_changes %}<div>Proposed status changed by {{ proposed_status_changes|join:", "|urlize_related_source_list }}</div>{% endif %}
             {% if rfc_aliases %}<div>Also known as {{ rfc_aliases|join:", "|urlize_ietf_docs }}</div>{% endif %}
             {% if draft_name %}<div>Was <a href="/doc/{{ draft_name}}/">{{ draft_name }}</a> {% if submission %}({{ submission|safe }}){% endif %}</div>{% endif %}
           {% else %}
@@ -117,7 +117,7 @@
             {% endif %}
           </td>
           <td>
-            {{ replaces|urlize_doc_list|join:", "|default:"(None)" }}
+            {{ replaces|urlize_related_target_list|join:", "|default:"(None)" }}
           </td>
         </tr>
       {% endif %}
@@ -128,7 +128,7 @@
           <th>Replaced by</th>
           <td class="edit"></td>
           <td>
-            {{ replaced_by|urlize_doc_list|join:", " }}
+            {{ replaced_by|urlize_related_source_list|join:", " }}
           </td>
         </tr>
       {% endif %}
@@ -144,7 +144,7 @@
                 {% endif %}
               </td>
               <td>
-                {{ possibly_replaces|urlize_doc_list|join:", " }}
+                {{ possibly_replaces|urlize_related_target_list|join:", " }}
               </td>
             </tr>
           {% endif %}
@@ -159,7 +159,7 @@
                 {% endif %}
               </td>
               <td>
-                {{ possibly_replaced_by|urlize_doc_list|join:", " }}
+                {{ possibly_replaced_by|urlize_related_source_list|join:", " }}
               </td>
             </tr>
           {% endif %}

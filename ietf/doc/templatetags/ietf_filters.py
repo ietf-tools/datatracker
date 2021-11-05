@@ -236,13 +236,31 @@ def urlize_ietf_docs(string, autoescape=None):
     return mark_safe(string)
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
-@register.filter(name='urlize_doc_list', is_safe=True, needs_autoescape=True)
-def urlize_doc_list(docs, autoescape=None):
-    """Convert a list of DocAliases into list of links using canonical name"""
+@register.filter(name='urlize_related_source_list', is_safe=True, needs_autoescape=True)
+def urlize_related_source_list(related, autoescape=None):
+    """Convert a list of DocumentRelations into list of links using the source document's canonical name"""
     links = []
-    for doc in docs:
-        name=doc.document.canonical_name()
-        title = doc.document.title
+    for rel in related:
+        name=rel.source.canonical_name()
+        title = rel.source.title
+        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=name))
+        if autoescape:
+            name = escape(name)
+            title = escape(title)
+        links.append(mark_safe(
+            '<a href="%(url)s" title="%(title)s">%(name)s</a>' % dict(name=prettify_std_name(name),
+                                                                      title=title,
+                                                                      url=url)
+        ))
+    return links
+        
+@register.filter(name='urlize_related_target_list', is_safe=True, needs_autoescape=True)
+def urlize_related_target_list(related, autoescape=None):
+    """Convert a list of DocumentRelations into list of links using the source document's canonical name"""
+    links = []
+    for rel in related:
+        name=rel.target.document.canonical_name()
+        title = rel.target.document.title
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=name))
         if autoescape:
             name = escape(name)

@@ -56,7 +56,8 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent, BallotType,
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
-    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor)
+    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
+    RelatedDocument, RelatedDocHistory)
 from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
@@ -118,6 +119,25 @@ def render_document_top(request, doc, tab, name):
                                  selected=tab,
                                  name=name))
 
+def interesting_doc_relations(doc):
+
+    if isinstance(doc, Document):
+        cls = RelatedDocument
+        target = doc
+    elif isinstance(doc, DocHistory):
+        cls = RelatedDocHistory
+        target = doc.doc
+    else:
+        raise TypeError("Expected this method to be called with a Document or DocHistory object")
+
+    that_relationships = STATUSCHANGE_RELATIONS + ('conflrev', 'replaces', 'possibly_replaces', 'updates', 'obs') 
+
+    that_doc_relationships = ('replaces', 'possibly_replaces', 'updates', 'obs')
+
+    interesting_relations_that = cls.objects.filter(target__docs=target, relationship__in=that_relationships).select_related('source')
+    interesting_relations_that_doc = cls.objects.filter(source=doc, relationship__in=that_doc_relationships).prefetch_related('target__docs')
+
+    return interesting_relations_that, interesting_relations_that_doc
 
 def document_main(request, name, rev=None):
     doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
@@ -128,9 +148,6 @@ def document_main(request, name, rev=None):
         for a in aliases:
             if a.startswith("rfc"):
                 return redirect("ietf.doc.views_doc.document_main", name=a)
-
-    if doc.type_id == 'conflrev':
-        conflictdoc = doc.related_that_doc('conflrev')[0].document
     
     revisions = []
     for h in doc.history_set.order_by("time", "id"):
@@ -181,6 +198,8 @@ def document_main(request, name, rev=None):
             split_content = False
         else:
             pass
+
+        interesting_relations_that, interesting_relations_that_doc = interesting_doc_relations(doc)
 
         iesg_state = doc.get_state("draft-iesg")
         if isinstance(doc, Document):
@@ -328,11 +347,11 @@ def document_main(request, name, rev=None):
         search_archive = quote(search_archive, safe="~")
 
         # conflict reviews
-        conflict_reviews = [d.document.name for d in doc.related_that("conflrev")]
+        conflict_reviews = [r.source.name for r in interesting_relations_that.filter(relationship="conflrev")]
 
-        status_change_docs = doc.related_that(STATUSCHANGE_RELATIONS)
-        status_changes = [ rel.document for rel in status_change_docs  if rel.document.get_state_slug() in ('appr-sent','appr-pend')]
-        proposed_status_changes = [ rel.document for rel in status_change_docs  if rel.document.get_state_slug() in ('needshep','adrev','iesgeval','defer','appr-pr')]
+        status_change_docs = interesting_relations_that.filter(relationship__in=STATUSCHANGE_RELATIONS)
+        status_changes = [ r.source for r in status_change_docs  if r.source.get_state_slug() in ('appr-sent','appr-pend')]
+        proposed_status_changes = [ r.source for r in status_change_docs  if r.source.get_state_slug() in ('needshep','adrev','iesgeval','defer','appr-pr')]
 
         presentations = doc.future_presentations()
 
@@ -454,14 +473,14 @@ def document_main(request, name, rev=None):
                                        submission=submission,
                                        resurrected_by=resurrected_by,
 
-                                       replaces=doc.related_that_doc("replaces"),
-                                       replaced_by=doc.related_that("replaces"),
-                                       possibly_replaces=doc.related_that_doc("possibly_replaces"),
-                                       possibly_replaced_by=doc.related_that("possibly_replaces"),
-                                       updates=doc.related_that_doc("updates"),
-                                       updated_by=doc.related_that("updates"),
-                                       obsoletes=doc.related_that_doc("obs"),
-                                       obsoleted_by=doc.related_that("obs"),
+                                       replaces=interesting_relations_that_doc.filter(relationship="replaces"),
+                                       replaced_by=interesting_relations_that.filter(relationship="replaces"),
+                                       possibly_replaces=interesting_relations_that_doc.filter(relationship="possibly_replaces"),
+                                       possibly_replaced_by=interesting_relations_that.filter(relationship="possibly_replaces"),
+                                       updates=interesting_relations_that_doc.filter(relationship="updates"),
+                                       updated_by=interesting_relations_that.filter(relationship="updates"),
+                                       obsoletes=interesting_relations_that_doc.filter(relationship="obs"),
+                                       obsoleted_by=interesting_relations_that.filter(relationship="obs"),
                                        conflict_reviews=conflict_reviews,
                                        status_changes=status_changes,
                                        proposed_status_changes=proposed_status_changes,
@@ -564,6 +583,8 @@ def document_main(request, name, rev=None):
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval", ) and doc.active_ballot():
             ballot_summary = needed_ballot_positions(doc, list(doc.active_ballot().active_balloter_positions().values()))
+
+        conflictdoc = doc.related_that_doc('conflrev')[0].document
 
         return render(request, "doc/document_conflict_review.html",
                                   dict(doc=doc,
