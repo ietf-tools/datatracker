@@ -27,7 +27,7 @@ from ietf.person.factories import EmailFactory, PersonFactory, UserFactory
 from ietf.person.models import Person, Alias
 from ietf.person.utils import (merge_persons, determine_merge_order, send_merge_notification,
     handle_users, get_extra_primary, dedupe_aliases, move_related_objects, merge_nominees,
-    handle_reviewer_settings, merge_users)
+    handle_reviewer_settings, merge_users, get_dots)
 from ietf.review.models import ReviewerSettings
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox
@@ -373,3 +373,30 @@ class PersonUtilsTests(TestCase):
         self.assertIn(communitylist, target.communitylist_set.all())
         self.assertIn(feedback, target.feedback_set.all())
         self.assertIn(nomination, target.nomination_set.all())
+
+    def test_dots(self):
+        noroles = PersonFactory()
+        self.assertEqual(get_dots(noroles),[])
+        wgchair = RoleFactory(name_id='chair',group__type_id='wg').person
+        self.assertEqual(get_dots(wgchair),['chair'])
+        ad = RoleFactory(name_id='ad',group__acronym='iesg').person
+        self.assertEqual(get_dots(ad),['iesg'])
+        iabmember = RoleFactory(name_id='member',group__acronym='iab').person
+        self.assertEqual(get_dots(iabmember),['iab'])
+        iabchair = RoleFactory(name_id='chair',group__acronym='iab').person
+        RoleFactory(person=iabchair,group__acronym='iab',name_id='member')
+        self.assertEqual(set(get_dots(iabchair)),set(['iab','iesg']))
+        llcboard = RoleFactory(name_id='member',group__acronym='llc-board').person
+        self.assertEqual(get_dots(llcboard),['llc'])
+        ietftrust = RoleFactory(name_id='member',group__acronym='ietf-trust').person
+        self.assertEqual(get_dots(ietftrust),['trust'])
+        ncmember = RoleFactory(group__acronym='nomcom2020',group__type_id='nomcom',name_id='member').person
+        self.assertEqual(get_dots(ncmember),['nomcom'])
+        ncchair = RoleFactory(group__acronym='nomcom2020',group__type_id='nomcom',name_id='chair').person
+        self.assertEqual(get_dots(ncchair),['nomcom'])
+
+
+
+
+       
+
