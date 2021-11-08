@@ -137,7 +137,7 @@ def interesting_doc_relations(doc):
     interesting_relations_that = cls.objects.filter(target__docs=target, relationship__in=that_relationships).select_related('source')
     interesting_relations_that_doc = cls.objects.filter(source=doc, relationship__in=that_doc_relationships).prefetch_related('target__docs')
 
-    return interesting_relations_that, interesting_relations_that_doc
+    return list(interesting_relations_that), list(interesting_relations_that_doc)
 
 def document_main(request, name, rev=None):
     doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
@@ -347,9 +347,9 @@ def document_main(request, name, rev=None):
         search_archive = quote(search_archive, safe="~")
 
         # conflict reviews
-        conflict_reviews = [r.source.name for r in interesting_relations_that.filter(relationship="conflrev")]
+        conflict_reviews = [r.source.name for r in interesting_relations_that if r.relationship=="conflrev"]
 
-        status_change_docs = interesting_relations_that.filter(relationship__in=STATUSCHANGE_RELATIONS)
+        status_change_docs = [ r for r in interesting_relations_that if r.relationship_id in STATUSCHANGE_RELATIONS]
         status_changes = [ r.source for r in status_change_docs  if r.source.get_state_slug() in ('appr-sent','appr-pend')]
         proposed_status_changes = [ r.source for r in status_change_docs  if r.source.get_state_slug() in ('needshep','adrev','iesgeval','defer','appr-pr')]
 
@@ -473,14 +473,14 @@ def document_main(request, name, rev=None):
                                        submission=submission,
                                        resurrected_by=resurrected_by,
 
-                                       replaces=interesting_relations_that_doc.filter(relationship="replaces"),
-                                       replaced_by=interesting_relations_that.filter(relationship="replaces"),
-                                       possibly_replaces=interesting_relations_that_doc.filter(relationship="possibly_replaces"),
-                                       possibly_replaced_by=interesting_relations_that.filter(relationship="possibly_replaces"),
-                                       updates=interesting_relations_that_doc.filter(relationship="updates"),
-                                       updated_by=interesting_relations_that.filter(relationship="updates"),
-                                       obsoletes=interesting_relations_that_doc.filter(relationship="obs"),
-                                       obsoleted_by=interesting_relations_that.filter(relationship="obs"),
+                                       replaces=[r for r in interesting_relations_that_doc if r.relationship=="replaces"],
+                                       replaced_by=[r for r in interesting_relations_that if r.relationship=="replaces"],
+                                       possibly_replaces=[r for r in interesting_relations_that_doc if r.relationship=="possibly_replaces"],
+                                       possibly_replaced_by=[r for r in interesting_relations_that if r.relationship=="possibly_replaces"],
+                                       updates=[r for r in interesting_relations_that_doc if r.relationship=="updates"],
+                                       updated_by=[r for r in interesting_relations_that if r.relationship=="updates"],
+                                       obsoletes=[r for r in interesting_relations_that_doc if r.relationship=="obs"],
+                                       obsoleted_by=[r for r in interesting_relations_that if r.relationship=="obs"],
                                        conflict_reviews=conflict_reviews,
                                        status_changes=status_changes,
                                        proposed_status_changes=proposed_status_changes,
