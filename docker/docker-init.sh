@@ -76,7 +76,7 @@ echo
 if [ -z "$*" ]; then
     echo "You can execute arbitrary commands now, e.g.,"
     echo
-    echo "    ietf/manage.py runserver 0.0.0.0:8000"
+    echo "    ietf/manage.py check && ietf/manage.py runserver 0.0.0.0:8000"
     echo
     echo "to start a development instance of the Datatracker."
     echo
