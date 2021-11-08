@@ -41,6 +41,7 @@ from ietf.utils.text import strip_prefix, xslugify
 
 class ReviewTests(TestCase):
     def setUp(self):
+        super().setUp()
         self.review_dir = self.tempdir('review')
         self.old_document_path_pattern = settings.DOCUMENT_PATH_PATTERN
         settings.DOCUMENT_PATH_PATTERN = self.review_dir + "/{doc.type_id}/"
@@ -52,6 +53,7 @@ class ReviewTests(TestCase):
     def tearDown(self):
         shutil.rmtree(self.review_dir)
         settings.DOCUMENT_PATH_PATTERN = self.old_document_path_pattern
+        super().tearDown()
 
     def test_request_review(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')

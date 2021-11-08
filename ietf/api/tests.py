@@ -5,7 +5,6 @@
 import json
 import html
 import os
-import shutil
 import sys
 
 from importlib import import_module
@@ -38,14 +37,7 @@ OMITTED_APPS = (
 )
 
 class CustomApiTests(TestCase):
-    def setUp(self):
-        self.agenda_path = self.tempdir('materials')
-        self.saved_agenda_path = settings.AGENDA_PATH
-        settings.AGENDA_PATH = self.agenda_path
-
-    def tearDown(self):
-        shutil.rmtree(self.agenda_path)
-        settings.AGENDA_PATH = self.saved_agenda_path
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
 
     # Using mock to patch the import functions in ietf.meeting.views, where
     # api_import_recordings() are using them:

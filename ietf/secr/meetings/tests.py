@@ -5,6 +5,8 @@
 import datetime
 import os
 import shutil
+
+from pathlib import Path
 from pyquery import PyQuery
 from io import StringIO
 
@@ -25,27 +27,25 @@ from ietf.utils.test_utils import TestCase
 
 
 class SecrMeetingTestCase(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
     def setUp(self):
-        self.proceedings_dir = self.tempdir('proceedings')
-        self.saved_secr_proceedings_dir = settings.SECR_PROCEEDINGS_DIR
-        settings.SECR_PROCEEDINGS_DIR = self.proceedings_dir
-        self.saved_agenda_path = settings.AGENDA_PATH
-        settings.AGENDA_PATH = self.proceedings_dir
-        
+        super().setUp()
         self.bluesheet_dir = self.tempdir('bluesheet')
         self.bluesheet_path = os.path.join(self.bluesheet_dir,'blue_sheet.rtf')
         self.saved_secr_blue_sheet_path = settings.SECR_BLUE_SHEET_PATH
         settings.SECR_BLUE_SHEET_PATH = self.bluesheet_path
 
-        self.materials_dir = self.tempdir('materials')
-        
+        # n.b., the bluesheet upload relies on SECR_PROCEEDINGS_DIR being the same
+        # as AGENDA_PATH. This is probably a bug, but may not be worth fixing if
+        # the secr app is on the way out.
+        self.saved_secr_proceedings_dir = settings.SECR_PROCEEDINGS_DIR
+        settings.SECR_PROCEEDINGS_DIR = settings.AGENDA_PATH
+
     def tearDown(self):
         settings.SECR_PROCEEDINGS_DIR = self.saved_secr_proceedings_dir
-        settings.AGENDA_PATH = self.saved_agenda_path
         settings.SECR_BLUE_SHEET_PATH = self.saved_secr_blue_sheet_path
-        shutil.rmtree(self.proceedings_dir)
         shutil.rmtree(self.bluesheet_dir)
-        shutil.rmtree(self.materials_dir)
+        super().tearDown()
 
     def test_main(self):
         "Main Test"
@@ -170,8 +170,8 @@ class SecrMeetingTestCase(TestCase):
     def test_blue_sheets_upload(self):
         "Test Bluesheets"
         meeting = make_meeting_test_data()
-        os.makedirs(os.path.join(self.proceedings_dir,str(meeting.number),'bluesheets'))
-        
+        (Path(settings.SECR_PROCEEDINGS_DIR) / str(meeting.number) / 'bluesheets').mkdir(parents=True)
+
         url = reverse('ietf.secr.meetings.views.blue_sheet',kwargs={'meeting_id':meeting.number})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)

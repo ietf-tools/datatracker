@@ -16,6 +16,7 @@ from ietf.utils.test_utils import login_testing_unauthorized
 class Downref(TestCase):
 
     def setUp(self):
+        super().setUp()
         PersonFactory(name='Plain Man',user__username='plain')
         self.draft = WgDraftFactory(name='draft-ietf-mars-test')
         self.draftalias = self.draft.docalias.get(name='draft-ietf-mars-test')

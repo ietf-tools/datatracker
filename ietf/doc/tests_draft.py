@@ -3,12 +3,12 @@
 
 
 import os
-import shutil
 import datetime
 import io
 import mock
 
 from collections import Counter
+from pathlib import Path
 from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
@@ -547,27 +547,14 @@ class EditInfoTests(TestCase):
 class DraftFileMixin():
     '''A mixin to setup temporary draft directories and files'''
     def setUp(self):
-        self.saved_id_dir = settings.INTERNET_DRAFT_PATH
-        self.saved_archive_dir = settings.INTERNET_DRAFT_ARCHIVE_DIR
-        self.id_dir = self.tempdir('id')
-        self.archive_dir = self.tempdir('id-archive')
-        os.mkdir(os.path.join(self.archive_dir, "unknown_ids"))
-        os.mkdir(os.path.join(self.archive_dir, "deleted_tombstones"))
-        os.mkdir(os.path.join(self.archive_dir, "expired_without_tombstone"))
-
-        settings.INTERNET_DRAFT_PATH = self.id_dir
-        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
-
-    def tearDown(self):
-        shutil.rmtree(self.id_dir)
-        shutil.rmtree(self.archive_dir)
-        settings.INTERNET_DRAFT_PATH = self.saved_id_dir
-        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
+        super().setUp()
+        (Path(settings.INTERNET_DRAFT_ARCHIVE_DIR) / "unknown_ids").mkdir()
+        (Path(settings.INTERNET_DRAFT_ARCHIVE_DIR) / "deleted_tombstones").mkdir()
+        (Path(settings.INTERNET_DRAFT_ARCHIVE_DIR) / "expired_without_tombstone").mkdir()
 
     def write_draft_file(self, name, size):
-        f = io.open(os.path.join(self.id_dir, name), 'w')
-        f.write("a" * size)
-        f.close()
+        with (Path(settings.INTERNET_DRAFT_PATH) / name).open('w') as f:
+            f.write("a" * size)
 
 
 class ResurrectTests(DraftFileMixin, TestCase):
@@ -638,8 +625,8 @@ class ResurrectTests(DraftFileMixin, TestCase):
         self.assertTrue('aread' in outbox[-1]['To'])
 
         # ensure file restored from archive directory
-        self.assertTrue(os.path.exists(os.path.join(self.id_dir, txt)))
-        self.assertTrue(not os.path.exists(os.path.join(self.archive_dir, txt)))
+        self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, txt)))
+        self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, txt)))
 
 
 class ExpireIDsTests(DraftFileMixin, TestCase):
@@ -749,8 +736,8 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         self.assertTrue(draft.latest_event(type="expired_document"))
         self.assertCountEqual(draft.action_holders.all(), [])
         self.assertIn('Removed all action holders', draft.latest_event(type='changed_action_holders').desc)
-        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
-        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, txt)))
+        self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, txt)))
+        self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, txt)))
 
         draft.delete()
 
@@ -772,8 +759,8 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
 
         clean_up_draft_files()
         
-        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, unknown)))
-        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "unknown_ids", unknown)))
+        self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, unknown)))
+        self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, "unknown_ids", unknown)))
 
         
         # put file with malformed name (no revision)
@@ -782,8 +769,8 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
 
         clean_up_draft_files()
         
-        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, malformed)))
-        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "unknown_ids", malformed)))
+        self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, malformed)))
+        self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, "unknown_ids", malformed)))
 
         
         # RFC draft
@@ -796,11 +783,11 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
 
         clean_up_draft_files()
         
-        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
-        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, txt)))
+        self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, txt)))
+        self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, txt)))
 
-        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, pdf)))
-        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, pdf)))
+        self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, pdf)))
+        self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, pdf)))
 
         # expire draft
         draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
@@ -817,8 +804,8 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
 
         clean_up_draft_files()
         
-        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
-        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, txt)))
+        self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, txt)))
+        self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, txt)))
 
 
 class ExpireLastCallTests(TestCase):
@@ -898,6 +885,7 @@ class ExpireLastCallTests(TestCase):
 class IndividualInfoFormsTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         doc = WgDraftFactory(group__acronym='mars',shepherd=PersonFactory(user__username='plain',name='Plain Man').email_set.first())
         self.docname = doc.name
 
@@ -1373,6 +1361,7 @@ class IndividualInfoFormsTests(TestCase):
 class SubmitToIesgTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         role=RoleFactory(group__acronym='mars',name_id='chair',person=PersonFactory(user__username='marschairman'))
         doc=WgDraftFactory(
             name='draft-ietf-mars-test',
@@ -1798,7 +1787,7 @@ class ChangeStreamStateTests(TestCase):
 
 class ChangeReplacesTests(TestCase):
     def setUp(self):
-
+        super().setUp()
         role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name='WG Cháir Man')
         RoleFactory(name_id='delegate',group=role.group,person__user__email='marsdelegate@ietf.org')
         #draft = WgDraftFactory(group=role.group)

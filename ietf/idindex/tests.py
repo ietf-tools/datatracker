@@ -3,9 +3,8 @@
 
 
 import datetime
-import io
-import os
-import shutil
+
+from pathlib import Path
 
 from django.conf import settings
 
@@ -20,17 +19,8 @@ from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.test_utils import TestCase
 
 class IndexTests(TestCase):
-    def setUp(self):
-        self.id_dir = self.tempdir('id')
-        self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
-        settings.INTERNET_DRAFT_PATH = self.id_dir
-
-    def tearDown(self):
-        settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
-        shutil.rmtree(self.id_dir)
-        
     def write_draft_file(self, name, size):
-        with io.open(os.path.join(self.id_dir, name), 'w') as f:
+        with (Path(settings.INTERNET_DRAFT_PATH) / name).open('w') as f:
             f.write("a" * size)
 
     def test_all_id_txt(self):

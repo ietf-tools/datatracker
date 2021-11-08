@@ -424,12 +424,14 @@ class BaseManipulationTests():
 class IRTFChairTests(BaseManipulationTests, TestCase):
 
     def setUp(self):
+        super().setUp()
         self.username = 'irtf-chair'
         self.balloter = ''
 
 class SecretariatTests(BaseManipulationTests, TestCase):
 
     def setUp(self):
+        super().setUp()
         self.username = 'secretary'
         self.balloter = '?balloter={}'.format(Person.objects.get(user__username='irtf-chair').pk)
 
@@ -437,6 +439,7 @@ class SecretariatTests(BaseManipulationTests, TestCase):
 class IRSGMemberTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         self.username = get_active_irsg()[0].user.username
 
     def test_cant_issue_irsg_ballot(self):

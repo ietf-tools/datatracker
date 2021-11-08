@@ -18,6 +18,7 @@ import debug                            # pyflakes:ignore
 
 class ScheduleGeneratorTest(TestCase):
     def setUp(self):
+        super().setUp()
         # Create a meeting of 2 days, 5 sessions per day, in 2 rooms. There are 3 days
         # actually created, but sundays are ignored.
         # Two rooms is a fairly low level of simultaneous schedules, this is needed

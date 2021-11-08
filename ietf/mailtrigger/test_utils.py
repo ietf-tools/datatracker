@@ -10,6 +10,7 @@ from ietf.utils.test_utils import TestCase
 
 class GatherAddressListsTests(TestCase):
     def setUp(self):
+        super().setUp()
         self.doc = WgDraftFactory(group__acronym='mars', rev='01')
         self.author_address = self.doc.name + '@ietf.org'
 

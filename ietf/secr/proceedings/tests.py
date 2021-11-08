@@ -6,7 +6,6 @@ import debug                            # pyflakes:ignore
 import io
 import json
 import os
-import shutil
 
 from django.conf import settings
 from django.urls import reverse
@@ -65,14 +64,7 @@ class VideoRecordingTestCase(TestCase):
         self.assertEqual(urls[0]['url'],'https://www.youtube.com/watch?v=lhYWB5FFkg4&list=PLC86T-6ZTP5jo6kIuqdyeYYhsKv9sUwG1')
         
 class RecordingTestCase(TestCase):
-    def setUp(self):
-        self.meeting_recordings_dir = self.tempdir('meeting-recordings')
-        self.saved_meeting_recordings_dir = settings.MEETING_RECORDINGS_DIR
-        settings.MEETING_RECORDINGS_DIR = self.meeting_recordings_dir
-
-    def tearDown(self):
-        shutil.rmtree(self.meeting_recordings_dir)
-        settings.MEETING_RECORDINGS_DIR = self.saved_meeting_recordings_dir
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['MEETING_RECORDINGS_DIR']
 
     def test_page(self):
         meeting = MeetingFactory(type_id='ietf')

@@ -4,9 +4,8 @@
 
 import datetime
 import io
-import os
-import shutil
 
+from pathlib import Path
 from pyquery import PyQuery
 
 from django.conf import settings
@@ -84,17 +83,12 @@ class ViewCharterTests(TestCase):
             
 
 class EditCharterTests(TestCase):
-    def setUp(self):
-        self.charter_dir = self.tempdir('charter')
-        self.saved_charter_path = settings.CHARTER_PATH
-        settings.CHARTER_PATH = self.charter_dir
-
-    def tearDown(self):
-        settings.CHARTER_PATH = self.saved_charter_path
-        shutil.rmtree(self.charter_dir)
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['CHARTER_PATH']
 
     def write_charter_file(self, charter):
-        with io.open(os.path.join(self.charter_dir, "%s-%s.txt" % (charter.canonical_name(), charter.rev)), "w") as f:
+        with (Path(settings.CHARTER_PATH) /
+              ("%s-%s.txt" % (charter.canonical_name(), charter.rev))
+        ).open("w") as f:
             f.write("This is a charter.")
 
     def test_startstop_process(self):
@@ -513,7 +507,7 @@ class EditCharterTests(TestCase):
         self.assertEqual(charter.rev, next_revision(prev_rev))
         self.assertTrue("new_revision" in charter.latest_event().type)
 
-        with io.open(os.path.join(self.charter_dir, charter.canonical_name() + "-" + charter.rev + ".txt"), encoding='utf-8') as f:
+        with (Path(settings.CHARTER_PATH) / (charter.canonical_name() + "-" + charter.rev + ".txt")).open(encoding='utf-8') as f:
             self.assertEqual(f.read(), "Windows line\nMac line\nUnix line\n" + utf_8_snippet.decode('utf-8'))
 
     def test_submit_initial_charter(self):
@@ -792,7 +786,9 @@ class EditCharterTests(TestCase):
         self.assertTrue(not charter.ballot_open("approve"))
 
         self.assertEqual(charter.rev, "01")
-        self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "charter-ietf-%s-%s.txt" % (group.acronym, charter.rev))))
+        self.assertTrue(
+            (Path(settings.CHARTER_PATH) / ("charter-ietf-%s-%s.txt" % (group.acronym, charter.rev))).exists()
+        )
 
         self.assertEqual(len(outbox), 2)
         #

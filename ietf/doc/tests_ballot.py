@@ -1056,6 +1056,7 @@ class DeferUndeferTestCase(TestCase):
     # when charters support being deferred, be sure to test them here
 
     def setUp(self):
+        super().setUp()
         IndividualDraftFactory(name='draft-ietf-mars-test',states=[('draft','active'),('draft-iesg','iesg-eva')],
                                ad=Person.objects.get(user__username='ad'))
         DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',states=[('statchg','iesgeval')])

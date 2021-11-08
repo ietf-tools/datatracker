@@ -188,6 +188,7 @@ class TemplateChecksTestCase(TestCase):
     templates = {}                      # type: Dict[str, Template]
 
     def setUp(self):
+        super().setUp()
         set_coverage_checking(False)
         self.paths = list(get_template_paths())
         self.paths.sort()
@@ -199,7 +200,7 @@ class TemplateChecksTestCase(TestCase):
 
     def tearDown(self):
         set_coverage_checking(True)
-        pass
+        super().tearDown()
 
     def test_parse_templates(self):
         errors = []
@@ -294,6 +295,7 @@ class TemplateChecksTestCase(TestCase):
 class TestWikiGlueManagementCommand(TestCase):
 
     def setUp(self):
+        super().setUp()
         # We create temporary wiki and svn directories, and provide them to the management
         # command through command line switches.  We have to do it this way because the
         # management command reads in its own copy of settings.py in its own python
@@ -310,6 +312,7 @@ class TestWikiGlueManagementCommand(TestCase):
         shutil.rmtree(os.path.dirname(self.wiki_dir_pattern))
         shutil.rmtree(os.path.dirname(self.svn_dir_pattern))
         set_coverage_checking(True)
+        super().tearDown()
 
     def test_wiki_create_output(self):
         for group_type in ['wg','rg','ag','area','rag']:
@@ -423,6 +426,7 @@ class TestBowerStaticFiles(TestCase):
 class DraftTests(TestCase):
 
     def setUp(self):
+        super().setUp()
         file,_ = submission_file(name='draft-test-draft-class',rev='00',format='txt',templatename='test_submission.txt',group=None)
         self.draft = Draft(text=file.getvalue(),source='draft-test-draft-class-00.txt',name_from_source=False)
 

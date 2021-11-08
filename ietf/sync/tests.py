@@ -7,7 +7,6 @@ import io
 import json
 import datetime
 import quopri
-import shutil
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -219,22 +218,8 @@ ICANN
         
 
 class RFCSyncTests(TestCase):
-    def setUp(self):
-        self.save_id_dir = settings.INTERNET_DRAFT_PATH
-        self.save_archive_dir = settings.INTERNET_DRAFT_ARCHIVE_DIR
-        self.id_dir = self.tempdir('id')
-        self.archive_dir = self.tempdir('id-archive')
-        settings.INTERNET_DRAFT_PATH = self.id_dir
-        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
-
-    def tearDown(self):
-        shutil.rmtree(self.id_dir)
-        shutil.rmtree(self.archive_dir)
-        settings.INTERNET_DRAFT_PATH = self.save_id_dir
-        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.save_archive_dir
-
     def write_draft_file(self, name, size):
-        with io.open(os.path.join(self.id_dir, name), 'w') as f:
+        with io.open(os.path.join(settings.INTERNET_DRAFT_PATH, name), 'w') as f:
             f.write("a" * size)
 
     def test_rfc_index(self):
@@ -382,8 +367,8 @@ class RFCSyncTests(TestCase):
         self.assertEqual(doc.get_state_slug("draft-stream-ise"), "pub")
         self.assertEqual(doc.std_level_id, "ps")
         self.assertEqual(doc.pages, 42)
-        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, draft_filename)))
-        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, draft_filename)))
+        self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, draft_filename)))
+        self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, draft_filename)))
 
         # make sure we can apply it again with no changes
         changed = list(rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)))
