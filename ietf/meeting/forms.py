@@ -257,6 +257,7 @@ class InterimSessionModelForm(forms.ModelForm):
         session = super(InterimSessionModelForm, self).save(commit=False)
         session.group = self.group
         session.type_id = 'regular'
+        session.purpose_id = 'regular'
         if kwargs.get('commit', True) is True:
             super(InterimSessionModelForm, self).save(commit=True)
         return session
@@ -600,11 +601,32 @@ class SessionDetailsForm(forms.ModelForm):
 
     class Meta:
         model = Session
-        fields = ('name', 'short', 'purpose', 'type', 'requested_duration', 'remote_instructions')
+        fields = (
+            'name', 'short', 'purpose', 'type', 'requested_duration',
+            'on_agenda', 'remote_instructions', 'attendees', 'comments',
+        )
         labels = {'requested_duration': 'Length'}
+
+    def clean(self):
+        super().clean()
+        if 'purpose' in self.cleaned_data and (
+        'purpose' in self.changed_data or self.instance.pk is None
+        ):
+            self.cleaned_data['on_agenda'] = self.cleaned_data['purpose'].on_agenda
+
+        return self.cleaned_data
 
     class Media:
         js = ('ietf/js/meeting/session_details_form.js',)
+
+
+class SessionEditForm(SessionDetailsForm):
+    """Form to edit an existing session"""
+    def __init__(self, instance, *args, **kwargs):
+        kw_group = kwargs.pop('group', None)
+        if kw_group is not None and kw_group != instance.group:
+            raise ValueError('Session group does not match group keyword')
+        super().__init__(instance=instance, group=instance.group, *args, **kwargs)
 
 
 class SessionDetailsInlineFormset(forms.BaseInlineFormSet):

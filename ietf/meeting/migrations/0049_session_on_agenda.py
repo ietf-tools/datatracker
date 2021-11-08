@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('meeting', '0048_session_purpose'),
+        ('meeting', '0049_session_purpose'),
     ]
 
     operations = [
