@@ -12,7 +12,7 @@
 #
 # docker/run
 
-FROM ubuntu:hirsute
+FROM python:3.6-bullseye
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 # Default django runserver port
@@ -24,7 +24,7 @@ EXPOSE 3306
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get -y update && \
     # apt-get upgrade is normally not a good idea, but this is a dev container
-    apt-get upgrade && \
+    apt-get -y upgrade && \
     # Install all dependencies that are available as packages
     apt-get -y install --no-install-recommends \
         apache2-utils \
@@ -45,8 +45,6 @@ RUN apt-get -y update && \
         pigz \
         pv \
         python-is-python3 \
-        python3-dev \
-        python3-pip \
         rsyslog \
         unzip \
         yang-tools && \

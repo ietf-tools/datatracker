@@ -38,7 +38,10 @@ def start_web_driver():
     options.add_argument("disable-extensions")
     options.add_argument("disable-gpu") # headless needs this
     options.add_argument("no-sandbox") # docker needs this
-    return webdriver.Chrome(service=service, options=options)
+    # For selenium 3:
+    return webdriver.Chrome("chromedriver", options=options)
+    # For selenium 4:
+    # return webdriver.Chrome(service=service, options=options)
 
 
 def selenium_enabled():
