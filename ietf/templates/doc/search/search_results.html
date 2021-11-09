@@ -15,6 +15,7 @@
 
   {% comment %}
   Disable the js tablesort stuff for a truncate result, per Henrik.
+  FIXME: datatables support partial loading via AJAX, should redesign this
   {% endcomment %}
   <table class="table table-condensed table-striped {% if not meta.max %}tablesorter{% endif %}">
     <thead>
@@ -50,8 +51,8 @@
     {% regroup docs by search_heading as grouped_docs %}
 
       {% for doc_group in grouped_docs %}
-    <tbody>
-        <tr class="info">
+    <thead>
+        <tr class="table-info">
           <th></th>
           {% if color_row_positions %}
               <th colspan="{{ meta.headers|length }}">
@@ -61,7 +62,7 @@
 	    {{ doc_group.grouper|plural:doc_group.list }} ({{doc_group.list|length}} {{"hit"|plural:doc_group.list}})
           </th>
         </tr>
-    </tbody>
+    </thead>
 
     <tbody>
         {% for doc in doc_group.list %}
