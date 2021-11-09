@@ -57,6 +57,10 @@ $enable-negative-margins: true;
 // to be run manually due to parcel limitations.
 // @import "../../../node_modules/bootstrap-icons/font/bootstrap-icons";
 
+// For now, let's stick with font-awesome v4:
+$fa-font-path: "~/node_modules/font-awesome/fonts";
+@import "~/node_modules/font-awesome/scss/font-awesome";
+
 // Install the datatables.net bootstrap5 styles.
 // FIXME: Including this with ~ fails for some odd reason?
 @import "../../../node_modules/datatables.net-bs5/css/dataTables.bootstrap5";
