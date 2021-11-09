@@ -5,7 +5,7 @@
 from . import checks                           # pyflakes:ignore
 
 # Don't add patch number here:
-__version__ = "7.39.1.dev1"
+__version__ = "7.39.1.dev2"
 
 # set this to ".p1", ".p2", etc. after patching
 __patch__   = ""
