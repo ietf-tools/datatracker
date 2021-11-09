@@ -2592,6 +2592,7 @@ class ProceedingsMaterialTests(IetfSeleniumTestCase):
                         'URL field should be shown by default')
 
 
+@ifSeleniumEnabled
 class EditTimeslotsTests(IetfSeleniumTestCase):
     """Test the timeslot editor"""
     def setUp(self):
