@@ -10,7 +10,7 @@
       {% if group.state_id == "proposed" %}Proposed milestones{% else %}Milestones{% endif %}
     {% endif %}
   </h2>
-  <table class="table table-condensed table-striped{% if group.uses_milestone_dates %} tablesorter{% endif %}">
+  <table class="table table-sm table-striped{% if group.uses_milestone_dates %} tablesorter{% endif %}">
     <thead>
       <tr>
         <th>{% if group.uses_milestone_dates %}Date{% else %}Order{% endif %}</th>

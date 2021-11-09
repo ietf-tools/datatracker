@@ -14,7 +14,7 @@
   {% regroup adm by parent as grouped_groups %}
   {% for grouptype in grouped_groups %}
   <h1>Active {% firstof grouptype.grouper.verbose_name grouptype.grouper.name 'Top-level Administration' %} Groups</h1>
-  <table class="table table-condensed table-striped tablesorter">
+  <table class="table table-sm table-striped tablesorter">
     <thead>
       <tr>
         <th>{{grouptype.grouper}}</th>

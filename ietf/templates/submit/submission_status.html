@@ -136,7 +136,7 @@
     {% endif %}
   {% endif %}
 
-  <table class="table table-condensed table-striped">
+  <table class="table table-sm table-striped">
     <tr>
       <th>Document</th>
       <td>
@@ -343,14 +343,14 @@
   {% else %}
     {% if submission.submitter %}
       <h3>Submitter information</h3>
-      <table class="table table-condensed table-striped">
+      <table class="table table-sm table-striped">
         <tr><th>Name</th><td>{{ submission.submitter_parsed.name }}</td></tr>
         <tr><th>Email address</th><td>{{ submission.submitter_parsed.email }}</td></tr>
       </table>
     {% endif %}
     {% if submission.replaces %}
       <h3>Replaced documents</h3>
-      <table class="table table-condensed table-striped">
+      <table class="table table-sm table-striped">
         <tr><th>Replaces</th><td>{{ submission.replaces|split:","|join:", "|urlize_ietf_docs }}</td></tr>
       </table>
     {% endif %}
@@ -412,7 +412,7 @@
 
   <h2>History</h2>
 
-  <table  id="history" class="table table-condensed table-striped">
+  <table  id="history" class="table table-sm table-striped">
     <thead>
       <tr><th>Date</th><th>By</th><th>Event</th></tr>
     </thead>

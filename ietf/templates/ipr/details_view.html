@@ -125,7 +125,7 @@
         {% if ipr|to_class_name == "ThirdPartyIprDisclosure" %}Possible{% endif %}
         Patent Holder/Applicant ("Patent Holder")</h2>
 
-	  <table class="table-condensed col-md-12">
+	  <table class="table-sm col-md-12">
 	    {% if prev %}
 	    {% if prev.state.slug == "posted" %}
 	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
@@ -143,7 +143,7 @@
         {% if ipr.holder_contact_name or ipr.holder_contact_info %}
           <h2>{% cycle section %}. Patent Holder's Contact for Licence Application</h2>
 
-	  <table class="table-condensed col-md-12">
+	  <table class="table-sm col-md-12">
 	    {% if prev %}
 	    {% if prev.state.slug == "posted" %}
 	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
@@ -176,7 +176,7 @@
         {% if ipr.ietfer_name or ipr.ietfer_contact_email or ipr.ietfer_contact_info %}
           <h2>{% cycle section %}. Contact Information for the IETF Participant Whose Personal Belief Triggered this Disclosure</h2>
 
-	  <table class="table-condensed col-md-12">
+	  <table class="table-sm col-md-12">
 	    {% if prev %}
 	    {% if prev.state.slug == "posted" %}
 	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
@@ -208,7 +208,7 @@
         {% if ipr.iprdocrel_set.all or ipr.other_designations %}
           <h2>{% cycle section %}. IETF Document or Other Contribution to Which this IPR Disclosure Relates</h2>
 
-	  <table class="table-condensed col-md-12">
+	  <table class="table-sm col-md-12">
 	    {% if prev %}
 	    {% if prev.state.slug == "posted" %}
 	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
@@ -270,7 +270,7 @@
 
           <p>A. For granted patents or published pending patent applications, please provide the following information:</p>
 
-	  <table class="table-condensed col-md-12">
+	  <table class="table-sm col-md-12">
 	    {% if prev %}
 	    {% if prev.state.slug == "posted" %}
 	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
@@ -287,7 +287,7 @@
 
           <p>B. Does this disclosure relate to an unpublished pending patent application?:</p>
           
-	  <table class="table-condensed col-md-12">
+	  <table class="table-sm col-md-12">
 	    {% if prev %}
 	    {% if prev.state.slug == "posted" %}
 	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
@@ -326,7 +326,7 @@
 	  </div>
 	  {% endif %}
 
-	  <table class="table-condensed col-md-12">
+	  <table class="table-sm col-md-12">
 	    {% if prev %}
 	    {% if prev.state.slug == "posted" %}
 	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
@@ -353,7 +353,7 @@
         {% elif ipr.statement %}
           <h2>{% cycle section %}. Statement</h2>
 
-	  <table class="table-condensed col-md-12">
+	  <table class="table-sm col-md-12">
 	    {% if prev %}
 	    {% if prev.state.slug == "posted" %}
 	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
@@ -371,7 +371,7 @@
 
         <h2>{% cycle section %}. Contact Information of Submitter of this Form</h2>
 
-	  <table class="table-condensed col-md-12">
+	  <table class="table-sm col-md-12">
 	    {% if prev %}
 	    {% if prev.state.slug == "posted" %}
 	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>
@@ -395,7 +395,7 @@
         {% if ipr.notes %}
           <h2>{% cycle section %}. Other Notes</h2>
 
-	  <table class="table-condensed col-md-12">
+	  <table class="table-sm col-md-12">
 	    {% if prev %}
 	    {% if prev.state.slug == "posted" %}
 	    <tr><th class="ipr-prev">Previous (<a href="{% url "ietf.ipr.views.show" id=prev.id %}">#{{prev.id}}</a>)</th><th></th><th>This (#{{ipr.id}})</th></tr>

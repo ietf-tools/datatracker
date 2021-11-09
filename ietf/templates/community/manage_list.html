@@ -27,7 +27,7 @@
 
   {% if individually_added %}
     <p>The list tracks {{ individually_added|length }} individually added document{{ individually_added|length|pluralize }}:</p>
-    <table class="table table-condensed table-striped">
+    <table class="table table-sm table-striped">
       <tbody>
         {% for d in individually_added %}
           <tr>
@@ -67,7 +67,7 @@
   <p>You can track documents with a search rule. When a document fulfills the search criteria, it will automatically show up in the list.</p>
 
   {% if rules %}
-  <table class="table table-condensed table-striped">
+  <table class="table table-sm table-striped">
     <thead>
       <tr><th>Rule</th><th>Value</th><th>Documents</th><th></th></tr>
     </thead>

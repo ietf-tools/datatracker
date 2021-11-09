@@ -93,7 +93,7 @@
           Check boxes below to select individual sessions.
         </p>
 
-        <table id="agenda-table" class="table table-condensed table-striped">
+        <table id="agenda-table" class="table table-sm table-striped">
           {% for item in filtered_assignments %}
 
             {% ifchanged item.timeslot.time|date:"Y-m-d" %}

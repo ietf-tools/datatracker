@@ -16,7 +16,7 @@
   {% else %}
     <p class="alert alert-info">Total number of IPR disclosures found: <b>{{ iprs|length }}</b>.</p>
 
-    <table class="table table-condensed table-striped tablesorter">
+    <table class="table table-sm table-striped tablesorter">
       <thead><th>Date</th><th>ID</th><th>Statement</th></thead>
         {% for alias in docs %}
       <tbody>

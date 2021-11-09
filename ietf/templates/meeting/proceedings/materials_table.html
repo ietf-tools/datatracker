@@ -4,7 +4,7 @@
 {% if proceedings_materials|list_extract:1|keep_only:'active' or user|has_role:'Secretariat' %}
   <!-- Proceedings materials not tied to groups -->
   <h2 class="anchor-target" id="proceedings-materials">Proceedings Materials</h2>
-  <table class="table table-condensed table-striped">
+  <table class="table table-sm table-striped">
     <thead>
     <tr>
       {% if user|has_role:'Secretariat' %}

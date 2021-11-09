@@ -55,7 +55,7 @@
       <div class="panel panel-default">
         <div class="panel-heading">Agenda, Minutes, and Bluesheets</div>
         <div class="panel-body">
-          <table class="table table-condensed table-striped">
+          <table class="table table-sm table-striped">
             {% for pres in session.filtered_artifacts %}
               <tr>
                 {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
@@ -96,7 +96,7 @@
       <div class="panel panel-default">
         <div class="panel-heading" data-toggle="tooltip" title="Drag and drop to reorder slides">Slides</div>
         <div class="panel-body">
-          <table class="table table-condensed table-striped slides" id="slides_{{session.pk}}">
+          <table class="table table-sm table-striped slides" id="slides_{{session.pk}}">
            <tbody session="{{session.pk}}" addToSession="{% url 'ietf.meeting.views.ajax_add_slides_to_session' session_id=session.pk num=session.meeting.number %}" removeFromSession="{% url 'ietf.meeting.views.ajax_remove_slides_from_session' session_id=session.pk num=session.meeting.number %}" reorderInSession="{% url 'ietf.meeting.views.ajax_reorder_slides_in_session' session_id=session.pk num=session.meeting.number %}">
             {% for pres in session.filtered_slides %}
               <tr name="{{pres.document.name}}">
@@ -129,7 +129,7 @@
         <div class="panel-heading">Drafts
         </div>
         <div class="panel-body">
-          <table class="table table-condensed table-striped">
+          <table class="table table-sm table-striped">
             {% for pres in session.filtered_drafts %}
               <tr>
                 <td>
