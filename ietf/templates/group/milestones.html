@@ -25,8 +25,7 @@
   	    <span class="label label-success">{{ milestone.resolved }}</span>
   	  {% else %}
         {% if group.uses_milestone_dates %}
-           <!-- The first hidden digit is to help tablesorter see this as a date -->
-           <span style="display:none">1</span> {{ milestone.due|date:"M Y" }} 
+          {{ milestone.due|date:"M Y" }}
         {% else %}
           {% if forloop.first %}Last{% endif %}
           {% if forloop.last %}Next{% endif %}

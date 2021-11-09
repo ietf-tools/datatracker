@@ -5,7 +5,7 @@
 {% load ietf_filters static %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}Liaison statements to the IETF - guidelines for completing the "To:" and "Cc:" fields{% endblock %}
@@ -71,5 +71,5 @@
 {% endblock %}
 
 {% block js %}
-<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+<script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

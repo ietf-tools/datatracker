@@ -5,7 +5,7 @@
 {% load ietf_filters static classname %}
 
 {% block pagehead %}
-<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+<link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 <link rel="stylesheet" href="{% static "fullcalendar/core/main.css" %}">
 <link rel="stylesheet" href="{% static "fullcalendar/daygrid/main.css" %}">
 
@@ -173,7 +173,7 @@
 {% endblock %}
 
 {% block js %}
-<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+<script src="{% static "ietf/js/datatables.js" %}"></script>
 <script src="{% static 'fullcalendar/core/main.js' %}"></script>
 <script src="{% static 'fullcalendar/daygrid/main.js' %}"></script>
     <script src="{% static 'moment/min/moment.min.js' %}"></script>

@@ -7,12 +7,7 @@
 
 {% block pagehead %}
   <link rel="alternate" type="application/atom+xml" href="/feed/iesg-agenda/">
-  <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
-  <style>
-    .tablesorter-bootstrap .bootstrap-icon-unsorted {
-	background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAAOCAMAAADOvxanAAAAVFBMVEUAAABCQkJZWVkZGRnJyckgICAZGRkZGRn8/PweHh4dHR0aGhoaGhpUVFQbGxvQ0NDc3NxMTExSUlIbGxvr6+s4ODhKSkogICAtLS00NDQzMzMnJydSEPrQAAAAGHRSTlMA1ssZRLgdAQbDyisqsZo8QdXUq0r9xPepSRwiAAAAX0lEQVQI13XHSQKAIAwEwQAKxn13Ev7/T2Pu9qmarJKPXIicI4PH4hxaKNrhm2S8bJK5h4YzKHrzJNtK6yYT/TdXzpS5zuYg4MSQYF6i4IHExdw1UVRi05HPrrvT53a+qyMFC9t04gcAAAAASUVORK5CYII=)
-    }
-  </style>
+  <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
 {% endblock %}
 
 {% block title %}Documents on future IESG telechat agendas{% endblock %}
@@ -90,5 +85,5 @@
 {% endblock content %}
 
 {% block js %}
-<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+<script src="{% static "ietf/js/datatables.js" %}"></script>
 {% endblock %}

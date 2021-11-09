@@ -5,7 +5,7 @@
 {% load ietf_filters static django_bootstrap5 %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+  <link rel="stylesheet" href="{% static "ietf/css/datatables.css" %}">
   <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
 {% endblock %}
 
@@ -252,7 +252,7 @@
 {% endblock %}
 
 {% block js %}
-  <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+  <script src="{% static "ietf/js/datatables.js" %}"></script>
   <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
   {% if stats_type == "time" %}
     <script src="{% static 'flot/jquery.flot.min.js' %}"></script>
