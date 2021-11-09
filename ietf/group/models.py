@@ -8,25 +8,23 @@ import jsonfield
 import os
 import re
 
-from urllib.parse import urljoin
-
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models.deletion import CASCADE
+from django.db.models.deletion import CASCADE, PROTECT
 from django.dispatch import receiver
-
-#from simple_history.models import HistoricalRecords
 
 import debug                            # pyflakes:ignore
 
 from ietf.group.colors import fg_group_colors, bg_group_colors
-from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName, AgendaTypeName, ExtResourceName
+from ietf.name.models import (GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName,
+                              AgendaTypeName, AgendaFilterTypeName, ExtResourceName, SessionPurposeName)
 from ietf.person.models import Email, Person
 from ietf.utils.db import IETFJSONField
 from ietf.utils.mail import formataddr, send_mail_text
 from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.validators import JSONForeignKeyListValidator
 
 
 class GroupInfo(models.Model):
@@ -167,30 +165,6 @@ class Group(GroupInfo):
     def bg_color(self):
         return bg_group_colors[self.upcase_acronym]
 
-    def json_url(self):
-        return "/group/%s.json" % (self.acronym,)
-
-    def json_dict(self, host_scheme):
-        group1= dict()
-        group1['href'] = urljoin(host_scheme, self.json_url())
-        group1['acronym'] = self.acronym
-        group1['name']    = self.name
-        group1['state']   = self.state.slug
-        group1['type']    = self.type.slug
-        if self.parent is not None:
-            group1['parent_href']  = urljoin(host_scheme, self.parent.json_url())
-        # uncomment when people URL handle is created
-        try:
-            if self.ad_role() is not None:
-                group1['ad_href']      = urljoin(host_scheme, self.ad_role().person.json_url())
-        except Person.DoesNotExist:
-            pass
-        group1['list_email'] = self.list_email
-        group1['list_subscribe'] = self.list_subscribe
-        group1['list_archive'] = self.list_archive
-        group1['comments']     = self.comments
-        return group1
-
     def liaison_approvers(self):
         '''Returns roles that have liaison statement approval authority for group'''
 
@@ -248,6 +222,7 @@ validate_comma_separated_roles = RegexValidator(
     code='invalid',
 )
 
+
 class GroupFeatures(models.Model):
     type = OneToOneField(GroupTypeName, primary_key=True, null=False, related_name='features')
     #history = HistoricalRecords()
@@ -275,6 +250,7 @@ class GroupFeatures(models.Model):
     customize_workflow      = models.BooleanField("Workflow",   default=False)
     is_schedulable          = models.BooleanField("Schedulable",default=False)
     show_on_agenda          = models.BooleanField("On Agenda",  default=False)
+    agenda_filter_type      = models.ForeignKey(AgendaFilterTypeName, default='none', on_delete=PROTECT)
     req_subm_approval       = models.BooleanField("Subm. Approval",  default=False)
     #
     agenda_type             = models.ForeignKey(AgendaTypeName, null=True, default="ietf", on_delete=CASCADE)
@@ -289,6 +265,9 @@ class GroupFeatures(models.Model):
     matman_roles            = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=["ad","chair","delegate","secr"])
     role_order              = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=["chair","secr","member"],
                                                 help_text="The order in which roles are shown, for instance on photo pages.  Enter valid JSON.")
+    session_purposes        = IETFJSONField(max_length=256, accepted_empty_values=[[], {}], blank=False, default=[],
+                                                  help_text="Allowed session purposes for this group type",
+                                                  validators=[JSONForeignKeyListValidator(SessionPurposeName)])
 
 
 class GroupHistory(GroupInfo):

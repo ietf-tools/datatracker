@@ -89,7 +89,13 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         s2.save()
         SchedTimeSessAssignment.objects.filter(session=s1).delete()
 
-        s2b = Session.objects.create(meeting=meeting, group=s2.group, attendees=10, requested_duration=datetime.timedelta(minutes=60), type_id='regular')
+        s2b = SessionFactory(
+            meeting=meeting,
+            group=s2.group,
+            attendees=10,
+            requested_duration=datetime.timedelta(minutes=60),
+            add_to_schedule=False,
+        )
 
         SchedulingEvent.objects.create(
             session=s2b,
@@ -110,7 +116,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
 
         WebDriverWait(self.driver, 2).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, '.edit-meeting-schedule')))
 
-        self.assertEqual(len(self.driver.find_elements(By.CSS_SELECTOR, '.session')), 3)
+        self.assertEqual(len(self.driver.find_elements(By.CSS_SELECTOR, '.session.purpose-regular')), 3)
 
         # select - show session info
         s2_element = self.driver.find_element(By.CSS_SELECTOR, '#session{}'.format(s2.pk))
@@ -167,7 +173,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         
         sorted_pks = [s.pk for s in sorted([s1, s2, s2b], key=lambda s: (s.requested_duration, s.group.parent.acronym, s.group.acronym, s.pk))]
         self.driver.find_element(By.CSS_SELECTOR, '[name=sort_unassigned] option[value=duration]').click()
-        self.assertTrue(self.driver.find_element(By.CSS_SELECTOR, '.unassigned-sessions .drop-target #session{} + #session{}'.format(*sorted_pks)))
+        self.assertTrue(self.driver.find_element(By.CSS_SELECTOR, '.unassigned-sessions .drop-target #session{} ~ #session{}'.format(*sorted_pks)))
         
         sorted_pks = [s.pk for s in sorted([s1, s2, s2b], key=lambda s: (int(bool(s.comments)), s.group.parent.acronym, s.group.acronym, s.requested_duration, s.pk))]
         self.driver.find_element(By.CSS_SELECTOR, '[name=sort_unassigned] option[value=comments]').click()
@@ -258,7 +264,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
                          'Session should be selectable when parent enabled')
 
         # hide timeslots
-        self.driver.find_element(By.CSS_SELECTOR, ".timeslot-group-toggles button").click()
+        self.driver.find_element(By.CSS_SELECTOR, "#timeslot-toggle-modal-open").click()
         self.assertTrue(self.driver.find_element(By.CSS_SELECTOR, "#timeslot-group-toggles-modal").is_displayed())
         self.driver.find_element(By.CSS_SELECTOR, "#timeslot-group-toggles-modal [value=\"{}\"]".format("ts-group-{}-{}".format(slot2.time.strftime("%Y%m%d-%H%M"), int(slot2.duration.total_seconds() / 60)))).click()
         self.driver.find_element(By.CSS_SELECTOR, "#timeslot-group-toggles-modal [data-dismiss=\"modal\"]").click()
@@ -760,18 +766,8 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         all of the events needed by the editor.
         """
         # Set up a meeting and a schedule a plain user can edit
-        meeting = make_meeting_test_data()
-        schedule = Schedule.objects.filter(meeting=meeting, owner__user__username="plain").first()
-        sessions = meeting.session_set.filter(type_id='regular')
-        timeslots = meeting.timeslot_set.filter(type_id='regular')
-        self.assertGreaterEqual(timeslots.count(), sessions.count(),
-                                'Need a timeslot for each session')
-        for index, session in enumerate(sessions):
-            SchedTimeSessAssignment.objects.create(
-                schedule=schedule,
-                timeslot=timeslots[index],
-                session=session,
-            )
+        schedule = ScheduleFactory(meeting__type_id='ietf', owner__user__username="plain")
+        meeting = schedule.meeting
 
         # Open the editor
         self.login()
@@ -780,7 +776,6 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
             kwargs=dict(num=meeting.number, name=schedule.name, owner=schedule.owner_email())
         )
         self.driver.get(url)
-
         # Check that the drop target for unassigned sessions is actually empty
         drop_target = self.driver.find_element(By.CSS_SELECTOR,
             '.unassigned-sessions .drop-target'
@@ -859,7 +854,7 @@ class ScheduleEditTests(IetfSeleniumTestCase):
         ss = list(SchedTimeSessAssignment.objects.filter(session__meeting__number=72,session__group__acronym='mars',schedule__name='test-schedule')) # pyflakes:ignore
 
         self.login()
-        url = self.absreverse('ietf.meeting.views.edit_schedule',kwargs=dict(num='72',name='test-schedule',owner='plain@example.com'))
+        url = self.absreverse('ietf.meeting.views.edit_meeting_schedule',kwargs=dict(num='72',name='test-schedule',owner='plain@example.com'))
         self.driver.get(url)
 
         # driver.get() will wait for scripts to finish, but not ajax
@@ -1197,7 +1192,7 @@ class AgendaTests(IetfSeleniumTestCase):
         for item in self.get_expected_items():
             if item.session.name:
                 label = item.session.name
-            elif item.timeslot.type_id == 'break':
+            elif item.slot_type().slug == 'break':
                 label = item.timeslot.name
             elif item.session.group:
                 label = item.session.group.name
@@ -1308,6 +1303,7 @@ class AgendaTests(IetfSeleniumTestCase):
         self.assert_agenda_item_visibility([group_acronym])
         
         # Click the group button again
+        group_button = self.get_agenda_filter_group_button(wait, group_acronym)
         group_button.click()
 
         # Check visibility
@@ -1479,7 +1475,7 @@ class AgendaTests(IetfSeleniumTestCase):
         ics_url = self.absreverse('ietf.meeting.views.agenda_ical')
         
         # parse out the events
-        agenda_rows = self.driver.find_elements(By.CSS_SELECTOR, '[id^="row-"]')
+        agenda_rows = self.driver.find_elements(By.CSS_SELECTOR, '[id^="row-"]:not(.info)')
         visible_rows = [r for r in agenda_rows if r.is_displayed()]
         sessions = [self.session_from_agenda_row_id(row.get_attribute("id")) 
                     for row in visible_rows]
@@ -1736,6 +1732,16 @@ class AgendaTests(IetfSeleniumTestCase):
             self.fail('iframe href not updated to contain selected time zone')
 
     def test_agenda_session_selection(self):
+        # create a second mars session to test selection of specific sessions
+        SessionFactory(
+            meeting=self.meeting,
+            group__acronym='mars',
+            add_to_schedule=False,
+        ).timeslotassignments.create(
+            timeslot=TimeSlotFactory(meeting=self.meeting, duration=datetime.timedelta(minutes=60)),
+            schedule=self.meeting.schedule,
+        )
+
         wait = WebDriverWait(self.driver, 2)
         url = self.absreverse('ietf.meeting.views.agenda_personalize', kwargs={'num': self.meeting.number})
         self.driver.get(url)
@@ -1752,47 +1758,52 @@ class AgendaTests(IetfSeleniumTestCase):
             'Sessions were selected before being clicked',
         )
 
-        mars_checkbox = self.driver.find_element(By.CSS_SELECTOR, 'input[type="checkbox"][name="selected-sessions"][data-filter-item="mars"]')
+        mars_sessa_checkbox = self.driver.find_element(By.CSS_SELECTOR, 'input[type="checkbox"][name="selected-sessions"][data-filter-item="mars-sessa"]')
+        mars_sessb_checkbox = self.driver.find_element(By.CSS_SELECTOR, 'input[type="checkbox"][name="selected-sessions"][data-filter-item="mars-sessb"]')
+        farfut_button = self.driver.find_element(By.CSS_SELECTOR, 'button[data-filter-item="farfut"]')
         break_checkbox = self.driver.find_element(By.CSS_SELECTOR, 'input[type="checkbox"][name="selected-sessions"][data-filter-item="secretariat-sessb"]')
         registration_checkbox = self.driver.find_element(By.CSS_SELECTOR, 'input[type="checkbox"][name="selected-sessions"][data-filter-item="secretariat-sessa"]')
-        secretariat_button = self.driver.find_element(By.CSS_SELECTOR, 'button[data-filter-item="secretariat"]')
 
-        mars_checkbox.click()  # select mars session
+        mars_sessa_checkbox.click()  # select mars session
         try:
             wait.until(
-                lambda driver: all('?show=mars' in el.get_attribute('href') for el in elements_to_check)
+                lambda driver: all('?show=mars-sessa' in el.get_attribute('href') for el in elements_to_check)
             )
         except TimeoutException:
             self.fail('Some agenda links were not updated when mars session was selected')
-        self.assertTrue(mars_checkbox.is_selected(), 'mars session checkbox was not selected after being clicked')
+        self.assertTrue(mars_sessa_checkbox.is_selected(), 'mars session A checkbox was not selected after being clicked')
+        self.assertFalse(mars_sessb_checkbox.is_selected(), 'mars session B checkbox was selected without being clicked')
         self.assertFalse(break_checkbox.is_selected(), 'break checkbox was selected without being clicked')
         self.assertFalse(registration_checkbox.is_selected(), 'registration checkbox was selected without being clicked')
 
-        mars_checkbox.click()  # deselect mars session
+        mars_sessa_checkbox.click()  # deselect mars session
         try:
             wait.until(
-                lambda driver: not any('?show=mars' in el.get_attribute('href') for el in elements_to_check)
+                lambda driver: not any('?show=mars-sessa' in el.get_attribute('href') for el in elements_to_check)
             )
         except TimeoutException:
             self.fail('Some agenda links were not updated when mars session was de-selected')
-        self.assertFalse(mars_checkbox.is_selected(), 'mars session checkbox was still selected after being clicked')
+        self.assertFalse(mars_sessa_checkbox.is_selected(), 'mars session A checkbox was still selected after being clicked')
+        self.assertFalse(mars_sessb_checkbox.is_selected(), 'mars session B checkbox was selected without being clicked')
         self.assertFalse(break_checkbox.is_selected(), 'break checkbox was selected without being clicked')
         self.assertFalse(registration_checkbox.is_selected(), 'registration checkbox was selected without being clicked')
 
-        secretariat_button.click()  # turn on all secretariat sessions
+        farfut_button.click()  # turn on all farfut area sessions
+        mars_sessa_checkbox.click()  # but turn off mars session a
         break_checkbox.click()  # also select the break
 
         try:
             wait.until(
                 lambda driver: all(
-                    '?show=secretariat&hide=secretariat-sessb' in el.get_attribute('href')
+                    '?show=farfut,secretariat-sessb&hide=mars-sessa' in el.get_attribute('href')
                     for el in elements_to_check
                 ))
         except TimeoutException:
-            self.fail('Some agenda links were not updated when secretariat group but not break was selected')
-        self.assertFalse(mars_checkbox.is_selected(), 'mars session checkbox was unexpectedly selected')
-        self.assertFalse(break_checkbox.is_selected(), 'break checkbox was unexpectedly selected')
-        self.assertTrue(registration_checkbox.is_selected(), 'registration checkbox was expected to be selected')
+            self.fail('Some agenda links were not updated when farfut area was selected')
+        self.assertFalse(mars_sessa_checkbox.is_selected(), 'mars session A checkbox was unexpectedly selected')
+        self.assertTrue(mars_sessb_checkbox.is_selected(), 'mars session B checkbox was expected to be selected')
+        self.assertTrue(break_checkbox.is_selected(), 'break checkbox was expected to be selected')
+        self.assertFalse(registration_checkbox.is_selected(), 'registration checkbox was unexpectedly selected')
 
 @ifSeleniumEnabled
 class WeekviewTests(IetfSeleniumTestCase):
@@ -1814,7 +1825,7 @@ class WeekviewTests(IetfSeleniumTestCase):
         for item in self.get_expected_items():
             if item.session.name:
                 expected_name = item.session.name
-            elif item.timeslot.type_id == 'break':
+            elif item.slot_type().slug == 'break':
                 expected_name = item.timeslot.name
             else:
                 expected_name = item.session.group.name
@@ -1839,7 +1850,7 @@ class WeekviewTests(IetfSeleniumTestCase):
             for item in self.get_expected_items():
                 if item.session.name:
                     expected_name = item.session.name
-                elif item.timeslot.type_id == 'break':
+                elif item.slot_type().slug == 'break':
                     expected_name = item.timeslot.name
                 else:
                     expected_name = item.session.group.name
@@ -2005,6 +2016,7 @@ class InterimTests(IetfSeleniumTestCase):
         sg_interim = make_interim_meeting(somegroup, datetime.date.today() + datetime.timedelta(days=20))
         sg_sess = sg_interim.session_set.first()
         sg_slot = sg_sess.timeslotassignments.first().timeslot
+        sg_sess.purpose_id = 'plenary'
         sg_sess.type_id = 'plenary'
         sg_slot.type_id = 'plenary'
         sg_sess.save()
@@ -2580,6 +2592,166 @@ class ProceedingsMaterialTests(IetfSeleniumTestCase):
                         'URL field should be shown by default')
 
 
+@ifSeleniumEnabled
+class EditTimeslotsTests(IetfSeleniumTestCase):
+    """Test the timeslot editor"""
+    def setUp(self):
+        super().setUp()
+        self.meeting: Meeting = MeetingFactory(
+            type_id='ietf',
+            number=120,
+            date=datetime.datetime.today() + datetime.timedelta(days=10),
+            populate_schedule=False,
+        )
+        self.edit_timeslot_url = self.absreverse(
+            'ietf.meeting.views.edit_timeslots',
+            kwargs=dict(num=self.meeting.number),
+        )
+        self.wait = WebDriverWait(self.driver, 2)
+
+    def do_delete_test(self, selector, keep, delete, cancel=False):
+        self.login('secretary')
+        self.driver.get(self.edit_timeslot_url)
+        delete_button = self.wait.until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, selector)
+            ))
+        delete_button.click()
+
+        if cancel:
+            cancel_button = self.wait.until(
+                expected_conditions.element_to_be_clickable(
+                    (By.CSS_SELECTOR, '#delete-modal button[data-dismiss="modal"]')
+                ))
+            cancel_button.click()
+        else:
+            confirm_button = self.wait.until(
+                expected_conditions.element_to_be_clickable(
+                    (By.CSS_SELECTOR, '#confirm-delete-button')
+                ))
+            confirm_button.click()
+
+        self.wait.until(
+            expected_conditions.invisibility_of_element_located(
+                (By.CSS_SELECTOR, '#delete-modal')
+            ))
+
+        if cancel:
+            keep.extend(delete)
+            delete = []
+
+        self.assertEqual(
+            TimeSlot.objects.filter(pk__in=[ts.pk for ts in delete]).count(),
+            0,
+            'Not all expected timeslots deleted',
+        )
+        self.assertEqual(
+            TimeSlot.objects.filter(pk__in=[ts.pk for ts in keep]).count(),
+            len(keep),
+            'Not all expected timeslots kept'
+        )
+
+    def do_delete_timeslot_test(self, cancel=False):
+        delete = [TimeSlotFactory(meeting=self.meeting)]
+        keep = [TimeSlotFactory(meeting=self.meeting)]
+
+        self.do_delete_test(
+            '#timeslot-table #timeslot{} .delete-button'.format(delete[0].pk),
+            keep,
+            delete
+        )
+
+    def test_delete_timeslot(self):
+        """Delete button for a timeslot should delete that timeslot"""
+        self.do_delete_timeslot_test(cancel=False)
+
+    def test_delete_timeslot_cancel(self):
+        """Timeslot should not be deleted on cancel"""
+        self.do_delete_timeslot_test(cancel=True)
+
+    def do_delete_time_interval_test(self, cancel=False):
+        delete_day = self.meeting.date.date()
+        delete_time = datetime.time(hour=10)
+        other_day = self.meeting.get_meeting_date(1).date()
+        other_time = datetime.time(hour=12)
+        duration = datetime.timedelta(minutes=60)
+
+        delete: [TimeSlot] = TimeSlotFactory.create_batch(
+            2,
+            meeting=self.meeting,
+            time=datetime.datetime.combine(delete_day, delete_time),
+            duration=duration)
+
+        keep: [TimeSlot] = [
+            TimeSlotFactory(
+                meeting=self.meeting,
+                time=datetime.datetime.combine(day, time),
+                duration=duration
+            )
+            for (day, time) in (
+                # combinations of day/time that should not be deleted
+                (delete_day, other_time),
+                (other_day, delete_time),
+                (other_day, other_time),
+            )
+        ]
+
+        selector = (
+            '#timeslot-table '
+            '.delete-button[data-delete-scope="column"]'
+            '[data-col-id="{}T{}-{}"]'.format(
+                delete_day.isoformat(),
+                delete_time.strftime('%H:%M'),
+                (datetime.datetime.combine(delete_day, delete_time) + duration).strftime(
+                    '%H:%M'
+                ))
+        )
+        self.do_delete_test(selector, keep, delete, cancel)
+
+    def test_delete_time_interval(self):
+        """Delete button for a time interval should delete all timeslots in that interval"""
+        self.do_delete_time_interval_test(cancel=False)
+
+    def test_delete_time_interval_cancel(self):
+        """Should not delete a time interval on cancel"""
+        self.do_delete_time_interval_test(cancel=True)
+
+    def do_delete_day_test(self, cancel=False):
+        delete_day = self.meeting.date.date()
+        times = [datetime.time(hour=10), datetime.time(hour=12)]
+        other_days = [self.meeting.get_meeting_date(d).date() for d in range(1, 3)]
+
+        delete: [TimeSlot] = [
+            TimeSlotFactory(
+                meeting=self.meeting,
+                time=datetime.datetime.combine(delete_day, time),
+            ) for time in times
+        ]
+
+        keep: [TimeSlot] = [
+            TimeSlotFactory(
+                meeting=self.meeting,
+                time=datetime.datetime.combine(day, time),
+            ) for day in other_days for time in times
+        ]
+
+        selector = (
+            '#timeslot-table '
+            '.delete-button[data-delete-scope="day"][data-date-id="{}"]'.format(
+                delete_day.isoformat()
+            )
+        )
+        self.do_delete_test(selector, keep, delete, cancel)
+
+    def test_delete_day(self):
+        """Delete button for a day should delete all timeslots on that day"""
+        self.do_delete_day_test(cancel=False)
+
+    def test_delete_day_cancel(self):
+        """Should not delete a day on cancel"""
+        self.do_delete_day_test(cancel=True)
+
+
 # The following are useful debugging tools
 
 # If you add this to a LiveServerTestCase and run just this test, you can browse
@@ -2599,5 +2771,5 @@ class ProceedingsMaterialTests(IetfSeleniumTestCase):
 #        make_meeting_test_data()
 #
 #    def testOpenSchedule(self):
-#        url = urlreverse('ietf.meeting.views.edit_schedule', kwargs=dict(num='72',name='test-schedule'))
+#        url = urlreverse('ietf.meeting.views.edit_meeting_schedule', kwargs=dict(num='72',name='test-schedule'))
 #        r = self.client.get(url)

@@ -82,6 +82,7 @@ jQuery(document).ready(function () {
             jQuery(element).addClass("selected");
 
             showConstraintHints(element);
+            showTimeSlotTypeIndicators(element.dataset.type);
 
             let sessionInfoContainer = content.find(".scheduling-panel .session-info-container");
             sessionInfoContainer.html(jQuery(element).find(".session-info").html());
@@ -105,6 +106,7 @@ jQuery(document).ready(function () {
         else {
             sessions.removeClass("selected");
             showConstraintHints();
+            resetTimeSlotTypeIndicators();
             content.find(".scheduling-panel .session-info-container").html("");
         }
     }
@@ -204,6 +206,23 @@ jQuery(document).ready(function () {
     }
 
     /**
+     * Remove timeslot classes indicating timeslot type disagreement
+     */
+    function resetTimeSlotTypeIndicators() {
+        timeslots.removeClass('wrong-timeslot-type');
+    }
+
+    /**
+     * Add timeslot classes indicating timeslot type disagreement
+     *
+     * @param timeslot_type
+     */
+    function showTimeSlotTypeIndicators(timeslot_type) {
+        timeslots.removeClass('wrong-timeslot-type');
+        timeslots.filter('[data-type!="' + timeslot_type + '"]').addClass('wrong-timeslot-type');
+    }
+
+    /**
      * Should this timeslot be treated as a future timeslot?
      *
      * @param timeslot timeslot to test
@@ -278,18 +297,41 @@ jQuery(document).ready(function () {
     }
 
     /**
+     * Get the session element being dragged
+     *
+     * @param event drag-related event
+     */
+    function getDraggedSession(event) {
+        if (!isSessionDragEvent(event)) {
+            return null;
+        }
+        const sessionId = event.originalEvent.dataTransfer.getData(dnd_mime_type);
+        const sessionElements = sessions.filter("#" + sessionId);
+        if (sessionElements.length > 0) {
+            return sessionElements[0];
+        }
+        return null;
+    }
+
+    /**
      * Can a session be dropped in this element?
      *
      * Drop is allowed in drop-zones that are in unassigned-session or timeslot containers
      * not marked as 'past'.
      */
-    function sessionDropAllowed(elt) {
-        if (!officialSchedule) {
-            return true;
+    function sessionDropAllowed(dropElement, sessionElement) {
+        const relevant_parent = dropElement.closest('.timeslot, .unassigned-sessions');
+        if (!relevant_parent || !sessionElement) {
+            return false;
         }
 
-        const relevant_parent = elt.closest('.timeslot, .unassigned-sessions');
-        return relevant_parent && !(relevant_parent.classList.contains('past'));
+        if (officialSchedule && relevant_parent.classList.contains('past')) {
+            return false;
+        }
+
+        return !relevant_parent.dataset.type || (
+          relevant_parent.dataset.type === sessionElement.dataset.type
+        );
     }
 
     if (!content.find(".edit-grid").hasClass("read-only")) {
@@ -314,7 +356,7 @@ jQuery(document).ready(function () {
         // dropping
         let dropElements = content.find(".timeslot .drop-target,.unassigned-sessions .drop-target");
         dropElements.on('dragenter', function (event) {
-            if (sessionDropAllowed(this)) {
+            if (sessionDropAllowed(this, getDraggedSession(event))) {
                 event.preventDefault(); // default action is signalling that this is not a valid target
                 jQuery(this).parent().addClass("dropping");
             }
@@ -324,7 +366,7 @@ jQuery(document).ready(function () {
             // we don't actually need this event, except we need to signal
             // that this is a valid drop target, by cancelling the default
             // action
-            if (sessionDropAllowed(this)) {
+            if (sessionDropAllowed(this, getDraggedSession(event))) {
                 event.preventDefault();
             }
         });
@@ -332,7 +374,7 @@ jQuery(document).ready(function () {
         dropElements.on('dragleave', function (event) {
             // skip dragleave events if they are to children
             const leaving_child = event.originalEvent.currentTarget.contains(event.originalEvent.relatedTarget);
-            if (!leaving_child && sessionDropAllowed(this)) {
+            if (!leaving_child && sessionDropAllowed(this, getDraggedSession(event))) {
                 jQuery(this).parent().removeClass('dropping');
             }
         });
@@ -340,30 +382,21 @@ jQuery(document).ready(function () {
         dropElements.on('drop', function (event) {
             let dropElement = jQuery(this);
 
-            if (!isSessionDragEvent(event)) {
-                // event is result of something other than a session drag
+            const sessionElement = getDraggedSession(event);
+            if (!sessionElement) {
+                // not drag event or not from a session we recognize
                 dropElement.parent().removeClass("dropping");
                 return;
             }
 
-            const sessionId = event.originalEvent.dataTransfer.getData(dnd_mime_type);
-            let sessionElement = sessions.filter("#" + sessionId);
-            if (sessionElement.length === 0) {
-                // drag event is not from a session we recognize
-                dropElement.parent().removeClass("dropping");
-                return;
-            }
-
-            // We now know this is a drop of a recognized session
-
-            if (!sessionDropAllowed(this)) {
+            if (!sessionDropAllowed(this, sessionElement)) {
                 dropElement.parent().removeClass("dropping"); // just in case
                 return; // drop not allowed
             }
 
             event.preventDefault(); // prevent opening as link
 
-            let dragParent = sessionElement.parent();
+            let dragParent = jQuery(sessionElement).parent();
             if (dragParent.is(this)) {
                 dropElement.parent().removeClass("dropping");
                 return;
@@ -400,7 +433,7 @@ jQuery(document).ready(function () {
                     timeout: 5 * 1000,
                     data: {
                         action: "unassign",
-                        session: sessionId.slice("session".length)
+                        session: sessionElement.id.slice("session".length)
                     }
                 }).fail(failHandler).done(done);
             }
@@ -410,7 +443,7 @@ jQuery(document).ready(function () {
                     method: "post",
                     data: {
                         action: "assign",
-                        session: sessionId.slice("session".length),
+                        session: sessionElement.id.slice("session".length),
                         timeslot: dropParent.attr("id").slice("timeslot".length)
                     },
                     timeout: 5 * 1000
@@ -673,7 +706,7 @@ jQuery(document).ready(function () {
     // toggling visible sessions by session parents
     let sessionParentInputs = content.find(".session-parent-toggles input");
 
-    function setSessionHidden(sess, hide) {
+    function setSessionHiddenParent(sess, hide) {
         sess.toggleClass('hidden-parent', hide);
         sess.prop('draggable', !hide);
     }
@@ -684,18 +717,76 @@ jQuery(document).ready(function () {
             checked.push(".parent-" + this.value);
         });
 
-        setSessionHidden(sessions.not(".untoggleable").filter(checked.join(",")), false);
-        setSessionHidden(sessions.not(".untoggleable").not(checked.join(",")), true);
+        setSessionHiddenParent(sessions.not(".untoggleable-by-parent").filter(checked.join(",")), false);
+        setSessionHiddenParent(sessions.not(".untoggleable-by-parent").not(checked.join(",")), true);
     }
 
     sessionParentInputs.on("click", updateSessionParentToggling);
     updateSessionParentToggling();
 
-    // toggling visible timeslots
-    let timeslotGroupInputs = content.find("#timeslot-group-toggles-modal .modal-body input");
-    function updateTimeslotGroupToggling() {
+    // Toggling timeslot types
+    let timeSlotTypeInputs = content.find('.timeslot-type-toggles input');
+    function updateTimeSlotTypeToggling() {
         let checked = [];
-        timeslotGroupInputs.filter(":checked").each(function () {
+        timeSlotTypeInputs.filter(":checked").each(function () {
+            checked.push("[data-type=" + this.value + "]");
+        });
+
+        sessions.filter(checked.join(",")).removeClass('hidden-timeslot-type');
+        sessions.not(checked.join(",")).addClass('hidden-timeslot-type');
+        timeslots.filter(checked.join(",")).removeClass('hidden-timeslot-type');
+        timeslots.not(checked.join(",")).addClass('hidden-timeslot-type');
+    }
+    if (timeSlotTypeInputs.length > 0) {
+        timeSlotTypeInputs.on("change", updateTimeSlotTypeToggling);
+        updateTimeSlotTypeToggling();
+        content.find('#timeslot-group-toggles-modal .timeslot-type-toggles .select-all').get(0).addEventListener(
+          'click',
+          function() {
+              timeSlotTypeInputs.prop('checked', true);
+              updateTimeSlotTypeToggling();
+          });
+        content.find('#timeslot-group-toggles-modal .timeslot-type-toggles .clear-all').get(0).addEventListener(
+          'click',
+          function() {
+              timeSlotTypeInputs.prop('checked', false);
+              updateTimeSlotTypeToggling();
+          });
+    }
+
+    // Toggling session purposes
+    let sessionPurposeInputs = content.find('.session-purpose-toggles input');
+    function updateSessionPurposeToggling(evt) {
+        let checked = [];
+        sessionPurposeInputs.filter(":checked").each(function () {
+            checked.push(".purpose-" + this.value);
+        });
+
+        sessions.filter(checked.join(",")).removeClass('hidden-purpose');
+        sessions.not(checked.join(",")).addClass('hidden-purpose');
+    }
+    if (sessionPurposeInputs.length > 0) {
+        sessionPurposeInputs.on("change", updateSessionPurposeToggling);
+        updateSessionPurposeToggling();
+        content.find('#session-toggles-modal .select-all').get(0).addEventListener(
+          'click',
+          function() {
+              sessionPurposeInputs.prop('checked', true);
+              updateSessionPurposeToggling();
+          });
+        content.find('#session-toggles-modal .clear-all').get(0).addEventListener(
+          'click',
+          function() {
+              sessionPurposeInputs.prop('checked', false);
+              updateSessionPurposeToggling();
+          });
+    }
+
+    // toggling visible timeslots
+    let timeSlotGroupInputs = content.find("#timeslot-group-toggles-modal .modal-body .individual-timeslots input");
+    function updateTimeSlotGroupToggling() {
+        let checked = [];
+        timeSlotGroupInputs.filter(":checked").each(function () {
             checked.push("." + this.value);
         });
 
@@ -707,8 +798,21 @@ jQuery(document).ready(function () {
         });
     }
 
-    timeslotGroupInputs.on("click change", updateTimeslotGroupToggling);
-    updateTimeslotGroupToggling();
+    timeSlotGroupInputs.on("click change", updateTimeSlotGroupToggling);
+    content.find('#timeslot-group-toggles-modal .timeslot-group-buttons .select-all').get(0).addEventListener(
+      'click',
+      function() {
+          timeSlotGroupInputs.prop('checked', true);
+          updateTimeSlotGroupToggling();
+      });
+    content.find('#timeslot-group-toggles-modal .timeslot-group-buttons .clear-all').get(0).addEventListener(
+      'click',
+      function() {
+          timeSlotGroupInputs.prop('checked', false);
+          updateTimeSlotGroupToggling();
+      });
+
+    updateTimeSlotGroupToggling();
     updatePastTimeslots();
     setInterval(updatePastTimeslots, 10 * 1000 /* ms */);
 

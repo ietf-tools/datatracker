@@ -16,6 +16,15 @@
   .edit-meeting-schedule .edit-grid .timeslot.past-hint { filter: brightness(0.9); }
   .edit-meeting-schedule .past-flag { visibility: hidden; font-size: smaller; }
   .edit-meeting-schedule .edit-grid .timeslot.past .past-flag { visibility: visible; color: #aaaaaa; }
+  {# style off-agenda sessions to indicate this #}
+  .edit-meeting-schedule .session.off-agenda { filter: brightness(0.9); }
+  {# type and purpose styling #}
+  .edit-meeting-schedule .edit-grid .timeslot.wrong-timeslot-type,
+  .edit-meeting-schedule .edit-grid .timeslot.hidden-timeslot-type { background-color: transparent; ); }
+  .edit-meeting-schedule .edit-grid .timeslot.wrong-timeslot-type .time-label,
+  .edit-meeting-schedule .edit-grid .timeslot.hidden-timeslot-type .time-label { color: transparent; ); }
+  .edit-meeting-schedule .session.hidden-purpose,
+  .edit-meeting-schedule .session.hidden-timeslot-type { filter: blur(3px); }
 {% endblock morecss %}
 
 {% block title %}{{ schedule.name }}: IETF {{ meeting.number }} meeting agenda{% endblock %}
@@ -40,7 +49,7 @@
         &middot;
       {% endif %}
 
-      <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">New agenda</a>
+      <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">Copy agenda</a>
       &middot;
 
       <a href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">Other Agendas</a>
@@ -133,6 +142,7 @@
                            data-end="{{ t.utc_end_time.isoformat }}"
                            data-duration="{{ t.duration.total_seconds }}"
                            data-scheduledatlabel="{{ t.time|date:"l G:i" }}-{{ t.end_time|date:"G:i" }}"
+                           data-type="{{ t.type.slug }}"
                            style="width: {{ t.layout_width }}rem;">
                         <div class="time-label">
                           <div class="past-flag">&nbsp;{# blank div keeps time centered vertically #}</div>
@@ -177,16 +187,17 @@
             </select>
           </span>
 
-          <span class="session-parent-toggles">
+          <span class="toggle-inputs session-parent-toggles">
             Show:
             {% for p in session_parents %}
               <label class="parent-{{ p.acronym }}"><input type="checkbox" checked value="{{ p.acronym }}"> {{ p.acronym }}</label>
             {% endfor %}
           </span>
 
-          <span class="timeslot-group-toggles">
-            <button class="btn btn-default" data-toggle="modal" data-target="#timeslot-group-toggles-modal"><input type="checkbox" checked="checked" disabled> Timeslots</button>
-          </span>
+          {% if session_purposes|length > 1 %}
+            <button id="session-toggle-modal-open" class="btn btn-default" data-toggle="modal" data-target="#session-toggles-modal"><input type="checkbox" checked="checked" disabled> Sessions</button>
+          {% endif %}
+          <button id="timeslot-toggle-modal-open" class="btn btn-default" data-toggle="modal" data-target="#timeslot-group-toggles-modal"><input type="checkbox" checked="checked" disabled> Timeslots</button>
         </div>
       </div>
 
@@ -205,14 +216,59 @@
           </div>
 
           <div class="modal-body">
-            {% for day, t_groups in timeslot_groups %}
-              <div>
-                <div><strong>{{ day|date:"M. d" }}</strong></div>
-                {% for start, end, key in t_groups %}
-                  <label><input type="checkbox" name="timeslot-group" value="{{ key }}" checked="checked"> {{ start|date:"H:i" }} - {{ end|date:"H:i" }}</label>
+            <div class="timeslot-group-buttons">
+              <button type="button" class="btn btn-default select-all">Select all times</button>
+              <button type="button" class="btn btn-default clear-all">Clear times</button>
+            </div>
+            <div class="individual-timeslots">
+
+              {% for day, t_groups in timeslot_groups %}
+                <div>
+                  <div><strong>{{ day|date:"M. d" }}</strong></div>
+                  {% for start, end, key in t_groups %}
+                    <label><input type="checkbox" name="timeslot-group" value="{{ key }}" checked="checked"> {{ start|date:"H:i" }} - {{ end|date:"H:i" }}</label>
+                  {% endfor %}
+                </div>
+              {% endfor %}
+            </div>
+            <div class="timeslots-by-type timeslot-type-toggles">
+                Type:
+                {% for type in timeslot_types %}
+                  <label class="timeslot-type-{{ type.slug }}"><input type="checkbox" checked value="{{ type.slug }}"> {{ type }}</label>
                 {% endfor %}
-              </div>
-            {% endfor %}
+                <button type="button" class="btn btn-default select-all">Select all types</button>
+                <button type="button" class="btn btn-default clear-all">Clear types</button>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="session-toggles-modal" class="modal" role="dialog" aria-labelledby="session-toggles-modal-title">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">
+              <span aria-hidden="true">&times;</span>
+              <span class="sr-only">Close</span>
+            </button>
+            <h4 class="modal-title" id="session-toggles-modal-title">Displayed sessions</h4>
+          </div>
+
+          <div class="modal-body">
+            <div class="session-purpose-toggles">
+              {% for purpose in session_purposes %}
+                <div>
+                  <label class="purpose-{{ purpose.slug }}"><input type="checkbox" checked value="{% firstof purpose.slug 'none' %}"> {{ purpose }}</label>
+                </div>
+              {% endfor %}
+              <button type="button" class="btn btn-default select-all">Select all</button>
+              <button type="button" class="btn btn-default clear-all">Clear all</button>
+            </div>
           </div>
 
           <div class="modal-footer">

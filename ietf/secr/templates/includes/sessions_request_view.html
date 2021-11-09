@@ -3,16 +3,11 @@
         <col width="200">
         <tr class="row1"><td>Working Group Name:</td><td>{{ group.name }} ({{ group.acronym }})</td></tr>
         <tr class="row2"><td>Area Name:</td><td>{{ group.parent }}</td></tr>
-        <tr class="row1"><td>Number of Sessions Requested:</td><td>{% if session.length_session3 %}3{% else %}{{ session.num_session }}{% endif %}</td></tr>
-        <tr class="row2"><td>Length of Session 1:</td><td>{{ session.length_session1|display_duration }}</td></tr>
-        {% if session.length_session2 %}
-          <tr class="row2"><td>Length of Session 2:</td><td>{{ session.length_session2|display_duration }}</td></tr>
-          {% if not is_virtual %}
-            <tr class="row2"><td>Time between sessions:</td><td>{% if session.session_time_relation_display %}{{ session.session_time_relation_display }}{% else %}No preference{% endif %}</td></tr>
-          {% endif %}
-        {% endif %}
-        {% if session.length_session3 %}
-          <tr class="row2"><td>Length of Session 3:</td><td>{{ session.length_session3|display_duration }}</td></tr>
+        <tr class="row1"><td>Number of Sessions Requested:</td><td>{% if session.third_session %}3{% else %}{{ session.num_session }}{% endif %}</td></tr>
+        {% if form %}
+          {% include 'includes/sessions_request_view_formset.html' with formset=form.session_forms group=group session=session only %}
+        {% else %}
+          {% include 'includes/sessions_request_view_session_set.html' with session_set=sessions group=group session=session only %}
         {% endif %}
         <tr class="row1"><td>Number of Attendees:</td><td>{{ session.attendees }}</td></tr>
         <tr class="row2">

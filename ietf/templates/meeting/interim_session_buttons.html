@@ -16,7 +16,7 @@
     {% endif %}
       <!-- etherpad -->
     {% if use_codimd %}
-      {% if item.timeslot.type.slug == 'plenary' %}
+      {% if item.slot_type.slug == 'plenary' %}
         <a class="" href="https://notes.ietf.org/notes-ietf-{{ meeting.number }}-plenary" title="Notepad for note-takers"><span class="fa fa-fw fa-edit"></span></a>
       {% else %}
         <a class="" href="https://notes.ietf.org/notes-ietf-{{ meeting.number }}-{{acronym}}" title="Notepad for note-takers"><span class="fa fa-fw fa-edit"></span></a>

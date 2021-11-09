@@ -29,7 +29,7 @@ ul.sessionlist { list-style:none; padding-left:2em; margin-bottom:10px;}
 	    <li class="roomlistentry"><h3>{{room.grouper|default:"Location Unavailable"}}</h3>
 	      <ul class="sessionlist">
 		{% for ss in room.list %}
-                  <li class="sessionlistentry type-{{ss.timeslot.type_id}} {% if ss.schedule_id != meeting.schedule_id %}from-base-schedule{% endif %}">{{ss.timeslot.time|date:"H:i"}}-{{ss.timeslot.end_time|date:"H:i"}} {{ss.session.short_name}}</li>
+                  <li class="sessionlistentry type-{{ss.slot_type.slug}} {% if ss.schedule_id != meeting.schedule_id %}from-base-schedule{% endif %}">{{ss.timeslot.time|date:"H:i"}}-{{ss.timeslot.end_time|date:"H:i"}} {{ss.session.short_name}}</li>
 		{% endfor %}
 	      </ul>
 	    </li>

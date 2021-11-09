@@ -4,6 +4,7 @@
 
 import datetime
 
+from django.test import override_settings
 from django.urls import reverse
 
 import debug                            # pyflakes:ignore
@@ -76,6 +77,7 @@ class SessionRequestTestCase(TestCase):
         self.assertRedirects(r,reverse('ietf.secr.sreq.views.main'))
         self.assertEqual(SchedulingEvent.objects.filter(session=session).order_by('-id')[0].status_id, 'deleted')
 
+    @override_settings(SECR_VIRTUAL_MEETINGS=tuple())  # ensure not unexpectedly testing a virtual meeting session
     def test_edit(self):
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
         mars = RoleFactory(name_id='chair', person__user__username='marschairman', group__acronym='mars').group
@@ -90,17 +92,43 @@ class SessionRequestTestCase(TestCase):
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+        attendees = 10
+        comments = 'need lights'
+        mars_sessions = meeting.session_set.filter(group__acronym='mars')
         post_data = {'num_session':'2',
-                     'length_session1':'3600',
-                     'length_session2':'3600',
-                     'attendees':'10',
+                     'attendees': attendees,
                      'constraint_chair_conflict':iabprog.acronym,
-                     'comments':'need lights',
                      'session_time_relation': 'subsequent-days',
                      'adjacent_with_wg': group2.acronym,
                      'joint_with_groups': group3.acronym + ' ' + group4.acronym,
                      'joint_for_session': '2',
                      'timeranges': ['thursday-afternoon-early', 'thursday-afternoon-late'],
+                     'session_set-TOTAL_FORMS': '2',
+                     'session_set-INITIAL_FORMS': '1',
+                     'session_set-MIN_NUM_FORMS': '1',
+                     'session_set-MAX_NUM_FORMS': '3',
+                     'session_set-0-id':mars_sessions[0].pk,
+                     'session_set-0-name': mars_sessions[0].name,
+                     'session_set-0-short': mars_sessions[0].short,
+                     'session_set-0-purpose': mars_sessions[0].purpose_id,
+                     'session_set-0-type': mars_sessions[0].type_id,
+                     'session_set-0-requested_duration': '3600',
+                     'session_set-0-on_agenda': mars_sessions[0].on_agenda,
+                     'session_set-0-remote_instructions': mars_sessions[0].remote_instructions,
+                     'session_set-0-attendees': attendees,
+                     'session_set-0-comments': comments,
+                     'session_set-0-DELETE': '',
+                     # no session_set-1-id because it's a new request
+                     'session_set-1-name': '',
+                     'session_set-1-short': '',
+                     'session_set-1-purpose': 'regular',
+                     'session_set-1-type': 'regular',
+                     'session_set-1-requested_duration': '3600',
+                     'session_set-1-on_agenda': True,
+                     'session_set-1-remote_instructions': mars_sessions[0].remote_instructions,
+                     'session_set-1-attendees': attendees,
+                     'session_set-1-comments': comments,
+                     'session_set-1-DELETE': '',
                      'submit': 'Continue'}
         r = self.client.post(url, post_data, HTTP_HOST='example.com')
         redirect_url = reverse('ietf.secr.sreq.views.view', kwargs={'acronym': 'mars'})
@@ -133,11 +161,37 @@ class SessionRequestTestCase(TestCase):
         post_data = {'num_session':'2',
                      'length_session1':'3600',
                      'length_session2':'3600',
-                     'attendees':'10',
+                     'attendees':attendees,
                      'constraint_chair_conflict':'',
                      'comments':'need lights',
                      'joint_with_groups': group2.acronym,
                      'joint_for_session': '1',
+                     'session_set-TOTAL_FORMS': '2',
+                     'session_set-INITIAL_FORMS': '2',
+                     'session_set-MIN_NUM_FORMS': '1',
+                     'session_set-MAX_NUM_FORMS': '3',
+                     'session_set-0-id':sessions[0].pk,
+                     'session_set-0-name': sessions[0].name,
+                     'session_set-0-short': sessions[0].short,
+                     'session_set-0-purpose': sessions[0].purpose_id,
+                     'session_set-0-type': sessions[0].type_id,
+                     'session_set-0-requested_duration': '3600',
+                     'session_set-0-on_agenda': sessions[0].on_agenda,
+                     'session_set-0-remote_instructions': sessions[0].remote_instructions,
+                     'session_set-0-attendees': sessions[0].attendees,
+                     'session_set-0-comments': sessions[1].comments,
+                     'session_set-0-DELETE': '',
+                     'session_set-1-id': sessions[1].pk,
+                     'session_set-1-name': sessions[1].name,
+                     'session_set-1-short': sessions[1].short,
+                     'session_set-1-purpose': sessions[1].purpose_id,
+                     'session_set-1-type': sessions[1].type_id,
+                     'session_set-1-requested_duration': '3600',
+                     'session_set-1-on_agenda': sessions[1].on_agenda,
+                     'session_set-1-remote_instructions': sessions[1].remote_instructions,
+                     'session_set-1-attendees': sessions[1].attendees,
+                     'session_set-1-comments': sessions[1].comments,
+                     'session_set-1-DELETE': '',
                      'submit': 'Continue'}
         r = self.client.post(url, post_data, HTTP_HOST='example.com')
         self.assertRedirects(r, redirect_url)
@@ -160,7 +214,7 @@ class SessionRequestTestCase(TestCase):
         """Inactive conflicts should be displayed and removable"""
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today(), group_conflicts=['chair_conflict'])
         mars = RoleFactory(name_id='chair', person__user__username='marschairman', group__acronym='mars').group
-        SessionFactory(meeting=meeting, group=mars, status_id='sched')
+        session = SessionFactory(meeting=meeting, group=mars, status_id='sched')
         other_group = GroupFactory()
         Constraint.objects.create(
             meeting=meeting,
@@ -184,16 +238,31 @@ class SessionRequestTestCase(TestCase):
         # check that the target is displayed correctly in the UI
         self.assertIn(other_group.acronym, delete_checkbox.find('../input[@type="text"]').value)
 
+        attendees = '10'
         post_data = {
             'num_session': '1',
-            'length_session1': '3600',
-            'attendees': '10',
+            'attendees': attendees,
             'constraint_chair_conflict':'',
             'comments':'',
             'joint_with_groups': '',
             'joint_for_session': '',
-            'submit': 'Save',
             'delete_conflict': 'on',
+            'session_set-TOTAL_FORMS': '1',
+            'session_set-INITIAL_FORMS': '1',
+            'session_set-MIN_NUM_FORMS': '1',
+            'session_set-MAX_NUM_FORMS': '3',
+            'session_set-0-id':session.pk,
+            'session_set-0-name': session.name,
+            'session_set-0-short': session.short,
+            'session_set-0-purpose': session.purpose_id,
+            'session_set-0-type': session.type_id,
+            'session_set-0-requested_duration': '3600',
+            'session_set-0-on_agenda': session.on_agenda,
+            'session_set-0-remote_instructions': session.remote_instructions,
+            'session_set-0-attendees': attendees,
+            'session_set-0-comments': '',
+            'session_set-0-DELETE': '',
+            'submit': 'Save',
         }
         r = self.client.post(url, post_data, HTTP_HOST='example.com')
         redirect_url = reverse('ietf.secr.sreq.views.view', kwargs={'acronym': 'mars'})
@@ -283,15 +352,31 @@ class SubmitRequestCase(TestCase):
         url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
         confirm_url = reverse('ietf.secr.sreq.views.confirm',kwargs={'acronym':group.acronym})
         main_url = reverse('ietf.secr.sreq.views.main')
+        attendees = '10'
+        comments = 'need projector'
         post_data = {'num_session':'1',
-                     'length_session1':'3600',
-                     'attendees':'10',
+                     'attendees':attendees,
                      'constraint_chair_conflict':'',
-                     'comments':'need projector',
+                     'comments':comments,
                      'adjacent_with_wg': group2.acronym,
                      'timeranges': ['thursday-afternoon-early', 'thursday-afternoon-late'],
                      'joint_with_groups': group3.acronym + ' ' + group4.acronym,
                      'joint_for_session': '1',
+                     'session_set-TOTAL_FORMS': '1',
+                     'session_set-INITIAL_FORMS': '0',
+                     'session_set-MIN_NUM_FORMS': '1',
+                     'session_set-MAX_NUM_FORMS': '3',
+                     # no 'session_set-0-id' to create a new session
+                     'session_set-0-name': '',
+                     'session_set-0-short': '',
+                     'session_set-0-purpose': 'regular',
+                     'session_set-0-type': 'regular',
+                     'session_set-0-requested_duration': '3600',
+                     'session_set-0-on_agenda': True,
+                     'session_set-0-remote_instructions': '',
+                     'session_set-0-attendees': attendees,
+                     'session_set-0-comments': comments,
+                     'session_set-0-DELETE': '',
                      'submit': 'Continue'}
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url,post_data)
@@ -313,7 +398,7 @@ class SubmitRequestCase(TestCase):
         self.assertRedirects(r, main_url)
         session_count_after = Session.objects.filter(meeting=meeting, group=group, type='regular').count()
         self.assertEqual(session_count_after, session_count_before + 1)
-        
+
         # Verify database content
         session = Session.objects.get(meeting=meeting, group=group)
         self.assertEqual(session.constraints().get(name='wg_adjacent').target.acronym, group2.acronym)
@@ -329,17 +414,35 @@ class SubmitRequestCase(TestCase):
         area = RoleFactory(name_id='ad', person=ad, group__type_id='area').group
         group = GroupFactory(parent=area)
         url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
-        post_data = {'num_session':'2',
-                     'length_session1':'3600',
-                     'attendees':'10',
-                     'constraint_chair_conflict':'',
-                     'comments':'need projector'}
+        attendees = '10'
+        comments = 'need projector'
+        post_data = {
+            'num_session':'2',
+            'attendees':attendees,
+            'constraint_chair_conflict':'',
+            'comments':comments,
+            'session_set-TOTAL_FORMS': '1',
+            'session_set-INITIAL_FORMS': '1',
+            'session_set-MIN_NUM_FORMS': '1',
+            'session_set-MAX_NUM_FORMS': '3',
+            # no 'session_set-0-id' to create a new session
+            'session_set-0-name': '',
+            'session_set-0-short': '',
+            'session_set-0-purpose': 'regular',
+            'session_set-0-type': 'regular',
+            'session_set-0-requested_duration': '3600',
+            'session_set-0-on_agenda': True,
+            'session_set-0-remote_instructions': '',
+            'session_set-0-attendees': attendees,
+            'session_set-0-comments': comments,
+            'session_set-0-DELETE': '',
+        }
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url,post_data)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('#session-request-form')),1)
-        self.assertContains(r, 'You must enter a length for all sessions')
+        self.assertContains(r, 'Must provide data for all sessions')
 
     def test_submit_request_check_constraints(self):
         m1 = MeetingFactory(type_id='ietf', date=datetime.date.today() - datetime.timedelta(days=100))
@@ -363,7 +466,7 @@ class SubmitRequestCase(TestCase):
             target=inactive_group,
             name_id='chair_conflict',
         )
-        SessionFactory(group=group, meeting=m1)
+        session = SessionFactory(group=group, meeting=m1)
 
         self.client.login(username="secretary", password="secretary+password")
 
@@ -375,11 +478,27 @@ class SubmitRequestCase(TestCase):
         self.assertIn(still_active_group.acronym, conflict1)
         self.assertNotIn(inactive_group.acronym, conflict1)
 
+        attendees = '10'
+        comments = 'need projector'
         post_data = {'num_session':'1',
-                     'length_session1':'3600',
-                     'attendees':'10',
+                     'attendees':attendees,
                      'constraint_chair_conflict': group.acronym,
-                     'comments':'need projector',
+                     'comments':comments,
+                     'session_set-TOTAL_FORMS': '1',
+                     'session_set-INITIAL_FORMS': '1',
+                     'session_set-MIN_NUM_FORMS': '1',
+                     'session_set-MAX_NUM_FORMS': '3',
+                     # no 'session_set-0-id' to create a new session
+                     'session_set-0-name': '',
+                     'session_set-0-short': '',
+                     'session_set-0-purpose': session.purpose_id,
+                     'session_set-0-type': session.type_id,
+                     'session_set-0-requested_duration': '3600',
+                     'session_set-0-on_agenda': session.on_agenda,
+                     'session_set-0-remote_instructions': session.remote_instructions,
+                     'session_set-0-attendees': attendees,
+                     'session_set-0-comments': comments,
+                     'session_set-0-DELETE': '',
                      'submit': 'Continue'}
         r = self.client.post(url,post_data)
         self.assertEqual(r.status_code, 200)
@@ -405,10 +524,9 @@ class SubmitRequestCase(TestCase):
         url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
         confirm_url = reverse('ietf.secr.sreq.views.confirm',kwargs={'acronym':group.acronym})
         len_before = len(outbox)
+        attendees = '10'
         post_data = {'num_session':'2',
-                     'length_session1':'3600',
-                     'length_session2':'3600',
-                     'attendees':'10',
+                     'attendees':attendees,
                      'bethere':str(ad.pk),
                      'constraint_chair_conflict':group4.acronym,
                      'comments':'',
@@ -418,6 +536,32 @@ class SubmitRequestCase(TestCase):
                      'joint_with_groups': group3.acronym,
                      'joint_for_session': '2',
                      'timeranges': ['thursday-afternoon-early', 'thursday-afternoon-late'],
+                     'session_set-TOTAL_FORMS': '2',
+                     'session_set-INITIAL_FORMS': '0',
+                     'session_set-MIN_NUM_FORMS': '1',
+                     'session_set-MAX_NUM_FORMS': '3',
+                     # no 'session_set-0-id' for new session
+                     'session_set-0-name': '',
+                     'session_set-0-short': '',
+                     'session_set-0-purpose': 'regular',
+                     'session_set-0-type': 'regular',
+                     'session_set-0-requested_duration': '3600',
+                     'session_set-0-on_agenda': True,
+                     'session_set-0-remote_instructions': '',
+                     'session_set-0-attendees': attendees,
+                     'session_set-0-comments': '',
+                     'session_set-0-DELETE': '',
+                     # no 'session_set-1-id' for new session
+                     'session_set-1-name': '',
+                     'session_set-1-short': '',
+                     'session_set-1-purpose': 'regular',
+                     'session_set-1-type': 'regular',
+                     'session_set-1-requested_duration': '3600',
+                     'session_set-1-on_agenda': True,
+                     'session_set-1-remote_instructions': '',
+                     'session_set-1-attendees': attendees,
+                     'session_set-1-comments': '',
+                     'session_set-1-DELETE': '',
                      'submit': 'Continue'}
         self.client.login(username="ameschairman", password="ameschairman+password")
         # submit
@@ -541,23 +685,59 @@ class SessionFormTest(TestCase):
         self.group5 = GroupFactory()
         self.group6 = GroupFactory()
 
+        attendees = '10'
+        comments = 'need lights'
         self.valid_form_data = {
             'num_session': '2',
             'third_session': 'true',
-            'length_session1': '3600',
-            'length_session2': '3600',
-            'length_session3': '3600',
-            'attendees': '10',
+            'attendees': attendees,
             'constraint_chair_conflict': self.group2.acronym,
             'constraint_tech_overlap': self.group3.acronym,
             'constraint_key_participant': self.group4.acronym,
-            'comments': 'need lights',
+            'comments': comments,
             'session_time_relation': 'subsequent-days',
             'adjacent_with_wg': self.group5.acronym,
             'joint_with_groups': self.group6.acronym,
             'joint_for_session': '3',
             'timeranges': ['thursday-afternoon-early', 'thursday-afternoon-late'],
-            'submit': 'Continue'
+            'submit': 'Continue',
+            'session_set-TOTAL_FORMS': '3',
+            'session_set-INITIAL_FORMS': '0',
+            'session_set-MIN_NUM_FORMS': '1',
+            'session_set-MAX_NUM_FORMS': '3',
+            # no 'session_set-0-id' for new session
+            'session_set-0-name': '',
+            'session_set-0-short': '',
+            'session_set-0-purpose': 'regular',
+            'session_set-0-type': 'regular',
+            'session_set-0-requested_duration': '3600',
+            'session_set-0-on_agenda': True,
+            'session_set-0-remote_instructions': '',
+            'session_set-0-attendees': attendees,
+            'session_set-0-comments': '',
+            'session_set-0-DELETE': '',
+            # no 'session_set-1-id' for new session
+            'session_set-1-name': '',
+            'session_set-1-short': '',
+            'session_set-1-purpose': 'regular',
+            'session_set-1-type': 'regular',
+            'session_set-1-requested_duration': '3600',
+            'session_set-1-on_agenda': True,
+            'session_set-1-remote_instructions': '',
+            'session_set-1-attendees': attendees,
+            'session_set-1-comments': '',
+            'session_set-1-DELETE': '',
+            # no 'session_set-2-id' for new session
+            'session_set-2-name': '',
+            'session_set-2-short': '',
+            'session_set-2-purpose': 'regular',
+            'session_set-2-type': 'regular',
+            'session_set-2-requested_duration': '3600',
+            'session_set-2-on_agenda': True,
+            'session_set-2-remote_instructions': '',
+            'session_set-2-attendees': attendees,
+            'session_set-2-comments': '',
+            'session_set-2-DELETE': '',
         }
         
     def test_valid(self):
@@ -639,58 +819,65 @@ class SessionFormTest(TestCase):
     def test_invalid_joint_for_session(self):
         form = self._invalid_test_helper({
             'third_session': '',
+            'session_set-TOTAL_FORMS': '2',
             'num_session': 2,
             'joint_for_session': '3',
         })
         self.assertEqual(form.errors,
                          {
-                             'joint_for_session': ['The third session can not be the joint session, '
-                                                   'because you have not requested a third session.']
+                             'joint_for_session': [
+                                 'Session 3 can not be the joint session, the session has not been requested.']
                          })
 
         form = self._invalid_test_helper({
             'third_session': '',
-            'length_session2': '',
+            'session_set-TOTAL_FORMS': '1',
             'num_session': 1,
             'joint_for_session': '2',
             'session_time_relation': '',
         })
         self.assertEqual(form.errors,
                          {
-                             'joint_for_session': ['The second session can not be the joint session, '
-                                                   'because you have not requested a second session.']
+                             'joint_for_session': [
+                                 'Session 2 can not be the joint session, the session has not been requested.']
                          })
     
     def test_invalid_missing_session_length(self):
         form = self._invalid_test_helper({
-            'length_session2': '',
+            'session_set-TOTAL_FORMS': '2',
+            'session_set-1-requested_duration': '',
             'third_session': 'false',
             'joint_for_session': None,
         })
-        self.assertEqual(form.errors,
-                         {
-                             'length_session2': ['You must enter a length for all sessions'],
-                         })
+        self.assertEqual(form.session_forms.errors,
+                         [
+                             {},
+                             {'requested_duration': ['This field is required.']},
+                         ])
 
         form = self._invalid_test_helper({
-            'length_session2': '',
-            'length_session3': '',
+            'session_set-1-requested_duration': '',
+            'session_set-2-requested_duration': '',
             'joint_for_session': None,
         })
-        self.assertEqual(form.errors,
-                         {
-                             'length_session2': ['You must enter a length for all sessions'],
-                             'length_session3': ['You must enter a length for all sessions'],
-                         })
+        self.assertEqual(
+            form.session_forms.errors,
+            [
+                {},
+                {'requested_duration': ['This field is required.']},
+                {'requested_duration': ['This field is required.']},
+            ])
 
         form = self._invalid_test_helper({
-            'length_session3': '',
+            'session_set-2-requested_duration': '',
             'joint_for_session': None,
         })
-        self.assertEqual(form.errors,
-                         {
-                             'length_session3': ['You must enter a length for all sessions'],
-                         })
+        self.assertEqual(form.session_forms.errors,
+                         [
+                             {},
+                             {},
+                             {'requested_duration': ['This field is required.']},
+                         ])
 
     def _invalid_test_helper(self, new_form_data):
         form_data = dict(self.valid_form_data, **new_form_data)

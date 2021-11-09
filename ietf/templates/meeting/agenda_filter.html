@@ -61,12 +61,12 @@ Optional parameters:
                                     {% for fc in filter_categories %}
                                         {% if not forloop.first %} <td></td> {% endif %}
                                         {% for p in fc %}
-                                            <td class="view {{ p.keyword }}">
+                                            <td class="view{% if p.keyword %} {{ p.keyword }}{% endif %}">
                                                 <div class="btn-group-vertical btn-block">
-                                                    {% for button in p.children|dictsort:"label" %}
+                                                    {% for button in p.children %}
                                                         <div class="btn-group btn-group-xs btn-group-justified">
                                                             <button class="btn btn-default pickview {{ button.keyword }}"
-                                                                    {% if p.keyword or button.is_bof %}data-filter-keywords="{% if p.keyword %}{{ p.keyword }}{% if button.is_bof %},{% endif %}{% endif %}{% if button.is_bof %}bof{% endif %}"{% endif %}
+                                                                    {% if button.toggled_by %}data-filter-keywords="{{ button.toggled_by|join:"," }}"{% endif %}
                                                                     data-filter-item="{{ button.keyword }}">
                                                                 {% if button.is_bof %}
                                                                     <i>{{ button.label }}</i>

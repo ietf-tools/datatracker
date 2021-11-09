@@ -8,6 +8,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.name.models import TimerangeName, ConstraintName
 from ietf.group.models import Group
+from ietf.meeting.forms import sessiondetailsformset_factory
 from ietf.meeting.models import ResourceAssociation, Constraint
 from ietf.person.fields import SearchablePersonsField
 from ietf.utils.html import clean_text_field
@@ -61,13 +62,11 @@ class NameModelMultipleChoiceField(forms.ModelMultipleChoiceField):
     def label_from_instance(self, name):
         return name.desc
 
-    
+
 class SessionForm(forms.Form):
     num_session = forms.ChoiceField(choices=NUM_SESSION_CHOICES)
-    length_session1 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES)
-    length_session2 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES,required=False)
+    # session fields are added in __init__()
     session_time_relation = forms.ChoiceField(choices=SESSION_TIME_RELATION_CHOICES, required=False)
-    length_session3 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES,required=False)
     attendees = forms.IntegerField()
     # FIXME: it would cleaner to have these be
     # ModelMultipleChoiceField, and just customize the widgetry, that
@@ -84,19 +83,21 @@ class SessionForm(forms.Form):
                                                  queryset=TimerangeName.objects.all())
     adjacent_with_wg = forms.ChoiceField(required=False)
 
-    def __init__(self, group, meeting, *args, **kwargs):
+    def __init__(self, group, meeting, data=None, *args, **kwargs):
         if 'hidden' in kwargs:
             self.hidden = kwargs.pop('hidden')
         else:
             self.hidden = False
 
         self.group = group
+        formset_class = sessiondetailsformset_factory(max_num=3 if group.features.acts_like_wg else 12)
+        self.session_forms = formset_class(group=self.group, meeting=meeting, data=data)
+        super(SessionForm, self).__init__(data=data, *args, **kwargs)
 
-        super(SessionForm, self).__init__(*args, **kwargs)
-        self.fields['num_session'].widget.attrs['onChange'] = "ietf_sessions.stat_ls(this.selectedIndex);"
-        self.fields['length_session1'].widget.attrs['onClick'] = "if (ietf_sessions.check_num_session(1)) this.disabled=true;"
-        self.fields['length_session2'].widget.attrs['onClick'] = "if (ietf_sessions.check_num_session(2)) this.disabled=true;"
-        self.fields['length_session3'].widget.attrs['onClick'] = "if (ietf_sessions.check_third_session()) { this.disabled=true;}"
+        # Allow additional sessions for non-wg-like groups
+        if not self.group.features.acts_like_wg:
+            self.fields['num_session'].choices = ((n, str(n)) for n in range(1, 13))
+
         self.fields['comments'].widget = forms.Textarea(attrs={'rows':'3','cols':'65'})
 
         other_groups = list(allowed_conflicting_groups().exclude(pk=group.pk).values_list('acronym', 'acronym').order_by('acronym'))
@@ -148,14 +149,7 @@ class SessionForm(forms.Form):
             )
 
         self.fields['joint_with_groups_selector'].widget.attrs['onChange'] = "document.form_post.joint_with_groups.value=document.form_post.joint_with_groups.value + ' ' + this.options[this.selectedIndex].value; return 1;"
-        self.fields['third_session'].widget.attrs['onClick'] = "if (document.form_post.num_session.selectedIndex < 2) { alert('Cannot use this field - Number of Session is not set to 2'); return false; } else { if (this.checked==true) { document.form_post.length_session3.disabled=false; } else { document.form_post.length_session3.value=0;document.form_post.length_session3.disabled=true; } }"
         self.fields["resources"].choices = [(x.pk,x.desc) for x in ResourceAssociation.objects.filter(name__used=True).order_by('name__order') ]
-
-        # check third_session checkbox if instance and length_session3
-        # assert False, (self.instance, self.fields['length_session3'].initial)
-        if self.initial and 'length_session3' in self.initial:
-            if self.initial['length_session3'] != '0' and self.initial['length_session3'] != None:
-                self.fields['third_session'].initial = True
 
         if self.hidden:
             for key in list(self.fields.keys()):
@@ -235,8 +229,13 @@ class SessionForm(forms.Form):
     def clean_comments(self):
         return clean_text_field(self.cleaned_data['comments'])
 
+    def is_valid(self):
+        return super().is_valid() and self.session_forms.is_valid()
+
     def clean(self):
         super(SessionForm, self).clean()
+        self.session_forms.clean()
+
         data = self.cleaned_data
 
         # Validate the individual conflict fields
@@ -254,44 +253,45 @@ class SessionForm(forms.Form):
         for error in self._validate_duplicate_conflicts(data):
             self.add_error(None, error)
 
-        # verify session_length and num_session correspond
+        # Verify expected number of session entries are present
+        num_sessions_with_data = len(self.session_forms.forms_to_keep)
+        num_sessions_expected = -1
+        try:
+            num_sessions_expected = int(data.get('num_session', ''))
+        except ValueError:
+            self.add_error('num_session', 'Invalid value for number of sessions')
+        if num_sessions_with_data < num_sessions_expected:
+            self.add_error('num_session', 'Must provide data for all sessions')
+
         # if default (empty) option is selected, cleaned_data won't include num_session key
-        if data.get('num_session','') == '2':
-            if not data['length_session2']:
-                self.add_error('length_session2', forms.ValidationError('You must enter a length for all sessions'))
-        else:
+        if num_sessions_expected != 2 and num_sessions_expected is not None:
             if data.get('session_time_relation'):
                 self.add_error(
                     'session_time_relation',
                     forms.ValidationError('Time between sessions can only be used when two sessions are requested.')
                 )
-            if data.get('joint_for_session') == '2':
+
+        joint_session = data.get('joint_for_session', '')
+        if joint_session != '':
+            joint_session = int(joint_session)
+            if joint_session > num_sessions_with_data:
                 self.add_error(
                     'joint_for_session',
                     forms.ValidationError(
-                        'The second session can not be the joint session, because you have not requested a second session.'
+                        f'Session {joint_session} can not be the joint session, the session has not been requested.'
                     )
                 )
 
-        if data.get('third_session', False):
-            if not data.get('length_session3',None):
-                self.add_error('length_session3', forms.ValidationError('You must enter a length for all sessions'))
-        elif data.get('joint_for_session') == '3':
-                self.add_error(
-                    'joint_for_session',
-                    forms.ValidationError(
-                        'The third session can not be the joint session, because you have not requested a third session.'
-                    )
-                )
-        
         return data
+
+    @property
+    def media(self):
+        # get media for our formset
+        return super().media + self.session_forms.media + forms.Media(js=('secr/js/session_form.js',))
 
 
 class VirtualSessionForm(SessionForm):
     '''A SessionForm customized for special virtual meeting requirements'''
-    length_session1 = forms.ChoiceField(choices=VIRTUAL_LENGTH_SESSION_CHOICES)
-    length_session2 = forms.ChoiceField(choices=VIRTUAL_LENGTH_SESSION_CHOICES,required=False)
-    length_session3 = forms.ChoiceField(choices=VIRTUAL_LENGTH_SESSION_CHOICES,required=False)
     attendees = forms.IntegerField(required=False)
 
 

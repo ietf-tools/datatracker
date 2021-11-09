@@ -40,7 +40,7 @@ from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
-from ietf.meeting.models import Meeting, Session, SessionPresentation, SchedulingEvent
+from ietf.meeting.models import Meeting, SessionPresentation, SchedulingEvent
 from ietf.meeting.factories import ( MeetingFactory, SessionFactory, SessionPresentationFactory,
      ProceedingsMaterialFactory )
 
@@ -1465,12 +1465,12 @@ class DocTestCase(TestCase):
         )
         doc.set_state(State.objects.get(type="slides", slug="active"))
 
-        session = Session.objects.create(
+        session = SessionFactory(
             name = "session-72-mars-1",
             meeting = Meeting.objects.get(number='72'),
             group = Group.objects.get(acronym='mars'),
             modified = datetime.datetime.now(),
-            type_id = 'regular',
+            add_to_schedule=False,
         )
         SchedulingEvent.objects.create(
             session=session,

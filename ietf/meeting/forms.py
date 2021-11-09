@@ -5,9 +5,11 @@
 import io
 import os
 import datetime
+import json
 
 from django import forms
 from django.conf import settings
+from django.core import validators
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.forms import BaseInlineFormSet
@@ -21,8 +23,9 @@ from ietf.meeting.models import Session, Meeting, Schedule, countries, timezones
 from ietf.meeting.helpers import get_next_interim_number, make_materials_directories
 from ietf.meeting.helpers import is_interim_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
+from ietf.name.models import TimeSlotTypeName, SessionPurposeName
 from ietf.person.models import Person
-from ietf.utils.fields import DatepickerDateField, DurationField, MultiEmailField
+from ietf.utils.fields import DatepickerDateField, DurationField, MultiEmailField, DatepickerSplitDateTimeWidget
 from ietf.utils.validators import ( validate_file_size, validate_mime_type,
     validate_file_extension, validate_no_html_frame)
 
@@ -44,7 +47,8 @@ class GroupModelChoiceField(forms.ModelChoiceField):
         return obj.acronym
 
 class CustomDurationField(DurationField):
-    '''Custom DurationField to display as HH:MM (no seconds)'''
+    """Custom DurationField to display as HH:MM (no seconds)"""
+    widget = forms.TextInput(dict(placeholder='HH:MM'))
     def prepare_value(self, value):
         if isinstance(value, datetime.timedelta):
             return duration_string(value)
@@ -253,6 +257,7 @@ class InterimSessionModelForm(forms.ModelForm):
         session = super(InterimSessionModelForm, self).save(commit=False)
         session.group = self.group
         session.type_id = 'regular'
+        session.purpose_id = 'regular'
         if kwargs.get('commit', True) is True:
             super(InterimSessionModelForm, self).save(commit=True)
         return session
@@ -417,3 +422,258 @@ class SwapTimeslotsForm(forms.Form):
         self.fields['origin_timeslot'].queryset = meeting.timeslot_set.all()
         self.fields['target_timeslot'].queryset = meeting.timeslot_set.all()
         self.fields['rooms'].queryset = meeting.room_set.all()
+
+
+class TimeSlotDurationField(CustomDurationField):
+    """Duration field for TimeSlot edit / create forms"""
+    default_validators=[
+        validators.MinValueValidator(datetime.timedelta(seconds=0)),
+        validators.MaxValueValidator(datetime.timedelta(hours=12)),
+    ]
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault('help_text', 'Duration of timeslot in hours and minutes')
+        super().__init__(**kwargs)
+
+
+class TimeSlotEditForm(forms.ModelForm):
+    class Meta:
+        model = TimeSlot
+        fields = ('name', 'type', 'time', 'duration', 'show_location', 'location')
+        field_classes = dict(
+            time=forms.SplitDateTimeField,
+            duration=TimeSlotDurationField
+        )
+        widgets = dict(
+            time=DatepickerSplitDateTimeWidget,
+        )
+
+    def __init__(self, *args, **kwargs):
+        super(TimeSlotEditForm, self).__init__(*args, **kwargs)
+        self.fields['location'].queryset = self.instance.meeting.room_set.all()
+
+
+class TimeSlotCreateForm(forms.Form):
+    name = forms.CharField(max_length=255)
+    type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.all(), initial='regular')
+    days = forms.TypedMultipleChoiceField(
+        label='Meeting days',
+        widget=forms.CheckboxSelectMultiple,
+        coerce=lambda s: datetime.date.fromordinal(int(s)),
+        empty_value=None,
+        required=False
+    )
+    other_date = DatepickerDateField(
+        required=False,
+        help_text='Optional date outside the official meeting dates',
+        date_format="yyyy-mm-dd",
+        picker_settings={"autoclose": "1"},
+    )
+
+    time = forms.TimeField(
+        help_text='Time to create timeslot on each selected date',
+        widget=forms.TimeInput(dict(placeholder='HH:MM'))
+    )
+    duration = TimeSlotDurationField()
+    show_location = forms.BooleanField(required=False, initial=True)
+    locations = forms.ModelMultipleChoiceField(
+        queryset=Room.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    def __init__(self, meeting, *args, **kwargs):
+        super(TimeSlotCreateForm, self).__init__(*args, **kwargs)
+
+        meeting_days = [
+            meeting.date + datetime.timedelta(days=n)
+            for n in range(meeting.days)
+        ]
+
+        # Fill in dynamic field properties
+        self.fields['days'].choices = self._day_choices(meeting_days)
+        self.fields['other_date'].widget.attrs['data-date-default-view-date'] = meeting.date
+        self.fields['other_date'].widget.attrs['data-date-dates-disabled'] = ','.join(
+            d.isoformat() for d in meeting_days
+        )
+        self.fields['locations'].queryset = meeting.room_set.order_by('name')
+
+    def clean_other_date(self):
+        # Because other_date is not required, failed field validation does not automatically
+        # invalidate the form. It should, otherwise a typo may be silently ignored.
+        if self.data.get('other_date') and not self.cleaned_data.get('other_date'):
+            raise ValidationError('Enter a valid date or leave field blank.')
+        return self.cleaned_data.get('other_date', None)
+
+    def clean(self):
+        # Merge other_date and days fields
+        try:
+            other_date = self.cleaned_data.pop('other_date')
+        except KeyError:
+            other_date = None
+
+        self.cleaned_data['days'] = self.cleaned_data.get('days') or []
+        if other_date is not None:
+            self.cleaned_data['days'].append(other_date)
+        if len(self.cleaned_data['days']) == 0:
+            self.add_error('days', ValidationError('Please select a day or specify a date'))
+
+    @staticmethod
+    def _day_choices(days):
+        """Generates an iterable of value, label pairs for a choice field
+
+        Uses toordinal() to represent dates - would prefer to use isoformat(),
+        but fromisoformat() is not available in python 3.6..
+        """
+        choices = [
+            (str(day.toordinal()), day.strftime('%A ({})'.format(day.isoformat())))
+            for day in days
+        ]
+        return choices
+
+
+class DurationChoiceField(forms.ChoiceField):
+    def __init__(self, durations=None, *args, **kwargs):
+        if durations is None:
+            durations = (3600, 7200)
+        super().__init__(
+            choices=self._make_choices(durations),
+            *args, **kwargs,
+        )
+
+    def prepare_value(self, value):
+        """Converts incoming value into string used for the option value"""
+        if value:
+            return str(int(value.total_seconds())) if isinstance(value, datetime.timedelta) else str(value)
+        return ''
+
+    def to_python(self, value):
+        return datetime.timedelta(seconds=round(float(value))) if value not in self.empty_values else None
+
+    def valid_value(self, value):
+        return super().valid_value(self.prepare_value(value))
+
+    def _format_duration_choice(self, dur):
+        seconds = int(dur.total_seconds()) if isinstance(dur, datetime.timedelta) else int(dur)
+        hours = int(seconds / 3600)
+        minutes = round((seconds - 3600 * hours) / 60)
+        hr_str = '{} hour{}'.format(hours, '' if hours == 1 else 's')
+        min_str = '{} minute{}'.format(minutes, '' if minutes == 1 else 's')
+        if hours > 0 and minutes > 0:
+            time_str = ' '.join((hr_str, min_str))
+        elif hours > 0:
+            time_str = hr_str
+        else:
+            time_str = min_str
+        return (str(seconds), time_str)
+
+    def _make_choices(self, durations):
+        return (
+            ('','--Please select'),
+            *[self._format_duration_choice(dur) for dur in durations])
+
+    def _set_durations(self, durations):
+        self.choices = self._make_choices(durations)
+
+    durations = property(None, _set_durations)
+
+
+class SessionDetailsForm(forms.ModelForm):
+    requested_duration = DurationChoiceField()
+
+    def __init__(self, group, *args, **kwargs):
+        session_purposes = group.features.session_purposes
+        kwargs.setdefault('initial', {})
+        kwargs['initial'].setdefault(
+            'purpose',
+            session_purposes[0] if len(session_purposes) > 0 else None,
+        )
+        super().__init__(*args, **kwargs)
+
+        self.fields['type'].widget.attrs.update({
+            'data-allowed-options': json.dumps({
+                purpose.slug: list(purpose.timeslot_types)
+                for purpose in SessionPurposeName.objects.all()
+            }),
+        })
+        self.fields['purpose'].queryset = SessionPurposeName.objects.filter(pk__in=session_purposes)
+        if not group.features.acts_like_wg:
+            self.fields['requested_duration'].durations = [datetime.timedelta(minutes=m) for m in range(30, 241, 30)]
+
+    class Meta:
+        model = Session
+        fields = (
+            'name', 'short', 'purpose', 'type', 'requested_duration',
+            'on_agenda', 'remote_instructions', 'attendees', 'comments',
+        )
+        labels = {'requested_duration': 'Length'}
+
+    def clean(self):
+        super().clean()
+        if 'purpose' in self.cleaned_data and (
+        'purpose' in self.changed_data or self.instance.pk is None
+        ):
+            self.cleaned_data['on_agenda'] = self.cleaned_data['purpose'].on_agenda
+
+        return self.cleaned_data
+
+    class Media:
+        js = ('ietf/js/meeting/session_details_form.js',)
+
+
+class SessionEditForm(SessionDetailsForm):
+    """Form to edit an existing session"""
+    def __init__(self, instance, *args, **kwargs):
+        kw_group = kwargs.pop('group', None)
+        if kw_group is not None and kw_group != instance.group:
+            raise ValueError('Session group does not match group keyword')
+        super().__init__(instance=instance, group=instance.group, *args, **kwargs)
+
+
+class SessionDetailsInlineFormset(forms.BaseInlineFormSet):
+    def __init__(self, group, meeting, queryset=None, *args, **kwargs):
+        self._meeting = meeting
+        self.created_instances = []
+
+        # Restrict sessions to the meeting and group. The instance
+        # property handles one of these for free.
+        kwargs['instance'] = group
+        if queryset is None:
+            queryset = Session._default_manager
+        if self._meeting.pk is not None:
+            queryset = queryset.filter(meeting=self._meeting)
+        else:
+            queryset = queryset.none()
+        kwargs['queryset'] = queryset.not_deleted()
+
+        kwargs.setdefault('form_kwargs', {})
+        kwargs['form_kwargs'].update({'group': group})
+
+        super().__init__(*args, **kwargs)
+
+    def save_new(self, form, commit=True):
+        form.instance.meeting = self._meeting
+        return super().save_new(form, commit)
+
+    def save(self, commit=True):
+        existing_instances = set(form.instance for form in self.forms if form.instance.pk)
+        saved = super().save(commit)
+        self.created_instances = [inst for inst in saved if inst not in existing_instances]
+        return saved
+
+    @property
+    def forms_to_keep(self):
+        """Get the not-deleted forms"""
+        return [f for f in self.forms if f not in self.deleted_forms]
+
+def sessiondetailsformset_factory(min_num=1, max_num=3):
+    return forms.inlineformset_factory(
+        Group,
+        Session,
+        formset=SessionDetailsInlineFormset,
+        form=SessionDetailsForm,
+        can_delete=True,
+        can_order=False,
+        min_num=min_num,
+        max_num=max_num,
+        extra=max_num,  # only creates up to max_num total
+    )

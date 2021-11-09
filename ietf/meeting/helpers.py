@@ -9,13 +9,11 @@ import os
 import re
 from tempfile import mkstemp
 
-from django.http import HttpRequest, Http404
-from django.db.models import F, Max, Q, Prefetch
+from django.http import Http404
+from django.db.models import F, Prefetch
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
-from django.core.cache import cache
 from django.urls import reverse
-from django.utils.cache import get_cache_key
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 
@@ -30,93 +28,13 @@ from ietf.mailtrigger.utils import gather_address_lists
 from ietf.person.models  import Person
 from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment, ImportantDate, SchedulingEvent, Session
 from ietf.meeting.utils import session_requested_by, add_event_info_to_session_qs
-from ietf.name.models import ImportantDateName
-from ietf.utils.history import find_history_active_at, find_history_replacements_active_at
+from ietf.name.models import ImportantDateName, SessionPurposeName
+from ietf.utils import log
+from ietf.utils.history import find_history_replacements_active_at
 from ietf.utils.mail import send_mail
 from ietf.utils.pipe import pipe
+from ietf.utils.text import xslugify
 
-def find_ads_for_meeting(meeting):
-    ads = []
-    meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
-
-    num = 0
-    # get list of ADs which are/were active at the time of the meeting.
-    #  (previous [x for x in y] syntax changed to aid debugging)
-    for g in Group.objects.filter(type="area").order_by("acronym"):
-        history = find_history_active_at(g, meeting_time)
-        num = num +1
-        if history and history != g:
-            #print " history[%u]: %s" % (num, history)
-            if history.state_id == "active":
-                for x in history.rolehistory_set.filter(name="ad",group__type='area').select_related('group', 'person', 'email'):
-                    #print "xh[%u]: %s" % (num, x)
-                    ads.append(x)
-        else:
-            #print " group[%u]: %s" % (num, g)
-            if g.state_id == "active":
-                for x in g.role_set.filter(name="ad",group__type='area').select_related('group', 'person', 'email'):
-                    #print "xg[%u]: %s (#%u)" % (num, x, x.pk)
-                    ads.append(x)
-    return ads
-
-
-# get list of all areas, + IRTF + IETF (plenaries).
-def get_pseudo_areas():
-    return Group.objects.filter(Q(state="active", name="IRTF")|
-                                Q(state="active", name="IETF")|
-                                Q(state="active", type="area")).order_by('acronym')
-
-# get list of all areas, + IRTF.
-def get_areas():
-    return Group.objects.filter(Q(state="active",
-                                  name="IRTF")|
-                                Q(state="active", type="area")).order_by('acronym')
-
-# get list of areas that are referenced.
-def get_area_list_from_sessions(assignments, num):
-    return assignments.filter(timeslot__type = 'regular',
-                                    session__group__parent__isnull = False).order_by(
-        'session__group__parent__acronym').distinct().values_list(
-        'session__group__parent__acronym',flat=True)
-
-def build_all_agenda_slices(meeting):
-    time_slices = []
-    date_slices = {}
-
-    for ts in meeting.timeslot_set.filter(type__in=['regular',]).order_by('time','name'):
-            ymd = ts.time.date()
-
-            if ymd not in date_slices and ts.location != None:
-                date_slices[ymd] = []
-                time_slices.append(ymd)
-
-            if ymd in date_slices:
-                if [ts.time, ts.time+ts.duration] not in date_slices[ymd]:   # only keep unique entries
-                    date_slices[ymd].append([ts.time, ts.time+ts.duration])
-
-    time_slices.sort()
-    return time_slices,date_slices
-
-def get_all_assignments_from_schedule(schedule):
-   ss = schedule.assignments.filter(timeslot__location__isnull = False)
-   ss = ss.filter(session__type__slug='regular')
-   ss = ss.order_by('timeslot__time','timeslot__name')
-
-   return ss
-
-def get_modified_from_assignments(assignments):
-    return assignments.aggregate(Max('timeslot__modified'))['timeslot__modified__max']
-
-def get_wg_name_list(assignments):
-    return assignments.filter(timeslot__type = 'regular',
-                                    session__group__isnull = False,
-                                    session__group__parent__isnull = False).order_by(
-        'session__group__acronym').distinct().values_list(
-        'session__group__acronym',flat=True)
-
-def get_wg_list(assignments):
-    wg_name_list = get_wg_name_list(assignments)
-    return Group.objects.filter(acronym__in = set(wg_name_list)).order_by('parent__acronym','acronym')
 
 def get_meeting(num=None,type_in=['ietf',],days=28):
     meetings = Meeting.objects
@@ -229,7 +147,7 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
 
             l = sessions_for_groups.get((a.session.group, a.session.type_id), [])
             a.session.order_number = l.index(a) + 1 if a in l else 0
-            
+
     parents = Group.objects.filter(pk__in=parent_id_set)
     parent_replacements = find_history_replacements_active_at(parents, meeting_time)
 
@@ -253,54 +171,463 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
 
     return assignments
 
-def is_regular_agenda_filter_group(group):
-    """Should this group appear in the 'regular' agenda filter button lists?"""
-    return group.type_id in ('wg', 'rg', 'ag', 'rag', 'iab', 'program')
 
-def tag_assignments_with_filter_keywords(assignments):
-    """Add keywords for agenda filtering
-    
-    Keywords are all lower case.
+class AgendaKeywordTool:
+    """Base class for agenda keyword-related organizers
+
+    The purpose of this class is to hold utility methods and data needed by keyword generation
+    helper classes. It ensures consistency of, e.g., definitions of when to use legacy keywords or what
+    timeslot types should be used to define filters.
     """
-    for a in assignments:
-        a.filter_keywords = {a.timeslot.type.slug.lower()}
-        a.filter_keywords.update(filter_keywords_for_session(a.session))
-        a.filter_keywords = sorted(list(a.filter_keywords))
+    def __init__(self, *, assignments=None, sessions=None):
+        # n.b., single star argument means only keyword parameters are allowed when calling constructor
+        if assignments is not None and sessions is None:
+            self.assignments = assignments
+            self.sessions = [a.session for a in self.assignments if a.session]
+        elif sessions is not None and assignments is None:
+            self.assignments = None
+            self.sessions = sessions
+        else:
+            raise RuntimeError('Exactly one of assignments or sessions must be specified')
 
-def filter_keywords_for_session(session):
-    keywords = {session.type.slug.lower()}
-    group = getattr(session, 'historic_group', session.group)
-    if group is not None:
-        if group.state_id == 'bof':
-            keywords.add('bof')
-        keywords.add(group.acronym.lower())
-        specific_kw = filter_keyword_for_specific_session(session)
+        self.meeting = self.sessions[0].meeting if len(self.sessions) > 0 else None
+
+    def _use_legacy_keywords(self):
+        """Should legacy keyword handling be used for this meeting?"""
+        # Only IETF meetings need legacy handling. These are identified
+        # by having a purely numeric meeting.number.
+        return (self.meeting is not None
+                and self.meeting.number.isdigit()
+                and int(self.meeting.number) <= settings.MEETING_LEGACY_OFFICE_HOURS_END)
+
+    # Helper methods
+    @staticmethod
+    def _get_group(s):
+        """Get group of a session, handling historic groups"""
+        return getattr(s, 'historic_group', s.group)
+
+    def _get_group_parent(self, s):
+        """Get parent of a group or parent of a session's group, handling historic groups"""
+        g = self._get_group(s) if isinstance(s, Session) else s  # accept a group or a session arg
+        return getattr(g, 'historic_parent', g.parent)
+
+    def _purpose_keyword(self, purpose):
+        """Get the keyword corresponding to a session purpose"""
+        return purpose.slug.lower()
+
+    def _group_keyword(self, group):
+        """Get the keyword corresponding to a session group"""
+        return group.acronym.lower()
+
+    def _session_name_keyword(self, session):
+        """Get the keyword identifying a session by name"""
+        return xslugify(session.name) if session.name else None
+
+    @property
+    def filterable_purposes(self):
+        return SessionPurposeName.objects.exclude(slug='none').order_by('name')
+
+
+class AgendaFilterOrganizer(AgendaKeywordTool):
+    """Helper class to organize agenda filters given a list of assignments or sessions
+
+    Either assignments or sessions must be specified (but not both). Keywords should be applied
+    to these items before calling either of the 'get_' methods, otherwise some special filters
+    may not be included (e.g., 'BoF' or 'Plenary'). If historic_group and/or historic_parent
+    attributes are present, these will be used instead of group/parent.
+
+    The organizer will process its inputs once, when one of its get_ methods is first called.
+
+    Terminology:
+      * column: group of related buttons, usually with a heading button.
+      * heading: button at the top of a column, e.g. an area. Has a keyword that applies to all in its column.
+      * category: a set of columns displayed as separate from other categories
+      * group filters: filters whose keywords derive from the group owning the session, such as for working groups
+      * non-group filters: filters whose keywords come from something other than a session's group
+      * special filters: group filters of type "special" that have no heading, end up in the catch-all column
+      * extra filters: ad hoc filters created based on the extra_labels list, go in the catch-all column
+      * catch-all column: column with no heading where extra filters and special filters are gathered
+    """
+    # group acronyms in this list will never be used as filter buttons
+    exclude_acronyms = ('iesg', 'ietf', 'secretariat')
+    # extra keywords to include in the no-heading column if they apply to any sessions
+    extra_labels = ('BoF',)
+    # group types whose acronyms should be word-capitalized
+    capitalized_group_types = ('team',)
+    # group types whose acronyms should be all-caps
+    uppercased_group_types = ('area', 'ietf', 'irtf')
+    # check that the group labeling sets are disjoint
+    assert(set(capitalized_group_types).isdisjoint(uppercased_group_types))
+    # group acronyms that need special handling
+    special_group_labels = dict(edu='EDU', iepg='IEPG')
+
+    def __init__(self, *, single_category=False, **kwargs):
+        super(AgendaFilterOrganizer, self).__init__(**kwargs)
+        self.single_category = single_category
+        # filled in when _organize_filters() is called
+        self.filter_categories = None
+        self.special_filters = None
+        if self._use_legacy_keywords():
+            self.extra_labels += ('Plenary',)  # need this when not using session purpose
+
+    def get_non_area_keywords(self):
+        """Get list of any 'non-area' (aka 'special') keywords
+
+        These are the keywords corresponding to the right-most, headingless button column.
+        """
+        if self.special_filters is None:
+            self._organize_filters()
+        return [sf['keyword'] for sf in self.special_filters['children']]
+
+    def get_filter_categories(self):
+        """Get a list of filter categories
+
+        If single_category is True, this will be a list with one element. Otherwise it
+        may have multiple elements. Each element is a list of filter columns.
+        """
+        if self.filter_categories is None:
+            self._organize_filters()
+        return self.filter_categories
+
+    def _organize_filters(self):
+        """Process inputs to construct and categorize filter lists"""
+        headings, special = self._group_filter_headings()
+        self.filter_categories = self._categorize_group_filters(headings)
+
+        # Create an additional category with non-group filters and special/extra filters
+        non_group_category = self._non_group_filters()
+
+        # special filters include self.extra_labels and any 'special' group filters
+        self.special_filters = self._extra_filters()
+        for g in special:
+            self.special_filters['children'].append(self._group_filter_entry(g))
+        if len(self.special_filters['children']) > 0:
+            self.special_filters['children'].sort(key=self._group_sort_key)
+            non_group_category.append(self.special_filters)
+
+        # if we have any additional filters, add them
+        if len(non_group_category) > 0:
+            if self.single_category:
+                # if a single category is requested, just add them to that category
+                self.filter_categories[0].extend(non_group_category)
+            else:
+                # otherwise add these as a separate category
+                self.filter_categories.append(non_group_category)
+
+    def _group_filter_headings(self):
+        """Collect group-based filters
+
+        Output is a tuple (dict(group->set), set). The dict keys are groups to be used as headings
+        with sets of child groups as associated values. The set is 'special' groups that have no
+        heading group.
+        """
+        # groups in the schedule that have a historic_parent group
+        groups = set(self._get_group(s) for s in self.sessions
+                     if s
+                     and self._get_group(s))
+        log.assertion('len(groups) == len(set(g.acronym for g in groups))')  # no repeated acros
+
+        group_parents = set(self._get_group_parent(g) for g in groups if self._get_group_parent(g))
+        log.assertion('len(group_parents) == len(set(gp.acronym for gp in group_parents))')  # no repeated acros
+
+        all_groups = groups.union(group_parents)
+        all_groups.difference_update([g for g in all_groups if g.acronym in self.exclude_acronyms])
+        headings = {g: set()
+                    for g in all_groups
+                    if g.features.agenda_filter_type_id == 'heading'}
+        special = set(g for g in all_groups
+                      if g.features.agenda_filter_type_id == 'special')
+
+        for g in groups:
+            if g.features.agenda_filter_type_id == 'normal':
+                # normal filter group with a heading parent goes in that column
+                p = self._get_group_parent(g)
+                if p in headings:
+                    headings[p].add(g)
+                else:
+                    # normal filter group with no heading parent is 'special'
+                    special.add(g)
+
+        return headings, special
+
+    def _categorize_group_filters(self, headings):
+        """Categorize the group-based filters
+
+        Returns a list of one or more categories of filter columns. When single_category is True,
+        it will always be only one category.
+        """
+        area_category = []  # headings are area groups
+        non_area_category = []  # headings are non-area groups
+
+        for h in headings:
+            if h.type_id == 'area' or self.single_category:
+                area_category.append(self._group_filter_column(h, headings[h]))
+            else:
+                non_area_category.append(self._group_filter_column(h, headings[h]))
+        area_category.sort(key=self._group_sort_key)
+        if self.single_category:
+            return [area_category]
+        non_area_category.sort(key=self._group_sort_key)
+        return [area_category, non_area_category]
+
+    def _non_group_filters(self):
+        """Get list of non-group filter columns
+
+        Empty columns will be omitted.
+        """
+        if self.sessions is None:
+            sessions = [a.session for a in self.assignments]
+        else:
+            sessions = self.sessions
+
+        # Call legacy version for older meetings
+        if self._use_legacy_keywords():
+            return self._legacy_non_group_filters(sessions)
+
+        # Not using legacy version
+        filter_cols = []
+        for purpose in self.filterable_purposes:
+            if purpose.slug == 'regular':
+                continue
+
+            # Map label to its keyword, discarding duplicate labels.
+            # This does what we want as long as sessions with the same
+            # name and purpose belong to the same group.
+            sessions_by_name = {
+                session.name: session
+                for session in sessions if session.purpose == purpose
+            }
+            if len(sessions_by_name) > 0:
+                # keyword needs to match what's tagged in filter_keywords_for_session()
+                heading_kw = self._purpose_keyword(purpose)
+                children = []
+                for name, session in sessions_by_name.items():
+                    children.append(self._filter_entry(
+                        label=name,
+                        keyword=self._session_name_keyword(session),
+                        toggled_by=[self._group_keyword(session.group)] if session.group else None,
+                        is_bof=False,
+                    ))
+                column = self._filter_column(
+                    label=purpose.name,
+                    keyword=heading_kw,
+                    children=children,
+                )
+                filter_cols.append(column)
+
+        return filter_cols
+
+    def _legacy_non_group_filters(self, sessions):
+        """Get list of non-group filters for older meetings
+
+        Returns a list of filter columns
+        """
+        office_hours_items = set()
+        suffix = ' office hours'
+        for s in sessions:
+            if s.name.lower().endswith(suffix):
+                office_hours_items.add((s.name[:-len(suffix)].strip(), s.group))
+
+        headings = []
+        # currently we only do office hours
+        if len(office_hours_items) > 0:
+            column = self._filter_column(
+                label='Office Hours',
+                keyword='officehours',
+                children=[
+                    self._filter_entry(
+                        label=label,
+                        keyword=f'{label.lower().replace(" ", "")}-officehours',
+                        toggled_by=[self._group_keyword(group)] if group else None,
+                        is_bof=False,
+                    )
+                    for label, group in sorted(office_hours_items, key=lambda item: item[0].upper())
+                ])
+            headings.append(column)
+        return headings
+
+    def _extra_filters(self):
+        """Get list of filters corresponding to self.extra_labels"""
+        item_source = self.assignments or self.sessions or []
+        candidates = set(self.extra_labels)
+        return self._filter_column(
+            label=None,
+            keyword=None,
+            children=[
+                self._filter_entry(label=label, keyword=xslugify(label), toggled_by=[], is_bof=False)
+                for label in candidates if any(
+                    # Keep only those that will affect at least one session
+                    [label.lower() in item.filter_keywords for item in item_source]
+                )]
+        )
+
+    @staticmethod
+    def _filter_entry(label, keyword, is_bof, toggled_by=None):
+        """Construct a filter entry representation"""
+        # get our own copy of the list for toggled_by
+        if toggled_by is None:
+            toggled_by = []
+        if is_bof:
+            toggled_by = ['bof'] + toggled_by
+        return dict(
+            label=label,
+            keyword=keyword,
+            toggled_by=toggled_by,
+            is_bof=is_bof,
+        )
+
+    def _filter_column(self, label, keyword, children):
+        """Construct a filter column given a label, keyword, and list of child entries"""
+        entry = self._filter_entry(label, keyword, False)  # heading
+        entry['children'] = children
+        # all children should be controlled by the heading keyword
+        if keyword:
+            for child in children:
+                if keyword not in child['toggled_by']:
+                    child['toggled_by'] = [keyword] + child['toggled_by']
+        return entry
+
+    def _group_label(self, group):
+        """Generate a label for a group filter button"""
+        label = group.acronym
+        if label in self.special_group_labels:
+            return self.special_group_labels[label]
+        elif group.type_id in self.capitalized_group_types:
+            return label.capitalize()
+        elif group.type_id in self.uppercased_group_types:
+            return label.upper()
+        return label
+
+    def _group_filter_entry(self, group):
+        """Construct a filter_entry for a group filter button"""
+        return self._filter_entry(
+            label=self._group_label(group),
+            keyword=self._group_keyword(group),
+            toggled_by=[self._group_keyword(group.parent)] if group.parent else None,
+            is_bof=group.is_bof(),
+        )
+
+    def _group_filter_column(self, heading, children):
+        """Construct a filter column given a heading group and a list of its child groups"""
+        return self._filter_column(
+            label=None if heading is None else self._group_label(heading),
+            keyword=self._group_keyword(heading),
+            children=sorted([self._group_filter_entry(g) for g in children], key=self._group_sort_key),
+        )
+
+    @staticmethod
+    def _group_sort_key(g):
+        return 'zzzzzzzz' if g is None else g['label'].upper()  # sort blank to the end
+
+
+class AgendaKeywordTagger(AgendaKeywordTool):
+    """Class for applying keywords to agenda timeslot assignments.
+
+    This is the other side of the agenda filtering: AgendaFilterOrganizer generates the
+    filter buttons, this applies keywords to the entries being filtered.
+    """
+    def apply(self):
+        """Apply tags to sessions / assignments"""
+        if self.assignments is not None:
+            self._tag_assignments_with_filter_keywords()
+        else:
+            self._tag_sessions_with_filter_keywords()
+
+    def apply_session_keywords(self):
+        """Tag each item with its session-specific keyword"""
+        if self.assignments is not None:
+            for a in self.assignments:
+                a.session_keyword = self.filter_keyword_for_specific_session(a.session)
+        else:
+            for s in self.sessions:
+                s.session_keyword = self.filter_keyword_for_specific_session(s)
+
+    def _is_regular_agenda_filter_group(self, group):
+        """Should this group appear in the 'regular' agenda filter button lists?"""
+        parent = self._get_group_parent(group)
+        return (
+                group.features.agenda_filter_type_id == 'normal'
+                and parent
+                and parent.features.agenda_filter_type_id == 'heading'
+        )
+
+    def _tag_assignments_with_filter_keywords(self):
+        """Add keywords for agenda filtering
+
+        Keywords are all lower case.
+        """
+        for a in self.assignments:
+            a.filter_keywords = self._filter_keywords_for_assignment(a)
+            a.filter_keywords = sorted(list(a.filter_keywords))
+
+    def _tag_sessions_with_filter_keywords(self):
+        for s in self.sessions:
+            s.filter_keywords = self._filter_keywords_for_session(s)
+            s.filter_keywords = sorted(list(s.filter_keywords))
+
+    @staticmethod
+    def _legacy_extra_session_keywords(session):
+        """Get extra keywords for a session at a legacy meeting"""
+        extra = []
+        if session.type_id == 'plenary':
+            extra.append('plenary')
+        office_hours_match = re.match(r'^ *\w+(?: +\w+)* +office hours *$', session.name, re.IGNORECASE)
+        if office_hours_match is not None:
+            suffix = 'officehours'
+            extra.extend([
+                'officehours',
+                session.name.lower().replace(' ', '')[:-len(suffix)] + '-officehours',
+            ])
+        return extra
+
+    def _filter_keywords_for_session(self, session):
+        keywords = set()
+        if session.purpose in self.filterable_purposes:
+            keywords.add(self._purpose_keyword(session.purpose))
+
+        group = self._get_group(session)
+        if group is not None:
+            if group.state_id == 'bof':
+                keywords.add('bof')
+            keywords.add(self._group_keyword(group))
+        specific_kw = self.filter_keyword_for_specific_session(session)
         if specific_kw is not None:
             keywords.add(specific_kw)
-        area = getattr(group, 'historic_parent', group.parent)
+
+        kw = self._session_name_keyword(session)
+        if kw:
+            keywords.add(kw)
 
         # Only sessions belonging to "regular" groups should respond to the
         # parent group filter keyword (often the 'area'). This must match
         # the test used by the agenda() view to decide whether a group
         # gets an area or non-area filter button.
-        if is_regular_agenda_filter_group(group) and area is not None:
-            keywords.add(area.acronym.lower())
-    office_hours_match = re.match(r'^ *\w+(?: +\w+)* +office hours *$', session.name, re.IGNORECASE)
-    if office_hours_match is not None:
-        keywords.update(['officehours', session.name.lower().replace(' ', '')])
-    return sorted(list(keywords))
+        if self._is_regular_agenda_filter_group(group):
+            area = self._get_group_parent(group)
+            if area is not None:
+                keywords.add(self._group_keyword(area))
 
-def filter_keyword_for_specific_session(session):
-    """Get keyword that identifies a specific session
+        if self._use_legacy_keywords():
+            keywords.update(self._legacy_extra_session_keywords(session))
 
-    Returns None if the session cannot be selected individually.
-    """
-    group = getattr(session, 'historic_group', session.group)
-    if group is None:
-        return None
-    kw = group.acronym.lower()  # start with this
-    token = session.docname_token_only_for_multiple()
-    return kw if token is None else '{}-{}'.format(kw, token)
+        return sorted(keywords)
+
+    def _filter_keywords_for_assignment(self, assignment):
+        keywords = self._filter_keywords_for_session(assignment.session)
+        return sorted(keywords)
+
+    def filter_keyword_for_specific_session(self, session):
+        """Get keyword that identifies a specific session
+
+        Returns None if the session cannot be selected individually.
+        """
+        group = self._get_group(session)
+        if group is None:
+            return None
+        kw = self._group_keyword(group)  # start with this
+        token = session.docname_token_only_for_multiple()
+        return kw if token is None else '{}-{}'.format(kw, token)
+
 
 def read_session_file(type, num, doc):
     # XXXX FIXME: the path fragment in the code below should be moved to
@@ -387,15 +714,6 @@ def schedule_permissions(meeting, schedule, user):
 
     return cansee, canedit, secretariat
 
-def session_constraint_expire(request,session):
-    from .ajax import session_constraints
-    path = reverse(session_constraints, args=[session.meeting.number, session.pk])
-    temp_request = HttpRequest()
-    temp_request.path = path
-    temp_request.META['HTTP_HOST'] = request.META['HTTP_HOST']
-    key = get_cache_key(temp_request)
-    if key is not None and key in cache:
-        cache.delete(key)
 
 # -------------------------------------------------
 # Interim Meeting Helpers

@@ -1,11 +1,13 @@
 # -*- conf-mode -*-
 #
 
+
 /personal/lars/7.39.1.dev0@19495 # Hold the modal 'give us your xml' poking until bibxml service is stable 
 				 # and maybe until we have rendered previews.
 
 # Everyting below this line is OBE
 
+/personal/rjs/7.39.1.dev1@19554 # Optimization wasn't measured correctly
 /personal/rjs/7.36.1.dev0@19318 # Folded this into r19336
 /personal/rjs/7.36.1.dev0@19302 # Handled this in an earlier merge
 

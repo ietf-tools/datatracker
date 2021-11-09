@@ -14,7 +14,6 @@ import string
 
 from collections import namedtuple
 from pathlib import Path
-from urllib.parse import urljoin
 
 import debug                            # pyflakes:ignore
 
@@ -23,9 +22,7 @@ from django.db import models
 from django.db.models import Max, Subquery, OuterRef, TextField, Value, Q
 from django.db.models.functions import Coalesce
 from django.conf import settings
-# mostly used by json_dict()
-#from django.template.defaultfilters import slugify, date as date_format, time as time_format
-from django.template.defaultfilters import date as date_format
+from django.urls import reverse as urlreverse
 from django.utils.text import slugify
 from django.utils.safestring import mark_safe
 
@@ -36,6 +33,7 @@ from ietf.group.utils import can_manage_materials
 from ietf.name.models import (
     MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName,
     ImportantDateName, TimerangeName, SlideSubmissionStatusName, ProceedingsMaterialTypeName,
+    SessionPurposeName,
 )
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
@@ -308,36 +306,17 @@ class Meeting(models.Model):
             slugs = ('conflict', 'conflic2', 'conflic3')
         return ConstraintName.objects.filter(slug__in=slugs)
 
-    def json_url(self):
-        return "/meeting/%s/json" % (self.number, )
-
     def base_url(self):
         return "/meeting/%s" % (self.number, )
 
-    def json_dict(self, host_scheme):
-        # unfortunately, using the datetime aware json encoder seems impossible,
-        # so the dates are formatted as strings here.
-        agenda_url = ""
-        if self.schedule:
-            agenda_url = urljoin(host_scheme, self.schedule.base_url())
-        return {
-            'href':                 urljoin(host_scheme, self.json_url()),
-            'name':                 self.number,
-            'submission_start_date':   fmt_date(self.get_submission_start_date()),
-            'submission_cut_off_date': fmt_date(self.get_submission_cut_off_date()),
-            'submission_correction_date': fmt_date(self.get_submission_correction_date()),
-            'date':                    fmt_date(self.date),
-            'agenda_href':             agenda_url,
-            'city':                    self.city,
-            'country':                 self.country,
-            'time_zone':               self.time_zone,
-            'venue_name':              self.venue_name,
-            'venue_addr':              self.venue_addr,
-            'break_area':              self.break_area,
-            'reg_area':                self.reg_area
-            }
-
     def build_timeslices(self):
+        """Get unique day/time/timeslot data for meeting
+        
+        Returns a list of days, time intervals for each day, and timeslots for each day,
+        with repeated days/time intervals removed. Ignores timeslots that do not have a
+        location. The slots return value contains only one TimeSlot for each distinct
+        time interval.
+        """
         days = []          # the days of the meetings
         time_slices = {}   # the times on each day
         slots = {}
@@ -359,8 +338,9 @@ class Meeting(models.Model):
 
         days.sort()
         for ymd in time_slices:
+            # Make sure these sort the same way
             time_slices[ymd].sort()
-            slots[ymd].sort(key=lambda x: x.time)
+            slots[ymd].sort(key=lambda x: (x.time, x.duration))
         return days,time_slices,slots
 
     # this functions makes a list of timeslices and rooms, and
@@ -428,13 +408,6 @@ class ResourceAssociation(models.Model):
     def __str__(self):
         return self.desc
 
-    def json_dict(self, host_scheme):
-        res1 = dict()
-        res1['name'] = self.name.slug
-        res1['icon'] = "/images/%s" % (self.icon)
-        res1['desc'] = self.desc
-        res1['resource_id'] = self.pk
-        return res1
 
 class Room(models.Model):
     meeting = ForeignKey(Meeting)
@@ -477,16 +450,19 @@ class Room(models.Model):
     def dom_id(self):
         return "room%u" % (self.pk)
 
-    def json_url(self):
-        return "/meeting/%s/room/%s.json" % (self.meeting.number, self.id)
-
-    def json_dict(self, host_scheme):
-        return {
-            'href':                 urljoin(host_scheme, self.json_url()),
-            'name':                 self.name,
-            'capacity':             self.capacity,
-            }
     # floorplan support
+    def floorplan_url(self):
+        mtg_num = self.meeting.get_number()
+        if not mtg_num:
+            return None
+        elif mtg_num <= settings.FLOORPLAN_LAST_LEGACY_MEETING:
+            base_url = settings.FLOORPLAN_LEGACY_BASE_URL.format(meeting=self.meeting)
+        elif self.floorplan:
+            base_url = urlreverse('ietf.meeting.views.floor_plan', kwargs=dict(num=mtg_num))
+        else:
+            return None
+        return f'{base_url}?room={xslugify(self.name)}'
+
     def left(self):
         return min(self.x1, self.x2) if (self.x1 and self.x2) else 0
     def top(self):
@@ -678,29 +654,8 @@ class TimeSlot(models.Model):
             dom_id = self.location.dom_id()
         return "%s_%s_%s" % (dom_id, self.time.strftime('%Y-%m-%d'), self.time.strftime('%H%M'))
 
-    def json_dict(self, host_scheme):
-        ts = dict()
-        ts['timeslot_id'] = self.id
-        ts['href']        = urljoin(host_scheme, self.json_url())
-        ts['room']        = self.get_location()
-        ts['roomtype'] = self.type.slug
-        if self.location is not None:
-            ts['capacity'] = self.location.capacity
-        ts["time"]     = date_format(self.time, 'Hi')
-        ts["date"]     = fmt_date(self.time)
-        ts["domid"]    = self.js_identifier
-        following = self.slot_to_the_right
-        if following is not None:
-            ts["following_timeslot_id"] = following.id
-        return ts
-
-    def json_url(self):
-        return "/meeting/%s/timeslot/%s.json" % (self.meeting.number, self.id)
-
-    """
-    This routine deletes all timeslots which are in the same time as this slot.
-    """
     def delete_concurrent_timeslots(self):
+        """Delete all timeslots which are in the same time as this slot"""
         # can not include duration in filter, because there is no support
         # for having it a WHERE clause.
         # below will delete self as well.
@@ -804,25 +759,6 @@ class Schedule(models.Model):
     def delete_assignments(self):
         self.assignments.all().delete()
 
-    def json_url(self):
-        return "%s.json" % self.base_url()
-
-    def json_dict(self, host_scheme):
-        sch = dict()
-        sch['schedule_id'] = self.id
-        sch['href']        = urljoin(host_scheme, self.json_url())
-        if self.visible:
-            sch['visible']  = "visible"
-        else:
-            sch['visible']  = "hidden"
-        if self.public:
-            sch['public']   = "public"
-        else:
-            sch['public']   = "private"
-        sch['owner']       = urljoin(host_scheme, self.owner.json_url())
-        # should include href to list of assignments, but they have no direct API yet.
-        return sch
-
     @property
     def qs_assignments_with_sessions(self):
         return self.assignments.filter(session__isnull=False)
@@ -878,39 +814,13 @@ class SchedTimeSessAssignment(models.Model):
         else:
             return None
 
-    def json_url(self):
-        if not hasattr(self, '_cached_json_url'):
-            self._cached_json_url =  "/meeting/%s/agenda/%s/%s/session/%u.json" % (
-                                        self.schedule.meeting.number,
-                                        self.schedule.owner_email(),
-                                        self.schedule.name, self.id )
-        return self._cached_json_url
+    def meeting(self):
+        """Get the meeting to which this assignment belongs"""
+        return self.session.meeting
 
-    def json_dict(self, host_scheme):
-        if not hasattr(self, '_cached_json_dict'):
-            ss = dict()
-            ss['assignment_id'] = self.id
-            ss['href']          = urljoin(host_scheme, self.json_url())
-            ss['timeslot_id'] = self.timeslot.id
-
-            efset = self.session.timeslotassignments.filter(schedule=self.schedule).order_by("timeslot__time")
-            if efset.count() > 1:
-                # now we know that there is some work to do finding the extendedfrom_id.
-                # loop through the list of items
-                previous = None
-                for efss in efset:
-                    if efss.pk == self.pk:
-                        extendedfrom = previous
-                        break
-                    previous = efss
-                if extendedfrom is not None:
-                    ss['extendedfrom_id']  = extendedfrom.id
-
-            if self.session:
-                ss['session_id']  = self.session.id
-            ss["pinned"]   = self.pinned
-            self._cached_json_dict = ss
-        return self._cached_json_dict
+    def slot_type(self):
+        """Get the TimeSlotTypeName that applies to this assignment"""
+        return self.timeslot.type
 
     def slug(self):
         """Return sensible id string for session, e.g. suitable for use as HTML anchor."""
@@ -928,12 +838,12 @@ class SchedTimeSessAssignment(models.Model):
 
             g = getattr(self.session, "historic_group", None) or self.session.group
 
-            if self.timeslot.type_id in ('break', 'reg', 'other'):
+            if self.timeslot.type.slug in ('break', 'reg', 'other'):
                 components.append(g.acronym)
                 components.append(slugify(self.session.name))
 
-            if self.timeslot.type_id in ('regular', 'plenary'):
-                if self.timeslot.type_id == "plenary":
+            if self.timeslot.type.slug in ('regular', 'plenary'):
+                if self.timeslot.type.slug == "plenary":
                     components.append("1plenary")
                 else:
                     p = getattr(g, "historic_parent", None) or g.parent
@@ -1002,30 +912,6 @@ class Constraint(models.Model):
             return "%s " % (self.target.acronym)
         elif not self.target and self.person:
             return "%s " % (self.person)
-
-    def json_url(self):
-        return "/meeting/%s/constraint/%s.json" % (self.meeting.number, self.id)
-
-    def json_dict(self, host_scheme):
-        ct1 = dict()
-        ct1['constraint_id'] = self.id
-        ct1['href']          = urljoin(host_scheme, self.json_url())
-        ct1['name']          = self.name.slug
-        if self.person is not None:
-            ct1['person_href'] = urljoin(host_scheme, self.person.json_url())
-        if self.source is not None:
-            ct1['source_href'] = urljoin(host_scheme, self.source.json_url())
-        if self.target is not None:
-            ct1['target_href'] = urljoin(host_scheme, self.target.json_url())
-        ct1['meeting_href'] = urljoin(host_scheme, self.meeting.json_url())
-        if self.time_relation:
-            ct1['time_relation'] = self.time_relation
-            ct1['time_relation_display'] = self.get_time_relation_display()
-        if self.timeranges.count():
-            ct1['timeranges_cant_meet'] = [t.slug for t in self.timeranges.all()]
-            timeranges_str = ", ".join([t.desc for t in self.timeranges.all()])
-            ct1['timeranges_display'] = "Can't meet %s" % timeranges_str
-        return ct1
 
 
 class SessionPresentation(models.Model):
@@ -1098,6 +984,13 @@ class SessionQuerySet(models.QuerySet):
         """
         return self.with_current_status().exclude(current_status__in=Session.CANCELED_STATUSES)
 
+    def not_deleted(self):
+        """Queryset containing all sessions not deleted
+
+        Results annotated with current_status
+        """
+        return self.with_current_status().exclude(current_status='deleted')
+
     def that_can_meet(self):
         """Queryset containing sessions that can meet
         
@@ -1109,6 +1002,11 @@ class SessionQuerySet(models.QuerySet):
             type__slug='regular'
         )
 
+    def requests(self):
+        """Queryset containing sessions that may be handled as requests"""
+        return self.exclude(
+            type__in=('offagenda', 'reserved', 'unavail')
+        )
 
 class Session(models.Model):
     """Session records that a group should have a session on the
@@ -1120,6 +1018,7 @@ class Session(models.Model):
     meeting = ForeignKey(Meeting)
     name = models.CharField(blank=True, max_length=255, help_text="Name of session, in case the session has a purpose rather than just being a group meeting.")
     short = models.CharField(blank=True, max_length=32, help_text="Short version of 'name' above, for use in filenames.")
+    purpose = ForeignKey(SessionPurposeName, null=False, help_text='Purpose of the session')
     type = ForeignKey(TimeSlotTypeName)
     group = ForeignKey(Group)    # The group type historically determined the session type.  BOFs also need to be added as a group. Note that not all meeting requests have a natural group to associate with.
     joint_with_groups = models.ManyToManyField(Group, related_name='sessions_joint_in',blank=True)
@@ -1130,6 +1029,7 @@ class Session(models.Model):
     scheduled = models.DateTimeField(null=True, blank=True)
     modified = models.DateTimeField(auto_now=True)
     remote_instructions = models.CharField(blank=True,max_length=1024)
+    on_agenda = models.BooleanField(default=True, help_text='Is this session visible on the meeting agenda?')
 
     tombstone_for = models.ForeignKey('Session', blank=True, null=True, help_text="This session is the tombstone for a session that was rescheduled", on_delete=models.CASCADE)
 
@@ -1323,91 +1223,9 @@ class Session(models.Model):
     def official_timeslotassignment(self):
         return self.timeslotassignments.filter(schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting.schedule else None]).first()
 
-    def constraints_dict(self, host_scheme):
-        constraint_list = []
-        for constraint in self.constraints():
-            ct1 = constraint.json_dict(host_scheme)
-            constraint_list.append(ct1)
-
-        for constraint in self.reverse_constraints():
-            ct1 = constraint.json_dict(host_scheme)
-            constraint_list.append(ct1)
-        return constraint_list
-
     @property
     def people_constraints(self):
         return self.group.constraint_source_set.filter(meeting=self.meeting, name='bethere')
-
-    def json_url(self):
-        return "/meeting/%s/session/%s.json" % (self.meeting.number, self.id)
-
-    def json_dict(self, host_scheme):
-        sess1 = dict()
-        sess1['href']           = urljoin(host_scheme, self.json_url())
-        if self.group is not None:
-            sess1['group']          = self.group.json_dict(host_scheme)
-            sess1['group_href']     = urljoin(host_scheme, self.group.json_url())
-            if self.group.parent is not None:
-                sess1['area']           = self.group.parent.acronym.upper()
-            sess1['description']    = self.group.name
-            sess1['group_id']       = str(self.group.pk)
-        reslist = []
-        for r in self.resources.all():
-            reslist.append(r.json_dict(host_scheme))
-        sess1['resources']      = reslist
-        sess1['session_id']     = str(self.pk)
-        sess1['name']           = self.name
-        sess1['title']          = self.short_name
-        sess1['short_name']     = self.short_name
-        sess1['bof']            = str(self.group.is_bof())
-        sess1['agenda_note']    = self.agenda_note
-        sess1['attendees']      = str(self.attendees)
-        sess1['joint_with_groups'] = self.joint_with_groups_acronyms()
-
-        # fish out scheduling information - eventually, we should pick
-        # this out in the caller instead
-        latest_event = None
-        first_event = None
-
-        if self.pk is not None:
-            if not hasattr(self, 'current_status') or not hasattr(self, 'requested_time'):
-                events = list(SchedulingEvent.objects.filter(session=self.pk).order_by('time', 'id'))
-                if events:
-                    first_event = events[0]
-                    latest_event = events[-1]
-
-        status_id = None
-        if hasattr(self, 'current_status'):
-            status_id = self.current_status
-        elif latest_event:
-            status_id = latest_event.status_id
-
-        sess1['status']         = SessionStatusName.objects.get(slug=status_id).name if status_id else None
-        if self.comments is not None:
-            sess1['comments']       = self.comments
-
-        requested_time = None
-        if hasattr(self, 'requested_time'):
-            requested_time = self.requested_time
-        elif first_event:
-            requested_time = first_event.time
-        sess1['requested_time'] = requested_time.strftime("%Y-%m-%d") if requested_time else None
-
-
-        requested_by = None
-        if hasattr(self, 'requested_by'):
-            requested_by = self.requested_by
-        elif first_event:
-            requested_by = first_event.by_id
-
-        if requested_by is not None:
-            requested_by_person = Person.objects.filter(pk=requested_by).first()
-            if requested_by_person:
-                sess1['requested_by']   = str(requested_by_person)
-
-        sess1['requested_duration']= "%.1f" % (float(self.requested_duration.seconds) / 3600)
-        sess1['special_request'] = str(self.special_request_token)
-        return sess1
 
     def agenda_text(self):
         doc = self.agenda()

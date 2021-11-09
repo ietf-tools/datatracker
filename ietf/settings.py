@@ -959,8 +959,11 @@ INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 
 FLOORPLAN_MEDIA_DIR = 'floor'
 FLOORPLAN_DIR = os.path.join(MEDIA_ROOT, FLOORPLAN_MEDIA_DIR)
+FLOORPLAN_LEGACY_BASE_URL = 'https://tools.ietf.org/agenda/{meeting.number}/venue/'
+FLOORPLAN_LAST_LEGACY_MEETING = 95  # last meeting to use FLOORPLAN_LEGACY_BASE_URL
 
 MEETING_USES_CODIMD_DATE = datetime.date(2020,7,6)
+MEETING_LEGACY_OFFICE_HOURS_END = 112  # last meeting to use legacy office hours representation
 
 # Maximum dimensions to accept at all
 MEETINGHOST_LOGO_MAX_UPLOAD_WIDTH = 400

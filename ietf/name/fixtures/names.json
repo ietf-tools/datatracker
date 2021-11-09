@@ -2592,6 +2592,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "special",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": false,
@@ -2619,6 +2620,7 @@
       ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"lead\",\n    \"delegate\",\n    \"matman\"\n]",
+      "session_purposes": "[\n    \"presentation\"\n]",
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -2629,6 +2631,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": "ietf",
       "create_wiki": false,
       "custom_group_roles": false,
@@ -2654,6 +2657,7 @@
       "parent_types": [],
       "req_subm_approval": false,
       "role_order": "[\n    \"chair\"\n]",
+      "session_purposes": "[\n    \"closed_meeting\",\n    \"officehours\"\n]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -2664,6 +2668,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": true,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": true,
@@ -2692,6 +2697,7 @@
       ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
+      "session_purposes": "[\n    \"regular\"\n]",
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -2702,6 +2708,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"ad\"\n]",
+      "agenda_filter_type": "heading",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": true,
@@ -2729,6 +2736,7 @@
       ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
+      "session_purposes": "[\n    \"regular\"\n]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -2739,6 +2747,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\",\n    \"secr\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": "ad",
       "create_wiki": true,
       "custom_group_roles": true,
@@ -2766,6 +2775,7 @@
       ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
+      "session_purposes": "[\n    \"open_meeting\",\n    \"presentation\",\n    \"regular\",\n    \"social\",\n    \"tutorial\"\n]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -2776,6 +2786,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": false,
       "custom_group_roles": true,
@@ -2803,6 +2814,7 @@
       ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
+      "session_purposes": "[\n    \"closed_meeting\",\n    \"regular\"\n]",
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -2813,6 +2825,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"lead\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": "ad",
       "create_wiki": false,
       "custom_group_roles": true,
@@ -2840,6 +2853,7 @@
       ],
       "req_subm_approval": false,
       "role_order": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
+      "session_purposes": "[\n    \"closed_meeting\",\n    \"officehours\",\n    \"open_meeting\"\n]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -2850,6 +2864,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": "ietf",
       "create_wiki": false,
       "custom_group_roles": false,
@@ -2875,6 +2890,7 @@
       "parent_types": [],
       "req_subm_approval": false,
       "role_order": "[\n    \"chair\"\n]",
+      "session_purposes": "[\n    \"officehours\"\n]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -2885,6 +2901,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": "ad",
       "create_wiki": false,
       "custom_group_roles": true,
@@ -2910,6 +2927,7 @@
       "parent_types": [],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"delegate\",\n    \"member\"\n]",
+      "session_purposes": "[\n    \"closed_meeting\",\n    \"open_meeting\"\n]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -2920,6 +2938,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\",\n    \"lead\"\n]",
+      "agenda_filter_type": "heading",
       "agenda_type": "ietf",
       "create_wiki": false,
       "custom_group_roles": true,
@@ -2947,6 +2966,7 @@
       ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
+      "session_purposes": "[\n    \"admin\",\n    \"plenary\",\n    \"presentation\",\n    \"social\"\n]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -2957,6 +2977,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": null,
       "create_wiki": false,
       "custom_group_roles": true,
@@ -2984,6 +3005,7 @@
       ],
       "req_subm_approval": false,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
+      "session_purposes": "[]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -2994,6 +3016,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "heading",
       "agenda_type": "ietf",
       "create_wiki": false,
       "custom_group_roles": true,
@@ -3021,6 +3044,7 @@
       ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
+      "session_purposes": "[]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3031,6 +3055,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\",\n    \"lead\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": "ad",
       "create_wiki": false,
       "custom_group_roles": true,
@@ -3056,6 +3081,7 @@
       "parent_types": [],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"delegate\"\n]",
+      "session_purposes": "[\n    \"officehours\"\n]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3066,6 +3092,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": null,
       "create_wiki": false,
       "custom_group_roles": true,
@@ -3093,6 +3120,7 @@
       ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
+      "session_purposes": "[\n    \"officehours\",\n    \"open_meeting\",\n    \"presentation\"\n]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3103,6 +3131,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\",\n    \"advisor\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": "side",
       "create_wiki": true,
       "custom_group_roles": true,
@@ -3130,6 +3159,7 @@
       ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"member\",\n    \"advisor\"\n]",
+      "session_purposes": "[\n    \"closed_meeting\",\n    \"officehours\"\n]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3140,6 +3170,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"lead\"\n]",
+      "agenda_filter_type": "normal",
       "agenda_type": "ad",
       "create_wiki": false,
       "custom_group_roles": true,
@@ -3167,6 +3198,7 @@
       ],
       "req_subm_approval": false,
       "role_order": "[\n    \"lead\",\n    \"chair\",\n    \"secr\"\n]",
+      "session_purposes": "[\n    \"regular\",\n    \"tutorial\"\n]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3177,6 +3209,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": true,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": true,
@@ -3204,6 +3237,7 @@
       ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
+      "session_purposes": "[\n    \"regular\"\n]",
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -3214,6 +3248,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\",\n    \"secr\"\n]",
+      "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": true,
@@ -3241,6 +3276,7 @@
       ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
+      "session_purposes": "[\n    \"open_meeting\",\n    \"social\"\n]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3251,6 +3287,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": "side",
       "create_wiki": false,
       "custom_group_roles": true,
@@ -3276,6 +3313,7 @@
       "parent_types": [],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\"\n]",
+      "session_purposes": "[\n    \"officehours\"\n]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3286,6 +3324,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": true,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": false,
@@ -3313,6 +3352,7 @@
       ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "session_purposes": "[\n    \"regular\"\n]",
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -3323,6 +3363,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
       "agenda_type": null,
       "create_wiki": false,
       "custom_group_roles": true,
@@ -3351,6 +3392,7 @@
       ],
       "req_subm_approval": true,
       "role_order": "[\n    \"liaiman\"\n]",
+      "session_purposes": "[]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3361,6 +3403,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "special",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": true,
@@ -3388,6 +3431,7 @@
       ],
       "req_subm_approval": false,
       "role_order": "[\n    \"chair\",\n    \"member\",\n    \"matman\"\n]",
+      "session_purposes": "[\n    \"coding\",\n    \"presentation\",\n    \"social\",\n    \"tutorial\"\n]",
       "show_on_agenda": false
     },
     "model": "group.groupfeatures",
@@ -3398,6 +3442,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": true,
       "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "normal",
       "agenda_type": "ietf",
       "create_wiki": true,
       "custom_group_roles": false,
@@ -3425,6 +3470,7 @@
       ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"secr\",\n    \"delegate\"\n]",
+      "session_purposes": "[\n    \"regular\"\n]",
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -6094,6 +6140,46 @@
     },
     "model": "meeting.businessconstraint",
     "pk": "sessions_out_of_order"
+  },
+  {
+    "fields": {
+      "desc": "Column heading button",
+      "name": "Heading",
+      "order": 2,
+      "used": true
+    },
+    "model": "name.agendafiltertypename",
+    "pk": "heading"
+  },
+  {
+    "fields": {
+      "desc": "Not used except for a timeslot-type column (e.g., officehours)",
+      "name": "None",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.agendafiltertypename",
+    "pk": "none"
+  },
+  {
+    "fields": {
+      "desc": "Non-heading filter button",
+      "name": "Normal",
+      "order": 1,
+      "used": true
+    },
+    "model": "name.agendafiltertypename",
+    "pk": "normal"
+  },
+  {
+    "fields": {
+      "desc": "Button in the catch-all column",
+      "name": "Special",
+      "order": 3,
+      "used": true
+    },
+    "model": "name.agendafiltertypename",
+    "pk": "special"
   },
   {
     "fields": {
@@ -12678,6 +12764,138 @@
   },
   {
     "fields": {
+      "desc": "Meeting administration",
+      "name": "Administrative",
+      "on_agenda": true,
+      "order": 5,
+      "timeslot_types": "[\n    \"other\",\n    \"reg\"\n]",
+      "used": true
+    },
+    "model": "name.sessionpurposename",
+    "pk": "admin"
+  },
+  {
+    "fields": {
+      "desc": "Closed meeting",
+      "name": "Closed meeting",
+      "on_agenda": false,
+      "order": 10,
+      "timeslot_types": "[\n    \"other\",\n    \"regular\"\n]",
+      "used": true
+    },
+    "model": "name.sessionpurposename",
+    "pk": "closed_meeting"
+  },
+  {
+    "fields": {
+      "desc": "Coding session",
+      "name": "Coding",
+      "on_agenda": true,
+      "order": 4,
+      "timeslot_types": "[\n    \"other\"\n]",
+      "used": true
+    },
+    "model": "name.sessionpurposename",
+    "pk": "coding"
+  },
+  {
+    "fields": {
+      "desc": "Value not set (do not use for new sessions)",
+      "name": "None",
+      "on_agenda": true,
+      "order": 0,
+      "timeslot_types": "[]",
+      "used": false
+    },
+    "model": "name.sessionpurposename",
+    "pk": "none"
+  },
+  {
+    "fields": {
+      "desc": "Office hours session",
+      "name": "Office hours",
+      "on_agenda": true,
+      "order": 3,
+      "timeslot_types": "[\n    \"other\"\n]",
+      "used": true
+    },
+    "model": "name.sessionpurposename",
+    "pk": "officehours"
+  },
+  {
+    "fields": {
+      "desc": "Open meeting",
+      "name": "Open meeting",
+      "on_agenda": true,
+      "order": 9,
+      "timeslot_types": "[\n    \"other\"\n]",
+      "used": true
+    },
+    "model": "name.sessionpurposename",
+    "pk": "open_meeting"
+  },
+  {
+    "fields": {
+      "desc": "Plenary session",
+      "name": "Plenary",
+      "on_agenda": true,
+      "order": 7,
+      "timeslot_types": "[\n    \"plenary\"\n]",
+      "used": true
+    },
+    "model": "name.sessionpurposename",
+    "pk": "plenary"
+  },
+  {
+    "fields": {
+      "desc": "Presentation session",
+      "name": "Presentation",
+      "on_agenda": true,
+      "order": 8,
+      "timeslot_types": "[\n    \"other\",\n    \"regular\"\n]",
+      "used": true
+    },
+    "model": "name.sessionpurposename",
+    "pk": "presentation"
+  },
+  {
+    "fields": {
+      "desc": "Regular group session",
+      "name": "Regular",
+      "on_agenda": true,
+      "order": 1,
+      "timeslot_types": "[\n    \"regular\"\n]",
+      "used": true
+    },
+    "model": "name.sessionpurposename",
+    "pk": "regular"
+  },
+  {
+    "fields": {
+      "desc": "Social event or activity",
+      "name": "Social",
+      "on_agenda": true,
+      "order": 6,
+      "timeslot_types": "[\n    \"break\",\n    \"other\"\n]",
+      "used": true
+    },
+    "model": "name.sessionpurposename",
+    "pk": "social"
+  },
+  {
+    "fields": {
+      "desc": "Tutorial or training session",
+      "name": "Tutorial",
+      "on_agenda": true,
+      "order": 2,
+      "timeslot_types": "[\n    \"other\"\n]",
+      "used": true
+    },
+    "model": "name.sessionpurposename",
+    "pk": "tutorial"
+  },
+  {
+    "fields": {
       "desc": "",
       "name": "Approved",
       "order": 0,
@@ -13101,7 +13319,6 @@
       "desc": "",
       "name": "Break",
       "order": 0,
-      "private": false,
       "used": true
     },
     "model": "name.timeslottypename",
@@ -13112,7 +13329,6 @@
       "desc": "Leadership Meetings",
       "name": "Leadership",
       "order": 0,
-      "private": true,
       "used": true
     },
     "model": "name.timeslottypename",
@@ -13123,8 +13339,7 @@
       "desc": "Other Meetings Not Published on Agenda",
       "name": "Off Agenda",
       "order": 0,
-      "private": true,
-      "used": true
+      "used": false
     },
     "model": "name.timeslottypename",
     "pk": "offagenda"
@@ -13134,7 +13349,6 @@
       "desc": "",
       "name": "Other",
       "order": 0,
-      "private": false,
       "used": true
     },
     "model": "name.timeslottypename",
@@ -13145,7 +13359,6 @@
       "desc": "",
       "name": "Plenary",
       "order": 0,
-      "private": false,
       "used": true
     },
     "model": "name.timeslottypename",
@@ -13156,7 +13369,6 @@
       "desc": "",
       "name": "Registration",
       "order": 0,
-      "private": false,
       "used": true
     },
     "model": "name.timeslottypename",
@@ -13167,7 +13379,6 @@
       "desc": "",
       "name": "Regular",
       "order": 0,
-      "private": false,
       "used": true
     },
     "model": "name.timeslottypename",
@@ -13178,8 +13389,7 @@
       "desc": "A room has been reserved for use by another body the timeslot indicated",
       "name": "Room Reserved",
       "order": 0,
-      "private": false,
-      "used": true
+      "used": false
     },
     "model": "name.timeslottypename",
     "pk": "reserved"
@@ -13189,7 +13399,6 @@
       "desc": "A room was not booked for the timeslot indicated",
       "name": "Room Unavailable",
       "order": 0,
-      "private": false,
       "used": true
     },
     "model": "name.timeslottypename",

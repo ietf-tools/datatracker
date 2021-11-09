@@ -38,7 +38,6 @@ import copy
 import datetime
 import itertools
 import io
-import json
 import markdown
 import math
 import os
@@ -1298,13 +1297,6 @@ def stream_edit(request, acronym):
                     },
                 )
 
-
-def group_json(request, acronym):
-    group = get_object_or_404(Group, acronym=acronym)
-
-    return HttpResponse(json.dumps(group.json_dict(request.build_absolute_uri('/')),
-                                   sort_keys=True, indent=2),
-                        content_type="application/json")
 
 @cache_control(public=True, max_age=30*60)
 @cache_page(30 * 60)

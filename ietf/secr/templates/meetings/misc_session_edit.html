@@ -21,3 +21,11 @@
 </div> <!-- module -->
 
 {% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {{ form.media.js }}
+{% endblock %}
+{% block extrastyle %}
+  {{ form.media.css }}
+{% endblock %}

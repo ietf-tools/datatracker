@@ -57,16 +57,13 @@ from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
 from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
-from ietf.meeting.forms import CustomDurationField, SwapDaysForm, SwapTimeslotsForm
-from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
-from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
-from ietf.meeting.helpers import get_all_assignments_from_schedule
-from ietf.meeting.helpers import get_modified_from_assignments
-from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
+from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm,
+                                 TimeSlotCreateForm, TimeSlotEditForm, SessionEditForm )
+from ietf.meeting.helpers import get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import get_meeting, get_ietf_meeting, get_current_ietf_meeting_num
-from ietf.meeting.helpers import get_schedule, schedule_permissions, is_regular_agenda_filter_group
+from ietf.meeting.helpers import get_schedule, schedule_permissions
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
-from ietf.meeting.helpers import filter_keywords_for_session, tag_assignments_with_filter_keywords, filter_keyword_for_specific_session
+from ietf.meeting.helpers import AgendaFilterOrganizer, AgendaKeywordTagger
 from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
 from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
 from ietf.meeting.helpers import can_edit_interim_request
@@ -84,10 +81,10 @@ from ietf.meeting.utils import current_session_status
 from ietf.meeting.utils import data_for_meetings_overview
 from ietf.meeting.utils import preprocess_constraints_for_meeting_schedule_editor
 from ietf.meeting.utils import diff_meeting_schedules, prefetch_schedule_diff_objects
-from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments
+from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_create_timeslots
 from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.message.utils import infer_message
-from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName
+from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
     create_recording)
@@ -279,102 +276,55 @@ def materials_editable_groups(request, num=None):
     return render(request, "meeting/materials_editable_groups.html", {
         'meeting_num': meeting.number})
 
-def ascii_alphanumeric(string):
-    return re.match(r'^[a-zA-Z0-9]*$', string)
-
-class SaveAsForm(forms.Form):
-    savename = forms.CharField(max_length=16)
-
-@role_required('Area Director','Secretariat')
-def schedule_create(request, num=None, owner=None, name=None):
-    meeting  = get_meeting(num)
-    person   = get_person_by_email(owner)
-    schedule = get_schedule_by_name(meeting, person, name)
-
-    if schedule is None:
-        # here we have to return some ajax to display an error.
-        messages.error("Error: No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name)) # pylint: disable=no-value-for-parameter
-        return redirect(edit_schedule, num=num, owner=owner, name=name)
-
-    # authorization was enforced by the @group_require decorator above.
-
-    saveasform = SaveAsForm(request.POST)
-    if not saveasform.is_valid():
-        messages.info(request, "This name is not valid. Please choose another one.")
-        return redirect(edit_schedule, num=num, owner=owner, name=name)
-
-    savedname = saveasform.cleaned_data['savename']
-
-    if not ascii_alphanumeric(savedname):
-        messages.info(request, "This name contains illegal characters. Please choose another one.")
-        return redirect(edit_schedule, num=num, owner=owner, name=name)
-
-    # create the new schedule, and copy the assignments
-    try:
-        sched = meeting.schedule_set.get(name=savedname, owner=request.user.person)
-        if sched:
-            return redirect(edit_schedule, num=meeting.number, owner=sched.owner_email(), name=sched.name)
-        else:
-            messages.info(request, "Schedule creation failed. Please try again.")
-            return redirect(edit_schedule, num=num, owner=owner, name=name)
-
-    except Schedule.DoesNotExist:
-        pass
-
-    # must be done
-    newschedule = Schedule(name=savedname,
-                           owner=request.user.person,
-                           meeting=meeting,
-                           base=schedule.base,
-                           origin=schedule,
-                           visible=False,
-                           public=False)
-
-    newschedule.save()
-    if newschedule is None:
-        return HttpResponse(status=500)
-
-    # keep a mapping so that extendedfrom references can be chased.
-    mapping = {};
-    for ss in schedule.assignments.all():
-        # hack to copy the object, creating a new one
-        # just reset the key, and save it again.
-        oldid = ss.pk
-        ss.pk = None
-        ss.schedule=newschedule
-        ss.save()
-        mapping[oldid] = ss.pk
-        #print "Copying %u to %u" % (oldid, ss.pk)
-
-    # now fix up any extendedfrom references to new set.
-    for ss in newschedule.assignments.all():
-        if ss.extendedfrom is not None:
-            oldid = ss.extendedfrom.id
-            newid = mapping[oldid]
-            #print "Fixing %u to %u" % (oldid, newid)
-            ss.extendedfrom = newschedule.assignments.get(pk = newid)
-            ss.save()
-
-
-    # now redirect to this new schedule.
-    return redirect(edit_schedule, meeting.number, newschedule.owner_email(), newschedule.name)
-
 
 @role_required('Secretariat')
 def edit_timeslots(request, num=None):
 
     meeting = get_meeting(num)
 
-    time_slices,date_slices,slots = meeting.build_timeslices()
+    if request.method == 'POST':
+        # handle AJAX requests
+        action = request.POST.get('action')
+        if action == 'delete':
+            # delete a timeslot
+            # Parameters:
+            #   slot_id: comma-separated list of TimeSlot PKs to delete
+            slot_id = request.POST.get('slot_id')
+            if slot_id is None:
+                return HttpResponseBadRequest('missing slot_id')
+            slot_ids = [id.strip() for id in slot_id.split(',')]
+            try:
+                timeslots = meeting.timeslot_set.filter(pk__in=slot_ids)
+            except ValueError:
+                return HttpResponseBadRequest('invalid slot_id specification')
+            missing_ids = set(slot_ids).difference(str(ts.pk) for ts in timeslots)
+            if len(missing_ids) != 0:
+                return HttpResponseNotFound('TimeSlot ids not found in meeting {}: {}'.format(
+                    meeting.number,
+                    ', '.join(sorted(missing_ids))
+                ))
+            timeslots.delete()
+            return HttpResponse(content='; '.join('Deleted TimeSlot {}'.format(id) for id in slot_ids))
+        else:
+            return HttpResponseBadRequest('unknown action')
+
+    # Labels here differ from those in the build_timeslices() method. The labels here are
+    # relative to the table: time_slices are the row headings (ie, days), date_slices are
+    # the column headings (i.e., time intervals), and slots are the per-day list of time slots
+    # (with only one time slot per unique time/duration)
+    time_slices, date_slices, slots = meeting.build_timeslices()
 
     ts_list = deque()
     rooms = meeting.room_set.order_by("capacity","name","id")
     for room in rooms:
         for day in time_slices:
             for slice in date_slices[day]:
-                ts_list.append(room.timeslot_set.filter(time=slice[0],duration=datetime.timedelta(seconds=slice[2])).first())
-            
+                ts_list.append(room.timeslot_set.filter(time=slice[0],duration=datetime.timedelta(seconds=slice[2])))
 
+    # Grab these in one query each to identify sessions that are in use and should be handled with care
+    ts_with_official_assignments = meeting.timeslot_set.filter(sessionassignments__schedule=meeting.schedule)
+    ts_with_any_assignments = meeting.timeslot_set.filter(sessionassignments__isnull=False)
+    
     return render(request, "meeting/timeslot_edit.html",
                                          {"rooms":rooms,
                                           "time_slices":time_slices,
@@ -382,6 +332,8 @@ def edit_timeslots(request, num=None):
                                           "date_slices":date_slices,
                                           "meeting":meeting,
                                           "ts_list":ts_list,
+                                          "ts_with_official_assignments": ts_with_official_assignments,
+                                          "ts_with_any_assignments": ts_with_any_assignments,
                                       })
 
 class NewScheduleForm(forms.ModelForm):
@@ -464,6 +416,19 @@ def new_meeting_schedule(request, num, owner=None, name=None):
 
 @ensure_csrf_cookie
 def edit_meeting_schedule(request, num=None, owner=None, name=None):
+    """Schedule editor
+
+    In addition to the URL parameters, accepts a query string parameter 'type'.
+    If present, only sessions/timeslots with a TimeSlotTypeName with that slug
+    will be included in the editor. More than one type can be enabled by passing
+    multiple type parameters.
+
+    ?type=regular  - shows only regular sessions/timeslots (i.e., old editor behavior)
+    ?type=regular&type=other  - shows both regular and other sessions/timeslots
+    """
+    # Need to coordinate this list with types of session requests
+    # that can be created (see, e.g., SessionQuerySet.requests())
+    IGNORE_TIMESLOT_TYPES = ('offagenda', 'reserved', 'unavail')
     meeting = get_meeting(num)
     if name is None:
         schedule = meeting.schedule
@@ -493,11 +458,19 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             "hide_menu": True
         }, status=403, content_type="text/html")
 
+    # See if we were given one or more 'type' query string parameters. If so, filter to that timeslot type.
+    if 'type' in request.GET:
+        include_timeslot_types = request.GET.getlist('type')
+    else:
+        include_timeslot_types = None  # disables filtering by type (other than IGNORE_TIMESLOT_TYPES)
+
     assignments = SchedTimeSessAssignment.objects.filter(
         schedule__in=[schedule, schedule.base],
         timeslot__location__isnull=False,
-        session__type='regular',
-    ).order_by('timeslot__time','timeslot__name')
+    )
+    if include_timeslot_types is not None:
+        assignments = assignments.filter(session__type__in=include_timeslot_types)
+    assignments = assignments.order_by('timeslot__time','timeslot__name')
 
     assignments_by_session = defaultdict(list)
     for a in assignments:
@@ -505,10 +478,12 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
     tombstone_states = ['canceled', 'canceledpa', 'resched']
 
+    sessions = Session.objects.filter(meeting=meeting)
+    if include_timeslot_types is not None:
+        sessions = sessions.filter(type__in=include_timeslot_types)
     sessions = add_event_info_to_session_qs(
-        Session.objects.filter(
-            meeting=meeting,
-            type='regular',
+        sessions.exclude(
+            type__in=IGNORE_TIMESLOT_TYPES,
         ).order_by('pk'),
         requested_time=True,
         requested_by=True,
@@ -516,13 +491,22 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         Q(current_status__in=['appr', 'schedw', 'scheda', 'sched'])
         | Q(current_status__in=tombstone_states, pk__in={a.session_id for a in assignments})
     ).prefetch_related(
-        'resources', 'group', 'group__parent', 'group__type', 'joint_with_groups',
+        'resources', 'group', 'group__parent', 'group__type', 'joint_with_groups', 'purpose',
     )
 
-    timeslots_qs = TimeSlot.objects.filter(meeting=meeting, type='regular').prefetch_related('type').order_by('location', 'time', 'name')
+    timeslots_qs = TimeSlot.objects.filter(meeting=meeting)
+    if include_timeslot_types is not None:
+        timeslots_qs = timeslots_qs.filter(type__in=include_timeslot_types)
+    timeslots_qs = timeslots_qs.exclude(
+        type__in=IGNORE_TIMESLOT_TYPES,
+    ).prefetch_related('type').order_by('location', 'time', 'name')
 
-    min_duration = min(t.duration for t in timeslots_qs)
-    max_duration = max(t.duration for t in timeslots_qs)
+    if timeslots_qs.count() > 0:
+        min_duration = min(t.duration for t in timeslots_qs)
+        max_duration = max(t.duration for t in timeslots_qs)
+    else:
+        min_duration = 1
+        max_duration = 2
 
     def timedelta_to_css_ems(timedelta):
         # we scale the session and slots a bit according to their
@@ -552,10 +536,14 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             s.requested_by_person = requested_by_lookup.get(s.requested_by)
 
             s.scheduling_label = "???"
-            if s.group:
+            s.purpose_label = None
+            if (s.purpose.slug in ('none', 'regular')) and s.group:
                 s.scheduling_label = s.group.acronym
-            elif s.name:
-                s.scheduling_label = s.name
+                s.purpose_label = 'BoF' if s.group.is_bof() else s.group.type.name
+            else:
+                s.purpose_label = s.purpose.name
+                if s.name:
+                    s.scheduling_label = s.name
 
             s.requested_duration_in_hours = round(s.requested_duration.seconds / 60.0 / 60.0, 1)
 
@@ -659,7 +647,10 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
 
         all_days = sorted(all_days)  # changes set to a list
         # Note the maximum timeslot count for any room
-        max_timeslots = max(rd['timeslot_count'] for rd in room_data.values())
+        if len(room_data) > 0:
+            max_timeslots = max(rd['timeslot_count'] for rd in room_data.values())
+        else:
+            max_timeslots = 0
 
         # Partition rooms into groups with identical timeslot arrangements.
         # Start by discarding any roos that have no timeslots.
@@ -872,7 +863,10 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         return _json_response(False, error="Invalid parameters")
 
     # Show only rooms that have regular sessions
-    rooms = meeting.room_set.filter(session_types__slug='regular')
+    if include_timeslot_types is None:
+        rooms = meeting.room_set.all()
+    else:
+        rooms = meeting.room_set.filter(session_types__slug__in=include_timeslot_types)
 
     # Construct timeslot data for the template to render
     days = prepare_timeslots_for_display(timeslots_qs, rooms)
@@ -942,6 +936,16 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
             p.scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round(x * 255)) for x in rgb_color))
             p.light_scheduling_color = "rgb({}, {}, {})".format(*tuple(int(round((0.9 + 0.1 * x) * 255)) for x in rgb_color))
 
+    session_purposes = sorted(set(s.purpose for s in sessions if s.purpose), key=lambda p: p.name)
+    timeslot_types = sorted(
+        set(
+            s.type for s in sessions if s.type
+        ).union(
+            t.type for t in timeslots_qs.all()
+        ),
+        key=lambda tstype: tstype.name,
+    )
+
     return render(request, "meeting/edit_meeting_schedule.html", {
         'meeting': meeting,
         'schedule': schedule,
@@ -952,6 +956,8 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'timeslot_groups': sorted((d, list(sorted(t_groups))) for d, t_groups in timeslot_groups.items()),
         'unassigned_sessions': unassigned_sessions,
         'session_parents': session_parents,
+        'session_purposes': session_purposes,
+        'timeslot_types': timeslot_types,
         'hide_menu': True,
         'lock_time': lock_time,
     })
@@ -968,6 +974,7 @@ class TimeSlotForm(forms.Form):
     location = RoomNameModelChoiceField(queryset=Room.objects.all(), required=False, empty_label="(No location)")
     show_location = forms.BooleanField(initial=True, required=False)
     type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(used=True), empty_label=None, required=False)
+    purpose = forms.ModelChoiceField(queryset=SessionPurposeName.objects.filter(used=True), required=False, widget=forms.HiddenInput)
     name = forms.CharField(help_text='Name that appears on the agenda', required=False)
     short = forms.CharField(max_length=32,label='Short name', help_text='Abbreviated session name used for material file names', required=False)
     group = forms.ModelChoiceField(queryset=Group.objects.filter(type__in=['ietf', 'team'], state='active'),
@@ -992,6 +999,12 @@ class TimeSlotForm(forms.Form):
         self.fields['group'].widget.attrs['data-ietf'] = Group.objects.get(acronym='ietf').pk
 
         self.active_assignment = None
+
+        # only allow timeslots with at least one purpose
+        timeslot_types_with_purpose = set()
+        for spn in SessionPurposeName.objects.filter(used=True):
+            timeslot_types_with_purpose.update(spn.timeslot_types)
+        self.fields['type'].queryset = self.fields['type'].queryset.filter(pk__in=timeslot_types_with_purpose)
 
         if timeslot:
             self.initial = {
@@ -1025,7 +1038,10 @@ class TimeSlotForm(forms.Form):
         ts_type = self.cleaned_data.get('type')
         short = self.cleaned_data.get('short')
 
-        if ts_type:
+        if not ts_type:
+            # assign a generic purpose if no type has been set
+            self.cleaned_data['purpose'] = SessionPurposeName.objects.get(slug='open_meeting')
+        else:
             if ts_type.slug in ['break', 'reg', 'reserved', 'unavail', 'regular']:
                 if ts_type.slug != 'regular':
                     self.cleaned_data['group'] = self.fields['group'].queryset.get(acronym='secretariat')
@@ -1035,10 +1051,22 @@ class TimeSlotForm(forms.Form):
                 if not short:
                     self.add_error('short', 'When scheduling this type of time slot, a short name is required')
 
-            if self.timeslot and self.timeslot.type_id == 'regular' and self.active_assignment and ts_type.pk != self.timeslot.type_id:
+            if self.timeslot and self.timeslot.type.slug == 'regular' and self.active_assignment and ts_type.slug != self.timeslot.type.slug:
                 self.add_error('type', "Can't change type on time slots for regular sessions when a session has been assigned")
 
-        if self.active_assignment and self.active_assignment.session.group != self.cleaned_data.get('group') and self.active_assignment.session.materials.exists() and self.timeslot.type_id != 'regular':
+            # find an allowed session purpose (guaranteed by TimeSlotForm)
+            for purpose in SessionPurposeName.objects.filter(used=True):
+                if ts_type.pk in purpose.timeslot_types:
+                    self.cleaned_data['purpose'] = purpose
+                    break
+            if self.cleaned_data['purpose'] is None:
+                self.add_error('type', f'{ts_type} has no allowed purposes')
+
+
+        if (self.active_assignment
+            and self.active_assignment.session.group != self.cleaned_data.get('group')
+            and self.active_assignment.session.materials.exists()
+            and self.timeslot.type.slug != 'regular'):
             self.add_error('group', "Can't change group after materials have been uploaded")
 
 
@@ -1118,6 +1146,7 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
                     short=c['short'],
                     group=c['group'],
                     type=c['type'],
+                    purpose=c['purpose'],
                     agenda_note=c.get('agenda_note') or "",
                 )
 
@@ -1284,80 +1313,6 @@ def edit_meeting_timeslots_and_misc_sessions(request, num=None, owner=None, name
     })
 
 
-##############################################################################
-#@role_required('Area Director','Secretariat')
-# disable the above security for now, check it below.
-@ensure_csrf_cookie
-def edit_schedule(request, num=None, owner=None, name=None):
-
-    if request.method == 'POST':
-        return schedule_create(request, num, owner, name)
-
-    user     = request.user
-    meeting  = get_meeting(num)
-    person   = get_person_by_email(owner)
-    if name is None:
-        schedule = meeting.schedule
-    else:
-        schedule = get_schedule_by_name(meeting, person, name)
-    if schedule is None:
-        raise Http404("No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
-
-    meeting_base_url = request.build_absolute_uri(meeting.base_url())
-    site_base_url = request.build_absolute_uri('/')[:-1] # skip the trailing slash
-
-    rooms = meeting.room_set.filter(session_types__slug='regular').distinct().order_by("capacity")
-    saveas = SaveAsForm()
-    saveasurl=reverse(edit_schedule,
-                      args=[meeting.number, schedule.owner_email(), schedule.name])
-
-    can_see, can_edit,secretariat = schedule_permissions(meeting, schedule, user)
-
-    if not can_see:
-        return render(request, "meeting/private_schedule.html",
-                                             {"schedule":schedule,
-                                              "meeting": meeting,
-                                              "meeting_base_url":meeting_base_url,
-                                              "hide_menu": True
-                                          }, status=403, content_type="text/html")
-
-    assignments = get_all_assignments_from_schedule(schedule)
-
-    # get_modified_from needs the query set, not the list
-    modified = get_modified_from_assignments(assignments)
-
-    area_list = get_areas()
-    wg_name_list = get_wg_name_list(assignments)
-    wg_list = get_wg_list(wg_name_list)
-    ads = find_ads_for_meeting(meeting)
-    for ad in ads:
-        # set the default to avoid needing extra arguments in templates
-        # django 1.3+
-        ad.default_hostscheme = site_base_url
-
-    time_slices,date_slices = build_all_agenda_slices(meeting)
-
-    return render(request, "meeting/landscape_edit.html",
-                                         {"schedule":schedule,
-                                          "saveas": saveas,
-                                          "saveasurl": saveasurl,
-                                          "meeting_base_url": meeting_base_url,
-                                          "site_base_url": site_base_url,
-                                          "rooms":rooms,
-                                          "time_slices":time_slices,
-                                          "date_slices":date_slices,
-                                          "modified": modified,
-                                          "meeting":meeting,
-                                          "area_list": area_list,
-                                          "area_directors" : ads,
-                                          "wg_list": wg_list ,
-                                          "assignments": assignments,
-                                          "show_inline": set(["txt","htm","html"]),
-                                          "hide_menu": True,
-                                          "can_edit_properties": can_edit or secretariat,
-                                      })
-
-
 class SchedulePropertiesForm(forms.ModelForm):
     class Meta:
         model = Schedule
@@ -1391,7 +1346,7 @@ def edit_schedule_properties(request, num, owner, name):
            form.save()
            if request.GET.get('next'):
                return HttpResponseRedirect(request.GET.get('next'))
-           return redirect('ietf.meeting.views.edit_schedule', num=num, owner=owner, name=name)
+           return redirect('ietf.meeting.views.edit_meeting_schedule', num=num, owner=owner, name=name)
     else:
         form = SchedulePropertiesForm(meeting, instance=schedule)
 
@@ -1450,6 +1405,7 @@ def list_schedules(request, num):
     return render(request, "meeting/schedule_list.html", {
         'meeting': meeting,
         'schedule_groups': schedule_groups,
+        'can_edit_timeslots': is_secretariat,
     })
 
 class DiffSchedulesForm(forms.Form):
@@ -1519,112 +1475,8 @@ def get_assignments_for_agenda(schedule):
     """Get queryset containing assignments to show on the agenda"""
     return SchedTimeSessAssignment.objects.filter(
         schedule__in=[schedule, schedule.base],
-        timeslot__type__private=False,
+        session__on_agenda=True,
     )
-
-
-def extract_groups_hierarchy(prepped_assignments):
-    """Extract groups hierarchy for agenda display
-
-    It's a little bit complicated because we can be dealing with historic groups.
-    """
-    seen = set()
-    groups = [a.session.historic_group for a in prepped_assignments
-              if a.session
-              and a.session.historic_group
-              and is_regular_agenda_filter_group(a.session.historic_group)
-              and a.session.historic_group.historic_parent]
-    group_parents = []
-    for g in groups:
-        if g.historic_parent.acronym not in seen:
-            group_parents.append(g.historic_parent)
-            seen.add(g.historic_parent.acronym)
-
-    seen = set()
-    for p in group_parents:
-        p.group_list = []
-        for g in groups:
-            if g.acronym not in seen and g.historic_parent.acronym == p.acronym:
-                p.group_list.append(g)
-                seen.add(g.acronym)
-
-        p.group_list.sort(key=lambda g: g.acronym)
-    return group_parents
-
-
-def prepare_filter_keywords(tagged_assignments, group_parents):
-    #
-    # The agenda_filter template expects a list of categorized header buttons, each
-    # with a list of children. Make two categories: the IETF areas and the other parent groups.
-    # We also pass a list of 'extra' buttons - currently Office Hours and miscellaneous filters.
-    # All but the last of these are additionally used by the agenda.html template to make
-    # a list of filtered ical buttons. The last group is ignored for this.
-    area_group_filters = []
-    other_group_filters = []
-    extra_filters = []
-
-    for p in group_parents:
-        new_filter = dict(
-            label=p.acronym.upper(),
-            keyword=p.acronym.lower(),
-            children=[
-                dict(
-                    label=g.acronym,
-                    keyword=g.acronym.lower(),
-                    is_bof=g.is_bof(),
-                ) for g in p.group_list
-            ]
-        )
-        if p.type.slug == 'area':
-            area_group_filters.append(new_filter)
-        else:
-            other_group_filters.append(new_filter)
-
-    office_hours_labels = set()
-    for a in tagged_assignments:
-        suffix = ' office hours'
-        if a.session.name.lower().endswith(suffix):
-            office_hours_labels.add(a.session.name[:-len(suffix)].strip())
-
-    if len(office_hours_labels) > 0:
-        # keyword needs to match what's tagged in filter_keywords_for_session()
-        extra_filters.append(dict(
-            label='Office Hours',
-            keyword='officehours',
-            children=[
-                dict(
-                    label=label,
-                    keyword=label.lower().replace(' ', '')+'officehours',
-                    is_bof=False,
-                ) for label in office_hours_labels
-            ]
-        ))
-
-    # Keywords that should appear in 'non-area' column
-    non_area_labels = [
-        'BOF', 'EDU', 'Hackathon', 'IEPG', 'IESG', 'IETF', 'Plenary', 'Secretariat', 'Tools',
-    ]
-    # Remove any unused non-area keywords
-    non_area_filters = [
-        dict(label=label, keyword=label.lower(), is_bof=False)
-        for label in non_area_labels if any([
-            label.lower() in assignment.filter_keywords
-            for assignment in tagged_assignments
-        ])
-    ]
-    if len(non_area_filters) > 0:
-        extra_filters.append(dict(
-            label=None,
-            keyword=None,
-            children=non_area_filters,
-        ))
-
-    area_group_filters.sort(key=lambda p:p['label'])
-    other_group_filters.sort(key=lambda p:p['label'])
-    filter_categories = [category
-                         for category in [area_group_filters, other_group_filters, extra_filters]
-                         if len(category) > 0]
-    return filter_categories, non_area_labels
 
 
 @ensure_csrf_cookie
@@ -1639,7 +1491,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
 
     # We do not have the appropriate data in the datatracker for IETF 64 and earlier.
     # So that we're not producing misleading pages...
-    
+
     assert num is None or num.isdigit()
 
     meeting = get_ietf_meeting(num)
@@ -1667,17 +1519,13 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         get_assignments_for_agenda(schedule),
         meeting
     )
-    tag_assignments_with_filter_keywords(filtered_assignments)
+    AgendaKeywordTagger(assignments=filtered_assignments).apply()
 
     # Done processing for CSV output
     if ext == ".csv":
         return agenda_csv(schedule, filtered_assignments)
 
-    # Now prep the filter UI
-    filter_categories, non_area_labels = prepare_filter_keywords(
-        filtered_assignments,
-        extract_groups_hierarchy(filtered_assignments),
-    )
+    filter_organizer = AgendaFilterOrganizer(assignments=filtered_assignments)
 
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
@@ -1685,8 +1533,8 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         "schedule": schedule,
         "filtered_assignments": filtered_assignments,
         "updated": updated,
-        "filter_categories": filter_categories,
-        "non_area_keywords": [label.lower() for label in non_area_labels],
+        "filter_categories": filter_organizer.get_filter_categories(),
+        "non_area_keywords": filter_organizer.get_non_area_keywords(),
         "now": datetime.datetime.now().astimezone(pytz.UTC),
         "timezone": meeting.time_zone,
         "is_current_meeting": is_current_meeting,
@@ -1728,23 +1576,23 @@ def agenda_csv(schedule, filtered_assignments):
         row.append(item.timeslot.time.strftime("%H%M"))
         row.append(item.timeslot.end_time().strftime("%H%M"))
 
-        if item.timeslot.type_id == "break":
-            row.append(item.timeslot.type.name)
+        if item.slot_type().slug == "break":
+            row.append(item.slot_type().name)
             row.append(schedule.meeting.break_area)
             row.append("")
             row.append("")
             row.append("")
             row.append(item.timeslot.name)
             row.append("b{}".format(item.timeslot.pk))
-        elif item.timeslot.type_id == "reg":
-            row.append(item.timeslot.type.name)
+        elif item.slot_type().slug == "reg":
+            row.append(item.slot_type().name)
             row.append(schedule.meeting.reg_area)
             row.append("")
             row.append("")
             row.append("")
             row.append(item.timeslot.name)
             row.append("r{}".format(item.timeslot.pk))
-        elif item.timeslot.type_id == "other":
+        elif item.slot_type().slug == "other":
             row.append("None")
             row.append(item.timeslot.location.name if item.timeslot.location else "")
             row.append("")
@@ -1752,7 +1600,7 @@ def agenda_csv(schedule, filtered_assignments):
             row.append(item.session.historic_group.historic_parent.acronym.upper() if item.session.historic_group.historic_parent else "")
             row.append(item.session.name)
             row.append(item.session.pk)
-        elif item.timeslot.type_id == "plenary":
+        elif item.slot_type().slug == "plenary":
             row.append(item.session.name)
             row.append(item.timeslot.location.name if item.timeslot.location else "")
             row.append("")
@@ -1762,7 +1610,7 @@ def agenda_csv(schedule, filtered_assignments):
             row.append(item.session.pk)
             row.append(agenda_field(item))
             row.append(slides_field(item))
-        elif item.timeslot.type_id == 'regular':
+        elif item.slot_type().slug == 'regular':
             row.append(item.timeslot.name)
             row.append(item.timeslot.location.name if item.timeslot.location else "")
             row.append(item.session.historic_group.historic_parent.acronym.upper() if item.session.historic_group.historic_parent else "")
@@ -1842,16 +1690,12 @@ def agenda_personalize(request, num):
         get_assignments_for_agenda(meeting.schedule),
         meeting
     )
-    tag_assignments_with_filter_keywords(filtered_assignments)
-    for assignment in filtered_assignments:
-        # may be None for some sessions
-        assignment.session_keyword = filter_keyword_for_specific_session(assignment.session)
+    tagger = AgendaKeywordTagger(assignments=filtered_assignments)
+    tagger.apply()  # annotate assignments with filter_keywords attribute
+    tagger.apply_session_keywords()  # annotate assignments with session_keyword attribute
 
     # Now prep the filter UI
-    filter_categories, non_area_labels = prepare_filter_keywords(
-        filtered_assignments,
-        extract_groups_hierarchy(filtered_assignments),
-    )
+    filter_organizer = AgendaFilterOrganizer(assignments=filtered_assignments)
 
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
@@ -1862,8 +1706,8 @@ def agenda_personalize(request, num):
             'schedule': meeting.schedule,
             'updated': meeting.updated(),
             'filtered_assignments': filtered_assignments,
-            'filter_categories': filter_categories,
-            'non_area_labels': non_area_labels,
+            'filter_categories': filter_organizer.get_filter_categories(),
+            'non_area_labels': filter_organizer.get_non_area_keywords(),
             'timezone': meeting.time_zone,
             'is_current_meeting': is_current_meeting,
             'cache_time': 150 if is_current_meeting else 3600,
@@ -1986,10 +1830,10 @@ def week_view(request, num=None, name=None, owner=None):
 
     filtered_assignments = SchedTimeSessAssignment.objects.filter(
         schedule__in=[schedule, schedule.base],
-        timeslot__type__private=False,
+        session__on_agenda=True,
     )
     filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
-    tag_assignments_with_filter_keywords(filtered_assignments)
+    AgendaKeywordTagger(assignments=filtered_assignments).apply()
 
     items = []
     for a in filtered_assignments:
@@ -1998,7 +1842,7 @@ def week_view(request, num=None, name=None, owner=None):
             "key": str(a.timeslot.pk),
             "utc_time": a.timeslot.utc_start_time().strftime("%Y%m%dT%H%MZ"),  # ISO8601 compliant
             "duration": a.timeslot.duration.seconds,
-            "type": a.timeslot.type.name,
+            "type": a.slot_type().name,
             "filter_keywords": ",".join(a.filter_keywords),
         }
 
@@ -2008,10 +1852,10 @@ def week_view(request, num=None, name=None, owner=None):
 
             if a.session.name:
                 item["name"] = a.session.name
-            elif a.timeslot.type_id == "break":
+            elif a.slot_type().slug == "break":
                 item["name"] = a.timeslot.name
-                item["area"] = a.timeslot.type_id
-                item["group"] = a.timeslot.type_id
+                item["area"] = a.slot_type().slug
+                item["group"] = a.slot_type().slug
             elif a.session.historic_group:
                 item["name"] = a.session.historic_group.name
                 if a.session.historic_group.state_id == "bof":
@@ -2169,10 +2013,10 @@ def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
 
     assignments = SchedTimeSessAssignment.objects.filter(
         schedule__in=[schedule, schedule.base],
-        timeslot__type__private=False,
+        session__on_agenda=True,
     )
     assignments = preprocess_assignments_for_agenda(assignments, meeting)
-    tag_assignments_with_filter_keywords(assignments)
+    AgendaKeywordTagger(assignments=assignments).apply()
 
     try:
         filt_params = parse_agenda_filter_params(request.GET)
@@ -2207,7 +2051,7 @@ def agenda_json(request, num=None):
     parent_acronyms = set()
     assignments = SchedTimeSessAssignment.objects.filter(
         schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None],
-        timeslot__type__private=False,
+        session__on_agenda=True,
     ).exclude(
         session__type__in=['break', 'reg']
     )
@@ -2330,14 +2174,10 @@ def agenda_json(request, num=None):
 
 def meeting_requests(request, num=None):
     meeting = get_meeting(num)
-    sessions = add_event_info_to_session_qs(
-        Session.objects.filter(
-            meeting__number=meeting.number,
-            type__slug='regular',
-            group__parent__isnull=False
-        ),
-        requested_by=True,
-    ).exclude(
+    sessions = Session.objects.requests().filter(
+        meeting__number=meeting.number,
+        group__parent__isnull=False
+    ).with_current_status().with_requested_by().exclude(
         requested_by=0
     ).order_by(
         "group__parent__acronym", "current_status", "group__acronym"
@@ -3625,37 +3465,12 @@ def upcoming(request):
         )
     ).filter(current_status__in=('sched','canceled'))
 
-    # get groups for group UI display - same algorithm as in agenda(), but
-    # using group / parent instead of historic_group / historic_parent
-    groups = [s.group for s in interim_sessions
-              if s.group
-              and is_regular_agenda_filter_group(s.group)
-              and s.group.parent]
-    group_parents = {g.parent for g in groups if g.parent}
-    seen = set()
-    for p in group_parents:
-        p.group_list = []
-        for g in groups:
-            if g.acronym not in seen and g.parent.acronym == p.acronym:
-                p.group_list.append(g)
-                seen.add(g.acronym)
-
-    # only one category
-    filter_categories = [[
-        dict(
-            label=p.acronym, 
-            keyword=p.acronym.lower(),
-            children=[dict(
-                label=g.acronym,
-                keyword=g.acronym.lower(),
-                is_bof=g.is_bof(),
-            ) for g in p.group_list]
-        ) for p in group_parents
-    ]]
-    
     for session in interim_sessions:
         session.historic_group = session.group
-        session.filter_keywords = filter_keywords_for_session(session)
+
+    # Set up for agenda filtering - only one filter_category here
+    AgendaKeywordTagger(sessions=interim_sessions).apply()
+    filter_organizer = AgendaFilterOrganizer(sessions=interim_sessions, single_category=True)
 
     entries = list(ietf_meetings)
     entries.extend(list(interim_sessions))
@@ -3694,7 +3509,7 @@ def upcoming(request):
 
     return render(request, 'meeting/upcoming.html', {
                   'entries': entries,
-                  'filter_categories': filter_categories,
+                  'filter_categories': filter_organizer.get_filter_categories(),
                   'menu_actions': actions,
                   'menu_entries': menu_entries,
                   'selected_menu_entry': selected_menu_entry,
@@ -3728,7 +3543,7 @@ def upcoming_ical(request):
         'session__group', 'session__group__parent', 'timeslot', 'schedule', 'schedule__meeting'
     ).distinct())
 
-    tag_assignments_with_filter_keywords(assignments)
+    AgendaKeywordTagger(assignments=assignments).apply()
 
     # apply filters
     if filter_params is not None:
@@ -3820,7 +3635,7 @@ def proceedings(request, num=None):
     plenaries = sessions.filter(name__icontains='plenary').exclude(current_status='notmeet')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
-    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other', ]).exclude(current_status='notmeet')
+    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other',]).exclude(current_status='notmeet')
     iab       = sessions.filter(group__parent__acronym = 'iab').exclude(current_status='notmeet')
 
     cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
@@ -4115,11 +3930,83 @@ def edit_timeslot_type(request, num, slot_id):
 
     else:
         form = TimeSlotTypeForm(instance=timeslot)
-        
+
     sessions = timeslot.sessions.filter(timeslotassignments__schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None])
 
     return render(request, 'meeting/edit_timeslot_type.html', {'timeslot':timeslot,'form':form,'sessions':sessions})
 
+@role_required('Secretariat')
+def edit_timeslot(request, num, slot_id):
+    timeslot = get_object_or_404(TimeSlot, id=slot_id)
+    meeting = get_object_or_404(Meeting, number=num)
+    if timeslot.meeting != meeting:
+        raise Http404()
+    if request.method == 'POST':
+        form = TimeSlotEditForm(instance=timeslot, data=request.POST)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(reverse('ietf.meeting.views.edit_timeslots', kwargs={'num': num}))
+    else:
+        form = TimeSlotEditForm(instance=timeslot)
+
+    sessions = timeslot.sessions.filter(
+        timeslotassignments__schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None])
+
+    return render(
+        request,
+        'meeting/edit_timeslot.html',
+        {'timeslot': timeslot, 'form': form, 'sessions': sessions},
+        status=400 if form.errors else 200,
+    )
+
+
+@role_required('Secretariat')
+def create_timeslot(request, num):
+    meeting = get_object_or_404(Meeting, number=num)
+    if request.method == 'POST':
+        form = TimeSlotCreateForm(meeting, data=request.POST)
+        if form.is_valid():
+            bulk_create_timeslots(
+                meeting,
+                [datetime.datetime.combine(day, form.cleaned_data['time'])
+                 for day in form.cleaned_data.get('days', [])],
+                form.cleaned_data['locations'],
+                dict(
+                    name=form.cleaned_data['name'],
+                    type=form.cleaned_data['type'],
+                    duration=form.cleaned_data['duration'],
+                    show_location=form.cleaned_data['show_location'],
+                )
+            )
+            return HttpResponseRedirect(reverse('ietf.meeting.views.edit_timeslots',kwargs={'num':num}))
+    else:
+        form = TimeSlotCreateForm(meeting)
+
+    return render(
+        request,
+        'meeting/create_timeslot.html',
+        dict(meeting=meeting, form=form),
+        status=400 if form.errors else 200,
+    )
+
+
+@role_required('Secretariat')
+def edit_session(request, session_id):
+    session = get_object_or_404(Session, pk=session_id)
+    if request.method == 'POST':
+        form = SessionEditForm(instance=session, data=request.POST)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(
+                reverse('ietf.meeting.views.edit_meeting_schedule',
+                        kwargs={'num': form.instance.meeting.number}))
+    else:
+        form = SessionEditForm(instance=session)
+    return render(
+        request,
+        'meeting/edit_session.html',
+        {'session': session, 'form': form},
+    )
 
 @role_required('Secretariat')
 def request_minutes(request, num=None):

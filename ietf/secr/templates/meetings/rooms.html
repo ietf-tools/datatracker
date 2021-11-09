@@ -11,7 +11,8 @@
             <form id="meetings-meta-rooms" action="" method="post">{% csrf_token %}
               {{ formset.management_form }}
               {{ formset.non_form_errors }}
-              
+              {% if options_form %}{{ options_form.errors }}{% endif %}
+
               <table id="id_rooms_table" class="full-width">
                 <thead>
                  <tr>
@@ -43,9 +44,10 @@
           </div> <!-- iniline-related -->
         </div> <!-- inline-group -->
         
-        {% include "includes/buttons_save.html" %}
+  {% if options_form %}{{ options_form }}{% endif %}
+  {% include "includes/buttons_save.html" %}
       
-      </form>
+  </form>
 </div> <!-- module -->
 
 {% endblock %}

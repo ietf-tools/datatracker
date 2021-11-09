@@ -188,6 +188,7 @@ class GroupFeaturesAdmin(admin.ModelAdmin):
         'customize_workflow',
         'is_schedulable',
         'show_on_agenda',
+        'agenda_filter_type',
         'req_subm_approval',
         'agenda_type',
         'material_types',
