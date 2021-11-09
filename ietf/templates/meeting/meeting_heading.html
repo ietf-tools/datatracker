@@ -29,51 +29,51 @@
       </h1>
 
       {# <a> tags with the agenda-link filterable classes will be updated with show/hide parameters  #}
-      <ul class="nav nav-tabs" role="tablist">
-        <li {% if selected == "agenda" %}class="active"{% endif %}>
-          <a href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}"
+      <ul class="nav nav-tabs">
+        <li class="nav-item">
+          <a class="nav-link {% if selected == "agenda" %}active{% endif %}" href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}"
              class="agenda-link filterable">
             Agenda
           </a>
         </li>
-        <li {% if selected == "agenda-utc" %}class="active"{% endif %}>
-          <a href="{% url 'ietf.meeting.views.agenda' num=meeting.number utc='-utc' %}"
+        <li class="nav-item">
+          <a class="nav-link {% if selected == "agenda-utc" %}active{% endif %}" href="{% url 'ietf.meeting.views.agenda' num=meeting.number utc='-utc' %}"
              class="agenda-link filterable">
             UTC Agenda
           </a>
         </li>
         {% if user|has_role:"Secretariat,Area Director,IAB" %}
           {% if schedule != meeting.schedule %}
-            <li {% if selected == "by-room" %}class="active"{% endif %}>
-              <a
+            <li class="nav-item">
+              <a class="nav-link {% if selected == "by-room" %}active{% endif %}"
                 href="{% url 'ietf.meeting.views.agenda_by_room' num=meeting.number name=schedule.name owner=schedule.owner.email %}">by
                 Room</a></li>
-            <li {% if selected == "by-type" %}class="active"{% endif %}>
-              <a
+            <li class="nav-item">
+              <a class="nav-link {% if selected == "by-type" %}active{% endif %}"
                 href="{% url 'ietf.meeting.views.agenda_by_type' num=meeting.number name=schedule.name owner=schedule.owner.email %}">by
                 Type</a></li>
-            <li {% if selected == "room-view" %}class="active"{% endif %}>
-              <a
+            <li class="nav-item">
+              <a class="nav-link {% if selected == "room-view" %}active{% endif %}"
                 href="{% url 'ietf.meeting.views.room_view'      num=meeting.number name=schedule.name owner=schedule.owner.email %}">Room
                 grid</a></li>
           {% else %}
-            <li {% if selected == "by-room" %}class="active"{% endif %}>
-              <a href="{% url 'ietf.meeting.views.agenda_by_room' num=meeting.number %}">by Room</a></li>
-            <li {% if selected == "by-type" %}class="active"{% endif %}>
-              <a href="{% url 'ietf.meeting.views.agenda_by_type' num=meeting.number %}">by Type</a></li>
-            <li {% if selected == "room-view" %}class="active"{% endif %}>
-              <a href="{% url 'ietf.meeting.views.room_view'      num=meeting.number %}">Room grid</a></li>
+            <li class="nav-item">
+              <a class="nav-link {% if selected == "by-room" %}active{% endif %}" href="{% url 'ietf.meeting.views.agenda_by_room' num=meeting.number %}">by Room</a></li>
+            <li class="nav-item">
+              <a class="nav-link {% if selected == "by-type" %}active{% endif %}" href="{% url 'ietf.meeting.views.agenda_by_type' num=meeting.number %}">by Type</a></li>
+            <li class="nav-item">
+              <a class="nav-link {% if selected == "room-view" %}active{% endif %}" href="{% url 'ietf.meeting.views.room_view'      num=meeting.number %}">Room grid</a></li>
           {% endif %}
         {% endif %}
-        <li {% if selected == "floor-plan" %}class="active"{% endif %}>
-          <a href="{% url 'ietf.meeting.views.floor_plan' num=meeting.number %}">Floor plan</a></li>
-        <li>
-          <a href="{% url 'ietf.meeting.views.agenda' num=meeting.number ext='.txt' %}">
+        <li class="nav-item">
+          <a class="nav-link {% if selected == "floor-plan" %}active{% endif %}" href="{% url 'ietf.meeting.views.floor_plan' num=meeting.number %}">Floor plan</a></li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'ietf.meeting.views.agenda' num=meeting.number ext='.txt' %}">
             Plaintext
           </a>
         </li>
-        <li {% if selected == "select-sessions" %}class="active"{% endif %}>
-          <a href="{% url 'ietf.meeting.views.agenda_personalize' num=meeting.number %}"
+        <li class="nav-item">
+          <a class="nav-link {% if selected == "select-sessions" %}active{% endif %}" href="{% url 'ietf.meeting.views.agenda_personalize' num=meeting.number %}"
              class="agenda-link filterable">
             Select Sessions
           </a>

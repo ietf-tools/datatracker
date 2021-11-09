@@ -15,10 +15,10 @@
     all of this information. These pages may be updated periodically.
   </p>
 
-  <ul class="nav nav-tabs" role="tablist">
+  <ul class="nav nav-tabs">
     {% for position in positions %}
-      <li {% if forloop.first %}class="active"{% endif %}>
-        <a data-toggle="tab" role="tab" href="#pos-{{ position.name|slugify }}">{{ position.name }}</a>
+      <li class="nav-item">
+        <a class="nav-link {% if forloop.first %}active{% endif %}" data-toggle="tab" role="tab" href="#pos-{{ position.name|slugify }}">{{ position.name }}</a>
       </li>
     {% endfor %}
   </ul>
@@ -43,4 +43,3 @@
   })
 </script>
 {% endblock %}
-

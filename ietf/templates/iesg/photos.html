@@ -18,12 +18,12 @@
 
       <h1>{{ group_type | upper }} {{ role }} Photos</h1>
 
-      <ul class="nav nav-tabs" role="tablist">
-	 <li class="      "><a href="{% url 'ietf.iesg.views.agenda' %}">IESG Agenda</a></li>
-	 <li class="      "><a href="{% url 'ietf.iesg.views.agenda_documents' %}">Documents on future agendas</a></li>
-	 <li class="      "><a href="{% url 'ietf.iesg.views.discusses' %}">DISCUSS positions</a></li>
-	 <li class="      "><a href="{% url 'ietf.iesg.views.past_documents' %}">Documents on recent agendas</a></li>
-	 <li class="active"><a href="{% url 'ietf.iesg.views.photos' %}">IESG Photos</a></li>
+      <ul class="nav nav-tabs">
+	 <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.agenda' %}">IESG Agenda</a></li>
+	 <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.agenda_documents' %}">Documents on future agendas</a></li>
+	 <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.discusses' %}">DISCUSS positions</a></li>
+	 <li class="nav-item       "><a class="nav-link" href="{% url 'ietf.iesg.views.past_documents' %}">Documents on recent agendas</a></li>
+	 <li class="nav-item"><a class="nav-link active" href="{% url 'ietf.iesg.views.photos' %}">IESG Photos</a></li>
       </ul>
 
       {% regroup roles by group.acronym as alphabet_blocks %}

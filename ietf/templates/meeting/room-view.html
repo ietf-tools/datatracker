@@ -587,9 +587,9 @@
 <body onload="draw_calendar()" onresize="draw_calendar()" id="body">
   <div id="mtgheader" style="overflow:auto">{% include "meeting/meeting_heading.html" with updated=schedule.meeting.updated selected="room-view" title_extra="Room Grid" %}</div>
   <div id="daycontainer" role="tabpanel">
-    <ul id="daytabs" class="nav nav-tabs" role="tablist">
+    <ul id="daytabs" class="nav nav-tabs">
     {% for day in days %}
-      <li {% if forloop.first %}class="active"{% endif %} role="presentation"><a href="#day{{forloop.counter0}}" id="day{{forloop.counter0}}-tab" role="tab" data-toggle="tab" area-controls="day{{forloop.counter0}}">{{day|date:"D M d"}}</a></li>
+      <li class="nav-item" role="presentation"><a class="nav-link {% if forloop.first %}active{% endif %}" href="#day{{forloop.counter0}}" id="day{{forloop.counter0}}-tab" role="tab" data-toggle="tab" area-controls="day{{forloop.counter0}}">{{day|date:"D M d"}}</a></li>
     {% endfor %}
     </ul>
     <div class="tab-content">

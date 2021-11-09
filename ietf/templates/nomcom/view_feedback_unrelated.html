@@ -10,9 +10,10 @@
   {% origin %}
   <h2>Feedback not related to nominees</h2>
 
-  <ul class="nav nav-tabs" role="tablist">
+  <ul class="nav nav-tabs">
     {% for ft in feedback_types %}
-      <li {% if forloop.first %}class="active"{% endif %}><a href="#{{ ft.ft.slug }}" role="tab" data-toggle="tab">{{ ft.ft.name }}</a></li>
+      <li class="nav-item">
+        <a class="nav-link {% if forloop.first %}active{% endif %}" href="#{{ ft.ft.slug }}" role="tab" data-toggle="tab">{{ ft.ft.name }}</a></li>
     {% endfor %}
   </ul>
 

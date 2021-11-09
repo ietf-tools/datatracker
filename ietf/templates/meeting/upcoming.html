@@ -71,10 +71,10 @@
         {% include 'meeting/agenda_filter.html' with filter_categories=filter_categories customize_button_text="Customize the meeting list..." only%}
 
         {% if menu_entries %}
-      <ul class="nav nav-tabs" role="tablist">
+      <ul class="nav nav-tabs">
         {% for name, url in menu_entries %}
-          <li {% if selected_menu_entry == name.lower %}class="active"{% endif %}>
-            <a href="{{ url }}">{{ name }}</a>
+          <li class="nav-item">
+            <a class="nav-link {% if selected_menu_entry == name.lower %}active{% endif %}" href="{{ url }}">{{ name }}</a>
           </li>
         {% endfor %}
       </ul>

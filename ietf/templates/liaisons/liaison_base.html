@@ -22,10 +22,10 @@
     </div>
   {% endif %}
 
-  <ul class="nav nav-tabs" role="tablist">
+  <ul class="nav nav-tabs">
     {% for name, url in menu_entries %}
-      <li {% if selected_menu_entry == name.lower %}class="active"{% endif %}>
-        <a href="{{ url }}">{{ name }}</a>
+      <li class="nav-item">
+        <a class="nav-link {% if selected_menu_entry == name.lower %}active{% endif %}" href="{{ url }}">{{ name }}</a>
       </li>
     {% endfor %}
   </ul>
