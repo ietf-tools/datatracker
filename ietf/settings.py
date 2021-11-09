@@ -484,32 +484,22 @@ try:
 except ImportError:
     pass
 
-# Settings for django-bootstrap3
-# See http://django-bootstrap3.readthedocs.org/en/latest/settings.html
-BOOTSTRAP3 = {
+# Settings for django-bootstrap5
+# See https://django-bootstrap5.readthedocs.io/en/latest/settings.html
+BOOTSTRAP5 = {
     # Label class to use in horizontal forms
     'horizontal_label_class': 'col-md-2',
 
     # Field class to use in horiozntal forms
     'horizontal_field_class': 'col-md-10',
 
-    # Set HTML required attribute on required fields
-    'set_required': True,
-
     # Set placeholder attributes to label if no placeholder is provided
     'set_placeholder': False,
 
-    # Class to indicate required
-    'form_required_class': 'bootstrap3-required',
-
-    # Class to indicate error
-    'form_error_class': 'bootstrap3-error',
-
     'field_renderers': {
         'default': 'ietf.utils.bootstrap.SeparateErrorsFromHelpTextFieldRenderer',
-        'inline': 'bootstrap3.renderers.InlineFieldRenderer',
+        'inline': 'bootstrap5.renderers.InlineFieldRenderer',
     },
-    
 }
 
 # CORS settings
