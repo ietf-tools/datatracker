@@ -20,7 +20,7 @@
   <table class="table table-sm table-striped {% if not meta.max %}tablesorter{% endif %}">
     <thead>
       <tr>
-        <th class="sorter-false"></th>
+        <th data-orderable="false"></th>
 
         {% for h in meta.headers %}
           {% if h.title != "Title" %}
@@ -43,7 +43,7 @@
         {% endfor %}
 
         {% if color_row_positions %}
-            <th class="sorter-false"></th>
+            <th data-orderable="false"></th>
         {% endif %}
       </tr>
     </thead>

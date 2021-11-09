@@ -5,6 +5,7 @@ require('datatables.net-bs5')(window, $);
 $.extend($.fn.dataTable.defaults, {
   info : false,
   paging : false,
+  order: [],
   "search": {
     "caseInsensitive": true
   }
