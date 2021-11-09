@@ -54,7 +54,6 @@ info_detail_urls = [
 group_urls = [
     url(r'^$', views.active_groups), 
     url(r'^groupmenu.json', views.group_menu_data, None, 'ietf.group.views.group_menu_data'),
-    url(r'^%(acronym)s.json$' % settings.URL_REGEXPS, views.group_json),
     url(r'^chartering/$', views.chartering_groups),
     url(r'^chartering/create/(?P<group_type>(wg|rg))/$', views.edit, {'action': "charter"}),
     url(r'^concluded/$', views.concluded_groups),

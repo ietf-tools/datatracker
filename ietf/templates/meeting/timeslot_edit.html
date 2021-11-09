@@ -1,57 +1,441 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load agenda_custom_tags %}
+{% load agenda_custom_tags misc_filters %}
 
-{% block title %}IETF {{ meeting.number }} Meeting Agenda: Timeslot/Room Availability{% endblock %}
+{% block title %}IETF {{ meeting.number }} Meeting Agenda: Timeslots and Room Availability{% endblock %}
 
 {% block morecss %}
-.tstable { width: 100%;}
-.tstable th { white-space: nowrap;}
-.tstable td { white-space: nowrap;}
-.capacity { font-size:80%; font-weight: normal;}
+  {% comment %}
+  Put scrollbars on the editor table. Requires fixed height so the scroll bars appear on the div, not the page body.
+  Note that 100vh is viewport height. Using that minus 25rem seems to leave space for the page header/footer.
+  {% endcomment %}
+  .timeslot-edit { overflow: auto; height: max(30rem, calc(100vh - 25rem));}
+  .tstable { width: 100%; border-collapse: separate; } {# "separate" to ensure sticky cells keep their borders #}
+  .tstable thead  { position: sticky; top: 0; z-index: 2; background-color: white;}
+  .tstable th:first-child, .tstable td:first-child {
+    background-color: white; {# needs to match the lighter of the striped-table colors! #}
+    position: sticky;
+    left: 0;
+    z-index: 1.5; {# render above other cells / borders but below thead (z-index 2, above) #}
+  }
+  .tstable tbody > tr:nth-of-type(odd) > th:first-child {
+    background-color: rgb(249, 249, 249); {# needs to match the darker of the striped-table colors! #}
+  }
 
-.tstable .tstype_unavail {background-color:#666;}
+  .tstable th { white-space: nowrap;}
+  .tstable td { white-space: nowrap;}
+  .capacity { font-size:80%; font-weight: normal;}
+
+  a.new-timeslot-link { color: lightgray; font-size: large;}
 {% endblock %}
 
 {% block content %}
   {% origin %}
 
+  <p class="pull-right">
+    <a href="{% url "ietf.meeting.views.create_timeslot" num=meeting.number %}">New timeslot</a>
+    &middot;
+    {% if meeting.schedule %}
+      <a href="{% url "ietf.secr.meetings.views.rooms" meeting_id=meeting.number schedule_name=meeting.schedule.name %}">Edit rooms</a>
+    {% else %} {# secr app room view requires a schedule - show something for now (should try to avoid this possibility) #}
+      <span title="Must create meeting schedule to edit rooms">Edit rooms</span>
+    {% endif %}
+  </p>
 
-<table class="tstable table table-striped table-compact table-bordered">
-  <thead>
-  <tr>
-  <th></th>
-  {% for day in time_slices %}
-    <th colspan="{{date_slices|colWidth:day}}"> 
-      {{day|date:'D'}}&nbsp;({{day}})
-    </th>
-  {% endfor %}
-  </tr>
-  <tr>
-    <th></th>
-    {% for day in time_slices %}
-	  {% for slot in slot_slices|lookup:day %}
-	      <th>
-                {{slot.time|date:'Hi'}}-{{slot.end_time|date:'Hi'}}
+  <p> IETF {{ meeting.number }} Meeting Agenda: Timeslots and Room Availability</p>
+  <div class="timeslot-edit">
+  {% if rooms|length == 0 %}
+    <p>No rooms exist for this meeting yet.</p>
+    {% if meeting.schedule %}
+      <a href="{% url "ietf.secr.meetings.views.rooms" meeting_id=meeting.number schedule_name=meeting.schedule.name %}">Create rooms</a>
+    {% else %}{# provide as helpful a link we can if we don't have an official schedule #}
+      <a href="{% url "ietf.secr.meetings.views.view" meeting_id=meeting.number %}">Create rooms through the secr app</a>
+    {% endif %}
+  {% else %}
+    <table id="timeslot-table" class="tstable table table-striped table-compact table-bordered">
+      {% with have_no_timeslots=time_slices|length_is:0 %}
+      <thead>
+      <tr>
+        {% if have_no_timeslots %}
+          <th></th>
+          <th></th>
+        {% else %}
+          <th></th>
+          {% for day in time_slices %}
+            <th class="day-label"
+                colspan="{{date_slices|colWidth:day}}">
+              {{day|date:'D'}}&nbsp;({{day}})
+              <span class="fa fa-trash delete-button"
+                    title="Delete all on this day"
+                    data-delete-scope="day"
+                    data-date-id="{{ day.isoformat }}">
+              </span>
+            </th>
+          {% endfor %}
+        {% endif %}
+      </tr>
+      <tr>
+        {% if have_no_timeslots %}
+          <th></th>
+          <th></th>
+        {% else %}
+          <th></th>
+          {% for day in time_slices %}
+            {% for slot in slot_slices|lookup:day %}
+              <th class="time-label">
+                {{slot.time|date:'H:i'}}-{{slot.end_time|date:'H:i'}}
+                <span class="fa fa-trash delete-button"
+                      data-delete-scope="column"
+                      data-date-id="{{ day.isoformat }}"
+                      data-col-id="{{ day.isoformat }}T{{slot.time|date:'H:i'}}-{{slot.end_time|date:'H:i'}}"
+                      title="Delete all in this column">
+                </span>
               </th>
-	  {% endfor %}
-    {% endfor %}
-  </tr>
-  </thead>
+            {% endfor %}
+          {% endfor %}
+        {% endif %}
+      </tr>
+      </thead>
 
-  {% for room in rooms %}
-  <tr>
-    <th>{{room.name}}<span class='capacity'>{% if room.capacity %} ({{room.capacity}}){% endif %}</th>
-    {% for day in time_slices %}
-      {% for slice in date_slices|lookup:day %}
-        {% with ts=ts_list.popleft %}
-          <td{% if ts %} class="tstype_{{ts.type.slug}}"{% endif %}>{% if ts %}<a href="{% url 'ietf.meeting.views.edit_timeslot_type' num=meeting.number slot_id=ts.id %}">{{ts.type.slug}}</a>{% endif %}</td>
-        {% endwith %}
+      <tbody>
+      {% for room in rooms %}
+        <tr>
+          <th><span class="room-heading">{{room.name}}{% if room.capacity %} <span class='capacity'>({{room.capacity}})</span>{% endif %}</span></th>
+          {% if have_no_timeslots and forloop.first %}
+            <td rowspan="{{ rooms|length }}">
+              <p>No timeslots exist for this meeting yet.</p>
+              <a href="{% url "ietf.meeting.views.create_timeslot" num=meeting.number %}">Create a timeslot.</a>
+            </td>
+          {% else %}
+            {% for day in time_slices %}{% with slots=slot_slices|lookup:day %}
+              {% for slice in date_slices|lookup:day %}{% with cell_ts=ts_list.popleft slot=slots|index:forloop.counter0 %}
+                <td class="tscell {% if cell_ts|length > 1 %}timeslot-collision {% endif %}{% for ts in cell_ts %}tstype_{{ ts.type.slug }} {% endfor %}">
+                {% if cell_ts %}
+                  {% for ts in cell_ts %}
+                    {% include 'meeting/timeslot_edit_timeslot.html' with ts=ts in_use=ts_with_any_assignments in_official_use=ts_with_official_assignments only %}
+                  {% endfor %}
+                {% endif %}
+                <a class="new-timeslot-link {% if cell_ts %}hidden{% endif %}"
+                   href="{% url "ietf.meeting.views.create_timeslot" num=meeting.number %}?day={{ day.toordinal }}&date={{ day|date:"Y-m-d" }}&location={{ room.pk }}&time={{ slot.time|date:'H:i' }}&duration={{ slot.duration }}">
+                  <span class="fa fa-plus-square"></span>
+                </a>
+              {% endwith %}{% endfor %}
+              </td>
+            {% endwith %}{% endfor %}
+          {% endif %}
+        </tr>
       {% endfor %}
-    {% endfor %}
-  </tr>
-  {% endfor %}
-</table>
+      </tbody>
+      {% endwith %}
+    </table>
+  {% endif %}
 
+  {# Modal to confirm timeslot deletion #}
+  <div id="delete-modal" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">
+            <span aria-hidden="true">&times;</span>
+            <span class="sr-only">Close</span>
+          </button>
+          <h4 class="modal-title">Confirm Delete</h4>
+        </div>
+
+        <div class="modal-body">
+          <p>
+            <span class="ts-singular">The following timeslot</span>
+            <span class="ts-plural"><span class="ts-count"></span> timeslots</span>
+            will be deleted:
+          </p>
+          <dl class="dl-horizontal">
+            <dt>Name</dt><dd><span class="ts-name"></span></dd>
+            <dt>Date</dt><dd><span class="ts-date"></span></dd>
+            <dt>Time</dt><dd><span class="ts-time"></span></dd>
+            <dt>Location</dt><dd><span class="ts-location"></span></dd>
+          </dl>
+          <p class="unofficial-use-warning">
+            The official schedule will not be affected, but sessions in
+            unofficial schedules currently assigned to
+            <span class="ts-singular">this timeslot</span>
+            <span class="ts-plural">any of these timeslots</span>
+            will become unassigned.
+          </p>
+          <p class="official-use-warning">
+            The official schedule will be affected.
+            Sessions currently assigned to
+            <span class="ts-singular">this timeslot</span>
+            <span class="ts-plural">any of these timeslots</span>
+            will become unassigned.
+          </p>
+          <p>
+            <span class="ts-singular">Are you sure you want to delete this timeslot?</span>
+            <span class="ts-plural">Are you sure you want to delete these <span class="ts-count"></span> timeslots?</span>
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" id="confirm-delete-button" class="btn btn-primary">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+{% endblock %}
+
+{% block js %}
+  <script type="text/javascript">
+  // create a namespace for local JS
+  timeslotEdit = (function() {
+    let deleteModal;
+    let timeslotTableBody = document.querySelector('#timeslot-table tbody');
+
+    function initializeDeleteModal() {
+      deleteModal = jQuery('#delete-modal');
+      deleteModal.eltsToDelete = null; // PK of TimeSlot that modal 'Delete' button should delete
+      let spans = deleteModal.find('span');
+      deleteModal.elts = {
+        unofficialUseWarning: deleteModal.find('.unofficial-use-warning'),
+        officialUseWarning: deleteModal.find('.official-use-warning'),
+        timeslotNameSpans: spans.filter('.ts-name'),
+        timeslotDateSpans: spans.filter('.ts-date'),
+        timeslotTimeSpans: spans.filter('.ts-time'),
+        timeslotLocSpans: spans.filter('.ts-location'),
+        timeslotCountSpans: spans.filter('.ts-count'),
+        pluralSpans: spans.filter('.ts-plural'),
+        singularSpans: spans.filter('.ts-singular')
+      };
+
+      document.getElementById('confirm-delete-button').addEventListener(
+        'click',
+        () => timeslotEdit.handleDeleteButtonClick()
+      );
+
+      function uniqueArray(a) {
+        let s = new Set();
+        a.forEach(item => s.add(item));
+        return Array.from(s);
+      }
+      deleteModal.openModal = function (eltsToDelete) {
+        let eltArray = Array.from(eltsToDelete); // make sure this is an array
+
+        if (eltArray.length > 1) {
+          deleteModal.elts.pluralSpans.show();
+          deleteModal.elts.singularSpans.hide();
+        } else {
+          deleteModal.elts.pluralSpans.hide();
+          deleteModal.elts.singularSpans.show();
+        }
+        deleteModal.elts.timeslotCountSpans.text(String(eltArray.length));
+
+        let names = uniqueArray(eltArray.map(elt => elt.dataset.timeslotName));
+        if (names.length === 1) {
+          names = names[0];
+        } else {
+          names.sort();
+          names = names.join(', ');
+        }
+        deleteModal.elts.timeslotNameSpans.text(names);
+
+        let dates = uniqueArray(eltArray.map(elt => elt.dataset.timeslotDate));
+        if (dates.length === 1) {
+          dates = dates[0];
+        } else {
+          dates = 'Multiple';
+        }
+        deleteModal.elts.timeslotDateSpans.text(dates);
+
+        let times = uniqueArray(eltArray.map(elt => elt.dataset.timeslotTime));
+        if (times.length === 1) {
+          times = times[0];
+        } else {
+          times = 'Multiple';
+        }
+        deleteModal.elts.timeslotTimeSpans.text(times);
+
+        let locs = uniqueArray(eltArray.map(elt => elt.dataset.timeslotLocation));
+        if (locs.length === 1) {
+          locs = locs[0];
+        } else {
+          locs = 'Multiple';
+        }
+        deleteModal.elts.timeslotLocSpans.text(locs);
+
+        // Check whether any of the elts are used in official / unofficial schedules
+        let unofficialUse = eltArray.some(elt => elt.dataset.unofficialUse === 'true');
+        let officialUse = eltArray.some(elt => elt.dataset.officialUse === 'true');
+        deleteModal.elts.unofficialUseWarning.hide();
+        deleteModal.elts.officialUseWarning.hide();
+        if (officialUse) {
+          deleteModal.elts.officialUseWarning.show();
+        } else if (unofficialUse) {
+          deleteModal.elts.unofficialUseWarning.show();
+        }
+
+        deleteModal.eltsToDelete  = eltsToDelete;
+        deleteModal.modal('show');
+      }
+
+      /**
+       * Handle deleting a single timeslot
+       *
+       * clicked arg is the clicked element, which must be a child of the timeslot element
+       */
+      function deleteSingleTimeSlot(clicked) {
+        deleteModal.openModal([clicked.closest('.timeslot')]);
+      }
+
+      /**
+       * Handle deleting an entire day worth of timeslots
+       *
+       * clicked arg is the clicked element, which must be a child of the day header element
+       */
+      function deleteDay(clicked) {
+        // Find all timeslots for this day
+        let dateId = clicked.dataset.dateId;
+        let timeslots = timeslotTableBody.querySelectorAll(
+          ':scope .timeslot[data-date-id="' + dateId + '"]' // :scope prevents picking up results outside table body
+        );
+        if (timeslots.length > 0) {
+          deleteModal.openModal(timeslots);
+        }
+      }
+
+      /**
+       * Handle deleting an entire column worth of timeslots
+       *
+       * clicked arg is the clicked element, which must be a child of the column header element
+       */
+      function deleteColumn(clicked) {
+        let colId = clicked.dataset.colId;
+        let timeslots = timeslotTableBody.querySelectorAll(
+          ':scope .timeslot[data-col-id="' + colId + '"]' // :scope prevents picking up results outside table body
+        );
+        if (timeslots.length > 0) {
+          deleteModal.openModal(timeslots);
+        }
+      }
+
+      /**
+       * Event handler for clicks on the timeslot table
+       *
+       * Handles clicks on all the delete buttons to avoid large numbers of event handlers.
+       */
+      document.getElementById('timeslot-table').addEventListener('click', function(event) {
+        let clicked = event.target; // find out what was clicked
+        if (clicked.dataset.deleteScope) {
+          switch (clicked.dataset.deleteScope) {
+            case 'timeslot':
+              deleteSingleTimeSlot(clicked)
+              break
+
+            case 'column':
+              deleteColumn(clicked)
+              break
+
+            case 'day':
+              deleteDay(clicked)
+              break
+
+            default:
+              throw new Error('Unexpected deleteScope "' + clicked.dataset.deleteScope + '"')
+          }
+        }
+      });
+    }
+
+    // Update timeslot classes when DOM changes
+    function tstableObserveCallback(mutationList) {
+      mutationList.forEach(mutation => {
+        if (mutation.type === 'childList' && mutation.target.classList.contains('tscell')) {
+          const tscell = mutation.target;
+          // mark collisions
+          if (tscell.getElementsByClassName('timeslot').length > 1) {
+            tscell.classList.add('timeslot-collision');
+          } else {
+            tscell.classList.remove('timeslot-collision');
+          }
+
+          // remove timeslot type classes for any removed timeslots
+          mutation.removedNodes.forEach(node => {
+            if (node.classList.contains('timeslot') && node.dataset.timeslotType) {
+              tscell.classList.remove('tstype_' + node.dataset.timeslotType);
+            }
+          });
+
+          // now add timeslot type classes for any remaining timeslots
+          Array.from(tscell.getElementsByClassName('timeslot')).forEach(elt => {
+            if (elt.dataset.timeslotType) {
+              tscell.classList.add('tstype_' + elt.dataset.timeslotType);
+            }
+          });
+        }
+      });
+    }
+
+    function initializeTsTableObserver() {
+      const observer = new MutationObserver(tstableObserveCallback);
+      observer.observe(timeslotTableBody, { childList: true, subtree: true });
+    }
+
+    window.addEventListener('load', function (event) {
+      initializeTsTableObserver();
+      initializeDeleteModal();
+    });
+
+    function removeTimeslotElement(elt) {
+      if (elt.parentNode) {
+        elt.parentNode.removeChild(elt);
+      }
+    }
+
+    function handleDeleteButtonClick() {
+      if (!deleteModal || !deleteModal.eltsToDelete) {
+        return; // do nothing if not yet initialized
+      }
+
+      let timeslotElts = Array.from(deleteModal.eltsToDelete); // make own copy as Array so we have .map()
+      ajaxDeleteTimeSlot(timeslotElts.map(elt => elt.dataset.timeslotPk))
+      .error(function(jqXHR, textStatus) {
+        displayError('Error deleting timeslot: ' + jqXHR.responseText)
+      })
+      .done(function () {timeslotElts.forEach(
+        tse => {
+          tse.closest('td.tscell').querySelector('.new-timeslot-link').classList.remove('hidden');
+          tse.parentNode.removeChild(tse);
+        }
+      )})
+      .always(function () {deleteModal.modal('hide')});
+    }
+
+    /**
+     * Make an AJAX request to delete a TimeSlot
+     *
+     * @param pkArray array of PKs of timeslots to delete
+     * @returns jqXHR object corresponding to jQuery ajax request
+     */
+    function ajaxDeleteTimeSlot(pkArray) {
+      return jQuery.ajax({
+        method: 'post',
+        timeout: 5 * 1000,
+        data: {
+          action: 'delete',
+          slot_id: pkArray.join(',')
+        }
+      });
+    }
+
+    function displayError(msg) {
+      window.alert(msg);
+    }
+
+    // export callable methods
+    return {
+      handleDeleteButtonClick: handleDeleteButtonClick,
+    }
+  })();
+  </script>
 {% endblock %}

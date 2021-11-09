@@ -1,0 +1,30 @@
+{% load ams_filters %}{# keep this in sync with sessions_request_view_formset.html #}
+{% for sess in session_set %}
+  <tr class="row2">
+    <td>Session {{ forloop.counter }}:</td>
+    <td>
+      <dl>
+        <dt>Length</dt>
+        <dd>{{ sess.requested_duration.total_seconds|display_duration }}</dd>
+        {% if sess.name %}
+          <dt>Name</dt>
+          <dd>{{ sess.name }}</dd>{% endif %}
+        {% if sess.purpose.slug != 'regular' %}
+          <dt>Purpose</dt>
+          <dd>
+            {{ sess.purpose }}
+            {% if sess.purpose.timeslot_types|length > 1 %}({{ sess.type }}
+              ){% endif %}
+          </dd>
+        {% endif %}
+      </dl>
+    </td>
+  </tr>
+  {% if group.features.acts_like_wg and forloop.counter == 2 and not is_virtual %}
+    <tr class="row2">
+      <td>Time between sessions:</td>
+      <td>{% if session.session_time_relation_display %}{{ session.session_time_relation_display }}{% else %}No
+        preference{% endif %}</td>
+    </tr>
+  {% endif %}
+{% endfor %}

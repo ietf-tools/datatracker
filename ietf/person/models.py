@@ -228,18 +228,6 @@ class Person(models.Model):
     def defurl(self):
         return urljoin(self.default_hostscheme,self.json_url())
 
-    def json_url(self):
-        return "/person/%s.json" % (self.id, )
-
-    # return info about the person
-    def json_dict(self, hostscheme):
-        ct1 = dict()
-        ct1['person_id'] = self.id
-        ct1['href']      = urljoin(hostscheme, self.json_url())
-        ct1['name']      = self.name
-        ct1['ascii']     = self.ascii
-        return ct1
-
     def available_api_endpoints(self):
         from ietf.ietfauth.utils import has_role
         return list(set([ (v, n) for (v, n, r) in PERSON_API_KEY_VALUES if r==None or has_role(self.user, r) ]))

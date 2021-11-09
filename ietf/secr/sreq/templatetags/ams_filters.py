@@ -25,15 +25,19 @@ def display_duration(value):
     """
     Maps a session requested duration from select index to 
     label."""
-    map = {'0':'None',
-           '1800':'30 Minutes',
-           '3000':'50 Minutes',
-           '3600':'1 Hour',
-           '5400':'1.5 Hours',
-           '6000':'100 Minutes',
-           '7200':'2 Hours',
-           '9000':'2.5 Hours'}
-    return map[value]
+    if value in (None, ''):
+        return 'unspecified'
+    value = int(value)
+    map = {0: 'None',
+           1800: '30 Minutes',
+           3600: '1 Hour',
+           5400: '1.5 Hours',
+           7200: '2 Hours',
+           9000: '2.5 Hours'}
+    if value in map:
+        return map[value]
+    else:
+        return "%d Hours %d Minutes %d Seconds"%(value//3600,(value%3600)//60,value%60)
 
 @register.filter
 def get_published_date(doc):

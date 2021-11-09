@@ -60,17 +60,13 @@ def get_initial_session(sessions, prune_conflicts=False):
     constraints = group.constraint_source_set.filter(meeting=meeting)  # all constraints with this group as source
     conflicts = constraints.filter(name__is_group_conflict=True)  # only the group conflict constraints
 
-    # even if there are three sessions requested, the old form has 2 in this field
-    initial['num_session'] = min(sessions.count(), 2)
-
-    # accessing these foreign key fields throw errors if they are unset so we
-    # need to catch these
-    initial['length_session1'] = str(sessions[0].requested_duration.seconds)
-    try:
-        initial['length_session2'] = str(sessions[1].requested_duration.seconds)
-        initial['length_session3'] = str(sessions[2].requested_duration.seconds)
-    except IndexError:
-        pass
+    if group.features.acts_like_wg:
+        # even if there are three sessions requested, the old form has 2 in this field
+        initial['num_session'] = min(sessions.count(), 2)
+        initial['third_session'] = sessions.count() > 2
+    else:
+        initial['num_session'] = sessions.count()
+        initial['third_session'] = False
     initial['attendees'] = sessions[0].attendees
 
     def valid_conflict(conflict):
@@ -268,6 +264,13 @@ def cancel(request, acronym):
     messages.success(request, 'The %s Session Request has been cancelled' % group.acronym)
     return redirect('ietf.secr.sreq.views.main')
 
+
+def status_slug_for_new_session(session, session_number):
+    if session.group.features.acts_like_wg and session_number == 2:
+        return 'apprw'
+    return 'schedw'
+
+
 @role_required(*AUTHORIZED_ROLES)
 def confirm(request, acronym):
     '''
@@ -276,12 +279,14 @@ def confirm(request, acronym):
     '''
     # FIXME: this should be using form.is_valid/form.cleaned_data - invalid input will make it crash
     group = get_object_or_404(Group,acronym=acronym)
+    if len(group.features.session_purposes) == 0:
+        raise Http404(f'Cannot request sessions for group "{acronym}"')
     meeting = get_meeting(days=14)
     FormClass = get_session_form_class()
 
     form = FormClass(group, meeting, request.POST, hidden=True)
     form.is_valid()
-    
+
     login = request.user.person
 
     # check if request already exists for this group
@@ -316,38 +321,27 @@ def confirm(request, acronym):
     if request.method == 'POST' and button_text == 'Submit':
         # delete any existing session records with status = canceled or notmeet
         add_event_info_to_session_qs(Session.objects.filter(group=group, meeting=meeting)).filter(current_status__in=['canceled', 'notmeet']).delete()
-
-        # create new session records
-        count = 0
-        # lenth_session2 and length_session3 fields might be disabled by javascript and so
-        # wouldn't appear in form data
-        for duration in (form.data.get('length_session1',None),form.data.get('length_session2',None),form.data.get('length_session3',None)):
-            count += 1
-            if duration:
-                slug = 'apprw' if count == 3 else 'schedw'
-                new_session = Session.objects.create(
-                    meeting=meeting,
-                    group=group,
-                    attendees=form.cleaned_data['attendees'],
-                    requested_duration=datetime.timedelta(0,int(duration)),
-                    comments=form.cleaned_data['comments'],
-                    type_id='regular',
-                )
-                SchedulingEvent.objects.create(
-                    session=new_session,
-                    status=SessionStatusName.objects.get(slug=slug),
-                    by=login,
-                )
-                if 'resources' in form.data:
-                    new_session.resources.set(session_data['resources'])
-                jfs = form.data.get('joint_for_session', '-1')
-                if not jfs: # jfs might be ''
-                    jfs = '-1'
-                if int(jfs) == count:
-                    groups_split = form.cleaned_data.get('joint_with_groups').replace(',',' ').split()
-                    joint = Group.objects.filter(acronym__in=groups_split)
-                    new_session.joint_with_groups.set(joint)
-                session_changed(new_session)
+        num_sessions = int(form.cleaned_data['num_session']) + (1 if form.cleaned_data['third_session'] else 0)
+        # Create new session records
+        form.session_forms.save()
+        for count, sess_form in enumerate(form.session_forms[:num_sessions]):
+            new_session = sess_form.instance
+            SchedulingEvent.objects.create(
+                session=new_session,
+                status=SessionStatusName.objects.get(slug=status_slug_for_new_session(new_session, count)),
+                by=login,
+            )
+            if 'resources' in form.data:
+                new_session.resources.set(session_data['resources'])
+            jfs = form.data.get('joint_for_session', '-1')
+            if not jfs: # jfs might be ''
+                jfs = '-1'
+            if int(jfs) == count + 1:  # count is zero-indexed
+                groups_split = form.cleaned_data.get('joint_with_groups').replace(',',' ').split()
+                joint = Group.objects.filter(acronym__in=groups_split)
+                new_session.joint_with_groups.set(joint)
+            new_session.save()
+            session_changed(new_session)
 
         # write constraint records
         for conflictname, cfield_id in form.wg_constraint_field_ids():
@@ -418,8 +412,13 @@ def edit(request, acronym, num=None):
     '''
     meeting = get_meeting(num,days=14)
     group = get_object_or_404(Group, acronym=acronym)
-    sessions = add_event_info_to_session_qs(Session.objects.filter(group=group, meeting=meeting)).filter(Q(current_status__isnull=True) | ~Q(current_status__in=['canceled', 'notmeet'])).order_by('id')
-    sessions_count = sessions.count()
+    if len(group.features.session_purposes) == 0:
+        raise Http404(f'Cannot request sessions for group "{acronym}"')
+    sessions = add_event_info_to_session_qs(
+        Session.objects.filter(group=group, meeting=meeting)
+    ).filter(
+        Q(current_status__isnull=True) | ~Q(current_status__in=['canceled', 'notmeet', 'deleted'])
+    ).order_by('id')
     initial = get_initial_session(sessions)
     FormClass = get_session_form_class()
 
@@ -449,67 +448,18 @@ def edit(request, acronym, num=None):
         form = FormClass(group, meeting, request.POST, initial=initial)
         if form.is_valid():
             if form.has_changed():
-                # might be cleaner to simply delete and rewrite all records (but maintain submitter?)
-                # adjust duration or add sessions
-                # session 1
-                if 'length_session1' in form.changed_data:
-                    session = sessions[0]
-                    session.requested_duration = datetime.timedelta(0,int(form.cleaned_data['length_session1']))
-                    session.save()
-                    session_changed(session)
-
-                # session 2
-                if 'length_session2' in form.changed_data:
-                    length_session2 = form.cleaned_data['length_session2']
-                    if length_session2 == '':
-                        sessions[1].delete()
-                    elif sessions_count < 2:
-                        duration = datetime.timedelta(0,int(form.cleaned_data['length_session2']))
-                        new_session = Session.objects.create(
-                            meeting=meeting,
-                            group=group,
-                            attendees=form.cleaned_data['attendees'],
-                            requested_duration=duration,
-                            comments=form.cleaned_data['comments'],
-                            type_id='regular',
-                        )
+                changed_session_forms = [sf for sf in form.session_forms.forms_to_keep if sf.has_changed()]
+                form.session_forms.save()
+                for n, subform in enumerate(form.session_forms):
+                    session = subform.instance
+                    if session in form.session_forms.created_instances:
                         SchedulingEvent.objects.create(
-                            session=new_session,
-                            status=SessionStatusName.objects.get(slug='schedw'),
+                            session=session,
+                            status_id=status_slug_for_new_session(session, n),
                             by=request.user.person,
                         )
-                    else:
-                        duration = datetime.timedelta(0,int(form.cleaned_data['length_session2']))
-                        session = sessions[1]
-                        session.requested_duration = duration
-                        session.save()
-
-                # session 3
-                if 'length_session3' in form.changed_data:
-                    length_session3 = form.cleaned_data['length_session3']
-                    if length_session3 == '':
-                        sessions[2].delete()
-                    elif sessions_count < 3:
-                        duration = datetime.timedelta(0,int(form.cleaned_data['length_session3']))
-                        new_session = Session.objects.create(
-                            meeting=meeting,
-                            group=group,
-                            attendees=form.cleaned_data['attendees'],
-                            requested_duration=duration,
-                            comments=form.cleaned_data['comments'],
-                            type_id='regular',
-                        )
-                        SchedulingEvent.objects.create(
-                            session=new_session,
-                            status=SessionStatusName.objects.get(slug='apprw'),
-                            by=request.user.person,
-                        )
-                    else:
-                        duration = datetime.timedelta(0,int(form.cleaned_data['length_session3']))
-                        session = sessions[2]
-                        session.requested_duration = duration
-                        session.save()
-                        session_changed(session)
+                for sf in changed_session_forms:
+                    session_changed(sf.instance)
 
                 # New sessions may have been created, refresh the sessions list
                 sessions = add_event_info_to_session_qs(
@@ -534,7 +484,8 @@ def edit(request, acronym, num=None):
                             session_changed(sessions[current_joint_for_session_idx])
                         sessions[new_joint_for_session_idx].joint_with_groups.set(new_joint_with_groups)
                         session_changed(sessions[new_joint_for_session_idx])
-                            
+
+                # Update sessions to match changes to shared form fields
                 if 'attendees' in form.changed_data:
                     sessions.update(attendees=form.cleaned_data['attendees'])
                 if 'comments' in form.changed_data:
@@ -587,10 +538,6 @@ def edit(request, acronym, num=None):
 
                 # send notification
                 send_notification(group,meeting,login,form.cleaned_data,'update')
-
-            # nuke any cache that might be lingering around.
-            from ietf.meeting.helpers import session_constraint_expire
-            session_constraint_expire(request,session)
 
             messages.success(request, 'Session Request updated')
             return redirect('ietf.secr.sreq.views.view', acronym=acronym)
@@ -666,7 +613,7 @@ def main(request):
      
     # add session status messages for use in template
     for group in scheduled_groups:
-        if len(group.meeting_sessions) < 3:
+        if not group.features.acts_like_wg or (len(group.meeting_sessions) < 3):
             group.status_message = group.meeting_sessions[0].current_status
         else:
             group.status_message = 'First two sessions: %s, Third session: %s' % (group.meeting_sessions[0].current_status, group.meeting_sessions[2].current_status)
@@ -690,9 +637,11 @@ def new(request, acronym):
     to create the request.
     '''
     group = get_object_or_404(Group, acronym=acronym)
+    if len(group.features.session_purposes) == 0:
+        raise Http404(f'Cannot request sessions for group "{acronym}"')
     meeting = get_meeting(days=14)
     session_conflicts = dict(inbound=inbound_session_conflicts_as_string(group, meeting))
-    is_virtual = meeting.number in settings.SECR_VIRTUAL_MEETINGS,
+    is_virtual = meeting.number in settings.SECR_VIRTUAL_MEETINGS
     FormClass = get_session_form_class()
 
     # check if app is locked
@@ -770,6 +719,7 @@ def no_session(request, acronym):
         meeting=meeting,
         requested_duration=datetime.timedelta(0),
         type_id='regular',
+        purpose_id='regular',
     )
     SchedulingEvent.objects.create(
         session=session,
@@ -892,7 +842,8 @@ def view(request, acronym, num = None):
     return render(request, 'sreq/view.html', {
         'is_locked': is_locked,
         'is_virtual': meeting.number in settings.SECR_VIRTUAL_MEETINGS,
-        'session': session,
+        'session': session,  # legacy processed data
+        'sessions': sessions,  # actual session instances
         'activities': activities,
         'meeting': meeting,
         'group': group,

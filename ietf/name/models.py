@@ -1,10 +1,13 @@
 # Copyright The IETF Trust 2010-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+import jsonfield
 
 from django.db import models
 
 from ietf.utils.models import ForeignKey
+from ietf.utils.validators import JSONForeignKeyListValidator
+
 
 class NameModel(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
@@ -64,11 +67,21 @@ class ProceedingsMaterialTypeName(NameModel):
     """social_event, host_speaker_series, supporters, wiki, additional_information"""
 class AgendaTypeName(NameModel):
     """ietf, ad, side, workshop, ..."""
+class AgendaFilterTypeName(NameModel):
+    """none, normal, heading, special"""
 class SessionStatusName(NameModel):
     """Waiting for Approval, Approved, Waiting for Scheduling, Scheduled, Cancelled, Disapproved"""
+class SessionPurposeName(NameModel):
+    """Regular, Tutorial, Office Hours, Coding, Social, Admin"""
+    timeslot_types = jsonfield.JSONField(
+        max_length=256, blank=False, default=[],
+        help_text='Allowed TimeSlotTypeNames',
+        validators=[JSONForeignKeyListValidator('name.TimeSlotTypeName')],
+    )
+    on_agenda = models.BooleanField(default=True, help_text='Are sessions of this purpose visible on the agenda by default?')
+
 class TimeSlotTypeName(NameModel):
     """Session, Break, Registration, Other, Reserved, unavail"""
-    private = models.BooleanField(default=False, help_text="Whether sessions of this type should be kept off the public agenda")
 class ConstraintName(NameModel):
     """conflict, conflic2, conflic3, bethere, timerange, time_relation, wg_adjacent"""
     penalty = models.IntegerField(default=0, help_text="The penalty for violating this kind of constraint; for instance 10 (small penalty) or 10000 (large penalty)")

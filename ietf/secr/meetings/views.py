@@ -26,7 +26,7 @@ from ietf.group.models import Group, GroupEvent
 from ietf.secr.meetings.blue_sheets import create_blue_sheets
 from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm, MeetingSelectForm,
     MeetingRoomForm, MiscSessionForm, TimeSlotForm, RegularSessionEditForm,
-    UploadBlueSheetForm )
+    UploadBlueSheetForm, MeetingRoomOptionsForm )
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.sreq.views import get_initial_session
 from ietf.secr.utils.meeting import get_session, get_timeslot
@@ -406,9 +406,11 @@ def misc_sessions(request, meeting_id, schedule_name):
             name = form.cleaned_data['name']
             short = form.cleaned_data['short']
             type = form.cleaned_data['type']
+            purpose = form.cleaned_data['purpose']
             group = form.cleaned_data['group']
             duration = form.cleaned_data['duration']
             location = form.cleaned_data['location']
+            remote_instructions = form.cleaned_data['remote_instructions']
 
             # create TimeSlot object
             timeslot = TimeSlot.objects.create(type=type,
@@ -427,7 +429,9 @@ def misc_sessions(request, meeting_id, schedule_name):
                                              name=name,
                                              short=short,
                                              group=group,
-                                             type=type)
+                                             type=type,
+                                             purpose=purpose,
+                                             remote_instructions=remote_instructions)
 
             SchedulingEvent.objects.create(
                 session=session,
@@ -537,6 +541,7 @@ def misc_session_edit(request, meeting_id, schedule_name, slot_id):
             name = form.cleaned_data['name']
             short = form.cleaned_data['short']
             duration = form.cleaned_data['duration']
+            session_purpose = form.cleaned_data['purpose']
             slot_type = form.cleaned_data['type']
             show_location = form.cleaned_data['show_location']
             remote_instructions = form.cleaned_data['remote_instructions']
@@ -553,6 +558,8 @@ def misc_session_edit(request, meeting_id, schedule_name, slot_id):
             session.name = name
             session.short = short
             session.remote_instructions = remote_instructions
+            session.purpose = session_purpose
+            session.type = slot_type
             session.save()
 
             messages.success(request, 'Location saved')
@@ -570,7 +577,8 @@ def misc_session_edit(request, meeting_id, schedule_name, slot_id):
                    'time':slot.time.strftime('%H:%M'),
                    'duration':duration_string(slot.duration),
                    'show_location':slot.show_location,
-                   'type':slot.type,
+                   'purpose': session.purpose,
+                   'type': session.type,
                    'remote_instructions': session.remote_instructions,
                }
         form = MiscSessionForm(initial=initial, meeting=meeting, session=session)
@@ -637,29 +645,34 @@ def rooms(request, meeting_id, schedule_name):
             return redirect('ietf.secr.meetings.views.main', meeting_id=meeting_id,schedule_name=schedule_name)
 
         formset = RoomFormset(request.POST, instance=meeting, prefix='room')
-        if formset.is_valid():
+        options_form = MeetingRoomOptionsForm(request.POST)
+        if formset.is_valid() and options_form.is_valid():
             formset.save()
 
-            # if we are creating rooms for the first time create full set of timeslots
-            if first_time:
-                build_timeslots(meeting)
+            # only create timeslots on request
+            if options_form.cleaned_data['copy_timeslots']:
+                # if we are creating rooms for the first time create full set of timeslots
+                if first_time:
+                    build_timeslots(meeting)
 
-            # otherwise if we're modifying rooms
-            else:
-                # add timeslots for new rooms, deleting rooms automatically deletes timeslots
-                for form in formset.forms[formset.initial_form_count():]:
-                    if form.instance.pk:
-                        build_timeslots(meeting,room=form.instance)
+                # otherwise if we're modifying rooms
+                else:
+                    # add timeslots for new rooms, deleting rooms automatically deletes timeslots
+                    for form in formset.forms[formset.initial_form_count():]:
+                        if form.instance.pk:
+                            build_timeslots(meeting,room=form.instance)
 
             messages.success(request, 'Meeting Rooms changed successfully')
             return redirect('ietf.secr.meetings.views.rooms', meeting_id=meeting_id, schedule_name=schedule_name)
     else:
         formset = RoomFormset(instance=meeting, prefix='room')
+        options_form = MeetingRoomOptionsForm()
 
     return render(request, 'meetings/rooms.html', {
         'meeting': meeting,
         'schedule': schedule,
         'formset': formset,
+        'options_form': options_form,
         'selected': 'rooms'}
     )
 

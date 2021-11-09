@@ -12,7 +12,8 @@ from django.db.models import Q
 from ietf.meeting.models import (Meeting, Session, SchedulingEvent, Schedule,
     TimeSlot, SessionPresentation, FloorPlan, Room, SlideSubmission, Constraint,
     MeetingHost, ProceedingsMaterial)
-from ietf.name.models import ConstraintName, SessionStatusName, ProceedingsMaterialTypeName, TimerangeName
+from ietf.name.models import (ConstraintName, SessionStatusName, ProceedingsMaterialTypeName,
+                              TimerangeName, SessionPurposeName)
 from ietf.doc.factories import ProceedingsMaterialDocFactory
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
@@ -104,9 +105,11 @@ class SessionFactory(factory.django.DjangoModelFactory):
         model = Session
 
     meeting = factory.SubFactory(MeetingFactory)
-    type_id='regular'
+    purpose_id = 'regular'
+    type_id = 'regular'
     group = factory.SubFactory(GroupFactory)
     requested_duration = datetime.timedelta(hours=1)
+    on_agenda = factory.lazy_attribute(lambda obj: SessionPurposeName.objects.get(pk=obj.purpose_id).on_agenda)
 
     @factory.post_generation
     def status_id(obj, create, extracted, **kwargs):
@@ -128,7 +131,7 @@ class SessionFactory(factory.django.DjangoModelFactory):
                 status=SessionStatusName.objects.get(slug=extracted),
                 by=PersonFactory(),
             )
-                
+
     @factory.post_generation
     def add_to_schedule(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         '''

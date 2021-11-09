@@ -4,7 +4,7 @@ from django.conf.urls import include
 from django.views.generic import RedirectView
 from django.conf import settings
 
-from ietf.meeting import views, ajax, views_proceedings
+from ietf.meeting import views, views_proceedings
 from ietf.utils.urls import url
 
 safe_for_all_meeting_types = [
@@ -26,8 +26,7 @@ safe_for_all_meeting_types = [
 
 
 type_ietf_only_patterns = [
-    url(r'^agenda/%(owner)s/%(schedule_name)s/edit$' % settings.URL_REGEXPS, views.edit_schedule),
-    url(r'^agenda/%(owner)s/%(schedule_name)s/edit/$' % settings.URL_REGEXPS, views.edit_meeting_schedule),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/edit/?$' % settings.URL_REGEXPS, views.edit_meeting_schedule),
     url(r'^agenda/%(owner)s/%(schedule_name)s/timeslots/$' % settings.URL_REGEXPS, views.edit_meeting_timeslots_and_misc_sessions),
     url(r'^agenda/%(owner)s/%(schedule_name)s/details$' % settings.URL_REGEXPS, views.edit_schedule_properties),
     url(r'^agenda/%(owner)s/%(schedule_name)s/delete$' % settings.URL_REGEXPS, views.delete_schedule),
@@ -38,10 +37,6 @@ type_ietf_only_patterns = [
     url(r'^agenda/%(owner)s/%(schedule_name)s/by-room/?$' % settings.URL_REGEXPS, views.agenda_by_room),
     url(r'^agenda/%(owner)s/%(schedule_name)s/by-type/?$' % settings.URL_REGEXPS, views.agenda_by_type),
     url(r'^agenda/%(owner)s/%(schedule_name)s/by-type/(?P<type>[a-z]+)$' % settings.URL_REGEXPS, views.agenda_by_type),
-    url(r'^agenda/%(owner)s/%(schedule_name)s/permissions$' % settings.URL_REGEXPS, ajax.schedule_permission_api),
-    url(r'^agenda/%(owner)s/%(schedule_name)s/session/(?P<assignment_id>\d+).json$' % settings.URL_REGEXPS, ajax.assignment_json),
-    url(r'^agenda/%(owner)s/%(schedule_name)s/sessions.json$' % settings.URL_REGEXPS,      ajax.assignments_json),
-    url(r'^agenda/%(owner)s/%(schedule_name)s.json$' % settings.URL_REGEXPS, ajax.schedule_infourl),
     url(r'^agenda/%(owner)s/%(schedule_name)s/new/$' % settings.URL_REGEXPS, views.new_meeting_schedule),
     url(r'^agenda/by-room$', views.agenda_by_room),
     url(r'^agenda/by-type$', views.agenda_by_type),
@@ -52,22 +47,12 @@ type_ietf_only_patterns = [
     url(r'^agendas/edit$', RedirectView.as_view(pattern_name='ietf.meeting.views.list_schedules', permanent=True)),
     url(r'^agendas/diff/$', views.diff_schedules),
     url(r'^agenda/new/$', views.new_meeting_schedule),
-    url(r'^timeslots/edit$',                     views.edit_timeslots),
+    url(r'^timeslots/edit/?$',                     views.edit_timeslots),
+    url(r'^timeslot/new$',                       views.create_timeslot),
+    url(r'^timeslot/(?P<slot_id>\d+)/edit$',     views.edit_timeslot),
     url(r'^timeslot/(?P<slot_id>\d+)/edittype$', views.edit_timeslot_type),
-    url(r'^rooms$',                              ajax.timeslot_roomsurl),
-    url(r'^room/(?P<roomid>\d+).json$',          ajax.timeslot_roomurl),
-    url(r'^timeslots$',                          ajax.timeslot_slotsurl),
-    url(r'^timeslots.json$',                     ajax.timeslot_slotsurl),
-    url(r'^timeslot/(?P<slotid>\d+).json$',      ajax.timeslot_sloturl),
-    url(r'^agendas$',                            ajax.schedule_infosurl),
-    url(r'^agendas.json$',                       ajax.schedule_infosurl),
     url(r'^agenda/(?P<acronym>[-a-z0-9]+)-drafts.pdf$', views.session_draft_pdf),
     url(r'^agenda/(?P<acronym>[-a-z0-9]+)-drafts.tgz$', views.session_draft_tarfile),
-    url(r'^sessions\.json$',                               ajax.sessions_json),
-    url(r'^session/(?P<sessionid>\d+).json',             ajax.session_json),
-    url(r'^session/(?P<sessionid>\d+)/constraints.json', ajax.session_constraints),
-    url(r'^constraint/(?P<constraintid>\d+).json',       ajax.constraint_json),
-    url(r'^json$',                               ajax.meeting_json),
 ]
 
 # This is a limited subset of the list above -- many of the views above won't work for interim meetings
@@ -82,7 +67,9 @@ type_ietf_only_patterns_id_optional = [
     url(r'^agenda(?P<utc>-utc)?(?P<ext>.html)?/?$',     views.agenda),
     url(r'^agenda(?P<ext>.txt)$', views.agenda),
     url(r'^agenda(?P<ext>.csv)$', views.agenda),
-    url(r'^agenda/edit$', views.edit_schedule),
+    url(r'^agenda/edit$',
+        RedirectView.as_view(pattern_name='ietf.meeting.views.edit_meeting_schedule', permanent=True),
+        name='ietf.meeting.views.edit_meeting_schedule'),
     url(r'^agenda/edit/$', views.edit_meeting_schedule),
     url(r'^requests$', views.meeting_requests),
     url(r'^agenda/agenda\.ics$', views.agenda_ical),
@@ -140,6 +127,7 @@ urlpatterns = [
     url(r'^upcoming\.ics/?$', views.upcoming_ical),
     url(r'^upcoming\.json/?$', views.upcoming_json),
     url(r'^session/(?P<session_id>\d+)/agenda_materials$', views.session_materials),
+    url(r'^session/(?P<session_id>\d+)/edit/?', views.edit_session),
     # Then patterns from more specific to less
     url(r'^(?P<num>interim-[a-z0-9-]+)/', include(type_interim_patterns)),
     url(r'^(?P<num>\d+)/requests.html$', RedirectView.as_view(url='/meeting/%(num)s/requests', permanent=True)),

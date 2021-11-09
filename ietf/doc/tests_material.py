@@ -18,8 +18,8 @@ from django.urls import reverse as urlreverse
 from ietf.doc.models import Document, State, DocAlias, NewRevisionDocEvent
 from ietf.group.factories import RoleFactory
 from ietf.group.models import Group
-from ietf.meeting.factories import MeetingFactory
-from ietf.meeting.models import Meeting, Session, SessionPresentation, SchedulingEvent
+from ietf.meeting.factories import MeetingFactory, SessionFactory
+from ietf.meeting.models import Meeting, SessionPresentation, SchedulingEvent
 from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
@@ -151,12 +151,11 @@ class GroupMaterialTests(TestCase):
     def test_revise(self):
         doc = self.create_slides()
 
-        session = Session.objects.create(
+        session = SessionFactory(
             name = "session-42-mars-1",
             meeting = Meeting.objects.get(number='42'),
             group = Group.objects.get(acronym='mars'),
             modified = datetime.datetime.now(),
-            type_id='regular',
         )
         SchedulingEvent.objects.create(
             session=session,

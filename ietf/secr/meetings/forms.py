@@ -8,8 +8,9 @@ from django.db.models import Q
 import debug                            # pyflakes:ignore
 
 from ietf.group.models import Group
+from ietf.meeting.fields import SessionPurposeAndTypeField
 from ietf.meeting.models import Meeting, Room, TimeSlot, Session, SchedTimeSessAssignment
-from ietf.name.models import TimeSlotTypeName
+from ietf.name.models import TimeSlotTypeName, SessionPurposeName
 import ietf.utils.fields
 
 
@@ -130,6 +131,13 @@ class MeetingRoomForm(forms.ModelForm):
         model = Room
         exclude = ['resources']
 
+class MeetingRoomOptionsForm(forms.Form):
+    copy_timeslots = forms.BooleanField(
+        required=False,
+        initial=False,
+        label='Duplicate timeslots from previous meeting for new rooms?',
+    )
+
 class TimeSlotForm(forms.Form):
     day = forms.ChoiceField()
     time = forms.TimeField()
@@ -163,7 +171,10 @@ class TimeSlotForm(forms.Form):
 
 class MiscSessionForm(TimeSlotForm):
     short = forms.CharField(max_length=32,label='Short Name',help_text='Enter an abbreviated session name (used for material file names)',required=False)
-    type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(used=True).exclude(slug__in=('regular',)),empty_label=None)
+    purpose = SessionPurposeAndTypeField(
+        purpose_queryset=SessionPurposeName.objects.none(),
+        type_queryset=TimeSlotTypeName.objects.none(),
+    )
     group = forms.ModelChoiceField(
         queryset=Group.objects.filter(
             Q(type__in=['ietf','team','area'],state='active')|
@@ -187,8 +198,13 @@ class MiscSessionForm(TimeSlotForm):
             self.meeting = kwargs.pop('meeting')
         if 'session' in kwargs:
             self.session = kwargs.pop('session')
+        initial = kwargs.setdefault('initial', dict())
+        initial['purpose'] = (initial.pop('purpose', ''), initial.pop('type', ''))
         super(MiscSessionForm, self).__init__(*args,**kwargs)
         self.fields['location'].queryset = Room.objects.filter(meeting=self.meeting)
+        self.fields['purpose'].purpose_queryset = SessionPurposeName.objects.filter(
+            used=True).exclude(slug='session').order_by('name')
+        self.fields['purpose'].type_queryset = TimeSlotTypeName.objects.filter(used=True)
 
     def clean(self):
         super(MiscSessionForm, self).clean()
@@ -196,13 +212,15 @@ class MiscSessionForm(TimeSlotForm):
             return
         cleaned_data = self.cleaned_data
         group = cleaned_data['group']
-        type = cleaned_data['type']
+        type = cleaned_data['purpose'].type
         short = cleaned_data['short']
         if type.slug in ('other','plenary','lead') and not group:
             raise forms.ValidationError('ERROR: a group selection is required')
         if type.slug in ('other','plenary','lead') and not short:
             raise forms.ValidationError('ERROR: a short name is required')
-            
+
+        cleaned_data['purpose'] = cleaned_data['purpose'].purpose
+        cleaned_data['type'] = type
         return cleaned_data
     
     def clean_group(self):

@@ -11,7 +11,8 @@ from ietf.name.models import (
     ReviewRequestStateName, ReviewResultName, ReviewTypeName, RoleName, RoomResourceName,
     SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName, TopicAudienceName,
     DocUrlTagName, ReviewAssignmentStateName, ReviewerQueuePolicyName, TimerangeName,
-    ExtResourceName, ExtResourceTypeName, SlideSubmissionStatusName, ProceedingsMaterialTypeName)
+    ExtResourceName, ExtResourceTypeName, SlideSubmissionStatusName, ProceedingsMaterialTypeName,
+    AgendaFilterTypeName, SessionPurposeName )
 
 
 from ietf.stats.models import CountryAlias
@@ -56,6 +57,7 @@ class ProceedingsMaterialTypeNameAdmin(NameAdmin):
     list_display = ["slug", "name", "desc", "used", "order",]
 admin.site.register(ProceedingsMaterialTypeName, ProceedingsMaterialTypeNameAdmin)
 
+admin.site.register(AgendaFilterTypeName, NameAdmin)
 admin.site.register(AgendaTypeName, NameAdmin)
 admin.site.register(BallotPositionName, NameAdmin)
 admin.site.register(ConstraintName, NameAdmin)
@@ -94,3 +96,4 @@ admin.site.register(TopicAudienceName, NameAdmin)
 admin.site.register(DocUrlTagName, NameAdmin)
 admin.site.register(ExtResourceTypeName, NameAdmin)
 admin.site.register(SlideSubmissionStatusName, NameAdmin)
+admin.site.register(SessionPurposeName, NameAdmin)

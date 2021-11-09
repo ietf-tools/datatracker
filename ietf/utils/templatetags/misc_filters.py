@@ -60,3 +60,13 @@ def keep_only(items, arg):
       present and truthy. The attribute can be an int or a string.
     """
     return [item for item, value in zip(items, list_extract(items, arg)) if value]
+
+@register.filter
+def index(container, index):
+    """Retrieve item from an indexable container
+
+    Usage: {{ item_list|index:forloop.counter0 }}
+      Returns the index corresponding to the loop counter. (For a literal value,
+      just use the {{ item_list.0 }} syntax.)
+    """
+    return container[index]
