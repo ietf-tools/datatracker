@@ -10,7 +10,7 @@ coverage>=4.0.1,!=4.0.2,<5.0    # Coverage 5.x moves from a json database to SQL
 decorator>=4.0.4
 defusedxml>=0.4.1		# for TastyPie when ussing xml; not a declared dependency
 Django>=2.2.15,<3.0
-django-bootstrap3>=14.0
+django-bootstrap5>=21.1
 django-csp>=3.5
 django-cors-headers>=2.4.0
 django-debug-toolbar>=3.2.2
