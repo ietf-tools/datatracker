@@ -494,7 +494,7 @@ def consensus(doc):
 
 @register.filter
 def pos_to_label(text):
-    """Return a valid Bootstrap3 label type for a ballot position."""
+    """Return a valid Bootstrap label type for a ballot position."""
     return {
         'Yes':          'success',
         'No Objection': 'pass',

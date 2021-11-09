@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2016, All Rights Reserved #}
-{% load origin bootstrap3 static %}
+{% load origin django_bootstrap5 static %}
 
 {% block title %}{% if revising_review %}Revise{% elif assignment %}Complete{% else %}Submit unsolicited{% endif %} review of {{ doc.name }}{% endblock %}
 

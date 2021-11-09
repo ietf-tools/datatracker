@@ -1,6 +1,6 @@
 {# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
 {% load origin %}
-{% load bootstrap3 %}
+{% load django_bootstrap5 %}
 {% if not timeslot_form.active_assignment or timeslot_form.active_assignment.schedule_id == schedule.pk %}
   <form class="timeslot-form" method="post">{% csrf_token %}
     <div class="flowing-form">
