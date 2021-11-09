@@ -72,6 +72,9 @@ RUN apt-get -y update && \
     rm -rf /var/lib/apt/lists/*
 
 # Set locale to en_US.UTF-8
+RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \
+    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && \
+    echo "LANG=en_US.UTF-8" > /etc/locale.conf
 RUN dpkg-reconfigure locales && \
     locale-gen en_US.UTF-8 && \
     update-locale LC_ALL en_US.UTF-8
