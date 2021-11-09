@@ -165,16 +165,11 @@ else:
     STATIC_URL = "https://www.ietf.org/lib/dt/%s/"%__version__
     STATIC_ROOT = "/a/www/www6s/lib/dt/%s/"%__version__
 
-# Destination for components handled by djangobower
-COMPONENT_ROOT = BASE_DIR + "/externals/static/"
-COMPONENT_URL  = STATIC_URL
-
 # List of finder classes that know how to find static files in
 # various locations.
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'ietf.utils.bower_storage.BowerStorageFinder',
 )
 
 WSGI_APPLICATION = "ietf.wsgi.application"
@@ -442,7 +437,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_markup',
     'django_password_strength',
-    'djangobwr',
     'form_utils',
     'oidc_provider',
     'simple_history',
