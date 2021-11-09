@@ -1,0 +1,29 @@
+{
+  "dependencies": {
+    "@popperjs/core": "^2.10.2",
+    "bootstrap": "^5.1.3",
+    "datatables.net": "^1.11.3",
+    "datatables.net-bs5": "^1.11.3",
+    "jquery": "^3.6.0"
+  },
+  "devDependencies": {
+    "@parcel/transformer-sass": "^2.0.1",
+    "jquery-migrate": "^3.3.2",
+    "parcel": "^2.0.0"
+  },
+  "source": [
+    "ietf/static/js/ietf.js",
+    "ietf/static/js/datatables.js",
+    "ietf/static/css/ietf.scss",
+    "ietf/static/css/datatables.scss",
+    "ietf/static/images/ietflogo-small-transparent.png",
+    "ietf/static/images/ietflogo.png",
+    "ietf/static/images/apple-touch-icon.png",
+    "ietf/static/images/ietf-icon-red3.png"
+  ],
+  "targets": {
+    "default": {
+      "distDir": "ietf/static/dist/ietf"
+    }
+  }
+}

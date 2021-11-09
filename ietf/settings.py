@@ -415,9 +415,8 @@ ROOT_URLCONF = 'ietf.urls'
 
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
-    os.path.join(BASE_DIR, 'secr/static'),
-    os.path.join(BASE_DIR, 'externals/static'),
+    os.path.join(BASE_DIR, 'static/dist'),
+    # os.path.join(BASE_DIR, 'secr/static'),
 )
 
 INSTALLED_APPS = [
@@ -433,7 +432,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.staticfiles',
     # External apps 
-    'bootstrap3',
+    'django_bootstrap5',
     'corsheaders',
     'django_markup',
     'django_password_strength',
