@@ -14,23 +14,18 @@
        svn co https://svn.ietf.org/svn/tools/ietfdb/trunk
        cd trunk
 
-3. **TEMPORARY:** Replace the contents of the `docker` directory with [Lars'
-   files](https://svn.ietf.org/svn/tools/ietfdb/personal/lars/7.39.1.dev0/docker/).
-
-4. **TEMPORARY:** Until [Lars'
-   changes](https://svn.ietf.org/svn/tools/ietfdb/personal/lars/7.39.1.dev0/docker/)
-   have been merged and a docker image is available for download, you will need
+4. **TEMPORARY:** Until a pre-built docker image is available for download, you will need
    to build it locally:
 
        docker/build
 
-    This will take a while, but only needs to be done once.
+    This will take a while (15 to 30m), but only needs to be done once.
 
 5. Use the `docker/run` script to start the datatracker container. You will be
    dropped into a shell from which you can start the datatracker and execute
    related commands as usual, for example
 
-       ietf/manage.py runserver 0.0.0.0:8000
+       ietf/manage.py check; ietf/manage.py runserver 0.0.0.0:8000
 
    to start the datatracker.
 
