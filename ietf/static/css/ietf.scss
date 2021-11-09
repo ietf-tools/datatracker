@@ -89,3 +89,54 @@ body {
     width: 75%;
     max-width: 300px;
 }
+
+// Styles for d3.js graphical SVG timelines
+#timeline {
+    font-size: small;
+}
+
+#timeline .axis path,
+#timeline .axis line {
+    fill: none;
+    stroke: black;
+}
+
+#timeline .axis.y path,
+#timeline .axis.y line {
+    stroke: none;
+}
+
+#timeline .axis.x text {
+    dominant-baseline: central;
+}
+
+#timeline .bar text {
+    fill: white;
+    dominant-baseline: central;
+    pointer-events: none;
+}
+
+
+$timeline-odd-color: $primary;
+$timeline-odd-hover-color: shift-color($timeline-odd-color, $link-shade-percentage) !default;
+
+#timeline .bar:nth-child(odd) rect {
+    fill: $timeline-odd-color;
+}
+
+#timeline .bar:nth-child(odd) rect:hover,
+#timeline .bar:nth-child(odd) rect:focus {
+    fill: $timeline-odd-hover-color;
+}
+
+$timeline-even-color: $success;
+$timeline-even-hover-color: shift-color($timeline-even-color, $link-shade-percentage) !default;
+
+#timeline .bar:nth-child(even) rect {
+    fill: $timeline-even-color;
+}
+
+#timeline .bar:nth-child(even) rect:hover,
+#timeline .bar:nth-child(even) rect:focus {
+    fill: $timeline-even-hover-color;
+}

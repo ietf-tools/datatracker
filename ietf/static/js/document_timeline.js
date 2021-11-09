@@ -191,6 +191,8 @@ function draw_timeline() {
             .attr({
                 height: bar_height,
                 width: bar_width,
+                class: "btn",
+                type: "button",
                 mask: function(d, i) {
                     // apply gradient if the document is a draft and expired
                     if (d.name.match(/^draft-/) &&

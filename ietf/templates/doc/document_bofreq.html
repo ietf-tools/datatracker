@@ -5,12 +5,6 @@
 {% load ietf_filters %}
 {% load person_filters %}
 
-{% block pagehead %}
-  <script src="{% static 'd3/d3.min.js' %}"></script>
-  <script src="{% static 'jquery/jquery.min.js' %}"></script>
-  <script src="{% static 'ietf/js/document_timeline.js' %}"></script>
-{% endblock %}
-
 {% block title %}{{ doc.title }}{% endblock %}
 
 {% block content %}
@@ -177,4 +171,9 @@
     </div>
   </div>
 
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'ietf/js/d3.js' %}"></script>
+  <script src="{% static 'ietf/js/document_timeline.js' %}"></script>
 {% endblock %}
