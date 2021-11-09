@@ -766,7 +766,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         all of the events needed by the editor.
         """
         # Set up a meeting and a schedule a plain user can edit
-        schedule = ScheduleFactory(owner__user__username="plain")
+        schedule = ScheduleFactory(meeting__type_id='ietf', owner__user__username="plain")
         meeting = schedule.meeting
 
         # Open the editor

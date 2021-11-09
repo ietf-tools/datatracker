@@ -694,21 +694,21 @@ def is_special_agenda_item(assignment):
 def should_show_agenda_session_buttons(assignment):
     """Should this agenda item show the session buttons (jabber link, etc)?
 
-    In IETF-111 and earlier, office hours sessions were designated by a name ending
+    In IETF-112 and earlier, office hours sessions were designated by a name ending
     with ' office hours' and belonged to the IESG or some other group. This led to
     incorrect session buttons being displayed. Suppress session buttons for
-    when name ends with 'office hours' in the pre-111 meetings.
+    when name ends with 'office hours' in the pre-112 meetings.
     >>> from collections import namedtuple  # use to build mock objects
     >>> mock_meeting = namedtuple('t3', ['number'])
     >>> mock_session = namedtuple('t2', ['name'])
     >>> mock_assignment = namedtuple('t1', ['meeting', 'session'])  # meeting must be a callable
     >>> factory = lambda num, name: mock_assignment(session=mock_session(name), meeting=lambda: mock_meeting(num))
-    >>> test_cases = [('105', 'acme office hours'), ('111', 'acme office hours')]
+    >>> test_cases = [('105', 'acme office hours'), ('112', 'acme office hours')]
     >>> any(should_show_agenda_session_buttons(factory(*tc)) for tc in test_cases)
     False
-    >>> test_cases = [('interim-2020-acme-112', 'acme'), ('112', 'acme'), ('150', 'acme'), ('105', 'acme'),]
-    >>> test_cases.extend([('111', 'acme'), ('interim-2020-acme-112', 'acme office hours')])
-    >>> test_cases.extend([('112', 'acme office hours'), ('150', 'acme office hours')])
+    >>> test_cases = [('interim-2020-acme-113', 'acme'), ('113', 'acme'), ('150', 'acme'), ('105', 'acme'),]
+    >>> test_cases.extend([('112', 'acme'), ('interim-2020-acme-113', 'acme office hours')])
+    >>> test_cases.extend([('113', 'acme office hours'), ('150', 'acme office hours')])
     >>> all(should_show_agenda_session_buttons(factory(*tc)) for tc in test_cases)
     True
     """

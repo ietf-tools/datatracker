@@ -3714,7 +3714,7 @@ class EditTests(TestCase):
         self.assertEqual(meeting.schedule_set.count(), orig_schedule_count, 'Schedule should not be created')
 
     def test_edit_session(self):
-        session = SessionFactory(group__type_id='team')  # type determines allowed session purposes
+        session = SessionFactory(meeting__type_id='ietf', group__type_id='team')  # type determines allowed session purposes
         self.client.login(username='secretary', password='secretary+password')
         url = urlreverse('ietf.meeting.views.edit_session', kwargs={'session_id': session.pk})
         r = self.client.get(url)

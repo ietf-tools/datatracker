@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('name', '0035_populate_sessionpurposename'),
-        ('meeting', '0050_populate_session_on_agenda'),
+        ('meeting', '0051_populate_session_on_agenda'),
     ]
 
     operations = [

@@ -17,7 +17,7 @@ from django.dispatch import receiver
 import debug                            # pyflakes:ignore
 
 from ietf.group.colors import fg_group_colors, bg_group_colors
-from ietf.name.models import (GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName, 
+from ietf.name.models import (GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName,
                               AgendaTypeName, AgendaFilterTypeName, ExtResourceName, SessionPurposeName)
 from ietf.person.models import Email, Person
 from ietf.utils.db import IETFJSONField
@@ -264,8 +264,8 @@ class GroupFeatures(models.Model):
     groupman_authroles      = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=["Secretariat",])
     matman_roles            = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=["ad","chair","delegate","secr"])
     role_order              = IETFJSONField(max_length=128, accepted_empty_values=[[], {}], blank=False, default=["chair","secr","member"],
-                                                  help_text="The order in which roles are shown, for instance on photo pages.  Enter valid JSON.")
-    session_purposes        = jsonfield.JSONField(max_length=256, blank=False, default=[],
+                                                help_text="The order in which roles are shown, for instance on photo pages.  Enter valid JSON.")
+    session_purposes        = IETFJSONField(max_length=256, accepted_empty_values=[[], {}], blank=False, default=[],
                                                   help_text="Allowed session purposes for this group type",
                                                   validators=[JSONForeignKeyListValidator(SessionPurposeName)])
 
