@@ -13,7 +13,6 @@ import warnings
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
 warnings.simplefilter("always", DeprecationWarning)
-warnings.filterwarnings("ignore", message="Add the `renderer` argument to the render\(\) method of", module="bootstrap3")
 warnings.filterwarnings("ignore", message="The logout\(\) view is superseded by")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="{% load staticfiles %} is deprecated")
