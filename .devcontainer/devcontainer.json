@@ -1,29 +1,32 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.202.5/containers/python-3
 {
-	"name": "IETF Datatracker",
-	"dockerComposeFile": "docker-compose.yml",
+    "name": "IETF Datatracker",
+    "dockerComposeFile": ["../docker/docker-compose.yml", "docker-compose.extend.yml"],
     "service": "app",
-    "workspaceFolder": "/usr/local/share/datatracker",
+    "workspaceFolder": "/root/src",
     "shutdownAction": "stopCompose",
     "postCreateCommand": "/docker-init.sh",
-
-	// Set *default* container specific settings.json values on container create.
-	"settings": { 
+    "containerEnv": {
+        "EDITOR_VSCODE": "true"
+    },
+    
+    // Set *default* container specific settings.json values on container create.
+    "settings": { 
         "terminal.integrated.defaultProfile.linux": "zsh",
-		"python.pythonPath": "/usr/local/bin/python",
-		"python.languageServer": "Pylance",
-		"python.linting.enabled": true,
-		"python.linting.pylintEnabled": true,
-		"python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
-		"python.formatting.blackPath": "/usr/local/py-utils/bin/black",
-		"python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
-		"python.linting.banditPath": "/usr/local/py-utils/bin/bandit",
-		"python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
-		"python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
-		"python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
-		"python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
-		"python.linting.pylintPath": "/usr/local/py-utils/bin/pylint",
+        "python.pythonPath": "/usr/local/bin/python",
+        "python.languageServer": "Pylance",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
+        "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
+        "python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
+        "python.linting.banditPath": "/usr/local/py-utils/bin/bandit",
+        "python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
+        "python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
+        "python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
+        "python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
+        "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint",
         "python.testing.pytestArgs": [
             "ietf"
         ],
@@ -35,27 +38,56 @@
             "./ietf",
             "-p",
             "test*.py"
+        ],
+        "sqltools.connections": [
+            // Default connection to dev DB container
+            {
+                "name": "Local Dev",
+                "server": "db",
+                "port": 3306,
+                "database": "ietf_utf8",
+                "username": "django",
+                "password": "RkTkDPFnKpko",
+                "driver": "MySQL",
+                "askForPassword": false,
+                "connectionTimeout": 60
+            }
         ]
         // "python.envFile": "${workspaceFolder}/.devcontainer/dev.env"
-	},
-
-	// Add the IDs of extensions you want installed when the container is created.
-	"extensions": [
-		"ms-python.python",
-		"ms-python.vscode-pylance",
-		"ms-azuretools.vscode-docker",
-		"editorconfig.editorconfig",
-		"redhat.vscode-yaml",
-		"visualstudioexptteam.vscodeintellicode",
-		"batisteo.vscode-django",
-	],
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	"forwardPorts": [8000, 3306]
-
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "sh /docker-init.sh",
-
-	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-	// "remoteUser": "django"
+    },
+    
+    // Add the IDs of extensions you want installed when the container is created.
+    "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-azuretools.vscode-docker",
+        "editorconfig.editorconfig",
+        "redhat.vscode-yaml",
+        "visualstudioexptteam.vscodeintellicode",
+        "batisteo.vscode-django",
+        "mutantdino.resourcemonitor",
+        "spmeesseman.vscode-taskexplorer",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-mysql"
+    ],
+    
+    // Use 'forwardPorts' to make a list of ports inside the container available locally.
+    "forwardPorts": [8000, 3306],
+    
+    "portsAttributes": {
+        "8000": {
+            "label": "Datatracker",
+            "onAutoForward": "notify"
+        },
+        "3306": {
+            "label": "MariaDB",
+            "onAutoForward": "silent"
+        }
+    }
+    
+    // Use 'postCreateCommand' to run commands after the container is created.
+    // "postCreateCommand": "sh /docker-init.sh",
+    
+    // Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+    // "remoteUser": "django"
 }
