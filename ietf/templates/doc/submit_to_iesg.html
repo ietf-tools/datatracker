@@ -19,7 +19,7 @@
   <table class="table table-sm">
     <tr {% if warn.intended_std_level %}class="warning"{% endif %}>
       <th class="text-nowrap">Intended status level</th>
-      <td>{% if warn.intended_std_level %}<span class="fa fa-warning"></span>{% endif %}</td>
+      <td>{% if warn.intended_std_level %}<span class="bi bi-exclamation"></span>{% endif %}</td>
       <td>{{doc.intended_std_level}}</td>
     </tr>
 
@@ -31,13 +31,13 @@
 
     <tr {% if warn.shepherd %}class="warning"{% endif %}>
       <th class="text-nowrap">Document shepherd</th>
-      <td>{% if warn.shepherd %}<span class="fa fa-warning"></span>{% endif %}</td>
+      <td>{% if warn.shepherd %}<span class="bi bi-exclamation"></span>{% endif %}</td>
       <td>{% if doc.shepherd %}{{ doc.shepherd.person }}{% endif %}</td>
     </tr>
 
     <tr {% if warn.shepherd_writeup %}class="warning"{% endif %}>
       <th class="text-nowrap">Shepherd write-up exists</th>
-      <td>{% if warn.shepherd_writeup %}<span class="fa fa-warning"></span>{% endif %}</td>
+      <td>{% if warn.shepherd_writeup %}<span class="bi bi-exclamation"></span>{% endif %}</td>
       <td>{%if shepherd_writeup %}Yes{%else%}No{%endif%}</td>
     </tr>
 
@@ -49,13 +49,13 @@
 
     <tr {% if warn.tags %}class="warning"{% endif %}>
       <th class="text-nowrap">Annotation tags</th>
-      <td>{% if warn.tags %}<span class="fa fa-warning"></span>{% endif %}</td>
+      <td>{% if warn.tags %}<span class="bi bi-exclamation"></span>{% endif %}</td>
       <td>{% if not tags %}(None){%else%}{% for tag in tags %}{{ tag }}{% if not forloop.last%}, {%endif%}{% endfor %}{% endif %}</td>
     </tr>
   </table>
 
   {% if warn %}
-    <p class="alert alert-warning"><span class="fa fa-warning"></span> indicates the document might not be ready for submission. Please check each instance carefully to see if changes need to be made to the document's state before submitting.</p>
+    <p class="alert alert-warning"><span class="bi bi-exclamation"></span> indicates the document might not be ready for submission. Please check each instance carefully to see if changes need to be made to the document's state before submitting.</p>
   {% endif %}
 
   <p>

@@ -16,7 +16,7 @@
           {{ label }}
           {% if own %}
             <div class="pull-right" >
-              <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number %}"><i class="fa fa-plus"></i> New Agenda</a>
+              <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number %}"><i class="bi bi-plus"></i> New Agenda</a>
             </div>
           {% endif %}
         </div>
@@ -67,12 +67,12 @@
               <td>
                 {% if schedule.can_edit_properties %}
                   <a class="edit-schedule-properties" href="{% url "ietf.meeting.views.edit_schedule_properties" meeting.number schedule.owner_email schedule.name %}?next={{ request.get_full_path|urlencode }}">
-                    <i title="Edit agenda properties" class="fa fa-edit"></i>
+                    <i title="Edit agenda properties" class="bi bi-pencil"></i>
                   </a>
                 {% endif %}
 
                 <a href="{% url "ietf.meeting.views.edit_meeting_timeslots_and_misc_sessions" meeting.number schedule.owner_email schedule.name %}">
-                  <i title="Show time slots and misc. sessions for agenda" class="fa fa-calendar"></i>
+                  <i title="Show time slots and misc. sessions for agenda" class="bi bi-calendar"></i>
                 </a>
               </td>
             </tr>

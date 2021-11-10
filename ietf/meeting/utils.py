@@ -301,7 +301,7 @@ def preprocess_constraints_for_meeting_schedule_editor(meeting, sessions):
     joint_with_groups_constraint_name = ConstraintName(
         slug='joint_with_groups',
         name="Joint session with",
-        editor_label="<i class=\"fa fa-clone\"></i>",
+        editor_label="<i class=\"bi bi-link\"></i>",
         order=8,
     )
     constraint_names[joint_with_groups_constraint_name.slug] = joint_with_groups_constraint_name

@@ -8,7 +8,7 @@
       <dt>Conflict review</dt>
       <dd>
         <a href="{{doc.get_href}}">
-	  <span class="fa fa-file"></span>
+	  <span class="bi bi-file"></span>
         </a>
         <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
         <br>
@@ -18,7 +18,7 @@
       <dt>{{ conflictdoc.stream }} {{ conflictdoc.intended_std_level }}</dt>
       <dd>
         <a href="{{settings.IETF_ID_ARCHIVE_URL}}{{ conflictdoc.name }}-{{ conflictdoc.rev }}.txt">
-	  <span class="fa fa-file"></span>
+	  <span class="bi bi-file"></span>
         </a>
         <a href="{% url "ietf.doc.views_doc.document_main" name=conflictdoc.name %}">{{ conflictdoc.name }}</a>
         <br>

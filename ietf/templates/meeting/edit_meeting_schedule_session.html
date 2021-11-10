@@ -12,7 +12,7 @@
     {% endif %}
 
     {% if session.comments %}
-      <span class="comments"><i class="fa fa-comment-o"></i></span>
+      <span class="comments"><i class="bi bi-chat-o"></i></span>
     {% endif %}
 
     {% if session.constrained_sessions %}
@@ -36,7 +36,7 @@
           &middot; {% if session.group.is_bof %}BOF{% else %}{{ session.group.type.name }}{% endif %}
         {% endif %}
         {% if session.attendees != None %}
-          &middot; {{ session.attendees }} <i class="fa fa-user-o"></i>
+          &middot; {{ session.attendees }} <i class="bi bi-person"></i>
         {% endif %}
       </strong>
     </div>
@@ -52,7 +52,7 @@
 
     {% if session.requested_by_person %}
       <div>
-        <i title="Requested by" class="fa fa-user-circle-o"></i> {{ session.requested_by_person.plain_name }} {% if session.requested_time %}({{ session.requested_time|date:"Y-m-d" }}){% endif %}
+        <i title="Requested by" class="bi bi-person-circle"></i> {{ session.requested_by_person.plain_name }} {% if session.requested_time %}({{ session.requested_time|date:"Y-m-d" }}){% endif %}
       </div>
     {% endif %}
 
@@ -82,7 +82,7 @@
     {% endif %}
 
     {% for s in session.other_sessions %}
-      <div class="other-session" data-othersessionid="{{ s.pk }}"><i class="fa fa-calendar"></i> Other session <span class="time" data-scheduled="scheduled: {time}" data-notscheduled="not yet scheduled"></span></div>
+      <div class="other-session" data-othersessionid="{{ s.pk }}"><i class="bi bi-calendar"></i> Other session <span class="time" data-scheduled="scheduled: {time}" data-notscheduled="not yet scheduled"></span></div>
     {% endfor %}
   </div>
 </div>

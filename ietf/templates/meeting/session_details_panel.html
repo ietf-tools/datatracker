@@ -40,12 +40,12 @@
          {% if session.agenda_note|first_url|conference_url %}
            <a class=""
              href="{{ session.agenda_note|first_url }}"
-             title="Online conference"><span class="fa fa-fw fd-group"></span>
+             title="Online conference"><span class="bi bi-beople"></span>
            </a>
          {% elif session.remote_instructions|first_url|conference_url %}
            <a class=""
              href="{{ session.remote_instructions|first_url }}"
-             title="Online conference"><span class="fa fa-fw fd-group"></span>
+             title="Online conference"><span class="bi bi-people"></span>
            </a>
          {% endif %}
          {{ session.remote_instructions }}

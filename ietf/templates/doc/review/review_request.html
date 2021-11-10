@@ -12,7 +12,7 @@
 
   <div>
     {% if can_close_request %}
-      <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.close_request" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Close request</a>
+      <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.close_request" name=doc.name request_id=review_req.pk %}"><span class="bi bi-slash-circle"></span> Close request</a>
     {% endif %}
   </div>
 

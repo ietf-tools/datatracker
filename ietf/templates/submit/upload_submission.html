@@ -42,7 +42,7 @@
                 {% csrf_token %}
 
                 <div class="form-group">
-                    {% bootstrap_field form.xml label='<i class="fa fw-fw fa-file-code-o" aria-hidden="true"></i> XML source of the I-D' %}
+                    {% bootstrap_field form.xml label='<i class="bi bi-file-code" aria-hidden="true"></i> XML source of the I-D' %}
                     <p class="help-block">
                         Preferably, submit a standalone
                         <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc7991' %}">xml2rfc version 3</a>
@@ -64,7 +64,7 @@
                 </div>
                 <div class="collapse" id="other-formats">
                     <div class="form-group">
-                        {% bootstrap_field form.txt label='<i class="fa fw-fw fa-file-text-o" aria-hidden="true"></i> Plaintext rendering of the I-D'%}
+                        {% bootstrap_field form.txt label='<i class="bi bi-file-text" aria-hidden="true"></i> Plaintext rendering of the I-D'%}
                         <p class="help-block">
                             Optional to submit, will be auto-generated based
                             on the submitted XML.
@@ -74,7 +74,7 @@
                     </div>
 
                     <div class="form-group">
-                        {% bootstrap_field form.pdf label='<i class="fa fw-fw fa-file-pdf-o" aria-hidden="true"></i> PDF rendering of the I-D'%}
+                        {% bootstrap_field form.pdf label='<i class="bi bi-file-pdf" aria-hidden="true"></i> PDF rendering of the I-D'%}
                         <p class="help-block">
                             Optional to submit, will be auto-generated based
                             on the submitted XML.

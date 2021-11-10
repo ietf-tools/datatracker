@@ -19,15 +19,15 @@
     <a href="https://trac.ietf.org/trac/ietfdb/browser/tags/{{entry.version}}">
       Version {{ entry.version }}</a>
     <br><small>Released {{ entry.date }}</small>
-    <div class="pull-right"><a href="{% url "ietf.release.views.stats" %}" class="icon-link">&nbsp;<span class="small fa fa-bar-chart">&nbsp;</span></a></div>
+    <div class="pull-right"><a href="{% url "ietf.release.views.stats" %}" class="icon-link">&nbsp;<span class="small bi bi-bar-chart-line">&nbsp;</span></a></div>
   </h1>
 
   <ul class="pager">
     <li class="previous {% if not entry.prev %}disabled{% endif %}">
-      <a href="{% if entry.prev %}/release/{{entry.prev.version}}/{% else %}#{% endif %}"><span class="fa fa-long-arrow-left"></span> Previous release</a>
+      <a href="{% if entry.prev %}/release/{{entry.prev.version}}/{% else %}#{% endif %}"><span class="bi bi-arrow-left"></span> Previous release</a>
     </li>
     <li class="next {% if not entry.next %}disabled{% endif %}">
-      <a href="{% if entry.next %}/release/{{entry.next.version}}/{% else %}#{% endif %}">Next release <span class="fa fa-long-arrow-right"></span></a>
+      <a href="{% if entry.next %}/release/{{entry.next.version}}/{% else %}#{% endif %}">Next release <span class="bi bi-arrow-right"></span></a>
     </li>
   </ul>
 

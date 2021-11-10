@@ -32,19 +32,19 @@
           <td>
             {% for ad in group.ads %}
               <a href="{% url 'ietf.person.views.profile' email_or_name=ad.person.name %}">{{ ad.person.plain_name }}
-	      </a><a href="mailto:{{ ad.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>{% if not forloop.last %}, {% endif %}
+	      </a><a href="mailto:{{ ad.email.address }}"><span class="bi bi-envelope tiny"></span></a>{% if not forloop.last %}, {% endif %}
             {% endfor %}
           </td>
           <td>
             {% for secretary in group.secretaries %}
               <a href="{% url 'ietf.person.views.profile' email_or_name=secretary.person.name %}">{{ secretary.person.plain_name }}</a>
-	      <a href="mailto:{{ secretary.email.address }}"><span class="fa fa-envelope-o tiny"></span></a> {% if not forloop.last %}, {% endif %}
+	      <a href="mailto:{{ secretary.email.address }}"><span class="bi bi-envelope tiny"></span></a> {% if not forloop.last %}, {% endif %}
             {% endfor %}
           </td>
           <td>
             {% for chair in group.chairs %}
               <a href="{% url 'ietf.person.views.profile' email_or_name=chair.person.name %}">{{ chair.person.plain_name }}</a>
-	      <a href="mailto:{{ chair.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>{% if not forloop.last %}, {% endif %}
+	      <a href="mailto:{{ chair.email.address }}"><span class="bi bi-envelope tiny"></span></a>{% if not forloop.last %}, {% endif %}
             {% endfor %}
           </td>
         </tr>

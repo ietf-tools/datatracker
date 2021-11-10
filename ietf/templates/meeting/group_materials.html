@@ -30,7 +30,7 @@
         {% for agenda in session.all_meeting_agendas %}
           {% if session.all_meeting_agendas|length == 1 %}
 	    {% if agenda.time > old %}
-	      <span class="small fa fa-bell-o" title="Last Update: {{ agenda.time|utc|date:"Y-m-d H:i:s" }}&nbsp;UTC" ></span>
+	      <span class="small bi bi-bell" title="Last Update: {{ agenda.time|utc|date:"Y-m-d H:i:s" }}&nbsp;UTC" ></span>
 	    {% endif %}
 	    <a href="{{ session.all_meeting_agendas.0|meeting_href:session.meeting }}">Agenda</a><br>
 	  {% else %}
@@ -75,7 +75,7 @@
       {% with session.all_meeting_slides as slides %}
         {% for slide in slides %}
 	  {% if slide.time > old %}
-	    <span class="small fa fa-bell-o" title="Last Update: {{ slide.time|utc|date:"Y-m-d H:i:s" }}&nbsp;UTC" ></span>
+	    <span class="small bi bi-bell" title="Last Update: {{ slide.time|utc|date:"Y-m-d H:i:s" }}&nbsp;UTC" ></span>
 	  {% endif %}
 	  <a href="{{ slide|meeting_href:session.meeting}}">{{ slide.title|clean_whitespace }}</a>
           <br>
@@ -88,7 +88,7 @@
      {% with session.all_meeting_drafts as drafts %}
        {% for draft in drafts %}
          {% if draft.time > old %}
-	   <span class="small fa fa-bell-o" title="Last Update: {{ draft.time|utc|date:"Y-m-d H:i:s" }}&nbsp;UTC" ></span>
+	   <span class="small bi bi-bell" title="Last Update: {{ draft.time|utc|date:"Y-m-d H:i:s" }}&nbsp;UTC" ></span>
 	 {% endif %}
 	 <a href="{{ draft.get_href }}">{{ draft.name }}</a><br>
        {% empty %} 

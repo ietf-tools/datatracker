@@ -34,7 +34,7 @@
       <div class="col-sm-10">
 	<p class="form-control-static">
 	  {{ user.username }}
-	  &nbsp;<a href="/accounts/username/"><span class="fa fa-pencil"></span></a>
+	  &nbsp;<a href="/accounts/username/"><span class="bi bi-pencil"></span></a>
 	</p>
 
       </div>
@@ -46,7 +46,7 @@
 	 <p class="form-control-static">
 	   
 	   <a href="/accounts/password/">Password change form</a>
-	   &nbsp;<a href="/accounts/password/"><span class="fa fa-pencil"></span></a>
+	   &nbsp;<a href="/accounts/password/"><span class="bi bi-pencil"></span></a>
 	 </p>
       </div>
     </div>
@@ -103,11 +103,11 @@
               <span title="{{ extres.name.name}}">{% firstof extres.display_name extres.name.name %}</span>
             </div>
             <div class="col-sm-11">{{extres.value}}
-              {% if forloop.first %}&nbsp;<a href="{% url 'ietf.ietfauth.views.edit_person_externalresources' %}"><span class="fa fa-pencil"></span></a>{% endif %}
+              {% if forloop.first %}&nbsp;<a href="{% url 'ietf.ietfauth.views.edit_person_externalresources' %}"><span class="bi bi-pencil"></span></a>{% endif %}
             </div>
           </div>
         {% empty %}
-          <div class="row"><div class="col-sm-1">None&nbsp;<a href="{% url 'ietf.ietfauth.views.edit_person_externalresources' %}"><span class="fa fa-pencil"></span></a></div></div>
+          <div class="row"><div class="col-sm-1">None&nbsp;<a href="{% url 'ietf.ietfauth.views.edit_person_externalresources' %}"><span class="bi bi-pencil"></span></a></div></div>
         {% endfor %}
       </div>
     </div>

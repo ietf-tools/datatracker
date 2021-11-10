@@ -18,10 +18,10 @@
 
 {% if item.session.slides %}
     <h4>Slides</h4>
-    <ul class="fa-ul list-unstyled">
+    <ul class="list-unstyled">
         {% for slide in item.session.slides %}
             <li>
-                <span class="fa-li fa fa-file-{{ slide.file_extension|lower }}-o"></span>
+                <span class="bi bi-file-{{ slide.file_extension|lower }}-o"></span>
                 <a href="{{ slide.get_versionless_href }}">{{ slide.title|clean_whitespace }}</a>
             </li>
         {% endfor %}

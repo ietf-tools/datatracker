@@ -87,13 +87,13 @@
               <div class="panel-heading">
                 <h5 class="panel-title"><b>{{ p.pos.name }}</b> ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev }}{% endif %})
                 {% if p.send_email %}
-                  <span class="fa fa-envelope-o pull-right" title="Email requested to be sent for this discuss"></span>
+                  <span class="bi bi-envelope pull-right" title="Email requested to be sent for this discuss"></span>
                 {% elif p.any_email_sent == True %}
-                  <span class="fa fa-envelope pull-right" title="Email requested to be sent for earlier discuss"></span>
+                  <span class="bi bi-envelope pull-right" title="Email requested to be sent for earlier discuss"></span>
                 {% elif p.any_email_sent == False %}
-                  <span class="fa fa-comment-o pull-right" title="No email send requests for this discuss"></span>
+                  <span class="bi bi-chat-o pull-right" title="No email send requests for this discuss"></span>
                 {% else %}
-                  <span class="fa fa-comment-o pull-right" title="No email send requests for this discuss"></span>
+                  <span class="bi bi-chat-o pull-right" title="No email send requests for this discuss"></span>
                 {% endif %}
 	            </h5>
               </div>
@@ -106,11 +106,11 @@
               <div class="panel-heading">
                 <h5 class="panel-title"><b>Comment</b> ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev }}{% endif %})
                 {% if p.send_email %}
-                  <span class="fa fa-envelope-o pull-right" title="Email requested to be sent for this comment"></span>
+                  <span class="bi bi-envelope pull-right" title="Email requested to be sent for this comment"></span>
                 {% elif p.any_email_sent == True %}
-                  <span class="fa fa-envelope pull-right" title="Email requested to be sent for earlier comment"></span>
+                  <span class="bi bi-envelope pull-right" title="Email requested to be sent for earlier comment"></span>
                 {% elif p.any_email_sent == False %}
-                  <span class="fa fa-comment-o pull-right" title="No email send requests for this comment"></span>
+                  <span class="bi bi-chat-o pull-right" title="No email send requests for this comment"></span>
                 {% else %}
                   <div class="pull-right small italic" style="margin-top: -0.3em;" title="No ballot position send log available">No email<br/>send info</div>
                 {% endif %}
@@ -145,11 +145,11 @@
                 ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev }}{% endif %})
               {% endif %}
               {% if p.send_email %}
-                <span class="fa fa-envelope-o pull-right" title="Email requested to be sent for this ballot position"></span>
+                <span class="bi bi-envelope pull-right" title="Email requested to be sent for this ballot position"></span>
               {% elif p.any_email_sent == True %}
-                <span class="fa fa-envelope pull-right" title="Email requested to be sent for earlier ballot position"></span>
+                <span class="bi bi-envelope pull-right" title="Email requested to be sent for earlier ballot position"></span>
               {% elif p.any_email_sent == False %}
-                <span class="fa fa-comment-o pull-right" title="No email send requests for this ballot position"></span>
+                <span class="bi bi-chat-o pull-right" title="No email send requests for this ballot position"></span>
               {% else %}
                 <div class="pull-right small italic" style="margin-top: -0.3em;" title="No ballot position send log available">No email<br/>send info</div>
               {% endif %}

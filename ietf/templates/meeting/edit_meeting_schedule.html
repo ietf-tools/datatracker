@@ -84,7 +84,7 @@
                   <div class="timeslots">
                     <div class="room-name">
                       <strong>{{ room.name }}</strong><br>
-                      {% if room.capacity %}{{ room.capacity }} <i class="fa fa-user-o"></i>{% endif %}
+                      {% if room.capacity %}{{ room.capacity }} <i class="bi bi-person"></i>{% endif %}
                     </div>
                   </div>
                 {% endwith %}{% endfor %}
@@ -99,7 +99,7 @@
           <div class="day">
             <div class="day-label">
               <strong>{{ day|date:"l" }}</strong>
-              <i class="fa fa-exchange swap-days"
+              <i class="bi bi-arrow-left-right swap-days"
                  data-dayid="{{ day.isoformat }}"
                  data-start="{{ day.isoformat }}"></i>
               <br>
@@ -116,7 +116,7 @@
                     <div class="time-label" style="width: {{ t.layout_width }}rem">
                       <span>
                         {{ t.time|date:"G:i" }} - {{ t.end_time|date:"G:i" }}
-                        <i class="fa fa-exchange swap-timeslot-col"
+                        <i class="bi bi-arrow-left-right swap-timeslot-col"
                            data-origin-label="{{ day|date:"l, N j" }}, {{ t.time|date:"G:i" }}-{{ t.end_time|date:"G:i" }}"
                            data-start="{{ t.utc_start_time.isoformat }}"
                            data-timeslot-pk="{{ t.pk }}"></i>

@@ -46,9 +46,11 @@
             <div class="title-buttons col-xs-6">
                 <div>
                     <a title="iCalendar subscription for upcoming meetings" href="webcal://{{request.get_host}}{% url 'ietf.meeting.views.upcoming_ical' %}">
-                        <span class="fa fa-stack-1"><i class="fa fa-fw fa-calendar-o fa-stack-1x"></i><i class="fa fa-fw fa-repeat fa-stack-xs"></i></span>
+                        <i class="bi bi-share"></i>
                     </a>
-                    <a title="iCalendar entry for upcoming meetings" href="{% url 'ietf.meeting.views.upcoming_ical' %}"><span class="fa fa-calendar"></span></a>
+                    <a title="iCalendar entry for upcoming meetings" href="{% url 'ietf.meeting.views.upcoming_ical' %}">
+                        <i class="bi bi-calendar"></i>
+                    </a>
                 </div>
                 <div class="tz-display">
                     <label for="timezone-select">Time zone:</label>

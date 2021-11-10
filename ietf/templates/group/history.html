@@ -12,7 +12,7 @@
   {% origin %}
   <h2>Group History</h2>
   {% if can_add_comment %}
-    <a class="btn btn-primary" href="{% url 'ietf.group.views.add_comment' acronym=group.acronym %}"><span class="fa fa-plus"></span> Add comment</a>
+    <a class="btn btn-primary" href="{% url 'ietf.group.views.add_comment' acronym=group.acronym %}"><span class="bi bi-plus"></span> Add comment</a>
   {% endif %}
   <table class="table table-sm table-striped tablesorter">
     <thead>

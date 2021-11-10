@@ -17,7 +17,7 @@
       {% else %}
           <a href="{{doc.get_href}}">
       {% endif %}
-      <span class="fa fa-file"></span></a>
+      <span class="bi bi-file"></span></a>
     {% endwith %}
     <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
     {% if doc.has_rfc_editor_note %}

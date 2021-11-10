@@ -38,8 +38,8 @@
             <td><a href="{% url 'ietf.doc.views_doc.document_main' name=name %}">{{ name|prettystdname }}</a></td>
             <td>
 	      <b>{{ref.target.document.title}}</b><br>
-              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.document_references' name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
-              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.document_referenced_by' name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
+              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.document_references' name %}" rel="nofollow"><span class="bi bi-arrow-left"></span> References</a>
+              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.document_referenced_by' name %}" rel="nofollow"><span class="bi bi-arrow-right"></span> Referenced by</a>
             </td>
             <td>
 	      {% ifequal ref.target.document.get_state.slug 'rfc' %}

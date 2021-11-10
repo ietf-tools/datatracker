@@ -3,7 +3,7 @@
 <a {% if title %}title="{{ title }}"{% endif %} href="{% url 'ietf.person.views.profile' email_or_name=email %}">
   <span class="{{class}}">{{ plain_name }}</span>
 </a>&nbsp;<a href="mailto:{{ email|urlencode }}">
-  <span class="fa fa-envelope-o tiny"></span>
+  <span class="bi bi-envelope tiny"></span>
 </a>
 {% elif name %}
 <a {% if title %}title="{{ title }}"{% endif %} href="{% url 'ietf.person.views.profile' email_or_name=name %}">

@@ -2,7 +2,7 @@
 {% for file in files %}
   {% if file.exists %}
     <a class="btn btn-primary btn-xs" href="{{ file.url }}" target="_blank">
-      <span class="fa fa-file-{% if file.ext == "txt" %}text-o{% elif file.ext == "xml" %}code-o{% elif file.ext == "pdf" %}pdf-o{% else %}o{% endif %}"></span>
+      <span class="bi bi-file-{% if file.ext == "txt" %}text-o{% elif file.ext == "xml" %}code-o{% elif file.ext == "pdf" %}pdf-o{% else %}o{% endif %}"></span>
       {{ file.ext }}
     </a>
   {% endif %}
