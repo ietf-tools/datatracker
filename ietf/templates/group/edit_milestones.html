@@ -29,7 +29,7 @@
     {% if can_change_uses_milestone_dates %}
       <div class="col-sm-12">
         <form method="post" id="switch-date-use-form">{% csrf_token %}
-          <button class="btn btn-default" type="submit" name="action" value="switch"{% if milestone_set == 'charter' and not group.charter.rev == '00-00' %} style="display:none;"{% endif %}>
+          <button class="btn btn-primary" type="submit" name="action" value="switch"{% if milestone_set == 'charter' and not group.charter.rev == '00-00' %} style="display:none;"{% endif %}>
             {% if group.uses_milestone_dates %}Stop{% else %}Start{% endif %} using milestone dates
           </button>
         </form>
@@ -95,7 +95,7 @@
     </div>
     <div class="row extrabuttoncontainer">
       <div class="col-sm-1"></div>
-      <div class="col-sm-11"><button type="button" class="btn btn-default add-milestone">Add extra {% if milestone_set == "chartering" %}charter{% endif%} milestone {% if needs_review %}for {{ reviewer }} review{% endif %}</button></div>
+      <div class="col-sm-11"><button type="button" class="btn btn-primary add-milestone">Add extra {% if milestone_set == "chartering" %}charter{% endif%} milestone {% if needs_review %}for {{ reviewer }} review{% endif %}</button></div>
     </div>
     <div id="extratemplatecontainer">
       <div class="row extratemplate">
@@ -104,7 +104,7 @@
     </div>
 
     {% buttons %}
-      <a class="btn btn-default pull-right" href="{% if milestone_set == "charter" %}{% url "ietf.doc.views_doc.document_main" name=group.charter.canonical_name %}{% else %}{{ group.about_url }}{% endif %}">Cancel</a>
+      <a class="btn btn-primary pull-right" href="{% if milestone_set == "charter" %}{% url "ietf.doc.views_doc.document_main" name=group.charter.canonical_name %}{% else %}{{ group.about_url }}{% endif %}">Cancel</a>
 
       <button style="display:none" class="btn btn-primary" type="submit" data-labelsave="Save" data-labelreview="Review changes">Save</button>
       <input type="hidden" name="action" value="save">

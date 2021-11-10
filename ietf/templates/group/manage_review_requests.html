@@ -121,13 +121,13 @@
 
             <span class="assign-action">
               {% if r.reviewer %}
-                <button type="button" class="btn btn-default btn-success" title="Click to reassign reviewer">
+                <button type="button" class="btn btn-primary btn-success" title="Click to reassign reviewer">
                   {{ r.reviewer.person }}
                   {% if r.state_id == "accepted" %} <span class="label label-default">accepted</span>{% endif %}
                   {% if r.reviewer_unavailable %}<span class="label label-danger">unavailable</span>{% endif %}
                 </button>
               {% else %}
-                <button type="button" class="btn btn-default btn-success" title="Click to assign reviewer"><em>Not yet assigned</em></button>
+                <button type="button" class="btn btn-primary btn-success" title="Click to assign reviewer"><em>Not yet assigned</em></button>
               {% endif %}
             </span>
 
@@ -141,7 +141,7 @@
               <label for="{{ r.form.reviewer.id_for_label }}">Assign:</label>
               {{ r.form.reviewer }} 
               {{ r.form.add_skip }} <label for="{{ r.form.add_skip.id_for_label }}">Skip next time</label>
-              <button type="button" class="btn btn-default undo" title="Cancel assignment" data-initial="{{ r.form.fields.reviewer.initial|default:"" }}">Cancel</button>
+              <button type="button" class="btn btn-primary undo" title="Cancel assignment" data-initial="{{ r.form.fields.reviewer.initial|default:"" }}">Cancel</button>
               {% if r.form.reviewer.errors or r.form.add_skip.errors %}
                 <div class="alert alert-danger">
                   {% for e in r.form.reviewer.errors %}
@@ -155,7 +155,7 @@
             </span>
 
             <span class="close-action">
-              <button type="button" class="btn btn-default btn-danger">Close...</button>
+              <button type="button" class="btn btn-primary btn-danger">Close...</button>
               {% if r.doc.past_telechat_date %} (was on {{r.doc.past_telechat_date}} telechat) {% endif %}
             </span>
 
@@ -164,7 +164,7 @@
               {{ r.form.close }}
               <label for="{{ r.form.reviewer.id_for_close_comment }}">Optional comment:</label>
               {{ r.form.close_comment }}
-              <button type="button" class="btn btn-default undo" title="Cancel closing">Cancel</button>
+              <button type="button" class="btn btn-primary undo" title="Cancel closing">Cancel</button>
               {% if r.form.close.errors %}
                 <br>
                 {{ r.form.close.errors }}
@@ -175,10 +175,10 @@
       {% endfor %}
 
       {% buttons %}
-      <a href="{% url "ietf.group.views.review_requests" group_type=group.type_id acronym=group.acronym %}" class="btn btn-default pull-right">Cancel</a>
+      <a href="{% url "ietf.group.views.review_requests" group_type=group.type_id acronym=group.acronym %}" class="btn btn-primary pull-right">Cancel</a>
       <button class="btn btn-primary" type="submit" name="action" value="save">Save changes</button>
       <button class="btn btn-primary" type="submit" name="action" value="save-continue">Save and continue editing</button>
-      <button class="btn btn-default" type="submit" name="action" value="refresh">Refresh (keeping changes)</button>
+      <button class="btn btn-primary" type="submit" name="action" value="refresh">Refresh (keeping changes)</button>
       {% endbuttons %}
     </form>
   {% else %}

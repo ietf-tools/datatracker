@@ -119,7 +119,7 @@
       {% bootstrap_form review_wish_form layout="inline" %}
 
       {% buttons %}
-        <button class="btn btn-default" type="submit" name="action" value="add_wish">Add draft</button>
+        <button class="btn btn-primary" type="submit" name="action" value="add_wish">Add draft</button>
       {% endbuttons %}
     </form>
   {% endif %}
@@ -165,7 +165,7 @@
     </table>
 
     <div>
-      <a class="btn btn-default" href="{% url "ietf.group.views.change_reviewer_settings" group_type=t.type_id acronym=t.acronym reviewer_email=t.role.email.address %}?next={{ request.get_full_path|urlencode }}">Change settings</a>
+      <a class="btn btn-primary" href="{% url "ietf.group.views.change_reviewer_settings" group_type=t.type_id acronym=t.acronym reviewer_email=t.role.email.address %}?next={{ request.get_full_path|urlencode }}">Change settings</a>
     </div>
 
 

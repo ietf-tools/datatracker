@@ -11,7 +11,7 @@
   <h1>IPR Admin - {% for s in states %}{{ s.name }}{% if not forloop.last %}/{% endif %}{% endfor %} Disclosures</h1>
 
   <p class="buttonlist">
-    <a class="btn btn-default" href="{% url "ietf.ipr.views.showlist" %}">Back to IPR Disclosure Page</a>
+    <a class="btn btn-primary" href="{% url "ietf.ipr.views.showlist" %}">Back to IPR Disclosure Page</a>
   </p>
 
   <ul class="nav nav-tabs">

@@ -28,7 +28,7 @@
     <h2>{{ t.name }}s</h2>
 
     {% if t.can_manage %}
-      <p><a class="btn btn-default" role="button" href="{% url 'ietf.group.views.edit' group_type=t.pk action='charter' %}">Charter new {{ t.name }}</a></p>
+      <p><a class="btn btn-primary" role="button" href="{% url 'ietf.group.views.edit' group_type=t.pk action='charter' %}">Charter new {{ t.name }}</a></p>
     {% endif %}
 
     {% if not t.chartering_groups %}

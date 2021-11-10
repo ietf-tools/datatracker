@@ -17,7 +17,7 @@
     {% buttons %}
       <button type="submit" class="btn btn-primary">Send announcement, close ballot & update revision</button>
       <a class="btn btn-warning" href="{% url "ietf.doc.views_charter.action_announcement_text" name=charter.canonical_name %}?next=approve">Edit/regenerate announcement</a>
-      <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=charter.name %}">Back</a>
+      <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=charter.name %}">Back</a>
     {% endbuttons %}
   </form>
 {% endblock %}

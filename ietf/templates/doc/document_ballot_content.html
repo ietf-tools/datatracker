@@ -47,7 +47,7 @@
     {% endif %}
 
     {% if editable and user|has_role:"Area Director,Secretariat,IRSG Member" %}
-      <a class="btn btn-default"
+      <a class="btn btn-primary"
 	  href="https://mailarchive.ietf.org/arch/search/?q=subject:{{doc.name}}+AND+subject:(discuss+OR+comment+OR+review)">
 	 Search Mailarchive</a>
 
@@ -57,7 +57,7 @@
 
       {% if doc.type_id == "draft" or doc.type_id == "conflrev" or doc.type_id == "statchg" %}
         {% if deferred %}
-          <a class="btn btn-default" href="{% url 'ietf.doc.views_ballot.undefer_ballot' name=doc.name %}">Undefer ballot</a>
+          <a class="btn btn-primary" href="{% url 'ietf.doc.views_ballot.undefer_ballot' name=doc.name %}">Undefer ballot</a>
         {% else %}
           {% if doc.telechat_date %}
             <a class="btn btn-warning" href="{% url 'ietf.doc.views_ballot.defer_ballot' name=doc.name %}">Defer ballot</a>
@@ -78,7 +78,7 @@
             {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
             <span class="label label-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
             {% if user|has_role:"Secretariat" %}
-              <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}" title="Click to edit the position of {{ p.balloter.plain_name }}" class="btn btn-default btn-xs">Edit</a>
+              <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}" title="Click to edit the position of {{ p.balloter.plain_name }}" class="btn btn-primary btn-xs">Edit</a>
             {% endif %}
             </span>
           </h4>
@@ -132,7 +132,7 @@
               {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
               <span class="label label-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
               {% if user|has_role:"Secretariat" %}
-                <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}" title="Click to edit the position of {{ p.balloter.plain_name }}" class="btn btn-default btn-xs">Edit</a>
+                <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}" title="Click to edit the position of {{ p.balloter.plain_name }}" class="btn btn-primary btn-xs">Edit</a>
               {% endif %}
             </span>
           </h4>

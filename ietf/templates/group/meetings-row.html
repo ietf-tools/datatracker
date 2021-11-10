@@ -31,7 +31,7 @@
           {% if show_request and s.meeting.type_id == 'ietf' %}
              {% if can_edit %}
                <br>
-               <a class="btn btn-default btn-xs" href="{% url 'ietf.secr.sreq.views.view' num=s.meeting.number acronym=s.group.acronym %}">Edit Session Request</a>
+               <a class="btn btn-primary btn-xs" href="{% url 'ietf.secr.sreq.views.view' num=s.meeting.number acronym=s.group.acronym %}">Edit Session Request</a>
             {% endif %}
           {% endif %}
          </td>

@@ -25,7 +25,7 @@
   {% if numdocs %}
     <div class="alert alert-warning">
       <p>Showing only the first 250 of {{ numdocs }} documents.</p>
-      <p><a class="btn btn-default" href="?full=True">Show all</a></p>
+      <p><a class="btn btn-primary" href="?full=True">Show all</a></p>
     </div>
   {% endif %}
 
@@ -51,8 +51,8 @@
             </td>
             <td>
 	      <b>{{ref.source.title}}</b><br>
-              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_references' name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
-              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_referenced_by' name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
+              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.document_references' name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
+              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.document_referenced_by' name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
             </td>
             <td>
 	      {% ifequal ref.source.get_state.slug 'rfc' %}

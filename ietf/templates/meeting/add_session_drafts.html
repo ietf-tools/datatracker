@@ -45,7 +45,7 @@
           {% bootstrap_form form %}
           {% buttons %}
             <button class="btn btn-{% if session.is_material_submission_cutoff %}warning{% else %}primary{% endif %}" type="submit">Save</button>
-            <a class="btn btn-default" href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">Cancel</a>
+            <a class="btn btn-primary" href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">Cancel</a>
           {% endbuttons %}
         </form>
      </div>

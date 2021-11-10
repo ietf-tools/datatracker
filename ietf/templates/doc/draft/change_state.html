@@ -28,7 +28,7 @@
 
     {% buttons %}
       <button type="submit" class="btn btn-primary">Submit</button>
-      <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
+      <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
     {% endbuttons %}
   </form>
 
@@ -40,7 +40,7 @@
         <form method="post">
           {% csrf_token %}
           <input type="hidden" name="state" value="{{ n.pk }}">
-          <input class="btn btn-default" type="submit" value="{{ n.name }}">
+          <input class="btn btn-primary" type="submit" value="{{ n.name }}">
         </form>
       {% endfor %}
     </div>
@@ -54,7 +54,7 @@
       <input type="hidden" name="state" value="{{ to_iesg_eval.pk }}">
       <input class="btn btn-warning" type="submit" value="{{ to_iesg_eval.name }}">
       But the ballot for this document has not yet been issued.
-      <a class="btn btn-default" href="{% url 'ietf.doc.views_ballot.ballot_writeupnotes' name=doc.name %}">Edit ballot text</a>
+      <a class="btn btn-primary" href="{% url 'ietf.doc.views_ballot.ballot_writeupnotes' name=doc.name %}">Edit ballot text</a>
     </form>
   {% endif %}
 

@@ -39,7 +39,7 @@
     <h2 class="anchor-target" id="preapprovals">Pre-approved drafts not yet submitted</h2>
 
     {% if user|has_role:"Secretariat,WG Chair,RG Chair" %}
-      <p><a class="btn btn-default" href="{% url "ietf.submit.views.add_preapproval" %}">Add pre-approval</a></p>
+      <p><a class="btn btn-primary" href="{% url "ietf.submit.views.add_preapproval" %}">Add pre-approval</a></p>
     {% endif %}
 
     {% if not preapprovals %}

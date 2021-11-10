@@ -31,7 +31,7 @@
       Show:
       <div class="btn-group">
         {% for slug, label, url in possible_stats_types %}
-          <a class="btn btn-default {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+          <a class="btn btn-primary {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
         {% endfor %}
       </div>
     </div>
@@ -40,7 +40,7 @@
       Count:
       <div class="btn-group">
         {% for slug, label, url in possible_count_choices %}
-          <a class="btn btn-default {% if slug == count %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+          <a class="btn btn-primary {% if slug == count %}active{% endif %}" href="{{ url }}">{{ label }}</a>
         {% endfor %}
       </div>
     </div>
@@ -57,7 +57,7 @@
           <input type="hidden" name="{{ name }}" value="{{ value }}">
         {% endif %}
       {% endfor %}
-      <button class="btn btn-default" type="submit">Set</button>
+      <button class="btn btn-primary" type="submit">Set</button>
     </form>
 
 
@@ -68,7 +68,7 @@
         Team:
         <div class="btn-group">
           {% for slug, label, url in possible_teams %}
-            <a class="btn btn-default {% if slug in selected_teams %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+            <a class="btn btn-primary {% if slug in selected_teams %}active{% endif %}" href="{{ url }}">{{ label }}</a>
           {% endfor %}
         </div>
       </div>
@@ -78,7 +78,7 @@
           Completion:
           <div class="btn-group">
             {% for slug, label, url in possible_completion_types %}
-              <a class="btn btn-default {% if slug == selected_completion_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+              <a class="btn btn-primary {% if slug == selected_completion_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
             {% endfor %}
           </div>
         </div>
@@ -87,7 +87,7 @@
           Result:
           <div class="btn-group">
             {% for slug, label, url in possible_results %}
-              <a class="btn btn-default {% if slug == selected_result %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+              <a class="btn btn-primary {% if slug == selected_result %}active{% endif %}" href="{{ url }}">{{ label }}</a>
             {% endfor %}
           </div>
         </div>
@@ -96,7 +96,7 @@
           State:
           <div class="btn-group">
             {% for slug, label, url in possible_states %}
-              <a class="btn btn-default {% if slug == selected_state %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+              <a class="btn btn-primary {% if slug == selected_state %}active{% endif %}" href="{{ url }}">{{ label }}</a>
             {% endfor %}
           </div>
         </div>

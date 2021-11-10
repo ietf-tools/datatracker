@@ -25,12 +25,12 @@
           <div class="btn-toolbar" role="toolbar" id="role-toolbar-{{ role_type_label|slugify }}">
           {% for doc_role in role_labels %}
               <div class="btn-group-vertical btn-group-sm" role="group">
-                  <button type="button" class="btn btn-default"
+                  <button type="button" class="btn btn-primary"
                           id="add-{{ doc_role.slug }}"
                           onclick="local_js.add_ah('{{ doc_role.slug }}')">
                       Add {{ doc_role.label }}
                   </button>
-                  <button type="button" class="btn btn-default"
+                  <button type="button" class="btn btn-primary"
                           id="del-{{ doc_role.slug }}"
                           onclick="local_js.del_ah('{{ doc_role.slug }}')">
                       Remove {{ doc_role.label }}
@@ -42,7 +42,7 @@
 
     {% buttons %}
       <button type="submit" class="btn btn-primary" name="submit" value="Save">Submit</button>
-      <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Back</a>
+      <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Back</a>
     {% endbuttons %}
   </form>
 

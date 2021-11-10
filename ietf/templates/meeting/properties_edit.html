@@ -13,7 +13,7 @@
 <h1>IETF {{meeting.number}}</h1>
 <h2>Schedule: {{schedule.owner}}/{{schedule.name}} ({{schedule.official_token }})
     {% if not schedule.is_official %}
-      <a class="btn btn-default btn-sm" href="{% url 'ietf.meeting.views.make_schedule_official' num=meeting.number owner=schedule.owner.email_address name=schedule.name %}">Make this the official schedule</a>
+      <a class="btn btn-primary btn-sm" href="{% url 'ietf.meeting.views.make_schedule_official' num=meeting.number owner=schedule.owner.email_address name=schedule.name %}">Make this the official schedule</a>
       <a class="btn btn-warning btn-sm" href="{% url 'ietf.meeting.views.delete_schedule' num=meeting.number owner=schedule.owner.email_address name=schedule.name %}">Delete this schedule</a>
     {% endif %}
 </h2>
@@ -25,7 +25,7 @@
     {% bootstrap_form form %}
     {% buttons %}
         <input class="btn btn-primary" type="submit" value="Save" name="save">
-        <a href="{% url 'ietf.meeting.views.list_schedules' num=meeting.number %}" class="btn btn-default">Cancel</a>
+        <a href="{% url 'ietf.meeting.views.list_schedules' num=meeting.number %}" class="btn btn-primary">Cancel</a>
     {% endbuttons %}
   </form>
 

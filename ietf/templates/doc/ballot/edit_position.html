@@ -33,7 +33,7 @@
 
     {% buttons %}
       <button type="submit" class="btn btn-primary" name="send_mail" value="Save and send email">Save & send email</button>
-      <input type="submit" class="btn btn-default" value="Save">
+      <input type="submit" class="btn btn-primary" value="Save">
 
       {% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
         {% if doc.stream.slug != "irtf" %}

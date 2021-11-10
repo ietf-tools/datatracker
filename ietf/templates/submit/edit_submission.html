@@ -26,7 +26,7 @@
 	  {{ submission|two_pages_decorated_with_errors:errors }}
         </div>
         <div class="modal-footer">
-	  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+	  <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
@@ -40,7 +40,7 @@
       <th>Document</th>
       <td>
         {{ submission.name }}
-        <button class="btn btn-default btn-xs pull-right" data-toggle="modal" data-target="#twopages">View first two pages</button>
+        <button class="btn btn-primary btn-xs pull-right" data-toggle="modal" data-target="#twopages">View first two pages</button>
         {% show_submission_files submission %}
       </td>
     </tr>
@@ -82,7 +82,7 @@
     {% endfor %}
 
     {% buttons %}
-      <input class="btn btn-default" type="button" value="Add another author" id="add-author">
+      <input class="btn btn-primary" type="button" value="Add another author" id="add-author">
       <input class="btn btn-primary" type="submit" value="Submit for manual posting">
     {% endbuttons %}
   </form>

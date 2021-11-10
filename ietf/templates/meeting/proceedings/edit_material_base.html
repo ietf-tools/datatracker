@@ -49,7 +49,7 @@
       {# To replace the form but keep default buttons, use block.super in the edit_form block #}
       {% block form_buttons %}
         {% buttons %}
-          <a class="btn btn-default pull-right"
+          <a class="btn btn-primary pull-right"
              href="{% url 'ietf.meeting.views_proceedings.material_details' num=meeting.number %}">Back</a>
           <button class="btn btn-primary" type="submit">{% firstof submit_button_label 'Save' %}</button>
         {% endbuttons %}

@@ -109,13 +109,13 @@
                 {% if not forloop.last %} {# skip the last group, it's the office hours/misc #}
                     <div style="display:inline-block;margin-right:1em">
                         {% for p in fc|dictsort:"label" %}
-                            <a class="btn btn-default" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{p.keyword}}">{{p.label}}</a>
+                            <a class="btn btn-primary" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{p.keyword}}">{{p.label}}</a>
                         {% endfor %}
                     </div>
                 {% endif %}
             {% endfor %}
             <div style="display:inline-block">
-                <a class="btn btn-default" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{ non_area_keywords|join:',' }}">Non-area events</a>
+                <a class="btn btn-primary" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}?show={{ non_area_keywords|join:',' }}">Non-area events</a>
                 <a id="ical-link" class="hidden btn btn-primary agenda-link filterable" href="{% url "ietf.meeting.views.agenda_ical" num=schedule.meeting.number %}">Customized schedule</a>
             </div>
         </p>

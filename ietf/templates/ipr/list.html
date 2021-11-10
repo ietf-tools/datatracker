@@ -26,10 +26,10 @@
       </div>
 
       <p class="buttonlist">
-        <a class="btn btn-default" href="{% url "ietf.ipr.views.about" %}">Submit an IPR disclosure</a>
-        <a class="btn btn-default" href="{% url "ietf.ipr.views.search" %}">Search IPR disclosures</a>
+        <a class="btn btn-primary" href="{% url "ietf.ipr.views.about" %}">Submit an IPR disclosure</a>
+        <a class="btn btn-primary" href="{% url "ietf.ipr.views.search" %}">Search IPR disclosures</a>
         {% if user|has_role:"Secretariat" %}
-          <a class="btn btn-default" href="{% url 'ietf.ipr.views.admin' state='pending' %}">Administrative View</a>
+          <a class="btn btn-primary" href="{% url 'ietf.ipr.views.admin' state='pending' %}">Administrative View</a>
         {% endif %}
       </p>
 

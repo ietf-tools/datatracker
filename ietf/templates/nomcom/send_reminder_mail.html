@@ -17,7 +17,7 @@
 
     {% if mail_template %}
       <p>
-        <a class="btn btn-default" href="{% url 'ietf.nomcom.views.edit_template' year mail_template.id %}">Edit the message</a>
+        <a class="btn btn-primary" href="{% url 'ietf.nomcom.views.edit_template' year mail_template.id %}">Edit the message</a>
       </p>
     {% endif %}
 

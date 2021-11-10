@@ -19,7 +19,7 @@
         {% for g in ad.groups_needing_review %}
           <h3>{{ g.name }} ({{ g.acronym }})</h3>
           {% include "group/milestones.html" with milestones=g.milestones_needing_review %}
-          <a class="btn btn-default" href="{% url 'ietf.group.milestones.edit_milestones;current' group_type=g.type_id acronym=g.acronym %}">All {{ g.acronym }} milestones</a>
+          <a class="btn btn-primary" href="{% url 'ietf.group.milestones.edit_milestones;current' group_type=g.type_id acronym=g.acronym %}">All {{ g.acronym }} milestones</a>
         {% endfor %}
       </div>
     </div>

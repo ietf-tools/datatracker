@@ -49,9 +49,9 @@
 
     {% buttons %}
     {% if assignment %}
-      <a class="btn btn-default" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=assignment.review_request.pk %}">Cancel</a>
+      <a class="btn btn-primary" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=assignment.review_request.pk %}">Cancel</a>
     {% else %}
-      <a class="btn btn-default" href="{{ doc.get_absolute_url }}">Cancel</a>
+      <a class="btn btn-primary" href="{{ doc.get_absolute_url }}">Cancel</a>
     {% endif %}
     <button type="submit" class="btn btn-primary">{% if revising_review %}Revise{% else %}Complete{% endif %} review</button>
     {% endbuttons %}
@@ -63,7 +63,7 @@
             <p class="form-inline">
               Search mail archive subjects for:
               <input class="query-input form-control input-sm" value="{{ mail_archive_query_urls.query }}">
-              <button type="button" class="search btn btn-default btn-sm">Search</button>
+              <button type="button" class="search btn btn-primary btn-sm">Search</button>
             </p>
 
             <div class="retrieving hidden">

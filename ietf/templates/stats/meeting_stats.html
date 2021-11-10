@@ -28,7 +28,7 @@
       
       <div class="btn-group">
         {% for slug, label, url in possible_stats_types %}
-          <a class="btn btn-default {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+          <a class="btn btn-primary {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
         {% endfor %}
       </div>
     </div>

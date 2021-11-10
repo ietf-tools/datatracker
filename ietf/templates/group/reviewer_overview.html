@@ -29,7 +29,7 @@
   </div>
   {% if can_reset_next_reviewer %}
     <div>
-      <a href="{% url 'ietf.group.views.reset_next_reviewer' acronym=group.acronym %}" class="btn btn-default" id="reset_next_reviewer">Reset head of queue</a>
+      <a href="{% url 'ietf.group.views.reset_next_reviewer' acronym=group.acronym %}" class="btn btn-primary" id="reset_next_reviewer">Reset head of queue</a>
     </div>
   {% endif %}
 

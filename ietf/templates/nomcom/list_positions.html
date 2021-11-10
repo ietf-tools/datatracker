@@ -9,7 +9,7 @@
   <h2>Positions in {{ nomcom.group }}</h2>
 
   {% if nomcom.group.state_id == 'active' %}
-    <a class="btn btn-default" href="{% url 'ietf.nomcom.views.edit_position' year %}">Add new position</a>
+    <a class="btn btn-primary" href="{% url 'ietf.nomcom.views.edit_position' year %}">Add new position</a>
     <p class="help-block">If you need to start processing a new position while other positions are further along or have already closed (such as when the 2016 nomcom needed to seat a second RAI AD after moving an incumbent to the IESG chair position) adding a new position is the right way to start. Please review the <a href="{% url 'ietf.nomcom.views.configuration_help' year=nomcom.year %}">Configuration Hints</a>.</p>
   {% endif %}
 
@@ -41,8 +41,8 @@
         {% if nomcom.group.state_id == 'active' %}
         <dt>Actions</dt>
         <dd>
-          <a class="btn btn-default" href="{% url 'ietf.nomcom.views.edit_position' year position.id %}">Edit</a>
-          <a class="btn btn-default" href="{% url 'ietf.nomcom.views.remove_position' year position.id %}">Remove</a>
+          <a class="btn btn-primary" href="{% url 'ietf.nomcom.views.edit_position' year position.id %}">Edit</a>
+          <a class="btn btn-primary" href="{% url 'ietf.nomcom.views.remove_position' year position.id %}">Remove</a>
         </dd>
         {% endif %}
       </dl>

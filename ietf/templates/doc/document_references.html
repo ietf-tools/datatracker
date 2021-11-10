@@ -18,7 +18,7 @@
     These dependencies are extracted using heuristics looking for strings with particular prefixes. Notably, this means that references to I-Ds by title only are not reflected here. If it's really important, please inspect the documents' references sections directly.
   </p>
   <p>
-    <a class="btn btn-default" href="{% url 'ietf.doc.views_help.relationship_help' subset='reference' %}">Reference type help</a>
+    <a class="btn btn-primary" href="{% url 'ietf.doc.views_help.relationship_help' subset='reference' %}">Reference type help</a>
   </p>
 
   <table class="table table-sm table-striped tablesorter">
@@ -38,8 +38,8 @@
             <td><a href="{% url 'ietf.doc.views_doc.document_main' name=name %}">{{ name|prettystdname }}</a></td>
             <td>
 	      <b>{{ref.target.document.title}}</b><br>
-              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_references' name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
-              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_referenced_by' name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
+              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.document_references' name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
+              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.document_referenced_by' name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
             </td>
             <td>
 	      {% ifequal ref.target.document.get_state.slug 'rfc' %}

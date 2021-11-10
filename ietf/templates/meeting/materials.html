@@ -29,13 +29,13 @@
 
       <p>
         {% if user|has_role:"Secretariat" %}
-          <a class="btn btn-default" href="{% url 'ietf.meeting.views_proceedings.edit_meetinghosts' num=meeting.number %}">Edit meeting hosts</a>
-          <a class="btn btn-default" href="{% url 'ietf.secr.proceedings.views.main' %}">Secretariat proceedings functions</a>
+          <a class="btn btn-primary" href="{% url 'ietf.meeting.views_proceedings.edit_meetinghosts' num=meeting.number %}">Edit meeting hosts</a>
+          <a class="btn btn-primary" href="{% url 'ietf.secr.proceedings.views.main' %}">Secretariat proceedings functions</a>
           {% if meeting.end_date.today > meeting.end_date %}
-            <a class="btn btn-default" href="{% url 'ietf.meeting.views.request_minutes' num=meeting.number %}">Send request for minutes</a>
+            <a class="btn btn-primary" href="{% url 'ietf.meeting.views.request_minutes' num=meeting.number %}">Send request for minutes</a>
           {% endif %}
         {% endif %}
-        <a class="btn btn-default" href="/meeting/{{meeting.number}}/requests">Meeting requests/conflicts</a>
+        <a class="btn btn-primary" href="/meeting/{{meeting.number}}/requests">Meeting requests/conflicts</a>
       </p>
 
       {% include 'meeting/proceedings/materials_table.html' with meeting=meeting proceedings_materials=proceedings_materials user=user only %}

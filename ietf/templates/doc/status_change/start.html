@@ -10,7 +10,7 @@
   {% origin %}
   <h1>Begin RFC status change review</h1>
 
-  <p><a class="btn btn-default" href="{% url 'ietf.doc.views_help.state_help' type="status-change"  %}">Help on states</a></p>
+  <p><a class="btn btn-primary" href="{% url 'ietf.doc.views_help.state_help' type="status-change"  %}">Help on states</a></p>
 
   <form class="start-rfc-status-change-review" method="post">
     {% csrf_token %}
@@ -26,7 +26,7 @@
 
         {% buttons %}
           <button type="submit" class="btn btn-primary" name="submit_response" value="Submit">Submit</button>
-          <a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
+          <a class="btn btn-primary pull-right" href="{{ back_url }}">Back</a>
         {% endbuttons %}
       </div>
     </div>

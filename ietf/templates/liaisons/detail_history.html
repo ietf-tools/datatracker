@@ -15,7 +15,7 @@
 
   {% if user|has_role:"Area Director,Secretariat,IANA,RFC Editor" %}
     <p class="buttonlist">
-      <a class="btn btn-default" href="{% url "ietf.liaisons.views.add_comment" object_id=liaison.id %}" title="Add comment to history">Add comment</a>
+      <a class="btn btn-primary" href="{% url "ietf.liaisons.views.add_comment" object_id=liaison.id %}" title="Add comment to history">Add comment</a>
     </p>
   {% endif %}
 

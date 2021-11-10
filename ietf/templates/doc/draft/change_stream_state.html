@@ -17,7 +17,7 @@
     </p>
     <p class="buttonlist">
       {% for state in next_states %}
-        <button class="btn btn-default next-state" data-state="{{ state.pk }}">{{ state.name }}</button>
+        <button class="btn btn-primary next-state" data-state="{{ state.pk }}">{{ state.name }}</button>
       {% endfor %}
       <a class="btn btn-info pull-right" href="{% url 'ietf.doc.views_help.state_help' type=state_type.slug %}">Help on states</a>
     </p>
@@ -28,7 +28,7 @@
     {% bootstrap_form form %}
     {% buttons %}
       <button type="submit" class="btn btn-primary">Submit</button>
-      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
+      <a class="btn btn-primary pull-right" href="{{ doc.get_absolute_url }}">Back</a>
     {% endbuttons %}
   </form>
 {% endblock %}

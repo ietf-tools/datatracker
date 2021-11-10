@@ -119,7 +119,7 @@
     Past:
     <div class="btn-group" role="group">
       {% for key, label in since_choices %}
-        <button class="btn btn-default {% if since == key %}active{% endif %}" {% if key %}name="since" value="{{ key }}"{% endif %} type="submit">{{ label }}</button>
+        <button class="btn btn-primary {% if since == key %}active{% endif %}" {% if key %}name="since" value="{{ key }}"{% endif %} type="submit">{{ label }}</button>
       {% endfor %}
     </div>
   </form>

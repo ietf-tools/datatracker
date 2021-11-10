@@ -17,7 +17,7 @@
   <p>Groups in the <i>BOF</i> state.</p>
 
   {% if user|has_role:"Area Director,Secretariat" %}
-    <p><a class="btn btn-default" role="button" href="{% url 'ietf.group.views.edit' group_type='wg' action='create' %}">Create new BOF</a></p>
+    <p><a class="btn btn-primary" role="button" href="{% url 'ietf.group.views.edit' group_type='wg' action='create' %}">Create new BOF</a></p>
   {% endif %}
 
   {% if not groups %}

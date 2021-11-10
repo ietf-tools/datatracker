@@ -186,22 +186,22 @@
 <form method="post">
   {% csrf_token %}
   {% if liaison.state.slug == 'pending' and can_edit %}
-    <a class="btn btn-default" href="{% url "ietf.liaisons.views.liaison_edit" object_id=liaison.pk %}">Edit liaison</a>
+    <a class="btn btn-primary" href="{% url "ietf.liaisons.views.liaison_edit" object_id=liaison.pk %}">Edit liaison</a>
   {% elif liaison.state.slug == 'posted' and  user|has_role:"Secretariat" %}
-    <a class="btn btn-default" href="{% url "ietf.liaisons.views.liaison_edit" object_id=liaison.pk %}">Edit liaison</a>
+    <a class="btn btn-primary" href="{% url "ietf.liaisons.views.liaison_edit" object_id=liaison.pk %}">Edit liaison</a>
   {% endif %}
   {% if liaison.state.slug != 'dead' and can_reply %}
-    <a class="btn btn-default" href="{% url "ietf.liaisons.views.liaison_reply" object_id=liaison.pk %}">Reply to liaison</a>
+    <a class="btn btn-primary" href="{% url "ietf.liaisons.views.liaison_reply" object_id=liaison.pk %}">Reply to liaison</a>
   {% endif %}
   {% if liaison.state.slug == 'pending' and can_edit %}
-    <input class="btn btn-default" type="submit" value="Approve" name='approved' />
-    <input class="btn btn-default" type="submit" value="Mark as Dead" name='dead' />
+    <input class="btn btn-primary" type="submit" value="Approve" name='approved' />
+    <input class="btn btn-primary" type="submit" value="Mark as Dead" name='dead' />
   {% endif %}
   {% if liaison.state.slug == 'posted' and  user|has_role:"Secretariat" %}
-    <a class="btn btn-default" href="{% url "ietf.liaisons.views.liaison_resend" object_id=liaison.pk %}">Resend statement</a>
+    <a class="btn btn-primary" href="{% url "ietf.liaisons.views.liaison_resend" object_id=liaison.pk %}">Resend statement</a>
   {% endif %}
   {% if liaison.state.slug == 'dead' and can_edit %}
-    <input class="btn btn-default" type="submit" value="Resurrect" name='resurrect' />
+    <input class="btn btn-primary" type="submit" value="Resurrect" name='resurrect' />
   {% endif %}
 </form>
 

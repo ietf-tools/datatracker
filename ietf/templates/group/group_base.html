@@ -37,7 +37,7 @@
     {% block buttonlist %}
       {% if menu_actions %}
 	{% for name, url in menu_actions %}
-	  <a class="btn {% if name == "Request closing group" %}btn-warning{% else %}btn-default{% endif %}" href="{{ url }}">{{ name }}</a>
+	  <a class="btn {% if name == "Request closing group" %}btn-warning{% else %}btn-primary{% endif %}" href="{{ url }}">{{ name }}</a>
 	{% endfor %}
       {% endif %}
     {% endblock buttonlist %}

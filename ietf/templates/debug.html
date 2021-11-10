@@ -9,7 +9,7 @@
       <p>
 	{{ sql_queries|length }} queries ({{ sql_queries|timesum }}s)
 	{% if sql_queries|length != 0 %}
-	  <a class="btn btn-default btn-xs"
+	  <a class="btn btn-primary btn-xs"
 	     onclick="$('#debug-query-table').toggleClass('hide');">Show</a>
 	{% endif %}
       </p>
@@ -74,7 +74,7 @@
 			     </table>
 			   </div>
 			   <div class="modal-footer">
-			     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			     <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
 			   </div>
 			 </div>
 		       </div>

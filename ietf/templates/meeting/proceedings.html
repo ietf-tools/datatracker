@@ -57,7 +57,7 @@
     <div class="col-md-10">
 
       {% if user|has_role:"Secretariat" and not meeting.proceedings_final %}
-        <a class="btn btn-default finalize-button"
+        <a class="btn btn-primary finalize-button"
            href="{% url 'ietf.meeting.views.finalize_proceedings' num=meeting.number %}">
           Finalize Proceedings
         </a>

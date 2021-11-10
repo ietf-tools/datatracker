@@ -21,7 +21,7 @@
     {% bootstrap_form settings_form %}
     
     {% buttons %}
-      <a href="{{ back_url }}" class="btn btn-default pull-right">Cancel</a>
+      <a href="{{ back_url }}" class="btn btn-primary pull-right">Cancel</a>
       <button class="btn btn-primary" type="submit" name="action" value="change_settings">Save</button>
     {% endbuttons %}
   </form>
@@ -50,7 +50,7 @@
                 {% csrf_token %}
                 <input type="hidden" name="period_id" value="{{ o.pk }}">
                 {% bootstrap_form o.end_form layout="inline" %}
-                <button type="submit" class="btn btn-default btn-sm" name="action" value="end_period">End period</button>
+                <button type="submit" class="btn btn-primary btn-sm" name="action" value="end_period">End period</button>
               </form>
             {% endif %}
           </td>
@@ -68,7 +68,7 @@
     <p>No periods found.</p>
   {% endif %}
 
-  <div><a class="btn btn-default" data-toggle="collapse" data-target="#add-new-period">Add a new period</a></div>
+  <div><a class="btn btn-primary" data-toggle="collapse" data-target="#add-new-period">Add a new period</a></div>
 
   <div id="add-new-period" {% if not period_form.errors %}class="collapse"{% endif %}>
     <h4>Add a new period</h4>
@@ -119,7 +119,7 @@
     </table>
   </div>
   <p style="padding-top: 2em;">
-    <a href="{{ back_url }}" class="btn btn-default">Back</a>
+    <a href="{{ back_url }}" class="btn btn-primary">Back</a>
   </p>
 {% endblock %}
 

@@ -50,7 +50,7 @@
         <th>Deadline</th>
         <td>{{ review_req.deadline|date:"Y-m-d" }}
             {% if can_edit_deadline %}
-              <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.edit_deadline" name=doc.name request_id=review_req.pk %}"><span class="fa fa-edit"></span> Edit</a>
+              <a class="btn btn-primary btn-xs" href="{% url "ietf.doc.views_review.edit_deadline" name=doc.name request_id=review_req.pk %}"><span class="fa fa-edit"></span> Edit</a>
             {% endif %}
         </td>
       </tr>
@@ -123,7 +123,7 @@
           <th>Comments</th>
           <td><pre class="pasted">{{review_req.comment}}</pre>
             {% if can_edit_comment %}
-              <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.edit_comment" name=doc.name request_id=review_req.pk %}"><span class="fa fa-edit"></span> Edit comment</a>
+              <a class="btn btn-primary btn-xs" href="{% url "ietf.doc.views_review.edit_comment" name=doc.name request_id=review_req.pk %}"><span class="fa fa-edit"></span> Edit comment</a>
             {% endif %}
           </td>
         </tr>
@@ -235,7 +235,7 @@
 
     {% if can_assign_reviewer %}
       <p>
-        <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.assign_reviewer" name=doc.name request_id=review_req.pk %}"><span class="fa fa-user"></span> Assign reviewer</a>
+        <a class="btn btn-primary btn-xs" href="{% url "ietf.doc.views_review.assign_reviewer" name=doc.name request_id=review_req.pk %}"><span class="fa fa-user"></span> Assign reviewer</a>
       </p>
     {% endif %}
   

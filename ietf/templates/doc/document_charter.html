@@ -198,12 +198,12 @@
         {% if group.state_id == "proposed" or group.state_id == "bof" %}
           {% url 'ietf.doc.views_charter.submit' name=doc.name option='initcharter' as start_url %}
           {% if start_url %}
-            <a class="btn btn-default" href="{{ start_url }}">Start chartering</a>
+            <a class="btn btn-primary" href="{{ start_url }}">Start chartering</a>
           {% endif %}
         {% else %}
           {% url 'ietf.doc.views_charter.submit' name=doc.name option='recharter' as recharter_url %}
           {% if recharter_url %}
-            <a class="btn btn-default" href="{{ recharter_url }}">Recharter</a>
+            <a class="btn btn-primary" href="{{ recharter_url }}">Recharter</a>
           {% endif %}
         {% endif %}
       {% endif %}
@@ -213,7 +213,7 @@
   <h2>Charter<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h2>
 
   {% if not snapshot and can_manage and chartering and group.state_id != "conclude" %}
-    <p><a class="btn btn-default" href="{% url 'ietf.doc.views_charter.submit' name=doc.name %}">Change charter text</a></p>
+    <p><a class="btn btn-primary" href="{% url 'ietf.doc.views_charter.submit' name=doc.name %}">Change charter text</a></p>
   {% endif %}
 
   {% if doc.rev != "" %}

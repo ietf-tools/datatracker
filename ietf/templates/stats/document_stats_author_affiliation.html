@@ -75,7 +75,7 @@
   applied to determine the affiliations of each author.</p>
 
 {% if request.GET.showaliases %}
-  <p><a href="{{ hide_aliases_url }}" class="btn btn-default">Hide generated aliases</a></p>
+  <p><a href="{{ hide_aliases_url }}" class="btn btn-primary">Hide generated aliases</a></p>
 
   {% if request.user.is_staff %}
     <p>Note: since you're an admin, you can <a href="{% url "admin:stats_affiliationalias_add" %}">add an extra known alias</a> or see the <a href="{% url "admin:stats_affiliationalias_changelist" %}">existing known aliases</a> and <a href="{% url "admin:stats_affiliationignoredending_changelist" %}">generally ignored endings</a>.</p>
@@ -104,5 +104,5 @@
   {% endif %}
 
 {% else %}
-  <p><a href="{{ show_aliases_url }}" class="btn btn-default">Show generated aliases</a></p>
+  <p><a href="{{ show_aliases_url }}" class="btn btn-primary">Show generated aliases</a></p>
 {% endif %}

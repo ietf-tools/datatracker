@@ -16,7 +16,7 @@
     {% csrf_token %}
     {% buttons %}
       <button type="submit" class="btn btn-primary">{{ action|capfirst }} material</button>
-      <a class="btn btn-default" href="{% url 'ietf.meeting.views_proceedings.material_details' num=material.meeting.number %}">Cancel</a>
+      <a class="btn btn-primary" href="{% url 'ietf.meeting.views_proceedings.material_details' num=material.meeting.number %}">Cancel</a>
     {% endbuttons %}
   </form>
 

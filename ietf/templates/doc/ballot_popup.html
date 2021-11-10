@@ -27,12 +27,12 @@
 <div class="modal-footer">
   {% if editable and user|has_role:"Area Director,Secretariat,IRSG Member" %}
     {% if user|can_ballot:doc %}
-      <a class="btn btn-default" href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot_id %}">Edit position</a>
+      <a class="btn btn-primary" href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot_id %}">Edit position</a>
     {% endif %}
 
     {% if user|can_defer:doc %}
       {% if deferred %}
-        <a class="btn btn-default" href="{% url 'ietf.doc.views_ballot.undefer_ballot' name=doc.name %}">Undefer ballot</a>
+        <a class="btn btn-primary" href="{% url 'ietf.doc.views_ballot.undefer_ballot' name=doc.name %}">Undefer ballot</a>
       {% else %}
         <a class="btn btn-warning" href="{% url 'ietf.doc.views_ballot.defer_ballot' name=doc.name %}">Defer ballot</a>
       {% endif %}

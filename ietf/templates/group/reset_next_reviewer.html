@@ -12,8 +12,8 @@
   {% bootstrap_form form %}
 
   {% buttons %}
-    <button class="btn btn-default" type="submit">Save</button>
-    <a class="btn btn-default" href="{% url 'ietf.group.views.reviewer_overview' acronym=group.acronym %}">Cancel</a>
+    <button class="btn btn-primary" type="submit">Save</button>
+    <a class="btn btn-primary" href="{% url 'ietf.group.views.reviewer_overview' acronym=group.acronym %}">Cancel</a>
   {% endbuttons %}
 
 </form>

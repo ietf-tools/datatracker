@@ -80,7 +80,7 @@
   applied to figure out which country each author is from.</p>
 
 {% if request.GET.showaliases %}
-  <p><a href="{{ hide_aliases_url }}" class="btn btn-default">Hide generated aliases</a></p>
+  <p><a href="{{ hide_aliases_url }}" class="btn btn-primary">Hide generated aliases</a></p>
 
   {% if request.user.is_staff %}
     <p>Note: since you're an admin, some extra links are visible. You
@@ -125,5 +125,5 @@
   {% endif %}
 
 {% else %}
-  <p><a href="{{ show_aliases_url }}" class="btn btn-default">Show generated aliases</a></p>
+  <p><a href="{{ show_aliases_url }}" class="btn btn-primary">Show generated aliases</a></p>
 {% endif %}

@@ -83,7 +83,7 @@
       {% if menu_actions %}
         <div id="menu-actions" class="buttonlist">
           {% for action in menu_actions %}
-            <a class="btn btn-default {% if action.append_filter %}agenda-link filterable{% endif %}"
+            <a class="btn btn-primary {% if action.append_filter %}agenda-link filterable{% endif %}"
                href="{{ action.url }}">{{ action.label }}</a>
           {% endfor %}
         </div>

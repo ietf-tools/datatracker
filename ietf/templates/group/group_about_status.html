@@ -21,7 +21,7 @@
   {% if can_provide_status_update %}
     <a id="edit_button" class="btn btn-primary" href="{% url "ietf.group.views.group_about_status_edit" acronym=group.acronym %}">Edit</a>
   {% endif %}
-  <a class="btn btn-default pull-right" href="{% url "ietf.group.views.group_about" acronym=group.acronym %}">Back</a>
+  <a class="btn btn-primary pull-right" href="{% url "ietf.group.views.group_about" acronym=group.acronym %}">Back</a>
 
   {% if can_provide_status_update %}
   <h2>About Status Updates</h2>

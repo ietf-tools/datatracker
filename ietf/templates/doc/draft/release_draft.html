@@ -23,7 +23,7 @@
   {% csrf_token %}
   {% bootstrap_form form %}
   <button type="submit" class="btn btn-primary">Proceed</button>
-  <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Cancel</a> 
+  <a class="btn btn-primary pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Cancel</a> 
 </form>
 </div>
 {% endblock %}

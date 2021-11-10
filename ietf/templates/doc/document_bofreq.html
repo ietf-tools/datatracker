@@ -117,7 +117,7 @@
             <th>Additional Resources</th>
             <td class="edit">
               {% if editor_can_manage or can_manage %}
-                <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_doc_extresources' name=doc.name %}">Edit</a> 
+                <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.edit_doc_extresources' name=doc.name %}">Edit</a> 
               {% endif %}
             </td>
             <td>
@@ -160,7 +160,7 @@
 
   {% if not snapshot %}
     {% if editor_can_manage or can_manage  %}
-      <p id="change-request"><a class="btn btn-default" href="{% url 'ietf.doc.views_bofreq.submit' name=doc.name %}">Change BOF request text</a></p>
+      <p id="change-request"><a class="btn btn-primary" href="{% url 'ietf.doc.views_bofreq.submit' name=doc.name %}">Change BOF request text</a></p>
     {% endif %}
   {% endif %}
 

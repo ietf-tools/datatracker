@@ -40,9 +40,9 @@
         {% endfor %}
       {% endif %}
       {% if method == 'post' %}
-        <a class="btn btn-default" href="{% url 'ietf.person.views.merge' %}?source={{ target.pk }}&target={{ source.pk }}" role="button">Swap</a>
+        <a class="btn btn-primary" href="{% url 'ietf.person.views.merge' %}?source={{ target.pk }}&target={{ source.pk }}" role="button">Swap</a>
       {% endif %}
-      <button type="submit" class="btn btn-default">{% if method == 'post' %}Merge{% else %}Submit{% endif %}</button>
+      <button type="submit" class="btn btn-primary">{% if method == 'post' %}Merge{% else %}Submit{% endif %}</button>
     </form>
 
 {% endblock %}

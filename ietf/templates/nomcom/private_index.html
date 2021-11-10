@@ -106,7 +106,7 @@
       </select>
     </div>
 
-    <input class="btn btn-default" name="submit" value="Filter" type="submit">
+    <input class="btn btn-primary" name="submit" value="Filter" type="submit">
   </form>
 
 
@@ -132,7 +132,7 @@
         <tr>
 	  {% if is_chair and nomcom.group.state_id == 'active' %}
 	    <td><input class="batch-select" type="checkbox" value="{{ np.id }}" name="selected"></td>
-	    <td class="edit"><a class="btn btn-default btn-xs" href="{% url 'ietf.nomcom.views.edit_nominee' year np.nominee.id %}">Edit</a></td>
+	    <td class="edit"><a class="btn btn-primary btn-xs" href="{% url 'ietf.nomcom.views.edit_nominee' year np.nominee.id %}">Edit</a></td>
 	  {% endif %}
 
 	  <td>

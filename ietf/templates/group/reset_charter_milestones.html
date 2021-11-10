@@ -32,7 +32,7 @@
     {% endfor %}
 
     {% buttons %}
-      <a class="btn btn-default pull-right" href="{% url 'ietf.group.milestones.edit_milestones;charter' group_type=group.type_id acronym=group.acronym %}">Back</a>
+      <a class="btn btn-primary pull-right" href="{% url 'ietf.group.milestones.edit_milestones;charter' group_type=group.type_id acronym=group.acronym %}">Back</a>
       <button type="submit" class="btn btn-primary">Submit</button>
     {% endbuttons %}
   </form>

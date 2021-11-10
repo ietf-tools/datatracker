@@ -59,7 +59,7 @@
 
         {% buttons %}
         <input class="btn btn-primary" type="submit" value="Save feedback" name="end">
-        <a class="btn btn-default" href="{% url 'ietf.nomcom.views.view_feedback_pending' year %}">Cancel & leave unclassified</a>
+        <a class="btn btn-primary" href="{% url 'ietf.nomcom.views.view_feedback_pending' year %}">Cancel & leave unclassified</a>
         {% endbuttons %}
 
       {% else %}
@@ -114,7 +114,7 @@
 	        <td>{{ form.instance.subject }}</td>
 
 	        <td>
-	          <button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#modal{{ form.instance.id }}">View</button>
+	          <button type="button" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#modal{{ form.instance.id }}">View</button>
 	        </td>
               </tr>
 
@@ -134,7 +134,7 @@
 	              <pre>{% decrypt form.instance.comments request year 1 %}</pre>
 	            </div>
 	            <div class="modal-footer">
-	              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+	              <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
 	            </div>
 	          </div>
 	        </div>

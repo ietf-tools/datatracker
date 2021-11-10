@@ -14,7 +14,7 @@
 
   <form action="" method="post">{% csrf_token %}
   <input class="btn btn btn-danger" type="submit" value="Continue">
-  <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_announce' %}">Cancel</a>
+  <a class="btn btn-primary" href="{% url 'ietf.meeting.views.interim_announce' %}">Cancel</a>
   </form>
 
 {% endblock %}

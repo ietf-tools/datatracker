@@ -7,10 +7,10 @@
 {% block buttonlist %}
   {{ block.super }}
   <br>
-  <a class="btn btn-default" href="{% url 'ietf.meeting.views.meeting_requests' %}">Session requests</a>
+  <a class="btn btn-primary" href="{% url 'ietf.meeting.views.meeting_requests' %}">Session requests</a>
   {% if can_edit or can_always_edit %}
-  <a class="btn btn-default" href="{% url 'ietf.secr.sreq.views.main' %}">Request a session</a>
-  <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_request' %}?group={{group.id}}">Request an interim meeting</a>
+  <a class="btn btn-primary" href="{% url 'ietf.secr.sreq.views.main' %}">Request a session</a>
+  <a class="btn btn-primary" href="{% url 'ietf.meeting.views.interim_request' %}?group={{group.id}}">Request an interim meeting</a>
   {% endif %}
 {% endblock buttonlist %}
 

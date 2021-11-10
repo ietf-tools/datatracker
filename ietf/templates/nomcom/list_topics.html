@@ -9,7 +9,7 @@
   <h2>Topics in {{ nomcom.group }}</h2>
 
   {% if nomcom.group.state_id == 'active' %}
-    <a class="btn btn-default" href="{% url 'ietf.nomcom.views.edit_topic' year %}">Add new topic</a>
+    <a class="btn btn-primary" href="{% url 'ietf.nomcom.views.edit_topic' year %}">Add new topic</a>
   {% endif %}
 
   {% if topics %}
@@ -28,8 +28,8 @@
         {% if nomcom.group.state_id == 'active' %}
         <dt>Actions</dt>
         <dd>
-          <a class="btn btn-default" href="{% url 'ietf.nomcom.views.edit_topic' year topic.id %}">Edit</a>
-          <a class="btn btn-default" href="{% url 'ietf.nomcom.views.remove_topic' year topic.id %}">Remove</a>
+          <a class="btn btn-primary" href="{% url 'ietf.nomcom.views.edit_topic' year topic.id %}">Edit</a>
+          <a class="btn btn-primary" href="{% url 'ietf.nomcom.views.remove_topic' year topic.id %}">Remove</a>
         </dd>
         {% endif %}
       </dl>

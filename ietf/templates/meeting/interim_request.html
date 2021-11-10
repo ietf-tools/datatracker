@@ -142,20 +142,20 @@
         <label for="id_session_set-{{ forloop.counter0 }}-agenda_note" class="col-md-2 control-label">Additional Information</label>
         <div class="col-md-10">{% render_field form.agenda_note class="form-control" %}</div>
     </div>
-    <button name="id_session_set-{{ forloop.counter0 }}-delete-button" type="button" class="btn btn-default hidden btn-delete">Delete</button>
+    <button name="id_session_set-{{ forloop.counter0 }}-delete-button" type="button" class="btn btn-primary hidden btn-delete">Delete</button>
     </div>  <!-- fieldset -->
     {% endfor %}
 
     <div class="form-group">
     <div class="col-md-12">
-    <button id="add_session" type="button" class="btn btn-default" style="display: none;"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>Add Session</button>
+    <button id="add_session" type="button" class="btn btn-primary" style="display: none;"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>Add Session</button>
     </div>
     </div>
 
     {% buttons %}
       <div class="col-md-12">
       <button type="submit" class="btn btn-primary">Submit</button>
-      <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upcoming' %}">Back</a>
+      <a class="btn btn-primary pull-right" href="{% url 'ietf.meeting.views.upcoming' %}">Back</a>
       </div>
     {% endbuttons %}
 

@@ -79,7 +79,7 @@
               </td>
             {% endif %}
             {% if user|has_role:"Secretariat" %}
-              <td><a id="add-submission-email{{ s.pk }}" class="btn btn-default btn-xs" href="{% url "ietf.submit.views.add_manualpost_email" submission_id=s.pk access_token=s.access_token %}">Add email</a></td>
+              <td><a id="add-submission-email{{ s.pk }}" class="btn btn-primary btn-xs" href="{% url "ietf.submit.views.add_manualpost_email" submission_id=s.pk access_token=s.access_token %}">Add email</a></td>
             {% endif %}
           </tr>
         {% endfor %}
@@ -88,7 +88,7 @@
     {% endif %}
 
     {% if user|has_role:"Secretariat" %}
-      <a id="new-submission-email" class="btn btn-default btn-sm" href="{% url "ietf.submit.views.add_manualpost_email" %}">New submission from email</a>
+      <a id="new-submission-email" class="btn btn-primary btn-sm" href="{% url "ietf.submit.views.add_manualpost_email" %}">New submission from email</a>
     {% endif %}
 
 {% endblock %}

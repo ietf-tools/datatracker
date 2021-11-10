@@ -35,7 +35,7 @@
 
     <p class="buttonlist">
       {% for g in groups %}
-        <button class="btn btn-default name-template">draft-ietf-<b>{{ g.acronym }}</b>-<i>something</i></button>
+        <button class="btn btn-primary name-template">draft-ietf-<b>{{ g.acronym }}</b>-<i>something</i></button>
       {% endfor %}
     </p>
   {% endif %}
@@ -46,7 +46,7 @@
 
     {% buttons %}
       <button type="submit" class="btn btn-primary">Save</button>
-      <a class="btn btn-default pull-right" href="{% url "ietf.submit.views.approvals" %}#preapprovals">Back</a>
+      <a class="btn btn-primary pull-right" href="{% url "ietf.submit.views.approvals" %}#preapprovals">Back</a>
     {% endbuttons %}
   </form>
 

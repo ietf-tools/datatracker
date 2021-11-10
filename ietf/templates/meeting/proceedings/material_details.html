@@ -60,14 +60,14 @@
                 {% url 'ietf.meeting.views_proceedings.remove_material' num=meeting.number material_type=mat_type.slug as remove_url %}
                 {% url 'ietf.meeting.views_proceedings.restore_material' num=meeting.number material_type=mat_type.slug as restore_url %}
                 {% if mat is None %}
-                  <a class="btn btn-default btn-sm pull-right" href="{{ upload_url }}">Add Material</a>
+                  <a class="btn btn-primary btn-sm pull-right" href="{{ upload_url }}">Add Material</a>
                 {% elif mat.active %}
-                  <a class="btn btn-default btn-sm pull-right" href="{{ upload_url }}">Replace Material</a>
-                  <a class="btn btn-default btn-sm pull-right" href="{{ edit_url }}">Change title</a>
-                  <a class="btn btn-default btn-sm pull-right" href="{{ remove_url }}">Remove</a>
+                  <a class="btn btn-primary btn-sm pull-right" href="{{ upload_url }}">Replace Material</a>
+                  <a class="btn btn-primary btn-sm pull-right" href="{{ edit_url }}">Change title</a>
+                  <a class="btn btn-primary btn-sm pull-right" href="{{ remove_url }}">Remove</a>
                 {% else %}
-                  <a class="btn btn-default btn-sm pull-right" href="{{ upload_url }}">Add Material</a>
-                  <a class="btn btn-default btn-sm pull-right" href="{{ restore_url }}">Restore</a>
+                  <a class="btn btn-primary btn-sm pull-right" href="{{ upload_url }}">Add Material</a>
+                  <a class="btn btn-primary btn-sm pull-right" href="{{ restore_url }}">Restore</a>
                 {% endif %}
               </td>
             {% endif %}
@@ -78,7 +78,7 @@
     </div>
   </div>
 
-  <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.materials' num=meeting.number %}">Back</a>
+  <a class="btn btn-primary pull-right" href="{% url 'ietf.meeting.views.materials' num=meeting.number %}">Back</a>
 {% endblock %}
 
 {% comment %}{% block js %}

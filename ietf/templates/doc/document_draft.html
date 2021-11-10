@@ -74,7 +74,7 @@
         <th>Author{{doc.authors|pluralize}}</th>
         <td class="edit">
             {% if can_edit_authors %}
-            <a class="btn btn-default btn-xs" href="{%  url 'ietf.doc.views_doc.edit_authors' name=doc.name %}">Edit</a>
+            <a class="btn btn-primary btn-xs" href="{%  url 'ietf.doc.views_doc.edit_authors' name=doc.name %}">Edit</a>
             {% endif %}
         </td>
         <td>
@@ -110,7 +110,7 @@
           <th>Replaces</th>
           <td class="edit">
             {% if can_edit_stream_info and not snapshot %}
-              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.replaces' name=doc.name %}">Edit</a>
+              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.replaces' name=doc.name %}">Edit</a>
             {% endif %}
           </td>
           <td>
@@ -137,7 +137,7 @@
               <th>Possibly Replaces</th>
               <td class="edit">
                 {% if can_edit_replaces and not snapshot %}
-                  <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">Edit</a>
+                  <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">Edit</a>
                 {% endif %}
               </td>
               <td>
@@ -152,7 +152,7 @@
               <th>Possibly Replaced By</th>
               <td class="edit">
                 {% if can_edit_replaces and not snapshot %}
-                  {% comment %}<a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">Edit</a>{% endcomment %}
+                  {% comment %}<a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">Edit</a>{% endcomment %}
                 {% endif %}
               </td>
               <td>
@@ -167,7 +167,7 @@
         <th>Stream</th>
         <td class="edit">
           {% if can_change_stream and not snapshot %}
-            <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_stream' name=doc.name %}">Edit</a>
+            <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.change_stream' name=doc.name %}">Edit</a>
           {% endif %}
         </td>
         <td>
@@ -182,7 +182,7 @@
           <th>Intended RFC status</th>
           <td class="edit">
             {% if can_edit_stream_info and not snapshot %}
-              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_intention' name=doc.name %}">Edit</a>
+              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.change_intention' name=doc.name %}">Edit</a>
             {% endif %}
           </td>
           <td>
@@ -199,7 +199,7 @@
           {% if doc.get_state_slug != "active" and doc.get_state_slug != "rfc" %}<div class="pull-right label label-warning">Expired & archived</div>{% endif %}
           {% if file_urls %}
             {% for label, url in file_urls %}
-              <a class="btn btn-default btn-xs" href="{{ url }}">
+              <a class="btn btn-primary btn-xs" href="{{ url }}">
                 <span class="fa fa-file-{% if label == "pdf" %}pdf-{% elif label == "xml" or label == "html" %}code-{% elif label == "plain text" %}text-{% endif %}o"></span>
                 {{ label }}</a>
             {% endfor %}
@@ -249,11 +249,11 @@
 
           {% if can_request_review %}
             <div>
-              <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.request_review" doc.name %}"><span class="fa fa-check-circle-o"></span> Request review</a>
+              <a class="btn btn-primary btn-xs" href="{% url "ietf.doc.views_review.request_review" doc.name %}"><span class="fa fa-check-circle-o"></span> Request review</a>
               {% if can_submit_unsolicited_review_for_teams|length == 1 %}
-                <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.complete_review" doc.name can_submit_unsolicited_review_for_teams.0.acronym %}"><span class="fa fa-pencil-square-o"></span> Submit unsolicited review</a>
+                <a class="btn btn-primary btn-xs" href="{% url "ietf.doc.views_review.complete_review" doc.name can_submit_unsolicited_review_for_teams.0.acronym %}"><span class="fa fa-pencil-square-o"></span> Submit unsolicited review</a>
               {% elif can_submit_unsolicited_review_for_teams %}
-                <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.submit_unsolicited_review_choose_team" doc.name %}"><span class="fa fa-pencil-square-o"></span> Submit unsolicited review</a>
+                <a class="btn btn-primary btn-xs" href="{% url "ietf.doc.views_review.submit_unsolicited_review_choose_team" doc.name %}"><span class="fa fa-pencil-square-o"></span> Submit unsolicited review</a>
               {% endif %}    
             </div>
           {% endif %}
@@ -278,7 +278,7 @@
             <th>Additional Resources</th>
             <td class="edit">
               {% if can_edit_stream_info or can_edit_individual %}
-                <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_doc_extresources' name=doc.name %}">Edit</a> 
+                <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.edit_doc_extresources' name=doc.name %}">Edit</a> 
               {% endif %}
             </td>
             <td>
@@ -319,7 +319,7 @@
           </th>
           <td class="edit">
             {% if doc.stream and can_edit_stream_info and doc.stream.slug != "legacy" and not snapshot %}
-              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_stream_state' name=doc.name state_type=stream_state_type_slug %}">Edit</a>
+              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.change_stream_state' name=doc.name state_type=stream_state_type_slug %}">Edit</a>
             {% endif %}
           </td>
           <td>
@@ -350,7 +350,7 @@
           <th>Consensus Boilerplate</th>
           <td class="edit">
             {% if can_edit_stream_info and not snapshot %}
-              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_consensus' name=doc.name %}">Edit</a>
+              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.edit_consensus' name=doc.name %}">Edit</a>
             {% endif %}
           </td>
           <td>
@@ -392,9 +392,9 @@
           <td class="edit">
 
             {% if can_edit_stream_info and not snapshot %}
-              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_shepherd' name=doc.name %}">Edit</a>
+              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.edit_shepherd' name=doc.name %}">Edit</a>
             {% elif is_shepherd %}
-              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_shepherd_email' name=doc.name %}">Change Email</a>
+              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.change_shepherd_email' name=doc.name %}">Change Email</a>
             {% endif %}
           </td>
           <td>
@@ -410,13 +410,13 @@
               {% if can_edit_shepherd_writeup %}
                 {% url 'ietf.doc.views_draft.edit_shepherd_writeup' name=doc.name as doc_edit_url %}
                 {% if doc_edit_url %}
-                  <a class="btn btn-default btn-xs" href="{{doc_edit_url}}">Edit</a>
+                  <a class="btn btn-primary btn-xs" href="{{doc_edit_url}}">Edit</a>
                 {% endif %}
               {% endif %}
             </td>
             <td>
               {% if shepherd_writeup %}
-                <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_shepherd_writeup' name=doc.name %}">Show</a>
+                <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.document_shepherd_writeup' name=doc.name %}">Show</a>
                 (last changed {{ shepherd_writeup.time|date:"Y-m-d"}})
               {% else %}
                 (None)
@@ -430,7 +430,7 @@
           <th>RFC Editor Note</th>
           <td class="edit">
             {% if can_edit_stream_info %}
-            <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_ballot.ballot_rfceditornote' name=doc.name %}">Edit</a>
+            <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_ballot.ballot_rfceditornote' name=doc.name %}">Edit</a>
             {% endif %}
           </td>
           <td>
@@ -455,7 +455,7 @@
           <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
           <td class="edit">
             {% if iesg_state.slug != 'idexists' and can_edit %}
-            <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_state' name=doc.name %}">Edit</a>
+            <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.change_state' name=doc.name %}">Edit</a>
             {% endif %}
           </td>
           <td>
@@ -469,7 +469,7 @@
             <th>Action Holders</th>
             <td class="edit">
             {% if can_edit %}
-                <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.edit_action_holders' name=doc.name %}">Edit</a>
+                <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.edit_action_holders' name=doc.name %}">Edit</a>
             {% endif %}
             </td>
             <td>
@@ -478,7 +478,7 @@
                       {% for action_holder in doc.documentactionholder_set.all %}
                         <div>{% person_link action_holder.person title=action_holder.role_for_doc %} {{ action_holder|action_holder_badge }}</div>
                       {% endfor %}
-                      {% if can_edit %}<a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_doc.remind_action_holders" name=doc.name %}"><span class="fa fa-envelope-o"></span> Send reminder email </a>{% endif %}
+                      {% if can_edit %}<a class="btn btn-primary btn-xs" href="{% url "ietf.doc.views_doc.remind_action_holders" name=doc.name %}"><span class="fa fa-envelope-o"></span> Send reminder email </a>{% endif %}
                   {% else %}
                       (None)
                   {% endif %}
@@ -492,7 +492,7 @@
             <th>Consensus Boilerplate</th>
             <td class="edit">
               {% if can_edit or can_edit_stream_info and not snapshot %}
-              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_consensus' name=doc.name %}">Edit</a>
+              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.edit_consensus' name=doc.name %}">Edit</a>
               {% endif %}
             </td>
             <td>
@@ -506,7 +506,7 @@
           <th>Telechat date</th>
           <td class="edit">
             {% if can_edit and not snapshot %}
-            <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.telechat_date' name=doc.name %}">Edit</a>
+            <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.telechat_date' name=doc.name %}">Edit</a>
             {% endif %}
           </td>
           <td>
@@ -532,7 +532,7 @@
           <th>Responsible AD</th>
           <td class="edit">
             {% if can_edit %}
-              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_ad' name=doc.name %}">Edit</a>
+              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.edit_ad' name=doc.name %}">Edit</a>
             {% endif %}
           </td>
           <td>
@@ -547,7 +547,7 @@
               <th>IESG note</th>
               <td class="edit">
                 {% if can_edit and not snapshot %}
-                  <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_iesg_note' name=doc.name %}">Edit</a>
+                  <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.edit_iesg_note' name=doc.name %}">Edit</a>
                 {% endif %}
             </td>
             <td>
@@ -562,7 +562,7 @@
           <th>Send notices to</th>
           <td class="edit">
             {% if can_edit_notify and not snapshot %}
-              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.edit_notify' name=doc.name %}">Edit</a>
+              <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.edit_notify' name=doc.name %}">Edit</a>
             {% endif %}
           </td>
           <td>
@@ -581,7 +581,7 @@
             <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">IANA review state</a></th>
             <td class="edit">
               {% if can_edit_iana_state and not snapshot %}
-                <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-review" %}">Edit</a>
+                <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-review" %}">Edit</a>
               {% endif %}
             </td>
             <td>
@@ -596,7 +596,7 @@
             <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-action" %}">IANA action state</a></th>
             <td class="edit">
               {% if can_edit_iana_state and not snapshot %}
-                <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-action" %}">Edit</a>
+                <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-action" %}">Edit</a>
               {% endif %}
             </td>
             <td>
@@ -611,7 +611,7 @@
             <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-experts" %}">IANA expert review state</a></th>
             <td class="edit">
               {% if can_edit_iana_state and not snapshot %}
-                <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-experts" %}">Edit</a>
+                <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-experts" %}">Edit</a>
               {% endif %}
             </td>
             <td>
@@ -626,7 +626,7 @@
             <th>IANA expert review comments</th>
             <td class="edit">
               {% if can_edit_iana_state and not snapshot %}
-                <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.add_iana_experts_comment' name=doc.name %}">Edit</a>
+                <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_draft.add_iana_experts_comment' name=doc.name %}">Edit</a>
               {% endif %}
             </td>
             <td>
@@ -674,16 +674,16 @@
   </table>
 
   <div class="buttonlist">
-    <a class="btn btn-default btn-xs" href="mailto:{{ doc.name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}"><span class="fa fa-envelope-o"></span> Email authors</a>
+    <a class="btn btn-primary btn-xs" href="mailto:{{ doc.name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}"><span class="fa fa-envelope-o"></span> Email authors</a>
     {% if doc.group.type.slug == 'wg' or doc.group.type.slug == 'rg' %}
-      <a class="btn btn-default btn-xs" href="mailto:{{ doc.group.list_email}}?subject=Mail%20regarding%20{{ doc.name }}"><span class="fa fa-envelope-o"></span> Email {{ doc.group.type }}</a>
+      <a class="btn btn-primary btn-xs" href="mailto:{{ doc.group.list_email}}?subject=Mail%20regarding%20{{ doc.name }}"><span class="fa fa-envelope-o"></span> Email {{ doc.group.type }}</a>
     {% endif %}
-    <a class="btn btn-default btn-xs" href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}" rel="nofollow"><span class="fa fa-bolt"></span> IPR {% if doc.related_ipr %} <span class="badge">{{doc.related_ipr|length}}</span>{% endif %}</a>
-    <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_references' doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
-    <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
-    <a class="btn btn-default btn-xs" href="{{settings.IDNITS_BASE_URL}}?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}" rel="nofollow" target="_blank"><span class="fa fa-exclamation"></span> Nits</a>
+    <a class="btn btn-primary btn-xs" href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}" rel="nofollow"><span class="fa fa-bolt"></span> IPR {% if doc.related_ipr %} <span class="badge">{{doc.related_ipr|length}}</span>{% endif %}</a>
+    <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.document_references' doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
+    <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
+    <a class="btn btn-primary btn-xs" href="{{settings.IDNITS_BASE_URL}}?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}" rel="nofollow" target="_blank"><span class="fa fa-exclamation"></span> Nits</a>
     <div class="dropdown inline">
-      <button class="btn btn-default btn-xs dropdown-toggle" type="button" id="ddSearchMenu" data-toggle="dropdown" aria-expanded="true">
+      <button class="btn btn-primary btn-xs dropdown-toggle" type="button" id="ddSearchMenu" data-toggle="dropdown" aria-expanded="true">
           <span class="fa fa-search"></span> Search lists <span class="caret"></span>
       </button>
       <ul class="dropdown-menu" role="menu">
@@ -695,23 +695,23 @@
       </ul>
     </div>
     {% if user.is_authenticated %}
-      <a class="btn btn-default btn-xs track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}" href="{% url "ietf.community.views.untrack_document" username=user.username name=doc.name %}" title="Remove from your personal ID list"><span class="fa fa-bookmark"></span> Untrack</a>
-      <a class="btn btn-default btn-xs track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}" href="{% url "ietf.community.views.track_document" username=user.username name=doc.name %}" title="Add to your personal ID list"><span class="fa fa-bookmark-o"></span> Track</a>
+      <a class="btn btn-primary btn-xs track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}" href="{% url "ietf.community.views.untrack_document" username=user.username name=doc.name %}" title="Remove from your personal ID list"><span class="fa fa-bookmark"></span> Untrack</a>
+      <a class="btn btn-primary btn-xs track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}" href="{% url "ietf.community.views.track_document" username=user.username name=doc.name %}" title="Add to your personal ID list"><span class="fa fa-bookmark-o"></span> Track</a>
     {% endif %}
     {% if user.review_teams %}
-      <a class="btn btn-default btn-xs review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}hide{% endif %}" href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}" title="Remove from your review wishes for all teams"><span class="fa fa-comments"></span> Remove review wishes</a>
-      <a class="btn btn-default btn-xs review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %}{% if doc.has_review_wish %}hide{% endif %}" href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}" title="Add to your review wishes"><span class="fa fa-comments-o"></span> Add review wish</a>
+      <a class="btn btn-primary btn-xs review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}hide{% endif %}" href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}" title="Remove from your review wishes for all teams"><span class="fa fa-comments"></span> Remove review wishes</a>
+      <a class="btn btn-primary btn-xs review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %}{% if doc.has_review_wish %}hide{% endif %}" href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}" title="Add to your review wishes"><span class="fa fa-comments-o"></span> Add review wish</a>
     {% endif %}
 
     {% if can_edit and iesg_state.slug != 'idexists' %}
-      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_ballot.lastcalltext' name=doc.name %}">Last call text</a>
-      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_ballot.ballot_writeupnotes' name=doc.name %}">Ballot text</a>
-      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_ballot.ballot_approvaltext' name=doc.name %}">Announcement text</a>
+      <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_ballot.lastcalltext' name=doc.name %}">Last call text</a>
+      <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_ballot.ballot_writeupnotes' name=doc.name %}">Ballot text</a>
+      <a class="btn btn-primary btn-xs" href="{% url 'ietf.doc.views_ballot.ballot_approvaltext' name=doc.name %}">Announcement text</a>
     {% endif %}
 
     {% if actions %}
       {% for label, url in actions %}
-        <a class="btn btn-default btn-xs" href="{{ url }}">{{ label|capfirst_allcaps }}</a>
+        <a class="btn btn-primary btn-xs" href="{{ url }}">{{ label|capfirst_allcaps }}</a>
       {% endfor %}
     {% endif %}
   </div>
@@ -720,7 +720,7 @@
     {{ content|safe }}
 
     {% if split_content %}
-      <a class="btn btn-default btn-block" href="?include_text=1"><span class="fa fa-caret-down"></span> Show full document text</a>
+      <a class="btn btn-primary btn-block" href="?include_text=1"><span class="fa fa-caret-down"></span> Show full document text</a>
     {% endif %}
 
   {% else %}

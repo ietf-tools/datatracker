@@ -50,7 +50,7 @@
             <h4>{{ p.name }}</h4>
             <div class="btn-group-vertical form-group">
               {% for np in p.nomineeposition_set.accepted.not_duplicated %}
-                <a class="btn btn-default btn-xs" {% if nomcom.group.state_id != 'conclude' %}href="?nominee={{np.nominee.id}}&position={{ np.position.id}}"{% endif %}>
+                <a class="btn btn-primary btn-xs" {% if nomcom.group.state_id != 'conclude' %}href="?nominee={{np.nominee.id}}&position={{ np.position.id}}"{% endif %}>
 	          {{ np.nominee.name }}
                   {% with count=counts|lookup:np.position.id|lookup:np.nominee.id %}
                     <span class="badge" 
@@ -75,7 +75,7 @@
         <h3>Topics</h3>
         <div class="btn-group-vertical form-group">
           {% for t in topics %}
-            <a class="btn btn-default btn-xs" {% if nomcom.group.state_id != 'conclude' %}href="?topic={{t.id}}"{% endif %}> 
+            <a class="btn btn-primary btn-xs" {% if nomcom.group.state_id != 'conclude' %}href="?topic={{t.id}}"{% endif %}> 
               {{t.subject}} 
               {% with count=topic_counts|lookup:t.id %}
                 <span class="badge" 

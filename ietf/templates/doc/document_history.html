@@ -72,16 +72,16 @@
         </div>
         <div class="col-sm-10">
           <div class="btn-group" data-toggle="buttons">
-	    <label class="btn btn-default active">
+	    <label class="btn btn-primary active">
 	      <input type="radio" name="difftype" value="--html"> Side-by-side
 	    </label>
-	    <label class="btn btn-default">
+	    <label class="btn btn-primary">
 	      <input type="radio" name="difftype" value="--abdiff"> Before-after
 	    </label>
-	    <label class="btn btn-default">
+	    <label class="btn btn-primary">
 	      <input type="radio" name="difftype" value="--chbars"> Change bars
 	    </label>
-	    <label class="btn btn-default">
+	    <label class="btn btn-primary">
 	      <input type="radio" name="difftype" value="--hwdiff"> Wdiff
 	    </label>
           </div>
@@ -95,7 +95,7 @@
   <h2>Document history</h2>
   {% if can_add_comment %} 
    <div class="buttonlist">
-      <a class="btn btn-default" href="{% url 'ietf.doc.views_doc.add_comment' name=doc.name %}"><span class="fa fa-plus"></span> Add comment</a>
+      <a class="btn btn-primary" href="{% url 'ietf.doc.views_doc.add_comment' name=doc.name %}"><span class="fa fa-plus"></span> Add comment</a>
     </div>
   {% endif %}
 
