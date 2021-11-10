@@ -22,6 +22,22 @@ if (!process.env.BUILD_DEPLOY) {
     require("jquery-migrate")
 }
 
+import Cookies from "js-cookie";
+
+// setup CSRF protection using jQuery
+function csrfSafeMethod(method) {
+    // these HTTP methods do not require CSRF protection
+    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+}
+jQuery.ajaxSetup({
+    crossDomain: false, // obviates need for sameOrigin test
+    beforeSend: function (xhr, settings) {
+        if (!csrfSafeMethod(settings.type)) {
+            xhr.setRequestHeader("X-CSRFToken", Cookies.get("csrftoken"));
+        }
+    }
+});
+
 function dropdown_hover() {
     var navbar = $(this)
         .closest(".navbar");
@@ -155,4 +171,37 @@ $(document)
 
             updateAdvanced();
         }
+
+        $('.review-wish-add-remove-doc.ajax, .track-untrack-doc')
+            .on("click", function (e) {
+                e.preventDefault();
+                var trigger = $(this);
+                $.ajax({
+                    url: trigger.attr('href'),
+                    type: 'POST',
+                    cache: false,
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success) {
+                            trigger.parent()
+                                .find(".tooltip")
+                                .remove();
+                            trigger.attr("hidden", true);
+
+                            var target_unhide = null;
+                            if (trigger.hasClass('review-wish-add-remove-doc')) {
+                                target_unhide = '.review-wish-add-remove-doc';
+                            } else if (trigger.hasClass('track-untrack-doc')) {
+                                target_unhide = '.track-untrack-doc';
+                            }
+                            if (target_unhide) {}
+                            trigger.parent()
+                                .find(target_unhide)
+                                .not(trigger)
+                                .removeAttr("hidden");
+                        }
+                    }
+                });
+            });
+
     });

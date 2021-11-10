@@ -6,7 +6,8 @@
     "d3": "^3.5.17",
     "datatables.net": "^1.11.3",
     "datatables.net-bs5": "^1.11.3",
-    "jquery": "^3.6.0"
+    "jquery": "^3.6.0",
+    "js-cookie": "^3.0.1"
   },
   "devDependencies": {
     "@parcel/transformer-sass": "^2.0.1",

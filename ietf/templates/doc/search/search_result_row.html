@@ -14,19 +14,19 @@
 
     <td>
         {% if user.is_authenticated %}
-            <a href="{% url "ietf.community.views.untrack_document" username=request.user.username name=doc.name %}" class="track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}" title="Remove from your personal ID list">
+            <a href="{% url "ietf.community.views.untrack_document" username=request.user.username name=doc.name %}" class="track-untrack-doc" {% if not doc.tracked_in_personal_community_list %}hidden{% endif %} title="Remove from your personal ID list">
                 <span class="bi bi-bookmark-check-fill"></span>
             </a>
-            <a href="{% url "ietf.community.views.track_document" username=request.user.username name=doc.name %}" class="track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}" title="Add to your personal ID list">
+            <a href="{% url "ietf.community.views.track_document" username=request.user.username name=doc.name %}" class="track-untrack-doc" {% if doc.tracked_in_personal_community_list %}hidden{% endif %} title="Add to your personal ID list">
                 <span class="bi bi-bookmark"></span>
             </a>
             <br>
         {% endif %}
         {% if user.review_teams %}
-            <a class="review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}hide{% endif %}" href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}" title="Remove from your review wishes for all teams">
+            <a class="review-wish-add-remove-doc ajax" {% if not doc.has_review_wish %}hidden{% endif %} href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}" title="Remove from your review wishes for all teams">
                 <span class="bi bi-chats"></span>
             </a>
-            <a class="review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %}{% if doc.has_review_wish %}hide{% endif %}" href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}" title="Add to your review wishes">
+            <a class="review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %}" {% if doc.has_review_wish %}hidden{% endif %} href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}" title="Add to your review wishes">
                 <span class="bi bi-chats-o"></span>
             </a>
             <br>
