@@ -1,11 +1,11 @@
-{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+
+{% load origin %}{% origin %}
 {% load widget_tweaks %}
 {% load ietf_filters %}
-{% load django_bootstrap5 %}
-
-{% bootstrap_form form layout="horizontal" %}
 
 <form id="search_form" class="form-horizontal" action="{% url 'ietf.doc.views_search.search' %}">
+    {% csrf_token %}
 
     <div class="input-group search_field">
         {{ form.name|add_class:"form-control"|attr:"placeholder:Document name/title/RFC number" }}
@@ -19,126 +19,138 @@
 
     {{ form.sort }} {# hidden field #}
 
-    <p class="text-center">
-        <a href="https://www.ietf.org/search">Search page for www.ietf.org website</a>
-        &nbsp;|&nbsp;
-        <a href="https://mailarchive.ietf.org">Search page for IETF mail list archives</a>
-    </p>
-
-    <div class="accordion" id="accordion1">
+    <div class="accordion pt-3" id="search-accordion">
         <div class="accordion-item">
-            <div class="accordion-header">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-parent="#accordion1" href="#searchcollapse">
+            <h2 class="accordion-header" id="search-heading">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#search-collapse" aria-expanded="false" aria-controls="search-collapse">
                     Additional search criteria
                 </button>
-            </div>
-            <div id="searchcollapse" class="accordion-collapse collapse visible-nojs">
+            </h2>
+            <div id="search-collapse" class="accordion-collapse collapse" aria-labelledby="search-heading" data-bs-parent="#search-accordion">
                 <div class="accordion-body">
-                    <div class="form-group">
+
+                    <div class="row mb-3 search_field">
                         <div class="col-sm-4">
-                            <label class="control-label">Document Type</label>
+                            <label class="form-label fw-bold">Document Type</label>
                         </div>
-                        <div class="col-sm-8 search_field">
-                            <div class="checkbox">
-                                <label class="control-label" for="id_rfcs">{{ form.rfcs }} RFC</label>
+                        <div class="col-sm-8">
+                            <div class="form-check">
+                                {{ form.rfcs|add_class:"form-check-input" }}
+                                <label class="form-check-label" for="id_rfcs"> RFC</label>
                             </div>
-                            <div class="checkbox">
-                                <label class="control-label" for="id_activedrafts">{{ form.activedrafts }} Internet-Draft (active)</label>
+                            <div class="form-check">
+                                {{ form.activedrafts|add_class:"form-check-input" }}
+                                <label class="form-check-label" for="id_activedrafts"> Internet-Draft (active)</label>
                             </div>
-                            <div class="checkbox">
-                                <label class="control-label" for="id_olddrafts">{{ form.olddrafts }} Internet-Draft (expired, replaced or withdrawn)</label>
+                            <div class="form-check">
+                                {{ form.olddrafts|add_class:"form-check-input advdoctype" }}
+                                <label class="form-check-label" for="id_olddrafts"> Internet-Draft (expired, replaced or withdrawn)</label>
                             </div>
 
                             {% for value, label in form.fields.doctypes.choices %}
-                                <div class="checkbox">
-                                    <label class="control-label" for="id_doctypes_{{ value }}">
-                                        <input type="checkbox" class="advdoctype" {% if value in form.doctypes.value %}checked{% endif %} name="doctypes" value="{{ value }}" id="id_doctypes_{{ value }}" />{{ label|safe|capfirst_allcaps}}
-                                    </label>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" {% if value in form.doctypes.value %}checked{% endif %} name="doctypes" value="{{ value }}" id="id_doctypes_{{ value }}" />
+                                    <label class="form-check-label" for="id_doctypes_{{ value }}">{{ label|safe|capfirst_allcaps}}</label>
+
                                 </div>
                             {% endfor %}
                         </div>
                     </div>
 
-                    <div class="form-group search_field">
+                    <div class="row mb-3 search_field">
                         <div class="col-sm-4">
-                            <input type="radio" name="by" value="author" {% if form.by.value == "author" %}checked{% endif %} id="author" />
-                            <label for="author" class="control-label">Author Name or Affiliation</label>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="by" value="author" {% if form.by.value == "author" %}checked{% endif %} id="author" />
+                                <label for="author" class="form-check-label fw-bold">Author or Affiliation Name</label>
+                            </div>
                         </div>
                         <div class="col-sm-8">
-                            {{ form.author|add_class:"form-control" }}
+                            {{ form.author|add_class:"form-select" }}
                         </div>
                     </div>
 
-                    <div class="form-group search_field">
+                    <div class="row mb-3 search_field">
                         <div class="col-sm-4">
-                            <input type="radio" name="by" value="group" {% if form.by.value == "group" %}checked{% endif %} id="group" />
-                            <label for="group" class="control-label">WG</label>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="by" value="group" {% if form.by.value == "group" %}checked{% endif %} id="group" />
+                                <label for="group" class="form-check-label fw-bold">WG</label>
+                            </div>
                         </div>
                         <div class="col-sm-8">
-                            {{ form.group|add_class:"form-control" }}
+                            {{ form.group|add_class:"form-select" }}
                         </div>
                     </div>
 
 
-                    <div class="form-group search_field">
+                    <div class="row mb-3 search_field">
                         <div class="col-sm-4">
-                            <input type="radio" name="by" value="area" {% if form.by.value == "area" %}checked{% endif %} id="area" />
-                            <label for="area" class="control-label">Area</label>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="by" value="area" {% if form.by.value == "area" %}checked{% endif %} id="area" />
+                                <label for="area" class="form-check-label fw-bold">Area</label>
+                            </div>
                         </div>
                         <div class="col-sm-8">
-                            {{ form.area|add_class:"form-control" }}
+                            {{ form.area|add_class:"form-select" }}
                         </div>
                     </div>
 
-                    <div class="form-group search_field">
+                    <div class="row mb-3 search_field">
                         <div class="col-sm-4">
-                            <input type="radio" name="by" value="ad" {% if form.by.value == "ad" %}checked{% endif %} id="areadir" />
-                            <label for="areadir" class="control-label">AD</label>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="by" value="ad" {% if form.by.value == "ad" %}checked{% endif %} id="areadir" />
+                                <label for="areadir" class="form-check-label fw-bold">AD</label>
+                            </div>
                         </div>
                         <div class="col-sm-8">
-                            {{ form.ad|add_class:"form-control" }}
+                            {{ form.ad|add_class:"form-select" }}
                         </div>
                     </div>
 
-                    <div class="form-group search_field">
+                    <div class="row mb-3 search_field">
                         <div class="col-sm-4">
-                            <input type="radio" name="by" value="state" {% if form.by.value == "state" %}checked{% endif %} id="state" />
-                            <label for="state" class="control-label">IESG State</label>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="by" value="state" {% if form.by.value == "state" %}checked{% endif %} id="state" />
+                                <label for="state" class="form-check-label fw-bold">IESG State</label>
+                            </div>
                         </div>
                         <div class="col-sm-4">
-                            {{ form.state|add_class:"form-control col-sm-4" }}
+                            {{ form.state|add_class:"form-select col-sm-4" }}
                         </div>
                         <div class="col-sm-4">
-                            {{ form.substate|add_class:"form-control" }}
+                            {{ form.substate|add_class:"form-select" }}
                         </div>
                     </div>
 
-                    <div class="form-group search_field">
+                    <div class="row mb-3 search_field">
                         <div class="col-sm-4">
-                            <input type="radio" name="by" value="irtfstate" {% if form.by.value == "irtfstate" %}checked{% endif %} id="irtfstate" />
-                            <label for="irtfstate" class="control-label">IRTF State</label>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="by" value="irtfstate" {% if form.by.value == "irtfstate" %}checked{% endif %} id="irtfstate" />
+                                <label for="irtfstate" class="form-check-label fw-bold">IRTF State</label>
+                            </div>
                         </div>
                         <div class="col-sm-8">
-                            {{ form.irtfstate|add_class:"form-control" }}
+                            {{ form.irtfstate|add_class:"form-select" }}
                         </div>
                     </div>
 
-                    <div class="form-group search_field">
+                    <div class="row mb-3 search_field">
                         <div class="col-sm-4">
-                            <input type="radio" name="by" value="stream" {% if form.by.value == "stream" %}checked{% endif %} id="stream" />
-                            <label for="stream" class="control-label">Stream</label>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="by" value="stream" {% if form.by.value == "stream" %}checked{% endif %} id="stream" />
+                                <label for="stream" class="form-check-label fw-bold">Stream</label>
+                            </div>
                         </div>
-                        <div class="col-sm-4">
-                            {{ form.stream|add_class:"form-control" }}
+                        <div class="col-sm-8">
+                            {{ form.stream|add_class:"form-select" }}
                         </div>
                     </div>
 
-                    <div class="form-group search_field">
-                        <div class="col-md-offset-4 col-sm-4">
-                            <button class="btn btn-primary btn-block" type="reset">Clear</button>
+                    <div class="row mb-3 search_field">
+                        <div class="offset-sm-4 col-sm-4 d-grid">
+                            <button class="btn btn-primary" type="reset">Clear</button>
                         </div>
-                        <div class="col-sm-4">
-                            <button class="btn btn-primary btn-block" type="submit">
+                        <div class="col-sm-4 d-grid">
+                            <button class="btn btn-primary" type="submit">
                                 <span class="bi bi-search"></span>
                                 Search
                             </button>
@@ -149,3 +161,9 @@
         </div>
     </div>
 </form>
+
+<p class="text-center pt-3">
+    <a href="https://www.ietf.org/search">Search page for www.ietf.org website</a>
+    |
+    <a href="https://mailarchive.ietf.org">Search page for IETF mail list archives</a>
+</p>

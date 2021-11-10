@@ -1,40 +1,45 @@
-{% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
+
+{% extends "base.html" %}
+
 {% load origin %}
 {% load static %}
-{% block title %}IETF Datatracker{% if server_mode != "production" %} -- Development Mode{% endif %}{% endblock %}
+
+{% block title %}
+    IETF Datatracker
+    {% if server_mode != "production" %}
+        &ndash; {{ server_mode|capfirst }} Mode
+    {% endif %}
+{% endblock %}
 
 {% block content %}
     {% origin %}
     <div class="row">
         <div class="col-md-12">
-            <div class="text-center padded">
-                <img class="ietflogo" src="{% static 'ietf/images/ietflogo.png' %}" alt="IETF">
+            <div class="text-center p-5">
+                <img class="ietflogo p-3" src="{% static 'ietf/images/ietflogo.png' %}" alt="IETF">
+
                 {% if server_mode != "production" %}
-                    <h1 style="color:#ff0000">Datatracker -- {{ server_mode|capfirst }} Mode</h1>
+                    <h1 class="text-danger">Datatracker &ndash; {{ server_mode|capfirst }} Mode</h1>
                 {% else %}
                     <h1>Datatracker</h1>
                 {% endif %}
-                <p class="center-block">
 
+                <p>
                     The IETF Datatracker is the day-to-day front-end to the IETF database for people
                     who work on IETF standards.<br/>
                     It contains data about the documents, working groups,
                     meetings, agendas, minutes, presentations, and more, of the IETF.
-
                 </p>
-                <p class="center-block">
-
+                <p>
                     The primary public face of the IETF is at <a href="https://www.ietf.org/">www.ietf.org</a>.
-
                 </p>
             </div>
 
-            <div class="padded">
+            <div class="p-5">
                 <h2>IETF Document Search</h2>
                 {% include "doc/search/search_form.html" %}
             </div>
         </div>
     </div>
-
 {% endblock content %}

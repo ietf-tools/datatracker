@@ -487,7 +487,7 @@ except ImportError:
 # See https://django-bootstrap5.readthedocs.io/en/latest/settings.html
 BOOTSTRAP5 = {
     # Label class to use in horizontal forms
-    'horizontal_label_class': 'col-md-2',
+    'horizontal_label_class': 'col-md-2 fw-bold',
 
     # Field class to use in horiozntal forms
     'horizontal_field_class': 'col-md-10',
