@@ -134,7 +134,7 @@
 
                         {% ifchanged item.timeslot.time|date:"Y-m-d" %}
                             <tr><th class="gap" colspan="7"></th></tr>
-                            <tr class="warning">
+                            <tr class="table-warning">
                                 <th colspan="7">
                                     {# The anchor here needs to be in a div, not in the th, in order for the anchor-target margin hack to work #}
                                     <div class="anchor-target" id="{{item.timeslot.time|slugify}}"></div>
@@ -145,7 +145,7 @@
 
                         {% if item.timeslot.type_id == 'regular' %}
                             {% ifchanged %}
-                                <tr class="info session-label-row"
+                                <tr class="table-info session-label-row"
                                     data-slot-start-ts="{{item.start_timestamp}}"
                                     data-slot-end-ts="{{item.end_timestamp}}">
                                     <td class="leftmarker"></td>

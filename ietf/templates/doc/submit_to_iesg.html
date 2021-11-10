@@ -17,7 +17,7 @@
     </p>
 
     <table class="table table-sm">
-        <tr {% if warn.intended_std_level %}class="warning"{% endif %}>
+        <tr {% if warn.intended_std_level %}class="table-warning"{% endif %}>
             <th class="text-nowrap">Intended status level</th>
             <td>{% if warn.intended_std_level %}<span class="bi bi-exclamation"></span>{% endif %}</td>
             <td>{{doc.intended_std_level}}</td>
@@ -29,13 +29,13 @@
             <td>{{ad}}</td>
         </tr>
 
-        <tr {% if warn.shepherd %}class="warning"{% endif %}>
+        <tr {% if warn.shepherd %}class="table-warning"{% endif %}>
             <th class="text-nowrap">Document shepherd</th>
             <td>{% if warn.shepherd %}<span class="bi bi-exclamation"></span>{% endif %}</td>
             <td>{% if doc.shepherd %}{{ doc.shepherd.person }}{% endif %}</td>
         </tr>
 
-        <tr {% if warn.shepherd_writeup %}class="warning"{% endif %}>
+        <tr {% if warn.shepherd_writeup %}class="table-warning"{% endif %}>
             <th class="text-nowrap">Shepherd write-up exists</th>
             <td>{% if warn.shepherd_writeup %}<span class="bi bi-exclamation"></span>{% endif %}</td>
             <td>{%if shepherd_writeup %}Yes{%else%}No{%endif%}</td>
@@ -47,7 +47,7 @@
             <td>{% if notify %}{{notify}}{%else%}(None){%endif%}</td>
         </tr>
 
-        <tr {% if warn.tags %}class="warning"{% endif %}>
+        <tr {% if warn.tags %}class="table-warning"{% endif %}>
             <th class="text-nowrap">Annotation tags</th>
             <td>{% if warn.tags %}<span class="bi bi-exclamation"></span>{% endif %}</td>
             <td>{% if not tags %}(None){%else%}{% for tag in tags %}{{ tag }}{% if not forloop.last%}, {%endif%}{% endfor %}{% endif %}</td>
