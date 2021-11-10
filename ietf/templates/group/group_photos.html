@@ -26,7 +26,7 @@
                         <ul class="list-inline">
                             {% regroup role_name.list by person as person_groups %}
                             {% for person_with_groups in person_groups %}
-                                <li>
+                                <li class="list-inline-item">
                                     <a href="{% url 'ietf.person.views.profile' email_or_name=person_with_groups.grouper.name %}">
                                         <div class="well photo-thumbnail">
                                             <div>
