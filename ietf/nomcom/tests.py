@@ -2311,13 +2311,17 @@ class rfc8989EligibilityTests(TestCase):
 
     def setUp(self):
         super().setUp()
-        self.nomcom = NomComFactory(group__acronym='nomcom2021', populate_personnel=False, first_call_for_volunteers=datetime.date(2021,5,15))
+        self.nomcoms = list()
+        self.nomcoms.append(NomComFactory(group__acronym='nomcom2021', populate_personnel=False, first_call_for_volunteers=datetime.date(2021,5,15)))
+        self.nomcoms.append(NomComFactory(group__acronym='nomcom2022', populate_personnel=False, first_call_for_volunteers=datetime.date(2022,5,15)))
         # make_immutable_test_data makes things this test does not want
         Role.objects.filter(name_id__in=('chair','secr')).delete()
 
     def test_elig_by_meetings(self):
 
         meetings = [MeetingFactory(number=number, date=date, type_id='ietf') for number,date in [
+            ('112', datetime.date(2021, 11, 8)),
+            ('111', datetime.date(2021, 7, 26)),
             ('110', datetime.date(2021, 3, 6)),
             ('109', datetime.date(2020, 11, 14)),
             ('108', datetime.date(2020, 7, 25)),
@@ -2325,163 +2329,177 @@ class rfc8989EligibilityTests(TestCase):
             ('106', datetime.date(2019, 11, 16)),
         ]]
 
-        eligible_people = list()
-        ineligible_people = list()
+        for nomcom in self.nomcoms:
+            eligible_people = list()
+            ineligible_people = list()
 
-        for combo_len in range(0,6):
-            for combo in combinations(meetings,combo_len):
-                p = PersonFactory()
-                for m in combo:
-                    MeetingRegistrationFactory(person=p, meeting=m)
-                if combo_len<3:
-                    ineligible_people.append(p)
-                else:
-                    eligible_people.append(p)
+            prev_five = meetings[2:] if nomcom.group.acronym == 'nomcom2021' else meetings[:5]
+            for combo_len in range(0,6):
+                for combo in combinations(prev_five,combo_len):
+                    p = PersonFactory()
+                    for m in combo:
+                        MeetingRegistrationFactory(person=p, meeting=m)
+                    if combo_len<3:
+                        ineligible_people.append(p)
+                    else:
+                        eligible_people.append(p)
 
-        self.assertEqual(set(eligible_people),set(list_eligible(self.nomcom)))
+            self.assertEqual(set(eligible_people),set(list_eligible(nomcom)))
 
-        for person in eligible_people:
-            self.assertTrue(is_eligible(person,self.nomcom))
+            for person in eligible_people:
+                self.assertTrue(is_eligible(person,nomcom))
 
-        for person in ineligible_people:
-            self.assertFalse(is_eligible(person,self.nomcom))
+            for person in ineligible_people:
+                self.assertFalse(is_eligible(person,nomcom))
+
+            Person.objects.filter(pk__in=[p.pk for p in eligible_people+ineligible_people]).delete()
+
 
     def test_elig_by_office_active_groups(self):
 
-        before_elig_date = self.nomcom.first_call_for_volunteers - datetime.timedelta(days=5)
-
-        chair = RoleFactory(name_id='chair',group__time=before_elig_date).person
-
-        secr = RoleFactory(name_id='secr',group__time=before_elig_date).person
-
         nobody=PersonFactory()
+        for nomcom in self.nomcoms:
+            before_elig_date = nomcom.first_call_for_volunteers - datetime.timedelta(days=5)
 
-        self.assertTrue(is_eligible(person=chair,nomcom=self.nomcom))
-        self.assertTrue(is_eligible(person=secr,nomcom=self.nomcom))
-        self.assertFalse(is_eligible(person=nobody,nomcom=self.nomcom))
+            chair = RoleFactory(name_id='chair',group__time=before_elig_date).person
 
-        self.assertEqual(set([chair,secr]), set(list_eligible(nomcom=self.nomcom)))
+            secr = RoleFactory(name_id='secr',group__time=before_elig_date).person
+
+
+            self.assertTrue(is_eligible(person=chair,nomcom=nomcom))
+            self.assertTrue(is_eligible(person=secr,nomcom=nomcom))
+            self.assertFalse(is_eligible(person=nobody,nomcom=nomcom))
+
+            self.assertEqual(set([chair,secr]), set(list_eligible(nomcom=nomcom)))
+            Role.objects.filter(person__in=(chair,secr)).delete()
 
 
     def test_elig_by_office_edge(self):
 
-        elig_date=get_eligibility_date(self.nomcom)
-        day_after = elig_date + datetime.timedelta(days=1)
-        two_days_after = elig_date + datetime.timedelta(days=2)
+        for nomcom in self.nomcoms:
+            elig_date=get_eligibility_date(nomcom)
+            day_after = elig_date + datetime.timedelta(days=1)
+            two_days_after = elig_date + datetime.timedelta(days=2)
 
-        group = GroupFactory(time=two_days_after)
-        GroupHistoryFactory(group=group,time=day_after)
+            group = GroupFactory(time=two_days_after)
+            GroupHistoryFactory(group=group,time=day_after)
 
-        after_chair = RoleFactory(name_id='chair',group=group).person
+            after_chair = RoleFactory(name_id='chair',group=group).person
 
-        self.assertFalse(is_eligible(person=after_chair,nomcom=self.nomcom))
+            self.assertFalse(is_eligible(person=after_chair,nomcom=nomcom))
 
 
     def test_elig_by_office_closed_groups(self):
 
-        elig_date=get_eligibility_date(self.nomcom)
-        day_before = elig_date-datetime.timedelta(days=1)
-        year_before = datetime.date(elig_date.year-1,elig_date.month,elig_date.day)
-        three_years_before = datetime.date(elig_date.year-3,elig_date.month,elig_date.day)
-        just_after_three_years_before = three_years_before + datetime.timedelta(days=1)
-        just_before_three_years_before = three_years_before - datetime.timedelta(days=1)
+        for nomcom in self.nomcoms:
+            elig_date=get_eligibility_date(nomcom)
+            day_before = elig_date-datetime.timedelta(days=1)
+            year_before = datetime.date(elig_date.year-1,elig_date.month,elig_date.day)
+            three_years_before = datetime.date(elig_date.year-3,elig_date.month,elig_date.day)
+            just_after_three_years_before = three_years_before + datetime.timedelta(days=1)
+            just_before_three_years_before = three_years_before - datetime.timedelta(days=1)
 
-        eligible = list()
-        ineligible = list()
+            eligible = list()
+            ineligible = list()
 
-        p1 = RoleHistoryFactory(
-            name_id='chair',
-            group__time=day_before,
-            group__group__state_id='conclude',
-        ).person
-        eligible.append(p1)
+            p1 = RoleHistoryFactory(
+                name_id='chair',
+                group__time=day_before,
+                group__group__state_id='conclude',
+            ).person
+            eligible.append(p1)
 
-        p2 = RoleHistoryFactory(
-            name_id='secr',
-            group__time=year_before,
-            group__group__state_id='conclude',
-        ).person
-        eligible.append(p2)
+            p2 = RoleHistoryFactory(
+                name_id='secr',
+                group__time=year_before,
+                group__group__state_id='conclude',
+            ).person
+            eligible.append(p2)
 
-        p3 = RoleHistoryFactory(
-            name_id='secr',
-            group__time=just_after_three_years_before,
-            group__group__state_id='conclude',
-        ).person
-        eligible.append(p3)
+            p3 = RoleHistoryFactory(
+                name_id='secr',
+                group__time=just_after_three_years_before,
+                group__group__state_id='conclude',
+            ).person
+            eligible.append(p3)
 
-        p4 = RoleHistoryFactory(
-            name_id='chair',
-            group__time=three_years_before,
-            group__group__state_id='conclude',
-        ).person
-        eligible.append(p4)
+            p4 = RoleHistoryFactory(
+                name_id='chair',
+                group__time=three_years_before,
+                group__group__state_id='conclude',
+            ).person
+            eligible.append(p4)
 
-        p5 = RoleHistoryFactory(
-            name_id='chair',
-            group__time=just_before_three_years_before,
-            group__group__state_id='conclude',
-        ).person
-        ineligible.append(p5)
+            p5 = RoleHistoryFactory(
+                name_id='chair',
+                group__time=just_before_three_years_before,
+                group__group__state_id='conclude',
+            ).person
+            ineligible.append(p5)
 
-        for person in eligible:
-            self.assertTrue(is_eligible(person,self.nomcom))
+            for person in eligible:
+                self.assertTrue(is_eligible(person,nomcom))
 
-        for person in ineligible:
-            self.assertFalse(is_eligible(person,self.nomcom))
+            for person in ineligible:
+                self.assertFalse(is_eligible(person,nomcom))
 
-        self.assertEqual(set(list_eligible(nomcom=self.nomcom)),set(eligible))
+            self.assertEqual(set(list_eligible(nomcom=nomcom)),set(eligible))
+
+            Person.objects.filter(pk__in=[p.pk for p in eligible+ineligible]).delete()
+
 
 
     def test_elig_by_author(self):
 
-        elig_date = get_eligibility_date(self.nomcom)
+        for nomcom in self.nomcoms:
+            elig_date = get_eligibility_date(nomcom)
 
-        last_date = elig_date
-        first_date = datetime.date(last_date.year-5,last_date.month,last_date.day)
-        day_after_last_date = last_date+datetime.timedelta(days=1)
-        day_before_first_date = first_date-datetime.timedelta(days=1)
-        middle_date = datetime.date(last_date.year-3,last_date.month,last_date.day)
+            last_date = elig_date
+            first_date = datetime.date(last_date.year-5,last_date.month,last_date.day)
+            day_after_last_date = last_date+datetime.timedelta(days=1)
+            day_before_first_date = first_date-datetime.timedelta(days=1)
+            middle_date = datetime.date(last_date.year-3,last_date.month,last_date.day)
 
-        eligible = set()
-        ineligible = set()
+            eligible = set()
+            ineligible = set()
 
-        p = PersonFactory()
-        ineligible.add(p)
+            p = PersonFactory()
+            ineligible.add(p)
 
-        p = PersonFactory()
-        da = WgDocumentAuthorFactory(person=p)
-        DocEventFactory(type='published_rfc',doc=da.document,time=middle_date)
-        ineligible.add(p)
+            p = PersonFactory()
+            da = WgDocumentAuthorFactory(person=p)
+            DocEventFactory(type='published_rfc',doc=da.document,time=middle_date)
+            ineligible.add(p)
 
-        p = PersonFactory()
-        da = WgDocumentAuthorFactory(person=p)
-        DocEventFactory(type='iesg_approved',doc=da.document,time=last_date)
-        da = WgDocumentAuthorFactory(person=p)
-        DocEventFactory(type='published_rfc',doc=da.document,time=first_date)
-        eligible.add(p)
+            p = PersonFactory()
+            da = WgDocumentAuthorFactory(person=p)
+            DocEventFactory(type='iesg_approved',doc=da.document,time=last_date)
+            da = WgDocumentAuthorFactory(person=p)
+            DocEventFactory(type='published_rfc',doc=da.document,time=first_date)
+            eligible.add(p)
 
-        p = PersonFactory()
-        da = WgDocumentAuthorFactory(person=p)
-        DocEventFactory(type='iesg_approved',doc=da.document,time=middle_date)
-        da = WgDocumentAuthorFactory(person=p)
-        DocEventFactory(type='published_rfc',doc=da.document,time=day_before_first_date)
-        ineligible.add(p)
+            p = PersonFactory()
+            da = WgDocumentAuthorFactory(person=p)
+            DocEventFactory(type='iesg_approved',doc=da.document,time=middle_date)
+            da = WgDocumentAuthorFactory(person=p)
+            DocEventFactory(type='published_rfc',doc=da.document,time=day_before_first_date)
+            ineligible.add(p)
 
-        p = PersonFactory()
-        da = WgDocumentAuthorFactory(person=p)
-        DocEventFactory(type='iesg_approved',doc=da.document,time=day_after_last_date)
-        da = WgDocumentAuthorFactory(person=p)
-        DocEventFactory(type='published_rfc',doc=da.document,time=middle_date)
-        ineligible.add(p)
+            p = PersonFactory()
+            da = WgDocumentAuthorFactory(person=p)
+            DocEventFactory(type='iesg_approved',doc=da.document,time=day_after_last_date)
+            da = WgDocumentAuthorFactory(person=p)
+            DocEventFactory(type='published_rfc',doc=da.document,time=middle_date)
+            ineligible.add(p)
 
-        for person in eligible:
-            self.assertTrue(is_eligible(person,self.nomcom))
+            for person in eligible:
+                self.assertTrue(is_eligible(person,nomcom))
 
-        for person in ineligible:
-            self.assertFalse(is_eligible(person,self.nomcom))
+            for person in ineligible:
+                self.assertFalse(is_eligible(person,nomcom))
 
-        self.assertEqual(set(list_eligible(nomcom=self.nomcom)),set(eligible))
+            self.assertEqual(set(list_eligible(nomcom=nomcom)),set(eligible))
+            Person.objects.filter(pk__in=[p.pk for p in eligible.union(ineligible)]).delete()
 
 class VolunteerTests(TestCase):
 

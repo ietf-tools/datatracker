@@ -495,7 +495,7 @@ def list_eligible(nomcom=None, date=None, base_qs=None):
         return list_eligible_8713(date=eligibility_date, base_qs=base_qs)
     elif eligibility_date.year == 2020:
         return list_eligible_8788(date=eligibility_date, base_qs=base_qs)
-    elif eligibility_date.year == 2021:
+    elif eligibility_date.year in (2021,2022):
         return list_eligible_8989(date=eligibility_date, base_qs=base_qs)
     else:
         return Person.objects.none()
@@ -504,7 +504,7 @@ def decorate_volunteers_with_qualifications(volunteers, nomcom=None, date=None, 
     if not base_qs:
         base_qs = Person.objects.all()
     eligibility_date = get_eligibility_date(nomcom, date)
-    if eligibility_date.year == 2021:
+    if eligibility_date.year in (2021,2022):
         three_of_five_qs, officer_qs, author_qs = get_8989_eligibility_querysets(eligibility_date, base_qs)
         for v in volunteers:
             qualifications = []
