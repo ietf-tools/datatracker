@@ -20,8 +20,8 @@
 
         {% regroup nominees_feedback by nominee.staterank as stateranked_nominees %}
         {% for staterank in stateranked_nominees %}
-            <div class="panel panel-default">
-                <div class="panel-heading">
+            <div class="panel ">
+                <div class="card-header">
                     {% if staterank.grouper == 0 %}
                         <h6 class="anchor-target" id="accepted">Accepted nomination for at least one position</h6>
                     {% elif staterank.grouper == 1 %}
@@ -30,7 +30,7 @@
                         <h6 class="anchor-target" id="declined">Declined each nominated position</h6>
                     {% endif %}
                 </div>
-                <div class="panel-body">
+                <div class="card-body">
                     <table class="table table-sm table-striped tablesorter">
                         <thead>
                             <tr>
@@ -70,8 +70,8 @@
 
         <h2 class="anchor-target" id="topics">Feedback related to topics</h2>
 
-        <div class="panel panel-default">
-            <div class="panel-body">
+        <div class="panel ">
+            <div class="card-body">
                 <table class="table table-sm table-striped">
                     <thead>
                         <tr>

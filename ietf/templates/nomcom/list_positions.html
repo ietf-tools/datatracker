@@ -16,9 +16,9 @@
     {% if positions %}
         {% regroup positions by is_open as posgroups %}
         {% for group in posgroups %}
-            <div class="panel panel-default">
-                <div class="panel-heading"><h3>{{ group.grouper| yesno:"Open Positions,Closed Positions"}}</h3></div>
-                <div class="panel-body">
+            <div class="panel ">
+                <div class="card-header"><h3>{{ group.grouper| yesno:"Open Positions,Closed Positions"}}</h3></div>
+                <div class="card-body">
                     {% for position in group.list %}
                         <h4>{{ position.name }}{% if position.is_iesg_position %} (IESG){% endif %}</h4>
                         {% if group.grouper %}

@@ -37,8 +37,8 @@
         {% bootstrap_form formset.management_form %}
         <div id="authors-list" class="well">
             {% for form in formset %}
-                <div class="panel panel-default author-panel">
-                    <div class="panel-body draggable">
+                <div class="panel  author-panel">
+                    <div class="card-body draggable">
                         <span class="handle bi bi-list"></span>
                         <div class="form-horizontal">
                             {% bootstrap_form form layout='horizontal' %}
@@ -48,8 +48,8 @@
             {% endfor %}
         </div>
         <div id="empty-author-form" class="template">
-            <div class="panel panel-default author-panel">
-                <div class="panel-body draggable">
+            <div class="panel  author-panel">
+                <div class="card-body draggable">
                     <span class="handle bi bi-list"></span>
                     <div class="form-horizontal">
                         {% bootstrap_form formset.empty_form layout='horizontal' %}

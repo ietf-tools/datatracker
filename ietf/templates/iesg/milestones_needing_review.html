@@ -3,7 +3,7 @@
 {% load origin %}
 
 {% block morecss %}
-    .panel-heading {font-size:150%; }
+    .card-header {font-size:150%; }
 {% endblock morecss %}
 
 {% block title %}Milestones under review{% endblock %}
@@ -13,9 +13,9 @@
     <h1>Milestones under review</h1>
 
     {% for ad in ads %}
-        <div class="panel panel-default">
-            <div class="panel-heading">{{ ad.plain_name }}</div>
-            <div class="panel-body">
+        <div class="panel ">
+            <div class="card-header">{{ ad.plain_name }}</div>
+            <div class="card-body">
                 {% for g in ad.groups_needing_review %}
                     <h3>{{ g.name }} ({{ g.acronym }})</h3>
                     {% include "group/milestones.html" with milestones=g.milestones_needing_review %}

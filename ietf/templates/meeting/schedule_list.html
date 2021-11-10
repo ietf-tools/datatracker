@@ -11,8 +11,8 @@
 
     <div>
         {% for schedules, own, label in schedule_groups %}
-            <div class="panel panel-default">
-                <div class="panel-heading">
+            <div class="panel ">
+                <div class="card-header">
                     {{ label }}
                     {% if own %}
                         <div class="float-end" >
@@ -20,7 +20,7 @@
                         </div>
                     {% endif %}
                 </div>
-                <div class="panel-body">
+                <div class="card-body">
                     <table class="table table-sm table-striped">
                         <tr>
                             <th class="col-md-2">Name</th>

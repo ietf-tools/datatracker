@@ -17,9 +17,9 @@
     {% regroup volunteers by eligible as volunteers_by_eligibility %}
 
     {% for eligibility_group in volunteers_by_eligibility %}
-        <div class="panel panel-default">
-            <div class="panel-heading">{{ eligibility_group.grouper|yesno:"Eligible, Not Eligible"}}</div>
-            <div class="panel-body">
+        <div class="panel ">
+            <div class="card-header">{{ eligibility_group.grouper|yesno:"Eligible, Not Eligible"}}</div>
+            <div class="card-body">
                 <table class="table table-sm table-striped tablesorter">
                     <thead>
                         <th></th>

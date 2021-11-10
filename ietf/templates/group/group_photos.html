@@ -20,9 +20,9 @@
     <div class="col-md-10">
         {% for role_name in role_groups %}
             <div class="row anchor-target" id="{{role_name.grouper|urlencode}}">
-                <div class="panel panel-default">
-                    <div class="panel-heading">{{role_name.grouper}}{{role_name.list|pluralize}}</div>
-                    <div class="panel-body">
+                <div class="panel ">
+                    <div class="card-header">{{role_name.grouper}}{{role_name.list|pluralize}}</div>
+                    <div class="card-body">
                         <ul class="list-inline">
                             {% regroup role_name.list by person as person_groups %}
                             {% for person_with_groups in person_groups %}

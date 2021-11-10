@@ -164,9 +164,9 @@
         {% endif %}
     {% endif %}
 
-    <div class="panel panel-default">
-        <div class="panel-heading">{{doc.name}}-{{doc.rev}}</div>
-        <div class="panel-body">
+    <div class="panel ">
+        <div class="card-header">{{doc.name}}-{{doc.rev}}</div>
+        <div class="card-body">
             {{ content|sanitize|safe }}
         </div>
     </div>

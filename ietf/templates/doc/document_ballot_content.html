@@ -83,9 +83,9 @@
                         </span>
                     </h4>
                     {% if p.pos.blocking and p.discuss %}
-                        <div class="panel panel-danger">
-                            <div class="panel-heading">
-                                <h5 class="panel-title"><b>{{ p.pos.name }}</b> ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev }}{% endif %})
+                        <div class="card border-danger">
+                            <div class="card-header bg-danger">
+                                <div><b>{{ p.pos.name }}</b> ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev }}{% endif %})
                                     {% if p.send_email %}
                                         <span class="bi bi-envelope float-end" title="Email requested to be sent for this discuss"></span>
                                     {% elif p.any_email_sent == True %}
@@ -95,16 +95,16 @@
                                     {% else %}
                                         <span class="bi bi-chat-o float-end" title="No email send requests for this discuss"></span>
                                     {% endif %}
-                                </h5>
+                                </div>
                             </div>
-                            <div class="panel-body"><pre class="ballot pasted">{{ p.discuss|linkify }}</pre></div>
+                            <div class="card-body"><pre class="ballot pasted">{{ p.discuss|linkify }}</pre></div>
                         </div>
                     {% endif %}
 
                     {% if p.comment %}
-                        <div class="panel panel-{{ p.pos|pos_to_label }}">
-                            <div class="panel-heading">
-                                <h5 class="panel-title"><b>Comment</b> ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev }}{% endif %})
+                        <div class="card border-{{ p.pos|pos_to_label }}">
+                            <div class="card-header bg-{{ p.pos|pos_to_label }}">
+                                <div><b>Comment</b> ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev }}{% endif %})
                                     {% if p.send_email %}
                                         <span class="bi bi-envelope float-end" title="Email requested to be sent for this comment"></span>
                                     {% elif p.any_email_sent == True %}
@@ -112,11 +112,11 @@
                                     {% elif p.any_email_sent == False %}
                                         <span class="bi bi-chat-o float-end" title="No email send requests for this comment"></span>
                                     {% else %}
-                                        <div class="float-end small italic" style="margin-top: -0.3em;" title="No ballot position send log available">No email<br/>send info</div>
+                                        <div class="float-end small italic" title="No ballot position send log available">No email<br/>send info</div>
                                     {% endif %}
-                                </h5>
+                                </div>
                             </div>
-                            <div class="panel-body"><pre class="ballot pasted">{{ p.comment|linkify }}</pre></div>
+                            <div class="card-body"><pre class="ballot pasted">{{ p.comment|linkify }}</pre></div>
                         </div>
                     {% endif %}
                 {% endif %}
@@ -136,9 +136,9 @@
                             {% endif %}
                         </span>
                     </h4>
-                    <div class="panel panel-{{ p.pos|pos_to_label }}">
-                        <div class="panel-heading">
-                            <h5 class="panel-title"><b>{{ p.pos.name }} </b>
+                    <div class="card border-{{ p.pos|pos_to_label }}">
+                        <div class="card-header bg-{{ p.pos|pos_to_label }}">
+                            <div><b>{{ p.pos.name }} </b>
                                 {% if p.pos.blocking and p.discuss %}
                                     <b>[Treat as non-blocking comment]</b> ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev }}{% endif %})
                                 {% else %}
@@ -151,14 +151,14 @@
                                 {% elif p.any_email_sent == False %}
                                     <span class="bi bi-chat-o float-end" title="No email send requests for this ballot position"></span>
                                 {% else %}
-                                    <div class="float-end small italic" style="margin-top: -0.3em;" title="No ballot position send log available">No email<br/>send info</div>
+                                    <div class="float-end small italic" title="No ballot position send log available">No email<br/>send info</div>
                                 {% endif %}
-                            </h5>
+                            </div>
                         </div>
                         {% if p.pos.blocking and p.discuss %}
-                            <div class="panel-body"><pre class="ballot pasted">{{ p.discuss|linkify }}</pre></div>
+                            <div class="card-body"><pre class="ballot pasted">{{ p.discuss|linkify }}</pre></div>
                         {% else %}
-                            <div class="panel-body"><pre class="ballot pasted">{{ p.comment|linkify }}</pre></div>
+                            <div class="card-body"><pre class="ballot pasted">{{ p.comment|linkify }}</pre></div>
                         {% endif %}
                     </div>
                 {% endif %}

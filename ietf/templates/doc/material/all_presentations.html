@@ -15,9 +15,9 @@
     </div>
 
     {% if in_progress %}
-        <div class="panel panel-default" id="inprogressmeets">
-            <div class="panel-heading">Meetings in progress</div>
-            <div class="panel-body">
+        <div class="panel " id="inprogressmeets">
+            <div class="card-header">Meetings in progress</div>
+            <div class="card-body">
                 {% with sessions=in_progress %}
                     {% include "doc/material/presentations-row.html" %}
                 {% endwith %}
@@ -26,9 +26,9 @@
     {% endif %}
 
     {% if future %}
-        <div class="panel panel-default" id="futuremeets">
-            <div class="panel-heading">Future meetings</div>
-            <div class="panel-body">
+        <div class="panel " id="futuremeets">
+            <div class="card-header">Future meetings</div>
+            <div class="card-body">
                 {% with sessions=future %}
                     {% include "doc/material/presentations-row.html" %}
                 {% endwith %}
@@ -37,9 +37,9 @@
     {% endif %}
 
     {% if past %}
-        <div class="panel panel-default" id="pastmeets">
-            <div class="panel-heading">Past meetings</div>
-            <div class="panel-body">
+        <div class="panel " id="pastmeets">
+            <div class="card-header">Past meetings</div>
+            <div class="card-body">
                 {% with sessions=past %}
                     {% include "doc/material/presentations-row.html" %}
                 {% endwith %}

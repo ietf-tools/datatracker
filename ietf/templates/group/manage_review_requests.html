@@ -32,10 +32,10 @@
         <form class="review-requests" method="post">{% csrf_token %}
 
             {% for r in review_requests %}
-                <div class="panel panel-default review-request">
-                    <div class="panel-heading">
+                <div class="panel  review-request">
+                    <div class="card-header">
 
-                        <h3 class="panel-title">
+                        <h5 class="card-title">
                             <span class="float-end">
                                 {% if r.in_lc_and_telechat %}Last Call and telechat{% else %}{{ r.type.name }}{% endif %}
                                 - deadline {{ r.deadline|date:"Y-m-d" }}
@@ -43,10 +43,10 @@
                             </span>
 
                             <a href="{% if r.requested_rev %}{% url "ietf.doc.views_doc.document_main" name=r.doc.name rev=r.requested_rev %}{% else %}{% url "ietf.doc.views_doc.document_main" name=r.doc.name %}{% endif %}?include_text=1">{{ r.doc.name }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}</a>
-                        </h3>
+                        </h5>
                     </div>
 
-                    <div class="panel-body">
+                    <div class="card-body">
                         <div class="row">
                             <div class="col-sm-6">
                                 <div class="request-metadata">
@@ -107,7 +107,7 @@
                         </div>
                     </div>
 
-                    <div class="panel-footer">
+                    <div>
                         {% if r.form.non_field_errors %}
                             <div class="alert alert-danger">
                                 {% for e in r.form.non_field_errors %}

@@ -116,9 +116,9 @@
 
                     </form>
                     {% if form.topic %}
-                        <div class="panel panel-default">
-                            <div class="panel-heading">Description: {{form.topic.subject}}</div>
-                            <div class="panel-body">{{form.topic.get_description|safe}}</div>
+                        <div class="panel ">
+                            <div class="card-header">Description: {{form.topic.subject}}</div>
+                            <div class="card-body">{{form.topic.get_description|safe}}</div>
                         </div>
                     {% endif %}
                 {% endif %}

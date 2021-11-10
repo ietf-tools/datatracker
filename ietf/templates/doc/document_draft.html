@@ -725,35 +725,34 @@
 
     {% else %}
         <p></p>
-        <div class="panel panel-warning">
-            <div class="panel-heading">
+        <div class="card border-warning">
+            <div class="card-header bg-warning">
                 This Internet-Draft is no longer active. A copy of
                 the expired Internet-Draft can be found at<br/>
                 <a href="{{doc.get_href}}">{{doc.get_href}}</a>
             </div>
-            <div class="panel-body">
-                <p>
+            <div class="card-body">
 
-                    <h4>Abstract</h4>
-                    <p>{{ doc.abstract }}</p>
+                <h5 class="card-title">Abstract</h5>
+                <p class="card-text">{{ doc.abstract }}</p>
 
-                    <h4>Authors</h4>
-                    <p>
-                        {% for author in doc.documentauthor_set.all %}
-                            {% if author.email %}
-                                <span class="bi bi-envelope"></span>
-                                <a href="mailto:{{ author.email.address }}">
-                            {% endif %}
-                            {{ author.person }}
-                            {% if author.email %}
-                                ({{ author.email.address }})</a>
-                            {% endif %}
-                            {% if not forloop.last %}<br>{% endif %}
-                        {% endfor %}
-                    </p>
-                    <p>(Note: The e-mail addresses provided for the authors of this Internet-Draft may no longer be valid.)</p>
-                </div>
+                <h5 class="card-title">Authors</h5>
+                <p class="card-text">
+                    {% for author in doc.documentauthor_set.all %}
+                        {% if author.email %}
+                            <span class="bi bi-envelope"></span>
+                            <a href="mailto:{{ author.email.address }}">
+                        {% endif %}
+                        {{ author.person }}
+                        {% if author.email %}
+                            ({{ author.email.address }})</a>
+                        {% endif %}
+                        {% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </p>
+                <p class="card-text">(Note: The e-mail addresses provided for the authors of this Internet-Draft may no longer be valid.)</p>
             </div>
+        </div>
     {% endif %}
 {% endblock %}
 

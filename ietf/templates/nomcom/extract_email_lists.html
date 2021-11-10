@@ -18,9 +18,9 @@
     {% with title='Accepted Nominees Without a Questionnaire Response' list=noresp %}
         {% include 'nomcom/email_list_panel.html' %}
     {% endwith %}
-    <div class="panel panel-default">
-        <div class="panel-heading"><h3>Accepted Nominees by Position</h3></div>
-        <div class="panel-body">
+    <div class="panel ">
+        <div class="card-header"><h3>Accepted Nominees by Position</h3></div>
+        <div class="card-body">
             {% for pos, accepts in bypos.items %}
                 {% with title=pos.name list=accepts %}
                     {% include 'nomcom/email_list_panel.html' %}

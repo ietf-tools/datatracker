@@ -497,14 +497,14 @@ def pos_to_label(text):
     """Return a valid Bootstrap label type for a ballot position."""
     return {
         'Yes':          'success',
-        'No Objection': 'pass',
+        'No Objection': 'info',
         'Abstain':      'warning',
         'Discuss':      'danger',
         'Block':        'danger',
         'Recuse':       'primary',
         'Not Ready':    'danger',
         'Need More Time': 'danger',
-    }.get(str(text), 'blank')
+    }.get(str(text), 'secondary')
 
 @register.filter
 def capfirst_allcaps(text):

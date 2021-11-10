@@ -5097,12 +5097,12 @@ class AgendaFilterTests(TestCase):
         # Test with/without custom button text
         context = Context({'customize_button_text': None, 'filter_categories': []})
         q = PyQuery(template.render(context))
-        self.assertIn('Customize...', q('h4.panel-title').text())
+        self.assertIn('Customize...', q('h4.card-title').text())
         self.assertEqual(q('table'), [])  # no filter_categories, so no button table
 
         context['customize_button_text'] = 'My custom text...'
         q = PyQuery(template.render(context))
-        self.assertIn(context['customize_button_text'], q('h4.panel-title').text())
+        self.assertIn(context['customize_button_text'], q('h4.card-title').text())
         self.assertEqual(q('table'), [])  # no filter_categories, so no button table
         
         # Now add a non-trivial set of filters
@@ -5176,7 +5176,7 @@ class AgendaFilterTests(TestCase):
         ]
 
         q = PyQuery(template.render(context))
-        self.assertIn(context['customize_button_text'], q('h4.panel-title').text())
+        self.assertIn(context['customize_button_text'], q('h4.card-title').text())
         self.assertNotEqual(q('table'), [])  # should now have table
         
         # Check that buttons are present for the expected things

@@ -18,11 +18,11 @@
     {% origin %}
 
     {% if in_progress %}
-        <div class="panel panel-default" id="inprogressmeets">
-            <div class="panel-heading">
+        <div class="card" id="inprogressmeets">
+            <div class="card-header">
                 Meetings in progress
             </div>
-            <div class="panel-body">
+            <div class="card-body">
                 {% with sessions=in_progress show_request=True show_ical=True can_edit_materials=can_edit %}
                     {% include "group/meetings-row.html" %}
                 {% endwith %}
@@ -31,12 +31,12 @@
     {% endif %}
 
     {% if future %}
-        <div class="panel panel-default" id="futuremeets">
-            <div class="panel-heading">
+        <div class="card" id="futuremeets">
+            <div class="card-header">
                 Future Meetings
                 <a class="regular float-end" title="icalendar entry for all scheduled future {{group.acronym}} meetings" href="{% url 'ietf.meeting.views.upcoming_ical' %}?show={{group.acronym}}"><span class="bi bi-calendar"></span></a>
             </div>
-            <div class="panel-body">
+            <div class="card-body">
                 {% with sessions=future show_request=True show_ical=True can_edit_materials=can_edit %}
                     {% include "group/meetings-row.html" %}
                 {% endwith %}
@@ -45,14 +45,16 @@
     {% endif %}
 
     {% if past or recent %}
-        <div class="panel panel-default" id="pastmeets">
-            <div class="panel-heading">
+        <div class="card" id="pastmeets">
+            <div class="card-header">
                 Past Meetings
             </div>
-            <div class="panel-body">
-                {% with sessions=recent can_edit_materials=can_edit %}
-                    {% include "group/meetings-row.html" %}
-                {% endwith %}
+            <div class="card-body">
+                {% if can_edit %}
+                    {% with sessions=recent can_edit_materials=can_edit %}
+                        {% include "group/meetings-row.html" %}
+                    {% endwith %}
+                {% endif %}
                 {% with sessions=past can_edit_materials=False %}
                     {% include "group/meetings-row.html" %}
                 {% endwith %}
@@ -60,6 +62,6 @@
         </div>
     {% endif %}
 
-    <div>This page shows meetings within the last four years. For earlier meetings, please see the proceedings.</div>
+    <p>This page shows meetings within the last four years. For earlier meetings, please see the proceedings.</p>
 
 {% endblock %}

@@ -19,9 +19,9 @@
     {% endif %}
 
     <div class="alert alert-info">This form will link additional drafts to this session with a revision of "Current at time of presentation". For more fine grained control of versions, or to remove a draft from a session, adjust the sessions associated with a draft from the draft's main page.</div>
-    <div class="panel panel-default">
-        <div class="panel-heading">Drafts already linked to this sesssion</div>
-        <div class="panel-body">
+    <div class="panel ">
+        <div class="card-header">Drafts already linked to this sesssion</div>
+        <div class="card-body">
             <table class="table table-sm table-striped">
                 <tr>
                     <th class="col-md-1">Revision</th>
@@ -37,9 +37,9 @@
         </div>
     </div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading">Additional drafts to link to this session</div>
-        <div class="panel-body">
+    <div class="panel ">
+        <div class="card-header">Additional drafts to link to this session</div>
+        <div class="card-body">
             <form method="post">
                 {% csrf_token %}
                 {% bootstrap_form form %}

@@ -31,9 +31,9 @@
 
         {% for label, groups in sections.items %}
             <div class="anchor-target" id="{{label}}">
-                <div class="panel panel-default">
-                    <div class="panel-heading">{{label}}</div>
-                    <div class="panel-body">
+                <div class="panel ">
+                    <div class="card-header">{{label}}</div>
+                    <div class="card-body">
 
                         {% if label == "WGs" %}
                             {% comment "Replace this if that tools page is moved" %}
@@ -56,9 +56,9 @@
                             {% regroup groups by parent as grouped_by_areas %}
                             {% for area_grouping in grouped_by_areas %}
                                 <div class="anchor-target" id="{{label}}-{{area_grouping.grouper.name|default:'unknown'|slugify}}">
-                                    <div class="panel panel-default">
-                                        <div class="panel-heading">{{area_grouping.grouper.name|default:'Unknown area'}}</div>
-                                        <div class="panel-body">
+                                    <div class="panel ">
+                                        <div class="card-header">{{area_grouping.grouper.name|default:'Unknown area'}}</div>
+                                        <div class="card-body">
                                             <table class="table table-sm table-striped tablesorter">
                                                 <thead>
                                                     <tr>

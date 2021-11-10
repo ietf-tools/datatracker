@@ -133,8 +133,8 @@
     <div id='materials-content'>
         {% if doc.rev and content != None %}
             {% if content_is_html %}
-                <div class="panel panel-default">
-                    <div class="panel-body">
+                <div class="panel ">
+                    <div class="card-body">
                         {{ content|sanitize|safe }}
                     </div>
                 </div>

@@ -52,9 +52,9 @@
             </div>
         {% endif %}
 
-        <div class="panel panel-default">
-            <div class="panel-heading">Agenda, Minutes, and Bluesheets</div>
-            <div class="panel-body">
+        <div class="panel ">
+            <div class="card-header">Agenda, Minutes, and Bluesheets</div>
+            <div class="card-body">
                 <table class="table table-sm table-striped">
                     {% for pres in session.filtered_artifacts %}
                         <tr>
@@ -93,9 +93,9 @@
                 {% endif %}
             </div>
         </div>
-        <div class="panel panel-default">
-            <div class="panel-heading" data-toggle="tooltip" title="Drag and drop to reorder slides">Slides</div>
-            <div class="panel-body">
+        <div class="panel ">
+            <div class="card-header" data-toggle="tooltip" title="Drag and drop to reorder slides">Slides</div>
+            <div class="card-body">
                 <table class="table table-sm table-striped slides" id="slides_{{session.pk}}">
                     <tbody session="{{session.pk}}" addToSession="{% url 'ietf.meeting.views.ajax_add_slides_to_session' session_id=session.pk num=session.meeting.number %}" removeFromSession="{% url 'ietf.meeting.views.ajax_remove_slides_from_session' session_id=session.pk num=session.meeting.number %}" reorderInSession="{% url 'ietf.meeting.views.ajax_reorder_slides_in_session' session_id=session.pk num=session.meeting.number %}">
                         {% for pres in session.filtered_slides %}
@@ -122,13 +122,13 @@
                 {% endif %}
             </div>
             {% if can_manage_materials %}
-                <div class="panel-footer small">Drag-and-drop to reorder slides</div>
+                <div class="small">Drag-and-drop to reorder slides</div>
             {% endif %}
         </div>
-        <div class="panel panel-default">
-            <div class="panel-heading">Drafts
+        <div class="panel ">
+            <div class="card-header">Drafts
             </div>
-            <div class="panel-body">
+            <div class="card-body">
                 <table class="table table-sm table-striped">
                     {% for pres in session.filtered_drafts %}
                         <tr>

@@ -79,7 +79,7 @@
         <div class="scheduling-panel" style="{% if not edit_timeslot_form and not add_timeslot_form %}display:none{% endif %}">
             <i class="close bi bi-x float-end"></i>
 
-            <div class="panel-content">
+            <div class="card-content">
                 {% if edit_timeslot_form %}
                     {% include "meeting/edit_timeslot_form.html" with timeslot_form_action='edit' timeslot_form=edit_timeslot_form %}
                 {% elif add_timeslot_form %}

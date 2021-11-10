@@ -15,18 +15,16 @@
         </span>
     </div> <!-- search_field -->
 
-    <div class="panel-group" id="accordion1">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <p class="panel-title toggle_advanced">
-                    <a data-toggle="collapse" data-parent="#accordion1" href="#searchcollapse">
-                        <span class="bi bi-caret-down"></span> Additional search criteria
-                    </a>
-                </p>
-            </div>
-            <div id="searchcollapse" class="panel-collapse collapse visible-nojs">
-                <div class="panel-body">
+    <div class="accordion" id="accordion1">
 
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading1">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#searchcollapse" aria-expanded="false" aria-controls="searchcollapse">
+                    Additional search criteria
+                </button>
+            </h2>
+            <div id="searchcollapse" class="accordion-collapse collapse" aria-labelledby="heading1" data-bs-parent="#accordion1">
+                <div class="accordion-body">
 
                     <div class="form-group search_field">
                         <div class="col-sm-4">
@@ -64,8 +62,6 @@
                         </div>
                     </div>
 
-
-
                     <div class="form-group search_field">
                         <div class="col-md-offset-4 col-sm-4">
                             <button id="search-clear-btn" class="btn btn-primary btn-block" type="button">Clear</button>
@@ -80,6 +76,5 @@
                 </div>
             </div>
         </div>
-    </div> <!-- accordian1 -->
+    </div>
 </form>
-

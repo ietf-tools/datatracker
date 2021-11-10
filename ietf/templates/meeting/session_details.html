@@ -30,17 +30,17 @@
 
     {% with use_panels=unscheduled_sessions %}
         {% if use_panels %}
-            <div class="panel panel-default">
-                <div class="panel-heading">Scheduled Sessions</div>
-                <div class="panel-body">
+            <div class="panel ">
+                <div class="card-header">Scheduled Sessions</div>
+                <div class="card-body">
         {% endif %}
         {% include 'meeting/session_details_panel.html' with sessions=scheduled_sessions %}
         {% if use_panels %}
             </div>
             </div>
-            <div class="panel panel-warning">
-                <div class="panel-heading">Unscheduled Sessions</div>
-                <div class="panel-body">
+            <div class="card border-warning">
+                <div class="card-header bg-warning">Unscheduled Sessions</div>
+                <div class="card-body">
         {% endif %}
         {% include 'meeting/session_details_panel.html' with sessions=unscheduled_sessions %}
         {% if use_panels %}
@@ -50,9 +50,9 @@
     {% endwith %}
 
     {% if pending_suggestions %}
-        <div class="panel panel-info">
-            <div class="panel-heading">{% if can_manage_materials %}Proposed slides awaiting your approval{% else %}Your proposed slides awaiting chair approval{% endif %}</div>
-            <div id="proposedslidelist" class="panel-body">
+        <div class="card border-info">
+            <div class="card-header bg-info">{% if can_manage_materials %}Proposed slides awaiting your approval{% else %}Your proposed slides awaiting chair approval{% endif %}</div>
+            <div id="proposedslidelist" class="card-body">
                 {% for s in pending_suggestions %}
                     {% if can_manage_materials %}
                         <p><a href="{% url "ietf.meeting.views.approve_proposed_slides" slidesubmission_id=s.pk num=s.session.meeting.number %}">{{s.submitter}} - {{s.title}} ({{s.time}})</a></p>

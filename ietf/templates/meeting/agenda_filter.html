@@ -7,23 +7,17 @@ Optional parameters:
   customize_button_text - text to show on the "Customize" button (defaults to "Customize...")
 {% endcomment %}
 {% load agenda_filter_tags %}
-<div class="panel-group" id="accordion">
-    <div class="panel panel-default">
-        {% if not always_show %}
-            <div class="panel-heading">
-                <h4 class="panel-title">
-                    <a data-toggle="collapse" data-parent="#accordion" href="#customize">
-                        <span class="bi bi-caret-down"></span> {% firstof customize_button_text "Customize..."%}
-                    </a>
-                </h4>
-            </div>
-        {% endif %}
-        <div id="customize" class="{% if not always_show %}panel-collapse collapse{% endif %}">
-            <span hidden {# options to pass to the JS - correspond to keys in opts object #}
-                id="agenda-filter-options"
-                data-always-show="{% firstof always_show False %}">
-            </span>
-            <div class="panel-body">
+
+<div class="accordion" id="accordion">
+
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="heading">
+            <button class="accordion-button {% if not always_show %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse" aria-expanded="{% if not always_show %}false{% else %}true{% endif %}" aria-controls="collapse">
+                {% firstof customize_button_text "Customize..."%}
+            </button>
+        </h2>
+        <div id="collapse" class="accordion-collapse collapse" aria-labelledby="heading" data-bs-parent="#accordion">
+            <div class="accordion-body">
 
                 <p>
                     You can customize the agenda view to show only selected sessions,
@@ -89,6 +83,7 @@ Optional parameters:
                     <blockquote><i>No WG / RG data available -- no WG / RG sessions have been scheduled yet.</i>
                     </blockquote>
                 {% endif %}
+
             </div>
         </div>
     </div>

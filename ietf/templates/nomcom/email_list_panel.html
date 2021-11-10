@@ -1,6 +1,6 @@
-<div class="panel panel-default">
-    <div class="panel-heading"><h3>{{title}}</h3></div>
-    <div class="panel-body">
+<div class="panel ">
+    <div class="card-header"><h3>{{title}}</h3></div>
+    <div class="card-body">
         {% for n in list %}{{n.email.address}}{% if not forloop.last %}, {%endif %}{% endfor %}
     </div>
 </div>
