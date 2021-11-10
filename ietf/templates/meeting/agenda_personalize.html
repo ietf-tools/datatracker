@@ -175,7 +175,7 @@
                                                     <a
                                                         href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{ floor.name|xslugify }}"
                                                         class="float-end" title="{{ floor.name }}"><span
-                                                            class="label label-blank label-wide">{{ floor.short }}</span></a>
+                                                            class="badge bg-blank label-wide">{{ floor.short }}</span></a>
                                                 </span>
                                             {% endif %}
                                         {% endwith %}
@@ -191,7 +191,7 @@
                                     {% endif %}
 
                                     {% if item.session.current_status == 'canceled' %}
-                                        <span class="label label-danger float-end">CANCELLED</span>
+                                        <span class="badge bg-danger float-end">CANCELLED</span>
                                     {% endif %}
                                 </td>
                                 <td class="rightmarker"></td>
@@ -248,7 +248,7 @@
                                                         <a
                                                             href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}#{{ floor.name|xslugify }}"
                                                             class="float-end" title="{{ floor.name }}"><span
-                                                                class="label label-blank">{{ floor.short }}</span></a>
+                                                                class="badge bg-blank">{{ floor.short }}</span></a>
                                                     </span>
                                                 {% endif %}
                                             {% endwith %}
@@ -294,15 +294,15 @@
                                         {% endif %}
 
                                         {% if item.session.current_status == 'canceled' %}
-                                            <span class="label label-danger float-end">CANCELLED</span>
+                                            <span class="badge bg-danger float-end">CANCELLED</span>
                                         {% endif %}
 
                                         {% if item.session.historic_group.state_id == "bof" %}
-                                            <span class="label label-success float-end">BOF</span>
+                                            <span class="badge bg-success float-end">BOF</span>
                                         {% endif %}
 
                                         {% if item.session.current_status == 'resched' %}
-                                            <span class="label label-danger float-end">
+                                            <span class="badge bg-danger float-end">
                                                 RESCHEDULED
                                                 {% if item.session.rescheduled_to %}
                                                     TO

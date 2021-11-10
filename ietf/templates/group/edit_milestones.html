@@ -69,16 +69,16 @@
                     <span class="milestone{% if form.delete.data %} delete{% endif %}">
                         <span class="due handle col-sm-1">
                             {% if form.milestone.resolved %}
-                                <span class="label label-success">{{ form.milestone.resolved }}</span>
+                                <span class="badge bg-success">{{ form.milestone.resolved }}</span>
                             {% else %}
                                 {% if group.uses_milestone_dates %}{{ form.milestone.due|date:"M Y" }}{% endif %}
                             {% endif %}
                         </span>
                         <span class="col-sm-11">
                             <span>{{ form.milestone.desc }}
-                                {% if form.needs_review %}<span title="This milestone is not active yet, awaiting {{ reviewer }} acceptance" class="label label-warning">Awaiting accept</span>{% endif %}
-                                {% if form.changed %}<span class="label label-info">Changed</span>{% endif %}
-                                {% if form.delete.data %}<span class="label label-danger">Deleted</span>{% endif %}
+                                {% if form.needs_review %}<span title="This milestone is not active yet, awaiting {{ reviewer }} acceptance" class="badge bg-warning">Awaiting accept</span>{% endif %}
+                                {% if form.changed %}<span class="badge bg-info">Changed</span>{% endif %}
+                                {% if form.delete.data %}<span class="badge bg-danger">Deleted</span>{% endif %}
                             </span>
 
                             {% for d in form.docs_names %}

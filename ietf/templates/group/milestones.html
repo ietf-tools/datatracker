@@ -22,7 +22,7 @@
                 <tr>
                     <td class="text-nowrap">
                         {% if milestone.resolved %}
-                            <span class="label label-success">{{ milestone.resolved }}</span>
+                            <span class="badge bg-success">{{ milestone.resolved }}</span>
                         {% else %}
                             {% if group.uses_milestone_dates %}
                                 {{ milestone.due|date:"M Y" }}

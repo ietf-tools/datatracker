@@ -278,7 +278,7 @@
                         {{ res.name.name }}: {{ res.value }}
                         {% if res.display_name %} (as &quot;{{ res.display_name }}&quot;) {% endif %}
                         {% if external_resources.show_changes and added %}
-                            <span class="label label-success">New</span>
+                            <span class="badge bg-success">New</span>
                         {% endif %}
                     </div>
                 {% endwith %}
@@ -296,7 +296,7 @@
                         {{ res.name.name }}: {{ res.value }}
                         {% if res.display_name %} (as &quot;{{ res.display_name }}&quot;) {% endif %}
                         {% if removed %}
-                            <span class="label label-warning">Removed</span>
+                            <span class="badge bg-warning">Removed</span>
                         {% endif %}
                     </div>
                 {% endwith %}

@@ -13,13 +13,13 @@
         {% else %}
             <div class="anchor-target" id="{{session.group.acronym}}"><a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{session.group.acronym}}</a></div>
             {% if session.group.state_id == "bof" %}
-                <span class="label label-success">BOF</span>
+                <span class="badge bg-success">BOF</span>
             {% endif %}
         {% endif %}
     </td>
 
     {% if session.all_meeting_sessions_cancelled %}
-        <td colspan="3"><span class="label label-danger">Session cancelled</span></td>
+        <td colspan="3"><span class="badge bg-danger">Session cancelled</span></td>
     {% else %}
         <td>
             {% if session.all_meeting_agendas %}
@@ -32,7 +32,7 @@
                 {% endif %}
             {% else %}
                 {% if show_agenda == "True" and not meeting.proceedings_final %}
-                    <span class="label label-warning">No agenda</span><br>
+                    <span class="badge bg-warning">No agenda</span><br>
                 {% endif %}
             {% endif %}
             {% if session.all_meeting_minutes %}
@@ -45,7 +45,7 @@
                 {% endif %}
             {% else %}
                 {% if show_agenda == "True" and not meeting.proceedings_final %}
-                    <span class="label label-warning">No minutes</span><br>
+                    <span class="badge bg-warning">No minutes</span><br>
                 {% endif %}
             {% endif %}
             {% if session.all_meeting_bluesheets %}
@@ -82,7 +82,7 @@
                     <br>
                 {% empty %}
                     {% if not meeting.proceedings_final %}
-                        <span class="label label-warning">No slides</span>
+                        <span class="badge bg-warning">No slides</span>
                     {% endif %}
                 {% endfor %}
             {% endwith %}
@@ -93,7 +93,7 @@
                     <a href="{% url "ietf.doc.views_doc.document_main" name=draft.canonical_name %}">{{ draft.canonical_name }}</a><br>
                 {% empty %}
                     {% if not meeting.proceedings_final %}
-                        <span class="label label-warning">No drafts</span>
+                        <span class="badge bg-warning">No drafts</span>
                     {% endif %}
                 {% endfor %}
             {% endwith %}

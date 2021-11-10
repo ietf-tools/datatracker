@@ -6,7 +6,7 @@
     <div class="col-md-2 hidden-sm hidden-xs">
 
         {% for n, positions in position_groups %}
-            <h4><span class="label label-{{ n|pos_to_label }}"> {{ n.name }}</span></h4>
+            <h4><span class="badge bg-{{ n|pos_to_label }}"> {{ n.name }}</span></h4>
             {% for p in positions %}
                 <div class="balloter-name">
                     {% if p.is_old_pos %}<span class="text-muted">({% endif %}{% if p.comment or p.discuss %}<a href="#{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">{% endif %}{{ p.balloter.plain_name }}{% if p.comment or p.discuss %}</a>{% endif %}{% if p.is_old_pos %})</span>{% endif %}
@@ -76,7 +76,7 @@
                     <h4 class="anchor-target" id="{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">{{ p.balloter.plain_name }}
                         <span class="float-end">
                             {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
-                            <span class="label label-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
+                            <span class="badge bg-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
                             {% if user|has_role:"Secretariat" %}
                                 <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}" title="Click to edit the position of {{ p.balloter.plain_name }}" class="btn btn-primary btn-xs">Edit</a>
                             {% endif %}
@@ -130,7 +130,7 @@
                         <span class="text-muted">({{ p.balloter.plain_name }}; former steering group member)</span>
                         <span class="float-end">
                             {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
-                            <span class="label label-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
+                            <span class="badge bg-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
                             {% if user|has_role:"Secretariat" %}
                                 <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}" title="Click to edit the position of {{ p.balloter.plain_name }}" class="btn btn-primary btn-xs">Edit</a>
                             {% endif %}

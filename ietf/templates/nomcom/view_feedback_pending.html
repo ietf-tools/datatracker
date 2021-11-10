@@ -43,7 +43,7 @@
                         <dt>Subject</dt>
                         <dd>{{ form.instance.subject }}</dd>
                         <dt>Type</dt>
-                        <dd><span class="label label-info">{{ form.feedback_type }}</span></dd>
+                        <dd><span class="badge bg-info">{{ form.feedback_type }}</span></dd>
                         <dt>Feedback</dt>
                         <dd>
                             <pre>{% decrypt form.instance.comments request year 1 %}</pre>

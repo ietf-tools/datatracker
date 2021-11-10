@@ -57,7 +57,7 @@
                     <a href="{{ group.about_url }}">({{ group.acronym }})</a>
 
                     {% if snapshot %}
-                        <span class="label label-warning">Snapshot</span>
+                        <span class="badge bg-warning">Snapshot</span>
                     {% endif %}
                 </td>
             </tr>
@@ -96,10 +96,10 @@
                     {% endif %}
 
                     {% if chartering == "initial" %}
-                        <span class="label label-info">Initial chartering</span>
+                        <span class="badge bg-info">Initial chartering</span>
                     {% endif %}
                     {% if chartering == "rechartering" %}
-                        <span class="label label-info">Rechartering</span>
+                        <span class="badge bg-info">Rechartering</span>
                     {% endif %}
                 </td>
             </tr>

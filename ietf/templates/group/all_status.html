@@ -26,7 +26,7 @@
                 <tr>
                     <td>{{ rpt.group.acronym }}
                         {% if rpt.group.state.slug != "active" %}
-                            <span class="label label-success">{{ rpt.group.state.slug|upper }}</span>
+                            <span class="badge bg-success">{{ rpt.group.state.slug|upper }}</span>
                         {% endif %}
                         <br> {{rpt.time|date:"Y-m-d"}}</td>
                     <td><pre class="pasted">{{ rpt.desc|default:"(none)"|linkify }}</pre></td>
@@ -41,7 +41,7 @@
             <tr>
                 <td>{{ rpt.group.acronym }}
                     {% if rpt.group.state.slug != "active" %}
-                        <span class="label label-success">{{ rpt.group.state.slug|upper }}</span>
+                        <span class="badge bg-success">{{ rpt.group.state.slug|upper }}</span>
                     {% endif %}
                     <br> {{rpt.time|date:"Y-m-d"}}</td>
                 <td><pre class="pasted">{{ rpt.desc|default:"(none)"|linkify }}</pre></td>

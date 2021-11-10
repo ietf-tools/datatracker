@@ -15,13 +15,13 @@
 
     <h1>{{ group.name}} ({{ group.acronym }})
         {% if group.state_id == "dormant" or group.state_id == "conclude" %}
-            <span class="label label-warning">Concluded {{ group.type.name }}</span>
+            <span class="badge bg-warning">Concluded {{ group.type.name }}</span>
         {% endif %}
         {% if group.state_id == "replaced" %}
-            <span class="label label-warning">Replaced {{ group.type.name }}</span>
+            <span class="badge bg-warning">Replaced {{ group.type.name }}</span>
         {% endif %}
         {% if group.state_id == "proposed" %}
-            <span class="label label-info">Proposed {{ group.type.name }}</span>
+            <span class="badge bg-info">Proposed {{ group.type.name }}</span>
         {% endif %}
     </h1>
 

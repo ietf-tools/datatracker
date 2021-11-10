@@ -40,9 +40,9 @@
                         <td>{{ meeting.date }}</td>
                         <td>{{ meeting.responsible_group.acronym }}</td>
                         <td>
-                            <a class="interim-meeting-link" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">{{ meeting.number }}{% if meeting.interim_meeting_cancelled %}&nbsp;&nbsp;<span class="label label-warning">CANCELLED</span>{% endif %}</a>
+                            <a class="interim-meeting-link" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">{{ meeting.number }}{% if meeting.interim_meeting_cancelled %}&nbsp;&nbsp;<span class="badge bg-warning">CANCELLED</span>{% endif %}</a>
                         </td>
-                        <td>{% if meeting.can_approve %}<span class="label label-success">can be approved</span>{% endif %}</td>
+                        <td>{% if meeting.can_approve %}<span class="badge bg-success">can be approved</span>{% endif %}</td>
                     </tr>
                 {% endfor %}
             </tbody>

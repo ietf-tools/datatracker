@@ -9,10 +9,10 @@
             <h4>Agenda</h4>
             <div class="agenda-frame" data-src="{{ agenda.get_href }}"></div>
         {% else %}
-            <span class="label label-info">Agenda submitted as {{ agenda.file_extension|upper }}</span>
+            <span class="badge bg-info">Agenda submitted as {{ agenda.file_extension|upper }}</span>
         {% endif %}
     {% else %}
-        <span class="label label-warning">No agenda submitted</span>
+        <span class="badge bg-warning">No agenda submitted</span>
     {% endif %}
 {% endwith %}
 
@@ -34,9 +34,9 @@
             <h4>Minutes</h4>
             <div class="minutes-frame" data-src="{{ minutes.get_href }}"></div>
         {% else %}
-            <span class="label label-info">Minutes submitted as {{ minutes.file_extension|upper }}</span>
+            <span class="badge bg-info">Minutes submitted as {{ minutes.file_extension|upper }}</span>
         {% endif %}
     {% else %}
-        <span class="label label-warning">No minutes submitted</span>
+        <span class="badge bg-warning">No minutes submitted</span>
     {% endif %}
 {% endwith %}

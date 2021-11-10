@@ -39,10 +39,10 @@
                     <a href="{% url "ietf.doc.views_doc.document_main" name=conflictdoc.canonical_name %}">
                         {{ conflictdoc.canonical_name }}{% if conflictdoc.get_state_slug != 'rfc' %}-{{ conflictdoc.rev }}{% endif %}
                     </a>
-                    <span class="label label-info">{{conflictdoc.stream}} stream</span>
+                    <span class="badge bg-info">{{conflictdoc.stream}} stream</span>
 
                     {% if snapshot %}
-                        <span class="label label-warning">Snapshot</span>
+                        <span class="badge bg-warning">Snapshot</span>
                     {% endif %}
                 </td>
             </tr>

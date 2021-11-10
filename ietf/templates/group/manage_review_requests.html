@@ -39,7 +39,7 @@
                             <span class="float-end">
                                 {% if r.in_lc_and_telechat %}Last Call and telechat{% else %}{{ r.type.name }}{% endif %}
                                 - deadline {{ r.deadline|date:"Y-m-d" }}
-                                {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
+                                {% if r.due %}<span class="badge bg-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
                             </span>
 
                             <a href="{% if r.requested_rev %}{% url "ietf.doc.views_doc.document_main" name=r.doc.name rev=r.requested_rev %}{% else %}{% url "ietf.doc.views_doc.document_main" name=r.doc.name %}{% endif %}?include_text=1">{{ r.doc.name }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}</a>
@@ -123,8 +123,8 @@
                             {% if r.reviewer %}
                                 <button type="button" class="btn btn-primary btn-success" title="Click to reassign reviewer">
                                     {{ r.reviewer.person }}
-                                    {% if r.state_id == "accepted" %} <span class="label label-default">accepted</span>{% endif %}
-                                    {% if r.reviewer_unavailable %}<span class="label label-danger">unavailable</span>{% endif %}
+                                    {% if r.state_id == "accepted" %} <span class="badge bg-default">accepted</span>{% endif %}
+                                    {% if r.reviewer_unavailable %}<span class="badge bg-danger">unavailable</span>{% endif %}
                                 </button>
                             {% else %}
                                 <button type="button" class="btn btn-primary btn-success" title="Click to assign reviewer"><em>Not yet assigned</em></button>

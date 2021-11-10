@@ -131,7 +131,7 @@
                                             </td>
                                             {% if session.current_status == 'canceled' %}
                                                 <td class='text-right'>
-                                                    <span class="label label-warning">CANCELLED</span>
+                                                    <span class="badge bg-warning">CANCELLED</span>
                                                 </td>
                                             {% else %}
                                                 <td class='text-right'>
@@ -140,7 +140,7 @@
                                             {% endif %}
                                         {% endwith %}
                                     {% else %}
-                                        <td><span class="label-warning">Unexpected entry type: {{entry|classname}}</span></td>
+                                        <td><span class="badge bg-warning">Unexpected entry type: {{entry|classname}}</span></td>
                                         <td></td>
                                         <td></td>
                                         <td></td>

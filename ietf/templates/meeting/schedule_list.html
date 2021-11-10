@@ -52,16 +52,16 @@
                                 <td>{{ schedule.notes|linebreaksbr }}</td>
                                 <td>
                                     {% if schedule.visible %}
-                                        <div class="label label-success">visible</div>
+                                        <div class="badge bg-success">visible</div>
                                     {% else %}
-                                        <div class="label label-danger">hidden</div>
+                                        <div class="badge bg-danger">hidden</div>
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if schedule.public %}
-                                        <div class="label label-success">public</div>
+                                        <div class="badge bg-success">public</div>
                                     {% else %}
-                                        <div class="label label-danger">private</div>
+                                        <div class="badge bg-danger">private</div>
                                     {% endif %}
                                 </td>
                                 <td>

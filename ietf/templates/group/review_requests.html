@@ -45,13 +45,13 @@
                         <td><span style="display:none">X</span>{% if r.pk %}{{ r.time|date:"Y-m-d" }} by {{r.requested_by.plain_name}}{% else %}<em>auto-suggested</em>{% endif %}</td>
                         <td><span style="display:none">X</span>
                             {{ r.deadline|date:"Y-m-d" }}
-                            {% if r.due %}<span class="label label-warning" title="{{ r.due }} day{{ r.due|pluralize }} past deadline">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
+                            {% if r.due %}<span class="badge bg-warning" title="{{ r.due }} day{{ r.due|pluralize }} past deadline">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
                         </td>
                         {% if r.reviewer %}
                             <td>
                                 {{ r.reviewer.person }}
-                                {% if r.state_id == "accepted" %}<span class="label label-default">Accepted</span>{% endif %}
-                                {% if r.reviewer_unavailable %}<span class="label label-danger">Unavailable</span>{% endif %}
+                                {% if r.state_id == "accepted" %}<span class="badge bg-default">Accepted</span>{% endif %}
+                                {% if r.reviewer_unavailable %}<span class="badge bg-danger">Unavailable</span>{% endif %}
                             </td>
                         {% endif %}
                         <td>
@@ -92,12 +92,12 @@
                         <td><span style="display:none">X</span>{{ a.assigned_on|date:"Y-m-d" }}</td>
                         <td><span style="display:none">X</span>
                             {{ a.review_request.deadline|date:"Y-m-d" }}
-                            {% if a.due %}<span class="label label-warning" title="{{ a.due }} day{{ a.due|pluralize }} past deadline">{{ a.due }} day{{ a.due|pluralize }}</span>{% endif %}
+                            {% if a.due %}<span class="badge bg-warning" title="{{ a.due }} day{{ a.due|pluralize }} past deadline">{{ a.due }} day{{ a.due|pluralize }}</span>{% endif %}
                         </td>
                         <td>
                             {{ a.reviewer.person }}
-                            {% if a.state_id == "accepted" %}<span class="label label-default">Accepted</span>{% endif %}
-                            {% if a.reviewer_unavailable %}<span class="label label-danger">Unavailable</span>{% endif %}
+                            {% if a.state_id == "accepted" %}<span class="badge bg-default">Accepted</span>{% endif %}
+                            {% if a.reviewer_unavailable %}<span class="badge bg-danger">Unavailable</span>{% endif %}
                         </td>
                         <td>
                             {{ a.review_request.doc.friendly_state }}

@@ -50,9 +50,9 @@
             <br>
             <b>{{ doc.title }}</b>
             {% if doc.has_verified_errata %}
-                <a class="label label-danger float-end" href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">Errata</a>
+                <a class="badge bg-danger float-end" href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">Errata</a>
             {% elif doc.has_errata %}
-                <a class="label label-warning float-end" href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">Errata</a>
+                <a class="badge bg-warning float-end" href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">Errata</a>
             {% endif %}
         </div>
 
@@ -102,11 +102,11 @@
         {% endif %}
 
         {% if doc.latest_revision_date|timesince_days|new_enough:request %}
-            <wbr><div class="float-end"><span class="label label-success">New</span></div>
+            <wbr><div class="float-end"><span class="badge bg-success">New</span></div>
         {% endif %}
 
         {% if doc.get_state_slug == "active" and doc.expirable and doc.expires|timesince_days|expires_soon:request %}
-            <wbr><span class="label label-warning">Expires soon</span>
+            <wbr><span class="badge bg-warning">Expires soon</span>
         {% endif %}
 
     </td>
@@ -116,7 +116,7 @@
     <td class="ipr text-center">
         {% if doc.related_ipr %}
             <a href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}">
-                <span class="label label-default">{{ doc.related_ipr|length }}</span>
+                <span class="badge bg-default">{{ doc.related_ipr|length }}</span>
             </a>
         {% endif %}
     </td>

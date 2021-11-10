@@ -46,7 +46,7 @@
                         <td>
                             <a href="{% url 'ietf.doc.views_doc.document_main' name=name %}">{{ name|prettystdname }}</a>
                             {% if ref.target.name != alias_name %}
-                                <br><span class="label label-info">As {{ref.target.name}}</span>
+                                <br><span class="badge bg-info">As {{ref.target.name}}</span>
                             {% endif %}
                         </td>
                         <td>

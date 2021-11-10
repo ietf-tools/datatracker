@@ -4,7 +4,7 @@
     {% with item=session.official_timeslotassignment %}
         <h2 class="anchor-target" id="session_{{session.pk}}">{% if sessions|length > 1 %}Session {{ forloop.counter }} : {% endif %}
             {% for time in session.times %}{% if not forloop.first %}, {% endif %} {{time|dateformat:"l Y-m-d H:i T"}} {% if time.tzinfo.zone != "UTC" %}<span class="small">({{time|utc|dateformat:"H:i T"}})</span>{% endif %}{% endfor %}
-            {% if session.cancelled %}<small class="label label-warning">CANCELLED</small>{% else %}{{ session.status }}{% endif %}
+            {% if session.cancelled %}<small class="badge bg-warning">CANCELLED</small>{% else %}{{ session.status }}{% endif %}
             {% if session.name %} : {{ session.name }}{% endif %}
             {% if not session.cancelled %}
                 <span class="regular float-end">
@@ -29,7 +29,7 @@
                     {% endif %}
                 </div>
                 {% if not session.type_counter.agenda %}
-                    <span class="label label-warning">This session does not yet have an agenda</span>
+                    <span class="badge bg-warning">This session does not yet have an agenda</span>
                 {% endif %}
             {% endif %}
         {% endif %}

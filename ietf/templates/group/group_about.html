@@ -56,7 +56,7 @@
                 <td>
                     {{ group.state.name }}
                     {% if requested_close %}
-                        <div class="label label-info">In the process of being closed</div>
+                        <div class="badge bg-info">In the process of being closed</div>
                     {% endif %}
                 </td>
             </tr>
@@ -69,7 +69,7 @@
                     <td>
                         {% if group.charter %}
                             <a href="{% url "ietf.doc.views_doc.document_main" name=group.charter.name %}">{{ group.charter.name }}-{{ group.charter.rev }}</a>
-                            <span class="label label-info">{{ group.charter.get_state.name }}</span>
+                            <span class="badge bg-info">{{ group.charter.get_state.name }}</span>
                         {% else %}
                             (None)
                             {% if user|has_role:"Area Director,Secretariat" %}
